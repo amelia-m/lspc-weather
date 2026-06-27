@@ -1,5 +1,6 @@
 import type { Advisory } from '../domain/types';
 import { SourceLink } from './common/SourceLink';
+import { DATA_SOURCES } from '../config/sources';
 
 const LEVEL_LABEL: Record<Advisory['level'], string> = {
   caution: 'Caution',
@@ -43,6 +44,20 @@ export function AdvisoryPanel({ advisories }: { advisories: Advisory[] }): JSX.E
           </ul>
         )}
       </div>
+      <footer className="panel-sources">
+        Flag values from:{' '}
+        {[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast, DATA_SOURCES.openMeteo].map(
+          (s, i) => (
+            <span key={s.url}>
+              {i > 0 && ' · '}
+              <a href={s.url} target="_blank" rel="noopener noreferrer">
+                {s.label}
+              </a>
+            </span>
+          ),
+        )}
+        . Guidance sources are linked on each flag above.
+      </footer>
     </section>
   );
 }

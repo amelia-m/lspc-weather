@@ -2,6 +2,7 @@ import type { DensityAltitudeResult } from '../domain/types';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { CITATIONS } from '../config/thresholds';
+import { DATA_SOURCES } from '../config/sources';
 
 export function DensityAltitudePanel({
   da,
@@ -9,7 +10,11 @@ export function DensityAltitudePanel({
   da: DensityAltitudeResult | null;
 }): JSX.Element {
   return (
-    <Panel title="Density altitude" subtitle="C-182 climb performance">
+    <Panel
+      title="Density altitude"
+      subtitle="C-182 climb performance"
+      sources={[DATA_SOURCES.nwsObservation]}
+    >
       {!da ? (
         <p className="muted">Needs altimeter + temperature from the METAR.</p>
       ) : (

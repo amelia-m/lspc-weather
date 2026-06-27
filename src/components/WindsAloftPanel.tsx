@@ -1,12 +1,13 @@
 import type { WindsAloftLevel } from '../domain/types';
 import { compass } from '../domain/units';
+import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 
 /** Winds aloft at jump altitudes — the skydiver-specific centerpiece. An arrow
  *  points the direction the wind is blowing TOWARD (drift direction). */
 export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Element {
   return (
-    <Panel title="Winds aloft" subtitle="freefall drift / spot">
+    <Panel title="Winds aloft" subtitle="freefall drift / spot" sources={[DATA_SOURCES.openMeteo]}>
       {levels.length === 0 ? (
         <p className="muted">No winds-aloft data.</p>
       ) : (

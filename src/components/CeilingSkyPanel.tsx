@@ -1,5 +1,6 @@
 import type { CurrentConditions, HourlyPoint } from '../domain/types';
 import { round } from '../domain/units';
+import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
 
@@ -16,7 +17,11 @@ export function CeilingSkyPanel({
   const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
 
   return (
-    <Panel title="Ceiling & sky" subtitle="now + next hours">
+    <Panel
+      title="Ceiling & sky"
+      subtitle="now + next hours"
+      sources={[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast]}
+    >
       <div className="ceil-now">
         <span className="ceil-label">Ceiling</span>
         <span className="ceil-value">

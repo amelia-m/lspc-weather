@@ -72,7 +72,7 @@ export default function App(): JSX.Element {
       <DataFreshness status={status} lastUpdated={lastUpdated} onRefresh={refresh} />
 
       <footer className="app-foot">
-        Data: NWS (api.weather.gov), AviationWeather.gov, Open-Meteo. Built for fun — fly safe.
+        Data: NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.
       </footer>
     </div>
   );

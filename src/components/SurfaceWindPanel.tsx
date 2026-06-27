@@ -1,6 +1,7 @@
 import type { CurrentConditions, JumperClass } from '../domain/types';
 import { ktToMph, round } from '../domain/units';
 import { DEFAULT_THRESHOLDS } from '../config/thresholds';
+import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 
 /** Surface wind with limit bands drawn from the active thresholds. The bands
@@ -19,7 +20,11 @@ export function SurfaceWindPanel({
   const pct = (v: number): number => Math.min(100, (v / max) * 100);
 
   return (
-    <Panel title="Surface wind" subtitle={`${jumperClass} limits`}>
+    <Panel
+      title="Surface wind"
+      subtitle={`${jumperClass} limits`}
+      sources={[DATA_SOURCES.nwsObservation]}
+    >
       {speed == null ? (
         <p className="muted">No wind data.</p>
       ) : (
