@@ -30,6 +30,11 @@ export const DATA_SOURCES = {
     label: `NWS TAF · ${SITE.tafStation.id}`,
     url: `https://aviationweather.gov/data/taf/?id=${SITE.tafStation.id}`,
   },
+  /** NWS radar (image loop + interactive viewer). */
+  radar: {
+    label: `NWS radar · ${SITE.radarSite.id}`,
+    url: `https://radar.weather.gov/station/${SITE.radarSite.id}/standard`,
+  },
   /** Sunrise/sunset computed locally via the NOAA solar-position algorithm. */
   computed: {
     label: 'Computed locally · NOAA solar algorithm',

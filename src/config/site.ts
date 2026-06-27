@@ -35,6 +35,13 @@ export interface SiteConfig {
     /** NWS text-product location code (ICAO minus leading "K"). */
     nwsProductLocation: string;
   };
+  /** NWS WSR-88D radar covering the drop zone. */
+  radarSite: {
+    id: string; // e.g. KOAX
+    name: string;
+    lat: number;
+    lon: number;
+  };
   timeZone: string;
 }
 
@@ -60,6 +67,12 @@ export const SITE: SiteConfig = {
     lat: 41.1183,
     lon: -95.9124,
     nwsProductLocation: 'OFF',
+  },
+  radarSite: {
+    id: 'KOAX',
+    name: 'NWS Omaha / Valley',
+    lat: 41.3203,
+    lon: -96.3667,
   },
   timeZone: 'America/Chicago',
 };
