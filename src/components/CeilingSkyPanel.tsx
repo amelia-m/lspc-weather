@@ -38,6 +38,7 @@ export function CeilingSkyPanel({
         <div className="sky-timeline">
           {upcoming.map((h) => (
             <div key={h.time} className="sky-col" title={describeHour(h)}>
+              <span className="sky-pct">{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</span>
               <div className="sky-bar-track">
                 <div
                   className="sky-bar"
