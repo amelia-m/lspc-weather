@@ -46,10 +46,11 @@ export default function App(): JSX.Element {
       </header>
 
       <p className="disclaimer">
-        Advisory only. This dashboard flags conditions and cites guidance — it does not decide
-        whether it is safe to jump. Always confirm with current official sources, the S&amp;TA, and
-        the pilot in command. Observations are from {SITE.metarStation.id} (~{SITE.metarStation.distanceMi}{' '}
-        mi away); forecasts and winds are gridded to the drop zone.
+        <strong>In development — not officially endorsed or approved by LSPC.</strong> Advisory
+        only: this dashboard flags conditions and cites guidance — it does not decide whether it is
+        safe to jump. Always confirm with current official sources, the S&amp;TA, and the pilot in
+        command. Observations are from {SITE.metarStation.id} (~{SITE.metarStation.distanceMi} mi
+        away); forecasts and winds are gridded to the drop zone.
       </p>
 
       <AdvisoryPanel advisories={advisories} />

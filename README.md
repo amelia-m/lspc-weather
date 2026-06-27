@@ -8,6 +8,8 @@ It consolidates the manual three-site routine (NOAA hourly forecast + usairnet
 cloud forecast + KPMV METAR) into one page, and adds **winds aloft** for
 freefall drift and **density altitude** for jump-plane climb performance.
 
+> **In development — not officially endorsed or approved by LSPC.**
+>
 > **Advisory only.** This dashboard *flags conditions and cites guidance* — it
 > does **not** decide whether it's safe to jump. Always confirm with current
 > official sources, the S&TA, and the pilot in command.
