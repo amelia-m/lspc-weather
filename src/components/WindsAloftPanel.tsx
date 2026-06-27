@@ -43,6 +43,13 @@ export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.
         </table>
       )}
       <p className="muted small">Arrow shows drift direction (where wind pushes you).</p>
+      <p className="muted small">
+        Each 1,000-ft level is <strong>linearly interpolated</strong> from the model’s pressure-level
+        winds (Open-Meteo gives wind at fixed pressure surfaces — e.g. 925/850/700 hPa — with their
+        geopotential heights, which we convert to ft MSL and interpolate to these AGL altitudes).
+        Direction is interpolated along the shortest compass arc. These are a model{' '}
+        <strong>forecast</strong> for the DZ, not a measured sounding, so treat them as guidance.
+      </p>
     </Panel>
   );
 }
