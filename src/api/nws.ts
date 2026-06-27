@@ -1,7 +1,13 @@
 import { fetchJson, NWS_BASE, USE_FIXTURES } from './http';
-import { normalizeGridpoint, type RawGridpoint } from '../domain/normalize';
-import type { HourlyPoint } from '../domain/types';
+import {
+  normalizeGridpoint,
+  normalizeNwsObservation,
+  type RawGridpoint,
+  type RawNwsObservation,
+} from '../domain/normalize';
+import type { CurrentConditions, HourlyPoint } from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
+import { OBSERVATION_FIXTURE } from './fixtures/observation';
 
 interface PointsResponse {
   properties: { forecastGridData: string };
@@ -31,6 +37,24 @@ export async function fetchHourly(lat: number, lon: number): Promise<HourlyPoint
   const url = await resolveGridpointUrl(lat, lon);
   const grid = await fetchJson<RawGridpoint>(url);
   return normalizeGridpoint(grid);
+}
+
+/**
+ * Fetch + normalize the latest observation (current conditions) for a station.
+ * This replaces the AviationWeather.gov METAR call, which the browser blocks on
+ * CORS; api.weather.gov is CORS-enabled. The response's `rawMessage` is the
+ * actual METAR, so the displayed raw text is unchanged.
+ */
+export async function fetchLatestObservation(
+  stationId: string,
+): Promise<CurrentConditions | null> {
+  const data = USE_FIXTURES
+    ? OBSERVATION_FIXTURE
+    : await fetchJson<RawNwsObservation>(
+        `${NWS_BASE}/stations/${encodeURIComponent(stationId)}/observations/latest`,
+      );
+  if (!data?.properties) return null;
+  return normalizeNwsObservation(data, stationId);
 }
 
 function safeLocalGet(key: string): string | null {
