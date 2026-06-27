@@ -5,11 +5,13 @@ import {
   normalizeGridpoint,
   normalizeMetar,
   normalizeNwsObservation,
+  parseTaf,
   parseValidTime,
 } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 import { GRIDPOINT_FIXTURE } from '../src/api/fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from '../src/api/fixtures/observation';
+import { TAF_FIXTURE } from '../src/api/fixtures/taf';
 
 describe('durationToHours', () => {
   it('parses hour and day durations', () => {
@@ -71,6 +73,22 @@ describe('normalizeNwsObservation', () => {
     const c = normalizeNwsObservation(noRaw, 'KPMV');
     expect(c.altimeterInHg).toBeGreaterThan(29.5); // 101490 Pa ≈ 29.97 inHg
     expect(c.altimeterInHg).toBeLessThan(30.5);
+  });
+});
+
+describe('parseTaf', () => {
+  it('extracts the KOFF TAF body, valid period, and issuance time', () => {
+    const taf = parseTaf(TAF_FIXTURE.productText!, 'KOFF', TAF_FIXTURE.issuanceTime);
+    expect(taf).not.toBeNull();
+    expect(taf!.station).toBe('KOFF');
+    expect(taf!.raw.startsWith('KOFF')).toBe(true); // comms header stripped
+    expect(taf!.raw).toContain('TEMPO');
+    expect(taf!.raw.endsWith('=')).toBe(false); // trailing separator stripped
+    expect(taf!.validRaw).toBe('2718/2824');
+    expect(taf!.issuedMs).toBeTypeOf('number');
+  });
+  it('returns null when the station is not in the product', () => {
+    expect(parseTaf('TAF KOMA 271720Z 2718/2824 ...', 'KOFF')).toBeNull();
   });
 });
 

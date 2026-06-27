@@ -25,6 +25,11 @@ export const DATA_SOURCES = {
     label: 'Open-Meteo',
     url: 'https://open-meteo.com/',
   },
+  /** TAF — fetched from the NWS text-products API; link is the NOAA viewer. */
+  taf: {
+    label: `NWS TAF · ${SITE.tafStation.id}`,
+    url: `https://aviationweather.gov/data/taf/?id=${SITE.tafStation.id}`,
+  },
   /** Sunrise/sunset computed locally via the NOAA solar-position algorithm. */
   computed: {
     label: 'Computed locally · NOAA solar algorithm',

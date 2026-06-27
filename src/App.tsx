@@ -5,6 +5,7 @@ import { useWeatherData } from './hooks/useWeatherData';
 import { AdvisoryPanel } from './components/AdvisoryPanel';
 import { MetarPanel } from './components/MetarPanel';
 import { CeilingSkyPanel } from './components/CeilingSkyPanel';
+import { TafPanel } from './components/TafPanel';
 import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
@@ -65,6 +66,7 @@ export default function App(): JSX.Element {
         <SurfaceWindPanel current={snapshot.current} jumperClass={jumperClass} />
         <WindsAloftPanel levels={snapshot.windsAloft} />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
+        <TafPanel taf={snapshot.taf} />
         <DensityAltitudePanel da={snapshot.densityAltitude} />
         <SunPanel sun={snapshot.sun} />
       </div>

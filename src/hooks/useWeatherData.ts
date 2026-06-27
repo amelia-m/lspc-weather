@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { fetchHourly, fetchLatestObservation } from '../api/nws';
+import { fetchHourly, fetchLatestObservation, fetchTaf } from '../api/nws';
 import { fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
@@ -36,6 +36,7 @@ const EMPTY_SNAPSHOT: WeatherSnapshot = {
   windsAloft: [],
   sun: null,
   densityAltitude: null,
+  taf: null,
 };
 
 export function useWeatherData(jumperClass: JumperClass): WeatherData {
@@ -44,6 +45,7 @@ export function useWeatherData(jumperClass: JumperClass): WeatherData {
     metar: idleStatus(),
     nws: idleStatus(),
     windsAloft: idleStatus(),
+    taf: idleStatus(),
   });
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,10 +91,17 @@ export function useWeatherData(jumperClass: JumperClass): WeatherData {
       })
       .catch((e) => markStale('windsAloft', e, updateSource));
 
+    const tafP = fetchTaf(SITE.tafStation.id, SITE.tafStation.nwsProductLocation)
+      .then((taf) => {
+        setSnapshot((prev) => ({ ...prev, taf }));
+        updateSource('taf', okStatus());
+      })
+      .catch((e) => markStale('taf', e, updateSource));
+
     // Sun is computed locally and never fails.
     setSnapshot((prev) => ({ ...prev, sun: sunTimes(dz.lat, dz.lon, new Date(now)) }));
 
-    void Promise.allSettled([metarP, hourlyP, windsP]).then(() => {
+    void Promise.allSettled([metarP, hourlyP, windsP, tafP]).then(() => {
       setLastUpdated(Date.now());
       setLoading(false);
     });

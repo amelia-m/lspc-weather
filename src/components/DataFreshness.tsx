@@ -7,12 +7,14 @@ const LABELS: Record<SourceKey, string> = {
   metar: 'METAR (KPMV)',
   nws: 'NWS forecast',
   windsAloft: 'Winds aloft',
+  taf: 'TAF (KOFF)',
 };
 
 const SOURCE_LINKS: Record<SourceKey, DataSource> = {
   metar: DATA_SOURCES.nwsObservation,
   nws: DATA_SOURCES.nwsForecast,
   windsAloft: DATA_SOURCES.openMeteo,
+  taf: DATA_SOURCES.taf,
 };
 
 export function DataFreshness({
