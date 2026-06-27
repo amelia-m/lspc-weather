@@ -22,7 +22,7 @@ export const CITATIONS = {
   uspaStudentWinds: {
     source: 'USPA SIM, Section 2-1',
     ref: 'Basic Safety Requirements — winds',
-    url: 'https://www.uspa.org/sim/2-1',
+    url: 'https://www.uspa.org/sim',
     note: VERIFY_NOTE,
   },
   far10517: {
@@ -40,13 +40,13 @@ export const CITATIONS = {
   faaDensityAltitude: {
     source: 'FAA-P-8740-2',
     ref: 'Density Altitude (FAA Safety pamphlet)',
-    url: 'https://www.faa.gov/sites/faa.gov/files/2022-06/DensityAltitude.pdf',
+    url: 'https://www.faasafety.gov/files/gslac/library/documents/2011/Aug/56396/FAA%20P-8740-02%20DensityAltitude%5Bhi-res%5D%20branded.pdf',
     note: VERIFY_NOTE,
   },
   uspaWeather: {
     source: 'USPA SIM, Section 5-1',
     ref: 'Weather (clouds, winds, spotting)',
-    url: 'https://www.uspa.org/sim/5-1',
+    url: 'https://www.uspa.org/sim',
     note: VERIFY_NOTE,
   },
 } satisfies Record<string, Citation>;
