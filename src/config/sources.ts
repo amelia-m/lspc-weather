@@ -8,10 +8,12 @@ export interface DataSource {
 }
 
 export const DATA_SOURCES = {
-  /** Current observation (the METAR) — NWS, CORS-enabled. */
+  /** Current observation (the METAR). The app fetches the CORS-enabled
+   *  api.weather.gov JSON endpoint, but that link points to the human-readable
+   *  NWS observation-history page (the API endpoint downloads as JSON). */
   nwsObservation: {
     label: `NWS observation · ${SITE.metarStation.id}`,
-    url: `https://api.weather.gov/stations/${SITE.metarStation.id}/observations/latest`,
+    url: `https://forecast.weather.gov/data/obhistory/${SITE.metarStation.id}.html`,
   },
   /** Gridded hourly forecast for the drop zone (the original NOAA graph). */
   nwsForecast: {
