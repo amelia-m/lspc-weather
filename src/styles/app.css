@@ -418,6 +418,18 @@ a {
   display: block;
   margin-top: 2px;
 }
+.sky-bar.precip-bar {
+  background: linear-gradient(180deg, var(--accent), #2f6db5);
+}
+
+/* Radar */
+.radar-img {
+  width: 100%;
+  border-radius: 6px;
+  display: block;
+  background: var(--panel-2);
+  min-height: 60px;
+}
 
 /* Density altitude */
 .da-readout {
