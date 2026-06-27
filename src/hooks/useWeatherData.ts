@@ -4,14 +4,8 @@ import { fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
-import type {
-  Advisory,
-  JumperClass,
-  SourceKey,
-  SourceStatus,
-  WeatherSnapshot,
-} from '../domain/types';
-import { DEFAULT_THRESHOLDS } from '../config/thresholds';
+import type { Advisory, SourceKey, SourceStatus, WeatherSnapshot } from '../domain/types';
+import type { Thresholds } from '../config/thresholds';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
 import { usePolling } from './usePolling';
 
@@ -39,7 +33,7 @@ const EMPTY_SNAPSHOT: WeatherSnapshot = {
   taf: null,
 };
 
-export function useWeatherData(jumperClass: JumperClass): WeatherData {
+export function useWeatherData(thresholds: Thresholds): WeatherData {
   const [snapshot, setSnapshot] = useState<WeatherSnapshot>(EMPTY_SNAPSHOT);
   const [status, setStatus] = useState<Record<SourceKey, SourceStatus>>({
     metar: idleStatus(),
@@ -110,8 +104,8 @@ export function useWeatherData(jumperClass: JumperClass): WeatherData {
   usePolling(refresh, REFRESH_MS);
 
   const advisories = useMemo(
-    () => evaluateAdvisories(snapshot, DEFAULT_THRESHOLDS[jumperClass], jumperClass, Date.now()),
-    [snapshot, jumperClass],
+    () => evaluateAdvisories(snapshot, thresholds, Date.now()),
+    [snapshot, thresholds],
   );
 
   const decoratedStatus = useMemo(() => withStaleness(status), [status]);

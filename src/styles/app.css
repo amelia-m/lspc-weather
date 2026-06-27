@@ -51,13 +51,18 @@ a {
   font-size: 0.85rem;
 }
 
+.toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
 .class-toggle button {
   background: var(--panel-2);
   color: var(--muted);
   border: 1px solid var(--border);
   padding: 6px 12px;
   cursor: pointer;
-  text-transform: capitalize;
 }
 .class-toggle button:first-child {
   border-radius: 8px 0 0 8px;
@@ -67,6 +72,26 @@ a {
 }
 .class-toggle button.active {
   background: var(--accent);
+  color: #04121f;
+  font-weight: 600;
+}
+.tier-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.tier-toggle button {
+  background: var(--panel-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.tier-toggle button.active {
+  background: var(--watch);
   color: #04121f;
   font-weight: 600;
 }
@@ -297,6 +322,9 @@ a {
 }
 .band-caution {
   background: var(--caution);
+}
+.band-gust {
+  background: #c879ff;
 }
 .wind-gust-tick {
   position: absolute;

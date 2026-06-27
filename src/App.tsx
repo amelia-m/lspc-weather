@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SITE } from './config/site';
-import type { JumperClass } from './domain/types';
+import {
+  resolveThresholds,
+  profileLabel,
+  WAIVER_TIERS,
+  type WindProfileId,
+} from './config/thresholds';
 import { useWeatherData } from './hooks/useWeatherData';
 import { AdvisoryPanel } from './components/AdvisoryPanel';
 import { MetarPanel } from './components/MetarPanel';
@@ -12,17 +17,19 @@ import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 
-const CLASS_KEY = 'lspc:jumperClass';
+const PROFILE_KEY = 'lspc:windProfile';
 
 export default function App(): JSX.Element {
-  const [jumperClass, setJumperClass] = useState<JumperClass>(
-    () => (localStorage.getItem(CLASS_KEY) as JumperClass) || 'student',
+  const [profile, setProfile] = useState<WindProfileId>(
+    () => (localStorage.getItem(PROFILE_KEY) as WindProfileId) || 'student',
   );
   useEffect(() => {
-    localStorage.setItem(CLASS_KEY, jumperClass);
-  }, [jumperClass]);
+    localStorage.setItem(PROFILE_KEY, profile);
+  }, [profile]);
 
-  const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(jumperClass);
+  const isWaiver = profile.startsWith('waiver');
+  const thresholds = useMemo(() => resolveThresholds(profile), [profile]);
+  const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds);
 
   return (
     <div className="app">
@@ -33,16 +40,37 @@ export default function App(): JSX.Element {
             {SITE.dz.name} ({SITE.dz.icao}) · Weeping Water, NE · obs from {SITE.metarStation.id}
           </p>
         </div>
-        <div className="class-toggle" role="group" aria-label="Jumper class">
-          {(['student', 'licensed'] as JumperClass[]).map((c) => (
-            <button
-              key={c}
-              className={c === jumperClass ? 'active' : ''}
-              onClick={() => setJumperClass(c)}
-            >
-              {c}
+        <div className="toggles">
+          <div className="class-toggle" role="group" aria-label="Wind-limit profile">
+            <button className={profile === 'student' ? 'active' : ''} onClick={() => setProfile('student')}>
+              Student
             </button>
-          ))}
+            <button
+              className={profile === 'licensed' ? 'active' : ''}
+              onClick={() => setProfile('licensed')}
+            >
+              Licensed
+            </button>
+            <button
+              className={isWaiver ? 'active' : ''}
+              onClick={() => setProfile(isWaiver ? profile : WAIVER_TIERS[0].id)}
+            >
+              LSPC waiver
+            </button>
+          </div>
+          {isWaiver && (
+            <div className="tier-toggle" role="group" aria-label="Waiver experience tier">
+              {WAIVER_TIERS.map((tier) => (
+                <button
+                  key={tier.id}
+                  className={tier.id === profile ? 'active' : ''}
+                  onClick={() => setProfile(tier.id)}
+                >
+                  {tier.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
@@ -63,7 +91,11 @@ export default function App(): JSX.Element {
 
       <div className="grid">
         <MetarPanel current={snapshot.current} />
-        <SurfaceWindPanel current={snapshot.current} jumperClass={jumperClass} />
+        <SurfaceWindPanel
+          current={snapshot.current}
+          thresholds={thresholds}
+          label={profileLabel(profile)}
+        />
         <WindsAloftPanel levels={snapshot.windsAloft} />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <TafPanel taf={snapshot.taf} />

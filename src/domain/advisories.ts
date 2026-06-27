@@ -1,4 +1,4 @@
-import type { Advisory, AdvisoryLevel, JumperClass, WeatherSnapshot } from './types';
+import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
 import { compass, ktToMph, round } from './units';
 
@@ -17,7 +17,6 @@ const WINDS_ALOFT_WATCH_KT = 30;
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
   thresholds: Thresholds,
-  jumperClass: JumperClass,
   now: number,
 ): Advisory[] {
   const out: Advisory[] = [];
@@ -38,11 +37,21 @@ export function evaluateAdvisories(
         level: windLevel,
         metric: 'Surface wind',
         value: formatWind(speedKt, gustKt),
+        guidance: thresholds.windGuidance,
+        citation: thresholds.windCitation,
+      });
+    }
+
+    // --- Absolute gust ceiling (LSPC waiver profiles) ---
+    if (thresholds.gustCautionKt != null && gustKt != null && gustKt >= thresholds.gustCautionKt) {
+      out.push({
+        id: 'gust-limit',
+        level: 'caution',
+        metric: 'Gust limit',
+        value: `gusting ${round(gustKt)} kt (${round(ktToMph(gustKt))} mph), waiver ceiling ${round(ktToMph(thresholds.gustCautionKt))} mph`,
         guidance:
-          jumperClass === 'student'
-            ? 'USPA recommends max ~14 mph (~12 kt) ground winds for solo students on ram-air reserves.'
-            : 'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency.',
-        citation: CITATIONS.uspaStudentWinds,
+          'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
+        citation: thresholds.windCitation,
       });
     }
 
