@@ -4,6 +4,7 @@ import {
   resolveThresholds,
   profileLabel,
   WAIVER_TIERS,
+  type Thresholds,
   type WindProfileId,
 } from './config/thresholds';
 import { useWeatherData } from './hooks/useWeatherData';
@@ -12,14 +13,19 @@ import { MetarPanel } from './components/MetarPanel';
 import { CeilingSkyPanel } from './components/CeilingSkyPanel';
 import { PrecipPanel } from './components/PrecipPanel';
 import { RadarPanel } from './components/RadarPanel';
+import { HourlyForecastPanel } from './components/HourlyForecastPanel';
 import { TafPanel } from './components/TafPanel';
 import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
+import { SettingsPanel } from './components/SettingsPanel';
 
 const PROFILE_KEY = 'lspc:windProfile';
+const OVERRIDES_KEY = 'lspc:thresholdOverrides';
+
+type Overrides = Partial<Record<WindProfileId, Partial<Thresholds>>>;
 
 export default function App(): JSX.Element {
   const [profile, setProfile] = useState<WindProfileId>(
@@ -29,8 +35,42 @@ export default function App(): JSX.Element {
     localStorage.setItem(PROFILE_KEY, profile);
   }, [profile]);
 
+  const [overrides, setOverrides] = useState<Overrides>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(OVERRIDES_KEY) ?? '{}') as Overrides;
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
+  }, [overrides]);
+
   const isWaiver = profile.startsWith('waiver');
-  const thresholds = useMemo(() => resolveThresholds(profile), [profile]);
+  const base = useMemo(() => resolveThresholds(profile), [profile]);
+  const profileOverride = overrides[profile];
+  const thresholds = useMemo<Thresholds>(
+    () => ({ ...base, ...(profileOverride ?? {}) }),
+    [base, profileOverride],
+  );
+  const modified = !!profileOverride && Object.keys(profileOverride).length > 0;
+
+  const setThreshold = (key: keyof Thresholds, value: number): void =>
+    setOverrides((prev) => {
+      const next: Partial<Thresholds> = { ...(prev[profile] ?? {}) };
+      if (value === (base[key] as number)) delete next[key];
+      else (next[key] as number) = value;
+      const out = { ...prev, [profile]: next };
+      if (Object.keys(next).length === 0) delete out[profile];
+      return out;
+    });
+  const resetProfile = (): void =>
+    setOverrides((prev) => {
+      const out = { ...prev };
+      delete out[profile];
+      return out;
+    });
+
   const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds);
 
   return (
@@ -99,6 +139,7 @@ export default function App(): JSX.Element {
           label={profileLabel(profile)}
         />
         <WindsAloftPanel levels={snapshot.windsAloft} />
+        <HourlyForecastPanel hourly={snapshot.hourly} />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
         <RadarPanel />
@@ -108,6 +149,15 @@ export default function App(): JSX.Element {
       </div>
 
       <DataFreshness status={status} lastUpdated={lastUpdated} onRefresh={refresh} />
+
+      <SettingsPanel
+        thresholds={thresholds}
+        base={base}
+        label={profileLabel(profile)}
+        modified={modified}
+        onChange={setThreshold}
+        onReset={resetProfile}
+      />
 
       <footer className="app-foot">
         Data: NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.

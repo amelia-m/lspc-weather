@@ -414,12 +414,121 @@ a {
 .sky-bar[data-cover='ovc'] {
   background: var(--caution);
 }
+.sky-pct {
+  display: block;
+  font-size: 0.6rem;
+  margin-bottom: 2px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
 .sky-ceil {
   display: block;
   margin-top: 2px;
 }
 .sky-bar.precip-bar {
   background: linear-gradient(180deg, var(--accent), #2f6db5);
+}
+
+/* Hourly chart */
+.hchart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.hc-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.hc-axis {
+  fill: var(--muted);
+  font-size: 8px;
+}
+.hc-precip {
+  fill: rgba(74, 168, 255, 0.25);
+}
+.hc-wind {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.hc-gust {
+  stroke: var(--watch);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+.hc-legend {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+.hc-key {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+.hc-key-wind {
+  background: var(--accent);
+}
+.hc-key-gust {
+  background: var(--watch);
+}
+.hc-key-precip {
+  background: rgba(74, 168, 255, 0.35);
+  height: 9px;
+}
+
+/* Settings */
+.settings summary {
+  cursor: pointer;
+  list-style: none;
+}
+.settings summary::-webkit-details-marker {
+  display: none;
+}
+.settings summary h2::before {
+  content: '▸ ';
+  color: var(--muted);
+}
+.settings[open] summary h2::before {
+  content: '▾ ';
+}
+.settings-dot {
+  color: var(--watch);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px 14px;
+  margin: 10px 0;
+}
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8rem;
+}
+.settings-label {
+  color: var(--muted);
+}
+.settings-field.modified .settings-label {
+  color: var(--watch);
+}
+.settings-unit {
+  opacity: 0.7;
+}
+.settings-field input {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 5px 8px;
+  font-variant-numeric: tabular-nums;
+}
+.settings-field.modified input {
+  border-color: var(--watch);
 }
 
 /* Radar */
