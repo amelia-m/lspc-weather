@@ -64,5 +64,9 @@ export const SITE: SiteConfig = {
   timeZone: 'America/Chicago',
 };
 
-/** Jump-run / drift altitudes (ft AGL) shown in the winds-aloft panel. */
-export const WINDS_ALOFT_LEVELS_AGL = [0, 3000, 6000, 9000, 12000] as const;
+/** Jump-run / drift altitudes (ft AGL) shown in the winds-aloft panel —
+ *  surface to 13,000 ft in 1,000-ft increments (covers C-182 exit altitudes). */
+export const WINDS_ALOFT_LEVELS_AGL: readonly number[] = Array.from(
+  { length: 14 },
+  (_, i) => i * 1000,
+);
