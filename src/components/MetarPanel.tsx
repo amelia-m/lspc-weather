@@ -3,6 +3,7 @@ import { compass, ktToMph, round } from '../domain/units';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
 import { SITE } from '../config/site';
+import { DATA_SOURCES } from '../config/sources';
 
 export function MetarPanel({ current }: { current: CurrentConditions | null }): JSX.Element {
   return (
@@ -11,6 +12,7 @@ export function MetarPanel({ current }: { current: CurrentConditions | null }): 
       subtitle={
         current ? `${current.station} · obs ${fmtTime(current.observedAt)}` : SITE.metarStation.id
       }
+      sources={[DATA_SOURCES.nwsObservation]}
     >
       {!current ? (
         <p className="muted">No METAR available.</p>

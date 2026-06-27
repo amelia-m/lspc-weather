@@ -1,11 +1,18 @@
 import type { SourceKey, SourceStatus } from '../domain/types';
 import { USE_FIXTURES } from '../api/http';
+import { DATA_SOURCES, type DataSource } from '../config/sources';
 import { fmtAgo } from './format';
 
 const LABELS: Record<SourceKey, string> = {
   metar: 'METAR (KPMV)',
   nws: 'NWS forecast',
   windsAloft: 'Winds aloft',
+};
+
+const SOURCE_LINKS: Record<SourceKey, DataSource> = {
+  metar: DATA_SOURCES.nwsObservation,
+  nws: DATA_SOURCES.nwsForecast,
+  windsAloft: DATA_SOURCES.openMeteo,
 };
 
 export function DataFreshness({
@@ -35,7 +42,11 @@ export function DataFreshness({
           {(Object.keys(LABELS) as SourceKey[]).map((k) => (
             <li key={k} className={statusClass(status[k])}>
               <span className="source-dot" aria-hidden />
-              <span className="source-name">{LABELS[k]}</span>
+              <span className="source-name">
+                <a href={SOURCE_LINKS[k].url} target="_blank" rel="noopener noreferrer">
+                  {LABELS[k]}
+                </a>
+              </span>
               <span className="source-meta">
                 {status[k].error
                   ? `error: ${status[k].error}`
