@@ -1,0 +1,446 @@
+:root {
+  --bg: #0e1116;
+  --panel: #171c24;
+  --panel-2: #1f2630;
+  --border: #2a323d;
+  --text: #e6edf3;
+  --muted: #93a1b0;
+  --accent: #4aa8ff;
+  --caution: #ff5d5d;
+  --watch: #ffb454;
+  --info: #4aa8ff;
+  --ok: #3fb950;
+  --stale: #ffb454;
+  --error: #ff5d5d;
+  --radius: 10px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+a {
+  color: var(--accent);
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.app-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.app-head h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.app-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.class-toggle button {
+  background: var(--panel-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+.class-toggle button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.class-toggle button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+.class-toggle button.active {
+  background: var(--accent);
+  color: #04121f;
+  font-weight: 600;
+}
+
+.disclaimer {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--watch);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 14px 0;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.panel-sub {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.panel-body {
+  padding: 12px 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.grid .panel {
+  margin-bottom: 0;
+}
+
+/* Advisories */
+.advisory-panel {
+  border-left: 3px solid var(--accent);
+}
+.advisory-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.advisory {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.advisory-caution {
+  border-left: 4px solid var(--caution);
+}
+.advisory-watch {
+  border-left: 4px solid var(--watch);
+}
+.advisory-info {
+  border-left: 4px solid var(--info);
+}
+.advisory-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.advisory-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #04121f;
+}
+.badge-caution {
+  background: var(--caution);
+}
+.badge-watch {
+  background: var(--watch);
+}
+.badge-info {
+  background: var(--info);
+}
+.advisory-metric {
+  font-weight: 600;
+}
+.advisory-value {
+  color: var(--text);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.advisory-guidance {
+  margin: 6px 0 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.advisory-cite {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.advisory-empty {
+  color: var(--muted);
+  margin: 0;
+}
+.source-link a {
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}
+.source-note {
+  cursor: help;
+  color: var(--watch);
+}
+
+/* Key/value lists */
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0;
+}
+.kv dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.kv dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.metar-raw {
+  margin: 10px 0 0;
+  padding: 8px;
+  background: #0b0e13;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 0.75rem;
+}
+
+/* Surface wind */
+.wind-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.wind-big {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+.wind-unit {
+  color: var(--muted);
+}
+.wind-mph,
+.wind-gust {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.wind-gust {
+  margin-left: auto;
+  color: var(--watch);
+}
+.wind-bar {
+  position: relative;
+  height: 14px;
+  background: var(--panel-2);
+  border-radius: 7px;
+  margin: 12px 0 6px;
+  overflow: hidden;
+}
+.wind-fill {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(90deg, var(--ok), var(--accent));
+}
+.wind-band {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  z-index: 2;
+}
+.band-watch {
+  background: var(--watch);
+}
+.band-caution {
+  background: var(--caution);
+}
+.wind-gust-tick {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 18px;
+  background: var(--watch);
+  z-index: 3;
+}
+.wind-legend {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Winds aloft */
+.aloft-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.aloft-table th,
+.aloft-table td {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.aloft-table th {
+  color: var(--muted);
+  font-weight: 500;
+}
+.aloft-strong {
+  color: var(--watch);
+  font-weight: 600;
+}
+.aloft-arrow {
+  display: inline-block;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+/* Ceiling timeline */
+.ceil-now {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ceil-label {
+  color: var(--muted);
+}
+.ceil-value {
+  font-weight: 600;
+}
+.sky-timeline {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+}
+.sky-col {
+  flex: 1;
+  text-align: center;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+.sky-bar-track {
+  height: 70px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--panel-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.sky-bar {
+  width: 100%;
+  background: var(--muted);
+  transition: height 0.2s;
+}
+.sky-bar[data-cover='few'] {
+  background: #3fb950;
+}
+.sky-bar[data-cover='sct'] {
+  background: #9acd32;
+}
+.sky-bar[data-cover='bkn'] {
+  background: var(--watch);
+}
+.sky-bar[data-cover='ovc'] {
+  background: var(--caution);
+}
+.sky-ceil {
+  display: block;
+  margin-top: 2px;
+}
+
+/* Density altitude */
+.da-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.da-big {
+  font-size: 2rem;
+  font-weight: 700;
+}
+.da-unit {
+  color: var(--muted);
+}
+
+/* Freshness */
+.freshness .refresh-btn {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.fixtures-banner {
+  background: rgba(255, 180, 84, 0.12);
+  border: 1px solid var(--watch);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  margin: 0 0 10px;
+}
+.source-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.source-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.85rem;
+}
+.source-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+.source.ok .source-dot {
+  background: var(--ok);
+}
+.source.stale .source-dot {
+  background: var(--stale);
+}
+.source.error .source-dot {
+  background: var(--error);
+}
+.source-meta {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.app-foot {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.75rem;
+  padding: 18px 0;
+}
