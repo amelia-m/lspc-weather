@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { fetchMetar } from '../api/aviationweather';
-import { fetchHourly } from '../api/nws';
+import { fetchHourly, fetchLatestObservation } from '../api/nws';
 import { fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
@@ -58,7 +57,7 @@ export function useWeatherData(jumperClass: JumperClass): WeatherData {
 
     // Each source is fetched and applied independently so one failure doesn't
     // blank the others; on error we keep prior data and mark it stale.
-    const metarP = fetchMetar(metarStation.id)
+    const metarP = fetchLatestObservation(metarStation.id)
       .then((current) => {
         setSnapshot((prev) => ({
           ...prev,

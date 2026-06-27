@@ -1,5 +1,5 @@
 import type { CurrentConditions, HourlyPoint, SkyCover, SkyLayer } from './types';
-import { hpaToInHg, mToFt, mToSm } from './units';
+import { hpaToInHg, mToFt, mToSm, round } from './units';
 import type { RawWindSample } from './windsAloft';
 
 /* ------------------------------------------------------------------ *
@@ -57,6 +57,102 @@ function parseVisibility(v: number | string | null): number | null {
   if (typeof v === 'number') return v;
   const n = parseFloat(v.replace('+', ''));
   return Number.isFinite(n) ? n : null;
+}
+
+/* ------------------------------------------------------------------ *
+ *  NWS latest observation (/stations/{id}/observations/latest)        *
+ *  Used instead of AviationWeather.gov for the current METAR because  *
+ *  api.weather.gov is CORS-enabled (Access-Control-Allow-Origin: *)   *
+ *  while aviationweather.gov is not, so the browser blocks that fetch.*
+ * ------------------------------------------------------------------ */
+
+interface NwsQuantity {
+  value: number | null;
+  unitCode?: string;
+}
+
+export interface RawNwsObservation {
+  properties: {
+    station?: string; // URL ending in the station id
+    timestamp: string;
+    rawMessage?: string; // the METAR text
+    temperature?: NwsQuantity; // degC
+    dewpoint?: NwsQuantity; // degC
+    windDirection?: NwsQuantity; // degrees
+    windSpeed?: NwsQuantity; // km/h or m/s (per unitCode)
+    windGust?: NwsQuantity;
+    barometricPressure?: NwsQuantity; // Pa (station pressure)
+    visibility?: NwsQuantity; // m
+    presentWeather?: Array<{ rawString?: string }>;
+    cloudLayers?: Array<{ base: NwsQuantity; amount: string }>;
+  };
+}
+
+export function normalizeNwsObservation(
+  obs: RawNwsObservation,
+  fallbackStationId: string,
+): CurrentConditions {
+  const p = obs.properties;
+  const raw = p.rawMessage ?? '';
+
+  const skyLayers: SkyLayer[] = (p.cloudLayers ?? []).map((l) => ({
+    cover: (l.amount as SkyCover) ?? 'SKC',
+    baseFtAgl: l.base?.value != null ? Math.round(mToFt(l.base.value)) : null,
+  }));
+  const ceiling = skyLayers
+    .filter((l) => CEILING_COVERS.includes(l.cover) && l.baseFtAgl != null)
+    .reduce<number | null>((min, l) => (min == null ? l.baseFtAgl : Math.min(min, l.baseFtAgl!)), null);
+
+  const wxString =
+    (p.presentWeather ?? [])
+      .map((w) => w.rawString)
+      .filter((s): s is string => !!s)
+      .join(' ') || null;
+
+  return {
+    station: stationIdFromUrl(p.station) ?? fallbackStationId,
+    observedAt: Date.parse(p.timestamp),
+    raw,
+    wind: {
+      directionDeg: p.windDirection?.value ?? null,
+      speedKt: p.windSpeed?.value != null ? round(convertObsSpeed(p.windSpeed)) : 0,
+      gustKt: p.windGust?.value != null ? round(convertObsSpeed(p.windGust)) : null,
+    },
+    visibilitySm: p.visibility?.value != null ? round(mToSm(p.visibility.value), 1) : null,
+    skyLayers,
+    ceilingFtAgl: ceiling,
+    tempC: p.temperature?.value ?? null,
+    dewpointC: p.dewpoint?.value ?? null,
+    // Prefer the altimeter setting parsed from the raw METAR; fall back to
+    // station pressure (Pa → inHg) only if the raw text lacks an A/Q group.
+    altimeterInHg:
+      altimeterFromRaw(raw) ??
+      (p.barometricPressure?.value != null ? round2(p.barometricPressure.value / 3386.389) : null),
+    wxString,
+  };
+}
+
+function stationIdFromUrl(url?: string): string | null {
+  if (!url) return null;
+  const parts = url.split('/').filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : null;
+}
+
+/** NWS observation speeds: km/h by default, sometimes m/s. Returns knots. */
+function convertObsSpeed(q: NwsQuantity): number {
+  const v = q.value ?? 0;
+  if (q.unitCode && /m_s|m\/s/i.test(q.unitCode)) return v * 1.943844;
+  return v / 1.852; // km/h
+}
+
+/** Parse the altimeter setting from a raw METAR: A2996 → 29.96 inHg, or
+ *  Q1015 (QNH hPa) → inHg. Returns null if absent. */
+export function altimeterFromRaw(raw: string): number | null {
+  const a = /\bA(\d{2})(\d{2})\b/.exec(raw);
+  if (a) return Number(`${a[1]}.${a[2]}`);
+  const q = /\bQ(\d{3,4})\b/.exec(raw);
+  if (q) return round2(hpaToInHg(Number(q[1])));
+  return null;
 }
 
 /* ------------------------------------------------------------------ *
