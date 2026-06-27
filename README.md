@@ -34,9 +34,13 @@ freefall drift and **density altitude** for jump-plane climb performance.
 
 | Source | Used for |
 |---|---|
-| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip |
-| [AviationWeather.gov](https://aviationweather.gov/data/api/) | KPMV METAR |
+| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip **and** the current KPMV observation (raw METAR + decoded) |
 | [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels) |
+
+KPMV (~12 mi from the DZ) is the nearest reporting station and issues METARs;
+it does not issue its own TAF (the nearest TAFs are KOFF/KOMA). Current
+conditions come from the NWS observation endpoint, not AviationWeather.gov,
+because `api.weather.gov` is reliably reachable from the browser.
 
 ## Develop
 

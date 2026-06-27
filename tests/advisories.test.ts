@@ -54,6 +54,16 @@ describe('evaluateAdvisories', () => {
     expect(out.some((a) => a.id === 'thunderstorm' && a.level === 'caution')).toBe(true);
   });
 
+  it('after-sunset advisory cites 14 CFR 105.19 and invents no "night rating"', () => {
+    const snap = snapshot({ sun: { sunrise: now - 8 * 3600_000, sunset: now - 3600_000 } });
+    const out = evaluateAdvisories(snap, DEFAULT_THRESHOLDS.student, 'student', now);
+    const day = out.find((a) => a.id === 'daylight');
+    expect(day?.level).toBe('caution');
+    expect(day?.citation.source).toContain('105.19');
+    // USPA has no "night rating" — night jumps need a B license, not a rating.
+    expect(JSON.stringify(out).toLowerCase()).not.toContain('night rating');
+  });
+
   it('student wind limits flag earlier than licensed', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 13, wgst: null });
     const s = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, 'student', now);
