@@ -16,7 +16,7 @@ import type { Citation, JumperClass } from '../domain/types';
  */
 
 const VERIFY_NOTE =
-  'Verify against the linked primary source — not live-fetched in this build environment.';
+  'AI-derived citation — may be inaccurate. Verify against the linked primary source and a licensed professional before use.';
 
 export const CITATIONS = {
   uspaStudentWinds: {
