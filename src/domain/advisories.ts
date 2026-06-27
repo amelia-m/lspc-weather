@@ -185,8 +185,8 @@ export function evaluateAdvisories(
         metric: 'Daylight',
         value: 'After sunset',
         guidance:
-          'Night jumps require lighting, a USPA night rating, and additional procedures — not a daytime operation.',
-        citation: CITATIONS.uspaStudentWinds,
+          'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19); USPA also requires a B license (min 50 jumps) for night jumps. Not a daytime operation.',
+        citation: CITATIONS.far10519,
       });
     } else if (minsToSunset <= thresholds.lastLoadWatchMin) {
       out.push({
@@ -194,8 +194,9 @@ export function evaluateAdvisories(
         level: 'watch',
         metric: 'Daylight',
         value: `~${Math.round(minsToSunset)} min to sunset`,
-        guidance: 'Approaching sunset — account for climb time so the load lands in daylight.',
-        citation: CITATIONS.uspaStudentWinds,
+        guidance:
+          'Approaching sunset — account for climb time so the load lands in daylight (after-sunset jumps trigger the 14 CFR 105.19 lighting rule).',
+        citation: CITATIONS.far10519,
       });
     }
   }

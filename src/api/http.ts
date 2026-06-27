@@ -17,10 +17,6 @@ export const NWS_BASE = env.VITE_NWS_BASE ?? 'https://api.weather.gov';
 export const AWC_BASE = env.VITE_AWC_BASE ?? 'https://aviationweather.gov/api/data';
 export const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 
-/** Identifies us politely to NWS. Browsers ignore a JS-set User-Agent, but
- *  this header is honored by non-browser callers and documents intent. */
-const CONTACT = 'lspc-weather-dashboard (github.com/amelia-m/lspc-weather)';
-
 export async function fetchJson<T>(
   url: string,
   opts: { timeoutMs?: number; headers?: Record<string, string>; retries?: number } = {},
@@ -31,9 +27,13 @@ export async function fetchJson<T>(
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
+      // Only CORS-safelisted headers: api.weather.gov asks non-browser callers
+      // for a User-Agent, but browsers forbid setting it from fetch(), and a
+      // custom request header would trigger a CORS preflight the API may not
+      // satisfy. Accept (safelisted) keeps the request CORS-"simple".
       const res = await fetch(url, {
         signal: controller.signal,
-        headers: { Accept: 'application/json', 'User-Agent': CONTACT, ...headers },
+        headers: { Accept: 'application/json', ...headers },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
       return (await res.json()) as T;

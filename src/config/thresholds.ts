@@ -22,19 +22,31 @@ export const CITATIONS = {
   uspaStudentWinds: {
     source: 'USPA SIM, Section 2-1',
     ref: 'Basic Safety Requirements — winds',
-    url: 'https://www.uspa.org/sim',
+    url: 'https://www.uspa.org/sim/2-1',
+    note: VERIFY_NOTE,
+  },
+  uspaNightBLicense: {
+    source: 'USPA SIM, Section 2-1 (BSRs)',
+    ref: 'Night jumps require a USPA B license (min 50 jumps)',
+    url: 'https://www.uspa.org/sim/2-1',
     note: VERIFY_NOTE,
   },
   far10517: {
     source: '14 CFR § 105.17',
     ref: 'Flight visibility & clearance from cloud (parachute ops)',
-    url: 'https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-105/subpart-B/section-105.17',
+    url: 'https://www.law.cornell.edu/cfr/text/14/105.17',
+    note: VERIFY_NOTE,
+  },
+  far10519: {
+    source: '14 CFR § 105.19',
+    ref: 'Parachute ops between sunset and sunrise (light visible ≥ 3 SM)',
+    url: 'https://www.law.cornell.edu/cfr/text/14/105.19',
     note: VERIFY_NOTE,
   },
   far91155: {
     source: '14 CFR § 91.155',
     ref: 'Basic VFR weather minimums',
-    url: 'https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-91/subpart-B/section-91.155',
+    url: 'https://www.law.cornell.edu/cfr/text/14/91.155',
     note: VERIFY_NOTE,
   },
   faaDensityAltitude: {
@@ -44,9 +56,9 @@ export const CITATIONS = {
     note: VERIFY_NOTE,
   },
   uspaWeather: {
-    source: 'USPA SIM, Section 5-1',
-    ref: 'Weather (clouds, winds, spotting)',
-    url: 'https://www.uspa.org/sim',
+    source: 'USPA SIM, Section 4-5',
+    ref: 'Weather (surface & upper winds, clouds)',
+    url: 'https://www.uspa.org/sim/4-5',
     note: VERIFY_NOTE,
   },
 } satisfies Record<string, Citation>;
