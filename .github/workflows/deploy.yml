@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/skydiver-weather-dashboard-gqved3
   workflow_dispatch:
 
 # Allow one concurrent deployment; let in-progress runs finish.
