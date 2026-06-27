@@ -1,4 +1,4 @@
-import type { CurrentConditions, HourlyPoint, SkyCover, SkyLayer } from './types';
+import type { CurrentConditions, HourlyPoint, SkyCover, SkyLayer, TafForecast } from './types';
 import { hpaToInHg, mToFt, mToSm, round } from './units';
 import type { RawWindSample } from './windsAloft';
 
@@ -153,6 +153,39 @@ export function altimeterFromRaw(raw: string): number | null {
   const q = /\bQ(\d{3,4})\b/.exec(raw);
   if (q) return round2(hpaToInHg(Number(q[1])));
   return null;
+}
+
+/* ------------------------------------------------------------------ *
+ *  NWS text product — TAF (/products/{id})                            *
+ * ------------------------------------------------------------------ */
+
+export interface RawNwsProduct {
+  productText?: string;
+  issuanceTime?: string;
+}
+
+/** Extract a station's TAF from an NWS text product. The productText carries a
+ *  communications header then the TAF body; we slice from the station id. */
+export function parseTaf(
+  productText: string,
+  station: string,
+  issuanceTime?: string,
+): TafForecast | null {
+  if (!productText) return null;
+  const idx = productText.indexOf(station);
+  if (idx < 0) return null;
+
+  const raw = productText
+    .slice(idx)
+    .replace(/\$\$[\s\S]*$/, '') // strip trailing product separator
+    .replace(/=\s*$/, '')
+    .trimEnd();
+
+  const valid = /\b(\d{4}\/\d{4})\b/.exec(raw);
+  const issuedMs =
+    issuanceTime && !Number.isNaN(Date.parse(issuanceTime)) ? Date.parse(issuanceTime) : null;
+
+  return { station, raw, issuedMs, validRaw: valid ? valid[1] : null };
 }
 
 /* ------------------------------------------------------------------ *

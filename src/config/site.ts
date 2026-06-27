@@ -17,7 +17,7 @@ export interface SiteConfig {
     lon: number;
     elevationFt: number;
   };
-  /** Nearest reporting station for METAR/TAF. */
+  /** Nearest reporting station for METARs. */
   metarStation: {
     id: string; // ICAO
     name: string;
@@ -25,6 +25,15 @@ export interface SiteConfig {
     lon: number;
     elevationFt: number;
     distanceMi: number; // approx distance from the DZ
+  };
+  /** Nearest station that issues a TAF (KPMV does not). */
+  tafStation: {
+    id: string; // ICAO
+    name: string;
+    lat: number;
+    lon: number;
+    /** NWS text-product location code (ICAO minus leading "K"). */
+    nwsProductLocation: string;
   };
   timeZone: string;
 }
@@ -44,6 +53,13 @@ export const SITE: SiteConfig = {
     lon: -95.9179,
     elevationFt: 1204,
     distanceMi: 12,
+  },
+  tafStation: {
+    id: 'KOFF',
+    name: 'Offutt AFB',
+    lat: 41.1183,
+    lon: -95.9124,
+    nwsProductLocation: 'OFF',
   },
   timeZone: 'America/Chicago',
 };

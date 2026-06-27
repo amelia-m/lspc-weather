@@ -14,6 +14,7 @@ function snapshot(overrides: Partial<WeatherSnapshot> = {}): WeatherSnapshot {
     windsAloft: [],
     sun: null,
     densityAltitude: null,
+    taf: null,
     ...overrides,
   };
 }

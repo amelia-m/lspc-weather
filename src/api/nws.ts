@@ -2,12 +2,15 @@ import { fetchJson, NWS_BASE, USE_FIXTURES } from './http';
 import {
   normalizeGridpoint,
   normalizeNwsObservation,
+  parseTaf,
   type RawGridpoint,
   type RawNwsObservation,
+  type RawNwsProduct,
 } from '../domain/normalize';
-import type { CurrentConditions, HourlyPoint } from '../domain/types';
+import type { CurrentConditions, HourlyPoint, TafForecast } from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from './fixtures/observation';
+import { TAF_FIXTURE } from './fixtures/taf';
 
 interface PointsResponse {
   properties: { forecastGridData: string };
@@ -55,6 +58,27 @@ export async function fetchLatestObservation(
       );
   if (!data?.properties) return null;
   return normalizeNwsObservation(data, stationId);
+}
+
+/**
+ * Fetch the latest TAF for a station via the NWS text-products API
+ * (CORS-friendly, unlike aviationweather.gov). Two steps: list the latest TAF
+ * product for the location code, then fetch that product's text.
+ */
+export async function fetchTaf(
+  station: string,
+  productLocation: string,
+): Promise<TafForecast | null> {
+  if (USE_FIXTURES) {
+    return parseTaf(TAF_FIXTURE.productText ?? '', station, TAF_FIXTURE.issuanceTime);
+  }
+  const list = await fetchJson<{ '@graph'?: Array<{ '@id': string; issuanceTime?: string }> }>(
+    `${NWS_BASE}/products/types/TAF/locations/${encodeURIComponent(productLocation)}`,
+  );
+  const latest = list['@graph']?.[0];
+  if (!latest) return null;
+  const product = await fetchJson<RawNwsProduct>(latest['@id']);
+  return parseTaf(product.productText ?? '', station, product.issuanceTime ?? latest.issuanceTime);
 }
 
 function safeLocalGet(key: string): string | null {

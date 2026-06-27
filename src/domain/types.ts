@@ -67,6 +67,15 @@ export interface SunTimes {
   sunset: number; // epoch ms
 }
 
+/** Terminal Aerodrome Forecast (from the nearest TAF station). */
+export interface TafForecast {
+  station: string;
+  raw: string; // the TAF body text
+  issuedMs: number | null;
+  /** Raw valid-period token, e.g. "2718/2824" (UTC day/hour). */
+  validRaw: string | null;
+}
+
 /** Merged, normalized snapshot fed to the advisory engine and the UI. */
 export interface WeatherSnapshot {
   current: CurrentConditions | null;
@@ -74,6 +83,7 @@ export interface WeatherSnapshot {
   windsAloft: WindsAloftLevel[];
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
+  taf: TafForecast | null;
 }
 
 // ---- Advisories (flags, never a go/no-go verdict) ----
@@ -102,7 +112,7 @@ export type JumperClass = 'student' | 'licensed';
 
 // ---- Per-source fetch status ----
 
-export type SourceKey = 'nws' | 'metar' | 'windsAloft';
+export type SourceKey = 'nws' | 'metar' | 'windsAloft' | 'taf';
 
 export interface SourceStatus {
   ok: boolean;
