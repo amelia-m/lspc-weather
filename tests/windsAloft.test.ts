@@ -32,4 +32,16 @@ describe('interpolateWindsAloft', () => {
   it('returns nothing when there are no samples', () => {
     expect(interpolateWindsAloft([], 1182, [3000])).toEqual([]);
   });
+
+  it('interpolates temperature when present and is null when absent', () => {
+    const withTemp: RawWindSample[] = [
+      { heightFtMsl: 1200, speedKt: 10, directionDeg: 200, tempC: 20 },
+      { heightFtMsl: 4200, speedKt: 30, directionDeg: 220, tempC: 0 },
+    ];
+    const out = interpolateWindsAloft(withTemp, 1182, [1518]); // midpoint
+    expect(out[0].tempC).toBe(10);
+
+    const noTemp = interpolateWindsAloft(samples, 1182, [1518]);
+    expect(noTemp[0].tempC).toBeNull();
+  });
 });

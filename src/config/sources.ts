@@ -25,6 +25,11 @@ export const DATA_SOURCES = {
     label: 'Open-Meteo',
     url: 'https://open-meteo.com/',
   },
+  /** Mark Schulze's Winds Aloft — same Open-Meteo source; cross-reference. */
+  markschulze: {
+    label: 'Winds Aloft · Mark Schulze',
+    url: 'https://www.markschulze.net/winds/',
+  },
   /** TAF — fetched from the NWS text-products API; link is the NOAA viewer. */
   taf: {
     label: `NWS TAF · ${SITE.tafStation.id}`,

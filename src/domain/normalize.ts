@@ -340,7 +340,12 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): RawWindSamp
   const surfaceDir = num('wind_direction_10m');
   const elevM = (data as unknown as { elevation?: number }).elevation;
   if (surfaceSpd != null && surfaceDir != null && typeof elevM === 'number') {
-    samples.push({ heightFtMsl: mToFt(elevM + 10), speedKt: surfaceSpd, directionDeg: surfaceDir });
+    samples.push({
+      heightFtMsl: mToFt(elevM + 10),
+      speedKt: surfaceSpd,
+      directionDeg: surfaceDir,
+      tempC: num('temperature_2m'),
+    });
   }
 
   for (const p of PRESSURE_LEVELS) {
@@ -348,7 +353,12 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): RawWindSamp
     const dir = num(`wind_direction_${p}hPa`);
     const gph = num(`geopotential_height_${p}hPa`); // m MSL
     if (spd != null && dir != null && gph != null) {
-      samples.push({ heightFtMsl: mToFt(gph), speedKt: spd, directionDeg: dir });
+      samples.push({
+        heightFtMsl: mToFt(gph),
+        speedKt: spd,
+        directionDeg: dir,
+        tempC: num(`temperature_${p}hPa`),
+      });
     }
   }
   return samples;

@@ -53,6 +53,8 @@ export interface WindsAloftLevel {
   altitudeFtMsl: number;
   directionDeg: number;
   speedKt: number;
+  /** Temperature at this altitude, °C (null if the model didn't provide it). */
+  tempC: number | null;
 }
 
 export interface DensityAltitudeResult {

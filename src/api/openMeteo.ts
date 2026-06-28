@@ -7,9 +7,14 @@ import { OPEN_METEO_FIXTURE } from './fixtures/openMeteo';
 const PRESSURE_LEVELS = [1000, 925, 850, 700, 600, 500];
 
 function buildHourlyVars(): string {
-  const vars = ['wind_speed_10m', 'wind_direction_10m'];
+  const vars = ['wind_speed_10m', 'wind_direction_10m', 'temperature_2m'];
   for (const p of PRESSURE_LEVELS) {
-    vars.push(`wind_speed_${p}hPa`, `wind_direction_${p}hPa`, `geopotential_height_${p}hPa`);
+    vars.push(
+      `wind_speed_${p}hPa`,
+      `wind_direction_${p}hPa`,
+      `geopotential_height_${p}hPa`,
+      `temperature_${p}hPa`,
+    );
   }
   return vars.join(',');
 }

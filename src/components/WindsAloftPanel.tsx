@@ -1,5 +1,5 @@
 import type { WindsAloftLevel } from '../domain/types';
-import { compass } from '../domain/units';
+import { compass, cToF, round } from '../domain/units';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 
@@ -7,7 +7,11 @@ import { Panel } from './common/Panel';
  *  points the direction the wind is blowing TOWARD (drift direction). */
 export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Element {
   return (
-    <Panel title="Winds aloft" subtitle="freefall drift / spot" sources={[DATA_SOURCES.openMeteo]}>
+    <Panel
+      title="Winds aloft"
+      subtitle="freefall drift / spot"
+      sources={[DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]}
+    >
       {levels.length === 0 ? (
         <p className="muted">No winds-aloft data.</p>
       ) : (
@@ -17,6 +21,7 @@ export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.
               <th>Alt (AGL)</th>
               <th>Wind</th>
               <th>Speed</th>
+              <th>Temp</th>
               <th aria-label="drift" />
             </tr>
           </thead>
@@ -28,6 +33,7 @@ export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.
                   {compass(l.directionDeg)} ({l.directionDeg}°)
                 </td>
                 <td className={l.speedKt >= 30 ? 'aloft-strong' : ''}>{l.speedKt} kt</td>
+                <td>{l.tempC != null ? `${l.tempC}°C / ${round(cToF(l.tempC))}°F` : '—'}</td>
                 <td>
                   <span
                     className="aloft-arrow"
@@ -43,6 +49,13 @@ export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.
         </table>
       )}
       <p className="muted small">Arrow shows drift direction (where wind pushes you).</p>
+      <p className="muted small">
+        Same Open-Meteo data source as{' '}
+        <a href={DATA_SOURCES.markschulze.url} target="_blank" rel="noopener noreferrer">
+          Mark Schulze’s Winds Aloft
+        </a>
+        , the popular skydiving winds tool.
+      </p>
       <p className="muted small">
         Each 1,000-ft level is <strong>linearly interpolated</strong> from the model’s pressure-level
         winds (Open-Meteo gives wind at fixed pressure surfaces — e.g. 925/850/700 hPa — with their

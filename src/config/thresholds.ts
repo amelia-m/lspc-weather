@@ -115,7 +115,7 @@ const LICENSED: Thresholds = {
   windCautionKt: LICENSED_WIND_CAUTION_KT,
   gustSpreadWatchKt: 10,
   windGuidance:
-    'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency.',
+    'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency. Note: most jump pilots will not take off in winds above ~30–35 mph.',
   windCitation: CITATIONS.uspaStudentWinds,
   ceilingWatchFt: 4000,
   ceilingCautionFt: 2500,
