@@ -6,6 +6,7 @@ export interface RawWindSample {
   heightFtMsl: number;
   speedKt: number;
   directionDeg: number;
+  tempC?: number | null;
 }
 
 /**
@@ -27,21 +28,30 @@ export function interpolateWindsAloft(
 
   return targetAltitudesFtAgl.map((agl) => {
     const msl = fieldElevationFt + agl;
-    const { speedKt, directionDeg } = sampleAt(sorted, msl);
+    const { speedKt, directionDeg, tempC } = sampleAt(sorted, msl);
     return {
       altitudeFtAgl: agl,
       altitudeFtMsl: Math.round(msl),
       speedKt: Math.round(speedKt),
       directionDeg: Math.round(((directionDeg % 360) + 360) % 360),
+      tempC: tempC != null ? Math.round(tempC) : null,
     };
   });
 }
 
-function sampleAt(sorted: RawWindSample[], msl: number): { speedKt: number; directionDeg: number } {
+interface Sampled {
+  speedKt: number;
+  directionDeg: number;
+  tempC: number | null;
+}
+
+function sampleAt(sorted: RawWindSample[], msl: number): Sampled {
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
-  if (msl <= first.heightFtMsl) return { speedKt: first.speedKt, directionDeg: first.directionDeg };
-  if (msl >= last.heightFtMsl) return { speedKt: last.speedKt, directionDeg: last.directionDeg };
+  if (msl <= first.heightFtMsl)
+    return { speedKt: first.speedKt, directionDeg: first.directionDeg, tempC: first.tempC ?? null };
+  if (msl >= last.heightFtMsl)
+    return { speedKt: last.speedKt, directionDeg: last.directionDeg, tempC: last.tempC ?? null };
 
   for (let i = 0; i < sorted.length - 1; i++) {
     const lo = sorted[i];
@@ -49,13 +59,16 @@ function sampleAt(sorted: RawWindSample[], msl: number): { speedKt: number; dire
     if (msl >= lo.heightFtMsl && msl <= hi.heightFtMsl) {
       const span = hi.heightFtMsl - lo.heightFtMsl;
       const t = span === 0 ? 0 : (msl - lo.heightFtMsl) / span;
+      const tempC =
+        lo.tempC != null && hi.tempC != null ? lo.tempC + t * (hi.tempC - lo.tempC) : null;
       return {
         speedKt: lo.speedKt + t * (hi.speedKt - lo.speedKt),
         directionDeg: interpAngle(lo.directionDeg, hi.directionDeg, t),
+        tempC,
       };
     }
   }
-  return { speedKt: last.speedKt, directionDeg: last.directionDeg };
+  return { speedKt: last.speedKt, directionDeg: last.directionDeg, tempC: last.tempC ?? null };
 }
 
 /** Interpolate between two headings along the shortest arc. */
