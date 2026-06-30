@@ -26,3 +26,12 @@ export const round = (n: number, places = 0): number => {
   const f = 10 ** places;
   return Math.round(n * f) / f;
 };
+
+export type SpeedUnit = 'kt' | 'mph';
+
+/** Convert a knots value to the selected display unit. */
+export const toSpeed = (kt: number, u: SpeedUnit): number => (u === 'mph' ? ktToMph(kt) : kt);
+
+/** Format a knots value in the selected unit, e.g. "12 kt" or "14 mph". */
+export const fmtSpeed = (kt: number, u: SpeedUnit, digits = 0): string =>
+  `${round(toSpeed(kt, u), digits)} ${u}`;

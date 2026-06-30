@@ -95,6 +95,62 @@ a {
   color: #04121f;
   font-weight: 600;
 }
+.unit-toggle {
+  display: flex;
+}
+.unit-toggle button {
+  background: var(--panel-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.unit-toggle button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.unit-toggle button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.unit-toggle button.active {
+  background: var(--accent);
+  color: #04121f;
+  font-weight: 600;
+}
+
+/* Drift / spot */
+.drift-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+.drift-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.drift-inputs input {
+  width: 88px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 4px 6px;
+  font-variant-numeric: tabular-nums;
+}
+.drift-spot {
+  font-size: 0.85rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 10px 0;
+}
 
 .disclaimer {
   background: var(--panel-2);

@@ -1,11 +1,17 @@
 import type { WindsAloftLevel } from '../domain/types';
-import { compass, cToF, round } from '../domain/units';
+import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 
 /** Winds aloft at jump altitudes — the skydiver-specific centerpiece. An arrow
  *  points the direction the wind is blowing TOWARD (drift direction). */
-export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Element {
+export function WindsAloftPanel({
+  levels,
+  unit,
+}: {
+  levels: WindsAloftLevel[];
+  unit: SpeedUnit;
+}): JSX.Element {
   return (
     <Panel
       title="Winds aloft"
@@ -32,7 +38,7 @@ export function WindsAloftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.
                 <td>
                   {compass(l.directionDeg)} ({l.directionDeg}°)
                 </td>
-                <td className={l.speedKt >= 30 ? 'aloft-strong' : ''}>{l.speedKt} kt</td>
+                <td className={l.speedKt >= 30 ? 'aloft-strong' : ''}>{fmtSpeed(l.speedKt, unit)}</td>
                 <td>{l.tempC != null ? `${l.tempC}°C / ${round(cToF(l.tempC))}°F` : '—'}</td>
                 <td>
                   <span
