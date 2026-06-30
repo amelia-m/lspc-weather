@@ -14,7 +14,9 @@ import { CeilingSkyPanel } from './components/CeilingSkyPanel';
 import { PrecipPanel } from './components/PrecipPanel';
 import { RadarPanel } from './components/RadarPanel';
 import { HourlyForecastPanel } from './components/HourlyForecastPanel';
+import { DriftPanel } from './components/DriftPanel';
 import { TafPanel } from './components/TafPanel';
+import type { SpeedUnit } from './domain/units';
 import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
@@ -24,6 +26,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 
 const PROFILE_KEY = 'lspc:windProfile';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
+const UNIT_KEY = 'lspc:windUnit';
 
 type Overrides = Partial<Record<WindProfileId, Partial<Thresholds>>>;
 
@@ -45,6 +48,13 @@ export default function App(): JSX.Element {
   useEffect(() => {
     localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
   }, [overrides]);
+
+  const [unit, setUnit] = useState<SpeedUnit>(
+    () => (localStorage.getItem(UNIT_KEY) as SpeedUnit) || 'kt',
+  );
+  useEffect(() => {
+    localStorage.setItem(UNIT_KEY, unit);
+  }, [unit]);
 
   const isWaiver = profile.startsWith('waiver');
   const base = useMemo(() => resolveThresholds(profile), [profile]);
@@ -83,6 +93,13 @@ export default function App(): JSX.Element {
           </p>
         </div>
         <div className="toggles">
+          <div className="unit-toggle" role="group" aria-label="Wind speed unit">
+            {(['kt', 'mph'] as SpeedUnit[]).map((u) => (
+              <button key={u} className={u === unit ? 'active' : ''} onClick={() => setUnit(u)}>
+                {u}
+              </button>
+            ))}
+          </div>
           <div className="class-toggle" role="group" aria-label="Wind-limit profile">
             <button className={profile === 'student' ? 'active' : ''} onClick={() => setProfile('student')}>
               Student
@@ -132,14 +149,16 @@ export default function App(): JSX.Element {
       <AdvisoryPanel advisories={advisories} />
 
       <div className="grid">
-        <MetarPanel current={snapshot.current} />
+        <MetarPanel current={snapshot.current} unit={unit} />
         <SurfaceWindPanel
           current={snapshot.current}
           thresholds={thresholds}
           label={profileLabel(profile)}
+          unit={unit}
         />
-        <WindsAloftPanel levels={snapshot.windsAloft} />
-        <HourlyForecastPanel hourly={snapshot.hourly} />
+        <WindsAloftPanel levels={snapshot.windsAloft} unit={unit} />
+        <DriftPanel levels={snapshot.windsAloft} />
+        <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
         <RadarPanel />

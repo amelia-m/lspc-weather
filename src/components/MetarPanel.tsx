@@ -1,11 +1,17 @@
 import type { CurrentConditions } from '../domain/types';
-import { compass, ktToMph, round } from '../domain/units';
+import { compass, fmtSpeed, round, type SpeedUnit } from '../domain/units';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 
-export function MetarPanel({ current }: { current: CurrentConditions | null }): JSX.Element {
+export function MetarPanel({
+  current,
+  unit,
+}: {
+  current: CurrentConditions | null;
+  unit: SpeedUnit;
+}): JSX.Element {
   return (
     <Panel
       title="Current conditions"
@@ -20,7 +26,7 @@ export function MetarPanel({ current }: { current: CurrentConditions | null }): 
         <>
           <dl className="kv">
             <dt>Wind</dt>
-            <dd>{describeWind(current)}</dd>
+            <dd>{describeWind(current, unit)}</dd>
             <dt>Visibility</dt>
             <dd>{current.visibilitySm != null ? `${round(current.visibilitySm, 1)} SM` : '—'}</dd>
             <dt>Sky</dt>
@@ -39,12 +45,12 @@ export function MetarPanel({ current }: { current: CurrentConditions | null }): 
   );
 }
 
-function describeWind(c: CurrentConditions): string {
+function describeWind(c: CurrentConditions, unit: SpeedUnit): string {
   const { directionDeg, speedKt, gustKt } = c.wind;
   if (speedKt === 0) return 'Calm';
   const dir = directionDeg != null ? `${compass(directionDeg)} (${directionDeg}°)` : 'variable';
-  const g = gustKt != null ? `, gusting ${round(gustKt)} kt` : '';
-  return `${dir} ${round(speedKt)} kt (${round(ktToMph(speedKt))} mph)${g}`;
+  const g = gustKt != null ? `, gusting ${fmtSpeed(gustKt, unit)}` : '';
+  return `${dir} ${fmtSpeed(speedKt, unit)}${g}`;
 }
 
 function describeSky(c: CurrentConditions): string {

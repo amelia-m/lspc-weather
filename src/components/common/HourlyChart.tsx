@@ -1,10 +1,17 @@
 import type { HourlyPoint } from '../../domain/types';
+import { toSpeed, type SpeedUnit } from '../../domain/units';
 import { SITE } from '../../config/site';
 
 /** Compact, dependency-free SVG chart of the next ~18 h: surface wind (line),
- *  gust (dashed line) on a knots axis, with precip probability as faint
+ *  gust (dashed line) on a wind-speed axis, with precip probability as faint
  *  background bars. */
-export function HourlyChart({ points }: { points: HourlyPoint[] }): JSX.Element {
+export function HourlyChart({
+  points,
+  unit,
+}: {
+  points: HourlyPoint[];
+  unit: SpeedUnit;
+}): JSX.Element {
   const W = 340;
   const H = 140;
   const padL = 26;
@@ -14,8 +21,9 @@ export function HourlyChart({ points }: { points: HourlyPoint[] }): JSX.Element 
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const speeds = points.map((p) => p.windSpeedKt);
-  const gusts = points.map((p) => p.windGustKt);
+  const conv = (v: number | null): number | null => (v == null ? null : toSpeed(v, unit));
+  const speeds = points.map((p) => conv(p.windSpeedKt));
+  const gusts = points.map((p) => conv(p.windGustKt));
   const precip = points.map((p) => p.precipProbPct);
 
   const peak = Math.max(
