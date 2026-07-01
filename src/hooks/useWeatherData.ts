@@ -51,6 +51,19 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
     const updateSource = (key: SourceKey, next: SourceStatus): void =>
       setStatus((prev) => ({ ...prev, [key]: next }));
 
+    const markStale = (key: SourceKey, err: unknown): void =>
+      setStatus((prev) => ({
+        ...prev,
+        // Keep the last-good fetchedAt so the freshness panel still shows when
+        // the data we're displaying was actually retrieved; just flag it stale.
+        [key]: {
+          ...prev[key],
+          ok: false,
+          stale: true,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      }));
+
     // Each source is fetched and applied independently so one failure doesn't
     // blank the others; on error we keep prior data and mark it stale.
     const metarP = fetchLatestObservation(metarStation.id)
@@ -69,28 +82,28 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
         }));
         updateSource('metar', okStatus());
       })
-      .catch((e) => markStale('metar', e, updateSource));
+      .catch((e) => markStale('metar', e));
 
     const hourlyP = fetchHourly(dz.lat, dz.lon)
       .then((hourly) => {
         setSnapshot((prev) => ({ ...prev, hourly }));
         updateSource('nws', okStatus());
       })
-      .catch((e) => markStale('nws', e, updateSource));
+      .catch((e) => markStale('nws', e));
 
     const windsP = fetchWindsAloft(dz.lat, dz.lon, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL, now)
       .then((windsAloft) => {
         setSnapshot((prev) => ({ ...prev, windsAloft }));
         updateSource('windsAloft', okStatus());
       })
-      .catch((e) => markStale('windsAloft', e, updateSource));
+      .catch((e) => markStale('windsAloft', e));
 
     const tafP = fetchTaf(SITE.tafStation.id, SITE.tafStation.nwsProductLocation)
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
         updateSource('taf', okStatus());
       })
-      .catch((e) => markStale('taf', e, updateSource));
+      .catch((e) => markStale('taf', e));
 
     // Sun is computed locally and never fails.
     setSnapshot((prev) => ({ ...prev, sun: sunTimes(dz.lat, dz.lon, new Date(now)) }));
@@ -111,19 +124,6 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
   const decoratedStatus = useMemo(() => withStaleness(status), [status]);
 
   return { snapshot, advisories, status: decoratedStatus, loading, lastUpdated, refresh };
-}
-
-function markStale(
-  key: SourceKey,
-  err: unknown,
-  update: (k: SourceKey, s: SourceStatus) => void,
-): void {
-  update(key, {
-    ok: false,
-    fetchedAt: null,
-    stale: true,
-    error: err instanceof Error ? err.message : String(err),
-  });
 }
 
 function withStaleness(status: Record<SourceKey, SourceStatus>): Record<SourceKey, SourceStatus> {
