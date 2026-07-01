@@ -17,6 +17,9 @@ export const NWS_BASE = env.VITE_NWS_BASE ?? 'https://api.weather.gov';
 export const AWC_BASE = env.VITE_AWC_BASE ?? 'https://aviationweather.gov/api/data';
 export const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 
+/** Thrown for responses that won't succeed on retry (4xx client errors). */
+class NonRetryableError extends Error {}
+
 export async function fetchJson<T>(
   url: string,
   opts: { timeoutMs?: number; headers?: Record<string, string>; retries?: number } = {},
@@ -35,10 +38,19 @@ export async function fetchJson<T>(
         signal: controller.signal,
         headers: { Accept: 'application/json', ...headers },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+      if (!res.ok) {
+        // 4xx is a client error (bad URL, not found, unauthorized) — retrying
+        // won't help, so fail fast. Retry only transient failures (5xx, network,
+        // timeout), handled by the catch below.
+        if (res.status >= 400 && res.status < 500) {
+          throw new NonRetryableError(`HTTP ${res.status} for ${url}`);
+        }
+        throw new Error(`HTTP ${res.status} for ${url}`);
+      }
       return (await res.json()) as T;
     } catch (err) {
       lastErr = err;
+      if (err instanceof NonRetryableError) break;
       if (attempt < retries) await delay(500 * 2 ** attempt);
     } finally {
       clearTimeout(timer);

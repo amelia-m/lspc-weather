@@ -30,30 +30,48 @@ const UNIT_KEY = 'lspc:windUnit';
 
 type Overrides = Partial<Record<WindProfileId, Partial<Thresholds>>>;
 
+// localStorage can throw (private mode, disabled cookies, quota). Guard every
+// access so a storage failure degrades to in-memory state instead of a
+// white-screen on mount. Mirrors the helpers in api/nws.ts.
+function safeLocalGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function safeLocalSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* private mode / quota — ignore */
+  }
+}
+
 export default function App(): JSX.Element {
   const [profile, setProfile] = useState<WindProfileId>(
-    () => (localStorage.getItem(PROFILE_KEY) as WindProfileId) || 'student',
+    () => (safeLocalGet(PROFILE_KEY) as WindProfileId) || 'student',
   );
   useEffect(() => {
-    localStorage.setItem(PROFILE_KEY, profile);
+    safeLocalSet(PROFILE_KEY, profile);
   }, [profile]);
 
   const [overrides, setOverrides] = useState<Overrides>(() => {
     try {
-      return JSON.parse(localStorage.getItem(OVERRIDES_KEY) ?? '{}') as Overrides;
+      return JSON.parse(safeLocalGet(OVERRIDES_KEY) ?? '{}') as Overrides;
     } catch {
       return {};
     }
   });
   useEffect(() => {
-    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
+    safeLocalSet(OVERRIDES_KEY, JSON.stringify(overrides));
   }, [overrides]);
 
   const [unit, setUnit] = useState<SpeedUnit>(
-    () => (localStorage.getItem(UNIT_KEY) as SpeedUnit) || 'kt',
+    () => (safeLocalGet(UNIT_KEY) as SpeedUnit) || 'kt',
   );
   useEffect(() => {
-    localStorage.setItem(UNIT_KEY, unit);
+    safeLocalSet(UNIT_KEY, unit);
   }, [unit]);
 
   const isWaiver = profile.startsWith('waiver');
