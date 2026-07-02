@@ -1,4 +1,5 @@
 import type { Thresholds } from '../config/thresholds';
+import { NumberField } from './common/NumberField';
 
 interface FieldDef {
   key: keyof Thresholds;
@@ -55,20 +56,19 @@ export function SettingsPanel({
             const value = thresholds[f.key] as number;
             const isMod = value !== (base[f.key] as number);
             return (
-              <label key={f.key} className={`settings-field${isMod ? ' modified' : ''}`}>
-                <span className="settings-label">
-                  {f.label} <span className="settings-unit">({f.unit})</span>
-                </span>
-                <input
-                  type="number"
-                  step={f.step ?? 1}
-                  value={Number.isFinite(value) ? value : ''}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (Number.isFinite(v)) onChange(f.key, v);
-                  }}
-                />
-              </label>
+              <NumberField
+                key={f.key}
+                className={`settings-field${isMod ? ' modified' : ''}`}
+                label={
+                  <span className="settings-label">
+                    {f.label} <span className="settings-unit">({f.unit})</span>
+                  </span>
+                }
+                value={value}
+                step={f.step ?? 1}
+                min={0}
+                onCommit={(v) => onChange(f.key, v)}
+              />
             );
           })}
         </div>
