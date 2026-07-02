@@ -14,6 +14,7 @@ import { CeilingSkyPanel } from './components/CeilingSkyPanel';
 import { PrecipPanel } from './components/PrecipPanel';
 import { RadarPanel } from './components/RadarPanel';
 import { HourlyForecastPanel } from './components/HourlyForecastPanel';
+import { DailyForecastPanel } from './components/DailyForecastPanel';
 import { DriftPanel } from './components/DriftPanel';
 import { TafPanel } from './components/TafPanel';
 import type { SpeedUnit } from './domain/units';
@@ -212,6 +213,7 @@ export default function App(): JSX.Element {
         <WindsAloftPanel levels={snapshot.windsAloft} unit={unit} />
         <DriftPanel levels={snapshot.windsAloft} />
         <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} />
+        <DailyForecastPanel daily={snapshot.daily} unit={unit} />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
         <RadarPanel />

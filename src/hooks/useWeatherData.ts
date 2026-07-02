@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { fetchHourly, fetchLatestObservation, fetchTaf } from '../api/nws';
-import { fetchWindsAloft } from '../api/openMeteo';
+import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
@@ -28,6 +28,7 @@ export interface WeatherData {
 const EMPTY_SNAPSHOT: WeatherSnapshot = {
   current: null,
   hourly: [],
+  daily: [],
   windsAloft: [],
   sun: null,
   densityAltitude: null,
@@ -41,6 +42,7 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
     nws: idleStatus(),
     windsAloft: idleStatus(),
     taf: idleStatus(),
+    daily: idleStatus(),
   });
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,10 +108,17 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
       })
       .catch((e) => markStale('taf', e));
 
+    const dailyP = fetchDailyForecast(dz.lat, dz.lon)
+      .then((daily) => {
+        setSnapshot((prev) => ({ ...prev, daily }));
+        updateSource('daily', okStatus());
+      })
+      .catch((e) => markStale('daily', e));
+
     // Sun is computed locally and never fails.
     setSnapshot((prev) => ({ ...prev, sun: sunTimes(dz.lat, dz.lon, new Date(now)) }));
 
-    void Promise.allSettled([metarP, hourlyP, windsP, tafP]).then(() => {
+    void Promise.allSettled([metarP, hourlyP, windsP, tafP, dailyP]).then(() => {
       setLastUpdated(Date.now());
       setLoading(false);
     });

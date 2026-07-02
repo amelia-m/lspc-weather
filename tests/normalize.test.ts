@@ -5,6 +5,7 @@ import {
   normalizeGridpoint,
   normalizeMetar,
   normalizeNwsObservation,
+  normalizeOpenMeteoDaily,
   parseTaf,
   parseValidTime,
   toSkyCover,
@@ -13,6 +14,7 @@ import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 import { GRIDPOINT_FIXTURE } from '../src/api/fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from '../src/api/fixtures/observation';
 import { TAF_FIXTURE } from '../src/api/fixtures/taf';
+import { OPEN_METEO_DAILY_FIXTURE } from '../src/api/fixtures/openMeteoDaily';
 
 describe('durationToHours', () => {
   it('parses hour and day durations', () => {
@@ -163,5 +165,42 @@ describe('normalizeGridpoint', () => {
     expect(first.ceilingFtAgl).toBeGreaterThan(4400);
     expect(first.ceilingFtAgl).toBeLessThan(4600);
     expect(first.skyCoverPct).toBe(55);
+  });
+});
+
+describe('normalizeOpenMeteoDaily', () => {
+  it('normalizes the 10-day fixture with unixtime seconds', () => {
+    const days = normalizeOpenMeteoDaily(OPEN_METEO_DAILY_FIXTURE);
+    expect(days).toHaveLength(10);
+    expect(days[0].date).toBe((OPEN_METEO_DAILY_FIXTURE.daily.time[0] as number) * 1000);
+    expect(days[0].weatherCode).toBe(1);
+    expect(days[5].gustMaxKt).toBe(38);
+    expect(days[1].precipProbMaxPct).toBe(0); // 0 is a real value, not missing
+  });
+
+  it('accepts ISO date strings and maps gaps to null', () => {
+    const days = normalizeOpenMeteoDaily({
+      daily: {
+        time: ['2026-07-02T12:00:00Z', '2026-07-03T12:00:00Z'],
+        weather_code: [61, null],
+        temperature_2m_max: [24],
+        wind_speed_10m_max: [16, null],
+      },
+    });
+    expect(days).toHaveLength(2);
+    expect(days[0].date).toBe(Date.parse('2026-07-02T12:00:00Z'));
+    expect(days[0].tempMaxC).toBe(24);
+    expect(days[1].weatherCode).toBeNull();
+    expect(days[1].tempMaxC).toBeNull(); // array shorter than time
+    expect(days[1].windMaxKt).toBeNull();
+    expect(days[1].gustMaxKt).toBeNull(); // field absent entirely
+  });
+
+  it('drops entries whose time cannot be parsed', () => {
+    const days = normalizeOpenMeteoDaily({
+      daily: { time: ['not-a-date', '2026-07-02T12:00:00Z'], weather_code: [0, 3] },
+    });
+    expect(days).toHaveLength(1);
+    expect(days[0].weatherCode).toBe(3);
   });
 });

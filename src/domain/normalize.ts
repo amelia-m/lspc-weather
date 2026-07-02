@@ -1,4 +1,11 @@
-import type { CurrentConditions, HourlyPoint, SkyCover, SkyLayer, TafForecast } from './types';
+import type {
+  CurrentConditions,
+  DailyPoint,
+  HourlyPoint,
+  SkyCover,
+  SkyLayer,
+  TafForecast,
+} from './types';
 import { hpaToInHg, mToFt, mToSm, round } from './units';
 import type { RawWindSample } from './windsAloft';
 
@@ -388,4 +395,47 @@ function nearestIndex(times: number[], target: number): number {
     }
   }
   return best;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Open-Meteo daily forecast (10-day outlook)                          *
+ * ------------------------------------------------------------------ */
+
+export interface RawOpenMeteoDaily {
+  daily: {
+    /** Epoch seconds (timeformat=unixtime) or ISO date strings. */
+    time: (number | string)[];
+    weather_code?: (number | null)[];
+    temperature_2m_max?: (number | null)[];
+    temperature_2m_min?: (number | null)[];
+    precipitation_probability_max?: (number | null)[];
+    wind_speed_10m_max?: (number | null)[];
+    wind_gusts_10m_max?: (number | null)[];
+  };
+  // wind_speed_unit requested as "kn"
+}
+
+/** Normalize the Open-Meteo daily block into one DailyPoint per day. */
+export function normalizeOpenMeteoDaily(data: RawOpenMeteoDaily): DailyPoint[] {
+  const d = data.daily;
+  const at = (arr: (number | null)[] | undefined, i: number): number | null => {
+    const v = arr?.[i];
+    return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  };
+
+  return d.time
+    .map((t, i): DailyPoint | null => {
+      const date = typeof t === 'number' ? t * 1000 : Date.parse(t);
+      if (!Number.isFinite(date)) return null;
+      return {
+        date,
+        weatherCode: at(d.weather_code, i),
+        tempMaxC: at(d.temperature_2m_max, i),
+        tempMinC: at(d.temperature_2m_min, i),
+        windMaxKt: at(d.wind_speed_10m_max, i),
+        gustMaxKt: at(d.wind_gusts_10m_max, i),
+        precipProbMaxPct: at(d.precipitation_probability_max, i),
+      };
+    })
+    .filter((p): p is DailyPoint => p != null);
 }

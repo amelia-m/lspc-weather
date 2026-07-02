@@ -49,6 +49,20 @@ export interface HourlyPoint {
   tempC: number | null;
 }
 
+/** One day of the extended outlook, from Open-Meteo's daily forecast. */
+export interface DailyPoint {
+  /** Epoch ms marking the forecast day (local day per SITE.timeZone). */
+  date: number;
+  /** WMO weather interpretation code (0 clear … 99 thunderstorm w/ hail). */
+  weatherCode: number | null;
+  tempMaxC: number | null;
+  tempMinC: number | null;
+  /** Daily maximum 10 m wind speed / gust, knots. */
+  windMaxKt: number | null;
+  gustMaxKt: number | null;
+  precipProbMaxPct: number | null;
+}
+
 /** Wind at one altitude, from Open-Meteo, interpolated to a jump altitude. */
 export interface WindsAloftLevel {
   altitudeFtAgl: number;
@@ -84,6 +98,7 @@ export interface TafForecast {
 export interface WeatherSnapshot {
   current: CurrentConditions | null;
   hourly: HourlyPoint[];
+  daily: DailyPoint[];
   windsAloft: WindsAloftLevel[];
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
@@ -116,7 +131,7 @@ export type JumperClass = 'student' | 'licensed';
 
 // ---- Per-source fetch status ----
 
-export type SourceKey = 'nws' | 'metar' | 'windsAloft' | 'taf';
+export type SourceKey = 'nws' | 'metar' | 'windsAloft' | 'taf' | 'daily';
 
 export interface SourceStatus {
   ok: boolean;
