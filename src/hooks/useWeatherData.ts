@@ -7,6 +7,7 @@ import { sunTimes } from '../domain/sun';
 import type { Advisory, SourceKey, SourceStatus, WeatherSnapshot } from '../domain/types';
 import type { Thresholds } from '../config/thresholds';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
+import { useNow } from './useNow';
 import { usePolling } from './usePolling';
 
 const STALE_AFTER_MS = 30 * 60 * 1000;
@@ -116,9 +117,13 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
 
   usePolling(refresh, REFRESH_MS);
 
+  // Ticks every minute so time-based advisories (sunset countdowns, "after
+  // sunset") stay current between the 10-minute data polls.
+  const now = useNow(60_000);
+
   const advisories = useMemo(
-    () => evaluateAdvisories(snapshot, thresholds, Date.now()),
-    [snapshot, thresholds],
+    () => evaluateAdvisories(snapshot, thresholds, now),
+    [snapshot, thresholds, now],
   );
 
   const decoratedStatus = useMemo(() => withStaleness(status), [status]);
