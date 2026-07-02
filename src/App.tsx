@@ -48,9 +48,44 @@ function safeLocalSet(key: string, value: string): void {
   }
 }
 
+const VALID_PROFILE_IDS: readonly WindProfileId[] = [
+  'student',
+  'licensed',
+  ...WAIVER_TIERS.map((t) => t.id),
+];
+
+/** Validate a persisted profile id; anything unknown falls back to 'student'. */
+function toWindProfileId(raw: string | null): WindProfileId {
+  return VALID_PROFILE_IDS.includes(raw as WindProfileId) ? (raw as WindProfileId) : 'student';
+}
+
+/** Sanitize persisted threshold overrides. localStorage is user-writable, so a
+ *  corrupt or tampered value (a string where a number belongs, an unknown
+ *  profile key) would silently break threshold comparisons. Keep only entries
+ *  under valid profile ids whose values are finite numbers for numeric keys
+ *  that exist in that profile's base Thresholds; drop everything else. */
+function sanitizeOverrides(raw: unknown): Overrides {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+  const out: Overrides = {};
+  for (const [id, entry] of Object.entries(raw)) {
+    if (!VALID_PROFILE_IDS.includes(id as WindProfileId)) continue;
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue;
+    const base = resolveThresholds(id as WindProfileId);
+    const clean: Partial<Thresholds> = {};
+    for (const [key, value] of Object.entries(entry as Record<string, unknown>)) {
+      const baseValue = (base as unknown as Record<string, unknown>)[key];
+      if (typeof baseValue === 'number' && typeof value === 'number' && Number.isFinite(value)) {
+        (clean as Record<string, number>)[key] = value;
+      }
+    }
+    if (Object.keys(clean).length > 0) out[id as WindProfileId] = clean;
+  }
+  return out;
+}
+
 export default function App(): JSX.Element {
-  const [profile, setProfile] = useState<WindProfileId>(
-    () => (safeLocalGet(PROFILE_KEY) as WindProfileId) || 'student',
+  const [profile, setProfile] = useState<WindProfileId>(() =>
+    toWindProfileId(safeLocalGet(PROFILE_KEY)),
   );
   useEffect(() => {
     safeLocalSet(PROFILE_KEY, profile);
@@ -58,7 +93,7 @@ export default function App(): JSX.Element {
 
   const [overrides, setOverrides] = useState<Overrides>(() => {
     try {
-      return JSON.parse(safeLocalGet(OVERRIDES_KEY) ?? '{}') as Overrides;
+      return sanitizeOverrides(JSON.parse(safeLocalGet(OVERRIDES_KEY) ?? '{}'));
     } catch {
       return {};
     }

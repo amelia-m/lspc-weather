@@ -23,9 +23,19 @@ export interface RawMetar {
 
 const CEILING_COVERS: SkyCover[] = ['BKN', 'OVC', 'VV'];
 
+const SKY_COVERS: readonly SkyCover[] = ['SKC', 'CLR', 'NSC', 'FEW', 'SCT', 'BKN', 'OVC', 'VV'];
+
+/** Validate a vendor sky-cover string against the SkyCover union instead of
+ *  blind-casting. Missing or unrecognized covers map to 'SKC': an unknown
+ *  string would never match CEILING_COVERS anyway, so making it explicitly
+ *  "no cover" is the same conservative outcome without a lying type. */
+export function toSkyCover(s: string | undefined | null): SkyCover {
+  return SKY_COVERS.includes(s as SkyCover) ? (s as SkyCover) : 'SKC';
+}
+
 export function normalizeMetar(m: RawMetar): CurrentConditions {
   const skyLayers: SkyLayer[] = (m.clouds ?? []).map((c) => ({
-    cover: (c.cover as SkyCover) ?? 'SKC',
+    cover: toSkyCover(c.cover),
     baseFtAgl: c.base ?? null,
   }));
 
@@ -97,7 +107,7 @@ export function normalizeNwsObservation(
   const raw = p.rawMessage ?? '';
 
   const skyLayers: SkyLayer[] = (p.cloudLayers ?? []).map((l) => ({
-    cover: (l.amount as SkyCover) ?? 'SKC',
+    cover: toSkyCover(l.amount),
     baseFtAgl: l.base?.value != null ? Math.round(mToFt(l.base.value)) : null,
   }));
   const ceiling = skyLayers
