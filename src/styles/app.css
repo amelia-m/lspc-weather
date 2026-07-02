@@ -667,3 +667,44 @@ a {
   font-size: 0.75rem;
   padding: 18px 0;
 }
+
+/* Error boundary fallback */
+.crash {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--error);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin: 24px 0;
+}
+.crash h1 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+.crash p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.crash-btn {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  margin: 8px 0 4px;
+}
+.crash-details {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.crash-details pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
