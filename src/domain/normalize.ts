@@ -39,7 +39,8 @@ export function normalizeMetar(m: RawMetar): CurrentConditions {
     raw: m.rawOb,
     wind: {
       directionDeg: typeof m.wdir === 'number' ? m.wdir : null,
-      speedKt: m.wspd ?? 0,
+      // null = wind speed not reported; a genuine calm comes through as 0.
+      speedKt: m.wspd ?? null,
       gustKt: m.wgst ?? null,
     },
     visibilitySm: parseVisibility(m.visib),
@@ -115,7 +116,9 @@ export function normalizeNwsObservation(
     raw,
     wind: {
       directionDeg: p.windDirection?.value ?? null,
-      speedKt: p.windSpeed?.value != null ? round(convertObsSpeed(p.windSpeed)) : 0,
+      // null = wind speed not reported (NWS sends value:null when the sensor
+      // reading fails QC); a genuine calm comes through as 0.
+      speedKt: p.windSpeed?.value != null ? round(convertObsSpeed(p.windSpeed)) : null,
       gustKt: p.windGust?.value != null ? round(convertObsSpeed(p.windGust)) : null,
     },
     visibilitySm: p.visibility?.value != null ? round(mToSm(p.visibility.value), 1) : null,

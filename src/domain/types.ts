@@ -7,7 +7,9 @@ export type SkyCover = 'SKC' | 'CLR' | 'NSC' | 'FEW' | 'SCT' | 'BKN' | 'OVC' | '
 export interface SurfaceWind {
   /** Degrees true. null when calm or variable. */
   directionDeg: number | null;
-  speedKt: number;
+  /** Sustained speed, kt. null = missing/unreported (e.g. sensor failed QC);
+   *  0 = a genuine calm observation. The two must never be conflated. */
+  speedKt: number | null;
   gustKt: number | null;
 }
 
