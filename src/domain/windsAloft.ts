@@ -73,7 +73,7 @@ function sampleAt(sorted: RawWindSample[], msl: number): Sampled {
 
 /** Interpolate between two headings along the shortest arc. */
 export function interpAngle(a: number, b: number, t: number): number {
-  let diff = ((b - a + 540) % 360) - 180; // shortest signed delta in [-180,180)
+  const diff = ((b - a + 540) % 360) - 180; // shortest signed delta in [-180,180)
   return a + diff * t;
 }
 
