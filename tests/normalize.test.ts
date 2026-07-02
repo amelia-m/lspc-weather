@@ -7,6 +7,7 @@ import {
   normalizeNwsObservation,
   parseTaf,
   parseValidTime,
+  toSkyCover,
 } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 import { GRIDPOINT_FIXTURE } from '../src/api/fixtures/gridpoint';
@@ -48,6 +49,28 @@ describe('normalizeMetar', () => {
   it('keeps a genuine calm (0 kt) as 0', () => {
     const c = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 0 });
     expect(c.wind.speedKt).toBe(0);
+  });
+
+  it('maps an unrecognized vendor sky-cover string to SKC instead of casting it through', () => {
+    const c = normalizeMetar({
+      ...METAR_FIXTURE[0],
+      clouds: [
+        { cover: 'BOGUS', base: 1200 },
+        { cover: 'BKN', base: 4500 },
+      ],
+    });
+    expect(c.skyLayers[0].cover).toBe('SKC'); // unknown → SKC, never a ceiling
+    expect(c.skyLayers[1].cover).toBe('BKN');
+    expect(c.ceilingFtAgl).toBe(4500);
+  });
+});
+
+describe('toSkyCover', () => {
+  it('accepts SkyCover union members and falls back to SKC otherwise', () => {
+    expect(toSkyCover('OVC')).toBe('OVC');
+    expect(toSkyCover('FEW')).toBe('FEW');
+    expect(toSkyCover('CAVOK')).toBe('SKC'); // unknown vendor string
+    expect(toSkyCover(undefined)).toBe('SKC'); // missing
   });
 });
 
