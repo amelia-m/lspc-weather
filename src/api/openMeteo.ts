@@ -1,8 +1,15 @@
 import { fetchJson, OPEN_METEO_BASE, USE_FIXTURES } from './http';
-import { normalizeOpenMeteo, type RawOpenMeteo } from '../domain/normalize';
+import {
+  normalizeOpenMeteo,
+  normalizeOpenMeteoDaily,
+  type RawOpenMeteo,
+  type RawOpenMeteoDaily,
+} from '../domain/normalize';
 import { interpolateWindsAloft } from '../domain/windsAloft';
-import type { WindsAloftLevel } from '../domain/types';
+import type { DailyPoint, WindsAloftLevel } from '../domain/types';
+import { SITE } from '../config/site';
 import { OPEN_METEO_FIXTURE } from './fixtures/openMeteo';
+import { OPEN_METEO_DAILY_FIXTURE } from './fixtures/openMeteoDaily';
 
 const PRESSURE_LEVELS = [1000, 925, 850, 700, 600, 500];
 
@@ -40,6 +47,21 @@ export async function fetchWindsAloft(
   const coerced = coerceTimes(data);
   const samples = normalizeOpenMeteo(coerced, now);
   return interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl);
+}
+
+/** Fetch the 10-day daily outlook (temps, wind/gust maxima, precip chance,
+ *  WMO weather code). timezone=DZ so daily aggregates follow local days. */
+export async function fetchDailyForecast(lat: number, lon: number): Promise<DailyPoint[]> {
+  const data: RawOpenMeteoDaily = USE_FIXTURES
+    ? OPEN_METEO_DAILY_FIXTURE
+    : await fetchJson<RawOpenMeteoDaily>(
+        `${OPEN_METEO_BASE}?latitude=${lat}&longitude=${lon}` +
+          `&daily=weather_code,temperature_2m_max,temperature_2m_min,` +
+          `precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max` +
+          `&forecast_days=10&wind_speed_unit=kn&timeformat=unixtime` +
+          `&timezone=${encodeURIComponent(SITE.timeZone)}`,
+      );
+  return normalizeOpenMeteoDaily(data);
 }
 
 /** Open-Meteo returns epoch seconds when timeformat=unixtime; normalize wants

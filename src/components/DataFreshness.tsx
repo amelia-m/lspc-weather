@@ -8,6 +8,7 @@ const LABELS: Record<SourceKey, string> = {
   nws: 'NWS forecast',
   windsAloft: 'Winds aloft',
   taf: 'TAF (KOFF)',
+  daily: '10-day outlook',
 };
 
 const SOURCE_LINKS: Record<SourceKey, DataSource> = {
@@ -15,6 +16,7 @@ const SOURCE_LINKS: Record<SourceKey, DataSource> = {
   nws: DATA_SOURCES.nwsForecast,
   windsAloft: DATA_SOURCES.openMeteo,
   taf: DATA_SOURCES.taf,
+  daily: DATA_SOURCES.openMeteo,
 };
 
 export function DataFreshness({

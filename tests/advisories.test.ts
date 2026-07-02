@@ -11,6 +11,7 @@ function snapshot(overrides: Partial<WeatherSnapshot> = {}): WeatherSnapshot {
   return {
     current: normalizeMetar(METAR_FIXTURE[0]),
     hourly: [],
+    daily: [],
     windsAloft: [],
     sun: null,
     densityAltitude: null,
