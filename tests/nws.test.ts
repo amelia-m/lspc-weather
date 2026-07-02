@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchJson, HttpError } from '../src/api/http';
-import { fetchGridpoint, type ResolvedGridpoint } from '../src/api/nws';
+import { fetchGridpoint, fetchTafChain, type ResolvedGridpoint } from '../src/api/nws';
 import type { RawGridpoint } from '../src/domain/normalize';
 
 /** Minimal Response stand-ins for the global fetch stub. */
@@ -179,5 +179,53 @@ describe('fetchGridpoint end-to-end wiring (default deps, stubbed globals)', () 
     expect((err as HttpError).status).toBe(404);
     // exactly one /points call and one gridpoint attempt
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('fetchTafChain', () => {
+  const STATIONS = [
+    { id: 'KOFF', nwsProductLocation: 'OFF' },
+    { id: 'KOMA', nwsProductLocation: 'OMA' },
+    { id: 'KLNK', nwsProductLocation: 'LNK' },
+  ];
+  const taf = (station: string) => ({ station, raw: `${station} 022000Z`, issuedMs: 1, validRaw: null });
+
+  it('returns the primary station when it has a TAF', async () => {
+    const fetchOne = vi.fn(async (id: string) => taf(id));
+    const out = await fetchTafChain(STATIONS, { fetchOne });
+    expect(out?.station).toBe('KOFF');
+    expect(fetchOne).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls through a station with no product to the next one', async () => {
+    const fetchOne = vi.fn(async (id: string) => (id === 'KOFF' ? null : taf(id)));
+    const out = await fetchTafChain(STATIONS, { fetchOne });
+    expect(out?.station).toBe('KOMA');
+    expect(fetchOne).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls through a station whose fetch errors', async () => {
+    const fetchOne = vi.fn(async (id: string) => {
+      if (id === 'KOFF') throw new HttpError(404, 'x');
+      return taf(id);
+    });
+    const out = await fetchTafChain(STATIONS, { fetchOne });
+    expect(out?.station).toBe('KOMA');
+  });
+
+  it('returns null when no station has a product (some erroring is fine)', async () => {
+    const fetchOne = vi.fn(async (id: string) => {
+      if (id === 'KOMA') throw new HttpError(500, 'x');
+      return null;
+    });
+    await expect(fetchTafChain(STATIONS, { fetchOne })).resolves.toBeNull();
+  });
+
+  it('throws only when every station errors', async () => {
+    const fetchOne = vi.fn(async () => {
+      throw new HttpError(500, 'x');
+    });
+    await expect(fetchTafChain(STATIONS, { fetchOne })).rejects.toBeInstanceOf(HttpError);
+    expect(fetchOne).toHaveBeenCalledTimes(3);
   });
 });

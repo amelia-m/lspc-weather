@@ -26,15 +26,18 @@ export interface SiteConfig {
     elevationFt: number;
     distanceMi: number; // approx distance from the DZ
   };
-  /** Nearest station that issues a TAF (KPMV does not). */
-  tafStation: {
+  /** TAF stations near the DZ, in preference order (KPMV issues no TAF).
+   *  Offutt is closest but its TAF is issued by the USAF and is not always
+   *  carried in the NWS text-product feed the app can reach from a browser,
+   *  so civilian fallbacks follow. */
+  tafStations: Array<{
     id: string; // ICAO
     name: string;
     lat: number;
     lon: number;
     /** NWS text-product location code (ICAO minus leading "K"). */
     nwsProductLocation: string;
-  };
+  }>;
   /** NWS WSR-88D radar covering the drop zone. */
   radarSite: {
     id: string; // e.g. KOAX
@@ -61,13 +64,17 @@ export const SITE: SiteConfig = {
     elevationFt: 1204,
     distanceMi: 12,
   },
-  tafStation: {
-    id: 'KOFF',
-    name: 'Offutt AFB',
-    lat: 41.1183,
-    lon: -95.9124,
-    nwsProductLocation: 'OFF',
-  },
+  tafStations: [
+    { id: 'KOFF', name: 'Offutt AFB', lat: 41.1183, lon: -95.9124, nwsProductLocation: 'OFF' },
+    {
+      id: 'KOMA',
+      name: 'Omaha Eppley Airfield',
+      lat: 41.3032,
+      lon: -95.8941,
+      nwsProductLocation: 'OMA',
+    },
+    { id: 'KLNK', name: 'Lincoln Airport', lat: 40.851, lon: -96.759, nwsProductLocation: 'LNK' },
+  ],
   radarSite: {
     id: 'KOAX',
     name: 'NWS Omaha / Valley',

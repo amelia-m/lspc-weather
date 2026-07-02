@@ -204,3 +204,14 @@ describe('normalizeOpenMeteoDaily', () => {
     expect(days[0].weatherCode).toBe(3);
   });
 });
+
+describe('parseTaf body anchoring', () => {
+  it('anchors on the TAF body when the station also appears in the WMO header', () => {
+    const product = `000\nFTUS80 KOFF 022000\nTAF AMD KOFF 022000Z 0220/0324 15011KT 9999 SCT020\n     TEMPO 0220/0222 -TSRA BKN020CB=`;
+    const taf = parseTaf(product, 'KOFF');
+    expect(taf).not.toBeNull();
+    // Starts at the body (with its TAF AMD prefix), not the comms header.
+    expect(taf!.raw.startsWith('TAF AMD KOFF 022000Z')).toBe(true);
+    expect(taf!.validRaw).toBe('0220/0324');
+  });
+});

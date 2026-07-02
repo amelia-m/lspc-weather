@@ -217,7 +217,7 @@ export default function App(): JSX.Element {
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
         <RadarPanel />
-        <TafPanel taf={snapshot.taf} />
+        <TafPanel taf={snapshot.taf} status={status.taf} />
         <DensityAltitudePanel da={snapshot.densityAltitude} />
         <SunPanel sun={snapshot.sun} />
       </div>
