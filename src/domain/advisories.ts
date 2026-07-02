@@ -25,21 +25,25 @@ export function evaluateAdvisories(
   // --- Surface wind ---
   if (current) {
     const { speedKt, gustKt } = current.wind;
-    const windLevel: AdvisoryLevel =
-      speedKt >= thresholds.windCautionKt
-        ? 'caution'
-        : speedKt >= thresholds.windWatchKt
-          ? 'watch'
-          : 'info';
-    if (windLevel !== 'info') {
-      out.push({
-        id: 'surface-wind',
-        level: windLevel,
-        metric: 'Surface wind',
-        value: formatWind(speedKt, gustKt),
-        guidance: thresholds.windGuidance,
-        citation: thresholds.windCitation,
-      });
+    // speedKt == null means the observation lacked a usable wind speed — that
+    // is "no data", not calm, so no threshold comparison is meaningful.
+    if (speedKt != null) {
+      const windLevel: AdvisoryLevel =
+        speedKt >= thresholds.windCautionKt
+          ? 'caution'
+          : speedKt >= thresholds.windWatchKt
+            ? 'watch'
+            : 'info';
+      if (windLevel !== 'info') {
+        out.push({
+          id: 'surface-wind',
+          level: windLevel,
+          metric: 'Surface wind',
+          value: formatWind(speedKt, gustKt),
+          guidance: thresholds.windGuidance,
+          citation: thresholds.windCitation,
+        });
+      }
     }
 
     // --- Absolute gust ceiling (LSPC waiver profiles) ---
@@ -56,7 +60,8 @@ export function evaluateAdvisories(
     }
 
     // --- Gust spread (turbulent / shifty landings) ---
-    if (gustKt != null && gustKt - speedKt >= thresholds.gustSpreadWatchKt) {
+    // Needs both values; skipped when the sustained speed is unreported.
+    if (speedKt != null && gustKt != null && gustKt - speedKt >= thresholds.gustSpreadWatchKt) {
       out.push({
         id: 'gust-spread',
         level: 'watch',

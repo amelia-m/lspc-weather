@@ -83,6 +83,21 @@ describe('evaluateAdvisories', () => {
     expect(out.some((a) => a.id === 'gust-limit')).toBe(false);
   });
 
+  it('unreported wind speed (null) yields no surface-wind or gust-spread advisory', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: null, wgst: null });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    expect(out.some((a) => a.id === 'surface-wind')).toBe(false);
+    expect(out.some((a) => a.id === 'gust-spread')).toBe(false);
+  });
+
+  it('gust-limit advisory still fires on gust alone when sustained speed is null', () => {
+    // waiver:0-5 gust ceiling is exceeded by a 15 kt gust even with no sustained reading.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: null, wgst: 15 });
+    const out = evaluateAdvisories(snapshot({ current }), resolveThresholds('waiver:0-5'), now);
+    expect(out.some((a) => a.id === 'surface-wind')).toBe(false);
+    expect(out.find((a) => a.id === 'gust-limit')?.level).toBe('caution');
+  });
+
   it('student wind limits flag earlier than licensed', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 13, wgst: null });
     const s = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);

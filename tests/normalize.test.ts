@@ -39,6 +39,16 @@ describe('normalizeMetar', () => {
     expect(c.altimeterInHg).toBeGreaterThan(29.9);
     expect(c.altimeterInHg).toBeLessThan(30.0);
   });
+
+  it('maps a missing wind speed to null, not calm', () => {
+    const c = normalizeMetar({ ...METAR_FIXTURE[0], wspd: null });
+    expect(c.wind.speedKt).toBeNull();
+  });
+
+  it('keeps a genuine calm (0 kt) as 0', () => {
+    const c = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 0 });
+    expect(c.wind.speedKt).toBe(0);
+  });
 });
 
 describe('altimeterFromRaw', () => {
@@ -73,6 +83,32 @@ describe('normalizeNwsObservation', () => {
     const c = normalizeNwsObservation(noRaw, 'KPMV');
     expect(c.altimeterInHg).toBeGreaterThan(29.5); // 101490 Pa ≈ 29.97 inHg
     expect(c.altimeterInHg).toBeLessThan(30.5);
+  });
+
+  it('maps a null wind-speed value (sensor failed QC) to null, not calm', () => {
+    const obs = {
+      properties: { ...OBSERVATION_FIXTURE.properties, windSpeed: { value: null } },
+    };
+    const c = normalizeNwsObservation(obs, 'KPMV');
+    expect(c.wind.speedKt).toBeNull();
+  });
+
+  it('maps an absent windSpeed field to null, not calm', () => {
+    const props = { ...OBSERVATION_FIXTURE.properties };
+    delete props.windSpeed;
+    const c = normalizeNwsObservation({ properties: props }, 'KPMV');
+    expect(c.wind.speedKt).toBeNull();
+  });
+
+  it('keeps a genuine calm (0 km/h) as 0 kt', () => {
+    const obs = {
+      properties: {
+        ...OBSERVATION_FIXTURE.properties,
+        windSpeed: { unitCode: 'wmoUnit:km_h-1', value: 0 },
+      },
+    };
+    const c = normalizeNwsObservation(obs, 'KPMV');
+    expect(c.wind.speedKt).toBe(0);
   });
 });
 

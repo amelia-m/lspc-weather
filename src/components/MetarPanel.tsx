@@ -47,6 +47,7 @@ export function MetarPanel({
 
 function describeWind(c: CurrentConditions, unit: SpeedUnit): string {
   const { directionDeg, speedKt, gustKt } = c.wind;
+  if (speedKt == null) return '— (not reported)';
   if (speedKt === 0) return 'Calm';
   const dir = directionDeg != null ? `${compass(directionDeg)} (${directionDeg}°)` : 'variable';
   const g = gustKt != null ? `, gusting ${fmtSpeed(gustKt, unit)}` : '';
