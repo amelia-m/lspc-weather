@@ -90,12 +90,43 @@ describe('evaluateAdvisories', () => {
     expect(out.some((a) => a.id === 'gust-spread')).toBe(false);
   });
 
-  it('gust-limit advisory still fires on gust alone when sustained speed is null', () => {
-    // waiver:0-5 gust ceiling is exceeded by a 15 kt gust even with no sustained reading.
+  it('gust-limit and surface-wind advisories still fire on gust alone when sustained speed is null', () => {
+    // waiver:0-5 gust ceiling is exceeded by a 15 kt gust even with no sustained reading;
+    // the 15 kt gust also puts the effective wind over the ~13 kt sustained limit.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: null, wgst: 15 });
     const out = evaluateAdvisories(snapshot({ current }), resolveThresholds('waiver:0-5'), now);
-    expect(out.some((a) => a.id === 'surface-wind')).toBe(false);
+    expect(out.find((a) => a.id === 'surface-wind')?.level).toBe('caution');
     expect(out.find((a) => a.id === 'gust-limit')?.level).toBe('caution');
+  });
+
+  it('flags gusts over the student limit even when the sustained speed is well under it', () => {
+    // Sustained 7 kt is fine, but gusting 14 kt (~16 mph) exceeds the ~12 kt student caution.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 7, wgst: 14 });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    const wind = out.find((a) => a.id === 'surface-wind');
+    expect(wind?.level).toBe('caution');
+    expect(wind?.value).toContain('gusts exceed limit');
+  });
+
+  it('sustained speed alone still levels the advisory when no gust is reported', () => {
+    // 11 kt sustained, no gust: at/above the student 10 kt watch, below the 12 kt caution.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 11, wgst: null });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    expect(out.find((a) => a.id === 'surface-wind')?.level).toBe('watch');
+  });
+
+  it('surface-wind advisory fires on a gust reading alone (sustained unreported)', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: null, wgst: 14 });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    const wind = out.find((a) => a.id === 'surface-wind');
+    expect(wind?.level).toBe('caution');
+    expect(wind?.value).toContain('gusting 14 kt');
+  });
+
+  it('no surface-wind advisory when both sustained and gust are under the watch level', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 5, wgst: 9 });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    expect(out.some((a) => a.id === 'surface-wind')).toBe(false);
   });
 
   it('student wind limits flag earlier than licensed', () => {
