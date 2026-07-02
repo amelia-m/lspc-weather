@@ -25,21 +25,27 @@ export function evaluateAdvisories(
   // --- Surface wind ---
   if (current) {
     const { speedKt, gustKt } = current.wind;
-    // speedKt == null means the observation lacked a usable wind speed — that
-    // is "no data", not calm, so no threshold comparison is meaningful.
-    if (speedKt != null) {
+    // null means the observation lacked a usable reading — that is "no data",
+    // not calm. Level on the EFFECTIVE wind (max of sustained and gust): a
+    // gust past the limit is still wind past the limit. A gust reading alone
+    // (sustained unreported) is enough to evaluate.
+    if (speedKt != null || gustKt != null) {
+      const effectiveKt = Math.max(speedKt ?? -Infinity, gustKt ?? -Infinity);
       const windLevel: AdvisoryLevel =
-        speedKt >= thresholds.windCautionKt
+        effectiveKt >= thresholds.windCautionKt
           ? 'caution'
-          : speedKt >= thresholds.windWatchKt
+          : effectiveKt >= thresholds.windWatchKt
             ? 'watch'
             : 'info';
       if (windLevel !== 'info') {
+        const levelKt = windLevel === 'caution' ? thresholds.windCautionKt : thresholds.windWatchKt;
+        // Gust-driven: the gust crossed the threshold but the sustained speed did not.
+        const gustDriven = gustKt != null && gustKt >= levelKt && (speedKt == null || speedKt < levelKt);
         out.push({
           id: 'surface-wind',
           level: windLevel,
           metric: 'Surface wind',
-          value: formatWind(speedKt, gustKt),
+          value: formatWind(speedKt, gustKt) + (gustDriven ? ' (gusts exceed limit)' : ''),
           guidance: thresholds.windGuidance,
           citation: thresholds.windCitation,
         });
@@ -218,9 +224,11 @@ export function evaluateAdvisories(
   return out.sort((a, b) => severityRank(b.level) - severityRank(a.level));
 }
 
-function formatWind(speedKt: number, gustKt: number | null): string {
+function formatWind(speedKt: number | null, gustKt: number | null): string {
+  const gust = gustKt != null ? `gusting ${round(gustKt)} kt` : null;
+  if (speedKt == null) return gust ?? 'unreported';
   const base = `${round(speedKt)} kt (${round(ktToMph(speedKt))} mph)`;
-  return gustKt != null ? `${base}, gusting ${round(gustKt)} kt` : base;
+  return gust != null ? `${base}, ${gust}` : base;
 }
 
 function severityRank(level: AdvisoryLevel): number {
