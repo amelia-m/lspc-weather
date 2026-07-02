@@ -36,6 +36,16 @@ export function CeilingSkyPanel({
         <p className="muted">No hourly forecast available.</p>
       ) : (
         <div className="sky-timeline">
+          <div className="sky-col sky-axis-col" aria-hidden="true">
+            <span className="sky-pct">&nbsp;</span>
+            <div className="sky-axis">
+              <span>100%</span>
+              <span>50%</span>
+              <span>0%</span>
+            </div>
+            <span className="sky-ceil">&nbsp;</span>
+            <span className="sky-time">&nbsp;</span>
+          </div>
           {upcoming.map((h) => (
             <div key={h.time} className="sky-col" title={describeHour(h)}>
               <span className="sky-pct">{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</span>
