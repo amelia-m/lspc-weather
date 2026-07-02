@@ -30,10 +30,11 @@ export const DATA_SOURCES = {
     label: 'Winds Aloft · Mark Schulze',
     url: 'https://www.markschulze.net/winds/',
   },
-  /** TAF — fetched from the NWS text-products API; link is the NOAA viewer. */
+  /** TAF — fetched from the NWS text-products API; link is the NOAA viewer
+   *  showing every station in the fallback chain. */
   taf: {
-    label: `NWS TAF · ${SITE.tafStation.id}`,
-    url: `https://aviationweather.gov/data/taf/?id=${SITE.tafStation.id}`,
+    label: 'NWS TAF',
+    url: `https://aviationweather.gov/data/taf/?ids=${SITE.tafStations.map((s) => s.id).join('%2C')}`,
   },
   /** NWS radar (image loop + interactive viewer). */
   radar: {

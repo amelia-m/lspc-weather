@@ -111,15 +111,14 @@ export async function fetchLatestObservation(
 /**
  * Fetch the latest TAF for a station via the NWS text-products API
  * (CORS-friendly, unlike aviationweather.gov). Two steps: list the latest TAF
- * product for the location code, then fetch that product's text.
+ * product for the location code, then fetch that product's text. Returns null
+ * when the feed has no product for the location — notably military fields
+ * like KOFF, whose USAF-issued TAFs are not always carried on this feed.
  */
 export async function fetchTaf(
   station: string,
   productLocation: string,
 ): Promise<TafForecast | null> {
-  if (USE_FIXTURES) {
-    return parseTaf(TAF_FIXTURE.productText ?? '', station, TAF_FIXTURE.issuanceTime);
-  }
   const list = await fetchJson<{ '@graph'?: Array<{ '@id': string; issuanceTime?: string }> }>(
     `${NWS_BASE}/products/types/TAF/locations/${encodeURIComponent(productLocation)}`,
   );
@@ -127,6 +126,51 @@ export async function fetchTaf(
   if (!latest) return null;
   const product = await fetchJson<RawNwsProduct>(latest['@id']);
   return parseTaf(product.productText ?? '', station, product.issuanceTime ?? latest.issuanceTime);
+}
+
+export interface TafStationRef {
+  id: string;
+  nwsProductLocation: string;
+}
+
+/** Injectable dependency so the fallback logic is unit-testable. */
+interface TafChainDeps {
+  fetchOne: (station: string, productLocation: string) => Promise<TafForecast | null>;
+}
+
+/**
+ * Try each TAF station in preference order and return the first available
+ * TAF (its `station` field says which one the card is showing). A station
+ * yielding no product is normal (see fetchTaf) and falls through; a fetch
+ * error also falls through so one bad request doesn't blank the card — but
+ * if EVERY station errored, the last error propagates so the source reads
+ * as failed rather than "no TAF".
+ */
+export async function fetchTafChain(
+  stations: readonly TafStationRef[],
+  deps: TafChainDeps = { fetchOne: fetchTaf },
+): Promise<TafForecast | null> {
+  let errors = 0;
+  let lastErr: unknown;
+  for (const s of stations) {
+    try {
+      const taf = await deps.fetchOne(s.id, s.nwsProductLocation);
+      if (taf) return taf;
+    } catch (err) {
+      errors++;
+      lastErr = err;
+    }
+  }
+  if (errors > 0 && errors === stations.length) throw lastErr;
+  return null;
+}
+
+/** Entry point for the app: fixture in dev, live fallback chain otherwise. */
+export async function fetchTafAny(stations: readonly TafStationRef[]): Promise<TafForecast | null> {
+  if (USE_FIXTURES) {
+    return parseTaf(TAF_FIXTURE.productText ?? '', stations[0].id, TAF_FIXTURE.issuanceTime);
+  }
+  return fetchTafChain(stations);
 }
 
 function safeLocalGet(key: string): string | null {

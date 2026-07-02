@@ -185,14 +185,22 @@ export interface RawNwsProduct {
 }
 
 /** Extract a station's TAF from an NWS text product. The productText carries a
- *  communications header then the TAF body; we slice from the station id. */
+ *  communications header then the TAF body. Anchor on the body's
+ *  "STATION ddhhmmZ" (with any leading "TAF AMD/COR") rather than the first
+ *  occurrence of the station id, which can also appear in the WMO header line
+ *  (military TAFs are transmitted under the field's own ICAO). */
 export function parseTaf(
   productText: string,
   station: string,
   issuanceTime?: string,
 ): TafForecast | null {
   if (!productText) return null;
-  const idx = productText.indexOf(station);
+  // Optional same-line "TAF AMD/COR" prefix (military style); NWS products put
+  // "TAF" on its own line, which stays out of the slice.
+  const body = new RegExp(`(?:TAF(?:[ \\t]+(?:AMD|COR))?[ \\t]+)?${station}\\s+\\d{6}Z`).exec(
+    productText,
+  );
+  const idx = body ? body.index : productText.indexOf(station);
   if (idx < 0) return null;
 
   const raw = productText

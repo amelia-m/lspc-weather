@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { fetchHourly, fetchLatestObservation, fetchTaf } from '../api/nws';
+import { fetchHourly, fetchLatestObservation, fetchTafAny } from '../api/nws';
 import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
@@ -101,7 +101,7 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
       })
       .catch((e) => markStale('windsAloft', e));
 
-    const tafP = fetchTaf(SITE.tafStation.id, SITE.tafStation.nwsProductLocation)
+    const tafP = fetchTafAny(SITE.tafStations)
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
         updateSource('taf', okStatus());

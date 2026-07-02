@@ -7,7 +7,7 @@ const LABELS: Record<SourceKey, string> = {
   metar: 'METAR (KPMV)',
   nws: 'NWS forecast',
   windsAloft: 'Winds aloft',
-  taf: 'TAF (KOFF)',
+  taf: 'TAF',
   daily: '10-day outlook',
 };
 
