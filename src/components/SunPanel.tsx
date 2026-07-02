@@ -1,10 +1,12 @@
 import type { SunTimes } from '../domain/types';
+import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
 import { DATA_SOURCES } from '../config/sources';
 
 export function SunPanel({ sun }: { sun: SunTimes | null }): JSX.Element {
-  const minsToSunset = sun ? Math.round((sun.sunset - Date.now()) / 60000) : null;
+  const now = useNow(30_000);
+  const minsToSunset = sun ? Math.round((sun.sunset - now) / 60000) : null;
   return (
     <Panel title="Daylight" subtitle="last load planning" sources={[DATA_SOURCES.computed]}>
       {!sun ? (
