@@ -37,8 +37,26 @@ export function DriftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Eleme
       ) : (
         <>
           <div className="drift-inputs">
-            <NumberField label="Exit (ft AGL)" value={exitFt} step={500} min={1000} max={18000} onCommit={setExit} />
-            <NumberField label="Deploy (ft AGL)" value={deployFt} step={250} min={1000} max={6000} onCommit={setDeploy} />
+            {/* Keep deploy ≤ exit: the exit field's floor is the current deploy
+                altitude and the deploy field's ceiling is the current exit
+                altitude, so NumberField's commit-time clamp can never produce
+                an exit-below-deploy state. */}
+            <NumberField
+              label="Exit (ft AGL)"
+              value={exitFt}
+              step={500}
+              min={Math.max(1000, deployFt)}
+              max={18000}
+              onCommit={setExit}
+            />
+            <NumberField
+              label="Deploy (ft AGL)"
+              value={deployFt}
+              step={250}
+              min={1000}
+              max={Math.min(6000, exitFt)}
+              onCommit={setDeploy}
+            />
             <NumberField label="Fall rate (mph)" value={fallRate} step={5} min={80} max={200} onCommit={setFallRate} />
           </div>
 

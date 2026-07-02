@@ -50,7 +50,15 @@ function legFromComponents(e: number, n: number): DriftLeg {
   };
 }
 
-/** Integrate drift between two AGL altitudes at a constant vertical speed. */
+/**
+ * Integrate drift between two AGL altitudes at a constant vertical speed.
+ *
+ * Outside the sampled altitude range the wind is extrapolated as a constant —
+ * the nearest sample's vector — matching how `sampleAt` in windsAloft.ts
+ * extrapolates when interpolating. Without this, any band above the highest
+ * sample (e.g. exit at 18,000 ft with winds sampled to 13,000 ft) contributed
+ * ZERO drift and the estimate silently underestimated.
+ */
 function integrate(
   levels: WindsAloftLevel[],
   loAgl: number,
@@ -60,7 +68,17 @@ function integrate(
   const ls = [...levels].sort((a, b) => a.altitudeFtAgl - b.altitudeFtAgl);
   let e = 0;
   let n = 0;
-  if (vSpeedFps <= 0) return { e, n };
+  if (vSpeedFps <= 0 || ls.length === 0 || hiAgl <= loAgl) return { e, n };
+
+  // Band below the lowest sample: constant extrapolation with its wind.
+  const bottom = ls[0];
+  const belowThickness = Math.min(hiAgl, bottom.altitudeFtAgl) - loAgl;
+  if (belowThickness > 0) {
+    const v = windVec(bottom);
+    const time = belowThickness / vSpeedFps;
+    e += v.e * time;
+    n += v.n * time;
+  }
 
   for (let i = 0; i < ls.length - 1; i++) {
     const a = ls[i];
@@ -76,6 +94,17 @@ function integrate(
     e += ((va.e + vb.e) / 2) * time;
     n += ((va.n + vb.n) / 2) * time;
   }
+
+  // Band above the highest sample: constant extrapolation with its wind.
+  const top = ls[ls.length - 1];
+  const aboveThickness = hiAgl - Math.max(loAgl, top.altitudeFtAgl);
+  if (aboveThickness > 0) {
+    const v = windVec(top);
+    const time = aboveThickness / vSpeedFps;
+    e += v.e * time;
+    n += v.n * time;
+  }
+
   return { e, n };
 }
 
@@ -83,8 +112,15 @@ export function estimateDrift(levels: WindsAloftLevel[], opts: DriftOptions): Dr
   const fallFps = opts.fallRateMph * MPH_TO_FPS;
   const canopyFps = opts.canopyRateFpm / 60;
 
-  const ff = integrate(levels, opts.deployFtAgl, opts.exitFtAgl, fallFps);
-  const can = integrate(levels, 0, opts.deployFtAgl, canopyFps);
+  // Guard exit < deploy (e.g. a low hop-and-pop typed into the inputs): the
+  // canopy leg can only start at the lower of the two, and the freefall leg
+  // is zero-length unless exit is actually above deploy.
+  const canopyTopFtAgl = Math.min(opts.deployFtAgl, opts.exitFtAgl);
+  const ff =
+    opts.exitFtAgl > opts.deployFtAgl
+      ? integrate(levels, opts.deployFtAgl, opts.exitFtAgl, fallFps)
+      : { e: 0, n: 0 };
+  const can = integrate(levels, 0, canopyTopFtAgl, canopyFps);
 
   return {
     freefall: legFromComponents(ff.e, ff.n),
