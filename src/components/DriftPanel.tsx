@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { WindsAloftLevel } from '../domain/types';
 import { compass, round } from '../domain/units';
 import { estimateDrift, type DriftLeg } from '../domain/spot';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
+import { NumberField } from './common/NumberField';
 
 const fmtDist = (ft: number): string =>
   `${Math.round(ft).toLocaleString()} ft · ${(ft / 5280).toFixed(2)} mi`;
@@ -86,57 +87,3 @@ export function DriftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Eleme
 }
 
 const legText = (leg: DriftLeg): string => `${fmtDist(leg.distanceFt)} toward ${dir(leg.towardDeg)}`;
-
-function clamp(v: number, lo: number, hi: number): number {
-  if (!Number.isFinite(v)) return lo;
-  return Math.max(lo, Math.min(hi, v));
-}
-
-/**
- * Numeric input that lets you type freely (including clearing the field mid-edit)
- * and only clamps to [min,max] on blur or Enter. Clamping on every keystroke — as
- * this did before — snapped a half-typed value straight to the minimum, making the
- * field feel impossible to change.
- */
-function NumberField({
-  label,
-  value,
-  step,
-  min,
-  max,
-  onCommit,
-}: {
-  label: string;
-  value: number;
-  step: number;
-  min: number;
-  max: number;
-  onCommit: (n: number) => void;
-}): JSX.Element {
-  const [draft, setDraft] = useState(String(value));
-
-  // Reflect external changes (e.g. a future reset) back into the field.
-  useEffect(() => setDraft(String(value)), [value]);
-
-  const commit = (): void => {
-    const n = clamp(parseFloat(draft), min, max);
-    onCommit(n);
-    setDraft(String(n));
-  };
-
-  return (
-    <label>
-      {label}
-      <input
-        type="number"
-        step={step}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
-      />
-    </label>
-  );
-}
