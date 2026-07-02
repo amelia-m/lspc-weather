@@ -14,7 +14,6 @@ export const USE_FIXTURES: boolean =
   env.VITE_USE_FIXTURES != null ? env.VITE_USE_FIXTURES === 'true' : env.DEV;
 
 export const NWS_BASE = env.VITE_NWS_BASE ?? 'https://api.weather.gov';
-export const AWC_BASE = env.VITE_AWC_BASE ?? 'https://aviationweather.gov/api/data';
 export const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 
 /** Thrown for responses that won't succeed on retry (4xx client errors). */
