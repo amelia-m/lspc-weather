@@ -452,6 +452,32 @@ a {
   background: var(--panel-2);
   border-radius: 4px;
   overflow: hidden;
+  /* Gridlines at 25 / 50 / 75% so bar heights read against the y-axis. */
+  background-image: repeating-linear-gradient(
+    to top,
+    transparent 0,
+    transparent calc(25% - 1px),
+    var(--border) calc(25% - 1px),
+    var(--border) 25%
+  );
+}
+
+/* Y-axis column: labels aligned to the top / middle / bottom of the tracks. */
+.sky-axis-col {
+  flex: none;
+  width: 28px;
+}
+.sky-axis {
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 3px;
+  font-size: 0.58rem;
+  line-height: 1;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 .sky-bar {
   width: 100%;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { WindsAloftLevel } from '../domain/types';
 import { compass, round } from '../domain/units';
 import { estimateDrift, type DriftLeg } from '../domain/spot';
@@ -37,33 +37,9 @@ export function DriftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Eleme
       ) : (
         <>
           <div className="drift-inputs">
-            <label>
-              Exit (ft AGL)
-              <input
-                type="number"
-                step={500}
-                value={exitFt}
-                onChange={(e) => setExit(clamp(parseFloat(e.target.value), 1000, 18000))}
-              />
-            </label>
-            <label>
-              Deploy (ft AGL)
-              <input
-                type="number"
-                step={250}
-                value={deployFt}
-                onChange={(e) => setDeploy(clamp(parseFloat(e.target.value), 1000, 6000))}
-              />
-            </label>
-            <label>
-              Fall rate (mph)
-              <input
-                type="number"
-                step={5}
-                value={fallRate}
-                onChange={(e) => setFallRate(clamp(parseFloat(e.target.value), 80, 200))}
-              />
-            </label>
+            <NumberField label="Exit (ft AGL)" value={exitFt} step={500} min={1000} max={18000} onCommit={setExit} />
+            <NumberField label="Deploy (ft AGL)" value={deployFt} step={250} min={1000} max={6000} onCommit={setDeploy} />
+            <NumberField label="Fall rate (mph)" value={fallRate} step={5} min={80} max={200} onCommit={setFallRate} />
           </div>
 
           <dl className="kv">
@@ -96,4 +72,53 @@ const legText = (leg: DriftLeg): string => `${fmtDist(leg.distanceFt)} toward ${
 function clamp(v: number, lo: number, hi: number): number {
   if (!Number.isFinite(v)) return lo;
   return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * Numeric input that lets you type freely (including clearing the field mid-edit)
+ * and only clamps to [min,max] on blur or Enter. Clamping on every keystroke — as
+ * this did before — snapped a half-typed value straight to the minimum, making the
+ * field feel impossible to change.
+ */
+function NumberField({
+  label,
+  value,
+  step,
+  min,
+  max,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  step: number;
+  min: number;
+  max: number;
+  onCommit: (n: number) => void;
+}): JSX.Element {
+  const [draft, setDraft] = useState(String(value));
+
+  // Reflect external changes (e.g. a future reset) back into the field.
+  useEffect(() => setDraft(String(value)), [value]);
+
+  const commit = (): void => {
+    const n = clamp(parseFloat(draft), min, max);
+    onCommit(n);
+    setDraft(String(n));
+  };
+
+  return (
+    <label>
+      {label}
+      <input
+        type="number"
+        step={step}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+        }}
+      />
+    </label>
+  );
 }
