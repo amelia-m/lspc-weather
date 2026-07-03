@@ -30,6 +30,18 @@ export class HttpError extends Error {
   }
 }
 
+/** Thrown when a request exceeds its timeout. Replaces the browser's cryptic
+ *  AbortError message ("The operation was aborted.") with an actionable one. */
+export class TimeoutError extends Error {
+  constructor(url: string, timeoutMs: number) {
+    super(`Request timed out after ${Math.round(timeoutMs / 1000)} s (${new URL(url).host})`);
+    this.name = 'TimeoutError';
+  }
+}
+
+const isAbort = (err: unknown): boolean =>
+  err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError');
+
 export async function fetchJson<T>(
   url: string,
   opts: { timeoutMs?: number; headers?: Record<string, string>; retries?: number } = {},
@@ -51,7 +63,7 @@ export async function fetchJson<T>(
       if (!res.ok) throw new HttpError(res.status, url);
       return (await res.json()) as T;
     } catch (err) {
-      lastErr = err;
+      lastErr = isAbort(err) ? new TimeoutError(url, timeoutMs) : err;
       // 4xx is a client error (bad URL, not found, unauthorized) — retrying
       // won't help, so fail fast. Retry only transient failures (5xx, network,
       // timeout).
