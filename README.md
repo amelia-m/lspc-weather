@@ -22,25 +22,64 @@ freefall drift and **density altitude** for jump-plane climb performance.
 
 - **Conditions to note** — flagged values (wind, gusts, ceiling, visibility,
   overcast, precip, density altitude, winds aloft, daylight), each with the
-  **USPA / FAA source** it relates to. No go/no-go verdict.
-- **Current conditions** — decoded KPMV METAR.
-- **Surface wind** — sustained + gust with sourced limit bands.
-- **Winds aloft** — speed/direction at surface → 12,000 ft AGL (drift/spot).
-- **Ceiling & sky** — current ceiling + an hourly sky-cover timeline.
-- **Density altitude** — DA, pressure altitude, ISA deviation.
+  **USPA / FAA / LSPC-waiver source** it relates to. No go/no-go verdict.
+- **Current conditions** — decoded KPMV METAR (raw text included).
+- **Surface wind** — sustained + gust with sourced limit bands per profile
+  (Student / Licensed / LSPC waiver tiers), kt/mph toggle.
+- **Winds aloft** — speed/direction/temperature at surface → 13,000 ft AGL in
+  1,000-ft steps, interpolated from pressure-level model winds.
+- **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
+  deploy, and fall-rate inputs.
+- **Hourly wind** — next ~18 h wind/gust chart with precip-probability bars.
+- **10-day outlook** — daily sky, high/low, max wind/gust, precip chance.
+- **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
+- **Precipitation** — hourly precip-probability timeline.
+- **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
+- **TAF** — nearest available TAF (see cross-references below).
+- **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
 - **Daylight** — sunrise/sunset and time to sunset for last-load planning.
+- **Data health** — per-source freshness, staleness, and error state.
 
 ## Data sources (all free, no API key)
 
 | Source | Used for |
 |---|---|
-| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip **and** the current KPMV observation (raw METAR + decoded) |
-| [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels) |
+| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ, the current KPMV observation (raw METAR + decoded), and TAF text products |
+| [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels) and the 10-day daily outlook |
+| [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 
 KPMV (~12 mi from the DZ) is the nearest reporting station and issues METARs;
-it does not issue its own TAF (the nearest TAFs are KOFF/KOMA). Current
-conditions come from the NWS observation endpoint, not AviationWeather.gov,
-because `api.weather.gov` is reliably reachable from the browser.
+it does not issue a TAF. TAFs are fetched through a fallback chain —
+**KOFF → KOMA → KLNK** — because Offutt's TAF is USAF-issued and not always
+carried on the NWS text-product feed; the card labels whichever station
+supplied the forecast. Current conditions come from the NWS observation
+endpoint rather than AviationWeather.gov because `api.weather.gov` sends CORS
+headers and is reliably reachable from a browser, while `aviationweather.gov`
+is not.
+
+## Cross-references
+
+Several cards link to well-known external pages that show the *same underlying
+data*, so you can sanity-check the dashboard against sources the club already
+trusts:
+
+- **Ceiling & sky ↔ [usairnet KPMV aviation
+  forecast](https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=KPMV)**
+  — the page the club traditionally checked. usairnet has no public API and
+  presents NWS forecast data; this dashboard pulls that data directly from the
+  NWS gridpoint API instead. One difference: usairnet's page is for the KPMV
+  station, while the dashboard's forecast grid is centered on the DZ itself
+  (only the METAR observation comes from KPMV).
+- **Winds aloft ↔ [Mark Schulze's Winds
+  Aloft](https://www.markschulze.net/winds/)** — the popular skydiving winds
+  tool; same Open-Meteo model source.
+- **TAF ↔ [AWC TAF
+  viewer](https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK)** —
+  shows all three chain stations, including KOFF's USAF-issued TAF on days it
+  isn't in the NWS feed.
+
+If a dashboard number and its cross-reference disagree meaningfully, trust
+neither — check the primary source and ask the S&TA.
 
 ## Develop
 
@@ -48,6 +87,8 @@ because `api.weather.gov` is reliably reachable from the browser.
 npm install
 npm run dev          # dev mode uses bundled sample data (sandbox-friendly)
 npm test             # unit tests for the pure domain logic
+npm run lint         # eslint
+npm run typecheck    # tsc, no emit
 npm run build        # production build (uses live APIs)
 ```
 
@@ -60,13 +101,18 @@ work from a normal browser; some sandboxed/CI networks block them.
 Advisory thresholds and their sources live in
 [`src/config/thresholds.ts`](src/config/thresholds.ts). The numbers reflect
 well-established USPA (SIM/BSR) and FAA (14 CFR 105.17 / 91.155, density
-altitude) guidance; **re-verify each against the linked primary source** before
-relying on it operationally.
+altitude) guidance plus the club's posted waivered wind limits
+([`docs/lspc-waivered-wind-limits.md`](docs/lspc-waivered-wind-limits.md));
+**re-verify each against the linked primary source** before relying on it
+operationally.
 
 ## Deploy
 
-Pushing to `main` (or the feature branch) runs
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), which builds and
-publishes to GitHub Pages. Enable Pages → "GitHub Actions" in repo settings.
-The Vite `base` is `/lspc-weather/`; override with `BASE_PATH` if hosting
-elsewhere.
+Pushing to `main` runs
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (lint + tests +
+build, then GitHub Pages publish); pull requests run the same checks via
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) without deploying.
+Enable Pages → "GitHub Actions" in repo settings. The Vite `base` is
+`/lspc-weather/`; override with `BASE_PATH` if hosting elsewhere. The
+production build also injects a Content-Security-Policy meta tag scoped to the
+data sources above.

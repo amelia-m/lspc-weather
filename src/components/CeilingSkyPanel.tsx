@@ -20,7 +20,7 @@ export function CeilingSkyPanel({
     <Panel
       title="Ceiling & sky"
       subtitle="now + next hours"
-      sources={[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast]}
+      sources={[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast, DATA_SOURCES.usairnet]}
     >
       <div className="ceil-now">
         <span className="ceil-label">Ceiling</span>
@@ -65,6 +65,14 @@ export function CeilingSkyPanel({
         </div>
       )}
       <p className="muted small">Bar height = sky cover %. Label = ceiling (thousands ft AGL).</p>
+      <p className="muted small">
+        Cross-check against the{' '}
+        <a href={DATA_SOURCES.usairnet.url} target="_blank" rel="noopener noreferrer">
+          usairnet KPMV aviation forecast
+        </a>{' '}
+        — the page the club traditionally used. It presents the same NWS forecast data; this card
+        pulls it gridded to the DZ instead of the KPMV station page.
+      </p>
     </Panel>
   );
 }
