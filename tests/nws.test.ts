@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchJson, HttpError } from '../src/api/http';
+import { fetchJson, HttpError, TimeoutError } from '../src/api/http';
 import { fetchGridpoint, fetchTafChain, type ResolvedGridpoint } from '../src/api/nws';
 import type { RawGridpoint } from '../src/domain/normalize';
 
@@ -227,5 +227,29 @@ describe('fetchTafChain', () => {
     });
     await expect(fetchTafChain(STATIONS, { fetchOne })).rejects.toBeInstanceOf(HttpError);
     expect(fetchOne).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('fetchJson timeout', () => {
+  it('maps an abort to a readable TimeoutError and retries', async () => {
+    // fetch that never settles until aborted, like a blackholed connection
+    const fetchMock = vi.fn(
+      (_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_res, rej) => {
+          init?.signal?.addEventListener('abort', () =>
+            rej(new DOMException('The operation was aborted.', 'AbortError')),
+          );
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const err = await fetchJson('https://api.open-meteo.com/v1/forecast', {
+      timeoutMs: 30,
+      retries: 1,
+    }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(TimeoutError);
+    expect((err as Error).message).toContain('timed out');
+    expect((err as Error).message).toContain('api.open-meteo.com');
+    expect(fetchMock).toHaveBeenCalledTimes(2); // timeout is transient → retried
   });
 });

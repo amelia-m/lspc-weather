@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { fetchHourly, fetchLatestObservation, fetchTafAny } from '../api/nws';
 import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
@@ -12,6 +12,8 @@ import { usePolling } from './usePolling';
 
 const STALE_AFTER_MS = 30 * 60 * 1000;
 const REFRESH_MS = 10 * 60 * 1000;
+/** How soon to re-try after a cycle with failures (see quick-retry below). */
+const QUICK_RETRY_MS = 45 * 1000;
 
 const okStatus = (): SourceStatus => ({ ok: true, fetchedAt: Date.now(), stale: false, error: null });
 const idleStatus = (): SourceStatus => ({ ok: false, fetchedAt: null, stale: false, error: null });
@@ -47,14 +49,25 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Quick-retry bookkeeping: one early re-fetch per failure streak, so a
+  // transient blip (e.g. a mobile network timing out one API) self-heals in
+  // ~45 s instead of waiting out the 10-minute poll — without tightening the
+  // poll loop against an API that is actually down.
+  const refreshRef = useRef<() => void>(() => {});
+  const quickRetryUsed = useRef(false);
+  const quickRetryTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   const refresh = useCallback(() => {
     const now = Date.now();
     const { dz, metarStation } = SITE;
+    clearTimeout(quickRetryTimer.current);
+    let failures = 0;
 
     const updateSource = (key: SourceKey, next: SourceStatus): void =>
       setStatus((prev) => ({ ...prev, [key]: next }));
 
-    const markStale = (key: SourceKey, err: unknown): void =>
+    const markStale = (key: SourceKey, err: unknown): void => {
+      failures++;
       setStatus((prev) => ({
         ...prev,
         // Keep the last-good fetchedAt so the freshness panel still shows when
@@ -66,6 +79,7 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
           error: err instanceof Error ? err.message : String(err),
         },
       }));
+    };
 
     // Each source is fetched and applied independently so one failure doesn't
     // blank the others; on error we keep prior data and mark it stale.
@@ -121,8 +135,15 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
     void Promise.allSettled([metarP, hourlyP, windsP, tafP, dailyP]).then(() => {
       setLastUpdated(Date.now());
       setLoading(false);
+      if (failures === 0) {
+        quickRetryUsed.current = false;
+      } else if (!quickRetryUsed.current) {
+        quickRetryUsed.current = true;
+        quickRetryTimer.current = setTimeout(() => refreshRef.current(), QUICK_RETRY_MS);
+      }
     });
   }, []);
+  refreshRef.current = refresh;
 
   usePolling(refresh, REFRESH_MS);
 

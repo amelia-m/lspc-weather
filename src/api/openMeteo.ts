@@ -26,6 +26,11 @@ function buildHourlyVars(): string {
   return vars.join(',');
 }
 
+/** Open-Meteo can be slow from mobile networks (field reports of 12 s
+ *  aborts while the NWS endpoints answered fine), so give it more headroom
+ *  and an extra retry than the fetchJson defaults. */
+const OPEN_METEO_OPTS = { timeoutMs: 20_000, retries: 2 };
+
 /** Fetch winds aloft and interpolate to the requested AGL jump altitudes. */
 export async function fetchWindsAloft(
   lat: number,
@@ -40,6 +45,7 @@ export async function fetchWindsAloft(
         `${OPEN_METEO_BASE}?latitude=${lat}&longitude=${lon}` +
           `&hourly=${buildHourlyVars()}` +
           `&wind_speed_unit=kn&forecast_days=2&timeformat=unixtime&timezone=UTC`,
+        OPEN_METEO_OPTS,
       );
 
   // timeformat=unixtime returns numbers; normalize expects ISO strings, so
@@ -60,6 +66,7 @@ export async function fetchDailyForecast(lat: number, lon: number): Promise<Dail
           `precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max` +
           `&forecast_days=10&wind_speed_unit=kn&timeformat=unixtime` +
           `&timezone=${encodeURIComponent(SITE.timeZone)}`,
+        OPEN_METEO_OPTS,
       );
   return normalizeOpenMeteoDaily(data);
 }
