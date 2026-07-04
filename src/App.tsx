@@ -210,7 +210,11 @@ export default function App(): JSX.Element {
           label={profileLabel(profile)}
           unit={unit}
         />
-        <WindsAloftPanel levels={snapshot.windsAloft} unit={unit} />
+        <WindsAloftPanel
+          levels={snapshot.windsAloft}
+          source={snapshot.windsAloftSource}
+          unit={unit}
+        />
         <DriftPanel levels={snapshot.windsAloft} />
         <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} />
         <DailyForecastPanel daily={snapshot.daily} unit={unit} />

@@ -1,5 +1,6 @@
-import type { WindsAloftLevel } from '../domain/types';
+import type { WindsAloftLevel, WindsAloftSource } from '../domain/types';
 import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
+import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 
@@ -7,16 +8,23 @@ import { Panel } from './common/Panel';
  *  points the direction the wind is blowing TOWARD (drift direction). */
 export function WindsAloftPanel({
   levels,
+  source,
   unit,
 }: {
   levels: WindsAloftLevel[];
+  source: WindsAloftSource | null | undefined;
   unit: SpeedUnit;
 }): JSX.Element {
+  const fallback = source === 'nws-fd';
   return (
     <Panel
       title="Winds aloft"
-      subtitle="freefall drift / spot"
-      sources={[DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]}
+      subtitle={fallback ? 'NOAA FD fallback' : 'freefall drift / spot'}
+      sources={
+        fallback
+          ? [DATA_SOURCES.fdWinds]
+          : [DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]
+      }
     >
       {levels.length === 0 ? (
         <p className="muted">No winds-aloft data.</p>
@@ -55,20 +63,33 @@ export function WindsAloftPanel({
         </table>
       )}
       <p className="muted small">Arrow shows drift direction (where wind pushes you).</p>
-      <p className="muted small">
-        Same Open-Meteo data source as{' '}
-        <a href={DATA_SOURCES.markschulze.url} target="_blank" rel="noopener noreferrer">
-          Mark Schulze’s Winds Aloft
-        </a>
-        , the popular skydiving winds tool.
-      </p>
-      <p className="muted small">
-        Each 1,000-ft level is <strong>linearly interpolated</strong> from the model’s pressure-level
-        winds (Open-Meteo gives wind at fixed pressure surfaces — e.g. 925/850/700 hPa — with their
-        geopotential heights, which we convert to ft MSL and interpolate to these AGL altitudes).
-        Direction is interpolated along the shortest compass arc. These are a model{' '}
-        <strong>forecast</strong> for the DZ, not a measured sounding, so treat them as guidance.
-      </p>
+      {fallback ? (
+        <p className="muted small">
+          <strong>Fallback source:</strong> Open-Meteo was unreachable, so these levels are
+          interpolated from the NOAA winds-aloft (FD) forecast for {SITE.fdWindsStation} (Omaha,
+          ~30 mi from the DZ) — 3/6/9/12k-ft MSL levels, the same bulletin jump pilots brief from.
+          The surface row is omitted (the bulletin&rsquo;s lowest level is 3,000 ft MSL); see the
+          Surface wind card for ground wind.
+        </p>
+      ) : (
+        <>
+          <p className="muted small">
+            Same Open-Meteo data source as{' '}
+            <a href={DATA_SOURCES.markschulze.url} target="_blank" rel="noopener noreferrer">
+              Mark Schulze’s Winds Aloft
+            </a>
+            , the popular skydiving winds tool.
+          </p>
+          <p className="muted small">
+            Each 1,000-ft level is <strong>linearly interpolated</strong> from the model’s
+            pressure-level winds (Open-Meteo gives wind at fixed pressure surfaces — e.g.
+            925/850/700 hPa — with their geopotential heights, which we convert to ft MSL and
+            interpolate to these AGL altitudes). Direction is interpolated along the shortest
+            compass arc. These are a model <strong>forecast</strong> for the DZ, not a measured
+            sounding, so treat them as guidance.
+          </p>
+        </>
+      )}
     </Panel>
   );
 }

@@ -42,6 +42,11 @@ export const DATA_SOURCES = {
     label: 'NWS TAF',
     url: `https://aviationweather.gov/data/taf/?ids=${SITE.tafStations.map((s) => s.id).join('%2C')}`,
   },
+  /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source. */
+  fdWinds: {
+    label: `NOAA winds aloft (FD) · ${SITE.fdWindsStation}`,
+    url: 'https://aviationweather.gov/data/windtemp/',
+  },
   /** NWS radar (image loop + interactive viewer). */
   radar: {
     label: `NWS radar · ${SITE.radarSite.id}`,

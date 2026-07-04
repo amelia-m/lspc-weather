@@ -217,6 +217,94 @@ export function parseTaf(
 }
 
 /* ------------------------------------------------------------------ *
+ *  NWS/NOAA winds-aloft (FD/FB) text product                          *
+ * ------------------------------------------------------------------ */
+
+/**
+ * Parse one station's row from a NOAA winds-and-temps-aloft (FD) bulletin into
+ * wind samples usable by interpolateWindsAloft. Used as a fallback when
+ * Open-Meteo is unreachable. Format (fixed-width, altitudes are ft MSL):
+ *
+ *   FT  3000    6000    9000   12000   18000  24000  30000 ...
+ *   OMA 2118    2426+14 2431+08 2536+03 2648-09 2762-21 269536 ...
+ *
+ * Group = DDSS[±TT]: direction DD×10° true, speed SS kt, temp °C. DD 51–86
+ * encodes speeds over 100 kt (subtract 50 from DD, add 100 to SS). "9900" is
+ * light and variable (treated as calm). At/above 24,000 ft the temp sign is
+ * omitted and negative is implied. Columns can be blank when the station
+ * elevation is above a level, so fields are sliced by header column position,
+ * not whitespace-split.
+ */
+export function parseFdWinds(productText: string, station: string): RawWindSample[] | null {
+  if (!productText) return null;
+  const lines = productText.split('\n');
+  const header = lines.find((l) => /^FT\s+\d/.test(l));
+  if (!header) return null;
+  const stationLine = lines.find((l) => new RegExp(`^${station}\\s`).test(l));
+  if (!stationLine) return null;
+
+  // Header column start positions. Groups in a station row sit under their
+  // altitude column, but stations above a level leave that column blank — so
+  // assign each whitespace token to the NEAREST column start instead of
+  // splitting blindly or hard-slicing (tolerates small alignment drift).
+  const cols: Array<{ altFt: number; start: number }> = [];
+  const headerRe = /\d+/g;
+  let m: RegExpExecArray | null;
+  while ((m = headerRe.exec(header)) !== null) cols.push({ altFt: Number(m[0]), start: m.index });
+
+  const byColumn = new Map<number, string>();
+  const tokenRe = /\S+/g;
+  let t: RegExpExecArray | null;
+  while ((t = tokenRe.exec(stationLine)) !== null) {
+    if (t.index === 0) continue; // the station id itself
+    let nearest = 0;
+    for (let i = 1; i < cols.length; i++) {
+      if (Math.abs(cols[i].start - t.index) < Math.abs(cols[nearest].start - t.index)) nearest = i;
+    }
+    if (!byColumn.has(nearest)) byColumn.set(nearest, t[0]);
+  }
+
+  const samples: RawWindSample[] = [];
+  for (let i = 0; i < cols.length; i++) {
+    const token = byColumn.get(i);
+    if (!token) continue;
+    const sample = decodeFdGroup(token, cols[i].altFt);
+    if (sample) samples.push(sample);
+  }
+  return samples.length > 0 ? samples : null;
+}
+
+function decodeFdGroup(token: string, altFt: number): RawWindSample | null {
+  const m = /^(\d{2})(\d{2})([+-]?\d{1,2})?$/.exec(token);
+  if (!m) return null;
+  let dd = Number(m[1]);
+  let spd = Number(m[2]);
+  if (dd === 99 && spd === 0) {
+    // light and variable
+    return { heightFtMsl: altFt, speedKt: 0, directionDeg: 0, tempC: parseFdTemp(m[3], altFt) };
+  }
+  if (dd >= 51 && dd <= 86) {
+    dd -= 50;
+    spd += 100;
+  }
+  if (dd < 1 || dd > 36) return null;
+  return {
+    heightFtMsl: altFt,
+    speedKt: spd,
+    directionDeg: (dd * 10) % 360,
+    tempC: parseFdTemp(m[3], altFt),
+  };
+}
+
+function parseFdTemp(raw: string | undefined, altFt: number): number | null {
+  if (raw == null) return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  // Unsigned temps at/above 24,000 ft are implied negative.
+  return altFt >= 24000 && !/^[+-]/.test(raw) ? -Math.abs(n) : n;
+}
+
+/* ------------------------------------------------------------------ *
  *  NWS gridpoint forecast (/gridpoints/{office}/{x},{y})              *
  * ------------------------------------------------------------------ */
 
