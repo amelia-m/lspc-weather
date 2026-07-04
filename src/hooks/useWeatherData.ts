@@ -15,8 +15,20 @@ const REFRESH_MS = 10 * 60 * 1000;
 /** How soon to re-try after a cycle with failures (see quick-retry below). */
 const QUICK_RETRY_MS = 45 * 1000;
 
-const okStatus = (): SourceStatus => ({ ok: true, fetchedAt: Date.now(), stale: false, error: null });
-const idleStatus = (): SourceStatus => ({ ok: false, fetchedAt: null, stale: false, error: null });
+const okStatus = (): SourceStatus => ({
+  ok: true,
+  fetchedAt: Date.now(),
+  stale: false,
+  error: null,
+  pending: false,
+});
+const idleStatus = (): SourceStatus => ({
+  ok: false,
+  fetchedAt: null,
+  stale: false,
+  error: null,
+  pending: false,
+});
 
 export interface WeatherData {
   snapshot: WeatherSnapshot;
@@ -63,11 +75,26 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
     clearTimeout(quickRetryTimer.current);
     let failures = 0;
 
-    const updateSource = (key: SourceKey, next: SourceStatus): void =>
+    // Flag every source as in-flight so the UI can show that a refresh is
+    // actually happening — a hung request otherwise looks like a dead button.
+    setStatus((prev) => {
+      const out = {} as Record<SourceKey, SourceStatus>;
+      for (const key of Object.keys(prev) as SourceKey[]) {
+        out[key] = { ...prev[key], pending: true };
+      }
+      return out;
+    });
+
+    // Each settle bumps the panel's "Updated" line, so fast sources register
+    // immediately instead of waiting for the slowest fetch to time out.
+    const updateSource = (key: SourceKey, next: SourceStatus): void => {
+      setLastUpdated(Date.now());
       setStatus((prev) => ({ ...prev, [key]: next }));
+    };
 
     const markStale = (key: SourceKey, err: unknown): void => {
       failures++;
+      setLastUpdated(Date.now());
       setStatus((prev) => ({
         ...prev,
         // Keep the last-good fetchedAt so the freshness panel still shows when
@@ -77,6 +104,7 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
           ok: false,
           stale: true,
           error: err instanceof Error ? err.message : String(err),
+          pending: false,
         },
       }));
     };
@@ -133,7 +161,6 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
     setSnapshot((prev) => ({ ...prev, sun: sunTimes(dz.lat, dz.lon, new Date(now)) }));
 
     void Promise.allSettled([metarP, hourlyP, windsP, tafP, dailyP]).then(() => {
-      setLastUpdated(Date.now());
       setLoading(false);
       if (failures === 0) {
         quickRetryUsed.current = false;

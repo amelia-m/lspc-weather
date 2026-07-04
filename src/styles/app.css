@@ -711,6 +711,23 @@ a {
 .source.ok .source-dot {
   background: var(--ok);
 }
+.source.pending .source-dot {
+  background: var(--accent);
+  animation: source-pulse 1.2s ease-in-out infinite;
+}
+@keyframes source-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.freshness .refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 .source.stale .source-dot {
   background: var(--stale);
 }
