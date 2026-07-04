@@ -1,5 +1,6 @@
 import { fetchJson, HttpError, NWS_BASE, USE_FIXTURES } from './http';
 import {
+  aggregateDailyFromHourly,
   normalizeGridpoint,
   normalizeNwsObservation,
   parseFdWinds,
@@ -9,7 +10,13 @@ import {
   type RawNwsProduct,
 } from '../domain/normalize';
 import { interpolateWindsAloft } from '../domain/windsAloft';
-import type { CurrentConditions, HourlyPoint, TafForecast, WindsAloftLevel } from '../domain/types';
+import type {
+  CurrentConditions,
+  DailyPoint,
+  HourlyPoint,
+  TafForecast,
+  WindsAloftLevel,
+} from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from './fixtures/observation';
 import { TAF_FIXTURE } from './fixtures/taf';
@@ -90,6 +97,19 @@ export async function fetchGridpoint(
 export async function fetchHourly(lat: number, lon: number): Promise<HourlyPoint[]> {
   if (USE_FIXTURES) return normalizeGridpoint(GRIDPOINT_FIXTURE);
   return normalizeGridpoint(await fetchGridpoint(lat, lon));
+}
+
+/**
+ * Fallback daily outlook aggregated from the NWS gridpoint hourlies (~7 days
+ * of data) — used when Open-Meteo's 10-day daily forecast is unreachable.
+ */
+export async function fetchDailyFromGridpoint(
+  lat: number,
+  lon: number,
+  timeZone: string,
+): Promise<DailyPoint[]> {
+  const grid = await fetchGridpoint(lat, lon);
+  return aggregateDailyFromHourly(normalizeGridpoint(grid, 7 * 24), timeZone);
 }
 
 /**

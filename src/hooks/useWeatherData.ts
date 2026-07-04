@@ -1,5 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { fetchHourly, fetchLatestObservation, fetchTafAny, fetchWindsAloftFd } from '../api/nws';
+import {
+  fetchDailyFromGridpoint,
+  fetchHourly,
+  fetchLatestObservation,
+  fetchTafAny,
+  fetchWindsAloftFd,
+} from '../api/nws';
 import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
@@ -172,10 +178,24 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
 
     const dailyP = fetchDailyForecast(dz.lat, dz.lon)
       .then((daily) => {
-        setSnapshot((prev) => ({ ...prev, daily }));
+        setSnapshot((prev) => ({ ...prev, daily, dailySource: 'open-meteo' }));
         updateSource('daily', okStatus());
       })
-      .catch((e) => markStale('daily', e));
+      .catch(async (e) => {
+        // Open-Meteo unreachable — aggregate the NWS gridpoint hourlies into
+        // a ~7-day outlook instead (same host as the working forecast).
+        try {
+          const daily = await fetchDailyFromGridpoint(dz.lat, dz.lon, SITE.timeZone);
+          if (daily.length > 0) {
+            setSnapshot((prev) => ({ ...prev, daily, dailySource: 'nws-gridpoint' }));
+            updateSource('daily', okStatus());
+            return;
+          }
+        } catch {
+          /* report the original Open-Meteo error below */
+        }
+        markStale('daily', e);
+      });
 
     // Sun is computed locally and never fails.
     setSnapshot((prev) => ({ ...prev, sun: sunTimes(dz.lat, dz.lon, new Date(now)) }));

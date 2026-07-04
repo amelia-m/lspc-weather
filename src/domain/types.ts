@@ -98,11 +98,17 @@ export interface TafForecast {
  *  (Open-Meteo) or the NOAA FD text-product fallback. */
 export type WindsAloftSource = 'open-meteo' | 'nws-fd';
 
+/** Where the daily outlook came from: Open-Meteo (10 days) or the NWS
+ *  gridpoint aggregate fallback (~7 days). */
+export type DailySource = 'open-meteo' | 'nws-gridpoint';
+
 /** Merged, normalized snapshot fed to the advisory engine and the UI. */
 export interface WeatherSnapshot {
   current: CurrentConditions | null;
   hourly: HourlyPoint[];
   daily: DailyPoint[];
+  /** null until the daily outlook has loaded. */
+  dailySource?: DailySource | null;
   windsAloft: WindsAloftLevel[];
   /** null until winds aloft have loaded. */
   windsAloftSource?: WindsAloftSource | null;

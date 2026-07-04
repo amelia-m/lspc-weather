@@ -511,6 +511,75 @@ export interface RawOpenMeteoDaily {
   // wind_speed_unit requested as "kn"
 }
 
+/**
+ * Aggregate an hourly series into one DailyPoint per LOCAL calendar day —
+ * the 10-day-outlook fallback when Open-Meteo is unreachable (the NWS
+ * gridpoint carries ~7 days of hourlies). The weather code is a coarse
+ * derivation: precip probability first, then mean sky cover.
+ */
+export function aggregateDailyFromHourly(hourly: HourlyPoint[], timeZone: string): DailyPoint[] {
+  const dayKey = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const byDay = new Map<string, HourlyPoint[]>();
+  for (const h of hourly) {
+    const key = dayKey.format(h.time);
+    const arr = byDay.get(key);
+    if (arr) arr.push(h);
+    else byDay.set(key, [h]);
+  }
+
+  const max = (vals: (number | null)[]): number | null =>
+    vals.reduce<number | null>((m, v) => (v != null && (m == null || v > m) ? v : m), null);
+  const min = (vals: (number | null)[]): number | null =>
+    vals.reduce<number | null>((m, v) => (v != null && (m == null || v < m) ? v : m), null);
+
+  return (
+    [...byDay.values()]
+      .map((points) => {
+        const skyVals = points.map((p) => p.skyCoverPct).filter((v): v is number => v != null);
+        const skyAvg = skyVals.length
+          ? skyVals.reduce((a, b) => a + b, 0) / skyVals.length
+          : null;
+        const pop = max(points.map((p) => p.precipProbPct));
+        return {
+          date: points[0].time,
+          weatherCode: deriveWeatherCode(skyAvg, pop),
+          tempMaxC: max(points.map((p) => p.tempC)),
+          tempMinC: min(points.map((p) => p.tempC)),
+          windMaxKt: max(points.map((p) => p.windSpeedKt)),
+          gustMaxKt: max(points.map((p) => p.windGustKt)),
+          precipProbMaxPct: pop,
+        };
+      })
+      // The hourly series is padded with all-null points past the end of the
+      // grid data; drop days that carry no values at all.
+      .filter(
+        (d) =>
+          d.weatherCode != null ||
+          d.tempMaxC != null ||
+          d.windMaxKt != null ||
+          d.gustMaxKt != null ||
+          d.precipProbMaxPct != null,
+      )
+  );
+}
+
+/** Coarse WMO-style code from sky cover + precip probability, for the icon
+ *  column only — not a real model weather code. */
+function deriveWeatherCode(skyAvgPct: number | null, precipProbMaxPct: number | null): number | null {
+  if (precipProbMaxPct != null && precipProbMaxPct >= 50) return 61; // rain-ish
+  if (skyAvgPct == null) return null;
+  if (skyAvgPct < 10) return 0;
+  if (skyAvgPct < 30) return 1;
+  if (skyAvgPct < 60) return 2;
+  return 3;
+}
+
 /** Normalize the Open-Meteo daily block into one DailyPoint per day. */
 export function normalizeOpenMeteoDaily(data: RawOpenMeteoDaily): DailyPoint[] {
   const d = data.daily;

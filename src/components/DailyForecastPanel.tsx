@@ -1,4 +1,4 @@
-import type { DailyPoint } from '../domain/types';
+import type { DailyPoint, DailySource } from '../domain/types';
 import { cToF, round, toSpeed, type SpeedUnit } from '../domain/units';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
@@ -9,13 +9,20 @@ import { Panel } from './common/Panel';
  *  morning-of forecast. */
 export function DailyForecastPanel({
   daily,
+  source,
   unit,
 }: {
   daily: DailyPoint[];
+  source: DailySource | null | undefined;
   unit: SpeedUnit;
 }): JSX.Element {
+  const fallback = source === 'nws-gridpoint';
   return (
-    <Panel title="10-day outlook" subtitle="daily planning" sources={[DATA_SOURCES.openMeteo]}>
+    <Panel
+      title="10-day outlook"
+      subtitle={fallback ? 'NWS ~7-day fallback' : 'daily planning'}
+      sources={[fallback ? DATA_SOURCES.nwsForecast : DATA_SOURCES.openMeteo]}
+    >
       {daily.length === 0 ? (
         <p className="muted">No daily forecast available.</p>
       ) : (
@@ -51,6 +58,13 @@ export function DailyForecastPanel({
             </tbody>
           </table>
         </div>
+      )}
+      {fallback && (
+        <p className="muted small">
+          <strong>Fallback source:</strong> Open-Meteo was unreachable, so these days are
+          aggregated from the NWS gridpoint forecast (~7 days instead of 10; the sky icon is
+          derived from cloud cover and precip chance).
+        </p>
       )}
       <p className="muted small">
         Model forecast for the DZ (daily maxima; wind/gust are 10 m surface values). Confidence
