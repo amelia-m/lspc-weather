@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchJson, HttpError, TimeoutError } from '../src/api/http';
-import { fetchGridpoint, fetchTafChain, type ResolvedGridpoint } from '../src/api/nws';
+import { fetchGridpoint, fetchTafChain, fetchWindsAloftFd, type ResolvedGridpoint } from '../src/api/nws';
 import type { RawGridpoint } from '../src/domain/normalize';
 
 /** Minimal Response stand-ins for the global fetch stub. */
@@ -251,5 +251,89 @@ describe('fetchJson timeout', () => {
     expect((err as Error).message).toContain('timed out');
     expect((err as Error).message).toContain('api.open-meteo.com');
     expect(fetchMock).toHaveBeenCalledTimes(2); // timeout is transient → retried
+  });
+});
+
+describe('fetchWindsAloftFd discovery', () => {
+  const FD_OMA = 'FT  3000    6000\nOMA 2118    2426+14\n';
+  const FD_OTHER = 'FT  3000    6000\nBOS 1005    1210+10\n';
+  const TARGETS = [1000, 2000];
+
+  beforeEach(() => vi.stubGlobal('localStorage', makeLocalStorage()));
+
+  it('discovers the bulletin containing the station and caches its wmoid', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('type=FD1')) {
+        return Promise.resolve(
+          jsonRes({
+            '@graph': [
+              { '@id': 'https://x/products/p1', wmoCollectiveId: 'FBUS31' },
+              { '@id': 'https://x/products/p1-older', wmoCollectiveId: 'FBUS31' },
+              { '@id': 'https://x/products/p3', wmoCollectiveId: 'FBUS33' },
+            ],
+          }),
+        );
+      }
+      if (url.endsWith('/products/p1')) {
+        return Promise.resolve(jsonRes({ productText: FD_OTHER, wmoCollectiveId: 'FBUS31' }));
+      }
+      if (url.endsWith('/products/p3')) {
+        return Promise.resolve(jsonRes({ productText: FD_OMA, wmoCollectiveId: 'FBUS33' }));
+      }
+      return Promise.resolve(jsonRes({ '@graph': [] }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const levels = await fetchWindsAloftFd('OMA', 1182, TARGETS);
+    expect(levels).not.toBeNull();
+    expect(levels!).toHaveLength(2);
+    expect(JSON.parse(localStorage.getItem('nws-fd-source')!)).toMatchObject({ wmoid: 'FBUS33' });
+    // The duplicate FBUS31 entry was deduped: list + p1 + p3 = 3 fetches.
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('uses the cached wmoid with a single precise query', async () => {
+    localStorage.setItem('nws-fd-source', JSON.stringify({ type: 'FD', wmoid: 'FBUS33' }));
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('wmoid=FBUS33')) {
+        return Promise.resolve(jsonRes({ '@graph': [{ '@id': 'https://x/products/p3' }] }));
+      }
+      if (url.endsWith('/products/p3')) {
+        return Promise.resolve(jsonRes({ productText: FD_OMA, wmoCollectiveId: 'FBUS33' }));
+      }
+      return Promise.resolve(jsonRes({ '@graph': [] }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const levels = await fetchWindsAloftFd('OMA', 1182, TARGETS);
+    expect(levels).not.toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('drops a stale cache entry and rediscovers', async () => {
+    localStorage.setItem('nws-fd-source', JSON.stringify({ type: 'FD', wmoid: 'FBUS39' }));
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('wmoid=FBUS39')) return Promise.resolve(jsonRes({ '@graph': [] }));
+      if (url.includes('type=FD1')) {
+        return Promise.resolve(
+          jsonRes({ '@graph': [{ '@id': 'https://x/products/p3', wmoCollectiveId: 'FBUS33' }] }),
+        );
+      }
+      if (url.endsWith('/products/p3')) {
+        return Promise.resolve(jsonRes({ productText: FD_OMA, wmoCollectiveId: 'FBUS33' }));
+      }
+      return Promise.resolve(jsonRes({ '@graph': [] }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const levels = await fetchWindsAloftFd('OMA', 1182, TARGETS);
+    expect(levels).not.toBeNull();
+    expect(JSON.parse(localStorage.getItem('nws-fd-source')!)).toMatchObject({ wmoid: 'FBUS33' });
+  });
+
+  it('returns null when no FD type yields the station', async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(jsonRes({ '@graph': [] })));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchWindsAloftFd('OMA', 1182, TARGETS)).resolves.toBeNull();
   });
 });
