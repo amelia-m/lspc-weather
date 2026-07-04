@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { fetchHourly, fetchLatestObservation, fetchTafAny } from '../api/nws';
+import { fetchHourly, fetchLatestObservation, fetchTafAny, fetchWindsAloftFd } from '../api/nws';
 import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
@@ -138,10 +138,30 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
 
     const windsP = fetchWindsAloft(dz.lat, dz.lon, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL, now)
       .then((windsAloft) => {
-        setSnapshot((prev) => ({ ...prev, windsAloft }));
+        setSnapshot((prev) => ({ ...prev, windsAloft, windsAloftSource: 'open-meteo' }));
         updateSource('windsAloft', okStatus());
       })
-      .catch((e) => markStale('windsAloft', e));
+      .catch(async (e) => {
+        // Open-Meteo unreachable (some networks block that host) — fall back
+        // to the NOAA FD winds-aloft product on api.weather.gov. No surface
+        // (0 AGL) target: the bulletin's lowest level is 3,000 ft MSL and
+        // extrapolating it to the ground would overstate surface wind.
+        try {
+          const fd = await fetchWindsAloftFd(
+            SITE.fdWindsStation,
+            dz.elevationFt,
+            WINDS_ALOFT_LEVELS_AGL.filter((a) => a > 0),
+          );
+          if (fd && fd.length > 0) {
+            setSnapshot((prev) => ({ ...prev, windsAloft: fd, windsAloftSource: 'nws-fd' }));
+            updateSource('windsAloft', okStatus());
+            return;
+          }
+        } catch {
+          /* report the original Open-Meteo error below */
+        }
+        markStale('windsAloft', e);
+      });
 
     const tafP = fetchTafAny(SITE.tafStations)
       .then((taf) => {

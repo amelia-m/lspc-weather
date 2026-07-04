@@ -94,12 +94,18 @@ export interface TafForecast {
   validRaw: string | null;
 }
 
+/** Where the winds-aloft levels came from: the pressure-level model
+ *  (Open-Meteo) or the NOAA FD text-product fallback. */
+export type WindsAloftSource = 'open-meteo' | 'nws-fd';
+
 /** Merged, normalized snapshot fed to the advisory engine and the UI. */
 export interface WeatherSnapshot {
   current: CurrentConditions | null;
   hourly: HourlyPoint[];
   daily: DailyPoint[];
   windsAloft: WindsAloftLevel[];
+  /** null until winds aloft have loaded. */
+  windsAloftSource?: WindsAloftSource | null;
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
   taf: TafForecast | null;

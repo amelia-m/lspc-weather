@@ -2,12 +2,14 @@ import { fetchJson, HttpError, NWS_BASE, USE_FIXTURES } from './http';
 import {
   normalizeGridpoint,
   normalizeNwsObservation,
+  parseFdWinds,
   parseTaf,
   type RawGridpoint,
   type RawNwsObservation,
   type RawNwsProduct,
 } from '../domain/normalize';
-import type { CurrentConditions, HourlyPoint, TafForecast } from '../domain/types';
+import { interpolateWindsAloft } from '../domain/windsAloft';
+import type { CurrentConditions, HourlyPoint, TafForecast, WindsAloftLevel } from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from './fixtures/observation';
 import { TAF_FIXTURE } from './fixtures/taf';
@@ -171,6 +173,47 @@ export async function fetchTafAny(stations: readonly TafStationRef[]): Promise<T
     return parseTaf(TAF_FIXTURE.productText ?? '', stations[0].id, TAF_FIXTURE.issuanceTime);
   }
   return fetchTafChain(stations);
+}
+
+/** NOAA winds-aloft (FD) bulletins covering the north-central US, in
+ *  preference order: 6-hour first, then the longer-range issuances. The
+ *  type/location codes come from the AWIPS PILs (FD1US3 = FBUS33 etc.);
+ *  unknown codes just fall through. */
+const FD_PRODUCT_CANDIDATES = [
+  { type: 'FD1', location: 'US3' },
+  { type: 'FD3', location: 'US3' },
+  { type: 'FD5', location: 'US3' },
+];
+
+/**
+ * Fallback winds aloft from the NOAA FD text product via api.weather.gov —
+ * used when Open-Meteo is unreachable (some networks block that host). The
+ * bulletin forecasts point winds for OMA (~30 mi from the DZ) at 3/6/9/12k+
+ * ft MSL; sparser than the pressure-level model but the same data jump
+ * pilots brief from. Returns null when no candidate product yields winds.
+ */
+export async function fetchWindsAloftFd(
+  station: string,
+  fieldElevationFt: number,
+  targetAltitudesFtAgl: readonly number[],
+): Promise<WindsAloftLevel[] | null> {
+  for (const cand of FD_PRODUCT_CANDIDATES) {
+    try {
+      const list = await fetchJson<{ '@graph'?: Array<{ '@id': string }> }>(
+        `${NWS_BASE}/products/types/${cand.type}/locations/${cand.location}`,
+      );
+      const latest = list['@graph']?.[0];
+      if (!latest) continue;
+      const product = await fetchJson<RawNwsProduct>(latest['@id']);
+      const samples = parseFdWinds(product.productText ?? '', station);
+      if (samples && samples.length > 0) {
+        return interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl);
+      }
+    } catch {
+      // Try the next candidate; the caller keeps the original error if all fail.
+    }
+  }
+  return null;
 }
 
 function safeLocalGet(key: string): string | null {

@@ -6,6 +6,7 @@ import {
   normalizeMetar,
   normalizeNwsObservation,
   normalizeOpenMeteoDaily,
+  parseFdWinds,
   parseTaf,
   parseValidTime,
   toSkyCover,
@@ -213,5 +214,50 @@ describe('parseTaf body anchoring', () => {
     // Starts at the body (with its TAF AMD prefix), not the comms header.
     expect(taf!.raw.startsWith('TAF AMD KOFF 022000Z')).toBe(true);
     expect(taf!.validRaw).toBe('0220/0324');
+  });
+});
+
+describe('parseFdWinds', () => {
+  const FD = `000
+FBUS33 KWNO 040200
+FD1US3
+DATA BASED ON 040000Z
+VALID 040600Z   FOR USE 0500-0900Z. TEMPS NEG ABV 24000
+
+FT  3000    6000    9000   12000   18000   24000  30000  34000  39000
+DEN         2426+14 2431+08 2536+03 2648-09 2762-21 269536 259545 249256
+OMA 2118    2426+14 2431+08 2536+03 2648-09 7762-21 269536 259545 249256
+`;
+
+  it('decodes direction, speed, and temps for the station row', () => {
+    const s = parseFdWinds(FD, 'OMA')!;
+    expect(s).not.toBeNull();
+    expect(s[0]).toEqual({ heightFtMsl: 3000, speedKt: 18, directionDeg: 210, tempC: null });
+    expect(s[1]).toEqual({ heightFtMsl: 6000, speedKt: 26, directionDeg: 240, tempC: 14 });
+    expect(s[4]).toEqual({ heightFtMsl: 18000, speedKt: 48, directionDeg: 260, tempC: -9 });
+  });
+
+  it('decodes the over-100-kt and implied-negative-temp encodings', () => {
+    const s = parseFdWinds(FD, 'OMA')!;
+    // 7762-21 at 24000: dd 77 -> 270 deg, speed 62+100
+    expect(s[5]).toEqual({ heightFtMsl: 24000, speedKt: 162, directionDeg: 270, tempC: -21 });
+    // 269536 at 30000: unsigned temp above 24k is negative
+    expect(s[6]).toEqual({ heightFtMsl: 30000, speedKt: 95, directionDeg: 260, tempC: -36 });
+  });
+
+  it('handles a blank low-level column via fixed-width slicing', () => {
+    const s = parseFdWinds(FD, 'DEN')!;
+    expect(s[0].heightFtMsl).toBe(6000); // 3000 column blank for DEN
+    expect(s).toHaveLength(8);
+  });
+
+  it('treats 9900 as light and variable (calm)', () => {
+    const calm = parseFdWinds('FT  3000\nOMA 9900\n', 'OMA')!;
+    expect(calm[0].speedKt).toBe(0);
+  });
+
+  it('returns null when the station or header is missing', () => {
+    expect(parseFdWinds(FD, 'LNK')).toBeNull();
+    expect(parseFdWinds('no header here', 'OMA')).toBeNull();
   });
 });
