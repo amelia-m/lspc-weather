@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aggregateDailyFromHourly,
   altimeterFromRaw,
   durationToHours,
   normalizeGridpoint,
@@ -259,5 +260,70 @@ OMA 2118    2426+14 2431+08 2536+03 2648-09 7762-21 269536 259545 249256
   it('returns null when the station or header is missing', () => {
     expect(parseFdWinds(FD, 'LNK')).toBeNull();
     expect(parseFdWinds('no header here', 'OMA')).toBeNull();
+  });
+});
+
+describe('aggregateDailyFromHourly', () => {
+  const CHI = 'America/Chicago';
+  const hour = (iso: string, over: Record<string, number | null> = {}) => ({
+    time: Date.parse(iso),
+    skyCoverPct: 20,
+    ceilingFtAgl: null,
+    visibilitySm: null,
+    windSpeedKt: 10,
+    windGustKt: 18,
+    windDirectionDeg: 180,
+    precipProbPct: 10,
+    tempC: 20,
+    ...over,
+  });
+
+  it('groups by LOCAL day across the UTC boundary', () => {
+    // 04:00Z Jul 3 = 11 PM Jul 2 in Chicago (CDT); 06:00Z = 1 AM Jul 3.
+    const days = aggregateDailyFromHourly(
+      [hour('2026-07-03T04:00:00Z'), hour('2026-07-03T06:00:00Z')],
+      CHI,
+    );
+    expect(days).toHaveLength(2);
+  });
+
+  it('aggregates maxima/minima and derives a coarse weather code', () => {
+    const days = aggregateDailyFromHourly(
+      [
+        hour('2026-07-03T18:00:00Z', { tempC: 18, windSpeedKt: 8, windGustKt: null }),
+        hour('2026-07-03T19:00:00Z', { tempC: 31, windSpeedKt: 16, windGustKt: 24, precipProbPct: 55 }),
+        hour('2026-07-03T20:00:00Z', { tempC: 25, windSpeedKt: 12, windGustKt: 20 }),
+      ],
+      CHI,
+    );
+    expect(days).toHaveLength(1);
+    const d = days[0];
+    expect(d.tempMaxC).toBe(31);
+    expect(d.tempMinC).toBe(18);
+    expect(d.windMaxKt).toBe(16);
+    expect(d.gustMaxKt).toBe(24);
+    expect(d.precipProbMaxPct).toBe(55);
+    expect(d.weatherCode).toBe(61); // pop >= 50 → rain-ish
+  });
+
+  it('derives sky-cover codes when precip is low and handles missing data', () => {
+    const clear = aggregateDailyFromHourly([hour('2026-07-03T18:00:00Z', { skyCoverPct: 5 })], CHI);
+    expect(clear[0].weatherCode).toBe(0);
+    const ovc = aggregateDailyFromHourly([hour('2026-07-03T18:00:00Z', { skyCoverPct: 95 })], CHI);
+    expect(ovc[0].weatherCode).toBe(3);
+    // A day with no values at all (the padded tail of the hourly series) is dropped.
+    const empty = aggregateDailyFromHourly(
+      [
+        hour('2026-07-03T18:00:00Z', {
+          skyCoverPct: null,
+          precipProbPct: null,
+          tempC: null,
+          windSpeedKt: null,
+          windGustKt: null,
+        }),
+      ],
+      CHI,
+    );
+    expect(empty).toHaveLength(0);
   });
 });
