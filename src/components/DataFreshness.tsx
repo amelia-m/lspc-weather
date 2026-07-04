@@ -28,12 +28,13 @@ export function DataFreshness({
   lastUpdated: number | null;
   onRefresh: () => void;
 }): JSX.Element {
+  const refreshing = Object.values(status).some((s) => s.pending);
   return (
     <section className="panel freshness">
       <header className="panel-head">
         <h2>Data health</h2>
-        <button className="refresh-btn" onClick={onRefresh}>
-          ↻ Refresh
+        <button className="refresh-btn" onClick={onRefresh} disabled={refreshing}>
+          {refreshing ? '↻ Refreshing…' : '↻ Refresh'}
         </button>
       </header>
       <div className="panel-body">
@@ -52,11 +53,13 @@ export function DataFreshness({
                 </a>
               </span>
               <span className="source-meta">
-                {status[k].error
-                  ? `error: ${status[k].error}`
-                  : status[k].stale
-                    ? 'stale'
-                    : fmtAgo(status[k].fetchedAt)}
+                {status[k].pending
+                  ? 'fetching…'
+                  : status[k].error
+                    ? `error: ${status[k].error}`
+                    : status[k].stale
+                      ? 'stale'
+                      : fmtAgo(status[k].fetchedAt)}
               </span>
             </li>
           ))}
@@ -68,6 +71,7 @@ export function DataFreshness({
 }
 
 function statusClass(s: SourceStatus): string {
+  if (s.pending) return 'source pending';
   if (s.error) return 'source error';
   if (s.stale) return 'source stale';
   if (s.ok) return 'source ok';

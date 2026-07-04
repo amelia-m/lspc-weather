@@ -138,4 +138,6 @@ export interface SourceStatus {
   fetchedAt: number | null;
   stale: boolean;
   error: string | null;
+  /** True while a fetch for this source is in flight. */
+  pending: boolean;
 }
