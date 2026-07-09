@@ -172,7 +172,19 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
     const tafP = fetchTafAny(SITE.tafStations)
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
-        updateSource('taf', okStatus());
+        if (taf) {
+          updateSource('taf', okStatus());
+        } else {
+          // The whole chain came back product-less: an NWS feed gap, not a
+          // success. Mark it so Data health shows the gap and the quick
+          // retry / next poll keeps trying.
+          markStale(
+            'taf',
+            new Error(
+              `NWS product feed listed no TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`,
+            ),
+          );
+        }
       })
       .catch((e) => markStale('taf', e));
 

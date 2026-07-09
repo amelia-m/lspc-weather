@@ -40,8 +40,10 @@ export function TafPanel({
       {!taf ? (
         <p className="muted">
           {status.error
-            ? 'TAF fetch failed — see Data health below.'
-            : `No TAF available from ${tafStations.map((s) => s.id).join(', ')}.`}
+            ? `TAF unavailable — ${status.error}. Retrying automatically; the raw TAF is on the AWC link below.`
+            : status.pending
+              ? 'Fetching TAF…'
+              : `No TAF available from ${tafStations.map((s) => s.id).join(', ')}.`}
         </p>
       ) : (
         <>

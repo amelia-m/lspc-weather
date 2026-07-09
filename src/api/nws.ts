@@ -133,21 +133,43 @@ export async function fetchLatestObservation(
 /**
  * Fetch the latest TAF for a station via the NWS text-products API
  * (CORS-friendly, unlike aviationweather.gov). Two steps: list the latest TAF
- * product for the location code, then fetch that product's text. Returns null
- * when the feed has no product for the location — notably military fields
- * like KOFF, whose USAF-issued TAFs are not always carried on this feed.
+ * product for the location code, then fetch that product's text. The products
+ * index is flaky, so two equivalent query forms are tried — the typed-path
+ * one, then the query-param one. Returns null when neither lists a product —
+ * notably military fields like KOFF, whose USAF-issued TAFs are not always
+ * carried on this feed.
  */
 export async function fetchTaf(
   station: string,
   productLocation: string,
 ): Promise<TafForecast | null> {
-  const list = await fetchJson<{ '@graph'?: Array<{ '@id': string; issuanceTime?: string }> }>(
-    `${NWS_BASE}/products/types/TAF/locations/${encodeURIComponent(productLocation)}`,
-  );
-  const latest = list['@graph']?.[0];
-  if (!latest) return null;
-  const product = await fetchJson<RawNwsProduct>(latest['@id']);
-  return parseTaf(product.productText ?? '', station, product.issuanceTime ?? latest.issuanceTime);
+  const loc = encodeURIComponent(productLocation);
+  const listUrls = [
+    `${NWS_BASE}/products/types/TAF/locations/${loc}`,
+    `${NWS_BASE}/products?type=TAF&location=${loc}&limit=1`,
+  ];
+  let lastErr: unknown = null;
+  for (const url of listUrls) {
+    try {
+      const list = await fetchJson<{
+        '@graph'?: Array<{ '@id': string; issuanceTime?: string }>;
+      }>(url);
+      const latest = list['@graph']?.[0];
+      if (!latest) continue;
+      const product = await fetchJson<RawNwsProduct>(latest['@id']);
+      return parseTaf(
+        product.productText ?? '',
+        station,
+        product.issuanceTime ?? latest.issuanceTime,
+      );
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  // Both list forms empty → genuinely no product. Any error with no success
+  // propagates so the chain can distinguish "gap in the feed" from "broken".
+  if (lastErr) throw lastErr;
+  return null;
 }
 
 export interface TafStationRef {
@@ -164,26 +186,25 @@ interface TafChainDeps {
  * Try each TAF station in preference order and return the first available
  * TAF (its `station` field says which one the card is showing). A station
  * yielding no product is normal (see fetchTaf) and falls through; a fetch
- * error also falls through so one bad request doesn't blank the card — but
- * if EVERY station errored, the last error propagates so the source reads
- * as failed rather than "no TAF".
+ * error also falls through so one bad request doesn't blank the card. If
+ * nothing succeeded and ANY station errored, the last error propagates —
+ * "KOFF has no product (as usual) and the rest failed" must read as a
+ * failure, not as "no TAF anywhere".
  */
 export async function fetchTafChain(
   stations: readonly TafStationRef[],
   deps: TafChainDeps = { fetchOne: fetchTaf },
 ): Promise<TafForecast | null> {
-  let errors = 0;
-  let lastErr: unknown;
+  let lastErr: unknown = null;
   for (const s of stations) {
     try {
       const taf = await deps.fetchOne(s.id, s.nwsProductLocation);
       if (taf) return taf;
     } catch (err) {
-      errors++;
       lastErr = err;
     }
   }
-  if (errors > 0 && errors === stations.length) throw lastErr;
+  if (lastErr) throw lastErr;
   return null;
 }
 
