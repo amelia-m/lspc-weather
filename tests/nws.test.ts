@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchJson, HttpError, TimeoutError } from '../src/api/http';
-import { fetchGridpoint, fetchTafChain, fetchWindsAloftFd, type ResolvedGridpoint } from '../src/api/nws';
+import { fetchGridpoint, fetchTaf, fetchTafChain, fetchWindsAloftFd, type ResolvedGridpoint } from '../src/api/nws';
 import type { RawGridpoint } from '../src/domain/normalize';
 
 /** Minimal Response stand-ins for the global fetch stub. */
@@ -213,11 +213,18 @@ describe('fetchTafChain', () => {
     expect(out?.station).toBe('KOMA');
   });
 
-  it('returns null when no station has a product (some erroring is fine)', async () => {
+  it('throws when nothing succeeded and any station errored', async () => {
+    // KOFF having no product is normal; if the civilian stations then error,
+    // the result must read as a failure, not "no TAF anywhere".
     const fetchOne = vi.fn(async (id: string) => {
       if (id === 'KOMA') throw new HttpError(500, 'x');
       return null;
     });
+    await expect(fetchTafChain(STATIONS, { fetchOne })).rejects.toBeInstanceOf(HttpError);
+  });
+
+  it('returns null only when every station is genuinely product-less', async () => {
+    const fetchOne = vi.fn(async () => null);
     await expect(fetchTafChain(STATIONS, { fetchOne })).resolves.toBeNull();
   });
 
@@ -335,5 +342,40 @@ describe('fetchWindsAloftFd discovery', () => {
     const fetchMock = vi.fn(() => Promise.resolve(jsonRes({ '@graph': [] })));
     vi.stubGlobal('fetch', fetchMock);
     await expect(fetchWindsAloftFd('OMA', 1182, TARGETS)).resolves.toBeNull();
+  });
+});
+
+describe('fetchTaf query forms', () => {
+  const TAF_TEXT = 'TAF\nKOMA 022320Z 0300/0324 18010KT P6SM SCT050=';
+
+  it('falls back to the query-param product list when the typed path is empty', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/products/types/TAF/locations/OMA')) {
+        return Promise.resolve(jsonRes({ '@graph': [] }));
+      }
+      if (url.includes('/products?type=TAF&location=OMA')) {
+        return Promise.resolve(jsonRes({ '@graph': [{ '@id': 'https://x/products/taf-oma' }] }));
+      }
+      if (url.endsWith('/products/taf-oma')) {
+        return Promise.resolve(jsonRes({ productText: TAF_TEXT, issuanceTime: '2026-07-03T00:00:00Z' }));
+      }
+      return Promise.resolve(jsonRes({ '@graph': [] }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const taf = await fetchTaf('KOMA', 'OMA');
+    expect(taf?.station).toBe('KOMA');
+    expect(taf?.raw).toContain('KOMA 022320Z');
+  });
+
+  it('propagates an error when a list form errors and nothing succeeds', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/products/types/TAF/locations/OMA')) {
+        return Promise.resolve(errRes(503));
+      }
+      return Promise.resolve(jsonRes({ '@graph': [] }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchTaf('KOMA', 'OMA')).rejects.toBeInstanceOf(HttpError);
   });
 });
