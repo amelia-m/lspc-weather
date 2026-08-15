@@ -48,6 +48,8 @@ export interface HourlyPoint {
   precipProbPct: number | null;
   /** Forecast thunderstorm probability, percent (NWS gridpoint). */
   thunderProbPct: number | null;
+  /** Forecast precipitation amount for the period, inches (NWS QPF). */
+  precipAmountIn: number | null;
   tempC: number | null;
 }
 

@@ -23,6 +23,9 @@ export function PrecipPanel({
     }, null);
   const maxNext6 = maxOf((h) => h.precipProbPct);
   const thunderNext6 = maxOf((h) => h.thunderProbPct);
+  // QPF is a per-period accumulation the expander repeats across the period's
+  // hours, so the max over the window is the largest forecast period total.
+  const qpfNext6 = maxOf((h) => h.precipAmountIn);
   const wx = current?.wxString?.trim();
 
   return (
@@ -39,6 +42,12 @@ export function PrecipPanel({
         <span className="ceil-label">Thunderstorm · max next 6 h</span>
         <span className={`ceil-value${thunderNext6 != null && thunderNext6 >= 30 ? ' aloft-strong' : ''}`}>
           {thunderNext6 != null ? `${round(thunderNext6)}%` : '—'}
+        </span>
+      </div>
+      <div className="ceil-now">
+        <span className="ceil-label">Rain amount · fcst period</span>
+        <span className="ceil-value">
+          {qpfNext6 != null ? `${qpfNext6 < 0.01 ? '0' : qpfNext6.toFixed(2)} in` : '—'}
         </span>
       </div>
       {wx && (

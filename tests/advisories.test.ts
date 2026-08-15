@@ -18,6 +18,7 @@ const hourAhead = (hoursAhead: number, over: Partial<HourlyPoint> = {}): HourlyP
   windDirectionDeg: null,
   precipProbPct: null,
   thunderProbPct: null,
+  precipAmountIn: null,
   tempC: null,
   ...over,
 });

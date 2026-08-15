@@ -326,6 +326,7 @@ export interface RawGridpoint {
     windDirection?: GridProp;
     probabilityOfPrecipitation?: GridProp;
     probabilityOfThunder?: GridProp;
+    quantitativePrecipitation?: GridProp;
     temperature?: GridProp;
     [k: string]: unknown;
   };
@@ -344,9 +345,13 @@ export function normalizeGridpoint(gp: RawGridpoint, maxHours = 168): HourlyPoin
   const dir = expand(p.windDirection);
   const pop = expand(p.probabilityOfPrecipitation);
   const tstm = expand(p.probabilityOfThunder);
+  // QPF: gridpoint reports mm (or kg m⁻², numerically equal) → inches.
+  const qpf = expand(p.quantitativePrecipitation, (v, uom) =>
+    uom && /inch|\bin\b/i.test(uom) ? v : v / 25.4,
+  );
   const temp = expand(p.temperature); // °C
 
-  const all = [sky, ceil, vis, spd, gst, dir, pop, tstm, temp];
+  const all = [sky, ceil, vis, spd, gst, dir, pop, tstm, qpf, temp];
   const start = earliestHour(all);
   const end = latestHour(all);
   if (start == null || end == null) return [];
@@ -366,6 +371,7 @@ export function normalizeGridpoint(gp: RawGridpoint, maxHours = 168): HourlyPoin
       windDirectionDeg: dir.get(t) ?? null,
       precipProbPct: pop.get(t) ?? null,
       thunderProbPct: tstm.get(t) ?? null,
+      precipAmountIn: qpf.get(t) ?? null,
       tempC: temp.get(t) ?? null,
     });
   }

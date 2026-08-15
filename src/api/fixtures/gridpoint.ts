@@ -54,6 +54,13 @@ export const GRIDPOINT_FIXTURE: RawGridpoint = {
         { validTime: interval(6, 6), value: 25 },
       ],
     },
+    quantitativePrecipitation: {
+      uom: 'wmoUnit:mm',
+      values: [
+        { validTime: interval(0, 6), value: 0 },
+        { validTime: interval(6, 6), value: 6.35 }, // 0.25 in
+      ],
+    },
     temperature: {
       uom: 'wmoUnit:degC',
       values: [
