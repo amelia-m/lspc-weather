@@ -82,6 +82,9 @@ export interface DensityAltitudeResult {
   pressureAltitudeFt: number;
   isaDeviationC: number;
   fieldElevationFt: number;
+  /** True when a dew point was available and the moisture (virtual-temp)
+   *  correction was applied — moist air is less dense, raising DA. */
+  humidityCorrected: boolean;
 }
 
 export interface SunTimes {

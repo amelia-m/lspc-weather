@@ -37,8 +37,11 @@ export function DensityAltitudePanel({
             </dd>
           </dl>
           <p className="muted small">
-            Higher DA = slower climb for a loaded jump plane. Source:{' '}
-            <SourceLink citation={CITATIONS.faaDensityAltitude} />
+            Higher DA = slower climb for a loaded jump plane.{' '}
+            {da.humidityCorrected
+              ? 'Humidity-corrected (virtual temperature).'
+              : 'Dry-air estimate (no dew point available).'}{' '}
+            Source: <SourceLink citation={CITATIONS.faaDensityAltitude} />
           </p>
         </>
       )}
