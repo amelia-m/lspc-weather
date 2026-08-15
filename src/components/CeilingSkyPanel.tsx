@@ -71,15 +71,18 @@ export function CeilingSkyPanel({
                   data-cover={coverClass(h.skyCoverPct)}
                 />
               </div>
-              <span className="sky-ceil">
-                {h.ceilingFtAgl != null ? `${Math.round(h.ceilingFtAgl / 100) / 10}k` : '—'}
+              <span className="sky-ceil" title={h.ceilingFtAgl != null ? undefined : 'No ceiling (no broken/overcast layer)'}>
+                {h.ceilingFtAgl != null ? `${Math.round(h.ceilingFtAgl / 100) / 10}k` : 'none'}
               </span>
               <span className="sky-time">{fmtTime(h.time)}</span>
             </div>
           ))}
         </div>
       )}
-      <p className="muted small">Bar height = sky cover %. Label = ceiling (thousands ft AGL).</p>
+      <p className="muted small">
+        Bar height = sky cover %. Label = ceiling (thousands ft AGL); “none” = no broken/overcast
+        layer, so no ceiling.
+      </p>
       <p className="muted small">
         Cross-check against the{' '}
         <a href={DATA_SOURCES.usairnet.url} target="_blank" rel="noopener noreferrer">
