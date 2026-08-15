@@ -202,6 +202,12 @@ export default function App(): JSX.Element {
 
       <AdvisoryPanel advisories={advisories} />
 
+      {/* Ordered by a jumper's decision flow — now (current/wind/sky/flight
+          category), then skydiver-specific (winds aloft/drift), then planning
+          (hourly/outlook/precip), then secondary (DA/daylight) and reference
+          (radar/TAF). Order matters most on mobile, where the grid is a single
+          linear column. Six cards precede the span-2 outlook so it packs onto a
+          fresh row at both 2- and 3-column widths. */}
       <div className="grid">
         <MetarPanel current={snapshot.current} unit={unit} />
         <SurfaceWindPanel
@@ -210,6 +216,7 @@ export default function App(): JSX.Element {
           label={profileLabel(profile)}
           unit={unit}
         />
+        <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <WindsAloftPanel
           levels={snapshot.windsAloft}
           source={snapshot.windsAloftSource}
@@ -223,12 +230,11 @@ export default function App(): JSX.Element {
           hourly={snapshot.hourly}
           unit={unit}
         />
-        <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
-        <RadarPanel />
-        <TafPanel taf={snapshot.taf} status={status.taf} />
         <DensityAltitudePanel da={snapshot.densityAltitude} />
         <SunPanel sun={snapshot.sun} />
+        <RadarPanel />
+        <TafPanel taf={snapshot.taf} status={status.taf} />
       </div>
 
       <DataFreshness status={status} lastUpdated={lastUpdated} onRefresh={refresh} />
