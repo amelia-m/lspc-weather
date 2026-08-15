@@ -26,8 +26,12 @@ export function WindsAloftPanel({
   const [expanded, setExpanded] = useState(false);
   const fallback = source === 'nws-fd';
   const collapsedLevels = levels.filter((l) => COLLAPSED_ALTITUDES_FT.has(l.altitudeFtAgl));
-  const shown = expanded ? levels : collapsedLevels;
-  const toggleable = levels.length > collapsedLevels.length;
+  // The key set assumes the whole-thousand grid. If the level altitudes ever
+  // stop intersecting it, don't hide every row behind a collapse — show all and
+  // drop the toggle. Only collapse when it actually thins a non-empty subset.
+  const canCollapse = collapsedLevels.length > 0 && collapsedLevels.length < levels.length;
+  const shown = expanded || !canCollapse ? levels : collapsedLevels;
+  const toggleable = canCollapse;
   return (
     <Panel
       title="Winds aloft"

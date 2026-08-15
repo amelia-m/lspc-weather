@@ -56,8 +56,11 @@ export function DriftPanel({
   const setExitSafe = (v: number): void => {
     setExit(v);
     if (deployFt >= v) {
+      // Highest deploy option still below the new exit. If none exists (only
+      // possible if exit's floor is ever dropped below deploy's), leave deploy
+      // as-is rather than forcing a value at or above exit.
       const valid = DEPLOY_OPTIONS.filter((a) => a < v);
-      setDeploy(valid.length ? valid[valid.length - 1] : DEPLOY_OPTIONS[0]);
+      if (valid.length) setDeploy(valid[valid.length - 1]);
     }
   };
 
