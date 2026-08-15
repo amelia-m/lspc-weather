@@ -131,8 +131,8 @@ export function evaluateAdvisories(
         metric: 'Flight category',
         value: `${category} (${CATEGORY_LABEL[category]})`,
         guidance:
-          'FAA flight category from ceiling and visibility. Below VFR: jump ops require VFR flight conditions and the 14 CFR 105.17 cloud-clearance minimums; the jump pilot needs VFR to operate.',
-        citation: CITATIONS.far91155,
+          'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility. Below VFR: jumps require VFR conditions and the 14 CFR 105.17 cloud-clearance minimums, and the pilot needs the basic VFR weather minimums of 14 CFR 91.155 to operate.',
+        citation: CITATIONS.aimFlightCategory,
       });
     }
 

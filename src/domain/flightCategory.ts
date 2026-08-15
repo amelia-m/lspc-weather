@@ -1,6 +1,6 @@
 /** FAA flight category (VFR / MVFR / IFR / LIFR) from ceiling and visibility —
  *  the classification usairnet color-codes and pilots brief from. Pure and
- *  unit-tested. This is a factual weather category (14 CFR 91.155 / AIM), NOT a
+ *  unit-tested. This is a factual weather category (FAA AIM 7-1-7), NOT a
  *  jump go/no-go verdict; the UI surfaces it and cites the source. */
 
 export type FlightCategory = 'VFR' | 'MVFR' | 'IFR' | 'LIFR';
