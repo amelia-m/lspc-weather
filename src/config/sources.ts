@@ -30,8 +30,8 @@ export const DATA_SOURCES = {
     label: 'Winds Aloft · Mark Schulze',
     url: 'https://www.markschulze.net/winds/',
   },
-  /** usairnet aviation forecast for KPMV — the page the club traditionally
-   *  checked. Presents the same NWS forecast data; cross-reference only. */
+  /** usairnet aviation forecast for KPMV — a page many jumpers use. Presents
+   *  the same NWS forecast data; cross-reference only. */
   usairnet: {
     label: 'usairnet · KPMV',
     url: `https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=${SITE.metarStation.id}`,

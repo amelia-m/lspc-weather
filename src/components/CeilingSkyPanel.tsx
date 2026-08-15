@@ -6,8 +6,8 @@ import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { fmtTime } from './format';
 
-/** Current ceiling + an hourly sky-cover / ceiling timeline (the usairnet
- *  cloud-forecast replacement), built from NWS gridpoint data. */
+/** Current ceiling + an hourly sky-cover / ceiling timeline (mirrors the
+ *  usairnet cloud forecast), built from NWS gridpoint data. */
 export function CeilingSkyPanel({
   current,
   hourly,
@@ -85,8 +85,9 @@ export function CeilingSkyPanel({
         <a href={DATA_SOURCES.usairnet.url} target="_blank" rel="noopener noreferrer">
           usairnet KPMV aviation forecast
         </a>{' '}
-        — the page the club traditionally used. It presents the same NWS forecast data; this card
-        pulls it gridded to the DZ instead of the KPMV station page.
+        — a page many jumpers use. It presents the same NWS forecast data; this card pulls it
+        gridded to the DZ instead of the KPMV station page. This dashboard gathers a lot of sources
+        in one place; it isn&rsquo;t a replacement for the tools you already check.
       </p>
     </Panel>
   );
