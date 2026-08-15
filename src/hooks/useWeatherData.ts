@@ -11,6 +11,7 @@ import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
 import type { Advisory, SourceKey, SourceStatus, WeatherSnapshot } from '../domain/types';
+import type { SpeedUnit } from '../domain/units';
 import type { Thresholds } from '../config/thresholds';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
 import { useNow } from './useNow';
@@ -55,7 +56,7 @@ const EMPTY_SNAPSHOT: WeatherSnapshot = {
   taf: null,
 };
 
-export function useWeatherData(thresholds: Thresholds): WeatherData {
+export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): WeatherData {
   const [snapshot, setSnapshot] = useState<WeatherSnapshot>(EMPTY_SNAPSHOT);
   const [status, setStatus] = useState<Record<SourceKey, SourceStatus>>({
     metar: idleStatus(),
@@ -231,8 +232,8 @@ export function useWeatherData(thresholds: Thresholds): WeatherData {
   const now = useNow(60_000);
 
   const advisories = useMemo(
-    () => evaluateAdvisories(snapshot, thresholds, now),
-    [snapshot, thresholds, now],
+    () => evaluateAdvisories(snapshot, thresholds, now, unit),
+    [snapshot, thresholds, now, unit],
   );
 
   const decoratedStatus = useMemo(() => withStaleness(status), [status]);

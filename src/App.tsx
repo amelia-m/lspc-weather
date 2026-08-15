@@ -135,7 +135,7 @@ export default function App(): JSX.Element {
       return out;
     });
 
-  const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds);
+  const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds, unit);
 
   return (
     <div className="app">
