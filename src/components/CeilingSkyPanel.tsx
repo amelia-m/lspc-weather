@@ -1,7 +1,9 @@
 import type { CurrentConditions, HourlyPoint } from '../domain/types';
 import { round } from '../domain/units';
+import { flightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
+import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { fmtTime } from './format';
 
 /** Current ceiling + an hourly sky-cover / ceiling timeline (the usairnet
@@ -15,6 +17,7 @@ export function CeilingSkyPanel({
 }): JSX.Element {
   const now = Date.now();
   const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
+  const category = current ? flightCategory(current.ceilingFtAgl, current.visibilitySm) : null;
 
   return (
     <Panel
@@ -22,6 +25,12 @@ export function CeilingSkyPanel({
       subtitle="now + next hours"
       sources={[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast, DATA_SOURCES.usairnet]}
     >
+      <div className="ceil-now">
+        <span className="ceil-label">Flight category</span>
+        <span className="ceil-value">
+          {category ? <FlightCategoryPill category={category} /> : '—'}
+        </span>
+      </div>
       <div className="ceil-now">
         <span className="ceil-label">Ceiling</span>
         <span className="ceil-value">
@@ -32,6 +41,12 @@ export function CeilingSkyPanel({
               : '—'}
         </span>
       </div>
+      {category != null && category !== 'VFR' && (
+        <p className="muted small">
+          {CATEGORY_LABEL[category]}: reduced ceiling/visibility. Jumps still require VFR flight
+          conditions and the 14 CFR 105.17 cloud-clearance minimums.
+        </p>
+      )}
       {upcoming.length === 0 ? (
         <p className="muted">No hourly forecast available.</p>
       ) : (

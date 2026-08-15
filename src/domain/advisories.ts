@@ -1,6 +1,7 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
 import { compass, ktToMph, round } from './units';
+import { flightCategory, CATEGORY_LABEL } from './flightCategory';
 
 /**
  * Turn a weather snapshot into a list of ADVISORIES — conditions worth noting,
@@ -108,6 +109,20 @@ export function evaluateAdvisories(
           citation: CITATIONS.far10517,
         });
       }
+    }
+
+    // --- Flight category (FAA VFR/MVFR/IFR/LIFR from ceiling + visibility) ---
+    const category = flightCategory(current.ceilingFtAgl, current.visibilitySm);
+    if (category && category !== 'VFR') {
+      out.push({
+        id: 'flight-category',
+        level: category === 'MVFR' ? 'watch' : 'caution',
+        metric: 'Flight category',
+        value: `${category} (${CATEGORY_LABEL[category]})`,
+        guidance:
+          'FAA flight category from ceiling and visibility. Below VFR: jump ops require VFR flight conditions and the 14 CFR 105.17 cloud-clearance minimums; the jump pilot needs VFR to operate.',
+        citation: CITATIONS.far91155,
+      });
     }
 
     // --- Overcast (no gaps to jump through) ---

@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import type { DailyPoint, DailySource, HourlyPoint } from '../domain/types';
 import { compass, cToF, round, toSpeed, type SpeedUnit } from '../domain/units';
+import { flightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { HourlyChart } from './common/HourlyChart';
+import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { fmtTime } from './format';
 
 /** 10-day outlook: daily sky, temps, wind/gust maxima, and precip chance.
@@ -170,6 +172,7 @@ function DayDetail({
               <thead>
                 <tr>
                   <th>Time</th>
+                  <th>Flight</th>
                   <th>Wind ({unit})</th>
                   <th>Sky</th>
                   <th>Temp</th>
@@ -177,15 +180,19 @@ function DayDetail({
                 </tr>
               </thead>
               <tbody>
-                {points.map((h) => (
-                  <tr key={h.time}>
-                    <td>{fmtTime(h.time)}</td>
-                    <td className={windClass(h.windGustKt)}>{hourWind(h, unit)}</td>
-                    <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
-                    <td>{h.tempC != null ? `${round(cToF(h.tempC))}°F` : '—'}</td>
-                    <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
-                  </tr>
-                ))}
+                {points.map((h) => {
+                  const cat = flightCategory(h.ceilingFtAgl, h.visibilitySm);
+                  return (
+                    <tr key={h.time}>
+                      <td>{fmtTime(h.time)}</td>
+                      <td>{cat ? <FlightCategoryPill category={cat} /> : '—'}</td>
+                      <td className={windClass(h.windGustKt)}>{hourWind(h, unit)}</td>
+                      <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
+                      <td>{h.tempC != null ? `${round(cToF(h.tempC))}°F` : '—'}</td>
+                      <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
