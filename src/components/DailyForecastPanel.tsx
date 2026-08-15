@@ -1,22 +1,42 @@
-import type { DailyPoint, DailySource } from '../domain/types';
-import { cToF, round, toSpeed, type SpeedUnit } from '../domain/units';
+import { useMemo, useState } from 'react';
+import type { DailyPoint, DailySource, HourlyPoint } from '../domain/types';
+import { compass, cToF, round, toSpeed, type SpeedUnit } from '../domain/units';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
+import { HourlyChart } from './common/HourlyChart';
+import { fmtTime } from './format';
 
-/** 10-day outlook: daily sky, temps, wind/gust maxima, and precip chance —
- *  planning guidance for which days look jumpable, not a substitute for the
- *  morning-of forecast. */
+/** 10-day outlook: daily sky, temps, wind/gust maxima, and precip chance.
+ *  Tap a day to expand its hourly detail (from the NWS gridpoint forecast,
+ *  which reaches ~7 days; days past that show a not-available note). Planning
+ *  guidance for which days look jumpable, not a substitute for the morning-of
+ *  forecast. */
 export function DailyForecastPanel({
   daily,
   source,
+  hourly,
   unit,
 }: {
   daily: DailyPoint[];
   source: DailySource | null | undefined;
+  hourly: HourlyPoint[];
   unit: SpeedUnit;
 }): JSX.Element {
   const fallback = source === 'nws-gridpoint';
+  const [selected, setSelected] = useState<string | null>(null);
+
+  // Group hourly points by local (DZ) calendar day so a selected outlook day
+  // maps to its hours regardless of the UTC boundary.
+  const hourlyByDay = useMemo(() => groupByLocalDay(hourly), [hourly]);
+  const lastCoveredDay = useMemo(() => {
+    let max: string | null = null;
+    for (const key of hourlyByDay.keys()) if (max == null || key > max) max = key;
+    return max;
+  }, [hourlyByDay]);
+
+  const toggle = (key: string): void => setSelected((cur) => (cur === key ? null : key));
+
   return (
     <Panel
       title="10-day outlook"
@@ -30,6 +50,7 @@ export function DailyForecastPanel({
           <table className="daily-table">
             <thead>
               <tr>
+                <th aria-label="expand" />
                 <th>Day</th>
                 <th>Sky</th>
                 <th>Hi/Lo °F</th>
@@ -40,8 +61,26 @@ export function DailyForecastPanel({
             <tbody>
               {daily.map((d, i) => {
                 const wx = weatherCode(d.weatherCode);
+                const key = localDayKey(d.date);
+                const isOpen = selected === key;
                 return (
-                  <tr key={d.date}>
+                  <tr
+                    key={d.date}
+                    className={`daily-row${isOpen ? ' selected' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isOpen}
+                    onClick={() => toggle(key)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggle(key);
+                      }
+                    }}
+                  >
+                    <td className="daily-caret" aria-hidden>
+                      {isOpen ? '▾' : '▸'}
+                    </td>
                     <td>{dayLabel(d.date, i)}</td>
                     <td className="daily-sky" title={wx.label}>
                       <span className="daily-icon" aria-hidden>
@@ -59,6 +98,17 @@ export function DailyForecastPanel({
           </table>
         </div>
       )}
+
+      {selected && (
+        <DayDetail
+          dayKey={selected}
+          points={hourlyByDay.get(selected) ?? []}
+          lastCoveredDay={lastCoveredDay}
+          unit={unit}
+          onClose={() => setSelected(null)}
+        />
+      )}
+
       {fallback && (
         <p className="muted small">
           <strong>Fallback source:</strong> Open-Meteo was unreachable, so these days are
@@ -67,13 +117,127 @@ export function DailyForecastPanel({
         </p>
       )}
       <p className="muted small">
-        Model forecast for the DZ (daily maxima; wind/gust are 10 m surface values). Confidence
-        drops fast past a few days — use this for planning which days to watch, and check current
-        conditions and the hourly forecast before jumping.
+        Model forecast for the DZ (daily maxima; wind/gust are 10 m surface values). Tap a day for
+        its hourly breakdown. Confidence drops fast past a few days — use this for planning which
+        days to watch, and check current conditions before jumping.
       </p>
     </Panel>
   );
 }
+
+/** Expanded hourly view for one selected outlook day. */
+function DayDetail({
+  dayKey,
+  points,
+  lastCoveredDay,
+  unit,
+  onClose,
+}: {
+  dayKey: string;
+  points: HourlyPoint[];
+  lastCoveredDay: string | null;
+  unit: SpeedUnit;
+  onClose: () => void;
+}): JSX.Element {
+  const heading = dayHeading(dayKey);
+  return (
+    <div className="daily-detail">
+      <div className="daily-detail-head">
+        <strong>Hourly — {heading}</strong>
+        <button className="refresh-btn" onClick={onClose}>
+          Hide
+        </button>
+      </div>
+      {points.length === 0 ? (
+        <p className="muted small">
+          Hourly forecast isn’t available this far out.{' '}
+          {lastCoveredDay
+            ? `The NWS gridpoint forecast reaches only about ${horizonDays(lastCoveredDay)} days out (through ${dayHeading(
+                lastCoveredDay,
+              )}).`
+            : 'The hourly forecast has not loaded — check Data health below.'}
+        </p>
+      ) : (
+        <>
+          <HourlyChart points={points} unit={unit} />
+          <p className="hc-legend">
+            <span className="hc-key hc-key-wind" /> wind &nbsp;
+            <span className="hc-key hc-key-gust" /> gust ({unit}) &nbsp;
+            <span className="hc-key hc-key-precip" /> precip&nbsp;chance
+          </p>
+          <div className="daily-scroll">
+            <table className="daily-table hourly-detail-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Wind ({unit})</th>
+                  <th>Sky</th>
+                  <th>Temp</th>
+                  <th>Rain</th>
+                </tr>
+              </thead>
+              <tbody>
+                {points.map((h) => (
+                  <tr key={h.time}>
+                    <td>{fmtTime(h.time)}</td>
+                    <td className={windClass(h.windGustKt)}>{hourWind(h, unit)}</td>
+                    <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
+                    <td>{h.tempC != null ? `${round(cToF(h.tempC))}°F` : '—'}</td>
+                    <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---- helpers ---- */
+
+const dayKeyFmt = new Intl.DateTimeFormat('en-CA', {
+  timeZone: SITE.timeZone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/** yyyy-mm-dd in the DZ time zone — a stable per-local-day key. */
+const localDayKey = (ms: number): string => dayKeyFmt.format(ms);
+
+function groupByLocalDay(points: HourlyPoint[]): Map<string, HourlyPoint[]> {
+  const map = new Map<string, HourlyPoint[]>();
+  for (const h of points) {
+    const key = localDayKey(h.time);
+    const arr = map.get(key);
+    if (arr) arr.push(h);
+    else map.set(key, [h]);
+  }
+  return map;
+}
+
+const keyToNoonUtc = (key: string): number => {
+  const [y, m, d] = key.split('-').map(Number);
+  return Date.UTC(y, m - 1, d, 12);
+};
+
+/** Whole days from today (DZ local) to the given day key — the hourly horizon. */
+const horizonDays = (lastKey: string): number => {
+  const today = keyToNoonUtc(localDayKey(Date.now()));
+  return Math.max(1, Math.round((keyToNoonUtc(lastKey) - today) / 86_400_000));
+};
+
+/** "Wed, Jul 9" from a yyyy-mm-dd day key, rendered in the DZ time zone.
+ *  Noon UTC keeps the date stable when formatted back into the DZ zone. */
+const dayHeading = (key: string): string =>
+  new Date(keyToNoonUtc(key)).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: SITE.timeZone,
+  });
 
 const dayLabel = (ms: number, index: number): string =>
   index === 0
@@ -97,7 +261,15 @@ const windText = (d: DailyPoint, unit: SpeedUnit): string => {
   return d.gustMaxKt != null ? `${base} g ${round(toSpeed(d.gustMaxKt, unit))}` : base;
 };
 
-/** Highlight days whose peak gust would trip even the licensed watch level. */
+/** Per-hour wind with direction, e.g. "SW 12 g 20". */
+const hourWind = (h: HourlyPoint, unit: SpeedUnit): string => {
+  if (h.windSpeedKt == null) return '—';
+  const dir = h.windDirectionDeg != null ? `${compass(h.windDirectionDeg)} ` : '';
+  const base = `${dir}${round(toSpeed(h.windSpeedKt, unit))}`;
+  return h.windGustKt != null ? `${base} g ${round(toSpeed(h.windGustKt, unit))}` : base;
+};
+
+/** Highlight days/hours whose gust would trip even the licensed watch level. */
 const windClass = (gustKt: number | null): string =>
   gustKt != null && gustKt >= 25 ? 'aloft-strong' : '';
 

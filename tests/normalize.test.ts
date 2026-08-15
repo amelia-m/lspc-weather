@@ -168,6 +168,43 @@ describe('normalizeGridpoint', () => {
     expect(first.ceilingFtAgl).toBeLessThan(4600);
     expect(first.skyCoverPct).toBe(55);
   });
+
+  it('generates past 48 h and stops at the last hour any property carries data', () => {
+    const start = Date.parse('2026-07-03T00:00:00Z');
+    const iso = (h: number): string => new Date(start + h * 3600_000).toISOString();
+    // Wind runs to hour 71 (72 h), sky to hour 155 (~6.5 days) — the series
+    // should reach 156 hours, not the old 48 cap, and not run past the data.
+    const grid = {
+      properties: {
+        windSpeed: {
+          uom: 'wmoUnit:km_h-1',
+          values: Array.from({ length: 72 }, (_, h) => ({ validTime: `${iso(h)}/PT1H`, value: 20 })),
+        },
+        skyCover: {
+          uom: 'wmoUnit:percent',
+          values: [{ validTime: `${iso(0)}/PT1H`, value: 10 }, { validTime: `${iso(155)}/PT1H`, value: 90 }],
+        },
+      },
+    };
+    const hourly = normalizeGridpoint(grid);
+    expect(hourly).toHaveLength(156); // 0..155 inclusive
+    expect(hourly[100].windSpeedKt).toBeNull(); // past the 72 h wind horizon
+    expect(hourly[155].skyCoverPct).toBe(90); // last hour with data
+  });
+
+  it('respects an explicit maxHours cap', () => {
+    const start = Date.parse('2026-07-03T00:00:00Z');
+    const iso = (h: number): string => new Date(start + h * 3600_000).toISOString();
+    const grid = {
+      properties: {
+        temperature: {
+          uom: 'wmoUnit:degC',
+          values: Array.from({ length: 200 }, (_, h) => ({ validTime: `${iso(h)}/PT1H`, value: 15 })),
+        },
+      },
+    };
+    expect(normalizeGridpoint(grid, 24)).toHaveLength(24);
+  });
 });
 
 describe('normalizeOpenMeteoDaily', () => {

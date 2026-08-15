@@ -330,8 +330,10 @@ export interface RawGridpoint {
   };
 }
 
-/** Expand NWS gridpoint properties into a contiguous hourly series. */
-export function normalizeGridpoint(gp: RawGridpoint, maxHours = 48): HourlyPoint[] {
+/** Expand NWS gridpoint properties into a contiguous hourly series. Generation
+ *  stops at the last hour any property carries data (NWS gridpoint reaches
+ *  ~7 days), so callers get the real horizon without a tail of all-null hours. */
+export function normalizeGridpoint(gp: RawGridpoint, maxHours = 168): HourlyPoint[] {
   const p = gp.properties;
   const sky = expand(p.skyCover);
   const ceil = expand(p.ceilingHeight, (v, uom) => convertLength(v, uom)); // → ft
@@ -342,11 +344,15 @@ export function normalizeGridpoint(gp: RawGridpoint, maxHours = 48): HourlyPoint
   const pop = expand(p.probabilityOfPrecipitation);
   const temp = expand(p.temperature); // °C
 
-  const start = earliestHour([sky, ceil, vis, spd, dir, temp]);
-  if (start == null) return [];
+  const all = [sky, ceil, vis, spd, gst, dir, pop, temp];
+  const start = earliestHour(all);
+  const end = latestHour(all);
+  if (start == null || end == null) return [];
+  const available = Math.floor((end - start) / 3600_000) + 1;
+  const count = Math.min(maxHours, Math.max(0, available));
 
   const out: HourlyPoint[] = [];
-  for (let i = 0; i < maxHours; i++) {
+  for (let i = 0; i < count; i++) {
     const t = start + i * 3600_000;
     out.push({
       time: t,
@@ -407,6 +413,14 @@ function earliestHour(maps: Map<number, number>[]): number | null {
     for (const k of m.keys()) if (min == null || k < min) min = k;
   }
   return min;
+}
+
+function latestHour(maps: Map<number, number>[]): number | null {
+  let max: number | null = null;
+  for (const m of maps) {
+    for (const k of m.keys()) if (max == null || k > max) max = k;
+  }
+  return max;
 }
 
 const isMeters = (uom?: string): boolean => !!uom && /(?:^|:)m$|metre|meter/i.test(uom);

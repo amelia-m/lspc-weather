@@ -217,7 +217,12 @@ export default function App(): JSX.Element {
         />
         <DriftPanel levels={snapshot.windsAloft} />
         <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} />
-        <DailyForecastPanel daily={snapshot.daily} source={snapshot.dailySource} unit={unit} />
+        <DailyForecastPanel
+          daily={snapshot.daily}
+          source={snapshot.dailySource}
+          hourly={snapshot.hourly}
+          unit={unit}
+        />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
         <RadarPanel />
