@@ -1,8 +1,16 @@
+import { useState } from 'react';
 import type { WindsAloftLevel, WindsAloftSource } from '../domain/types';
 import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
+
+/** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
+ *  around 10,000 ft, so the default view stops there and keeps the low levels
+ *  that matter for the landing pattern and opening (surface, 1k, 3k) plus a
+ *  couple in between for the exit/freefall drift. Expanding reveals every
+ *  1,000-ft level up to 13k. */
+const COLLAPSED_ALTITUDES_FT = new Set([0, 1000, 3000, 5000, 7000, 10000]);
 
 /** Winds aloft at jump altitudes — the skydiver-specific centerpiece. An arrow
  *  points the direction the wind is blowing TOWARD (drift direction). */
@@ -15,7 +23,11 @@ export function WindsAloftPanel({
   source: WindsAloftSource | null | undefined;
   unit: SpeedUnit;
 }): JSX.Element {
+  const [expanded, setExpanded] = useState(false);
   const fallback = source === 'nws-fd';
+  const collapsedLevels = levels.filter((l) => COLLAPSED_ALTITUDES_FT.has(l.altitudeFtAgl));
+  const shown = expanded ? levels : collapsedLevels;
+  const toggleable = levels.length > collapsedLevels.length;
   return (
     <Panel
       title="Winds aloft"
@@ -40,7 +52,7 @@ export function WindsAloftPanel({
             </tr>
           </thead>
           <tbody>
-            {[...levels].reverse().map((l) => (
+            {[...shown].reverse().map((l) => (
               <tr key={l.altitudeFtAgl}>
                 <td>{l.altitudeFtAgl === 0 ? 'Surface' : `${l.altitudeFtAgl.toLocaleString()} ft`}</td>
                 <td>
@@ -62,7 +74,23 @@ export function WindsAloftPanel({
           </tbody>
         </table>
       )}
+      {toggleable && (
+        <button
+          type="button"
+          className="aloft-toggle"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+        >
+          {expanded ? 'Show fewer altitudes' : 'Show all altitudes (to 13,000 ft)'}
+        </button>
+      )}
       <p className="muted small">Arrow shows drift direction (where wind pushes you).</p>
+      {!expanded && toggleable && (
+        <p className="muted small">
+          Showing key altitudes to 10,000 ft (LSPC&rsquo;s usual max). Expand for every 1,000-ft
+          level up to 13k.
+        </p>
+      )}
       {fallback ? (
         <p className="muted small">
           <strong>Fallback source:</strong> Open-Meteo was unreachable, so these levels are
