@@ -98,6 +98,25 @@ describe('evaluateAdvisories', () => {
     expect(out.some((a) => a.id === 'thunderstorm' && a.level === 'caution')).toBe(true);
   });
 
+  it('renders advisory wind values in the selected unit (mph)', () => {
+    // Sustained 20 kt gusting 28 kt, plus strong winds aloft.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 20, wgst: 28 });
+    const windsAloft = [
+      { altitudeFtAgl: 9000, altitudeFtMsl: 10182, directionDeg: 270, speedKt: 35, tempC: null },
+    ];
+    const kt = evaluateAdvisories(snapshot({ current, windsAloft }), DEFAULT_THRESHOLDS.licensed, now, 'kt');
+    const mph = evaluateAdvisories(snapshot({ current, windsAloft }), DEFAULT_THRESHOLDS.licensed, now, 'mph');
+
+    const sfcKt = kt.find((a) => a.id === 'surface-wind');
+    const sfcMph = mph.find((a) => a.id === 'surface-wind');
+    expect(sfcKt?.value).toContain('20 kt'); // kt primary
+    expect(sfcMph?.value).toMatch(/2[0-9] mph/); // mph primary when toggled
+
+    const aloftMph = mph.find((a) => a.id === 'winds-aloft');
+    expect(aloftMph?.value).toContain('mph');
+    expect(aloftMph?.value).not.toMatch(/\bkt\b/);
+  });
+
   it('flags forecast thunderstorm chance from the hourly gridpoint', () => {
     // 35% thunder within the next 6 h → caution; a low far-out value is ignored.
     const hourly = [

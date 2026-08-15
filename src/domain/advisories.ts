@@ -1,6 +1,6 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
-import { compass, ktToMph, round } from './units';
+import { compass, fmtSpeed, ktToMph, round, type SpeedUnit } from './units';
 import { flightCategory, CATEGORY_LABEL } from './flightCategory';
 
 /**
@@ -24,6 +24,7 @@ export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
   thresholds: Thresholds,
   now: number,
+  unit: SpeedUnit = 'kt',
 ): Advisory[] {
   const out: Advisory[] = [];
   const { current, hourly, windsAloft, sun, densityAltitude } = snapshot;
@@ -51,7 +52,7 @@ export function evaluateAdvisories(
           id: 'surface-wind',
           level: windLevel,
           metric: 'Surface wind',
-          value: formatWind(speedKt, gustKt) + (gustDriven ? ' (gusts exceed limit)' : ''),
+          value: formatWind(speedKt, gustKt, unit) + (gustDriven ? ' (gusts exceed limit)' : ''),
           guidance: thresholds.windGuidance,
           citation: thresholds.windCitation,
         });
@@ -64,7 +65,7 @@ export function evaluateAdvisories(
         id: 'gust-limit',
         level: 'caution',
         metric: 'Gust limit',
-        value: `gusting ${round(gustKt)} kt (${round(ktToMph(gustKt))} mph), waiver ceiling ${round(ktToMph(thresholds.gustCautionKt))} mph`,
+        value: `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${round(ktToMph(thresholds.gustCautionKt))} mph`,
         guidance:
           'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
         citation: thresholds.windCitation,
@@ -78,7 +79,7 @@ export function evaluateAdvisories(
         id: 'gust-spread',
         level: 'watch',
         metric: 'Gusty wind',
-        value: `${round(speedKt)} kt sustained, gusting ${round(gustKt)} kt (spread ${round(gustKt - speedKt)} kt)`,
+        value: `${fmtSpeed(speedKt, unit)} sustained, gusting ${fmtSpeed(gustKt, unit)} (spread ${fmtSpeed(gustKt - speedKt, unit)})`,
         guidance:
           'Large gust spread means shifting, turbulent surface winds — harder canopy flight and landings.',
         citation: CITATIONS.uspaWeather,
@@ -221,7 +222,7 @@ export function evaluateAdvisories(
         id: 'winds-aloft',
         level: strongest.speedKt >= WINDS_ALOFT_WATCH_KT ? 'watch' : 'info',
         metric: 'Winds aloft',
-        value: `${strongest.speedKt} kt from ${compass(strongest.directionDeg)} at ${strongest.altitudeFtAgl.toLocaleString()} ft AGL`,
+        value: `${fmtSpeed(strongest.speedKt, unit)} from ${compass(strongest.directionDeg)} at ${strongest.altitudeFtAgl.toLocaleString()} ft AGL`,
         guidance:
           'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
         citation: CITATIONS.uspaWeather,
@@ -258,10 +259,13 @@ export function evaluateAdvisories(
   return out.sort((a, b) => severityRank(b.level) - severityRank(a.level));
 }
 
-function formatWind(speedKt: number | null, gustKt: number | null): string {
-  const gust = gustKt != null ? `gusting ${round(gustKt)} kt` : null;
+/** Surface-wind headline: primary in the selected unit, with the other unit in
+ *  parens so the reader can cross-check against BSR limits (stated in mph). */
+function formatWind(speedKt: number | null, gustKt: number | null, unit: SpeedUnit): string {
+  const other: SpeedUnit = unit === 'kt' ? 'mph' : 'kt';
+  const gust = gustKt != null ? `gusting ${fmtSpeed(gustKt, unit)}` : null;
   if (speedKt == null) return gust ?? 'unreported';
-  const base = `${round(speedKt)} kt (${round(ktToMph(speedKt))} mph)`;
+  const base = `${fmtSpeed(speedKt, unit)} (${fmtSpeed(speedKt, other)})`;
   return gust != null ? `${base}, ${gust}` : base;
 }
 
