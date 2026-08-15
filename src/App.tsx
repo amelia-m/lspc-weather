@@ -24,6 +24,7 @@ import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
+import { deriveProvenance } from './domain/sourceProvenance';
 
 const PROFILE_KEY = 'lspc:windProfile';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
@@ -136,6 +137,7 @@ export default function App(): JSX.Element {
     });
 
   const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds, unit);
+  const provenance = useMemo(() => deriveProvenance(snapshot), [snapshot]);
 
   return (
     <div className="app">
@@ -237,7 +239,12 @@ export default function App(): JSX.Element {
         <TafPanel taf={snapshot.taf} status={status.taf} />
       </div>
 
-      <DataFreshness status={status} lastUpdated={lastUpdated} onRefresh={refresh} />
+      <DataFreshness
+        status={status}
+        provenance={provenance}
+        lastUpdated={lastUpdated}
+        onRefresh={refresh}
+      />
 
       <SettingsPanel
         thresholds={thresholds}
