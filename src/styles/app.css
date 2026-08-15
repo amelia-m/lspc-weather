@@ -456,6 +456,37 @@ a {
 .daily-icon {
   font-size: 0.95rem;
 }
+.daily-row {
+  cursor: pointer;
+}
+.daily-row:hover {
+  background: var(--panel-2);
+}
+.daily-row.selected {
+  background: var(--panel-2);
+}
+.daily-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.daily-caret {
+  color: var(--muted);
+  width: 1em;
+}
+.daily-detail {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.daily-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.hourly-detail-table {
+  margin-top: 8px;
+}
 
 /* Ceiling timeline */
 .ceil-now {
