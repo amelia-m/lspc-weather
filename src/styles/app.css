@@ -488,6 +488,29 @@ a {
   margin-top: 8px;
 }
 
+/* Flight category (standard aviation colors) */
+.fc-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #06121f;
+}
+.fc-vfr {
+  background: #3fb950;
+}
+.fc-mvfr {
+  background: #4c94ff;
+}
+.fc-ifr {
+  background: #ff6b6b;
+}
+.fc-lifr {
+  background: #d67cff;
+}
+
 /* Ceiling timeline */
 .ceil-now {
   display: flex;

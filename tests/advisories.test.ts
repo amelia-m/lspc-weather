@@ -50,6 +50,33 @@ describe('evaluateAdvisories', () => {
     expect(vis?.citation.source).toContain('105.17');
   });
 
+  it('does not flag flight category when conditions are VFR', () => {
+    // Base fixture: ceiling 4500 ft, 10 SM → VFR.
+    const out = evaluateAdvisories(snapshot(), DEFAULT_THRESHOLDS.student, now);
+    expect(out.some((a) => a.id === 'flight-category')).toBe(false);
+  });
+
+  it('flags an IFR flight category (from visibility) citing 91.155', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    const fc = out.find((a) => a.id === 'flight-category');
+    expect(fc?.level).toBe('caution');
+    expect(fc?.value).toContain('IFR');
+    expect(fc?.citation.source).toContain('91.155');
+  });
+
+  it('flags a marginal (MVFR) ceiling as watch', () => {
+    // Lower the BKN base to 2000 ft → MVFR ceiling.
+    const current = normalizeMetar({
+      ...METAR_FIXTURE[0],
+      clouds: [{ cover: 'BKN', base: 2000 }],
+    });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    const fc = out.find((a) => a.id === 'flight-category');
+    expect(fc?.level).toBe('watch');
+    expect(fc?.value).toContain('MVFR');
+  });
+
   it('flags a thunderstorm from present weather', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wxString: 'TSRA' });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
