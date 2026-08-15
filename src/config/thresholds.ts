@@ -49,6 +49,12 @@ export const CITATIONS = {
     url: 'https://www.uspa.org/sim',
     note: VERIFY_NOTE,
   },
+  uspaOpeningAltitude: {
+    source: 'USPA SIM, Section 2-1 (BSR)',
+    ref: 'Minimum container opening altitudes',
+    url: 'https://www.uspa.org/sim/2-1',
+    note: VERIFY_NOTE,
+  },
   lspcWaiver: {
     source: 'LSPC Waivered Wind Limits',
     ref: 'Club wind-limit policy (posted at the DZ)',

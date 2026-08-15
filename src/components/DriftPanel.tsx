@@ -3,8 +3,22 @@ import type { WindsAloftLevel } from '../domain/types';
 import { compass, round } from '../domain/units';
 import { estimateDrift, type DriftLeg } from '../domain/spot';
 import { DATA_SOURCES } from '../config/sources';
+import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
-import { NumberField } from './common/NumberField';
+import { SelectField } from './common/SelectField';
+
+/** Build an inclusive numeric range [lo, hi] stepping by `step`. */
+const range = (lo: number, hi: number, step: number): number[] =>
+  Array.from({ length: Math.floor((hi - lo) / step) + 1 }, (_, i) => lo + i * step);
+
+// Exit / deploy altitudes in 500-ft steps; fall rate in 10-mph steps. Exit
+// tops out at the DZ's usual 10k but allows higher (winds data runs to 13k).
+const EXIT_OPTIONS = range(3000, 13000, 500);
+const DEPLOY_OPTIONS = range(2000, 6000, 500);
+const FALL_RATE_OPTIONS = range(90, 180, 10);
+
+const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
+const fmtMph = (mph: number): string => `${mph} mph`;
 
 const fmtDist = (ft: number): string =>
   `${Math.round(ft).toLocaleString()} ft · ${(ft / 5280).toFixed(2)} mi`;
@@ -14,9 +28,21 @@ const dir = (deg: number): string => `${compass(deg)} (${round(deg)}°)`;
 /** Freefall + canopy drift / spot estimate from the winds-aloft layers, in the
  *  spirit of Mark Schulze's tool. Editable exit/deploy/fall-rate inputs. */
 export function DriftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Element {
-  const [exitFt, setExit] = useState(13000);
+  const [exitFt, setExit] = useState(10000);
   const [deployFt, setDeploy] = useState(3000);
   const [fallRate, setFallRate] = useState(120);
+
+  // Deploy must stay below exit. Offer only lower altitudes, and if a new exit
+  // drops at or below the current deploy, pull deploy down to the highest still-
+  // valid option.
+  const deployOptions = DEPLOY_OPTIONS.filter((a) => a < exitFt);
+  const setExitSafe = (v: number): void => {
+    setExit(v);
+    if (deployFt >= v) {
+      const valid = DEPLOY_OPTIONS.filter((a) => a < v);
+      setDeploy(valid.length ? valid[valid.length - 1] : DEPLOY_OPTIONS[0]);
+    }
+  };
 
   const drift = useMemo(
     () =>
@@ -38,27 +64,27 @@ export function DriftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Eleme
       ) : (
         <>
           <div className="drift-inputs">
-            {/* Keep deploy ≤ exit: the exit field's floor is the current deploy
-                altitude and the deploy field's ceiling is the current exit
-                altitude, so NumberField's commit-time clamp can never produce
-                an exit-below-deploy state. */}
-            <NumberField
+            <SelectField
               label="Exit (ft AGL)"
               value={exitFt}
-              step={500}
-              min={Math.max(1000, deployFt)}
-              max={18000}
-              onCommit={setExit}
+              options={EXIT_OPTIONS}
+              format={fmtFt}
+              onChange={setExitSafe}
             />
-            <NumberField
+            <SelectField
               label="Deploy (ft AGL)"
               value={deployFt}
-              step={250}
-              min={1000}
-              max={Math.min(6000, exitFt)}
-              onCommit={setDeploy}
+              options={deployOptions}
+              format={fmtFt}
+              onChange={setDeploy}
             />
-            <NumberField label="Fall rate (mph)" value={fallRate} step={5} min={80} max={200} onCommit={setFallRate} />
+            <SelectField
+              label="Fall rate (mph)"
+              value={fallRate}
+              options={FALL_RATE_OPTIONS}
+              format={fmtMph}
+              onChange={setFallRate}
+            />
           </div>
 
           <dl className="kv">
@@ -75,6 +101,15 @@ export function DriftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Eleme
             <strong>{dir(spotToward)}</strong> of the target so you drift back over it.
           </p>
 
+          <p className="muted small">
+            USPA BSR minimum container-opening altitudes:{' '}
+            <strong>students &amp; A-license 3,000 ft AGL</strong>, B-license 2,500 ft, C/D 2,000 ft
+            (tandem 5,000 ft). These are floors — deploy above your minimum, not at it. See the{' '}
+            <a href={CITATIONS.uspaOpeningAltitude.url} target="_blank" rel="noopener noreferrer">
+              USPA SIM §2-1 (BSR)
+            </a>
+            ; AI-derived, verify against the current SIM.
+          </p>
           <p className="muted small">
             *Canopy drift assumes you don’t steer (1,000 ft/min descent); you normally fly it out.
             Rough estimate only — winds are a model forecast and the spot is the jumpmaster/pilot’s
