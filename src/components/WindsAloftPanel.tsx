@@ -85,7 +85,7 @@ export function WindsAloftPanel({
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
         >
-          {expanded ? 'Show fewer altitudes' : 'Show all altitudes (to 13,000 ft)'}
+          {expanded ? 'Show fewer altitudes' : 'Show more altitudes (more increments, up to 13k ft)'}
         </button>
       )}
       <p className="muted small">Arrow shows drift direction (where wind pushes you).</p>
