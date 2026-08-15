@@ -70,7 +70,8 @@ const fmtC = (c: number | null): string => (c != null ? `${round(c)}°C` : '—'
 function describeHumidity(c: CurrentConditions): string {
   if (c.tempC == null || c.dewpointC == null) return '—';
   const rh = round(relativeHumidity(c.tempC, c.dewpointC));
-  const spreadF = round((c.tempC - c.dewpointC) * 1.8);
+  // Spread in °C to match the Temp / Dew row above (both shown in °C).
+  const spreadC = round(c.tempC - c.dewpointC);
   const hint = c.tempC - c.dewpointC <= 3 ? ' — fog/low-cloud favorable' : '';
-  return `${rh}% RH · ${spreadF}°F spread${hint}`;
+  return `${rh}% RH · ${spreadC}°C spread${hint}`;
 }
