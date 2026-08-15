@@ -59,17 +59,18 @@ is not.
 
 ## Cross-references
 
-Several cards link to well-known external pages that show the *same underlying
-data*, so you can sanity-check the dashboard against sources the club already
-trusts:
+This dashboard gathers a lot of sources in one place — it is **not a
+replacement** for the tools jumpers already check. Several cards link out to
+well-known external pages that show the *same underlying data*, so you can
+sanity-check the dashboard against sources you already trust:
 
 - **Ceiling & sky ↔ [usairnet KPMV aviation
   forecast](https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=KPMV)**
-  — the page the club traditionally checked. usairnet has no public API and
-  presents NWS forecast data; this dashboard pulls that data directly from the
-  NWS gridpoint API instead. One difference: usairnet's page is for the KPMV
-  station, while the dashboard's forecast grid is centered on the DZ itself
-  (only the METAR observation comes from KPMV).
+  — a page many jumpers use. usairnet has no public API and presents NWS
+  forecast data; this dashboard pulls that data directly from the NWS gridpoint
+  API instead. One difference: usairnet's page is for the KPMV station, while
+  the dashboard's forecast grid is centered on the DZ itself (only the METAR
+  observation comes from KPMV).
 - **Winds aloft ↔ [Mark Schulze's Winds
   Aloft](https://www.markschulze.net/winds/)** — the popular skydiving winds
   tool; same Open-Meteo model source.
