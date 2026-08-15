@@ -193,6 +193,8 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 14px;
+  /* Backfill any gap the span-2 outlook would leave at odd column counts. */
+  grid-auto-flow: row dense;
 }
 .grid .panel {
   margin-bottom: 0;
