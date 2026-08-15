@@ -1,5 +1,6 @@
 import type { CurrentConditions } from '../domain/types';
 import { compass, fmtSpeed, round, type SpeedUnit } from '../domain/units';
+import { relativeHumidity } from '../domain/humidity';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
 import { SITE } from '../config/site';
@@ -35,6 +36,8 @@ export function MetarPanel({
             <dd>
               {fmtC(current.tempC)} / {fmtC(current.dewpointC)}
             </dd>
+            <dt>Humidity</dt>
+            <dd>{describeHumidity(current)}</dd>
             <dt>Altimeter</dt>
             <dd>{current.altimeterInHg != null ? `${current.altimeterInHg.toFixed(2)} inHg` : '—'}</dd>
           </dl>
@@ -62,3 +65,12 @@ function describeSky(c: CurrentConditions): string {
 }
 
 const fmtC = (c: number | null): string => (c != null ? `${round(c)}°C` : '—');
+
+/** RH % and the temp–dew point spread; flags a fog-favorable tight spread. */
+function describeHumidity(c: CurrentConditions): string {
+  if (c.tempC == null || c.dewpointC == null) return '—';
+  const rh = round(relativeHumidity(c.tempC, c.dewpointC));
+  const spreadF = round((c.tempC - c.dewpointC) * 1.8);
+  const hint = c.tempC - c.dewpointC <= 3 ? ' — fog/low-cloud favorable' : '';
+  return `${rh}% RH · ${spreadF}°F spread${hint}`;
+}

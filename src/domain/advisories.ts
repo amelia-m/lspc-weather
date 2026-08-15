@@ -2,6 +2,7 @@ import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
 import { compass, fmtSpeed, ktToMph, round, type SpeedUnit } from './units';
 import { flightCategory, CATEGORY_LABEL } from './flightCategory';
+import { relativeHumidity } from './humidity';
 
 /**
  * Turn a weather snapshot into a list of ADVISORIES — conditions worth noting,
@@ -19,6 +20,10 @@ const WINDS_ALOFT_WATCH_KT = 30;
 // hazard, so these are lower than the precip-chance thresholds.
 const THUNDER_WATCH_PCT = 10;
 const THUNDER_CAUTION_PCT = 30;
+
+// Temp–dew point spread (°C) fog/low-cloud thresholds: ~5.4°F and ~1.8°F.
+const FOG_SPREAD_WATCH_C = 3;
+const FOG_SPREAD_CAUTION_C = 1;
 
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
@@ -142,6 +147,23 @@ export function evaluateAdvisories(
           'Solid overcast leaves no gaps — jumps may not be made into or through clouds (14 CFR 105.17).',
         citation: CITATIONS.far10517,
       });
+    }
+
+    // --- Fog / low cloud from a tight temp–dew point spread ---
+    if (current.tempC != null && current.dewpointC != null) {
+      const spreadC = current.tempC - current.dewpointC;
+      if (spreadC <= FOG_SPREAD_WATCH_C) {
+        const rh = relativeHumidity(current.tempC, current.dewpointC);
+        out.push({
+          id: 'dewpoint-spread',
+          level: spreadC <= FOG_SPREAD_CAUTION_C ? 'caution' : 'watch',
+          metric: 'Fog / low cloud',
+          value: `${round(spreadC * 1.8)}°F temp–dew point spread, ${round(rh)}% RH`,
+          guidance:
+            'A small temperature–dew point spread with high humidity favors fog and low ceilings — watch for reduced visibility and a dropping cloud base, especially near dawn.',
+          citation: CITATIONS.uspaWeather,
+        });
+      }
     }
 
     // --- Thunderstorm in present weather ---
