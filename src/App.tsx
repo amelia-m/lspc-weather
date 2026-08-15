@@ -224,7 +224,7 @@ export default function App(): JSX.Element {
           source={snapshot.windsAloftSource}
           unit={unit}
         />
-        <DriftPanel levels={snapshot.windsAloft} />
+        <DriftPanel levels={snapshot.windsAloft} profile={profile} />
         <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} />
         <DailyForecastPanel
           daily={snapshot.daily}

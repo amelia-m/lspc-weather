@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { WindsAloftLevel } from '../domain/types';
 import { compass, round } from '../domain/units';
 import { estimateDrift, type DriftLeg } from '../domain/spot';
 import { DATA_SOURCES } from '../config/sources';
-import { CITATIONS } from '../config/thresholds';
+import { CITATIONS, recommendedDeployFt, type WindProfileId } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { SelectField } from './common/SelectField';
 
@@ -27,10 +27,27 @@ const dir = (deg: number): string => `${compass(deg)} (${round(deg)}°)`;
 
 /** Freefall + canopy drift / spot estimate from the winds-aloft layers, in the
  *  spirit of Mark Schulze's tool. Editable exit/deploy/fall-rate inputs. */
-export function DriftPanel({ levels }: { levels: WindsAloftLevel[] }): JSX.Element {
+export function DriftPanel({
+  levels,
+  profile,
+}: {
+  levels: WindsAloftLevel[];
+  profile: WindProfileId;
+}): JSX.Element {
   const [exitFt, setExit] = useState(10000);
-  const [deployFt, setDeploy] = useState(3000);
+  const [deployFt, setDeploy] = useState(() => recommendedDeployFt(profile));
   const [fallRate, setFallRate] = useState(120);
+
+  // Deploy defaults to the active profile's USPA minimum opening altitude, and
+  // follows a later profile switch. Keep it below exit (exit's floor is 3,000,
+  // the highest recommendation, so the fallback only bites if exit is set that
+  // low). Not in the exit dep list on purpose — an exit change shouldn't reset
+  // a manually chosen deploy; setExitSafe handles that case instead.
+  useEffect(() => {
+    const rec = recommendedDeployFt(profile);
+    setDeploy(rec < exitFt ? rec : exitFt - 500);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
 
   // Deploy must stay below exit. Offer only lower altitudes, and if a new exit
   // drops at or below the current deploy, pull deploy down to the highest still-

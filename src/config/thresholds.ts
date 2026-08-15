@@ -172,6 +172,15 @@ export function resolveThresholds(id: WindProfileId): Thresholds {
   return tier ? waiverThresholds(tier) : STUDENT;
 }
 
+/** Default deploy altitude (ft AGL) for a wind-limit profile — the USPA BSR
+ *  minimum container-opening altitude for that jumper class: students &
+ *  A-license 3,000 ft, licensed (B-license floor) 2,500 ft. Waiver tiers are
+ *  all student-category, so they take the student floor. These are minimums,
+ *  not targets; the drift card reminds jumpers to deploy above them. */
+export function recommendedDeployFt(id: WindProfileId): number {
+  return id === 'licensed' ? 2500 : 3000;
+}
+
 /** Human label for a profile id, used in the UI. */
 export function profileLabel(id: WindProfileId): string {
   if (id === 'student') return 'Student';
