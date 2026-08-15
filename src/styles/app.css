@@ -752,7 +752,7 @@ a {
 }
 .source-list li {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   padding: 4px 0;
   font-size: 0.85rem;
@@ -763,6 +763,38 @@ a {
   border-radius: 50%;
   background: var(--muted);
   flex: none;
+  transform: translateY(1px);
+}
+.source-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.source-detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.source-chip {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  flex: none;
+}
+.source-chip.primary {
+  color: var(--muted);
+  border-color: var(--border);
+}
+.source-chip.fallback {
+  color: var(--stale);
+  border-color: var(--stale);
 }
 .source.ok .source-dot {
   background: var(--ok);

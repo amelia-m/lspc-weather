@@ -1,4 +1,5 @@
 import type { SourceKey, SourceStatus } from '../domain/types';
+import type { SourceProvenance } from '../domain/sourceProvenance';
 import { USE_FIXTURES } from '../api/http';
 import { DATA_SOURCES, type DataSource } from '../config/sources';
 import { fmtAgo } from './format';
@@ -21,10 +22,12 @@ const SOURCE_LINKS: Record<SourceKey, DataSource> = {
 
 export function DataFreshness({
   status,
+  provenance,
   lastUpdated,
   onRefresh,
 }: {
   status: Record<SourceKey, SourceStatus>;
+  provenance?: Partial<Record<SourceKey, SourceProvenance>>;
   lastUpdated: number | null;
   onRefresh: () => void;
 }): JSX.Element {
@@ -44,25 +47,38 @@ export function DataFreshness({
           </p>
         )}
         <ul className="source-list">
-          {(Object.keys(LABELS) as SourceKey[]).map((k) => (
-            <li key={k} className={statusClass(status[k])}>
-              <span className="source-dot" aria-hidden />
-              <span className="source-name">
-                <a href={SOURCE_LINKS[k].url} target="_blank" rel="noopener noreferrer">
-                  {LABELS[k]}
-                </a>
-              </span>
-              <span className="source-meta">
-                {status[k].pending
-                  ? 'fetching…'
-                  : status[k].error
-                    ? `error: ${status[k].error}`
-                    : status[k].stale
-                      ? 'stale'
-                      : fmtAgo(status[k].fetchedAt)}
-              </span>
-            </li>
-          ))}
+          {(Object.keys(LABELS) as SourceKey[]).map((k) => {
+            const prov = provenance?.[k];
+            return (
+              <li key={k} className={statusClass(status[k])}>
+                <span className="source-dot" aria-hidden />
+                <span className="source-info">
+                  <span className="source-name">
+                    <a href={SOURCE_LINKS[k].url} target="_blank" rel="noopener noreferrer">
+                      {LABELS[k]}
+                    </a>
+                  </span>
+                  {prov && (
+                    <span className="source-detail">
+                      <span className={`source-chip ${prov.fallback ? 'fallback' : 'primary'}`}>
+                        {prov.fallback ? 'fallback' : 'primary'}
+                      </span>
+                      {prov.detail}
+                    </span>
+                  )}
+                </span>
+                <span className="source-meta">
+                  {status[k].pending
+                    ? 'fetching…'
+                    : status[k].error
+                      ? `error: ${status[k].error}`
+                      : status[k].stale
+                        ? 'stale'
+                        : fmtAgo(status[k].fetchedAt)}
+                </span>
+              </li>
+            );
+          })}
         </ul>
         <p className="muted small">Updated {fmtAgo(lastUpdated)}.</p>
       </div>
