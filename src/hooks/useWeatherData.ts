@@ -129,6 +129,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
                   elevationFt: dz.elevationFt,
                   altimeterInHg: current.altimeterInHg,
                   oatC: current.tempC,
+                  dewpointC: current.dewpointC,
                 })
               : prev.densityAltitude,
         }));
