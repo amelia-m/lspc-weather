@@ -93,6 +93,20 @@ describe('evaluateAdvisories', () => {
     expect(fc?.value).toContain('MVFR');
   });
 
+  it('flags fog risk on a tight temp–dew point spread', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], temp: 20, dewp: 19 }); // 1°C spread
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    const fog = out.find((a) => a.id === 'dewpoint-spread');
+    expect(fog?.level).toBe('caution'); // <= 1°C spread → caution
+    expect(fog?.value).toMatch(/RH/);
+  });
+
+  it('does not flag fog when the air is dry (wide spread)', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], temp: 30, dewp: 5 });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    expect(out.some((a) => a.id === 'dewpoint-spread')).toBe(false);
+  });
+
   it('flags a thunderstorm from present weather', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wxString: 'TSRA' });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
