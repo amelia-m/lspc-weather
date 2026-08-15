@@ -133,8 +133,9 @@ a {
   font-size: 0.72rem;
   color: var(--muted);
 }
-.drift-inputs input {
-  width: 88px;
+.drift-inputs input,
+.drift-inputs select {
+  width: 96px;
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 6px;
