@@ -72,13 +72,14 @@ describe('evaluateAdvisories', () => {
     expect(out.some((a) => a.id === 'flight-category')).toBe(false);
   });
 
-  it('flags an IFR flight category (from visibility) citing 91.155', () => {
+  it('flags an IFR flight category (from visibility) citing the AIM category def', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
     const fc = out.find((a) => a.id === 'flight-category');
     expect(fc?.level).toBe('caution');
     expect(fc?.value).toContain('IFR');
-    expect(fc?.citation.source).toContain('91.155');
+    // VFR/MVFR/IFR/LIFR are defined in the AIM, not 14 CFR 91.155.
+    expect(fc?.citation.source).toContain('AIM');
   });
 
   it('flags a marginal (MVFR) ceiling as watch', () => {
