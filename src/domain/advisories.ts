@@ -15,6 +15,11 @@ import { flightCategory, CATEGORY_LABEL } from './flightCategory';
 const WINDS_ALOFT_INFO_KT = 20;
 const WINDS_ALOFT_WATCH_KT = 30;
 
+// Forecast thunderstorm probability (NWS gridpoint). Convection is a serious
+// hazard, so these are lower than the precip-chance thresholds.
+const THUNDER_WATCH_PCT = 10;
+const THUNDER_CAUTION_PCT = 30;
+
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
   thresholds: Thresholds,
@@ -170,6 +175,20 @@ export function evaluateAdvisories(
         citation: CITATIONS.uspaWeather,
       });
     }
+  }
+
+  // --- Forecast thunderstorm chance (max over the next ~6 hours) ---
+  const thunderMax = maxNear(hourly, now, 6, (h) => h.thunderProbPct);
+  if (thunderMax != null && thunderMax >= THUNDER_WATCH_PCT) {
+    out.push({
+      id: 'thunder-forecast',
+      level: thunderMax >= THUNDER_CAUTION_PCT ? 'caution' : 'watch',
+      metric: 'Thunderstorm chance',
+      value: `${round(thunderMax)}% chance (next 6 h)`,
+      guidance:
+        'Forecast thunderstorms bring lightning, gust fronts, and rapid condition changes — a convective hazard for the jump plane and canopies. Watch the radar and sky.',
+      citation: CITATIONS.uspaWeather,
+    });
   }
 
   // --- Density altitude (loaded C-182 climb performance) ---

@@ -325,6 +325,7 @@ export interface RawGridpoint {
     windGust?: GridProp;
     windDirection?: GridProp;
     probabilityOfPrecipitation?: GridProp;
+    probabilityOfThunder?: GridProp;
     temperature?: GridProp;
     [k: string]: unknown;
   };
@@ -342,9 +343,10 @@ export function normalizeGridpoint(gp: RawGridpoint, maxHours = 168): HourlyPoin
   const gst = expand(p.windGust, (v, uom) => convertSpeed(v, uom));
   const dir = expand(p.windDirection);
   const pop = expand(p.probabilityOfPrecipitation);
+  const tstm = expand(p.probabilityOfThunder);
   const temp = expand(p.temperature); // °C
 
-  const all = [sky, ceil, vis, spd, gst, dir, pop, temp];
+  const all = [sky, ceil, vis, spd, gst, dir, pop, tstm, temp];
   const start = earliestHour(all);
   const end = latestHour(all);
   if (start == null || end == null) return [];
@@ -363,6 +365,7 @@ export function normalizeGridpoint(gp: RawGridpoint, maxHours = 168): HourlyPoin
       windGustKt: gst.get(t) ?? null,
       windDirectionDeg: dir.get(t) ?? null,
       precipProbPct: pop.get(t) ?? null,
+      thunderProbPct: tstm.get(t) ?? null,
       tempC: temp.get(t) ?? null,
     });
   }
