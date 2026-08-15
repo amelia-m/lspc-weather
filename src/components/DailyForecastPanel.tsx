@@ -177,6 +177,7 @@ function DayDetail({
                   <th>Sky</th>
                   <th>Temp</th>
                   <th>Rain</th>
+                  <th>Storm</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,6 +191,9 @@ function DayDetail({
                       <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
                       <td>{h.tempC != null ? `${round(cToF(h.tempC))}°F` : '—'}</td>
                       <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
+                      <td className={h.thunderProbPct != null && h.thunderProbPct >= 30 ? 'aloft-strong' : ''}>
+                        {h.thunderProbPct != null ? `${round(h.thunderProbPct)}%` : '—'}
+                      </td>
                     </tr>
                   );
                 })}

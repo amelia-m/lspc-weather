@@ -167,6 +167,7 @@ describe('normalizeGridpoint', () => {
     expect(first.ceilingFtAgl).toBeGreaterThan(4400);
     expect(first.ceilingFtAgl).toBeLessThan(4600);
     expect(first.skyCoverPct).toBe(55);
+    expect(first.thunderProbPct).toBe(5); // probabilityOfThunder, first interval
   });
 
   it('generates past 48 h and stops at the last hour any property carries data', () => {
@@ -311,6 +312,7 @@ describe('aggregateDailyFromHourly', () => {
     windGustKt: 18,
     windDirectionDeg: 180,
     precipProbPct: 10,
+    thunderProbPct: 0,
     tempC: 20,
     ...over,
   });

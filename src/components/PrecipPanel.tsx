@@ -16,17 +16,30 @@ export function PrecipPanel({
   const now = Date.now();
   const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
   const next6 = upcoming.filter((h) => h.time <= now + 6 * 3600_000);
-  const maxNext6 = next6.reduce<number | null>(
-    (m, h) => (h.precipProbPct != null && (m == null || h.precipProbPct > m) ? h.precipProbPct : m),
-    null,
-  );
+  const maxOf = (pick: (h: HourlyPoint) => number | null): number | null =>
+    next6.reduce<number | null>((m, h) => {
+      const v = pick(h);
+      return v != null && (m == null || v > m) ? v : m;
+    }, null);
+  const maxNext6 = maxOf((h) => h.precipProbPct);
+  const thunderNext6 = maxOf((h) => h.thunderProbPct);
   const wx = current?.wxString?.trim();
 
   return (
-    <Panel title="Precipitation" subtitle="chance over next hours" sources={[DATA_SOURCES.nwsForecast]}>
+    <Panel
+      title="Precipitation & storms"
+      subtitle="chance over next hours"
+      sources={[DATA_SOURCES.nwsForecast]}
+    >
       <div className="ceil-now">
-        <span className="ceil-label">Max next 6 h</span>
+        <span className="ceil-label">Precip · max next 6 h</span>
         <span className="ceil-value">{maxNext6 != null ? `${round(maxNext6)}%` : '—'}</span>
+      </div>
+      <div className="ceil-now">
+        <span className="ceil-label">Thunderstorm · max next 6 h</span>
+        <span className={`ceil-value${thunderNext6 != null && thunderNext6 >= 30 ? ' aloft-strong' : ''}`}>
+          {thunderNext6 != null ? `${round(thunderNext6)}%` : '—'}
+        </span>
       </div>
       {wx && (
         <p className="muted small">

@@ -47,6 +47,13 @@ export const GRIDPOINT_FIXTURE: RawGridpoint = {
         { validTime: interval(6, 6), value: 35 },
       ],
     },
+    probabilityOfThunder: {
+      uom: 'wmoUnit:percent',
+      values: [
+        { validTime: interval(0, 6), value: 5 },
+        { validTime: interval(6, 6), value: 25 },
+      ],
+    },
     temperature: {
       uom: 'wmoUnit:degC',
       values: [

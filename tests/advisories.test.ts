@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateAdvisories } from '../src/domain/advisories';
 import { DEFAULT_THRESHOLDS, resolveThresholds } from '../src/config/thresholds';
-import type { WeatherSnapshot } from '../src/domain/types';
+import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 
 const now = Date.parse('2025-06-27T13:30:00Z');
+
+/** Minimal hourly point at `now + hoursAhead`, with overrides. */
+const hourAhead = (hoursAhead: number, over: Partial<HourlyPoint> = {}): HourlyPoint => ({
+  time: now + hoursAhead * 3600_000,
+  skyCoverPct: null,
+  ceilingFtAgl: null,
+  visibilitySm: null,
+  windSpeedKt: null,
+  windGustKt: null,
+  windDirectionDeg: null,
+  precipProbPct: null,
+  thunderProbPct: null,
+  tempC: null,
+  ...over,
+});
 
 function snapshot(overrides: Partial<WeatherSnapshot> = {}): WeatherSnapshot {
   return {
@@ -81,6 +96,25 @@ describe('evaluateAdvisories', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wxString: 'TSRA' });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
     expect(out.some((a) => a.id === 'thunderstorm' && a.level === 'caution')).toBe(true);
+  });
+
+  it('flags forecast thunderstorm chance from the hourly gridpoint', () => {
+    // 35% thunder within the next 6 h → caution; a low far-out value is ignored.
+    const hourly = [
+      hourAhead(2, { thunderProbPct: 35 }),
+      hourAhead(3, { thunderProbPct: 10 }),
+      hourAhead(20, { thunderProbPct: 80 }), // outside the 6 h window
+    ];
+    const out = evaluateAdvisories(snapshot({ hourly }), DEFAULT_THRESHOLDS.student, now);
+    const t = out.find((a) => a.id === 'thunder-forecast');
+    expect(t?.level).toBe('caution');
+    expect(t?.value).toContain('35%');
+  });
+
+  it('does not flag thunder below the watch threshold', () => {
+    const hourly = [hourAhead(2, { thunderProbPct: 5 })];
+    const out = evaluateAdvisories(snapshot({ hourly }), DEFAULT_THRESHOLDS.student, now);
+    expect(out.some((a) => a.id === 'thunder-forecast')).toBe(false);
   });
 
   it('after-sunset advisory cites 14 CFR 105.19 and invents no "night rating"', () => {

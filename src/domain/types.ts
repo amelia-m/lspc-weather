@@ -46,6 +46,8 @@ export interface HourlyPoint {
   windGustKt: number | null;
   windDirectionDeg: number | null;
   precipProbPct: number | null;
+  /** Forecast thunderstorm probability, percent (NWS gridpoint). */
+  thunderProbPct: number | null;
   tempC: number | null;
 }
 

@@ -19,7 +19,7 @@ Legend: ✅ have · ⚠️ partial · ❌ missing · ⏭️ intentionally skippe
 | Dew point + temp/dew-point spread | ⚠️ current METAR only, no forecast; spread not shown |
 | Relative humidity | ❌ missing |
 | Precip amount (QPF, inches) | ❌ missing (we have probability, not amount) |
-| Chance of thunder % | ❌ missing (needs a source we can't reliably reach) |
+| Chance of thunder % | ✅ NWS gridpoint `probabilityOfThunder` (Precip & storms card, hourly Storm column, advisory) |
 | Probability precip is rain % | ⏭️ skip — low value for summer jumping |
 | Lowest cloud base (any layer) | ⚠️ partial (we show ceiling, not lowest FEW/SCT) |
 | Nebraska State Summary sidebar | ⏭️ skip — regional roundup, not DZ-specific |
@@ -37,14 +37,16 @@ Legend: ✅ have · ⚠️ partial · ❌ missing · ⏭️ intentionally skippe
 4. **Precip amount (QPF, inches)** — NWS gridpoint `quantitativePrecipitation`,
    alongside the existing chance-of-precip %.
 
-Deferred / skipped:
+Resolved:
 
-- **Chance of thunder %** — high safety value, but the only real sources are
-  model CAPE / lightning potential (Open-Meteo), which is unreliable on
-  networks that block that host. **TODO: see if we can find a source (e.g. a
-  CORS-friendly NWS convective/thunder probability, SPC, or another API) OR
-  determine the reason Open-Meteo is blocked on the user's network (Private
-  DNS / ad-blocker / VPN) so it can be unblocked**, then reassess.
+- **Chance of thunder %** — *implemented.* Investigation found the NWS
+  gridpoint (`api.weather.gov`, which works even when Open-Meteo is blocked)
+  exposes a numeric `probabilityOfThunder` property — the same data usairnet
+  shows. We already fetch that gridpoint, so no new network dependency was
+  needed. See the [NWS gridpoint properties
+  doc](https://github.com/weather-gov/api/blob/master/gridpoints.md).
+
+Skipped:
 - **Probability precip is rain %** and **Nebraska State Summary** — low value
   for a single-DZ summer skydiving tool.
 
