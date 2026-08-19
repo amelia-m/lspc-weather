@@ -194,8 +194,20 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 14px;
+  /* Don't stretch a short card (Daylight, Sun) to the height of a tall
+     neighbour (Radar) — let each card be its natural height. */
+  align-items: start;
   /* Backfill any gap the span-2 outlook would leave at odd column counts. */
   grid-auto-flow: row dense;
+}
+/* Where supported, pack cards vertically (masonry) so a short card doesn't
+   leave a tall gap under it before the next row. Falls back to the aligned
+   grid above otherwise. */
+@supports (grid-template-rows: masonry) {
+  .grid {
+    grid-template-rows: masonry;
+    grid-auto-flow: row;
+  }
 }
 .grid .panel {
   margin-bottom: 0;
@@ -209,8 +221,10 @@ a {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  /* Flow warnings into columns on wider viewports so each flag isn't a
+     full-width band; collapses to a single column on narrow screens. */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 10px;
 }
 .advisory {
@@ -544,13 +558,22 @@ a {
 .ceil-value {
   font-weight: 600;
 }
+/* Horizontal scroll so the 12-hour timeline never forces the card wider than
+   its grid cell — it fits without scrolling on wide cards and scrolls only when
+   the cell is too narrow for readable bars. */
+.sky-scroll {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
 .sky-timeline {
   display: flex;
   gap: 4px;
   align-items: flex-end;
+  min-width: min-content;
 }
 .sky-col {
-  flex: 1;
+  /* Don't shrink below a readable bar width; scroll instead. */
+  flex: 1 0 34px;
   text-align: center;
   font-size: 0.62rem;
   color: var(--muted);
