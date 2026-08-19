@@ -50,7 +50,8 @@ export function CeilingSkyPanel({
       {upcoming.length === 0 ? (
         <p className="muted">No hourly forecast available.</p>
       ) : (
-        <div className="sky-timeline">
+        <div className="sky-scroll">
+          <div className="sky-timeline">
           <div className="sky-col sky-axis-col" aria-hidden="true">
             <span className="sky-pct">&nbsp;</span>
             <div className="sky-axis">
@@ -77,6 +78,7 @@ export function CeilingSkyPanel({
               <span className="sky-time">{fmtTime(h.time)}</span>
             </div>
           ))}
+          </div>
         </div>
       )}
       <p className="muted small">

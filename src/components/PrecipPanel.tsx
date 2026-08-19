@@ -59,23 +59,25 @@ export function PrecipPanel({
       {upcoming.length === 0 ? (
         <p className="muted">No hourly forecast available.</p>
       ) : (
-        <div className="sky-timeline">
-          {upcoming.map((h) => (
-            <div
-              key={h.time}
-              className="sky-col"
-              title={`${fmtTime(h.time)} · ${h.precipProbPct != null ? round(h.precipProbPct) + '%' : '—'}`}
-            >
-              <div className="sky-bar-track">
-                <div
-                  className="sky-bar precip-bar"
-                  style={{ height: `${h.precipProbPct ?? 0}%` }}
-                />
+        <div className="sky-scroll">
+          <div className="sky-timeline">
+            {upcoming.map((h) => (
+              <div
+                key={h.time}
+                className="sky-col"
+                title={`${fmtTime(h.time)} · ${h.precipProbPct != null ? round(h.precipProbPct) + '%' : '—'}`}
+              >
+                <div className="sky-bar-track">
+                  <div
+                    className="sky-bar precip-bar"
+                    style={{ height: `${h.precipProbPct ?? 0}%` }}
+                  />
+                </div>
+                <span className="sky-ceil">{h.precipProbPct != null ? `${round(h.precipProbPct)}` : '—'}</span>
+                <span className="sky-time">{fmtTime(h.time)}</span>
               </div>
-              <span className="sky-ceil">{h.precipProbPct != null ? `${round(h.precipProbPct)}` : '—'}</span>
-              <span className="sky-time">{fmtTime(h.time)}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
       <p className="muted small">Bar height = chance of precipitation (%). Label = same, per hour.</p>
