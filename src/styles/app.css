@@ -95,10 +95,15 @@ a {
   color: #04121f;
   font-weight: 600;
 }
-.unit-toggle {
+.unit-toggle,
+.range-toggle {
   display: flex;
 }
-.unit-toggle button {
+.range-toggle {
+  margin-bottom: 8px;
+}
+.unit-toggle button,
+.range-toggle button {
   background: var(--panel-2);
   color: var(--muted);
   border: 1px solid var(--border);
@@ -107,16 +112,23 @@ a {
   cursor: pointer;
   text-transform: uppercase;
 }
-.unit-toggle button:first-child {
+.unit-toggle button:first-child,
+.range-toggle button:first-child {
   border-radius: 6px 0 0 6px;
 }
-.unit-toggle button:last-child {
+.unit-toggle button:last-child,
+.range-toggle button:last-child {
   border-radius: 0 6px 6px 0;
 }
-.unit-toggle button.active {
+.unit-toggle button.active,
+.range-toggle button.active {
   background: var(--accent);
   color: #04121f;
   font-weight: 600;
+}
+/* Collapse the shared left/right border between adjacent toggle buttons. */
+.range-toggle button:not(:first-child) {
+  border-left: none;
 }
 
 /* Drift / spot */
