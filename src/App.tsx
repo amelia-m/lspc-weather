@@ -24,7 +24,9 @@ import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
+import { DebugSourcePanel } from './components/DebugSourcePanel';
 import { deriveProvenance } from './domain/sourceProvenance';
+import { loadPersistedLogs, getLogs } from './domain/sourceLogging';
 
 const PROFILE_KEY = 'lspc:windProfile';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
@@ -86,6 +88,17 @@ function sanitizeOverrides(raw: unknown): Overrides {
 }
 
 export default function App(): JSX.Element {
+  // Initialize debug logging and expose API to window
+  useEffect(() => {
+    loadPersistedLogs();
+    window.LSPC_DEBUG = {
+      toggle: () => {
+        // Toggles via Shift+D in DebugSourcePanel, but manual access is here
+      },
+      getLogs: () => getLogs(),
+    };
+  }, []);
+
   const [profile, setProfile] = useState<WindProfileId>(() =>
     toWindProfileId(safeLocalGet(PROFILE_KEY)),
   );
@@ -254,6 +267,8 @@ export default function App(): JSX.Element {
         onChange={setThreshold}
         onReset={resetProfile}
       />
+
+      <DebugSourcePanel />
 
       <footer className="app-foot">
         Data: NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.
