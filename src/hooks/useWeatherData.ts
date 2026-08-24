@@ -10,6 +10,7 @@ import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
+import { logSource } from '../domain/sourceLogging';
 import type { Advisory, SourceKey, SourceStatus, WeatherSnapshot } from '../domain/types';
 import type { SpeedUnit } from '../domain/units';
 import type { Thresholds } from '../config/thresholds';
@@ -133,23 +134,33 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
                 })
               : prev.densityAltitude,
         }));
+        logSource('metar', 'success', `METAR from ${metarStation.id}`);
         updateSource('metar', okStatus());
       })
-      .catch((e) => markStale('metar', e));
+      .catch((e) => {
+        logSource('metar', 'failure', 'METAR fetch failed', e as Error);
+        markStale('metar', e);
+      });
 
     const hourlyP = fetchHourly(dz.lat, dz.lon)
       .then((hourly) => {
         setSnapshot((prev) => ({ ...prev, hourly }));
+        logSource('hourly', 'success', `NWS hourly (${hourly.length} hours)`);
         updateSource('nws', okStatus());
       })
-      .catch((e) => markStale('nws', e));
+      .catch((e) => {
+        logSource('hourly', 'failure', 'NWS hourly fetch failed', e as Error);
+        markStale('nws', e);
+      });
 
     const windsP = fetchWindsAloft(dz.lat, dz.lon, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL, now)
       .then((windsAloft) => {
         setSnapshot((prev) => ({ ...prev, windsAloft, windsAloftSource: 'open-meteo' }));
+        logSource('winds-aloft', 'success', 'Open-Meteo winds aloft');
         updateSource('windsAloft', okStatus());
       })
       .catch(async (e) => {
+        logSource('winds-aloft', 'attempted', 'Open-Meteo unreachable, trying NOAA FD fallback', e as Error);
         // Open-Meteo unreachable (some networks block that host) — fall back
         // to the NOAA FD winds-aloft product on api.weather.gov. No surface
         // (0 AGL) target: the bulletin's lowest level is 3,000 ft MSL and
@@ -162,10 +173,12 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
           );
           if (fd && fd.length > 0) {
             setSnapshot((prev) => ({ ...prev, windsAloft: fd, windsAloftSource: 'nws-fd' }));
+            logSource('winds-aloft', 'fallback', `NOAA FD fallback (${fd.length} levels)`);
             updateSource('windsAloft', okStatus());
             return;
           }
-        } catch {
+        } catch (fdError) {
+          logSource('winds-aloft', 'failure', 'NOAA FD fallback also failed', fdError as Error);
           /* report the original Open-Meteo error below */
         }
         markStale('windsAloft', e);
@@ -175,37 +188,44 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
         if (taf) {
+          logSource('taf', 'success', `TAF from ${taf.station}`);
           updateSource('taf', okStatus());
         } else {
           // The whole chain came back product-less: an NWS feed gap, not a
           // success. Mark it so Data health shows the gap and the quick
           // retry / next poll keeps trying.
-          markStale(
-            'taf',
-            new Error(
-              `NWS product feed listed no TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`,
-            ),
+          const err = new Error(
+            `NWS product feed listed no TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`,
           );
+          logSource('taf', 'failure', 'No TAF in NWS feed', err);
+          markStale('taf', err);
         }
       })
-      .catch((e) => markStale('taf', e));
+      .catch((e) => {
+        logSource('taf', 'failure', 'TAF fetch failed', e as Error);
+        markStale('taf', e);
+      });
 
     const dailyP = fetchDailyForecast(dz.lat, dz.lon)
       .then((daily) => {
         setSnapshot((prev) => ({ ...prev, daily, dailySource: 'open-meteo' }));
+        logSource('daily', 'success', `Open-Meteo daily (${daily.length} days)`);
         updateSource('daily', okStatus());
       })
       .catch(async (e) => {
+        logSource('daily', 'attempted', 'Open-Meteo unreachable, trying NWS gridpoint fallback', e as Error);
         // Open-Meteo unreachable — aggregate the NWS gridpoint hourlies into
         // a ~7-day outlook instead (same host as the working forecast).
         try {
           const daily = await fetchDailyFromGridpoint(dz.lat, dz.lon, SITE.timeZone);
           if (daily.length > 0) {
             setSnapshot((prev) => ({ ...prev, daily, dailySource: 'nws-gridpoint' }));
+            logSource('daily', 'fallback', `NWS gridpoint fallback (${daily.length} days)`);
             updateSource('daily', okStatus());
             return;
           }
-        } catch {
+        } catch (npError) {
+          logSource('daily', 'failure', 'NWS gridpoint fallback also failed', npError as Error);
           /* report the original Open-Meteo error below */
         }
         markStale('daily', e);
