@@ -61,6 +61,7 @@ export function DebugSourcePanel(): JSX.Element | null {
                   hour: '2-digit',
                   minute: '2-digit',
                   second: '2-digit',
+                  hour12: false,
                 })}
               </span>
               <span className="debug-source">{log.source.toUpperCase()}</span>
