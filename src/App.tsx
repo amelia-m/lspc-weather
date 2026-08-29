@@ -24,9 +24,8 @@ import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
-import { DebugSourcePanel } from './components/DebugSourcePanel';
 import { deriveProvenance } from './domain/sourceProvenance';
-import { loadPersistedLogs } from './api/sourceLog';
+import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 
 const PROFILE_KEY = 'lspc:windProfile';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
@@ -89,12 +88,17 @@ function sanitizeOverrides(raw: unknown): Overrides {
 
 export default function App(): JSX.Element {
   /* Rehydrate the source log from localStorage before the first fetch runs, so
-     a reload while chasing a flaky upstream keeps the history that explains it.
-     The window.LSPC_DEBUG API is registered by DebugSourcePanel itself — the
-     panel owns its own visibility state, so it is the only place that can hand
-     out a toggle that actually toggles. */
+     a reload while chasing a flaky upstream keeps the history that explains it,
+     and publish it on window for devtools. There is deliberately no in-page log
+     viewer: the winds-aloft card states its own forecast valid time and Data
+     health names the provider per source, which covers the everyday "why does
+     this disagree with another tool" question without a debug surface. */
   useEffect(() => {
     loadPersistedLogs();
+    window.LSPC_DEBUG = { getLogs, clearLogs };
+    return () => {
+      delete window.LSPC_DEBUG;
+    };
   }, []);
 
   const [profile, setProfile] = useState<WindProfileId>(() =>
@@ -267,11 +271,19 @@ export default function App(): JSX.Element {
         onReset={resetProfile}
       />
 
-      <DebugSourcePanel />
-
       <footer className="app-foot">
         Data: NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.
       </footer>
     </div>
   );
+}
+
+/** Console-only handle on the fetch history. Declared optional because the
+ *  property exists only while App is mounted — notably absent if the
+ *  ErrorBoundary caught a crash during the first render, which is exactly when
+ *  someone would reach for it. */
+declare global {
+  interface Window {
+    LSPC_DEBUG?: { getLogs: () => readonly SourceLog[]; clearLogs: () => void };
+  }
 }
