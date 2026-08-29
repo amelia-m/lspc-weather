@@ -105,6 +105,35 @@ export interface TafForecast {
  *  (Open-Meteo) or the NOAA FD text-product fallback. */
 export type WindsAloftSource = 'open-meteo' | 'nws-fd';
 
+/**
+ * WHEN the winds-aloft levels are valid — a first-class fact, not a detail.
+ *
+ * Both sources are forecasts for a specific time, not observations of now:
+ * Open-Meteo is snapped to the nearest hourly step (which can be up to half an
+ * hour ahead of the clock), and a NOAA FD bulletin verifies at a single stated
+ * hour. Jumpers cross-check this card against Mark Schulze's Winds Aloft, which
+ * prints its own valid time in Z; unless this app states its valid time too,
+ * a routine one-hour offset looks exactly like a data disagreement.
+ */
+export interface WindsAloftValidity {
+  /** Epoch ms the levels verify at. null when the source states no valid time
+   *  (an FD bulletin whose header did not parse). */
+  validMs: number | null;
+  /** FD only: the model cycle the bulletin was computed from ("DATA BASED ON"). */
+  basedOnMs?: number | null;
+  /** FD only: the bulletin's own "FOR USE hhmm-hhmm" window, hours in Z. The
+   *  codes carry no day, so this stays text rather than becoming timestamps. */
+  forUseRaw?: string | null;
+}
+
+/** One fetch of winds aloft: the interpolated levels and the time they are for.
+ *  Returned by both the Open-Meteo path and the NOAA FD fallback so neither can
+ *  hand the UI altitudes without a valid time. */
+export interface WindsAloftForecast {
+  levels: WindsAloftLevel[];
+  validity: WindsAloftValidity;
+}
+
 /** Where the daily outlook came from: Open-Meteo (10 days) or the NWS
  *  gridpoint aggregate fallback (~7 days). */
 export type DailySource = 'open-meteo' | 'nws-gridpoint';
@@ -119,6 +148,8 @@ export interface WeatherSnapshot {
   windsAloft: WindsAloftLevel[];
   /** null until winds aloft have loaded. */
   windsAloftSource?: WindsAloftSource | null;
+  /** Forecast time the `windsAloft` levels are valid for. null until they load. */
+  windsAloftValidity?: WindsAloftValidity | null;
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
   taf: TafForecast | null;

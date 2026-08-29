@@ -6,7 +6,7 @@ import {
   type RawOpenMeteoDaily,
 } from '../domain/normalize';
 import { interpolateWindsAloft } from '../domain/windsAloft';
-import type { DailyPoint, WindsAloftLevel } from '../domain/types';
+import type { DailyPoint, WindsAloftForecast } from '../domain/types';
 import { SITE } from '../config/site';
 import { OPEN_METEO_FIXTURE } from './fixtures/openMeteo';
 import { OPEN_METEO_DAILY_FIXTURE } from './fixtures/openMeteoDaily';
@@ -31,14 +31,20 @@ function buildHourlyVars(): string {
  *  and an extra retry than the fetchJson defaults. */
 const OPEN_METEO_OPTS = { timeoutMs: 20_000, retries: 2 };
 
-/** Fetch winds aloft and interpolate to the requested AGL jump altitudes. */
+/** Fetch winds aloft and interpolate to the requested AGL jump altitudes.
+ *
+ *  Returns the valid time alongside the levels: the model is hourly and the
+ *  normalizer snaps to the nearest step in either direction, so "the winds" are
+ *  always the winds for one specific hour that is rarely the current one. The
+ *  UI states that hour so it can be compared against tools that print their own
+ *  (Mark Schulze's Winds Aloft labels its data in Z). */
 export async function fetchWindsAloft(
   lat: number,
   lon: number,
   fieldElevationFt: number,
   targetAltitudesFtAgl: readonly number[],
   now: number,
-): Promise<WindsAloftLevel[]> {
+): Promise<WindsAloftForecast> {
   const data: RawOpenMeteo = USE_FIXTURES
     ? OPEN_METEO_FIXTURE
     : await fetchJson<RawOpenMeteo>(
@@ -51,8 +57,11 @@ export async function fetchWindsAloft(
   // timeformat=unixtime returns numbers; normalize expects ISO strings, so
   // coerce here to keep the normalizer single-pathed.
   const coerced = coerceTimes(data);
-  const samples = normalizeOpenMeteo(coerced, now);
-  return interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl);
+  const { samples, validMs } = normalizeOpenMeteo(coerced, now);
+  return {
+    levels: interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl),
+    validity: { validMs },
+  };
 }
 
 /** Fetch the 10-day daily outlook (temps, wind/gust maxima, precip chance,

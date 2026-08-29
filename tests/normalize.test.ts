@@ -6,7 +6,9 @@ import {
   normalizeGridpoint,
   normalizeMetar,
   normalizeNwsObservation,
+  normalizeOpenMeteo,
   normalizeOpenMeteoDaily,
+  parseFdTiming,
   parseFdWinds,
   parseTaf,
   parseValidTime,
@@ -17,6 +19,7 @@ import { GRIDPOINT_FIXTURE } from '../src/api/fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from '../src/api/fixtures/observation';
 import { TAF_FIXTURE } from '../src/api/fixtures/taf';
 import { OPEN_METEO_DAILY_FIXTURE } from '../src/api/fixtures/openMeteoDaily';
+import type { RawOpenMeteo } from '../src/domain/normalize';
 
 describe('durationToHours', () => {
   it('parses hour and day durations', () => {
@@ -369,5 +372,88 @@ describe('aggregateDailyFromHourly', () => {
       CHI,
     );
     expect(empty).toHaveLength(0);
+  });
+});
+
+describe('normalizeOpenMeteo hour selection', () => {
+  /** Three hourly steps with distinguishable winds so the assertions can name
+   *  which step was picked, not just that some step was. */
+  const SERIES: RawOpenMeteo & { elevation: number } = {
+    elevation: 360,
+    hourly: {
+      time: [
+        '2026-06-04T12:00:00Z',
+        '2026-06-04T13:00:00Z',
+        '2026-06-04T14:00:00Z',
+      ],
+      temperature_2m: [20, 21, 22],
+      wind_speed_10m: [10, 20, 30],
+      wind_direction_10m: [100, 200, 300],
+      wind_speed_850hPa: [11, 21, 31],
+      wind_direction_850hPa: [110, 210, 310],
+      geopotential_height_850hPa: [1500, 1500, 1500],
+      temperature_850hPa: [5, 6, 7],
+    },
+  };
+
+  it('reports the epoch of the hour it selected', () => {
+    const { samples, validMs } = normalizeOpenMeteo(SERIES, Date.parse('2026-06-04T12:05:00Z'));
+    expect(validMs).toBe(Date.parse('2026-06-04T12:00:00Z'));
+    expect(samples[0].speedKt).toBe(10);
+  });
+
+  // The case that hides a real disagreement: past the half hour the NEXT step is
+  // nearer, so the card is showing 13:00 winds at 12:31. The reported validMs is
+  // what makes that visible instead of silent.
+  it('snaps FORWARD to the next hour once it is nearer, and says so', () => {
+    const { samples, validMs } = normalizeOpenMeteo(SERIES, Date.parse('2026-06-04T12:31:00Z'));
+    expect(validMs).toBe(Date.parse('2026-06-04T13:00:00Z'));
+    expect(validMs).toBeGreaterThan(Date.parse('2026-06-04T12:31:00Z'));
+    expect(samples[0].speedKt).toBe(20);
+    expect(samples[0].directionDeg).toBe(200);
+  });
+
+  it('clamps to the last step when now is past the end of the series', () => {
+    const { validMs } = normalizeOpenMeteo(SERIES, Date.parse('2026-06-05T09:00:00Z'));
+    expect(validMs).toBe(Date.parse('2026-06-04T14:00:00Z'));
+  });
+
+  it('reports a null valid time for an empty series', () => {
+    const empty = normalizeOpenMeteo({ hourly: { time: [] } }, Date.now());
+    expect(empty).toEqual({ samples: [], validMs: null });
+  });
+});
+
+describe('parseFdTiming', () => {
+  const HEADER = [
+    'FBUS33 KWNO 040200',
+    'FD1US3',
+    'DATA BASED ON 040000Z',
+    'VALID 040600Z   FOR USE 0500-0900Z. TEMPS NEG ABV 24000',
+  ].join('\n');
+
+  it('reads VALID, DATA BASED ON and FOR USE out of the header', () => {
+    const t = parseFdTiming(HEADER, Date.parse('2026-06-04T02:00:00Z'));
+    expect(t.validMs).toBe(Date.parse('2026-06-04T06:00:00Z'));
+    expect(t.basedOnMs).toBe(Date.parse('2026-06-04T00:00:00Z'));
+    // Hour-only codes with no day: kept as the bulletin's own text.
+    expect(t.forUseRaw).toBe('0500-0900');
+  });
+
+  it('resolves the day code into the month nearest the reference time', () => {
+    // Bulletin issued 31 May, read just after midnight UTC on 1 June: the "31"
+    // must resolve backwards into May, not forwards into a later month.
+    const may = 'DATA BASED ON 310000Z\nVALID 310600Z   FOR USE 0500-0900Z.';
+    const t = parseFdTiming(may, Date.parse('2026-06-01T01:00:00Z'));
+    expect(t.validMs).toBe(Date.parse('2026-05-31T06:00:00Z'));
+  });
+
+  it('returns nulls when the header is absent or the codes are impossible', () => {
+    expect(parseFdTiming('FT  3000\nOMA 2118\n', Date.now())).toEqual({
+      validMs: null,
+      basedOnMs: null,
+      forUseRaw: null,
+    });
+    expect(parseFdTiming('VALID 009900Z', Date.parse('2026-06-04T02:00:00Z')).validMs).toBeNull();
   });
 });

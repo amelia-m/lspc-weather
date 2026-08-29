@@ -304,6 +304,71 @@ function parseFdTemp(raw: string | undefined, altFt: number): number | null {
   return altFt >= 24000 && !/^[+-]/.test(raw) ? -Math.abs(n) : n;
 }
 
+/**
+ * Timing a NOAA FD bulletin states about itself, in its own header:
+ *
+ *   DATA BASED ON 040000Z
+ *   VALID 040600Z   FOR USE 0500-0900Z. TEMPS NEG ABV 24000
+ *
+ * Unlike the Open-Meteo path there is no hourly series to index — the bulletin
+ * is issued for a single verification time (VALID) off a single model cycle
+ * (DATA BASED ON), and NOAA additionally publishes the window over which it is
+ * meant to be briefed (FOR USE). All three are what a jump pilot reads off the
+ * paper, so all three are captured verbatim rather than reduced to one number.
+ *
+ * The day/hour/minute codes carry no month or year, so they are resolved
+ * against `referenceMs` (the product's issuance time when the API supplies one)
+ * by choosing the candidate in the surrounding months nearest that reference —
+ * which is what makes a 31st-of-the-month bulletin read on the 1st resolve
+ * backwards instead of eleven months forwards. Pure function: the reference is
+ * a parameter, never Date.now().
+ *
+ * FOR USE is kept as the bulletin's own text ("0500-0900") because its two
+ * codes are hour-only: they carry no day, so pinning them to an epoch would
+ * mean inventing a date the bulletin does not state.
+ */
+export interface FdBulletinTiming {
+  /** "VALID ddhhmmZ" — the instant the winds verify. null if absent/unparseable. */
+  validMs: number | null;
+  /** "DATA BASED ON ddhhmmZ" — the model cycle behind the bulletin. */
+  basedOnMs: number | null;
+  /** "FOR USE hhmm-hhmmZ" window, verbatim (e.g. "0500-0900"). */
+  forUseRaw: string | null;
+}
+
+export function parseFdTiming(productText: string, referenceMs: number): FdBulletinTiming {
+  const valid = /\bVALID\s+(\d{6})Z/i.exec(productText);
+  const based = /\bDATA BASED ON\s+(\d{6})Z/i.exec(productText);
+  const forUse = /\bFOR USE\s+(\d{4}\s*-\s*\d{4})Z/i.exec(productText);
+  return {
+    validMs: valid ? ddhhmmToEpoch(valid[1], referenceMs) : null,
+    basedOnMs: based ? ddhhmmToEpoch(based[1], referenceMs) : null,
+    forUseRaw: forUse ? forUse[1].replace(/\s+/g, '') : null,
+  };
+}
+
+/** Resolve a bare UTC "DDHHMM" stamp to an epoch using the month/year of
+ *  `referenceMs`, testing the previous, same and next month and keeping the
+ *  candidate closest to the reference. Day codes that do not exist in a
+ *  candidate month are rejected rather than letting Date.UTC roll them over
+ *  into the following month. */
+function ddhhmmToEpoch(code: string, referenceMs: number): number | null {
+  const dd = Number(code.slice(0, 2));
+  const hh = Number(code.slice(2, 4));
+  const mm = Number(code.slice(4, 6));
+  if (dd < 1 || dd > 31 || hh > 23 || mm > 59) return null;
+  if (!Number.isFinite(referenceMs)) return null;
+
+  const ref = new Date(referenceMs);
+  let best: number | null = null;
+  for (const monthDelta of [-1, 0, 1]) {
+    const t = Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + monthDelta, dd, hh, mm);
+    if (new Date(t).getUTCDate() !== dd) continue; // e.g. "31" in a 30-day month
+    if (best == null || Math.abs(t - referenceMs) < Math.abs(best - referenceMs)) best = t;
+  }
+  return best;
+}
+
 /* ------------------------------------------------------------------ *
  *  NWS gridpoint forecast (/gridpoints/{office}/{x},{y})              *
  * ------------------------------------------------------------------ */
@@ -461,10 +526,29 @@ export interface RawOpenMeteo {
 
 const PRESSURE_LEVELS = [1000, 925, 850, 700, 600, 500] as const;
 
-/** Build wind samples (MSL height + kt) for the hour nearest `now`. */
-export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): RawWindSample[] {
+/**
+ * Winds-aloft samples for ONE forecast hour, together with which hour that was.
+ *
+ * The hour travels with the samples because the pick is a nearest-neighbour
+ * snap in EITHER direction (see normalizeOpenMeteo): at 12:31 local the 13:00
+ * step is closer than the 12:00 one, so the numbers being displayed are the
+ * 13:00 forecast. Skydivers routinely cross-check this card against Mark
+ * Schulze's Winds Aloft, which states an explicit valid time ("1600Z"); with
+ * the selected hour discarded, an ordinary one-hour offset is indistinguishable
+ * from a genuine model disagreement — and during a frontal passage the two are
+ * the same size.
+ */
+export interface OpenMeteoWindsAtHour {
+  samples: RawWindSample[];
+  /** Epoch ms of the hourly step actually used; null when the series is empty. */
+  validMs: number | null;
+}
+
+/** Build wind samples (MSL height + kt) for the hour nearest `now`, and report
+ *  which hour that was. Pure: `now` is a parameter, never Date.now(). */
+export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWindsAtHour {
   const times = data.hourly.time.map((t) => Date.parse(t));
-  if (times.length === 0) return [];
+  if (times.length === 0) return { samples: [], validMs: null };
   const idx = nearestIndex(times, now);
 
   const samples: RawWindSample[] = [];
@@ -500,7 +584,7 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): RawWindSamp
       });
     }
   }
-  return samples;
+  return { samples, validMs: times[idx] };
 }
 
 function nearestIndex(times: number[], target: number): number {
