@@ -10,7 +10,7 @@ import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
-import { logSource } from '../domain/sourceLogging';
+import { logSource } from '../api/sourceLog';
 import type { Advisory, SourceKey, SourceStatus, WeatherSnapshot } from '../domain/types';
 import type { SpeedUnit } from '../domain/units';
 import type { Thresholds } from '../config/thresholds';
@@ -138,29 +138,29 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         updateSource('metar', okStatus());
       })
       .catch((e) => {
-        logSource('metar', 'failure', 'METAR fetch failed', e as Error);
+        logSource('metar', 'failure', 'METAR fetch failed', e);
         markStale('metar', e);
       });
 
     const hourlyP = fetchHourly(dz.lat, dz.lon)
       .then((hourly) => {
         setSnapshot((prev) => ({ ...prev, hourly }));
-        logSource('hourly', 'success', `NWS hourly (${hourly.length} hours)`);
+        logSource('nws', 'success', `NWS hourly (${hourly.length} hours)`);
         updateSource('nws', okStatus());
       })
       .catch((e) => {
-        logSource('hourly', 'failure', 'NWS hourly fetch failed', e as Error);
+        logSource('nws', 'failure', 'NWS hourly fetch failed', e);
         markStale('nws', e);
       });
 
     const windsP = fetchWindsAloft(dz.lat, dz.lon, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL, now)
       .then((windsAloft) => {
         setSnapshot((prev) => ({ ...prev, windsAloft, windsAloftSource: 'open-meteo' }));
-        logSource('winds-aloft', 'success', 'Open-Meteo winds aloft');
+        logSource('windsAloft', 'success', 'Open-Meteo winds aloft');
         updateSource('windsAloft', okStatus());
       })
       .catch(async (e) => {
-        logSource('winds-aloft', 'attempted', 'Open-Meteo unreachable, trying NOAA FD fallback', e as Error);
+        logSource('windsAloft', 'failure', 'Open-Meteo unreachable, trying NOAA FD fallback', e);
         // Open-Meteo unreachable (some networks block that host) — fall back
         // to the NOAA FD winds-aloft product on api.weather.gov. No surface
         // (0 AGL) target: the bulletin's lowest level is 3,000 ft MSL and
@@ -173,12 +173,12 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
           );
           if (fd && fd.length > 0) {
             setSnapshot((prev) => ({ ...prev, windsAloft: fd, windsAloftSource: 'nws-fd' }));
-            logSource('winds-aloft', 'fallback', `NOAA FD fallback (${fd.length} levels)`);
+            logSource('windsAloft', 'fallback', `NOAA FD fallback (${fd.length} levels)`);
             updateSource('windsAloft', okStatus());
             return;
           }
         } catch (fdError) {
-          logSource('winds-aloft', 'failure', 'NOAA FD fallback also failed', fdError as Error);
+          logSource('windsAloft', 'failure', 'NOAA FD fallback also failed', fdError);
           /* report the original Open-Meteo error below */
         }
         markStale('windsAloft', e);
@@ -202,7 +202,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         }
       })
       .catch((e) => {
-        logSource('taf', 'failure', 'TAF fetch failed', e as Error);
+        logSource('taf', 'failure', 'TAF fetch failed', e);
         markStale('taf', e);
       });
 
@@ -213,7 +213,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         updateSource('daily', okStatus());
       })
       .catch(async (e) => {
-        logSource('daily', 'attempted', 'Open-Meteo unreachable, trying NWS gridpoint fallback', e as Error);
+        logSource('daily', 'failure', 'Open-Meteo unreachable, trying NWS gridpoint fallback', e);
         // Open-Meteo unreachable — aggregate the NWS gridpoint hourlies into
         // a ~7-day outlook instead (same host as the working forecast).
         try {
@@ -225,7 +225,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
             return;
           }
         } catch (npError) {
-          logSource('daily', 'failure', 'NWS gridpoint fallback also failed', npError as Error);
+          logSource('daily', 'failure', 'NWS gridpoint fallback also failed', npError);
           /* report the original Open-Meteo error below */
         }
         markStale('daily', e);

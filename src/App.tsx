@@ -26,7 +26,7 @@ import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
 import { DebugSourcePanel } from './components/DebugSourcePanel';
 import { deriveProvenance } from './domain/sourceProvenance';
-import { loadPersistedLogs, getLogs } from './domain/sourceLogging';
+import { loadPersistedLogs } from './api/sourceLog';
 
 const PROFILE_KEY = 'lspc:windProfile';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
@@ -88,15 +88,13 @@ function sanitizeOverrides(raw: unknown): Overrides {
 }
 
 export default function App(): JSX.Element {
-  // Initialize debug logging and expose API to window
+  /* Rehydrate the source log from localStorage before the first fetch runs, so
+     a reload while chasing a flaky upstream keeps the history that explains it.
+     The window.LSPC_DEBUG API is registered by DebugSourcePanel itself — the
+     panel owns its own visibility state, so it is the only place that can hand
+     out a toggle that actually toggles. */
   useEffect(() => {
     loadPersistedLogs();
-    window.LSPC_DEBUG = {
-      toggle: () => {
-        // Toggles via Shift+D in DebugSourcePanel, but manual access is here
-      },
-      getLogs: () => getLogs(),
-    };
   }, []);
 
   const [profile, setProfile] = useState<WindProfileId>(() =>
