@@ -1069,3 +1069,40 @@ a {
   font-size: 0.7rem;
   margin-top: 2px;
 }
+
+/* The debug panel is a fixed overlay pinned to the bottom of the viewport, so
+   while it is open it covers whatever the page ends with — on a phone that is
+   the Data health card and its ↻ Refresh button, which is exactly the control
+   someone wants while watching fetch logs. Reserve scroll room under the page
+   equal to the panel's footprint so every control can be scrolled clear of it
+   rather than being permanently unreachable. Applied only while open, so the
+   normal layout keeps its tight bottom margin. */
+body.debug-panel-open .app {
+  padding-bottom: 420px;
+}
+
+/* Below the single-column breakpoint a 500px floating card is wider than the
+   screen and ~half its height, so it becomes a bottom sheet: full-bleed,
+   height-capped, and scrolling inside itself. */
+@media (max-width: 640px) {
+  .debug-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-width: none;
+    max-height: 50vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+  .debug-logs {
+    max-height: none;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+  body.debug-panel-open .app {
+    padding-bottom: calc(50vh + 24px);
+  }
+}
