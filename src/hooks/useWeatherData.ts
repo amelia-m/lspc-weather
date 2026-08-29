@@ -11,7 +11,13 @@ import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
 import { logSource } from '../api/sourceLog';
-import type { Advisory, SourceKey, SourceStatus, WeatherSnapshot } from '../domain/types';
+import type {
+  Advisory,
+  SourceKey,
+  SourceStatus,
+  WeatherSnapshot,
+  WindsAloftValidity,
+} from '../domain/types';
 import type { SpeedUnit } from '../domain/units';
 import type { Thresholds } from '../config/thresholds';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
@@ -154,9 +160,14 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       });
 
     const windsP = fetchWindsAloft(dz.lat, dz.lon, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL, now)
-      .then((windsAloft) => {
-        setSnapshot((prev) => ({ ...prev, windsAloft, windsAloftSource: 'open-meteo' }));
-        logSource('windsAloft', 'success', 'Open-Meteo winds aloft');
+      .then(({ levels, validity }) => {
+        setSnapshot((prev) => ({
+          ...prev,
+          windsAloft: levels,
+          windsAloftSource: 'open-meteo',
+          windsAloftValidity: validity,
+        }));
+        logSource('windsAloft', 'success', `Open-Meteo winds aloft ${describeValidity(validity)}`);
         updateSource('windsAloft', okStatus());
       })
       .catch(async (e) => {
@@ -170,10 +181,20 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
             SITE.fdWindsStation,
             dz.elevationFt,
             WINDS_ALOFT_LEVELS_AGL.filter((a) => a > 0),
+            now,
           );
-          if (fd && fd.length > 0) {
-            setSnapshot((prev) => ({ ...prev, windsAloft: fd, windsAloftSource: 'nws-fd' }));
-            logSource('windsAloft', 'fallback', `NOAA FD fallback (${fd.length} levels)`);
+          if (fd && fd.levels.length > 0) {
+            setSnapshot((prev) => ({
+              ...prev,
+              windsAloft: fd.levels,
+              windsAloftSource: 'nws-fd',
+              windsAloftValidity: fd.validity,
+            }));
+            logSource(
+              'windsAloft',
+              'fallback',
+              `NOAA FD fallback (${fd.levels.length} levels) ${describeValidity(fd.validity)}`,
+            );
             updateSource('windsAloft', okStatus());
             return;
           }
@@ -260,6 +281,30 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
   const decoratedStatus = useMemo(() => withStaleness(status), [status]);
 
   return { snapshot, advisories, status: decoratedStatus, loading, lastUpdated, refresh };
+}
+
+/**
+ * Render a winds-aloft valid time for the source log.
+ *
+ * The winds-aloft success line used to be the constant "Open-Meteo winds
+ * aloft", which could not answer the only question anyone opens the log for:
+ * WHICH forecast hour the numbers on screen were. Both the Zulu stamp (what
+ * Mark Schulze's Winds Aloft prints) and the signed offset from the clock go in,
+ * so a disagreement reported hours later is still diagnosable from the log
+ * alone. Time is read here, in the hook, rather than in any src/domain module.
+ */
+function describeValidity(validity: WindsAloftValidity): string {
+  if (validity.validMs == null) return 'valid time not stated by source';
+  const d = new Date(validity.validMs);
+  const zulu = `${String(d.getUTCHours()).padStart(2, '0')}${String(d.getUTCMinutes()).padStart(2, '0')}Z`;
+  const offsetMin = Math.round((validity.validMs - Date.now()) / 60_000);
+  // ASCII sign, not a typographic minus: log lines get grepped and pasted.
+  const offset = `${offsetMin >= 0 ? '+' : '-'}${Math.abs(offsetMin)} min vs now`;
+  const extra = [
+    validity.forUseRaw ? `for use ${validity.forUseRaw}Z` : null,
+    validity.basedOnMs != null ? `based on ${new Date(validity.basedOnMs).toISOString()}` : null,
+  ].filter((p): p is string => p != null);
+  return `valid ${d.toISOString()} (${zulu}, ${offset})${extra.length ? `, ${extra.join(', ')}` : ''}`;
 }
 
 function withStaleness(status: Record<SourceKey, SourceStatus>): Record<SourceKey, SourceStatus> {
