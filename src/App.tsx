@@ -233,6 +233,7 @@ export default function App(): JSX.Element {
         <WindsAloftPanel
           levels={snapshot.windsAloft}
           source={snapshot.windsAloftSource}
+          validity={snapshot.windsAloftValidity}
           unit={unit}
         />
         <DriftPanel levels={snapshot.windsAloft} profile={profile} />

@@ -3,6 +3,7 @@ import {
   aggregateDailyFromHourly,
   normalizeGridpoint,
   normalizeNwsObservation,
+  parseFdTiming,
   parseFdWinds,
   parseTaf,
   type RawGridpoint,
@@ -15,7 +16,7 @@ import type {
   DailyPoint,
   HourlyPoint,
   TafForecast,
-  WindsAloftLevel,
+  WindsAloftForecast,
 } from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from './fixtures/observation';
@@ -245,15 +246,24 @@ interface FdProductDetail extends RawNwsProduct {
  * collective id is cached so later refreshes use one precise query
  * (?type&wmoid&limit=1). The cache self-invalidates when it stops matching.
  * Returns null when no product yields winds.
+ *
+ * The bulletin's own header timing (VALID / DATA BASED ON / FOR USE) rides back
+ * with the levels so the card can state a valid time on this path too — an FD
+ * bulletin is issued every 6 hours and can verify hours from now, an offset
+ * even larger than the Open-Meteo hour snap. Its day/hour codes carry no month,
+ * so they are resolved against the product's issuanceTime where the API gives
+ * one and against `now` otherwise.
  */
 export async function fetchWindsAloftFd(
   station: string,
   fieldElevationFt: number,
   targetAltitudesFtAgl: readonly number[],
-): Promise<WindsAloftLevel[] | null> {
-  const tryProduct = async (url: string): Promise<WindsAloftLevel[] | null> => {
+  now: number,
+): Promise<WindsAloftForecast | null> {
+  const tryProduct = async (url: string): Promise<WindsAloftForecast | null> => {
     const product = await fetchJson<FdProductDetail>(url);
-    const samples = parseFdWinds(product.productText ?? '', station);
+    const text = product.productText ?? '';
+    const samples = parseFdWinds(text, station);
     if (!samples || samples.length === 0) return null;
     if (product.wmoCollectiveId) {
       safeLocalSet(
@@ -261,7 +271,12 @@ export async function fetchWindsAloftFd(
         JSON.stringify({ type: 'FD', wmoid: product.wmoCollectiveId }),
       );
     }
-    return interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl);
+    const issued = product.issuanceTime ? Date.parse(product.issuanceTime) : NaN;
+    const timing = parseFdTiming(text, Number.isNaN(issued) ? now : issued);
+    return {
+      levels: interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl),
+      validity: timing,
+    };
   };
 
   // Fast path: the previously discovered bulletin.
@@ -275,8 +290,8 @@ export async function fetchWindsAloftFd(
         );
         const latest = list['@graph']?.[0];
         if (latest) {
-          const levels = await tryProduct(latest['@id']);
-          if (levels) return levels;
+          const forecast = await tryProduct(latest['@id']);
+          if (forecast) return forecast;
         }
       }
     } catch {
@@ -304,8 +319,8 @@ export async function fetchWindsAloftFd(
       seen.add(key);
       if (budget-- <= 0) return null;
       try {
-        const levels = await tryProduct(e['@id']);
-        if (levels) return levels;
+        const forecast = await tryProduct(e['@id']);
+        if (forecast) return forecast;
       } catch {
         /* next candidate */
       }

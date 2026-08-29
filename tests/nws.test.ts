@@ -264,7 +264,19 @@ describe('fetchJson timeout', () => {
 describe('fetchWindsAloftFd discovery', () => {
   const FD_OMA = 'FT  3000    6000\nOMA 2118    2426+14\n';
   const FD_OTHER = 'FT  3000    6000\nBOS 1005    1210+10\n';
+  /** A bulletin with the real header block, for the timing assertions. */
+  const FD_OMA_FULL = [
+    'FBUS33 KWNO 040200',
+    'FD1US3',
+    'DATA BASED ON 040000Z',
+    'VALID 040600Z   FOR USE 0500-0900Z. TEMPS NEG ABV 24000',
+    '',
+    'FT  3000    6000',
+    'OMA 2118    2426+14',
+    '',
+  ].join('\n');
   const TARGETS = [1000, 2000];
+  const NOW = Date.parse('2026-06-04T03:30:00Z');
 
   beforeEach(() => vi.stubGlobal('localStorage', makeLocalStorage()));
 
@@ -291,9 +303,9 @@ describe('fetchWindsAloftFd discovery', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const levels = await fetchWindsAloftFd('OMA', 1182, TARGETS);
-    expect(levels).not.toBeNull();
-    expect(levels!).toHaveLength(2);
+    const fd = await fetchWindsAloftFd('OMA', 1182, TARGETS, NOW);
+    expect(fd).not.toBeNull();
+    expect(fd!.levels).toHaveLength(2);
     expect(JSON.parse(localStorage.getItem('nws-fd-source')!)).toMatchObject({ wmoid: 'FBUS33' });
     // The duplicate FBUS31 entry was deduped: list + p1 + p3 = 3 fetches.
     expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -312,8 +324,8 @@ describe('fetchWindsAloftFd discovery', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const levels = await fetchWindsAloftFd('OMA', 1182, TARGETS);
-    expect(levels).not.toBeNull();
+    const fd = await fetchWindsAloftFd('OMA', 1182, TARGETS, NOW);
+    expect(fd).not.toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -333,15 +345,46 @@ describe('fetchWindsAloftFd discovery', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const levels = await fetchWindsAloftFd('OMA', 1182, TARGETS);
-    expect(levels).not.toBeNull();
+    const fd = await fetchWindsAloftFd('OMA', 1182, TARGETS, NOW);
+    expect(fd).not.toBeNull();
     expect(JSON.parse(localStorage.getItem('nws-fd-source')!)).toMatchObject({ wmoid: 'FBUS33' });
   });
 
   it('returns null when no FD type yields the station', async () => {
     const fetchMock = vi.fn(() => Promise.resolve(jsonRes({ '@graph': [] })));
     vi.stubGlobal('fetch', fetchMock);
-    await expect(fetchWindsAloftFd('OMA', 1182, TARGETS)).resolves.toBeNull();
+    await expect(fetchWindsAloftFd('OMA', 1182, TARGETS, NOW)).resolves.toBeNull();
+  });
+
+  // The whole point of the fallback carrying timing: an FD bulletin verifies at
+  // one stated hour, so the card must be able to say which one rather than
+  // implying the levels describe right now.
+  it('carries the bulletin header timing back with the levels', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('type=FD1')) {
+        return Promise.resolve(
+          jsonRes({ '@graph': [{ '@id': 'https://x/products/p3', wmoCollectiveId: 'FBUS33' }] }),
+        );
+      }
+      if (url.endsWith('/products/p3')) {
+        return Promise.resolve(
+          jsonRes({
+            productText: FD_OMA_FULL,
+            wmoCollectiveId: 'FBUS33',
+            issuanceTime: '2026-06-04T02:00:00+00:00',
+          }),
+        );
+      }
+      return Promise.resolve(jsonRes({ '@graph': [] }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const fd = await fetchWindsAloftFd('OMA', 1182, TARGETS, NOW);
+    expect(fd!.validity).toEqual({
+      validMs: Date.parse('2026-06-04T06:00:00Z'),
+      basedOnMs: Date.parse('2026-06-04T00:00:00Z'),
+      forUseRaw: '0500-0900',
+    });
   });
 });
 
