@@ -1,5 +1,5 @@
 import { haversineMiles, initialBearingDeg } from '../domain/geo';
-import { compass16 } from '../domain/units';
+import { compass } from '../domain/units';
 
 /**
  * Fixed site configuration for the Lincoln Sport Parachute Club (LSPC).
@@ -100,7 +100,7 @@ export const WINDS_ALOFT_LEVELS_AGL: readonly number[] = Array.from(
 export interface DzOffset {
   distanceMi: number;
   bearingDeg: number;
-  /** 16-point label for `bearingDeg`, e.g. "ENE". */
+  /** Compass label for `bearingDeg`, e.g. "ENE". */
   compass: string;
 }
 
@@ -113,7 +113,7 @@ export function offsetFromDz(lat: number, lon: number): DzOffset {
   return {
     distanceMi: haversineMiles(SITE.dz.lat, SITE.dz.lon, lat, lon),
     bearingDeg,
-    compass: compass16(bearingDeg),
+    compass: compass(bearingDeg),
   };
 }
 

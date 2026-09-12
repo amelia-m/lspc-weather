@@ -24,15 +24,15 @@ describe('haversineMiles', () => {
 });
 
 describe('initialBearingDeg', () => {
-  it('points generally north-ish toward Offutt', () => {
+  it('points north-northeast toward Offutt', () => {
     const b = initialBearingDeg(NE69.lat, NE69.lon, KOFF.lat, KOFF.lon);
     expect(b).toBeGreaterThan(5);
     expect(b).toBeLessThan(50);
-    expect(['N', 'NE']).toContain(compass(b));
+    expect(compass(b)).toBe('NNE');
   });
-  it('points generally east-ish toward Plattsmouth', () => {
+  it('points east-northeast toward Plattsmouth', () => {
     const b = initialBearingDeg(NE69.lat, NE69.lon, KPMV.lat, KPMV.lon);
-    expect(['NE', 'E']).toContain(compass(b));
+    expect(compass(b)).toBe('ENE');
   });
 });
 

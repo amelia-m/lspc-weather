@@ -16,20 +16,13 @@ export const mToSm = (m: number): number => m / M_PER_SM;
 export const hpaToInHg = (hpa: number): number => hpa / HPA_PER_INHG;
 export const cToF = (c: number): number => (c * 9) / 5 + 32;
 
-/** 8-point compass label for a true heading in degrees. */
-export function compass(deg: number): string {
-  const points = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  return points[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
-}
-
 /** 16-point compass label for a true heading in degrees.
  *
- *  Winds are reported to the nearest 8 points because that is the resolution a
- *  jumper acts on, but a fixed bearing between two known points deserves the
- *  finer label: the METAR station sits at 060° from the DZ, which 8-point
- *  rounding would report as "NE" (045°) — a 15° overstatement of a bearing we
- *  know exactly. */
-export function compass16(deg: number): string {
+ *  16 points rather than 8 because a 45°-wide sector is coarse enough to
+ *  mislead: a wind from 060° labelled "NE" is off by 15°, which over a 10,000 ft
+ *  freefall is a meaningful difference in where the drift puts you. The exact
+ *  degrees are shown alongside this label wherever a heading is displayed. */
+export function compass(deg: number): string {
   const points = [
     'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
     'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW',
