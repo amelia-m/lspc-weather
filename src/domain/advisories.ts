@@ -13,15 +13,20 @@ import { relativeHumidity } from './humidity';
  */
 
 // Upper-wind flags are awareness aids (freefall drift / spot length), not limits.
+// House numbers — no rule puts a speed on "the spot is getting long".
 const WINDS_ALOFT_INFO_KT = 20;
 const WINDS_ALOFT_WATCH_KT = 30;
 
 // Forecast thunderstorm probability (NWS gridpoint). Convection is a serious
-// hazard, so these are lower than the precip-chance thresholds.
+// hazard, so these are lower than the precip-chance thresholds. House numbers:
+// nothing published says a forecast chance of storms becomes notable at 10%,
+// which is why the flag cites CITATIONS.appHeuristic rather than the SIM.
 const THUNDER_WATCH_PCT = 10;
 const THUNDER_CAUTION_PCT = 30;
 
 // Temp–dew point spread (°C) fog/low-cloud thresholds: ~5.4°F and ~1.8°F.
+// House numbers again, and the underlying claim is meteorology rather than
+// skydiving practice — see the fog flag below.
 const FOG_SPREAD_WATCH_C = 3;
 const FOG_SPREAD_CAUTION_C = 1;
 
@@ -92,8 +97,14 @@ export function evaluateAdvisories(
         metric: 'Gusty wind',
         value: `${fmtSpeed(speedKt, unit)} sustained, gusting ${fmtSpeed(gustKt, unit)} (spread ${fmtSpeed(gustKt - speedKt, unit)})`,
         guidance:
-          'Large gust spread means shifting, turbulent surface winds — harder canopy flight and landings.',
-        citation: CITATIONS.uspaWeather,
+          'Large gust spread means shifting, turbulent surface winds — harder canopy flight and landings. ' +
+          'The spread that trips this flag is a dashboard threshold; the source below is the wind rule that applies to the selected profile.',
+        // The profile's own wind citation, not the generic SIM index: on a
+        // waiver tier that is the club policy, which states an explicit gust
+        // ceiling in mph for exactly this jumper — the most useful thing a
+        // reader of a gust flag can be handed. The adjacent surface-wind and
+        // gust-limit advisories already cite it.
+        citation: thresholds.windCitation,
       });
     }
 
@@ -116,14 +127,24 @@ export function evaluateAdvisories(
       const ceilLevel: AdvisoryLevel =
         c < thresholds.ceilingCautionFt ? 'caution' : c < thresholds.ceilingWatchFt ? 'watch' : 'info';
       if (ceilLevel !== 'info') {
+        // No regulation sets a minimum ceiling for a jump, and this flag's
+        // bands (5,000/3,000 student, 4,000/2,500 licensed) are the app's own.
+        // It previously cited 14 CFR 105.17, which reads as though the reg
+        // prohibits the ceiling on screen; 105.17 governs cloud CLEARANCE and
+        // flight visibility and names no ceiling. The clearance requirement is
+        // still WHY a low base matters — it is what the cited rule actually
+        // says — so the guidance explains that relationship instead, and the
+        // ceiling number is cited as the house threshold it is. (105.17 itself
+        // is linked from the visibility and overcast flags and from the
+        // Ceiling & sky card.)
         out.push({
           id: 'ceiling',
           level: ceilLevel,
           metric: 'Ceiling',
           value: `${round(c).toLocaleString()} ft AGL`,
           guidance:
-            '14 CFR 105.17 prohibits jumping into or through clouds and sets cloud-clearance minimums (500 ft below / 1,000 ft above / 2,000 ft horizontal below 10,000 ft MSL).',
-          citation: CITATIONS.far10517,
+            'A dashboard threshold, not a regulatory one — no rule sets a minimum ceiling. A low base matters because you still have to stay clear of cloud: 14 CFR 105.17 requires 500 ft below / 1,000 ft above / 2,000 ft horizontal below 10,000 ft MSL, and no jumping into or through cloud, so the usable airspace under the base is smaller than the base itself.',
+          citation: CITATIONS.appHeuristic,
         });
       }
     }
@@ -136,8 +157,14 @@ export function evaluateAdvisories(
         level: category === 'MVFR' ? 'watch' : 'caution',
         metric: 'Flight category',
         value: `${category} (${CATEGORY_LABEL[category]})`,
+        // The AIM defines these categories and nothing else; it is not
+        // regulatory and does not carry the pilot's VFR weather minimums. The
+        // guidance used to name 14 CFR 91.155 while citing the AIM, so the one
+        // link offered could not support the one rule named. Below-VFR
+        // conditions are described here in terms the AIM does cover, and the
+        // operating decision is sent to the PIC, who holds it.
         guidance:
-          'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility. Below VFR: jumps require VFR conditions and the 14 CFR 105.17 cloud-clearance minimums, and the pilot needs the basic VFR weather minimums of 14 CFR 91.155 to operate.',
+          'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the PIC.',
         citation: CITATIONS.aimFlightCategory,
       });
     }
@@ -165,9 +192,16 @@ export function evaluateAdvisories(
           level: spreadC <= FOG_SPREAD_CAUTION_C ? 'caution' : 'watch',
           metric: 'Fog / low cloud',
           value: `${round(spreadC * 1.8)}°F temp–dew point spread, ${round(rh)}% RH`,
+          // Atmospheric physics, not skydiving practice: USPA has no view on
+          // dew-point spread, and the 3 °C / 1 °C bands are the app's. The
+          // authority here would be a meteorological one (NWS / AMS), but no
+          // URL for that can be verified from this environment, and inventing
+          // one would repeat the defect being fixed. So this cites the house
+          // threshold and leaves the physics unattributed rather than
+          // misattributed.
           guidance:
-            'A small temperature–dew point spread with high humidity favors fog and low ceilings — watch for reduced visibility and a dropping cloud base, especially near dawn.',
-          citation: CITATIONS.uspaWeather,
+            'A small temperature–dew point spread with high humidity favors fog and low ceilings — watch for reduced visibility and a dropping cloud base, especially near dawn. The spread this flags at is a dashboard threshold; the underlying behaviour is meteorology, not a skydiving rule.',
+          citation: CITATIONS.appHeuristic,
         });
       }
     }
@@ -179,6 +213,12 @@ export function evaluateAdvisories(
         level: 'caution',
         metric: 'Thunderstorm',
         value: current.wxString.trim(),
+        // Kept on the general-weather SIM citation: this flag invents no
+        // number (it fires on TS in the METAR), and staying clear of
+        // thunderstorms is genuine skydiving practice that a SIM section very
+        // likely governs — it just has not been identified yet (see the
+        // uspaWeather note). An unpinned SIM link is honest here; a house
+        // heuristic would understate whose rule this is.
         guidance: 'Thunderstorms reported at the station — convective hazard for aircraft and canopies.',
         citation: CITATIONS.uspaWeather,
       });
@@ -200,8 +240,11 @@ export function evaluateAdvisories(
         level,
         metric: 'Precipitation',
         value: `${round(precipMax)}% chance (next 6 h)`,
-        guidance: 'Precipitation degrades visibility and canopy control; rain on a packed canopy adds risk.',
-        citation: CITATIONS.uspaWeather,
+        // The 25/50% (student) and 30/60% (licensed) bands are the app's own;
+        // no BSR or SIM section puts a percentage on a chance of rain.
+        guidance:
+          'Precipitation degrades visibility and canopy control; rain on a packed canopy adds risk. The chance this flags at is a dashboard threshold.',
+        citation: CITATIONS.appHeuristic,
       });
     }
   }
@@ -214,9 +257,12 @@ export function evaluateAdvisories(
       level: thunderMax >= THUNDER_CAUTION_PCT ? 'caution' : 'watch',
       metric: 'Thunderstorm chance',
       value: `${round(thunderMax)}% chance (next 6 h)`,
+      // Same reasoning as the precipitation flag: the hazard is real, the
+      // 10%/30% trigger is the app's. The OBSERVED-thunderstorm flag above
+      // still cites the SIM, because that one asserts no number.
       guidance:
-        'Forecast thunderstorms bring lightning, gust fronts, and rapid condition changes — a convective hazard for the jump plane and canopies. Watch the radar and sky.',
-      citation: CITATIONS.uspaWeather,
+        'Forecast thunderstorms bring lightning, gust fronts, and rapid condition changes — a convective hazard for the jump plane and canopies. Watch the radar and sky. The forecast chance this flags at is a dashboard threshold.',
+      citation: CITATIONS.appHeuristic,
     });
   }
 
@@ -251,8 +297,13 @@ export function evaluateAdvisories(
         level: strongest.speedKt >= WINDS_ALOFT_WATCH_KT ? 'watch' : 'info',
         metric: 'Winds aloft',
         value: `${fmtSpeed(strongest.speedKt, unit)} from ${compass(strongest.directionDeg)} at ${strongest.altitudeFtAgl.toLocaleString()} ft AGL`,
+        // Kept on the SIM citation: exit separation and spotting in strong
+        // upper winds is skydiving practice, and the audit wants this pinned to
+        // a real SIM section rather than removed. What was borrowed authority
+        // was the TRIGGER — 20/30 kt is the app's — so the guidance says so and
+        // the citation stays attached to the practice claim it supports.
         guidance:
-          'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
+          'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly. The speed this flags at is a dashboard threshold.',
         citation: CITATIONS.uspaWeather,
       });
     }

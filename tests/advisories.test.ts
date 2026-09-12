@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateAdvisories } from '../src/domain/advisories';
-import { DEFAULT_THRESHOLDS, resolveThresholds } from '../src/config/thresholds';
+import { CITATIONS, DEFAULT_THRESHOLDS, resolveThresholds } from '../src/config/thresholds';
 import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
@@ -42,11 +42,13 @@ describe('evaluateAdvisories', () => {
     expect(out.some((a) => a.id === 'gust-spread')).toBe(true);
   });
 
-  it('every advisory carries a non-empty citation URL', () => {
+  it('every advisory carries a citation that points somewhere', () => {
     const out = evaluateAdvisories(snapshot(), DEFAULT_THRESHOLDS.student, now);
     expect(out.length).toBeGreaterThan(0);
     for (const a of out) {
-      expect(a.citation.url).toMatch(/^https?:\/\//);
+      // An outside authority links out; the house-heuristic citation links to
+      // the in-app page that lists the app's own unsourced numbers.
+      expect(a.citation.url === '#citations' || /^https?:\/\//.test(a.citation.url)).toBe(true);
       expect(a.citation.source.length).toBeGreaterThan(0);
     }
   });
@@ -252,5 +254,104 @@ describe('evaluateAdvisories', () => {
     const l = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.licensed, now);
     expect(s.some((a) => a.id === 'surface-wind')).toBe(true);
     expect(l.some((a) => a.id === 'surface-wind')).toBe(false);
+  });
+});
+
+/* Borrowed authority: a flag firing on a number the app invented must not wear
+ * a USPA or FAA source line. The citation is the only part of a flag a reader
+ * can check, so a wrong one is worse than none — it looks verified. */
+describe('flags that fire on app-invented thresholds', () => {
+  /** Every flag whose trigger value appears nowhere in a published document. */
+  const HOUSE_THRESHOLD_FLAGS = ['ceiling', 'dewpoint-spread', 'precip', 'thunder-forecast'];
+
+  /** A snapshot that trips all of them at once: 2,000 ft ceiling, 1 °C spread,
+   *  60% precip and 35% thunder in the next 6 h. */
+  function heuristicSnapshot(): WeatherSnapshot {
+    return snapshot({
+      current: normalizeMetar({
+        ...METAR_FIXTURE[0],
+        clouds: [{ cover: 'BKN', base: 2000 }],
+        temp: 20,
+        dewp: 19,
+      }),
+      hourly: [hourAhead(2, { precipProbPct: 60, thunderProbPct: 35 })],
+    });
+  }
+
+  it.each(HOUSE_THRESHOLD_FLAGS)('%s cites the app heuristic, not USPA or the FAA', (id) => {
+    const out = evaluateAdvisories(heuristicSnapshot(), DEFAULT_THRESHOLDS.student, now);
+    const flag = out.find((a) => a.id === id);
+    expect(flag, `${id} did not fire — the fixture no longer trips it`).toBeDefined();
+    expect(flag?.citation).toBe(CITATIONS.appHeuristic);
+    expect(flag?.citation.source).not.toMatch(/USPA|FAA|CFR|AIM/i);
+  });
+
+  it('the ceiling flag no longer implies 14 CFR 105.17 sets a ceiling', () => {
+    // 105.17 governs cloud CLEARANCE and flight visibility and names no
+    // ceiling; citing it beside "Ceiling 2,000 ft AGL · Caution" read as though
+    // the regulation prohibited that ceiling. The clearance rule is still why a
+    // low base matters, so the guidance explains the relationship instead.
+    const ceiling = evaluateAdvisories(heuristicSnapshot(), DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'ceiling',
+    );
+    expect(ceiling?.guidance).toMatch(/no rule sets a minimum ceiling/i);
+    expect(ceiling?.guidance).toMatch(/clear of cloud/i);
+  });
+
+  it('the fog flag does not attribute meteorology to USPA', () => {
+    // Dew-point spread is atmospheric physics; USPA has no view on it, and the
+    // 3 °C / 1 °C bands are the app's.
+    const fog = evaluateAdvisories(heuristicSnapshot(), DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'dewpoint-spread',
+    );
+    expect(fog?.citation.source).not.toMatch(/USPA/i);
+  });
+
+  it('the winds-aloft flag keeps its SIM citation but says whose trigger it is', () => {
+    // Deliberately NOT repointed: the claim it makes (upper winds lengthen the
+    // spot — plan exit separation) is skydiving practice a SIM section very
+    // likely governs. Only the 20/30 kt trigger is the app's, so the text says
+    // so rather than the citation being dropped.
+    const windsAloft = [
+      { altitudeFtAgl: 9000, altitudeFtMsl: 10182, directionDeg: 270, speedKt: 35, tempC: null },
+    ];
+    const aloft = evaluateAdvisories(snapshot({ windsAloft }), DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'winds-aloft',
+    );
+    expect(aloft?.citation).toBe(CITATIONS.uspaWeather);
+    expect(aloft?.guidance).toMatch(/dashboard threshold/i);
+  });
+});
+
+describe('citations that name a regulation', () => {
+  it('the flight-category flag does not name 14 CFR 91.155 while citing the AIM', () => {
+    // The AIM is non-regulatory and does not contain 91.155, so the one link
+    // offered could not support the one rule named.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 });
+    const fc = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'flight-category',
+    );
+    expect(fc?.citation).toBe(CITATIONS.aimFlightCategory);
+    expect(fc?.guidance).not.toMatch(/91\.155/);
+  });
+
+  it('the gust-spread flag cites the profile wind rule, not the SIM index', () => {
+    // For a waiver tier the club policy states an explicit gust ceiling for
+    // exactly this jumper — far more use to the reader of a gust flag than the
+    // SIM contents page, and it sits one line away in the same thresholds.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 6, wgst: 16 });
+    for (const id of ['student', 'licensed', 'waiver:0-5'] as const) {
+      const t = resolveThresholds(id);
+      const spread = evaluateAdvisories(snapshot({ current }), t, now).find(
+        (a) => a.id === 'gust-spread',
+      );
+      expect(spread, `gust-spread did not fire for ${id}`).toBeDefined();
+      expect(spread?.citation).toBe(t.windCitation);
+    }
+    expect(
+      evaluateAdvisories(snapshot({ current }), resolveThresholds('waiver:0-5'), now).find(
+        (a) => a.id === 'gust-spread',
+      )?.citation.source,
+    ).toContain('LSPC');
   });
 });

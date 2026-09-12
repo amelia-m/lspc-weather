@@ -25,17 +25,32 @@ describe('recommendedDeployFt', () => {
 });
 
 /* The citations are the product: the dashboard flags a condition and hands the
- * jumper the rule to check. These tests guard the two properties that make a
- * citation checkable — it has to point somewhere, and it must not claim more
- * precision than the link delivers. */
+ * jumper the rule to check. These tests guard the three properties that make a
+ * citation checkable — it has to point somewhere, it must not claim more
+ * precision than the link delivers, and where no published rule sets the number
+ * it must say so instead of borrowing someone else's authority. */
 
 const entries = Object.entries(CITATIONS) as Array<[string, Citation]>;
 
+/** The one citation that is not an outside document: the app's own thresholds,
+ *  which link to the in-app page listing them for review. */
+const IN_APP_URL = '#citations';
+
 describe('CITATIONS', () => {
-  it.each(entries)('%s links somewhere over https with a source and a ref', (_key, citation) => {
+  it.each(entries)('%s links somewhere with a source and a ref', (_key, citation) => {
     expect(citation.source.trim()).not.toBe('');
     expect(citation.ref.trim()).not.toBe('');
-    expect(citation.url).toMatch(/^https:\/\//);
+    // An external authority must be reachable over https; the house-heuristic
+    // citation deliberately points inward, because there is no outside document
+    // to point at — that is the whole claim it makes.
+    expect(citation.url === IN_APP_URL || /^https:\/\//.test(citation.url)).toBe(true);
+  });
+
+  it('only the app-heuristic citation points inside the app', () => {
+    for (const [key, citation] of entries) {
+      if (citation.url !== IN_APP_URL) continue;
+      expect(key, 'a citation to an outside authority must link to it').toBe('appHeuristic');
+    }
   });
 
   it.each(entries)('%s carries a verification caveat', (_key, citation) => {
@@ -81,6 +96,26 @@ describe('USPA SIM citations', () => {
   });
 });
 
+describe('the app-heuristic citation', () => {
+  const heuristic = CITATIONS.appHeuristic;
+
+  it('does not present itself as a USPA, FAA, or club authority', () => {
+    // The failure this citation exists to prevent: a number the app invented
+    // wearing someone else's source line. A reader scanning "Source: …" must be
+    // able to tell at a glance that nobody published this figure.
+    expect(`${heuristic.source} ${heuristic.ref}`).not.toMatch(/USPA|SIM|FAA|CFR|AIM|BSR|waiver/i);
+  });
+
+  it('says in its note that it is not a USPA or FAA figure', () => {
+    expect(heuristic.note).toMatch(/not a USPA or FAA figure/i);
+  });
+
+  it('names itself a threshold rather than a limit', () => {
+    // "Limit" is what a rule sets. This is a level the dashboard picked.
+    expect(heuristic.ref).toMatch(/threshold/i);
+  });
+});
+
 describe('wind-limit profiles', () => {
   const profiles: WindProfileId[] = ['student', 'licensed', ...WAIVER_TIERS.map((t) => t.id)];
 
@@ -95,6 +130,35 @@ describe('wind-limit profiles', () => {
     // BSR there would credit USPA with limits it never set.
     for (const tier of WAIVER_TIERS) {
       expect(resolveThresholds(tier.id).windCitation).toBe(CITATIONS.lspcWaiver);
+    }
+  });
+
+  it.each(profiles)('%s sources its card bands from the CITATIONS map', (id) => {
+    expect(Object.values(CITATIONS)).toContain(resolveThresholds(id).windLimitCitation);
+  });
+
+  it('cites the app heuristic for the licensed bands, which no one published', () => {
+    // 17/25 kt are the app's own numbers, and the licensed guidance says USPA
+    // sets no limit — so drawing those bands under a BSR source line would have
+    // the card crediting USPA with a number the same flag says it never set.
+    expect(resolveThresholds('licensed').windLimitCitation).toBe(CITATIONS.appHeuristic);
+  });
+
+  it('keeps the published sources for the bands that have one', () => {
+    expect(resolveThresholds('student').windLimitCitation).toBe(CITATIONS.uspaStudentWinds);
+    for (const tier of WAIVER_TIERS) {
+      expect(resolveThresholds(tier.id).windLimitCitation).toBe(CITATIONS.lspcWaiver);
+    }
+  });
+
+  it('carries no unsourced pilot-takeoff folklore in any profile guidance', () => {
+    // A "~30–35 mph" figure for when pilots will not take off sat under a USPA
+    // citation with no source at all; takeoff limits belong to the PIC and the
+    // aircraft's operating limitations, not to USPA.
+    for (const id of profiles) {
+      const guidance = resolveThresholds(id).windGuidance;
+      expect(guidance).not.toMatch(/30\s*[–-]\s*35/);
+      expect(guidance).not.toMatch(/will not take off/i);
     }
   });
 
