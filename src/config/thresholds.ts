@@ -12,11 +12,56 @@ import { mphToKt } from '../domain/units';
 const VERIFY_NOTE =
   'AI-derived citation — may be inaccurate. Verify against the linked primary source and a licensed professional before use.';
 
+/** SIM section URLs all take this shape — `simUrl('2-1')` → …/sim/2-1. Written
+ *  once so a citation cannot drift into a different URL shape (deep anchors,
+ *  PDF mirrors) that may not resolve. */
+const simUrl = (section: string) => `https://www.uspa.org/sim/${section}`;
+
+/** The SIM's table of contents. Used when no section has been identified for a
+ *  claim — see the honesty rule in the CITATIONS doc comment below. */
+const SIM_INDEX_URL = 'https://www.uspa.org/sim';
+
+/**
+ * Citations — the product, not decoration.
+ *
+ * This dashboard gives no go/no-go verdict; its whole job is to flag a
+ * condition and hand the jumper the rule so they (or the S&TA / instructor /
+ * PIC) can check it. So a citation has to land on the SECTION that governs the
+ * claim: a reader sent to a document index to hunt for a wind limit will not
+ * hunt, and an uncheckable flag is just an opinion.
+ *
+ * Two rules keep that honest, both enforced by tests/thresholds.test.ts:
+ *
+ *  1. `source` and `url` must agree. A source naming "Section 2-1" links to
+ *     /sim/2-1; a source naming no section links to the SIM index. Naming a
+ *     section while linking to the index claims a precision the link does not
+ *     deliver.
+ *  2. Where the governing section is NOT known, the citation stays on the index
+ *     and says so in its note. A confidently wrong section number is worse than
+ *     an honest general link — it sends a jumper to the wrong rule while
+ *     looking authoritative. Pin such a citation to a section only after
+ *     someone has read it in a current SIM.
+ */
 export const CITATIONS = {
+  /** BSR maximum ground winds for solo students. Section 2-1 is the Basic
+   *  Safety Requirements themselves; the LSPC waiver (docs/) treats this limit
+   *  as a BSR that needs on-site instructor approval to exceed, which is why
+   *  the waiver tiers below cite the club policy rather than this. */
   uspaStudentWinds: {
-    source: 'USPA SIM, Section 2-1',
-    ref: 'Basic Safety Requirements — winds',
-    url: 'https://www.uspa.org/sim/2-1',
+    source: 'USPA SIM, Section 2-1 (BSR)',
+    ref: 'Basic Safety Requirements — student ground-wind limits',
+    url: simUrl('2-1'),
+    note: VERIFY_NOTE,
+  },
+  /** Same BSR section, different claim: the ground-wind limit is written for
+   *  solo students, so for a licensed jumper the section is cited for the
+   *  ABSENCE of a limit. Split from uspaStudentWinds because sharing that
+   *  citation attached a ref about student limits to a flag explicitly telling
+   *  licensed jumpers no such limit binds them. */
+  uspaLicensedWinds: {
+    source: 'USPA SIM, Section 2-1 (BSR)',
+    ref: 'Basic Safety Requirements — wind limits stated for students, not licensed jumpers',
+    url: simUrl('2-1'),
     note: VERIFY_NOTE,
   },
   far10517: {
@@ -43,16 +88,30 @@ export const CITATIONS = {
     url: 'https://www.faasafety.gov/files/events/NM/NM07/2023/NM07120280/FAA-P-8740-02-DensityAltitude.pdf',
     note: VERIFY_NOTE,
   },
+  /**
+   * General weather awareness — the catch-all for flags no rule puts a number
+   * on: gust spread, fog, storms, precipitation chance, upper winds.
+   *
+   * DELIBERATELY still the SIM index. The BSRs (2-1) set wind limits, opening
+   * altitudes and cloud clearance, but none of them govern "it is gusty" or
+   * "there is a 40% chance of storms", and the SIM section that carries general
+   * weather guidance has not been identified from this environment. Guessing a
+   * number here would point a jumper at the wrong rule with a confident-looking
+   * link, so the note tells the reader the link is an index on purpose.
+   */
   uspaWeather: {
     source: 'USPA SIM',
-    ref: 'Weather awareness — winds, clouds, storms',
-    url: 'https://www.uspa.org/sim',
-    note: VERIFY_NOTE,
+    ref: 'Weather awareness — winds, clouds, precipitation, storms',
+    url: SIM_INDEX_URL,
+    note: `${VERIFY_NOTE} Links to the SIM contents, not a section: the SIM section governing general weather guidance has not been identified, and a wrong section number would be worse than a general link.`,
   },
+  /** BSR minimum container-opening altitudes (students & A 3,000 ft; B 2,500;
+   *  C/D 2,000; tandem 5,000) — same Section 2-1 as the wind limits. Drives the
+   *  drift card's deploy-altitude floor via recommendedDeployFt(). */
   uspaOpeningAltitude: {
     source: 'USPA SIM, Section 2-1 (BSR)',
-    ref: 'Minimum container opening altitudes',
-    url: 'https://www.uspa.org/sim/2-1',
+    ref: 'Basic Safety Requirements — minimum container opening altitudes',
+    url: simUrl('2-1'),
     note: VERIFY_NOTE,
   },
   lspcWaiver: {
@@ -116,7 +175,10 @@ const LICENSED: Thresholds = {
   gustSpreadWatchKt: 10,
   windGuidance:
     'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency. Note: most jump pilots will not take off in winds above ~30–35 mph.',
-  windCitation: CITATIONS.uspaStudentWinds,
+  // Cites the BSR for the absence of a limit, not the student limit: this flag
+  // is awareness only, and a reader who follows the link should land on the
+  // section that shows the wind rule is written for students.
+  windCitation: CITATIONS.uspaLicensedWinds,
   ceilingWatchFt: 4000,
   ceilingCautionFt: 2500,
   visibilityCautionSm: 3,
