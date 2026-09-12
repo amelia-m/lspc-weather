@@ -22,6 +22,21 @@ export function compass(deg: number): string {
   return points[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
 }
 
+/** 16-point compass label for a true heading in degrees.
+ *
+ *  Winds are reported to the nearest 8 points because that is the resolution a
+ *  jumper acts on, but a fixed bearing between two known points deserves the
+ *  finer label: the METAR station sits at 060° from the DZ, which 8-point
+ *  rounding would report as "NE" (045°) — a 15° overstatement of a bearing we
+ *  know exactly. */
+export function compass16(deg: number): string {
+  const points = [
+    'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+    'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW',
+  ];
+  return points[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+}
+
 export const round = (n: number, places = 0): number => {
   const f = 10 ** places;
   return Math.round(n * f) / f;

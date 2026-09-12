@@ -1,3 +1,6 @@
+import { haversineMiles, initialBearingDeg } from '../domain/geo';
+import { compass16 } from '../domain/units';
+
 /**
  * Fixed site configuration for the Lincoln Sport Parachute Club (LSPC).
  *
@@ -24,7 +27,6 @@ export interface SiteConfig {
     lat: number;
     lon: number;
     elevationFt: number;
-    distanceMi: number; // approx distance from the DZ
   };
   /** TAF stations near the DZ, in preference order (KPMV issues no TAF).
    *  Offutt is closest but its TAF is issued by the USAF and is not always
@@ -65,7 +67,6 @@ export const SITE: SiteConfig = {
     lat: 40.9502,
     lon: -95.9179,
     elevationFt: 1204,
-    distanceMi: 12,
   },
   tafStations: [
     { id: 'KOFF', name: 'Offutt AFB', lat: 41.1183, lon: -95.9124, nwsProductLocation: 'OFF' },
@@ -93,4 +94,32 @@ export const SITE: SiteConfig = {
 export const WINDS_ALOFT_LEVELS_AGL: readonly number[] = Array.from(
   { length: 14 },
   (_, i) => i * 1000,
+);
+
+/** How far a point lies from the drop zone, and in which direction. */
+export interface DzOffset {
+  distanceMi: number;
+  bearingDeg: number;
+  /** 16-point label for `bearingDeg`, e.g. "ENE". */
+  compass: string;
+}
+
+/** Great-circle offset of any point from the DZ. Derived rather than written
+ *  down: the coordinates above are the single source of truth, so a station
+ *  that moves or a correction to its position cannot leave a stale mileage
+ *  behind in the config. */
+export function offsetFromDz(lat: number, lon: number): DzOffset {
+  const bearingDeg = initialBearingDeg(SITE.dz.lat, SITE.dz.lon, lat, lon);
+  return {
+    distanceMi: haversineMiles(SITE.dz.lat, SITE.dz.lon, lat, lon),
+    bearingDeg,
+    compass: compass16(bearingDeg),
+  };
+}
+
+/** Offset of the METAR station (KPMV) from the DZ — ~11.5 mi ENE. Surface
+ *  observations are a proxy from there, so the UI states the gap. */
+export const METAR_STATION_OFFSET: DzOffset = offsetFromDz(
+  SITE.metarStation.lat,
+  SITE.metarStation.lon,
 );

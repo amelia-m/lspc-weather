@@ -3,7 +3,7 @@ import { compass, fmtSpeed, round, type SpeedUnit } from '../domain/units';
 import { relativeHumidity } from '../domain/humidity';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
-import { SITE } from '../config/site';
+import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 
 export function MetarPanel({
@@ -32,7 +32,10 @@ export function MetarPanel({
           {current.station === SITE.metarStation.id && (
             <p className="muted small station-name">
               {SITE.metarStation.name} ·{' '}
-              <span>~{SITE.metarStation.distanceMi} mi from the DZ</span>
+              <span>
+                ~{round(METAR_STATION_OFFSET.distanceMi)} mi {METAR_STATION_OFFSET.compass} of the
+                DZ
+              </span>
             </p>
           )}
           <dl className="kv">
