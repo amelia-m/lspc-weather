@@ -146,6 +146,12 @@ const HEURISTICS: Heuristic[] = [
   { id: 'B9', what: 'Winds aloft info / watch', value: '20 kt / 30 kt', where: 'Winds aloft flag' },
   { id: 'B10', what: 'Winds aloft shown in red', value: '≥ 30 kt', where: 'Winds aloft table' },
   { id: 'B11', what: 'Daily gust highlighted', value: '≥ 25 kt', where: '10-day outlook' },
+  {
+    id: 'B12',
+    what: 'Every “watch” band, including on sourced profiles',
+    value: 'student: caution − 2 kt · waiver tiers: posted limit − 3 mph',
+    where: 'Surface wind card and Surface wind flag, all profiles',
+  },
 ];
 
 export function CitationsPage(): JSX.Element {
@@ -230,6 +236,13 @@ export function CitationsPage(): JSX.Element {
             </tbody>
           </table>
         </div>
+        <p className="muted small">
+          <strong>B12 is worth a closer look than its row suggests.</strong> Where a profile has a
+          real source — the student limit, the club waiver tiers — that source covers the{' '}
+          <em>caution</em> band and the gust ceiling only. The earlier <em>watch</em> band is always
+          this dashboard&rsquo;s own, derived by subtracting a couple of units. So a card can be
+          honestly sourced and still be showing you a house number first.
+        </p>
         <p className="muted small">
           The club waiver tiers (0–5 jumps: 15 mph wind / 16 mph gust · 6–10: 16/18 · 10–20: 18/19 ·
           21+: 18/20) are transcribed from the club’s posted policy and are <strong>not</strong> app

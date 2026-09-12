@@ -2,8 +2,10 @@ import type { CurrentConditions, HourlyPoint } from '../domain/types';
 import { round } from '../domain/units';
 import { flightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { DATA_SOURCES } from '../config/sources';
+import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
+import { SourceLink } from './common/SourceLink';
 import { fmtTime } from './format';
 
 /** Current ceiling + an hourly sky-cover / ceiling timeline (mirrors the
@@ -42,9 +44,14 @@ export function CeilingSkyPanel({
         </span>
       </div>
       {category != null && category !== 'VFR' && (
+        // Naming the regulation and rendering no link left the reader with a
+        // section number and nowhere to check it — the citation layer exists
+        // precisely so that does not happen.
         <p className="muted small">
           {CATEGORY_LABEL[category]}: reduced ceiling/visibility. Jumps still require VFR flight
-          conditions and the 14 CFR 105.17 cloud-clearance minimums.
+          conditions and the cloud-clearance minimums for parachute ops (500 ft below / 1,000 ft
+          above / 2,000 ft horizontal below 10,000 ft MSL). Source:{' '}
+          <SourceLink citation={CITATIONS.far10517} />
         </p>
       )}
       {upcoming.length === 0 ? (

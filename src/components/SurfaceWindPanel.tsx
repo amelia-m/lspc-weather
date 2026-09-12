@@ -1,11 +1,27 @@
 import type { CurrentConditions } from '../domain/types';
 import { fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
-import type { Thresholds } from '../config/thresholds';
+import { CITATIONS, type Thresholds } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
+import { SourceLink } from './common/SourceLink';
 
-/** Surface wind with limit bands drawn from the active profile's thresholds.
- *  The bands are sourced markers, not a verdict. */
+/**
+ * Surface wind with the active profile's flag bands drawn on a scale.
+ *
+ * This is the most-read card on the page, and the bands are markers, not a
+ * verdict. They also do not all come from the same place, which is why the
+ * footnote below splits them rather than hanging one source line under both:
+ *
+ *  - CAUTION is a published limit for students (the USPA ground-wind figure)
+ *    and for waiver tiers (the posted club policy), but for licensed jumpers
+ *    nobody published one, so that band is the app's own number.
+ *  - WATCH is always the app's: it sits a few knots under the caution band as
+ *    an early warning, and no rule defines such a level.
+ *
+ * Rendering one citation across the pair would credit USPA or the club with a
+ * number they never set — the defect this card was fixed for. `thresholds`
+ * already carried the citation; the card simply never showed it.
+ */
 export function SurfaceWindPanel({
   current,
   thresholds: t,
@@ -24,7 +40,11 @@ export function SurfaceWindPanel({
   const other: SpeedUnit = unit === 'kt' ? 'mph' : 'kt';
 
   return (
-    <Panel title="Surface wind" subtitle={`${label} limits`} sources={[DATA_SOURCES.nwsObservation]}>
+    <Panel
+      title="Surface wind"
+      subtitle={`${label} flag bands`}
+      sources={[DATA_SOURCES.nwsObservation]}
+    >
       {speed == null ? (
         <p className="muted">No wind data.</p>
       ) : (
@@ -47,6 +67,21 @@ export function SurfaceWindPanel({
           <p className="wind-legend">
             Watch ≥ {fmtSpeed(t.windWatchKt, unit)} · Caution ≥ {fmtSpeed(t.windCautionKt, unit)}
             {t.gustCautionKt != null && ` · Gust ceiling ${fmtSpeed(t.gustCautionKt, unit)}`}
+          </p>
+          <p className="muted small">
+            {t.windLimitCitation === CITATIONS.appHeuristic ? (
+              <>
+                Both bands are dashboard thresholds, not published limits:{' '}
+                <SourceLink citation={t.windLimitCitation} />
+              </>
+            ) : (
+              <>
+                Caution{t.gustCautionKt != null ? ' and gust ceiling' : ''}:{' '}
+                <SourceLink citation={t.windLimitCitation} />. Watch is this dashboard&rsquo;s
+                earlier warning, not a published limit:{' '}
+                <SourceLink citation={CITATIONS.appHeuristic} />.
+              </>
+            )}
           </p>
         </>
       )}
