@@ -1,6 +1,6 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
-import { compass, fmtSpeed, ktToMph, round, type SpeedUnit } from './units';
+import { compass, fmtSpeed, round, type SpeedUnit } from './units';
 import { flightCategory, CATEGORY_LABEL } from './flightCategory';
 import { relativeHumidity } from './humidity';
 
@@ -70,7 +70,13 @@ export function evaluateAdvisories(
         id: 'gust-limit',
         level: 'caution',
         metric: 'Gust limit',
-        value: `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${round(ktToMph(thresholds.gustCautionKt))} mph`,
+        // Both figures in the selected unit. The waiver states its ceiling in
+        // mph, but printing the source unit next to a kt gust invited exactly
+        // the wrong reading: a 14 kt gust against a "16 mph" ceiling looks like
+        // 2 units of headroom when 14 kt IS 16 mph — the advisory appeared to
+        // contradict the caution it was raising. The citation below carries the
+        // reader back to the waiver's own wording.
+        value: `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtSpeed(thresholds.gustCautionKt, unit)}`,
         guidance:
           'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
         citation: thresholds.windCitation,

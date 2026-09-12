@@ -174,6 +174,26 @@ describe('evaluateAdvisories', () => {
     expect(gust?.citation.source).toContain('LSPC');
   });
 
+  it('states the gust and the waiver ceiling in the SAME unit', () => {
+    // The 0-5 tier ceiling is 16 mph = 13.9 kt, so a 14 kt gust is genuinely
+    // over it. Printing the waiver's native mph beside a kt gust read as
+    // "14 vs 16" — apparent headroom, contradicting the caution being raised.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 10, wgst: 14 });
+    const t = resolveThresholds('waiver:0-5');
+
+    const inKt = evaluateAdvisories(snapshot({ current }), t, now, 'kt')
+      .find((a) => a.id === 'gust-limit');
+    expect(inKt?.value).toContain('gusting 14 kt');
+    expect(inKt?.value).toContain('ceiling 14 kt');
+    expect(inKt?.value).not.toContain('mph');
+
+    const inMph = evaluateAdvisories(snapshot({ current }), t, now, 'mph')
+      .find((a) => a.id === 'gust-limit');
+    expect(inMph?.value).toContain('gusting 16 mph');
+    expect(inMph?.value).toContain('ceiling 16 mph');
+    expect(inMph?.value).not.toContain(' kt');
+  });
+
   it('non-waiver profiles do not emit a gust-limit advisory', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 14, wgst: 30 });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
