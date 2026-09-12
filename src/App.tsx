@@ -24,6 +24,7 @@ import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
+import { CitationsPage } from './components/CitationsPage';
 import { deriveProvenance } from './domain/sourceProvenance';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 
@@ -86,7 +87,21 @@ function sanitizeOverrides(raw: unknown): Overrides {
   return out;
 }
 
+/** Whether the citations page is showing. A hash rather than a router: the app
+ *  is a single page served from a GitHub Pages subpath, and `#citations` needs
+ *  no server rewrite, no dependency, and survives a reload and a shared link. */
+function useIsCitationsRoute(): boolean {
+  const [hash, setHash] = useState(() => window.location.hash);
+  useEffect(() => {
+    const onHashChange = (): void => setHash(window.location.hash);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+  return hash === '#citations';
+}
+
 export default function App(): JSX.Element {
+  const showCitations = useIsCitationsRoute();
   /* Rehydrate the source log from localStorage before the first fetch runs, so
      a reload while chasing a flaky upstream keeps the history that explains it,
      and publish it on window for devtools. There is deliberately no in-page log
@@ -153,6 +168,11 @@ export default function App(): JSX.Element {
 
   const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds, unit);
   const provenance = useMemo(() => deriveProvenance(snapshot), [snapshot]);
+
+  // Every hook above runs in both views, so switching routes cannot change hook
+  // order. The weather polling keeps running behind the citations page, which is
+  // what you want when someone ducks in to check a reference and comes back.
+  if (showCitations) return <CitationsPage />;
 
   return (
     <div className="app">
@@ -274,6 +294,9 @@ export default function App(): JSX.Element {
 
       <footer className="app-foot">
         Data: NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.
+        <br />
+        <a href="#citations">Citations to verify</a> — what this dashboard claims, and what nobody
+        has checked yet.
       </footer>
     </div>
   );
