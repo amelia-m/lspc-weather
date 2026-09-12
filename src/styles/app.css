@@ -329,6 +329,11 @@ a {
 .station-name {
   margin: 0 0 10px;
 }
+/* Keep the distance phrase intact: a card this narrow would otherwise break
+   inside it ("~12" / "mi from the DZ"). Wrapping before it reads cleanly. */
+.station-name span {
+  white-space: nowrap;
+}
 
 .metar-raw {
   margin: 10px 0 0;

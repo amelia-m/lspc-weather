@@ -30,7 +30,10 @@ export function MetarPanel({
               config when the observation really is the configured station; a
               METAR from anywhere else must not inherit KPMV's name. */}
           {current.station === SITE.metarStation.id && (
-            <p className="muted small station-name">{SITE.metarStation.name}</p>
+            <p className="muted small station-name">
+              {SITE.metarStation.name} ·{' '}
+              <span>~{SITE.metarStation.distanceMi} mi from the DZ</span>
+            </p>
           )}
           <dl className="kv">
             <dt>Wind</dt>
