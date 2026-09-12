@@ -1,39 +1,46 @@
 import { describe, expect, it } from 'vitest';
-import { compass, compass16 } from '../src/domain/units';
+import { compass } from '../src/domain/units';
 
-describe('compass16', () => {
+describe('compass', () => {
   it('labels the cardinal and intercardinal points', () => {
-    expect(compass16(0)).toBe('N');
-    expect(compass16(45)).toBe('NE');
-    expect(compass16(90)).toBe('E');
-    expect(compass16(180)).toBe('S');
-    expect(compass16(270)).toBe('W');
+    expect(compass(0)).toBe('N');
+    expect(compass(45)).toBe('NE');
+    expect(compass(90)).toBe('E');
+    expect(compass(180)).toBe('S');
+    expect(compass(270)).toBe('W');
   });
 
-  it('resolves the secondary intercardinals the 8-point label cannot', () => {
-    expect(compass16(22.5)).toBe('NNE');
-    expect(compass16(67.5)).toBe('ENE');
-    expect(compass16(112.5)).toBe('ESE');
-    expect(compass16(247.5)).toBe('WSW');
+  it('resolves the secondary intercardinals an 8-point label cannot', () => {
+    expect(compass(22.5)).toBe('NNE');
+    expect(compass(67.5)).toBe('ENE');
+    expect(compass(112.5)).toBe('ESE');
+    expect(compass(247.5)).toBe('WSW');
   });
 
-  it('reports the DZ→KPMV bearing as ENE where 8-point rounds to NE', () => {
-    // The reason this function exists: the METAR station sits at ~060° true
-    // from the drop zone, which the 8-point label flattens to NE (045°).
-    expect(compass(60.3)).toBe('NE');
-    expect(compass16(60.3)).toBe('ENE');
+  it('keeps a 060° heading out of the NE bucket', () => {
+    // The reason for 16 points: an 8-point label rounds 060° to NE (045°),
+    // a 15° error. This is the DZ→KPMV bearing and a common wind direction.
+    expect(compass(60.3)).toBe('ENE');
   });
 
   it('wraps past 360° and handles negative headings', () => {
-    expect(compass16(360)).toBe('N');
-    expect(compass16(371)).toBe('N');
-    expect(compass16(-22.5)).toBe('NNW');
-    expect(compass16(-90)).toBe('W');
+    expect(compass(360)).toBe('N');
+    expect(compass(371)).toBe('N');
+    expect(compass(-22.5)).toBe('NNW');
+    expect(compass(-90)).toBe('W');
   });
 
   it('rounds at the half-sector boundary rather than truncating', () => {
     // 11.25° is the N/NNE boundary; just over it must read NNE.
-    expect(compass16(11.24)).toBe('N');
-    expect(compass16(11.26)).toBe('NNE');
+    expect(compass(11.24)).toBe('N');
+    expect(compass(11.26)).toBe('NNE');
+  });
+
+  it('covers every one of the 16 sectors at its centre', () => {
+    const expected = [
+      'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+      'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW',
+    ];
+    expected.forEach((label, i) => expect(compass(i * 22.5)).toBe(label));
   });
 });
