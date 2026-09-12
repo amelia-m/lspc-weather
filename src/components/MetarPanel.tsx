@@ -25,6 +25,13 @@ export function MetarPanel({
         <p className="muted">No METAR available.</p>
       ) : (
         <>
+          {/* Spell out the station behind the ICAO id — "KPMV" alone says nothing
+              to a jumper who hasn't memorised the identifier. Only label it from
+              config when the observation really is the configured station; a
+              METAR from anywhere else must not inherit KPMV's name. */}
+          {current.station === SITE.metarStation.id && (
+            <p className="muted small station-name">{SITE.metarStation.name}</p>
+          )}
           <dl className="kv">
             <dt>Wind</dt>
             <dd>{describeWind(current, unit)}</dd>
