@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SITE } from './config/site';
+import { METAR_STATION_OFFSET, SITE } from './config/site';
 import {
   resolveThresholds,
   profileLabel,
@@ -213,7 +213,8 @@ export default function App(): JSX.Element {
         <strong>AI-derived and may be inaccurate</strong>; verify every value against the primary
         source and with a licensed professional before relying on it. Always confirm conditions with
         current official sources, the S&amp;TA, and the pilot in command. Observations are from{' '}
-        {SITE.metarStation.id} (~{SITE.metarStation.distanceMi} mi away); forecasts and winds are
+        {SITE.metarStation.id} (~{Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
+        {METAR_STATION_OFFSET.compass}); forecasts and winds are
         gridded to the drop zone.
       </p>
 
