@@ -22,10 +22,14 @@ freefall drift and **density altitude** for jump-plane climb performance.
 
 - **Conditions to note** — flagged values (wind, gusts, ceiling, visibility,
   overcast, precip, density altitude, winds aloft, daylight), each with the
-  **USPA / FAA / LSPC-waiver source** it relates to. No go/no-go verdict.
+  source it relates to — a **USPA / FAA / LSPC-waiver** source where one exists,
+  and otherwise an explicit **"app heuristic"** marker, because several flags
+  fire on thresholds this dashboard chose rather than on a published limit. No
+  go/no-go verdict.
 - **Current conditions** — decoded KPMV METAR (raw text included).
-- **Surface wind** — sustained + gust with sourced limit bands per profile
-  (Student / Licensed / LSPC waiver tiers), kt/mph toggle.
+- **Surface wind** — sustained + gust with flag bands per profile (Student /
+  Licensed / LSPC waiver tiers), each band labelled with where its number comes
+  from, kt/mph toggle.
 - **Winds aloft** — speed/direction/temperature at surface → 13,000 ft AGL in
   1,000-ft steps, interpolated from pressure-level model winds.
 - **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
@@ -100,12 +104,37 @@ work from a normal browser; some sandboxed/CI networks block them.
 ## Citations
 
 Advisory thresholds and their sources live in
-[`src/config/thresholds.ts`](src/config/thresholds.ts). The numbers reflect
-well-established USPA (SIM/BSR) and FAA (14 CFR 105.17 / 91.155, density
-altitude) guidance plus the club's posted waivered wind limits
-([`docs/lspc-waivered-wind-limits.md`](docs/lspc-waivered-wind-limits.md));
-**re-verify each against the linked primary source** before relying on it
-operationally.
+[`src/config/thresholds.ts`](src/config/thresholds.ts).
+
+**Not all of these numbers are sourced, and the app says which are.** Some come
+from a published document — the student ground-wind limit and the opening
+altitudes from the USPA SIM/BSR, the 3 SM visibility floor and cloud clearance
+from 14 CFR 105.17, the flight categories from FAA AIM 7-1-7, density altitude
+from FAA-P-8740-2, and the waivered wind and gust ceilings from the club's
+posted policy
+([`docs/lspc-waivered-wind-limits.md`](docs/lspc-waivered-wind-limits.md)).
+
+**Most of the rest are house heuristics** — thresholds this dashboard chose so a
+card would say something useful before a condition became a problem. The ceiling
+bands, the fog dew-point spread, the precipitation and forecast-thunderstorm
+chances, the licensed wind bands, and every "watch" level sitting under a real
+limit are in that group. None is a USPA or FAA figure, and each is cited as
+**"LSPC Weather — app heuristic"** rather than being dressed in a source that
+never set it.
+
+One flag is mixed: **winds aloft** fires at a speed the app chose, but what it
+tells you (strong upper winds lengthen the spot — plan jump run and exit
+separation) is skydiving practice a SIM section very likely governs. It keeps
+the section-less SIM citation for that claim and states in the flag text that
+the trigger speed is the dashboard's.
+
+The dashboard's own **Citations** page — the `#citations` route in the running
+app — lists exactly those unsourced numbers, for an instructor or S&TA to rule
+on.
+
+Every citation here is **AI-derived and unverified** — nothing in this repo has
+been checked against a current SIM or CFR — so **re-verify each against the
+linked primary source** before relying on it operationally.
 
 ## Deploy
 

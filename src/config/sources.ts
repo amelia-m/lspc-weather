@@ -42,9 +42,17 @@ export const DATA_SOURCES = {
     label: 'NWS TAF',
     url: `https://aviationweather.gov/data/taf/?ids=${SITE.tafStations.map((s) => s.id).join('%2C')}`,
   },
-  /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source. */
+  /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source.
+   *
+   *  The label names no station even though the fetch uses SITE.fdWindsStation
+   *  (OMA): this URL is the generic FD product page, and it does not open on
+   *  OMA. Labelling the link "· OMA" promised a station the reader would then
+   *  have to go and find for themselves — the same defect as a citation naming
+   *  a section its link does not open. The query parameters that would select
+   *  the station cannot be verified from this environment, so the label matches
+   *  what the link actually delivers instead of being guessed at. */
   fdWinds: {
-    label: `NOAA winds aloft (FD) · ${SITE.fdWindsStation}`,
+    label: 'NOAA winds aloft (FD)',
     url: 'https://aviationweather.gov/data/windtemp/',
   },
   /** NWS radar (image loop + interactive viewer). */
