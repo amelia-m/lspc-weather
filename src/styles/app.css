@@ -939,3 +939,51 @@ a {
   border-radius: 6px;
   padding: 8px 10px;
 }
+
+/* Citations-to-verify page */
+.cite-heading {
+  font-size: 1.05rem;
+  margin: 26px 0 4px;
+}
+.cite-intro {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+/* The claim as the jumper actually sees it, set apart from our commentary about
+   it — a reviewer needs to judge the wording itself, not a paraphrase. */
+.cite-quote {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  background: var(--panel-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.cite-kv {
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+.cite-kv dd {
+  text-align: left;
+  font-variant-numeric: normal;
+}
+.cite-asks {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.cite-asks li + li {
+  margin-top: 6px;
+}
+/* A ruled line to write on — this page is meant to be worked through with a
+   SIM open, on paper or on a phone. */
+.cite-verdict {
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
