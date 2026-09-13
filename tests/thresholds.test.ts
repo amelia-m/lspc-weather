@@ -34,7 +34,6 @@ const entries = Object.entries(CITATIONS) as Array<[string, Citation]>;
 
 /** The one citation that is not an outside document: the app's own thresholds,
  *  which link to the in-app page listing them for review. */
-const IN_APP_URL = '#citations';
 
 describe('CITATIONS', () => {
   it.each(entries)('%s links somewhere with a source and a ref', (_key, citation) => {
@@ -43,14 +42,7 @@ describe('CITATIONS', () => {
     // An external authority must be reachable over https; the house-heuristic
     // citation deliberately points inward, because there is no outside document
     // to point at — that is the whole claim it makes.
-    expect(citation.url === IN_APP_URL || /^https:\/\//.test(citation.url)).toBe(true);
-  });
-
-  it('only the app-heuristic citation points inside the app', () => {
-    for (const [key, citation] of entries) {
-      if (citation.url !== IN_APP_URL) continue;
-      expect(key, 'a citation to an outside authority must link to it').toBe('appHeuristic');
-    }
+    expect(citation.url).toMatch(/^https:\/\//);
   });
 
   it.each(entries)('%s carries a verification caveat', (_key, citation) => {
@@ -96,23 +88,16 @@ describe('USPA SIM citations', () => {
   });
 });
 
-describe('the app-heuristic citation', () => {
-  const heuristic = CITATIONS.appHeuristic;
-
-  it('does not present itself as a USPA, FAA, or club authority', () => {
-    // The failure this citation exists to prevent: a number the app invented
-    // wearing someone else's source line. A reader scanning "Source: …" must be
-    // able to tell at a glance that nobody published this figure.
-    expect(`${heuristic.source} ${heuristic.ref}`).not.toMatch(/USPA|SIM|FAA|CFR|AIM|BSR|waiver/i);
-  });
-
-  it('says in its note that it is not a USPA or FAA figure', () => {
-    expect(heuristic.note).toMatch(/not a USPA or FAA figure/i);
-  });
-
-  it('names itself a threshold rather than a limit', () => {
-    // "Limit" is what a rule sets. This is a level the dashboard picked.
-    expect(heuristic.ref).toMatch(/threshold/i);
+describe('citations all point outside this app', () => {
+  it('offers no in-app escape hatch for an unsourced number', () => {
+    // There used to be an `appHeuristic` citation so a flag firing on a number
+    // the app invented could still show a "Source:" line. That let an
+    // untraceable threshold stay on the dashboard wearing an honest-looking
+    // label. The flags that needed it were removed instead, and nothing here
+    // may link inside the app again.
+    for (const [key, c] of Object.entries(CITATIONS)) {
+      expect(c.url, `${key} links inside the app`).toMatch(/^https:\/\//);
+    }
   });
 });
 
@@ -133,15 +118,17 @@ describe('wind-limit profiles', () => {
     }
   });
 
-  it.each(profiles)('%s sources its card bands from the CITATIONS map', (id) => {
-    expect(Object.values(CITATIONS)).toContain(resolveThresholds(id).windLimitCitation);
+  it.each(profiles)('%s either cites a real source for its bands or shows none', (id) => {
+    const cite = resolveThresholds(id).windLimitCitation;
+    if (cite === null) return; // no published limit — the card draws no band
+    expect(Object.values(CITATIONS)).toContain(cite);
   });
 
-  it('cites the app heuristic for the licensed bands, which no one published', () => {
-    // 17/25 kt are the app's own numbers, and the licensed guidance says USPA
-    // sets no limit — so drawing those bands under a BSR source line would have
-    // the card crediting USPA with a number the same flag says it never set.
-    expect(resolveThresholds('licensed').windLimitCitation).toBe(CITATIONS.appHeuristic);
+  it('shows no limit band for licensed, because nobody published one', () => {
+    // 17/25 kt are the app's own numbers and the licensed guidance says USPA
+    // sets no limit, so there is nothing to draw and nothing to cite. null is
+    // the honest value; the card renders the observation alone.
+    expect(resolveThresholds('licensed').windLimitCitation).toBeNull();
   });
 
   it('keeps the published sources for the bands that have one', () => {
