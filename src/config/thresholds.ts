@@ -41,10 +41,11 @@ const SIM_INDEX_URL = 'https://www.uspa.org/sim';
  *     an honest general link — it sends a jumper to the wrong rule while
  *     looking authoritative. Pin such a citation to a section only after
  *     someone has read it in a current SIM.
- *  3. Where NO published rule sets the number at all, the citation says so:
- *     `appHeuristic` below. A threshold the app invented must not be dressed in
- *     a USPA or FAA source line — that is borrowed authority, and it is the one
- *     failure mode a reader cannot detect by clicking the link.
+ *  3. Where NO published rule sets the number at all, the app does not raise a
+ *     flag on it. There is deliberately no house-heuristic citation to fall back
+ *     on: a threshold nobody published cannot be checked, and a dashboard whose
+ *     premise is that every flag is traceable has no honest way to show one.
+ *     Such numbers are listed on the in-app #citations page for review instead.
  */
 export const CITATIONS = {
   /** BSR maximum ground winds for solo students. Section 2-1 is the Basic
@@ -106,40 +107,15 @@ export const CITATIONS = {
    * number here would point a jumper at the wrong rule with a confident-looking
    * link, so the note tells the reader the link is an index on purpose.
    *
-   * It is NOT the home for a number the app invented: flags that fire on a
-   * house threshold (ceiling, fog spread, precipitation and forecast-storm
-   * chance) cite appHeuristic below, because attaching a SIM link to those made
-   * the SIM look like the source of a figure it never printed.
+   * It is NOT a home for a number the app invented — see rule 3 above. The
+   * flags that used to lean on it that way (ceiling, fog spread, precipitation
+   * and forecast-storm chance) have been removed rather than relabelled.
    */
   uspaWeather: {
     source: 'USPA SIM',
     ref: 'Weather awareness — winds, clouds, precipitation, storms',
     url: SIM_INDEX_URL,
     note: `${VERIFY_NOTE} Links to the SIM contents, not a section: the SIM section governing general weather guidance has not been identified, and a wrong section number would be worse than a general link.`,
-  },
-  /**
-   * House thresholds — the numbers this dashboard invented.
-   *
-   * Several flags fire on levels no published rule sets: the ceiling bands, the
-   * fog dew-point spread, the precipitation and thunderstorm chances, the
-   * licensed wind bands, and every "watch" band that sits a few knots under a
-   * real limit. They were chosen so the card says something useful before a
-   * condition becomes a problem — which is a reasonable thing for a dashboard
-   * to do, and NOT a reasonable thing to hang a USPA or FAA citation on.
-   *
-   * Citing the SIM or a CFR for one of those numbers is worse than citing
-   * nothing: it lends borrowed authority to a figure nobody sourced, and a
-   * jumper who follows the link to check it will not find it there. This entry
-   * is where those flags point instead. Its URL is the in-app citations page,
-   * which lists every unsourced number for an instructor to rule on.
-   */
-  appHeuristic: {
-    source: 'LSPC Weather — app heuristic',
-    ref: 'Dashboard flag threshold — not a published limit',
-    url: '#citations',
-    note:
-      'Not a USPA or FAA figure. This dashboard picked the number to decide when to raise a flag; ' +
-      'no rule, BSR, or club policy sets it. Listed on the in-app citations page for an instructor to review.',
   },
   /** BSR minimum container-opening altitudes (students & A 3,000 ft; B 2,500;
    *  C/D 2,000; tandem 5,000) — same Section 2-1 as the wind limits. Drives the
@@ -180,15 +156,10 @@ export interface Thresholds {
    * Pointing the card's 25 kt band at the BSR would credit USPA with a number
    * the same sentence says it never set.
    */
-  windLimitCitation: Citation;
-  /** Ceiling / cloud base AGL, ft. */
-  ceilingWatchFt: number;
-  ceilingCautionFt: number;
+  /** Source for the displayed limit band, or null where none is published. */
+  windLimitCitation: Citation | null;
   /** Visibility, statute miles (105.17 floor below 10k MSL is 3 SM). */
   visibilityCautionSm: number;
-  /** Precip probability, percent. */
-  precipWatchPct: number;
-  precipCautionPct: number;
   /** Density altitude above field elevation, ft (C-182 climb concern). */
   densityAltExcessWatchFt: number;
   densityAltExcessCautionFt: number;
@@ -208,11 +179,7 @@ const STUDENT: Thresholds = {
     'USPA recommends max ~14 mph (~12 kt) ground winds for solo students on ram-air reserves.',
   windCitation: CITATIONS.uspaStudentWinds,
   windLimitCitation: CITATIONS.uspaStudentWinds,
-  ceilingWatchFt: 5000,
-  ceilingCautionFt: 3000,
   visibilityCautionSm: 3,
-  precipWatchPct: 25,
-  precipCautionPct: 50,
   densityAltExcessWatchFt: 2000,
   densityAltExcessCautionFt: 3500,
   lastLoadWatchMin: 45,
@@ -232,12 +199,9 @@ const LICENSED: Thresholds = {
   windCitation: CITATIONS.uspaLicensedWinds,
   // The 17/25 kt bands themselves are app-invented (the sentence above says as
   // much), so the card that draws them cites the heuristic, not the BSR.
-  windLimitCitation: CITATIONS.appHeuristic,
-  ceilingWatchFt: 4000,
-  ceilingCautionFt: 2500,
+  // No published limit exists for licensed jumpers, so the card shows no band.
+  windLimitCitation: null,
   visibilityCautionSm: 3,
-  precipWatchPct: 30,
-  precipCautionPct: 60,
   densityAltExcessWatchFt: 2500,
   densityAltExcessCautionFt: 4000,
   lastLoadWatchMin: 30,

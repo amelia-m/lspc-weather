@@ -2,7 +2,6 @@ import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
 import { compass, fmtSpeed, round, type SpeedUnit } from './units';
 import { flightCategory, CATEGORY_LABEL } from './flightCategory';
-import { relativeHumidity } from './humidity';
 
 /**
  * Turn a weather snapshot into a list of ADVISORIES — conditions worth noting,
@@ -17,19 +16,6 @@ import { relativeHumidity } from './humidity';
 const WINDS_ALOFT_INFO_KT = 20;
 const WINDS_ALOFT_WATCH_KT = 30;
 
-// Forecast thunderstorm probability (NWS gridpoint). Convection is a serious
-// hazard, so these are lower than the precip-chance thresholds. House numbers:
-// nothing published says a forecast chance of storms becomes notable at 10%,
-// which is why the flag cites CITATIONS.appHeuristic rather than the SIM.
-const THUNDER_WATCH_PCT = 10;
-const THUNDER_CAUTION_PCT = 30;
-
-// Temp–dew point spread (°C) fog/low-cloud thresholds: ~5.4°F and ~1.8°F.
-// House numbers again, and the underlying claim is meteorology rather than
-// skydiving practice — see the fog flag below.
-const FOG_SPREAD_WATCH_C = 3;
-const FOG_SPREAD_CAUTION_C = 1;
-
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
   thresholds: Thresholds,
@@ -37,7 +23,7 @@ export function evaluateAdvisories(
   unit: SpeedUnit = 'kt',
 ): Advisory[] {
   const out: Advisory[] = [];
-  const { current, hourly, windsAloft, sun, densityAltitude } = snapshot;
+  const { current, windsAloft, sun, densityAltitude } = snapshot;
 
   // --- Surface wind ---
   if (current) {
@@ -121,34 +107,6 @@ export function evaluateAdvisories(
       });
     }
 
-    // --- Ceiling / cloud base ---
-    if (current.ceilingFtAgl != null) {
-      const c = current.ceilingFtAgl;
-      const ceilLevel: AdvisoryLevel =
-        c < thresholds.ceilingCautionFt ? 'caution' : c < thresholds.ceilingWatchFt ? 'watch' : 'info';
-      if (ceilLevel !== 'info') {
-        // No regulation sets a minimum ceiling for a jump, and this flag's
-        // bands (5,000/3,000 student, 4,000/2,500 licensed) are the app's own.
-        // It previously cited 14 CFR 105.17, which reads as though the reg
-        // prohibits the ceiling on screen; 105.17 governs cloud CLEARANCE and
-        // flight visibility and names no ceiling. The clearance requirement is
-        // still WHY a low base matters — it is what the cited rule actually
-        // says — so the guidance explains that relationship instead, and the
-        // ceiling number is cited as the house threshold it is. (105.17 itself
-        // is linked from the visibility and overcast flags and from the
-        // Ceiling & sky card.)
-        out.push({
-          id: 'ceiling',
-          level: ceilLevel,
-          metric: 'Ceiling',
-          value: `${round(c).toLocaleString()} ft AGL`,
-          guidance:
-            'A dashboard threshold, not a regulatory one — no rule sets a minimum ceiling. A low base matters because you still have to stay clear of cloud: 14 CFR 105.17 requires 500 ft below / 1,000 ft above / 2,000 ft horizontal below 10,000 ft MSL, and no jumping into or through cloud, so the usable airspace under the base is smaller than the base itself.',
-          citation: CITATIONS.appHeuristic,
-        });
-      }
-    }
-
     // --- Flight category (FAA VFR/MVFR/IFR/LIFR from ceiling + visibility) ---
     const category = flightCategory(current.ceilingFtAgl, current.visibilitySm);
     if (category && category !== 'VFR') {
@@ -182,30 +140,6 @@ export function evaluateAdvisories(
       });
     }
 
-    // --- Fog / low cloud from a tight temp–dew point spread ---
-    if (current.tempC != null && current.dewpointC != null) {
-      const spreadC = current.tempC - current.dewpointC;
-      if (spreadC <= FOG_SPREAD_WATCH_C) {
-        const rh = relativeHumidity(current.tempC, current.dewpointC);
-        out.push({
-          id: 'dewpoint-spread',
-          level: spreadC <= FOG_SPREAD_CAUTION_C ? 'caution' : 'watch',
-          metric: 'Fog / low cloud',
-          value: `${round(spreadC * 1.8)}°F temp–dew point spread, ${round(rh)}% RH`,
-          // Atmospheric physics, not skydiving practice: USPA has no view on
-          // dew-point spread, and the 3 °C / 1 °C bands are the app's. The
-          // authority here would be a meteorological one (NWS / AMS), but no
-          // URL for that can be verified from this environment, and inventing
-          // one would repeat the defect being fixed. So this cites the house
-          // threshold and leaves the physics unattributed rather than
-          // misattributed.
-          guidance:
-            'A small temperature–dew point spread with high humidity favors fog and low ceilings — watch for reduced visibility and a dropping cloud base, especially near dawn. The spread this flags at is a dashboard threshold; the underlying behaviour is meteorology, not a skydiving rule.',
-          citation: CITATIONS.appHeuristic,
-        });
-      }
-    }
-
     // --- Thunderstorm in present weather ---
     if (current.wxString && /TS/.test(current.wxString)) {
       out.push({
@@ -223,47 +157,6 @@ export function evaluateAdvisories(
         citation: CITATIONS.uspaWeather,
       });
     }
-  }
-
-  // --- Precip probability (max over the next ~6 hours) ---
-  const precipMax = maxNear(hourly, now, 6, (h) => h.precipProbPct);
-  if (precipMax != null) {
-    const level: AdvisoryLevel =
-      precipMax >= thresholds.precipCautionPct
-        ? 'caution'
-        : precipMax >= thresholds.precipWatchPct
-          ? 'watch'
-          : 'info';
-    if (level !== 'info') {
-      out.push({
-        id: 'precip',
-        level,
-        metric: 'Precipitation',
-        value: `${round(precipMax)}% chance (next 6 h)`,
-        // The 25/50% (student) and 30/60% (licensed) bands are the app's own;
-        // no BSR or SIM section puts a percentage on a chance of rain.
-        guidance:
-          'Precipitation degrades visibility and canopy control; rain on a packed canopy adds risk. The chance this flags at is a dashboard threshold.',
-        citation: CITATIONS.appHeuristic,
-      });
-    }
-  }
-
-  // --- Forecast thunderstorm chance (max over the next ~6 hours) ---
-  const thunderMax = maxNear(hourly, now, 6, (h) => h.thunderProbPct);
-  if (thunderMax != null && thunderMax >= THUNDER_WATCH_PCT) {
-    out.push({
-      id: 'thunder-forecast',
-      level: thunderMax >= THUNDER_CAUTION_PCT ? 'caution' : 'watch',
-      metric: 'Thunderstorm chance',
-      value: `${round(thunderMax)}% chance (next 6 h)`,
-      // Same reasoning as the precipitation flag: the hazard is real, the
-      // 10%/30% trigger is the app's. The OBSERVED-thunderstorm flag above
-      // still cites the SIM, because that one asserts no number.
-      guidance:
-        'Forecast thunderstorms bring lightning, gust fronts, and rapid condition changes — a convective hazard for the jump plane and canopies. Watch the radar and sky. The forecast chance this flags at is a dashboard threshold.',
-      citation: CITATIONS.appHeuristic,
-    });
   }
 
   // --- Density altitude (loaded C-182 climb performance) ---
@@ -352,19 +245,3 @@ function severityRank(level: AdvisoryLevel): number {
   return level === 'caution' ? 2 : level === 'watch' ? 1 : 0;
 }
 
-/** Max of a field over hourly points within `hours` of `now`. */
-function maxNear(
-  hourly: WeatherSnapshot['hourly'],
-  now: number,
-  hours: number,
-  pick: (h: WeatherSnapshot['hourly'][number]) => number | null,
-): number | null {
-  const windowEnd = now + hours * 3600_000;
-  let max: number | null = null;
-  for (const h of hourly) {
-    if (h.time < now - 3600_000 || h.time > windowEnd) continue;
-    const v = pick(h);
-    if (v != null && (max == null || v > max)) max = v;
-  }
-  return max;
-}

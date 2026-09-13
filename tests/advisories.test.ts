@@ -96,20 +96,6 @@ describe('evaluateAdvisories', () => {
     expect(fc?.value).toContain('MVFR');
   });
 
-  it('flags fog risk on a tight temp–dew point spread', () => {
-    const current = normalizeMetar({ ...METAR_FIXTURE[0], temp: 20, dewp: 19 }); // 1°C spread
-    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
-    const fog = out.find((a) => a.id === 'dewpoint-spread');
-    expect(fog?.level).toBe('caution'); // <= 1°C spread → caution
-    expect(fog?.value).toMatch(/RH/);
-  });
-
-  it('does not flag fog when the air is dry (wide spread)', () => {
-    const current = normalizeMetar({ ...METAR_FIXTURE[0], temp: 30, dewp: 5 });
-    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
-    expect(out.some((a) => a.id === 'dewpoint-spread')).toBe(false);
-  });
-
   it('flags a thunderstorm from present weather', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wxString: 'TSRA' });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
@@ -135,18 +121,6 @@ describe('evaluateAdvisories', () => {
     expect(aloftMph?.value).not.toMatch(/\bkt\b/);
   });
 
-  it('flags forecast thunderstorm chance from the hourly gridpoint', () => {
-    // 35% thunder within the next 6 h → caution; a low far-out value is ignored.
-    const hourly = [
-      hourAhead(2, { thunderProbPct: 35 }),
-      hourAhead(3, { thunderProbPct: 10 }),
-      hourAhead(20, { thunderProbPct: 80 }), // outside the 6 h window
-    ];
-    const out = evaluateAdvisories(snapshot({ hourly }), DEFAULT_THRESHOLDS.student, now);
-    const t = out.find((a) => a.id === 'thunder-forecast');
-    expect(t?.level).toBe('caution');
-    expect(t?.value).toContain('35%');
-  });
 
   it('does not flag thunder below the watch threshold', () => {
     const hourly = [hourAhead(2, { thunderProbPct: 5 })];
@@ -260,13 +234,16 @@ describe('evaluateAdvisories', () => {
 /* Borrowed authority: a flag firing on a number the app invented must not wear
  * a USPA or FAA source line. The citation is the only part of a flag a reader
  * can check, so a wrong one is worse than none — it looks verified. */
-describe('flags that fire on app-invented thresholds', () => {
-  /** Every flag whose trigger value appears nowhere in a published document. */
-  const HOUSE_THRESHOLD_FLAGS = ['ceiling', 'dewpoint-spread', 'precip', 'thunder-forecast'];
+describe('flags whose trigger no published source sets', () => {
+  /** These fired on thresholds the app invented — ceiling bands, a dew-point
+   *  spread, a chance of rain, a chance of storms. No rule, BSR or club policy
+   *  puts a number on any of them, so there is nothing a reader could check.
+   *  They were removed rather than relabelled: on a page whose premise is that
+   *  every flag is traceable, an untraceable flag is the defect. */
+  const REMOVED_FLAGS = ['ceiling', 'dewpoint-spread', 'precip', 'thunder-forecast'];
 
-  /** A snapshot that trips all of them at once: 2,000 ft ceiling, 1 °C spread,
-   *  60% precip and 35% thunder in the next 6 h. */
-  function heuristicSnapshot(): WeatherSnapshot {
+  /** Conditions that would have tripped every one of them at once. */
+  function wouldHaveTripped() {
     return snapshot({
       current: normalizeMetar({
         ...METAR_FIXTURE[0],
@@ -278,48 +255,18 @@ describe('flags that fire on app-invented thresholds', () => {
     });
   }
 
-  it.each(HOUSE_THRESHOLD_FLAGS)('%s cites the app heuristic, not USPA or the FAA', (id) => {
-    const out = evaluateAdvisories(heuristicSnapshot(), DEFAULT_THRESHOLDS.student, now);
-    const flag = out.find((a) => a.id === id);
-    expect(flag, `${id} did not fire — the fixture no longer trips it`).toBeDefined();
-    expect(flag?.citation).toBe(CITATIONS.appHeuristic);
-    expect(flag?.citation.source).not.toMatch(/USPA|FAA|CFR|AIM/i);
+  it.each(REMOVED_FLAGS)('%s does not fire, even in conditions that would trip it', (id) => {
+    const out = evaluateAdvisories(wouldHaveTripped(), DEFAULT_THRESHOLDS.student, now);
+    expect(out.find((a) => a.id === id)).toBeUndefined();
   });
 
-  it('the ceiling flag no longer implies 14 CFR 105.17 sets a ceiling', () => {
-    // 105.17 governs cloud CLEARANCE and flight visibility and names no
-    // ceiling; citing it beside "Ceiling 2,000 ft AGL · Caution" read as though
-    // the regulation prohibited that ceiling. The clearance rule is still why a
-    // low base matters, so the guidance explains the relationship instead.
-    const ceiling = evaluateAdvisories(heuristicSnapshot(), DEFAULT_THRESHOLDS.student, now).find(
-      (a) => a.id === 'ceiling',
-    );
-    expect(ceiling?.guidance).toMatch(/no rule sets a minimum ceiling/i);
-    expect(ceiling?.guidance).toMatch(/clear of cloud/i);
-  });
-
-  it('the fog flag does not attribute meteorology to USPA', () => {
-    // Dew-point spread is atmospheric physics; USPA has no view on it, and the
-    // 3 °C / 1 °C bands are the app's.
-    const fog = evaluateAdvisories(heuristicSnapshot(), DEFAULT_THRESHOLDS.student, now).find(
-      (a) => a.id === 'dewpoint-spread',
-    );
-    expect(fog?.citation.source).not.toMatch(/USPA/i);
-  });
-
-  it('the winds-aloft flag keeps its SIM citation but says whose trigger it is', () => {
-    // Deliberately NOT repointed: the claim it makes (upper winds lengthen the
-    // spot — plan exit separation) is skydiving practice a SIM section very
-    // likely governs. Only the 20/30 kt trigger is the app's, so the text says
-    // so rather than the citation being dropped.
-    const windsAloft = [
-      { altitudeFtAgl: 9000, altitudeFtMsl: 10182, directionDeg: 270, speedKt: 35, tempC: null },
-    ];
-    const aloft = evaluateAdvisories(snapshot({ windsAloft }), DEFAULT_THRESHOLDS.student, now).find(
-      (a) => a.id === 'winds-aloft',
-    );
-    expect(aloft?.citation).toBe(CITATIONS.uspaWeather);
-    expect(aloft?.guidance).toMatch(/dashboard threshold/i);
+  it('every surviving flag carries a citation to a source outside this app', () => {
+    const out = evaluateAdvisories(wouldHaveTripped(), DEFAULT_THRESHOLDS.student, now);
+    expect(out.length).toBeGreaterThan(0);
+    for (const a of out) {
+      expect(a.citation, `${a.id} has no citation`).toBeDefined();
+      expect(a.citation.url, `${a.id} cites an in-app URL`).toMatch(/^https:\/\//);
+    }
   });
 });
 
