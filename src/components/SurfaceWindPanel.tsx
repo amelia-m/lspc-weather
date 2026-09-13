@@ -1,6 +1,6 @@
 import type { CurrentConditions } from '../domain/types';
 import { fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
-import { CITATIONS, type Thresholds } from '../config/thresholds';
+import type { Thresholds } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
@@ -56,33 +56,36 @@ export function SurfaceWindPanel({
             {gust != null && <span className="wind-gust">gust {fmtSpeed(gust, unit)}</span>}
           </div>
           <div className="wind-bar" role="img" aria-label={`Wind ${round(speed)} knots`}>
-            <div className="wind-band band-watch" style={{ left: `${pct(t.windWatchKt)}%` }} />
-            <div className="wind-band band-caution" style={{ left: `${pct(t.windCautionKt)}%` }} />
+            {t.windLimitCitation && (
+              <div className="wind-band band-caution" style={{ left: `${pct(t.windCautionKt)}%` }} />
+            )}
             {t.gustCautionKt != null && (
               <div className="wind-band band-gust" style={{ left: `${pct(t.gustCautionKt)}%` }} />
             )}
             <div className="wind-fill" style={{ width: `${pct(speed)}%` }} />
             {gust != null && <div className="wind-gust-tick" style={{ left: `${pct(gust)}%` }} />}
           </div>
-          <p className="wind-legend">
-            Watch ≥ {fmtSpeed(t.windWatchKt, unit)} · Caution ≥ {fmtSpeed(t.windCautionKt, unit)}
-            {t.gustCautionKt != null && ` · Gust ceiling ${fmtSpeed(t.gustCautionKt, unit)}`}
-          </p>
-          <p className="muted small">
-            {t.windLimitCitation === CITATIONS.appHeuristic ? (
-              <>
-                Both bands are dashboard thresholds, not published limits:{' '}
-                <SourceLink citation={t.windLimitCitation} />
-              </>
-            ) : (
-              <>
+          {/* Only bands a published source actually sets are drawn or named. The
+              "watch" band is this dashboard's own earlier warning — it still
+              raises a flag, but showing it here as a marked limit put an
+              unsourced number on the card beside sourced ones. */}
+          {t.windLimitCitation ? (
+            <>
+              <p className="wind-legend">
+                Caution ≥ {fmtSpeed(t.windCautionKt, unit)}
+                {t.gustCautionKt != null && ` · Gust ceiling ${fmtSpeed(t.gustCautionKt, unit)}`}
+              </p>
+              <p className="muted small">
                 Caution{t.gustCautionKt != null ? ' and gust ceiling' : ''}:{' '}
-                <SourceLink citation={t.windLimitCitation} />. Watch is this dashboard&rsquo;s
-                earlier warning, not a published limit:{' '}
-                <SourceLink citation={CITATIONS.appHeuristic} />.
-              </>
-            )}
-          </p>
+                <SourceLink citation={t.windLimitCitation} />
+              </p>
+            </>
+          ) : (
+            <p className="muted small">
+              No sourced wind limit to show for this profile — the reading above is the
+              observation only.
+            </p>
+          )}
         </>
       )}
     </Panel>
