@@ -1,6 +1,6 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
-import { compass, fmtSpeed, round, type SpeedUnit } from './units';
+import { fmtSpeed, round, type SpeedUnit } from './units';
 import { flightCategory, CATEGORY_LABEL } from './flightCategory';
 
 /**
@@ -11,11 +11,6 @@ import { flightCategory, CATEGORY_LABEL } from './flightCategory';
  * Pure function: same input → same output, no I/O. Unit-tested.
  */
 
-// Upper-wind flags are awareness aids (freefall drift / spot length), not limits.
-// House numbers — no rule puts a speed on "the spot is getting long".
-const WINDS_ALOFT_INFO_KT = 20;
-const WINDS_ALOFT_WATCH_KT = 30;
-
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
   thresholds: Thresholds,
@@ -23,7 +18,7 @@ export function evaluateAdvisories(
   unit: SpeedUnit = 'kt',
 ): Advisory[] {
   const out: Advisory[] = [];
-  const { current, windsAloft, sun, densityAltitude } = snapshot;
+  const { current, sun, densityAltitude } = snapshot;
 
   // --- Surface wind ---
   if (current) {
@@ -70,26 +65,6 @@ export function evaluateAdvisories(
         value: `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtSpeed(thresholds.gustCautionKt, unit)}`,
         guidance:
           'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
-        citation: thresholds.windCitation,
-      });
-    }
-
-    // --- Gust spread (turbulent / shifty landings) ---
-    // Needs both values; skipped when the sustained speed is unreported.
-    if (speedKt != null && gustKt != null && gustKt - speedKt >= thresholds.gustSpreadWatchKt) {
-      out.push({
-        id: 'gust-spread',
-        level: 'watch',
-        metric: 'Gusty wind',
-        value: `${fmtSpeed(speedKt, unit)} sustained, gusting ${fmtSpeed(gustKt, unit)} (spread ${fmtSpeed(gustKt - speedKt, unit)})`,
-        guidance:
-          'Large gust spread means shifting, turbulent surface winds — harder canopy flight and landings. ' +
-          'The spread that trips this flag is a dashboard threshold; the source below is the wind rule that applies to the selected profile.',
-        // The profile's own wind citation, not the generic SIM index: on a
-        // waiver tier that is the club policy, which states an explicit gust
-        // ceiling in mph for exactly this jumper — the most useful thing a
-        // reader of a gust flag can be handed. The adjacent surface-wind and
-        // gust-limit advisories already cite it.
         citation: thresholds.windCitation,
       });
     }
@@ -177,27 +152,6 @@ export function evaluateAdvisories(
         guidance:
           'High density altitude reduces a loaded jump plane’s climb performance — expect longer climbs to altitude.',
         citation: CITATIONS.faaDensityAltitude,
-      });
-    }
-  }
-
-  // --- Winds aloft (freefall drift / spot awareness) ---
-  if (windsAloft.length > 0) {
-    const strongest = windsAloft.reduce((a, b) => (b.speedKt > a.speedKt ? b : a));
-    if (strongest.speedKt >= WINDS_ALOFT_INFO_KT) {
-      out.push({
-        id: 'winds-aloft',
-        level: strongest.speedKt >= WINDS_ALOFT_WATCH_KT ? 'watch' : 'info',
-        metric: 'Winds aloft',
-        value: `${fmtSpeed(strongest.speedKt, unit)} from ${compass(strongest.directionDeg)} at ${strongest.altitudeFtAgl.toLocaleString()} ft AGL`,
-        // Kept on the SIM citation: exit separation and spotting in strong
-        // upper winds is skydiving practice, and the audit wants this pinned to
-        // a real SIM section rather than removed. What was borrowed authority
-        // was the TRIGGER — 20/30 kt is the app's — so the guidance says so and
-        // the citation stays attached to the practice claim it supports.
-        guidance:
-          'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly. The speed this flags at is a dashboard threshold.',
-        citation: CITATIONS.uspaWeather,
       });
     }
   }

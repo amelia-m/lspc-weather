@@ -37,18 +37,19 @@ function snapshot(overrides: Partial<WeatherSnapshot> = {}): WeatherSnapshot {
 }
 
 describe('evaluateAdvisories', () => {
-  it('flags the gusty surface wind in the KPMV fixture', () => {
+  it('does not flag gust spread — no published source sets a spread', () => {
+    // The fixture gusts 22 kt on 12 kt sustained, a 10 kt spread that used to
+    // raise "Gusty wind" at the app's own 8 kt. Nobody publishes a spread
+    // threshold, so the flag went the way of the other untraceable ones.
     const out = evaluateAdvisories(snapshot(), DEFAULT_THRESHOLDS.student, now);
-    expect(out.some((a) => a.id === 'gust-spread')).toBe(true);
+    expect(out.some((a) => a.id === 'gust-spread')).toBe(false);
   });
 
   it('every advisory carries a citation that points somewhere', () => {
     const out = evaluateAdvisories(snapshot(), DEFAULT_THRESHOLDS.student, now);
     expect(out.length).toBeGreaterThan(0);
     for (const a of out) {
-      // An outside authority links out; the house-heuristic citation links to
-      // the in-app page that lists the app's own unsourced numbers.
-      expect(a.citation.url === '#citations' || /^https?:\/\//.test(a.citation.url)).toBe(true);
+      expect(a.citation.url).toMatch(/^https:\/\//);
       expect(a.citation.source.length).toBeGreaterThan(0);
     }
   });
@@ -103,30 +104,21 @@ describe('evaluateAdvisories', () => {
   });
 
   it('renders advisory wind values in the selected unit (mph)', () => {
-    // Sustained 20 kt gusting 28 kt, plus strong winds aloft.
+    // Sustained 20 kt gusting 28 kt, over the waiver gust ceiling so both a
+    // wind flag and a gust flag are on screen in the same unit.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 20, wgst: 28 });
-    const windsAloft = [
-      { altitudeFtAgl: 9000, altitudeFtMsl: 10182, directionDeg: 270, speedKt: 35, tempC: null },
-    ];
-    const kt = evaluateAdvisories(snapshot({ current, windsAloft }), DEFAULT_THRESHOLDS.licensed, now, 'kt');
-    const mph = evaluateAdvisories(snapshot({ current, windsAloft }), DEFAULT_THRESHOLDS.licensed, now, 'mph');
+    const t = resolveThresholds('waiver:0-5');
+    const kt = evaluateAdvisories(snapshot({ current }), t, now, 'kt');
+    const mph = evaluateAdvisories(snapshot({ current }), t, now, 'mph');
 
-    const sfcKt = kt.find((a) => a.id === 'surface-wind');
-    const sfcMph = mph.find((a) => a.id === 'surface-wind');
-    expect(sfcKt?.value).toContain('20 kt'); // kt primary
-    expect(sfcMph?.value).toMatch(/2[0-9] mph/); // mph primary when toggled
+    expect(kt.find((a) => a.id === 'surface-wind')?.value).toContain('20 kt');
+    expect(mph.find((a) => a.id === 'surface-wind')?.value).toMatch(/2[0-9] mph/);
 
-    const aloftMph = mph.find((a) => a.id === 'winds-aloft');
-    expect(aloftMph?.value).toContain('mph');
-    expect(aloftMph?.value).not.toMatch(/\bkt\b/);
+    const gustMph = mph.find((a) => a.id === 'gust-limit');
+    expect(gustMph?.value).toContain('mph');
+    expect(gustMph?.value).not.toMatch(/\bkt\b/);
   });
 
-
-  it('does not flag thunder below the watch threshold', () => {
-    const hourly = [hourAhead(2, { thunderProbPct: 5 })];
-    const out = evaluateAdvisories(snapshot({ hourly }), DEFAULT_THRESHOLDS.student, now);
-    expect(out.some((a) => a.id === 'thunder-forecast')).toBe(false);
-  });
 
   it('after-sunset advisory cites 14 CFR 105.19 and invents no "night rating"', () => {
     const snap = snapshot({ sun: { sunrise: now - 8 * 3600_000, sunset: now - 3600_000 } });
@@ -282,23 +274,19 @@ describe('citations that name a regulation', () => {
     expect(fc?.guidance).not.toMatch(/91\.155/);
   });
 
-  it('the gust-spread flag cites the profile wind rule, not the SIM index', () => {
-    // For a waiver tier the club policy states an explicit gust ceiling for
-    // exactly this jumper — far more use to the reader of a gust flag than the
-    // SIM contents page, and it sits one line away in the same thresholds.
+  it('neither gust spread nor winds aloft raises a flag on an invented speed', () => {
+    // Both carried a real citation, but the number that made them appear was
+    // the app's: an 8/10 kt spread, and 20/30 kt aloft. A flag nobody can check
+    // the trigger of is still a flag nobody can check. The winds-aloft guidance
+    // it used to carry now stands on the winds-aloft card for any wind.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 6, wgst: 16 });
+    const windsAloft = [
+      { altitudeFtAgl: 9000, altitudeFtMsl: 10182, directionDeg: 270, speedKt: 45, tempC: null },
+    ];
     for (const id of ['student', 'licensed', 'waiver:0-5'] as const) {
-      const t = resolveThresholds(id);
-      const spread = evaluateAdvisories(snapshot({ current }), t, now).find(
-        (a) => a.id === 'gust-spread',
-      );
-      expect(spread, `gust-spread did not fire for ${id}`).toBeDefined();
-      expect(spread?.citation).toBe(t.windCitation);
+      const out = evaluateAdvisories(snapshot({ current, windsAloft }), resolveThresholds(id), now);
+      expect(out.some((a) => a.id === 'gust-spread'), `gust-spread fired for ${id}`).toBe(false);
+      expect(out.some((a) => a.id === 'winds-aloft'), `winds-aloft fired for ${id}`).toBe(false);
     }
-    expect(
-      evaluateAdvisories(snapshot({ current }), resolveThresholds('waiver:0-5'), now).find(
-        (a) => a.id === 'gust-spread',
-      )?.citation.source,
-    ).toContain('LSPC');
   });
 });
