@@ -112,10 +112,11 @@ const LOOKUPS: Lookup[] = [
     title: 'Exit separation and spotting in strong upper winds',
     onScreen:
       'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
-    where: 'Winds aloft flag in Conditions to note',
+    where: 'Winds aloft card, standing note under the table',
     cites: 'uspa.org/sim — no section identified',
     asks: [
       'Does the SIM cover exit or group separation? This is an operational instruction and the link currently goes to a document index.',
+      'It used to appear only once upper winds passed 20 kt — a number the app invented. It now stands on the card for any wind, so the guidance no longer depends on an unsourced trigger.',
     ],
   },
 ];
@@ -130,21 +131,20 @@ interface Heuristic {
 /** Numbers this dashboard invented that still drive something on screen.
  *
  *  Flags whose trigger had no published source at all — ceiling bands, a
- *  dew-point spread, a chance of rain, a chance of storms — were removed
- *  outright rather than labelled, so they are not listed here. What remains are
+ *  dew-point spread, a chance of rain, a chance of storms, a gust spread, a
+ *  wind speed aloft — were removed outright rather than labelled, so they are
+ *  not listed here. What remains are
  *  numbers that shape a flag or a highlight but sit alongside a real citation.
  *  The question is whether they are sensible for this DZ, which is a judgement
  *  rather than a lookup. */
 const HEURISTICS: Heuristic[] = [
   { id: 'B1', what: 'Licensed wind watch / caution', value: '17 kt / 25 kt', where: 'Surface wind flag, Licensed' },
-  { id: 'B2', what: 'Gust spread → “Gusty wind”', value: '8 kt students, 10 kt licensed', where: 'Gusty wind flag' },
-  { id: 'B3', what: 'Density altitude excess', value: '2,000 / 3,500 ft students · 2,500 / 4,000 ft licensed', where: 'Density altitude flag' },
-  { id: 'B4', what: 'Last load before sunset', value: '45 min students, 30 min licensed', where: 'Daylight flag' },
-  { id: 'B5', what: 'Winds aloft info / watch', value: '20 kt / 30 kt', where: 'Winds aloft flag' },
-  { id: 'B6', what: 'Winds aloft shown in red', value: '≥ 30 kt', where: 'Winds aloft table' },
-  { id: 'B7', what: 'Daily gust highlighted', value: '≥ 25 kt', where: '10-day outlook' },
+  { id: 'B2', what: 'Density altitude excess', value: '2,000 / 3,500 ft students · 2,500 / 4,000 ft licensed', where: 'Density altitude flag' },
+  { id: 'B3', what: 'Last load before sunset', value: '45 min students, 30 min licensed', where: 'Daylight flag' },
+  { id: 'B4', what: 'Daily gust highlighted', value: '≥ 25 kt', where: '10-day outlook' },
+  { id: 'B5', what: 'Daily thunder chance highlighted', value: '≥ 30%', where: '10-day outlook' },
   {
-    id: 'B8',
+    id: 'B6',
     what: 'Every “watch” band, including on sourced profiles',
     value: 'student: caution − 2 kt · waiver tiers: posted limit − 3 mph',
     where: 'Surface wind flag, all profiles',
@@ -214,7 +214,7 @@ export function CitationsPage(): JSX.Element {
       <h2 className="cite-heading">Part B · instructor judgement, no lookup needed</h2>
       <p className="muted small cite-intro">
         These numbers were invented for this dashboard. None is claimed to come from USPA or the
-        FAA — the question is whether they are sensible for this drop zone. B5–B7 are worth
+        FAA — the question is whether they are sensible for this drop zone. B4 and B5 are worth
         particular attention: a number shown in red is an assertion even with no words attached.
       </p>
 
@@ -242,7 +242,7 @@ export function CitationsPage(): JSX.Element {
           </table>
         </div>
         <p className="muted small">
-          <strong>B8 is worth a closer look than its row suggests.</strong> Where a profile has a
+          <strong>B6 is worth a closer look than its row suggests.</strong> Where a profile has a
           real source — the student limit, the club waiver tiers — that source covers the{' '}
           <em>caution</em> band and the gust ceiling only. The earlier <em>watch</em> band is always
           this dashboard&rsquo;s own, derived by subtracting a couple of units. So a card can be

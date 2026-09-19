@@ -11,7 +11,6 @@ interface FieldDef {
 const FIELDS: FieldDef[] = [
   { key: 'windWatchKt', label: 'Wind — watch', unit: 'kt' },
   { key: 'windCautionKt', label: 'Wind — caution', unit: 'kt' },
-  { key: 'gustSpreadWatchKt', label: 'Gust spread — watch', unit: 'kt' },
   { key: 'gustCautionKt', label: 'Gust ceiling', unit: 'kt' },
   { key: 'visibilityCautionSm', label: 'Visibility — caution', unit: 'SM', step: 0.5 },
   { key: 'densityAltExcessWatchFt', label: 'DA above field — watch', unit: 'ft', step: 100 },

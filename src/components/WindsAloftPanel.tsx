@@ -3,8 +3,10 @@ import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity } from '../d
 import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
+import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
+import { SourceLink } from './common/SourceLink';
 import { fmtClock, fmtTime } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
@@ -149,7 +151,7 @@ export function WindsAloftPanel({
                 <td>
                   {compass(l.directionDeg)} ({l.directionDeg}°)
                 </td>
-                <td className={l.speedKt >= 30 ? 'aloft-strong' : ''}>{fmtSpeed(l.speedKt, unit)}</td>
+                <td>{fmtSpeed(l.speedKt, unit)}</td>
                 <td>{l.tempC != null ? `${l.tempC}°C / ${round(cToF(l.tempC))}°F` : '—'}</td>
                 <td>
                   <span
@@ -176,6 +178,14 @@ export function WindsAloftPanel({
         </button>
       )}
       <p className="muted small">Arrow shows drift direction (where wind pushes you).</p>
+      {/* This used to reach the reader as a flag that fired at 20/30 kt — numbers
+          nobody published. The guidance is real practice, so it stands here for
+          any wind rather than appearing only once an invented threshold is
+          crossed. Read the speeds above and judge them. */}
+      <p className="muted small">
+        Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit
+        separation accordingly. Source: <SourceLink citation={CITATIONS.uspaWeather} />
+      </p>
       {!expanded && toggleable && (
         <p className="muted small">
           Showing key altitudes to 10,000 ft (LSPC&rsquo;s usual max). Expand for every 1,000-ft

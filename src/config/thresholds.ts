@@ -138,8 +138,6 @@ export interface Thresholds {
   /** Surface wind, knots. */
   windWatchKt: number;
   windCautionKt: number;
-  /** Gust spread (gust − sustained), knots — turbulence flag. */
-  gustSpreadWatchKt: number;
   /** Absolute gust ceiling, knots (LSPC waiver). undefined = no absolute rule. */
   gustCautionKt?: number;
   /** Guidance + citation for the surface-wind flag (varies by profile). */
@@ -174,7 +172,6 @@ const LICENSED_WIND_CAUTION_KT = 25;
 const STUDENT: Thresholds = {
   windWatchKt: STUDENT_WIND_KT - 2,
   windCautionKt: STUDENT_WIND_KT,
-  gustSpreadWatchKt: 8,
   windGuidance:
     'USPA recommends max ~14 mph (~12 kt) ground winds for solo students on ram-air reserves.',
   windCitation: CITATIONS.uspaStudentWinds,
@@ -188,7 +185,6 @@ const STUDENT: Thresholds = {
 const LICENSED: Thresholds = {
   windWatchKt: LICENSED_WIND_WATCH_KT,
   windCautionKt: LICENSED_WIND_CAUTION_KT,
-  gustSpreadWatchKt: 10,
   windGuidance:
     'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency. ' +
     'The levels this flag fires at are the dashboard’s own, not USPA’s. ' +
