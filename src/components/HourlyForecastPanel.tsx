@@ -14,9 +14,20 @@ const HORIZONS = [18, 36, 72] as const;
 export function HourlyForecastPanel({
   hourly,
   unit,
+  onUnitChange,
 }: {
   hourly: HourlyPoint[];
   unit: SpeedUnit;
+  /** Page-wide unit setter, handed to the header toggle. Required rather than
+   *  optional, like the other wind cards: the chart and its gust legend are
+   *  labelled in whichever unit is active, so the card should never be able to
+   *  show speeds a reader cannot re-express.
+   *
+   *  It deliberately goes to the header and not next to the 18/36/72 h control
+   *  below, which changes how far out the chart looks rather than how it reads
+   *  — two pill groups side by side would invite one to be taken for the
+   *  other. */
+  onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
   const [hours, setHours] = useState<number>(HORIZONS[0]);
   const now = Date.now();
@@ -34,6 +45,8 @@ export function HourlyForecastPanel({
       title="Hourly wind"
       subtitle={`next ~${points.length || effectiveHours} h`}
       sources={[DATA_SOURCES.nwsForecast]}
+      unit={unit}
+      onUnitChange={onUnitChange}
     >
       {!hasWind ? (
         <p className="muted">No hourly forecast available.</p>

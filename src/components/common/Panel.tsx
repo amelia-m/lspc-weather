@@ -1,23 +1,52 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { DataSource } from '../../config/sources';
+import type { SpeedUnit } from '../../domain/units';
+import { UnitToggle, UnitToggleScope } from './UnitToggle';
 
 export function Panel({
   title,
   subtitle,
   sources,
+  unit,
+  onUnitChange,
   children,
 }: {
   title: string;
   subtitle?: ReactNode;
   /** Data source(s) for this card; rendered as a linked "Data:" footer. */
   sources?: DataSource[];
+  /** Current page-wide wind speed unit. Supply together with `onUnitChange` on
+   *  any card that shows a speed, so a jumper can switch units at the number
+   *  they are reading instead of scrolling back to the top of the page. Both
+   *  omitted on cards with no speed in them, which leaves the header as-is. */
+  unit?: SpeedUnit;
+  onUnitChange?: (u: SpeedUnit) => void;
   children: ReactNode;
 }): JSX.Element {
+  const headingId = useId();
+  const unitToggle =
+    unit !== undefined && onUnitChange !== undefined ? (
+      <UnitToggleScope labelledBy={headingId}>
+        <UnitToggle unit={unit} onChange={onUnitChange} />
+      </UnitToggleScope>
+    ) : null;
   return (
     <section className="panel">
       <header className="panel-head">
-        <h2>{title}</h2>
-        {subtitle && <span className="panel-sub">{subtitle}</span>}
+        <h2 id={headingId}>{title}</h2>
+        {/* Subtitle and toggle share one right-hand cluster so the toggle keeps
+            its place against the card edge when a long subtitle ("freefall
+            drift / spot", a station plus observation time) wraps under it. With
+            no toggle the subtitle stays a bare child of the header, exactly as
+            on every card that shows no wind speed. */}
+        {unitToggle ? (
+          <div className="panel-head-aside">
+            {subtitle && <span className="panel-sub">{subtitle}</span>}
+            {unitToggle}
+          </div>
+        ) : (
+          subtitle && <span className="panel-sub">{subtitle}</span>
+        )}
       </header>
       <div className="panel-body">{children}</div>
       {sources && sources.length > 0 && (

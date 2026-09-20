@@ -27,11 +27,17 @@ export function SurfaceWindPanel({
   thresholds: t,
   label,
   unit,
+  onUnitChange,
 }: {
   current: CurrentConditions | null;
   thresholds: Thresholds;
   label: string;
   unit: SpeedUnit;
+  /** Page-wide unit setter, handed to the header toggle. Required rather than
+   *  optional: this is the most-read card on the page and the one a jumper
+   *  compares against a wind limit quoted in mph, so it must never render
+   *  without the switch. */
+  onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
   const speed = current?.wind.speedKt ?? null;
   const gust = current?.wind.gustKt ?? null;
@@ -44,6 +50,8 @@ export function SurfaceWindPanel({
       title="Surface wind"
       subtitle={`${label} flag bands`}
       sources={[DATA_SOURCES.nwsObservation]}
+      unit={unit}
+      onUnitChange={onUnitChange}
     >
       {speed == null ? (
         <p className="muted">No wind data.</p>
