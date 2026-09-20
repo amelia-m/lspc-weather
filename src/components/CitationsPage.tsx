@@ -78,10 +78,12 @@ const LOOKUPS: Lookup[] = [
     title: 'No USPA wind limit for licensed jumpers',
     onScreen:
       'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency.',
-    where: 'Surface wind card with Licensed selected',
+    where:
+      'Not currently on screen. This sentence reached the reader only through the licensed surface-wind flag, which no longer fires — no published source sets a trigger for it. The claim and its citation survive in the code.',
     cites: 'USPA SIM, Section 2-1 (BSR), cited for the absence of a limit',
     asks: [
       'Do the BSRs state a wind limit that applies to licensed jumpers? The app asserts they do not, and an absence is easy to get wrong.',
+      'Still worth answering even though the sentence is off screen: if the BSRs DO set a limit for licensed jumpers, the app is currently silent where it should be flagging.',
     ],
   },
   {
@@ -130,24 +132,17 @@ interface Heuristic {
 
 /** Numbers this dashboard invented that still drive something on screen.
  *
- *  Flags whose trigger had no published source at all — ceiling bands, a
- *  dew-point spread, a chance of rain, a chance of storms, a gust spread, a
- *  wind speed aloft — were removed outright rather than labelled, so they are
- *  not listed here. What remains are
- *  numbers that shape a flag or a highlight but sit alongside a real citation.
- *  The question is whether they are sensible for this DZ, which is a judgement
- *  rather than a lookup. */
+ *  This list used to be long. Everything that decided whether a flag appeared,
+ *  or painted a figure in a warning colour, has been removed rather than
+ *  labelled — a threshold with no published source is not something a reader
+ *  can check, so it does not get to assert anything. One number survives, and
+ *  only because it sets the length of a bar. */
 const HEURISTICS: Heuristic[] = [
-  { id: 'B1', what: 'Licensed wind watch / caution', value: '17 kt / 25 kt', where: 'Surface wind flag, Licensed' },
-  { id: 'B2', what: 'Density altitude excess', value: '2,000 / 3,500 ft students · 2,500 / 4,000 ft licensed', where: 'Density altitude flag' },
-  { id: 'B3', what: 'Last load before sunset', value: '45 min students, 30 min licensed', where: 'Daylight flag' },
-  { id: 'B4', what: 'Daily gust highlighted', value: '≥ 25 kt', where: '10-day outlook' },
-  { id: 'B5', what: 'Daily thunder chance highlighted', value: '≥ 30%', where: '10-day outlook' },
   {
-    id: 'B6',
-    what: 'Every “watch” band, including on sourced profiles',
-    value: 'student: caution − 2 kt · waiver tiers: posted limit − 3 mph',
-    where: 'Surface wind flag, all profiles',
+    id: 'B1',
+    what: 'Licensed surface-wind bar scale',
+    value: '25 kt',
+    where: 'Surface wind card, Licensed — sets where the bar tops out. No flag, no band.',
   },
 ];
 
@@ -173,10 +168,15 @@ export function CitationsPage(): JSX.Element {
         <em>the claim itself is wrong</em>.
       </p>
       <p className="muted small cite-intro">
-        Everything below points at a source outside this app. Flags that fired on a number nobody
-        published — ceiling bands, a dew-point spread, a chance of rain, a chance of storms — were
-        removed from the dashboard rather than relabelled, because a threshold with no source is not
-        something a reader can check. The open questions here are written as questions: a guess
+        Everything below points at a source outside this app. Anything that fired on a number
+        nobody published has been removed rather than relabelled, because a threshold with no
+        source is not something a reader can check: the ceiling bands, a dew-point spread, a
+        chance of rain, a chance of storms, a gust spread, a wind speed aloft, the density-altitude
+        bands, the last-load countdown, and every “watch” band — which were the app’s own
+        arithmetic on someone else’s limit. Two colour thresholds went with them, in the 10-day
+        outlook and the storms card, and so did a “fog/low-cloud favorable” verdict on the humidity
+        line: a figure in a warning colour, or a worded judgement, asserts something even when no
+        rule is quoted. The open questions here are written as questions: a guess
         about what a SIM section says is not evidence, and presenting one as though it were would
         repeat the problem this page exists to fix.
       </p>
@@ -213,9 +213,9 @@ export function CitationsPage(): JSX.Element {
 
       <h2 className="cite-heading">Part B · instructor judgement, no lookup needed</h2>
       <p className="muted small cite-intro">
-        These numbers were invented for this dashboard. None is claimed to come from USPA or the
-        FAA — the question is whether they are sensible for this drop zone. B4 and B5 are worth
-        particular attention: a number shown in red is an assertion even with no words attached.
+        One number invented for this dashboard is still on screen. It is not claimed to come from
+        USPA or the FAA, and it triggers nothing — it only decides how long a bar is drawn. Worth a
+        glance rather than a ruling.
       </p>
 
       <Panel title="App thresholds" subtitle="not published limits">
@@ -242,11 +242,10 @@ export function CitationsPage(): JSX.Element {
           </table>
         </div>
         <p className="muted small">
-          <strong>B6 is worth a closer look than its row suggests.</strong> Where a profile has a
-          real source — the student limit, the club waiver tiers — that source covers the{' '}
-          <em>caution</em> band and the gust ceiling only. The earlier <em>watch</em> band is always
-          this dashboard&rsquo;s own, derived by subtracting a couple of units. So a card can be
-          honestly sourced and still be showing you a house number first.
+          There is no longer a “watch” band anywhere in the app. Every profile used to carry one —
+          the student caution minus 2 kt, the waiver tiers minus 3 mph — so a card could be
+          honestly sourced and still warn you first on a number of the app’s own. Flags now fire at
+          the published limit or not at all.
         </p>
         <p className="muted small">
           The club waiver tiers (0–5 jumps: 15 mph wind / 16 mph gust · 6–10: 16/18 · 10–20: 18/19 ·
