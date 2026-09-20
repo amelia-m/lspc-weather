@@ -127,8 +127,42 @@ describe('wind-limit profiles', () => {
   it('shows no limit band for licensed, because nobody published one', () => {
     // 17/25 kt are the app's own numbers and the licensed guidance says USPA
     // sets no limit, so there is nothing to draw and nothing to cite. null is
-    // the honest value; the card renders the observation alone.
+    // the honest value; the card renders the observation alone, and
+    // evaluateAdvisories reads the same null to withhold the flag.
     expect(resolveThresholds('licensed').windLimitCitation).toBeNull();
+  });
+
+  it('carries no threshold that no published source sets', () => {
+    // These fields drove flags on numbers the app invented: an early "watch"
+    // band under every wind limit, density altitude so many feet above the
+    // field, so many minutes before sunset. The flags went, so the config
+    // went with them — a tunable left behind for a flag that no longer exists
+    // reads as a live control.
+    const RETIRED = [
+      'windWatchKt',
+      'densityAltExcessWatchFt',
+      'densityAltExcessCautionFt',
+      'lastLoadWatchMin',
+    ];
+    for (const id of profiles) {
+      const keys = Object.keys(resolveThresholds(id));
+      for (const gone of RETIRED) {
+        expect(keys, `${id} still carries ${gone}`).not.toContain(gone);
+      }
+    }
+  });
+
+  it('still carries the thresholds a published source does set', () => {
+    // The counterpart to the test above: this sweep removes unsourced numbers,
+    // not every number. The USPA student figure, the posted waiver wind and
+    // gust limits and the 14 CFR 105.17 visibility floor all stay.
+    expect(resolveThresholds('student').windCautionKt).toBe(12);
+    expect(resolveThresholds('student').visibilityCautionSm).toBe(3);
+    for (const tier of WAIVER_TIERS) {
+      const t = resolveThresholds(tier.id);
+      expect(t.windCautionKt).toBeCloseTo(tier.windMph * 0.868976, 5);
+      expect(t.gustCautionKt).toBeCloseTo(tier.gustMph * 0.868976, 5);
+    }
   });
 
   it('keeps the published sources for the bands that have one', () => {

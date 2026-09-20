@@ -36,8 +36,15 @@ export function DensityAltitudePanel({
               {da.isaDeviationC}°C
             </dd>
           </dl>
+          {/* This used to reach the reader as a flag that fired once DA ran
+              2,000–4,000 ft above the field — bands nobody published. The claim
+              itself is FAA-cited and holds at any DA, so it stands here under
+              the figure rather than appearing only past an invented threshold.
+              The number above is the reading; judging it is the reader's job,
+              with the PIC's. */}
           <p className="muted small">
-            Higher DA = slower climb for a loaded jump plane.{' '}
+            High density altitude reduces a loaded jump plane’s climb performance — expect longer
+            climbs to altitude.{' '}
             {da.humidityCorrected
               ? 'Humidity-corrected (virtual temperature).'
               : 'Dry-air estimate (no dew point available).'}{' '}

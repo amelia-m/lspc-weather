@@ -18,30 +18,33 @@ export function evaluateAdvisories(
   unit: SpeedUnit = 'kt',
 ): Advisory[] {
   const out: Advisory[] = [];
-  const { current, sun, densityAltitude } = snapshot;
+  const { current, sun } = snapshot;
 
   // --- Surface wind ---
   if (current) {
     const { speedKt, gustKt } = current.wind;
-    // null means the observation lacked a usable reading — that is "no data",
-    // not calm. Level on the EFFECTIVE wind (max of sustained and gust): a
-    // gust past the limit is still wind past the limit. A gust reading alone
-    // (sustained unreported) is enough to evaluate.
-    if (speedKt != null || gustKt != null) {
+    // Fires at the published CAUTION limit and nowhere else. `windLimitCitation`
+    // is the gate: it holds the source of that number — the USPA student figure
+    // or the posted club waiver — and is null where nobody published one. The
+    // earlier "watch" band was this app's own arithmetic on those limits, and
+    // for licensed jumpers (whose own guidance says no USPA limit binds them)
+    // BOTH bands were invented, so that profile now raises no surface-wind flag
+    // at all. The card still shows the reading and says it has no sourced limit
+    // to draw; a trigger a reader cannot check is not a flag this app raises.
+    //
+    // null speed/gust means the observation lacked a usable reading — that is
+    // "no data", not calm. Level on the EFFECTIVE wind (max of sustained and
+    // gust): a gust past the limit is still wind past the limit, and a gust
+    // reading alone (sustained unreported) is enough to evaluate.
+    if (thresholds.windLimitCitation && (speedKt != null || gustKt != null)) {
+      const limitKt = thresholds.windCautionKt;
       const effectiveKt = Math.max(speedKt ?? -Infinity, gustKt ?? -Infinity);
-      const windLevel: AdvisoryLevel =
-        effectiveKt >= thresholds.windCautionKt
-          ? 'caution'
-          : effectiveKt >= thresholds.windWatchKt
-            ? 'watch'
-            : 'info';
-      if (windLevel !== 'info') {
-        const levelKt = windLevel === 'caution' ? thresholds.windCautionKt : thresholds.windWatchKt;
-        // Gust-driven: the gust crossed the threshold but the sustained speed did not.
-        const gustDriven = gustKt != null && gustKt >= levelKt && (speedKt == null || speedKt < levelKt);
+      if (effectiveKt >= limitKt) {
+        // Gust-driven: the gust crossed the limit but the sustained speed did not.
+        const gustDriven = gustKt != null && gustKt >= limitKt && (speedKt == null || speedKt < limitKt);
         out.push({
           id: 'surface-wind',
-          level: windLevel,
+          level: 'caution',
           metric: 'Surface wind',
           value: formatWind(speedKt, gustKt, unit) + (gustDriven ? ' (gusts exceed limit)' : ''),
           guidance: thresholds.windGuidance,
@@ -134,29 +137,17 @@ export function evaluateAdvisories(
     }
   }
 
-  // --- Density altitude (loaded C-182 climb performance) ---
-  if (densityAltitude) {
-    const excess = densityAltitude.densityAltitudeFt - densityAltitude.fieldElevationFt;
-    const level: AdvisoryLevel =
-      excess >= thresholds.densityAltExcessCautionFt
-        ? 'caution'
-        : excess >= thresholds.densityAltExcessWatchFt
-          ? 'watch'
-          : 'info';
-    if (level !== 'info') {
-      out.push({
-        id: 'density-altitude',
-        level,
-        metric: 'Density altitude',
-        value: `${densityAltitude.densityAltitudeFt.toLocaleString()} ft (+${excess.toLocaleString()} above field)`,
-        guidance:
-          'High density altitude reduces a loaded jump plane’s climb performance — expect longer climbs to altitude.',
-        citation: CITATIONS.faaDensityAltitude,
-      });
-    }
-  }
+  // No density-altitude flag: the FAA-cited claim it carried (a loaded jump
+  // plane climbs worse in high DA) is real at any DA, but the ft-above-field
+  // bands that decided when to raise it were the app's own. The claim now
+  // stands on the density-altitude card, which prints the figure for the reader
+  // to judge — see DensityAltitudePanel.
 
-  // --- Daylight / last load ---
+  // --- Daylight (14 CFR 105.19) ---
+  // Fires on an astronomical fact, not on a chosen number: the reg's trigger IS
+  // sunset. The "last load" watch that used to precede it (45 min student /
+  // 30 licensed) was the app's own — nobody publishes a minutes-before-sunset
+  // figure, and the Sun card already shows the time remaining.
   if (sun) {
     const minsToSunset = (sun.sunset - now) / 60000;
     if (minsToSunset <= 0) {
@@ -167,16 +158,6 @@ export function evaluateAdvisories(
         value: 'After sunset',
         guidance:
           'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19); USPA also requires a B license (min 50 jumps) for night jumps. Not a daytime operation.',
-        citation: CITATIONS.far10519,
-      });
-    } else if (minsToSunset <= thresholds.lastLoadWatchMin) {
-      out.push({
-        id: 'daylight',
-        level: 'watch',
-        metric: 'Daylight',
-        value: `~${Math.round(minsToSunset)} min to sunset`,
-        guidance:
-          'Approaching sunset — account for climb time so the load lands in daylight (after-sunset jumps trigger the 14 CFR 105.19 lighting rule).',
         citation: CITATIONS.far10519,
       });
     }

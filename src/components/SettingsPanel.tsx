@@ -8,15 +8,31 @@ interface FieldDef {
   step?: number;
 }
 
+/**
+ * One row per threshold an advisory actually fires on.
+ *
+ * Kept deliberately short: a row for a number nothing reads is worse than no
+ * row, because editing it looks like it changes what the dashboard flags. The
+ * rows for the wind "watch" band, the density-altitude bands and the last-load
+ * warning went when those flags did — each fired on a number no published
+ * source sets, so there was nothing a reader could check them against.
+ */
 const FIELDS: FieldDef[] = [
-  { key: 'windWatchKt', label: 'Wind — watch', unit: 'kt' },
   { key: 'windCautionKt', label: 'Wind — caution', unit: 'kt' },
   { key: 'gustCautionKt', label: 'Gust ceiling', unit: 'kt' },
   { key: 'visibilityCautionSm', label: 'Visibility — caution', unit: 'SM', step: 0.5 },
-  { key: 'densityAltExcessWatchFt', label: 'DA above field — watch', unit: 'ft', step: 100 },
-  { key: 'densityAltExcessCautionFt', label: 'DA above field — caution', unit: 'ft', step: 100 },
-  { key: 'lastLoadWatchMin', label: 'Last-load — watch', unit: 'min', step: 5 },
 ];
+
+/** A row is shown only where the profile's base value is a number AND that
+ *  number drives something. `windCautionKt` fails the second test on a profile
+ *  with no published limit (licensed): no source sets the band there, so the
+ *  wind flag does not fire and the value survives only to scale the card's bar.
+ *  Offering it as a tunable would imply a flag behind it. */
+function fieldApplies(f: FieldDef, base: Thresholds): boolean {
+  if (typeof base[f.key] !== 'number') return false;
+  if (f.key === 'windCautionKt') return base.windLimitCitation !== null;
+  return true;
+}
 
 /** Editable advisory thresholds for the active profile. Overrides are owned by
  *  App and persisted; this is a controlled form. */
@@ -47,7 +63,7 @@ export function SettingsPanel({
           in this browser. Winds/gusts are in knots (1 kt ≈ 1.15 mph).
         </p>
         <div className="settings-grid">
-          {FIELDS.filter((f) => typeof base[f.key] === 'number').map((f) => {
+          {FIELDS.filter((f) => fieldApplies(f, base)).map((f) => {
             const value = thresholds[f.key] as number;
             const isMod = value !== (base[f.key] as number);
             return (

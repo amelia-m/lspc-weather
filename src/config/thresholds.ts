@@ -87,6 +87,11 @@ export const CITATIONS = {
     url: 'https://www.faa.gov/air_traffic/publications/atpubs/aim_html/chap7_section_1.html',
     note: VERIFY_NOTE,
   },
+  /** Density altitude and its effect on climb performance. Backs the standing
+   *  note on the density-altitude card, not a flag: the claim (a loaded jump
+   *  plane climbs worse in high DA) is FAA-sourced and true at any DA, but the
+   *  ft-above-field bands that used to raise a watch/caution were the app's
+   *  own. The card prints the DA figure; the reader judges it. */
   faaDensityAltitude: {
     source: 'FAA-P-8740-2',
     ref: 'Density Altitude (FAA Safety pamphlet)',
@@ -135,72 +140,89 @@ export const CITATIONS = {
 } satisfies Record<string, Citation>;
 
 export interface Thresholds {
-  /** Surface wind, knots. */
-  windWatchKt: number;
+  /**
+   * Surface-wind caution band, knots — the ONLY level the wind flag fires at.
+   *
+   * There is deliberately no earlier "watch" band. The one that used to sit a
+   * couple of knots under this (and 3 mph under the posted waiver limits) was
+   * the app's own invention: no BSR, club waiver or reg defines an early-warning
+   * speed, so a reader had nothing to check it against.
+   *
+   * Meaningful only where `windLimitCitation` is set, i.e. where a published
+   * source puts a number here. Where nobody published one (licensed jumpers) no
+   * flag fires and the card draws no band; the value then survives only as the
+   * upper bound the surface-wind card scales its bar against.
+   */
   windCautionKt: number;
   /** Absolute gust ceiling, knots (LSPC waiver). undefined = no absolute rule. */
   gustCautionKt?: number;
-  /** Guidance + citation for the surface-wind flag (varies by profile). */
+  /**
+   * Guidance sentence and its citation for the surface-wind flag. They reach
+   * the screen only when that flag fires, so on a profile with no published
+   * limit (licensed) they describe why the profile has no limit and nothing
+   * renders them.
+   */
   windGuidance: string;
   windCitation: Citation;
   /**
-   * Citation for the CAUTION band as a NUMBER, which is not always the same
-   * claim as `windCitation`. `windCitation` sources the guidance SENTENCE (for
-   * licensed jumpers that sentence is "USPA sets no limit", so it cites the
-   * BSR for an absence). The surface-wind card instead draws the band at a
-   * specific speed and needs the source of THAT speed: the USPA figure for
-   * students, the posted club policy for waiver tiers, and — for licensed
-   * jumpers, where nobody published a limit — the app's own heuristic.
-   * Pointing the card's 25 kt band at the BSR would credit USPA with a number
-   * the same sentence says it never set.
+   * Source of the CAUTION band as a NUMBER, which is a different claim from
+   * `windCitation` (that one sources the guidance SENTENCE). The card draws the
+   * band at a specific speed and needs the source of THAT speed: the USPA
+   * figure for students, the posted club policy for waiver tiers.
+   *
+   * null means no published rule sets a limit for this profile. That is also
+   * the switch on the flag itself: with no sourced number there is no trigger a
+   * reader could check, so `evaluateAdvisories` raises no surface-wind flag and
+   * the card draws no band.
    */
-  /** Source for the displayed limit band, or null where none is published. */
   windLimitCitation: Citation | null;
   /** Visibility, statute miles (105.17 floor below 10k MSL is 3 SM). */
   visibilityCautionSm: number;
-  /** Density altitude above field elevation, ft (C-182 climb concern). */
-  densityAltExcessWatchFt: number;
-  densityAltExcessCautionFt: number;
-  /** Minutes before sunset to start flagging "last load" pressure. */
-  lastLoadWatchMin: number;
 }
 
 const STUDENT_WIND_KT = 12; // USPA ~14 mph rounded to whole knots
-const LICENSED_WIND_WATCH_KT = 17;
-const LICENSED_WIND_CAUTION_KT = 25;
+
+/** Licensed profile: nobody publishes a surface-wind limit for licensed
+ *  jumpers, so no band is drawn and no flag fires. This number is NOT a limit —
+ *  it is only the upper bound the surface-wind card scales its bar against, so
+ *  a 12 kt reading does not render as a full bar. It was previously this
+ *  dashboard's own 25 kt caution band, which fired a flag nobody could check. */
+const LICENSED_BAR_SCALE_KT = 25;
 
 const STUDENT: Thresholds = {
-  windWatchKt: STUDENT_WIND_KT - 2,
   windCautionKt: STUDENT_WIND_KT,
   windGuidance:
     'USPA recommends max ~14 mph (~12 kt) ground winds for solo students on ram-air reserves.',
   windCitation: CITATIONS.uspaStudentWinds,
   windLimitCitation: CITATIONS.uspaStudentWinds,
   visibilityCautionSm: 3,
-  densityAltExcessWatchFt: 2000,
-  densityAltExcessCautionFt: 3500,
-  lastLoadWatchMin: 45,
 };
 
+/**
+ * Licensed jumpers. Both bands this profile used to flag on (17 kt watch,
+ * 25 kt caution) were the dashboard's own, and its own guidance says no USPA
+ * limit binds a licensed jumper — so the flag had no published trigger at any
+ * level and no longer fires. What the reader sees instead is the surface-wind
+ * card: the observation, and its line saying there is no sourced limit to draw.
+ *
+ * The guidance sentence below is this profile's account of that absence. With
+ * no flag to carry it, nothing renders it today; it stays because it is the
+ * text that belongs to `windCitation` — the BSR cited for the absence — should
+ * the card ever show the profile's own words.
+ */
 const LICENSED: Thresholds = {
-  windWatchKt: LICENSED_WIND_WATCH_KT,
-  windCautionKt: LICENSED_WIND_CAUTION_KT,
+  windCautionKt: LICENSED_BAR_SCALE_KT,
   windGuidance:
     'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency. ' +
-    'The levels this flag fires at are the dashboard’s own, not USPA’s. ' +
     'Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA — ask the PIC.',
-  // Cites the BSR for the absence of a limit, not the student limit: this flag
-  // is awareness only, and a reader who follows the link should land on the
-  // section that shows the wind rule is written for students.
+  // Cites the BSR for the absence of a limit, not the student limit: a reader
+  // who follows the link should land on the section that shows the wind rule is
+  // written for students.
   windCitation: CITATIONS.uspaLicensedWinds,
-  // The 17/25 kt bands themselves are app-invented (the sentence above says as
-  // much), so the card that draws them cites the heuristic, not the BSR.
-  // No published limit exists for licensed jumpers, so the card shows no band.
+  // No published limit exists for licensed jumpers, so the card shows no band
+  // and evaluateAdvisories raises no surface-wind flag for this profile.
   windLimitCitation: null,
   visibilityCautionSm: 3,
-  densityAltExcessWatchFt: 2500,
-  densityAltExcessCautionFt: 4000,
-  lastLoadWatchMin: 30,
 };
 
 /** Kept for tests / back-compat. */
@@ -231,8 +253,10 @@ export const WAIVER_TIERS: WaiverTier[] = [
 function waiverThresholds(tier: WaiverTier): Thresholds {
   return {
     ...STUDENT,
+    // The posted policy states one wind figure and one gust ceiling per tier;
+    // both are transcribed as-is. The earlier "watch" band this used to derive
+    // (posted limit − 3 mph) appears nowhere on the sign, so it is gone.
     windCautionKt: mphToKt(tier.windMph),
-    windWatchKt: mphToKt(Math.max(0, tier.windMph - 3)),
     gustCautionKt: mphToKt(tier.gustMph),
     windGuidance:
       `LSPC waivered limit (students, ${tier.label}): max wind ${tier.windMph} mph, gusts under ${tier.gustMph} mph. ` +
