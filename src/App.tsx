@@ -183,14 +183,12 @@ export default function App(): JSX.Element {
             {SITE.dz.name} ({SITE.dz.icao}) · Weeping Water, NE · obs from {SITE.metarStation.id}
           </p>
         </div>
+        {/* The kt/mph switch used to live here. It now sits on each of the five
+            cards that show a wind speed, next to the numbers it changes, so a
+            sixth copy up here would only be the one furthest from any of them.
+            What stays is what has no per-card home: the wind-limit profile and
+            waiver tier are page-wide policy, not a display preference. */}
         <div className="toggles">
-          <div className="unit-toggle" role="group" aria-label="Wind speed unit">
-            {(['kt', 'mph'] as SpeedUnit[]).map((u) => (
-              <button key={u} className={u === unit ? 'active' : ''} onClick={() => setUnit(u)}>
-                {u}
-              </button>
-            ))}
-          </div>
           <div className="class-toggle" role="group" aria-label="Wind-limit profile">
             <button className={profile === 'student' ? 'active' : ''} onClick={() => setProfile('student')}>
               Student
@@ -247,12 +245,13 @@ export default function App(): JSX.Element {
           linear column. Six cards precede the span-2 outlook so it packs onto a
           fresh row at both 2- and 3-column widths. */}
       <div className="grid">
-        <MetarPanel current={snapshot.current} unit={unit} />
+        <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} />
         <SurfaceWindPanel
           current={snapshot.current}
           thresholds={thresholds}
           label={profileLabel(profile)}
           unit={unit}
+          onUnitChange={setUnit}
         />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <WindsAloftPanel
@@ -260,14 +259,16 @@ export default function App(): JSX.Element {
           source={snapshot.windsAloftSource}
           validity={snapshot.windsAloftValidity}
           unit={unit}
+          onUnitChange={setUnit}
         />
         <DriftPanel levels={snapshot.windsAloft} profile={profile} />
-        <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} />
+        <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} onUnitChange={setUnit} />
         <DailyForecastPanel
           daily={snapshot.daily}
           source={snapshot.dailySource}
           hourly={snapshot.hourly}
           unit={unit}
+          onUnitChange={setUnit}
         />
         <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
         <DensityAltitudePanel da={snapshot.densityAltitude} />

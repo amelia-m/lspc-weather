@@ -62,12 +62,18 @@ export function WindsAloftPanel({
   source,
   validity,
   unit,
+  onUnitChange,
 }: {
   levels: WindsAloftLevel[];
   source: WindsAloftSource | null | undefined;
   /** When these levels are valid. Undefined until winds aloft have loaded. */
   validity?: WindsAloftValidity | null;
   unit: SpeedUnit;
+  /** Page-wide unit setter, handed to the header toggle. Required rather than
+   *  optional: the level speeds here are what a jumper cross-checks against
+   *  another winds tool, and those tools differ in which unit they print, so
+   *  the switch belongs with every rendering of this table. */
+  onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false);
   // Ticks each minute so the "ahead of now" offset stays true between the
@@ -93,6 +99,8 @@ export function WindsAloftPanel({
           ? [DATA_SOURCES.fdWinds]
           : [DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]
       }
+      unit={unit}
+      onUnitChange={onUnitChange}
     >
       {levels.length > 0 && (
         <>

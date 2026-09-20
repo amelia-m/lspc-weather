@@ -13,17 +13,36 @@ import { fmtTime } from './format';
  *  Tap a day to expand its hourly detail (from the NWS gridpoint forecast,
  *  which reaches ~7 days; days past that show a not-available note). Planning
  *  guidance for which days look jumpable, not a substitute for the morning-of
- *  forecast. */
+ *  forecast.
+ *
+ *  Nothing in these tables is coloured. A gust or a storm chance painted red
+ *  asserts that the day is one to worry about, and no published rule sets a
+ *  level at which a FORECAST gust or thunderstorm chance becomes that — the
+ *  USPA and club wind limits are same-day surface limits for the jump being
+ *  made, not a test to apply to a model maximum eight days out. The figures are
+ *  printed plainly so the reader judges them against the limits on the surface
+ *  wind card. */
 export function DailyForecastPanel({
   daily,
   source,
   hourly,
   unit,
+  onUnitChange,
 }: {
   daily: DailyPoint[];
   source: DailySource | null | undefined;
   hourly: HourlyPoint[];
   unit: SpeedUnit;
+  /** Page-wide unit setter, handed to the header toggle. Required rather than
+   *  optional, like the other wind cards: the outlook prints its wind maxima
+   *  bare under a "Wind (kt)" column heading, so the unit is only ever legible
+   *  from that heading and its switch.
+   *
+   *  The header is the one place that stays put while a day is expanded — the
+   *  day rows and the detail pane below them are already the card's own
+   *  interaction, and a unit switch buried in there would move or vanish as
+   *  days are opened and closed. */
+  onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
   const fallback = source === 'nws-gridpoint';
   const [selected, setSelected] = useState<string | null>(null);
@@ -44,6 +63,8 @@ export function DailyForecastPanel({
       title="10-day outlook"
       subtitle={fallback ? 'NWS ~7-day fallback' : 'daily planning'}
       sources={[fallback ? DATA_SOURCES.nwsForecast : DATA_SOURCES.openMeteo]}
+      unit={unit}
+      onUnitChange={onUnitChange}
     >
       {daily.length === 0 ? (
         <p className="muted">No daily forecast available.</p>
@@ -91,7 +112,7 @@ export function DailyForecastPanel({
                       {wx.label}
                     </td>
                     <td>{tempRange(d.tempMaxC, d.tempMinC)}</td>
-                    <td className={windClass(d.gustMaxKt)}>{windText(d, unit)}</td>
+                    <td>{windText(d, unit)}</td>
                     <td>{d.precipProbMaxPct != null ? `${round(d.precipProbMaxPct)}%` : '—'}</td>
                   </tr>
                 );
@@ -188,14 +209,12 @@ function DayDetail({
                     <tr key={h.time}>
                       <td>{fmtTime(h.time)}</td>
                       <td>{cat ? <FlightCategoryPill category={cat} /> : '—'}</td>
-                      <td className={windClass(h.windGustKt)}>{hourWind(h, unit)}</td>
+                      <td>{hourWind(h, unit)}</td>
                       <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
                       <td>{h.visibilitySm != null ? `${round(h.visibilitySm, 1)} SM` : '—'}</td>
                       <td>{h.tempC != null ? `${round(cToF(h.tempC))}°F` : '—'}</td>
                       <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
-                      <td className={h.thunderProbPct != null && h.thunderProbPct >= 30 ? 'aloft-strong' : ''}>
-                        {h.thunderProbPct != null ? `${round(h.thunderProbPct)}%` : '—'}
-                      </td>
+                      <td>{h.thunderProbPct != null ? `${round(h.thunderProbPct)}%` : '—'}</td>
                     </tr>
                   );
                 })}
@@ -281,10 +300,6 @@ const hourWind = (h: HourlyPoint, unit: SpeedUnit): string => {
   const base = `${dir}${round(toSpeed(h.windSpeedKt, unit))}`;
   return h.windGustKt != null ? `${base} g ${round(toSpeed(h.windGustKt, unit))}` : base;
 };
-
-/** Highlight days/hours whose gust would trip even the licensed watch level. */
-const windClass = (gustKt: number | null): string =>
-  gustKt != null && gustKt >= 25 ? 'aloft-strong' : '';
 
 /** WMO weather interpretation codes → compact icon + label. */
 function weatherCode(code: number | null): { icon: string; label: string } {

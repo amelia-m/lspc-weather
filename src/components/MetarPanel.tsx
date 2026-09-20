@@ -9,9 +9,16 @@ import { DATA_SOURCES } from '../config/sources';
 export function MetarPanel({
   current,
   unit,
+  onUnitChange,
 }: {
   current: CurrentConditions | null;
   unit: SpeedUnit;
+  /** Page-wide unit setter, handed to the header toggle. Required, not
+   *  optional: the METAR wind is reported in knots and read by jumpers who
+   *  think in mph, so a call site that rendered this card without a way to
+   *  switch would be the one place the conversion is hardest to do in the
+   *  head. Failing to pass it should be a type error, not a missing control. */
+  onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
   return (
     <Panel
@@ -20,6 +27,8 @@ export function MetarPanel({
         current ? `${current.station} · obs ${fmtTime(current.observedAt)}` : SITE.metarStation.id
       }
       sources={[DATA_SOURCES.nwsObservation]}
+      unit={unit}
+      onUnitChange={onUnitChange}
     >
       {!current ? (
         <p className="muted">No METAR available.</p>

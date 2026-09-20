@@ -127,8 +127,17 @@ a {
   font-weight: 600;
 }
 /* Collapse the shared left/right border between adjacent toggle buttons. */
-.range-toggle button:not(:first-child) {
+.range-toggle button:not(:first-child),
+.unit-toggle button:not(:first-child) {
   border-left: none;
+}
+/* The unit toggle is repeated on every card that shows a wind speed, so it is
+   sized below the card title and subtitle: a jumper scanning the page should
+   read the numbers first and only notice the switch when reaching for it. */
+.unit-toggle button {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  line-height: 1.6;
 }
 
 /* Drift / spot */
@@ -189,6 +198,11 @@ a {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   gap: 8px;
+  /* A phone-width card cannot fit "Current conditions" and "KPMV · obs 14:32"
+     on one line, let alone the unit toggle after it — let the right-hand
+     cluster drop to its own line rather than squeezing the title. */
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 .panel-head h2 {
   margin: 0;
@@ -197,6 +211,24 @@ a {
 .panel-sub {
   color: var(--muted);
   font-size: 0.78rem;
+}
+/* Subtitle + unit toggle, kept together against the right edge so the toggle
+   holds one predictable position across cards whose subtitles differ in length
+   (and wraps under the subtitle rather than shoving it into the title). */
+.panel-head-aside {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-left: auto;
+  min-width: 0;
+}
+.panel-head-aside .panel-sub {
+  text-align: right;
+}
+.panel-head-aside .unit-toggle {
+  flex: none;
 }
 .panel-body {
   padding: 12px 14px;
