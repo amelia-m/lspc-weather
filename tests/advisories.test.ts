@@ -193,11 +193,36 @@ describe('evaluateAdvisories', () => {
     expect(wind?.value).toContain('gusts exceed limit');
   });
 
-  it('sustained speed alone still levels the advisory when no gust is reported', () => {
-    // 11 kt sustained, no gust: at/above the student 10 kt watch, below the 12 kt caution.
+  it('sustained speed alone still raises the advisory when no gust is reported', () => {
+    // 12 kt sustained, no gust: exactly the USPA student caution band.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 12, wgst: null });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+    expect(out.find((a) => a.id === 'surface-wind')?.level).toBe('caution');
+  });
+
+  it('raises nothing below the published limit, where the old watch band used to fire', () => {
+    // 11 kt sustained sat in the app's own "watch" band (caution − 2 kt) and
+    // raised a flag. Nobody publishes an early-warning speed, so the only level
+    // left is the sourced one and 11 kt is under it.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 11, wgst: null });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
-    expect(out.find((a) => a.id === 'surface-wind')?.level).toBe('watch');
+    expect(out.some((a) => a.id === 'surface-wind')).toBe(false);
+  });
+
+  it('waiver tiers flag at the posted limit, not 3 mph under it', () => {
+    // The 0–5 tier posts 15 mph (13.03 kt). The app used to raise a watch from
+    // 12 mph (10.4 kt) — a number that appears nowhere on the posted sign, and
+    // that an 11 kt wind crossed.
+    const t = resolveThresholds('waiver:0-5');
+    const under = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 11, wgst: null });
+    const at = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 14, wgst: null });
+    expect(
+      evaluateAdvisories(snapshot({ current: under }), t, now).some((a) => a.id === 'surface-wind'),
+    ).toBe(false);
+    expect(
+      evaluateAdvisories(snapshot({ current: at }), t, now).find((a) => a.id === 'surface-wind')
+        ?.level,
+    ).toBe('caution');
   });
 
   it('surface-wind advisory fires on a gust reading alone (sustained unreported)', () => {
@@ -208,13 +233,13 @@ describe('evaluateAdvisories', () => {
     expect(wind?.value).toContain('gusting 14 kt');
   });
 
-  it('no surface-wind advisory when both sustained and gust are under the watch level', () => {
+  it('no surface-wind advisory when both sustained and gust are under the published limit', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 5, wgst: 9 });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
     expect(out.some((a) => a.id === 'surface-wind')).toBe(false);
   });
 
-  it('student wind limits flag earlier than licensed', () => {
+  it('flags the student limit while the licensed profile stays silent', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 13, wgst: null });
     const s = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
     const l = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.licensed, now);
@@ -228,11 +253,24 @@ describe('evaluateAdvisories', () => {
  * can check, so a wrong one is worse than none — it looks verified. */
 describe('flags whose trigger no published source sets', () => {
   /** These fired on thresholds the app invented — ceiling bands, a dew-point
-   *  spread, a chance of rain, a chance of storms. No rule, BSR or club policy
-   *  puts a number on any of them, so there is nothing a reader could check.
-   *  They were removed rather than relabelled: on a page whose premise is that
-   *  every flag is traceable, an untraceable flag is the defect. */
-  const REMOVED_FLAGS = ['ceiling', 'dewpoint-spread', 'precip', 'thunder-forecast'];
+   *  spread, a chance of rain, a chance of storms, a density altitude so many
+   *  feet above the field, so many minutes before sunset. No rule, BSR or club
+   *  policy puts a number on any of them, so there is nothing a reader could
+   *  check. They were removed rather than relabelled: on a page whose premise is
+   *  that every flag is traceable, an untraceable flag is the defect.
+   *
+   *  `daylight` is the one id that still exists: its after-sunset half fires on
+   *  an astronomical fact and cites 14 CFR 105.19 (covered above). Only the
+   *  "last load" watch in front of it is gone, which is why it is listed here
+   *  against a snapshot where the sun has not yet set. */
+  const REMOVED_FLAGS = [
+    'ceiling',
+    'dewpoint-spread',
+    'precip',
+    'thunder-forecast',
+    'density-altitude',
+    'daylight',
+  ];
 
   /** Conditions that would have tripped every one of them at once. */
   function wouldHaveTripped() {
@@ -244,6 +282,19 @@ describe('flags whose trigger no published source sets', () => {
         dewp: 19,
       }),
       hourly: [hourAhead(2, { precipProbPct: 60, thunderProbPct: 35 })],
+      // +3,600 ft above the field — past every DA band the app used to draw
+      // (2,000 / 3,500 ft student, 2,500 / 4,000 ft licensed).
+      densityAltitude: {
+        densityAltitudeFt: 4800,
+        pressureAltitudeFt: 1500,
+        isaDeviationC: 15,
+        fieldElevationFt: 1200,
+        humidityCorrected: false,
+      },
+      // 20 minutes of daylight left: inside both old "last load" watches
+      // (45 min student, 30 licensed), but the sun is still up, so 105.19 —
+      // the only sourced half of that flag — does not apply yet.
+      sun: { sunrise: now - 8 * 3600_000, sunset: now + 20 * 60_000 },
     });
   }
 
@@ -259,6 +310,45 @@ describe('flags whose trigger no published source sets', () => {
       expect(a.citation, `${a.id} has no citation`).toBeDefined();
       expect(a.citation.url, `${a.id} cites an in-app URL`).toMatch(/^https:\/\//);
     }
+  });
+});
+
+/* The licensed profile is the sharp edge of the rule above: its guidance says
+ * no USPA limit binds a licensed jumper, and both bands it used to fire on
+ * (17 kt watch, 25 kt caution) were this dashboard's own. Nothing published
+ * sets a surface-wind trigger for licensed jumpers, so no surface-wind flag
+ * fires for them at any speed. The Surface wind card still prints the reading
+ * and says it has no sourced limit to draw — the reader judges it. */
+describe('surface wind where no published limit exists (licensed)', () => {
+  const winds: Array<[number | null, number | null]> = [
+    [13, null], // over the student limit
+    [18, null], // over the old 17 kt watch
+    [26, null], // over the old 25 kt caution
+    [30, 45], // far over both, gusting harder still
+    [null, 40], // gust alone, which used to be enough on its own
+  ];
+
+  it.each(winds)('raises no surface-wind flag at %s kt sustained / %s kt gust', (wspd, wgst) => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd, wgst });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.licensed, now);
+    expect(out.some((a) => a.id === 'surface-wind')).toBe(false);
+  });
+
+  it('still flags the same wind for a profile whose limit someone published', () => {
+    // The wind is not the difference — the existence of a source is.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 30, wgst: 45 });
+    for (const id of ['student', 'waiver:0-5', 'waiver:21+'] as const) {
+      const out = evaluateAdvisories(snapshot({ current }), resolveThresholds(id), now);
+      expect(out.find((a) => a.id === 'surface-wind')?.level, id).toBe('caution');
+    }
+  });
+
+  it('leaves the other licensed flags alone', () => {
+    // Removing the wind flag must not quietly take the sourced ones with it.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 30, wgst: 45, visib: 2 });
+    const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.licensed, now);
+    expect(out.some((a) => a.id === 'visibility')).toBe(true);
+    expect(out.some((a) => a.id === 'flight-category')).toBe(true);
   });
 });
 
