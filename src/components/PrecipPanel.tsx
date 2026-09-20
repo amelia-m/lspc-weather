@@ -40,7 +40,10 @@ export function PrecipPanel({
       </div>
       <div className="ceil-now">
         <span className="ceil-label">Thunderstorm · max next 6 h</span>
-        <span className={`ceil-value${thunderNext6 != null && thunderNext6 >= 30 ? ' aloft-strong' : ''}`}>
+        {/* No colour on this figure: 30% was the app's own idea of when a
+            forecast storm chance becomes notable, and nothing published sets
+            it. The percentage is shown plainly for the reader to judge. */}
+        <span className="ceil-value">
           {thunderNext6 != null ? `${round(thunderNext6)}%` : '—'}
         </span>
       </div>

@@ -79,12 +79,16 @@ function describeSky(c: CurrentConditions): string {
 
 const fmtC = (c: number | null): string => (c != null ? `${round(c)}°C` : '—');
 
-/** RH % and the temp–dew point spread; flags a fog-favorable tight spread. */
+/** RH % and the temp–dew point spread, both as measured. No verdict attached. */
 function describeHumidity(c: CurrentConditions): string {
   if (c.tempC == null || c.dewpointC == null) return '—';
   const rh = round(relativeHumidity(c.tempC, c.dewpointC));
   // Spread in °C to match the Temp / Dew row above (both shown in °C).
   const spreadC = round(c.tempC - c.dewpointC);
-  const hint = c.tempC - c.dewpointC <= 3 ? ' — fog/low-cloud favorable' : '';
-  return `${rh}% RH · ${spreadC}°C spread${hint}`;
+  // No "fog favorable" verdict: that fired at a 3 °C spread, the same number
+  // behind the fog flag that was removed for having no published source. The
+  // RH and the spread are measurements — they stand on their own, and a reader
+  // who knows what a tight spread means does not need the app to decide where
+  // "tight" begins.
+  return `${rh}% RH · ${spreadC}°C spread`;
 }
