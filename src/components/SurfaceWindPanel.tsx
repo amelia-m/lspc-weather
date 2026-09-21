@@ -1,26 +1,29 @@
 import type { CurrentConditions } from '../domain/types';
-import { fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
+import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
 import type { Thresholds } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 
 /**
- * Surface wind with the active profile's flag bands drawn on a scale.
+ * Surface wind, against whatever limit a source has actually published for the
+ * active profile.
  *
- * This is the most-read card on the page, and the bands are markers, not a
- * verdict. They also do not all come from the same place, which is why the
- * footnote below splits them rather than hanging one source line under both:
+ * This is the most-read card on the page, and the band is a marker, not a
+ * verdict. Only a published limit is drawn or named: the USPA ground-wind
+ * figure for students, the posted club policy for the waiver tiers.
  *
- *  - CAUTION is a published limit for students (the USPA ground-wind figure)
- *    and for waiver tiers (the posted club policy), but for licensed jumpers
- *    nobody published one, so that band is the app's own number.
- *  - WATCH is always the app's: it sits a few knots under the caution band as
- *    an early warning, and no rule defines such a level.
+ * Where nobody published one — licensed jumpers — there is no band, and no
+ * surface-wind flag fires anywhere in the app at any speed. That makes this
+ * card the only place the profile's own account of that absence can reach a
+ * reader, so it prints here as a standing note with its citation, in a 3 kt
+ * breeze and in a 60 kt gale alike. It is the same treatment the winds-aloft
+ * and density-altitude cards give guidance whose trigger was removed for being
+ * a number nobody published: keep the sourced claim, drop the invented
+ * threshold, put the claim where it is always readable.
  *
- * Rendering one citation across the pair would credit USPA or the club with a
- * number they never set — the defect this card was fixed for. `thresholds`
- * already carried the citation; the card simply never showed it.
+ * Limits print through `fmtLimitSpeed`, not `fmtSpeed`: the waiver's top two
+ * tiers post ceilings one mph apart, which collide at whole knots.
  */
 export function SurfaceWindPanel({
   current,
@@ -48,7 +51,10 @@ export function SurfaceWindPanel({
   return (
     <Panel
       title="Surface wind"
-      subtitle={`${label} flag bands`}
+      /* "flag bands" is only true where a source set one. On the licensed
+         profile it named bands over a bar that draws none, for a profile that
+         raises no wind flag — a label describing a different card. */
+      subtitle={t.windLimitCitation ? `${label} flag bands` : `${label} — no published limit`}
       sources={[DATA_SOURCES.nwsObservation]}
       unit={unit}
       onUnitChange={onUnitChange}
@@ -73,27 +79,42 @@ export function SurfaceWindPanel({
             <div className="wind-fill" style={{ width: `${pct(speed)}%` }} />
             {gust != null && <div className="wind-gust-tick" style={{ left: `${pct(gust)}%` }} />}
           </div>
-          {/* Only bands a published source actually sets are drawn or named. The
-              "watch" band is this dashboard's own earlier warning — it still
-              raises a flag, but showing it here as a marked limit put an
-              unsourced number on the card beside sourced ones. */}
-          {t.windLimitCitation ? (
+          {/* Only a limit a published source sets is drawn or named. There is
+              no earlier "watch" marker: the one that used to sit a few knots
+              under this was the app's own arithmetic, and putting an unsourced
+              number on the card beside sourced ones lent it their authority.
+              It raises no flag now either — it does not exist. */}
+          {t.windLimitCitation && (
             <>
               <p className="wind-legend">
-                Caution ≥ {fmtSpeed(t.windCautionKt, unit)}
-                {t.gustCautionKt != null && ` · Gust ceiling ${fmtSpeed(t.gustCautionKt, unit)}`}
+                Caution ≥ {fmtLimitSpeed(t.windCautionKt, unit)}
+                {t.gustCautionKt != null &&
+                  ` · Gust ceiling ${fmtLimitSpeed(t.gustCautionKt, unit)}`}
               </p>
               <p className="muted small">
                 Caution{t.gustCautionKt != null ? ' and gust ceiling' : ''}:{' '}
                 <SourceLink citation={t.windLimitCitation} />
               </p>
             </>
-          ) : (
-            <p className="muted small">
-              No sourced wind limit to show for this profile — the reading above is the
-              observation only.
-            </p>
           )}
+        </>
+      )}
+      {/* Standing note, outside the reading above on purpose: it explains why
+          this profile has no limit to draw and no flag to raise, which is true
+          whether or not the station reported a wind this minute. */}
+      {!t.windLimitCitation && (
+        <>
+          {/* Split in two: what this dashboard does, then what a source says.
+              Running them together would let the app's own silence borrow the
+              citation's authority. */}
+          <p className="muted small">
+            <strong>No published limit for this profile</strong>, so there is no band to draw —
+            and no surface-wind flag appears under &ldquo;Conditions to note&rdquo; at any speed.
+            The reading is the observation; judging it is yours.
+          </p>
+          <p className="muted small">
+            {t.windGuidance} Source: <SourceLink citation={t.windCitation} />
+          </p>
         </>
       )}
     </Panel>

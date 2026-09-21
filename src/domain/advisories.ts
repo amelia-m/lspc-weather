@@ -1,6 +1,6 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
-import { fmtSpeed, round, type SpeedUnit } from './units';
+import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { flightCategory, CATEGORY_LABEL } from './flightCategory';
 
 /**
@@ -29,8 +29,11 @@ export function evaluateAdvisories(
     // earlier "watch" band was this app's own arithmetic on those limits, and
     // for licensed jumpers (whose own guidance says no USPA limit binds them)
     // BOTH bands were invented, so that profile now raises no surface-wind flag
-    // at all. The card still shows the reading and says it has no sourced limit
-    // to draw; a trigger a reader cannot check is not a flag this app raises.
+    // at all: a trigger a reader cannot check is not a flag this app raises.
+    // Silence here is not an all-clear, and two surfaces say so rather than
+    // leaving it implied — SurfaceWindPanel prints the reading plus the
+    // profile's guidance and its citation as a standing note, and AdvisoryPanel
+    // names the gap when this list comes back empty.
     //
     // null speed/gust means the observation lacked a usable reading — that is
     // "no data", not calm. Level on the EFFECTIVE wind (max of sustained and
@@ -65,7 +68,12 @@ export function evaluateAdvisories(
         // 2 units of headroom when 14 kt IS 16 mph — the advisory appeared to
         // contradict the caution it was raising. The citation below carries the
         // reader back to the waiver's own wording.
-        value: `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtSpeed(thresholds.gustCautionKt, unit)}`,
+        //
+        // The ceiling goes through fmtLimitSpeed so the tier's own posted
+        // figure survives the conversion: the 10–20 and 21+ tiers post 19 and
+        // 20 mph, which are the same number once rounded to whole knots. The
+        // GUST is a reading and stays whole — the station reports knots.
+        value: `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
         guidance:
           'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
         citation: thresholds.windCitation,

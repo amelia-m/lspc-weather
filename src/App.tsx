@@ -25,6 +25,7 @@ import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CitationsPage } from './components/CitationsPage';
+import { UnitToggle } from './components/common/UnitToggle';
 import { deriveProvenance } from './domain/sourceProvenance';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 
@@ -183,11 +184,16 @@ export default function App(): JSX.Element {
             {SITE.dz.name} ({SITE.dz.icao}) · Weeping Water, NE · obs from {SITE.metarStation.id}
           </p>
         </div>
-        {/* The kt/mph switch used to live here. It now sits on each of the five
-            cards that show a wind speed, next to the numbers it changes, so a
-            sixth copy up here would only be the one furthest from any of them.
-            What stays is what has no per-card home: the wind-limit profile and
-            waiver tier are page-wide policy, not a display preference. */}
+        {/* The kt/mph switch sits on each card that shows a wind speed AND
+            here, because one card cannot host its own copy: "Conditions to
+            note" prints wind in the active unit but renders through
+            AdvisoryPanel, not Panel, so it has nowhere to put a toggle. On a
+            375-px phone that panel is the one on screen at load while the
+            nearest card toggle is below the fold — a reader who needs mph to
+            check a flag against a limit quoted in mph would have to scroll past
+            the flag to find the switch. Beside it stay the controls with no
+            per-card home at all: the wind-limit profile and waiver tier are
+            page-wide policy, not a display preference. */}
         <div className="toggles">
           <div className="class-toggle" role="group" aria-label="Wind-limit profile">
             <button className={profile === 'student' ? 'active' : ''} onClick={() => setProfile('student')}>
@@ -219,6 +225,9 @@ export default function App(): JSX.Element {
               ))}
             </div>
           )}
+          {/* Rendered outside a UnitToggleScope, so it names itself "Wind speed
+              unit" — there is no card heading up here to borrow. */}
+          <UnitToggle unit={unit} onChange={setUnit} />
         </div>
       </header>
 
@@ -236,7 +245,15 @@ export default function App(): JSX.Element {
         gridded to the drop zone.
       </p>
 
-      <AdvisoryPanel advisories={advisories} />
+      <AdvisoryPanel
+        advisories={advisories}
+        profile={profileLabel(profile)}
+        /* Not "is the wind high" — whether a source published a limit to flag
+           it against. On the licensed profile nobody did, so the list below
+           cannot carry surface wind at any speed and says so when it is
+           otherwise empty. Same null that gates the flag and the card's band. */
+        hasSourcedWindLimit={thresholds.windLimitCitation !== null}
+      />
 
       {/* Ordered by a jumper's decision flow — now (current/wind/sky/flight
           category), then skydiver-specific (winds aloft/drift), then planning

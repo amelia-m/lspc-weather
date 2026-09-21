@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Citation } from '../src/domain/types';
+import { fmtLimitSpeed } from '../src/domain/units';
 import {
   CITATIONS,
   recommendedDeployFt,
@@ -181,6 +182,37 @@ describe('wind-limit profiles', () => {
       expect(guidance).not.toMatch(/30\s*[–-]\s*35/);
       expect(guidance).not.toMatch(/will not take off/i);
     }
+  });
+
+  it('gives the licensed profile guidance a reader can act on with no flag to carry it', () => {
+    // The sweep that removed the invented 25 kt trigger must not have taken the
+    // sourced CLAIM with it. Nothing flags surface wind for a licensed jumper,
+    // so this sentence is the only thing the app has to say about their wind —
+    // it has to name no threshold (nothing published one) and still refer the
+    // reader somewhere real. SurfaceWindPanel prints it beside windCitation.
+    const t = resolveThresholds('licensed');
+    expect(t.windLimitCitation).toBeNull();
+    expect(t.windGuidance).toMatch(/pilot in command|PIC/);
+    expect(t.windGuidance).toMatch(/ask the PIC/);
+    // No number dressed up as a limit: the referral is the whole point.
+    expect(t.windGuidance).not.toMatch(/\d+\s*(kt|mph)/);
+    expect(t.windCitation).toBe(CITATIONS.uspaLicensedWinds);
+  });
+
+  it('keeps the two top waiver tiers distinguishable in both display units', () => {
+    // The posted sign reads "gusts less than 19 mph" at 10–20 jumps and "less
+    // than 20 mph" at 21+. Stored in knots those are 16.51 and 17.38, which
+    // both print "17 kt" at whole knots — so selecting the tier you earned
+    // changed nothing on screen and the card misquoted the sign it cites.
+    const a = resolveThresholds('waiver:10-20');
+    const b = resolveThresholds('waiver:21+');
+    expect(a.gustCautionKt).not.toBe(b.gustCautionKt);
+    for (const unit of ['kt', 'mph'] as const) {
+      expect(fmtLimitSpeed(a.gustCautionKt!, unit)).not.toBe(fmtLimitSpeed(b.gustCautionKt!, unit));
+    }
+    // In mph the display lands back on the sign's own whole numbers.
+    expect(fmtLimitSpeed(a.gustCautionKt!, 'mph')).toBe('19 mph');
+    expect(fmtLimitSpeed(b.gustCautionKt!, 'mph')).toBe('20 mph');
   });
 
   it('does not cite the student wind limit at licensed jumpers', () => {

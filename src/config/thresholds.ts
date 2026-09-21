@@ -157,10 +157,14 @@ export interface Thresholds {
   /** Absolute gust ceiling, knots (LSPC waiver). undefined = no absolute rule. */
   gustCautionKt?: number;
   /**
-   * Guidance sentence and its citation for the surface-wind flag. They reach
-   * the screen only when that flag fires, so on a profile with no published
-   * limit (licensed) they describe why the profile has no limit and nothing
-   * renders them.
+   * Guidance sentence and its citation for the profile's surface wind.
+   *
+   * Two places read them, because a profile with no published limit raises no
+   * flag and a flag is not the only way a sourced claim should reach a reader:
+   * the surface-wind flag carries them when it fires, and SurfaceWindPanel
+   * prints them as a standing note where `windLimitCitation` is null — the case
+   * where the sentence is the profile's account of the ABSENCE of a limit and
+   * would otherwise never be seen at any speed.
    */
   windGuidance: string;
   windCitation: Citation;
@@ -202,18 +206,22 @@ const STUDENT: Thresholds = {
  * Licensed jumpers. Both bands this profile used to flag on (17 kt watch,
  * 25 kt caution) were the dashboard's own, and its own guidance says no USPA
  * limit binds a licensed jumper — so the flag had no published trigger at any
- * level and no longer fires. What the reader sees instead is the surface-wind
- * card: the observation, and its line saying there is no sourced limit to draw.
+ * level and no longer fires.
  *
- * The guidance sentence below is this profile's account of that absence. With
- * no flag to carry it, nothing renders it today; it stays because it is the
- * text that belongs to `windCitation` — the BSR cited for the absence — should
- * the card ever show the profile's own words.
+ * The guidance sentence below is this profile's account of that absence, and
+ * removing the flag must not remove it too: it names no number, so it is
+ * checkable exactly as written (the BSR in `windCitation` is cited for the
+ * absence, and the takeoff question is referred to the PIC, who holds it). It
+ * therefore stands on the surface-wind card at any speed rather than waiting
+ * for a trigger this profile no longer has — the treatment the winds-aloft and
+ * density-altitude guidance got when their invented triggers were removed. A
+ * licensed jumper in 60 kt of wind reads it there; nothing in this app flags
+ * that wind for them.
  */
 const LICENSED: Thresholds = {
   windCautionKt: LICENSED_BAR_SCALE_KT,
   windGuidance:
-    'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency. ' +
+    'No USPA hard wind limit for licensed jumpers — the BSR ground-wind limit is written for students. Judge it on your canopy, your currency and the conditions, with the S&TA. ' +
     'Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA — ask the PIC.',
   // Cites the BSR for the absence of a limit, not the student limit: a reader
   // who follows the link should land on the section that shows the wind rule is
@@ -256,6 +264,11 @@ function waiverThresholds(tier: WaiverTier): Thresholds {
     // The posted policy states one wind figure and one gust ceiling per tier;
     // both are transcribed as-is. The earlier "watch" band this used to derive
     // (posted limit − 3 mph) appears nowhere on the sign, so it is gone.
+    //
+    // Stored in knots, which is how they are compared against a METAR, but the
+    // tiers are only one mph apart at the top of the table — so anything that
+    // DISPLAYS these uses fmtLimitSpeed, or the 19 and 20 mph ceilings collide
+    // at whole knots and the sign is misquoted. See domain/units.ts.
     windCautionKt: mphToKt(tier.windMph),
     gustCautionKt: mphToKt(tier.gustMph),
     windGuidance:

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { evaluateAdvisories } from '../src/domain/advisories';
+import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
+import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
 import { CITATIONS, DEFAULT_THRESHOLDS, resolveThresholds } from '../src/config/thresholds';
+import type { Thresholds } from '../src/config/thresholds';
+import type { SpeedUnit } from '../src/domain/units';
 import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
@@ -152,7 +158,9 @@ describe('evaluateAdvisories', () => {
     const inKt = evaluateAdvisories(snapshot({ current }), t, now, 'kt')
       .find((a) => a.id === 'gust-limit');
     expect(inKt?.value).toContain('gusting 14 kt');
-    expect(inKt?.value).toContain('ceiling 14 kt');
+    // The ceiling keeps a decimal in kt so the posted mph figure survives the
+    // conversion — see the tier-collision test below.
+    expect(inKt?.value).toContain('ceiling 13.9 kt');
     expect(inKt?.value).not.toContain('mph');
 
     const inMph = evaluateAdvisories(snapshot({ current }), t, now, 'mph')
@@ -378,5 +386,140 @@ describe('citations that name a regulation', () => {
       expect(out.some((a) => a.id === 'gust-spread'), `gust-spread fired for ${id}`).toBe(false);
       expect(out.some((a) => a.id === 'winds-aloft'), `winds-aloft fired for ${id}`).toBe(false);
     }
+  });
+});
+
+/* The two panels below are rendered to static markup rather than asserted on
+ * through the evaluator alone, because the defect they fix is not in the
+ * evaluator's output — it is in what the page says ABOUT that output. An empty
+ * advisory list is correct for a licensed jumper at any wind speed; the bug was
+ * a page that printed "no conditions flagged" over a 60 kt gust with nothing to
+ * say it could never have flagged it. */
+
+/** Render a panel with no DOM: these components are pure of effects, so static
+ *  markup is enough to assert on the words a reader gets. */
+const markup = (el: Parameters<typeof renderToStaticMarkup>[0]): string =>
+  renderToStaticMarkup(el);
+
+const windPanel = (t: Thresholds, label: string, unit: SpeedUnit, current: unknown): string =>
+  markup(
+    createElement(SurfaceWindPanel, {
+      current: current as never,
+      thresholds: t,
+      label,
+      unit,
+      onUnitChange: () => {},
+    }),
+  );
+
+describe('an empty advisory list is not an all-clear', () => {
+  // 45 kt gusting 60, VFR, sun well up: nothing here is flaggable for a
+  // licensed jumper, because no published source sets them a wind limit.
+  const gale = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 45, wgst: 60 });
+  const galeSnapshot = snapshot({
+    current: gale,
+    sun: { sunrise: now - 5 * 3600_000, sunset: now + 5 * 3600_000 },
+  });
+
+  it('licensed in a 60 kt gust really does flag nothing', () => {
+    // Not a regression to fix by reintroducing a trigger — nobody published
+    // one. It is the premise of the two assertions that follow.
+    expect(evaluateAdvisories(galeSnapshot, DEFAULT_THRESHOLDS.licensed, now)).toHaveLength(0);
+  });
+
+  it('says why wind can never appear in the list instead of stopping at "nothing flagged"', () => {
+    const out = evaluateAdvisories(galeSnapshot, DEFAULT_THRESHOLDS.licensed, now);
+    const html = markup(
+      createElement(AdvisoryPanel, {
+        advisories: out,
+        profile: 'Licensed',
+        hasSourcedWindLimit: false,
+      }),
+    );
+    expect(html).toContain('No conditions flagged');
+    // The clause that keeps the empty state a statement about the app rather
+    // than about the weather, plus where the reader goes for the number.
+    expect(html).toContain('Surface wind is never flagged on the Licensed profile');
+    expect(html).toContain('Surface wind card');
+    expect(html).toContain('not clearance to jump');
+  });
+
+  it('adds the clause only where no published limit exists', () => {
+    // A student's empty list means the wind WAS checked against a sourced
+    // limit and came back under it. Qualifying that would be noise.
+    const html = markup(
+      createElement(AdvisoryPanel, {
+        advisories: [],
+        profile: 'Student',
+        hasSourcedWindLimit: true,
+      }),
+    );
+    expect(html).toContain('No conditions flagged');
+    expect(html).not.toContain('never flagged');
+    expect(html).toContain('not clearance to jump');
+  });
+
+  it('carries the licensed profile’s sourced guidance on the surface-wind card at any speed', () => {
+    // The BSR-cited absence and the PIC referral are non-numeric, so removing
+    // the invented 25 kt trigger did not make them uncheckable — they belong on
+    // the card the way the winds-aloft guidance does, not only when a flag
+    // fires (it never does here).
+    for (const current of [gale, normalizeMetar({ ...METAR_FIXTURE[0], wspd: 3, wgst: null }), null]) {
+      const html = windPanel(DEFAULT_THRESHOLDS.licensed, 'Licensed', 'kt', current);
+      expect(html).toContain('No published limit for this profile');
+      expect(html).toContain('no surface-wind flag appears under');
+      expect(html).toContain('ask the PIC');
+      // The BSR cited for the ABSENCE of a limit, reachable as a link.
+      expect(html).toContain(CITATIONS.uspaLicensedWinds.url);
+    }
+  });
+
+  it('does not caption a bandless bar "flag bands"', () => {
+    const licensed = windPanel(DEFAULT_THRESHOLDS.licensed, 'Licensed', 'kt', gale);
+    expect(licensed).not.toContain('flag bands');
+    expect(licensed).toContain('no published limit');
+    // The profiles that do draw a band keep the subtitle that describes it.
+    expect(windPanel(DEFAULT_THRESHOLDS.student, 'Student', 'kt', gale)).toContain('flag bands');
+  });
+});
+
+describe('waiver tiers that post different ceilings display different ceilings', () => {
+  // The sign reads "gusts less than 19 mph" (10–20 jumps) and "less than
+  // 20 mph" (21+). Converted and rounded to whole knots both were "17 kt", so
+  // the tier a jumper earned made no visible difference and the dashboard
+  // misquoted the policy on a page that asks an instructor to check it against
+  // the posted sign.
+  const gusty = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 12, wgst: 25 });
+  const tiers = ['waiver:10-20', 'waiver:21+'] as const;
+
+  it.each(['kt', 'mph'] as const)('gust-limit advisory distinguishes them in %s', (unit) => {
+    const [a, b] = tiers.map(
+      (id) =>
+        evaluateAdvisories(snapshot({ current: gusty }), resolveThresholds(id), now, unit).find(
+          (x) => x.id === 'gust-limit',
+        )?.value,
+    );
+    expect(a).toBeTruthy();
+    expect(a).not.toBe(b);
+    // Same unit on both figures — a kt gust beside an mph ceiling reads as
+    // headroom that is not there.
+    expect(a).not.toContain(unit === 'kt' ? 'mph' : ' kt');
+  });
+
+  it.each(['kt', 'mph'] as const)('card legend distinguishes them in %s', (unit) => {
+    const [a, b] = tiers.map((id) =>
+      windPanel(resolveThresholds(id), 'LSPC waiver', unit, gusty),
+    );
+    const legend = (html: string): string =>
+      /Gust ceiling ([^<]*)/.exec(html)?.[1].trim() ?? '';
+    expect(legend(a)).toBeTruthy();
+    expect(legend(a)).not.toBe(legend(b));
+  });
+
+  it('prints the posted mph figures verbatim', () => {
+    // In the unit the sign is written in, the display is the sign.
+    const [a, b] = tiers.map((id) => windPanel(resolveThresholds(id), 'LSPC waiver', 'mph', gusty));
+    expect(a).toContain('Gust ceiling 19 mph');
+    expect(b).toContain('Gust ceiling 20 mph');
   });
 });
