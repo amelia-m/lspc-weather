@@ -27,10 +27,14 @@ const MAX_LOGS = 200;
 const SOURCE_KEYS: readonly SourceKey[] = ['nws', 'metar', 'windsAloft', 'taf', 'daily'];
 const STATUSES: readonly SourceLogStatus[] = ['attempted', 'success', 'fallback', 'failure'];
 
-/** Console chatter only. The deployed GitHub Pages build would otherwise emit
- *  hundreds of emoji lines a day and bury ErrorBoundary's console.error, so the
- *  same gate http.ts uses for its debug output applies here. Recording and
- *  persistence stay on in production — the panel is used live at the DZ. */
+/** Gates the CONSOLE output only. The deployed GitHub Pages build would
+ *  otherwise emit hundreds of emoji lines a day and bury ErrorBoundary's
+ *  console.error, so the same gate http.ts uses for its debug output applies
+ *  here. Recording and persistence stay on in production regardless: there is
+ *  no in-page log viewer, so this buffer — published on `window.LSPC_DEBUG` by
+ *  App — is the only way to answer "which provider actually served this, and
+ *  when did it fall back?", and that question is usually asked from a laptop
+ *  after the fact rather than from a phone at the DZ. */
 const CONSOLE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_DEBUG_LOGS === 'true';
 
 function safeLocalGet(key: string): string | null {
@@ -59,14 +63,17 @@ const listeners = new Set<() => void>();
 
 let logs: SourceLog[] = [];
 /** Cached frozen copy of `logs`, replaced only when the buffer actually
- *  changes. Consumers subscribe with useSyncExternalStore, which compares
- *  snapshots by identity — returning a fresh array per read would re-render the
- *  panel on every poll of the store (and React would flag an infinite loop). */
+ *  changes. `subscribe` + `getLogs` form a useSyncExternalStore pair, and React
+ *  compares snapshots by identity — returning a fresh array per read would
+ *  re-render a subscriber on every poll of the store (and React would flag an
+ *  infinite loop). No component subscribes today; the contract is kept intact
+ *  so a reader added later cannot reintroduce that bug. */
 let snapshot: readonly SourceLog[] = Object.freeze([]);
 
 /** Publish the working buffer as a new immutable snapshot and wake subscribers.
- *  Persistence rides along so the log survives a tab close: the point of the
- *  feature is noticing a discrepancy now and reviewing it hours later. */
+ *  Persistence rides along so the log survives a tab close and a reload: the
+ *  point of the feature is noticing a discrepancy against another tool now and
+ *  being able to reconstruct which provider served it hours later. */
 function commit(): void {
   snapshot = Object.freeze(logs.slice());
   safeLocalSet(STORAGE_KEY, JSON.stringify(snapshot));
@@ -75,8 +82,8 @@ function commit(): void {
 
 /** Trim to MAX_LOGS by dropping the oldest 'success' entry first, and only
  *  falling back to the oldest entry overall once no successes are left.
- *  Successes are the routine noise (five per cycle, every cycle); the
- *  failures and fallbacks are the reason anyone opens the log, so plain FIFO
+ *  Successes are the routine noise (five per cycle, every cycle); the failures
+ *  and fallbacks are the reason anyone reads the log at all, so plain FIFO
  *  would evict exactly the entries worth keeping. */
 function evictToCap(buffer: SourceLog[]): void {
   while (buffer.length > MAX_LOGS) {
@@ -86,9 +93,10 @@ function evictToCap(buffer: SourceLog[]): void {
 }
 
 /** Rebuild one persisted entry, or null if it is not a well-formed log record.
- *  localStorage is user-writable and survives reloads, so a single malformed
- *  entry reaching the panel (which calls `source.toUpperCase()`) would throw
- *  into the root ErrorBoundary on every load until storage is cleared by hand.
+ *  localStorage is user-writable and survives reloads, and a restored entry is
+ *  replayed through code that assumes its shape — `source.toUpperCase()` in the
+ *  console line below, and whatever a reader does with `getLogs()` — so one
+ *  malformed record could throw on every load until storage is cleared by hand.
  *  Fields are copied one by one rather than spread so unknown keys cannot ride
  *  along into the snapshot. */
 function toSourceLog(value: unknown): SourceLog | null {
@@ -121,8 +129,8 @@ const STATUS_BADGE: Record<SourceLogStatus, string> = {
  * Record one source event.
  *
  * `source` is a SourceKey rather than a free string so log entries join to the
- * Data health map — the panel and the status record must name the same source
- * or the log cannot answer "why is winds aloft stale?".
+ * Data health map — the log and the status record must name the same source or
+ * the log cannot answer "why is winds aloft stale?".
  *
  * `error` is `unknown` because a rejected promise can carry anything: a thrown
  * string, a number, a DOMException. It is normalized the same way markStale
@@ -137,7 +145,7 @@ export function logSource(
 ): void {
   const entry: SourceLog = { timestamp: Date.now(), source, status, message };
   // Only when a reason was actually passed — an absent error must not become
-  // the string "undefined" in the panel.
+  // the string "undefined" in the console line or the persisted record.
   if (error !== undefined) {
     entry.error = error instanceof Error ? error.message : String(error);
   }
