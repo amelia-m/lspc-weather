@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { relativeHumidity, dewpointSpreadC, satVaporPressureHpa } from '../src/domain/humidity';
+import { relativeHumidity, satVaporPressureHpa } from '../src/domain/humidity';
 
 describe('relativeHumidity', () => {
   it('is 100% when dew point equals temperature', () => {
@@ -20,13 +20,9 @@ describe('relativeHumidity', () => {
   });
 });
 
-describe('satVaporPressureHpa / dewpointSpreadC', () => {
+describe('satVaporPressureHpa', () => {
   it('gives ~6.1 hPa at 0°C and rises with temperature', () => {
     expect(satVaporPressureHpa(0)).toBeCloseTo(6.11, 1);
     expect(satVaporPressureHpa(30)).toBeGreaterThan(satVaporPressureHpa(20));
-  });
-
-  it('computes the spread', () => {
-    expect(dewpointSpreadC(22, 19)).toBe(3);
   });
 });

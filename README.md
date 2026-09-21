@@ -20,28 +20,38 @@ freefall drift and **density altitude** for jump-plane climb performance.
 
 ## What it shows
 
-- **Conditions to note** — flagged values (wind, gusts, ceiling, visibility,
-  overcast, precip, density altitude, winds aloft, daylight), each with the
-  source it relates to — a **USPA / FAA / LSPC-waiver** source where one exists,
-  and otherwise an explicit **"app heuristic"** marker, because several flags
-  fire on thresholds this dashboard chose rather than on a published limit. No
-  go/no-go verdict.
+- **Conditions to note** — the flagged conditions, each with the source it
+  relates to: surface wind, the LSPC waiver gust ceiling, visibility, FAA flight
+  category, overcast sky, a thunderstorm reported in the METAR, and parachute
+  ops after sunset. Every one fires either on a **published limit** (USPA / the
+  CFRs / the FAA AIM / the club's posted waiver) or on a plain observed fact —
+  overcast reported, `TS` in the METAR, the sun is down. Where nothing published
+  sets a trigger, **no flag fires at all**; there is no "app heuristic" label to
+  fall back on. No go/no-go verdict.
 - **Current conditions** — decoded KPMV METAR (raw text included).
-- **Surface wind** — sustained + gust with flag bands per profile (Student /
-  Licensed / LSPC waiver tiers), each band labelled with where its number comes
-  from, kt/mph toggle.
+- **Surface wind** — sustained + gust on a scale, kt/mph toggle. A band is
+  drawn only where a published source sets it — the USPA ground-wind figure for
+  Student, the posted club policy for the LSPC waiver tiers — and is labelled
+  with that source. The Licensed profile draws no band and says so: nobody
+  publishes a surface-wind limit for licensed jumpers.
 - **Winds aloft** — speed/direction/temperature at surface → 13,000 ft AGL in
-  1,000-ft steps, interpolated from pressure-level model winds.
+  1,000-ft steps, interpolated from pressure-level model winds, with the
+  spot/exit-separation note standing under the table at any wind speed.
 - **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs.
-- **Hourly wind** — next ~18 h wind/gust chart with precip-probability bars.
-- **10-day outlook** — daily sky, high/low, max wind/gust, precip chance.
+- **Hourly wind** — wind/gust chart with precip-probability bars, over a
+  selectable 18 / 36 / 72 h horizon (18 h by default).
+- **10-day outlook** — daily sky, high/low, max wind/gust, precip chance; tap a
+  day for its hourly detail.
 - **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
-- **Precipitation** — hourly precip-probability timeline.
+- **Precipitation & storms** — max precip and thunderstorm chance over the next
+  6 h, forecast rain amount, and an hourly precip-probability timeline.
 - **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
 - **TAF** — nearest available TAF (see cross-references below).
 - **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
-- **Daylight** — sunrise/sunset and time to sunset for last-load planning.
+- **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
+  where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
+  countdown, because no published source sets a minutes-before-sunset figure.
 - **Data health** — per-source freshness, staleness, and error state.
 
 ## Data sources (all free, no API key)
@@ -106,31 +116,44 @@ work from a normal browser; some sandboxed/CI networks block them.
 Advisory thresholds and their sources live in
 [`src/config/thresholds.ts`](src/config/thresholds.ts).
 
-**Not all of these numbers are sourced, and the app says which are.** Some come
-from a published document — the student ground-wind limit and the opening
-altitudes from the USPA SIM/BSR, the 3 SM visibility floor and cloud clearance
-from 14 CFR 105.17, the flight categories from FAA AIM 7-1-7, density altitude
-from FAA-P-8740-2, and the waivered wind and gust ceilings from the club's
-posted policy
+**Every number that fires a flag comes from a published document** — the
+student ground-wind limit and the opening altitudes from the USPA SIM/BSR, the
+3 SM visibility floor and cloud clearance from 14 CFR 105.17, the flight
+categories from FAA AIM 7-1-7, the sunset trigger from 14 CFR 105.19, and the
+waivered wind and gust ceilings from the club's posted policy
 ([`docs/lspc-waivered-wind-limits.md`](docs/lspc-waivered-wind-limits.md)).
+Density altitude cites FAA-P-8740-2 for the claim on its card, not for a
+threshold.
 
-**Most of the rest are house heuristics** — thresholds this dashboard chose so a
-card would say something useful before a condition became a problem. The ceiling
-bands, the fog dew-point spread, the precipitation and forecast-thunderstorm
-chances, the licensed wind bands, and every "watch" level sitting under a real
-limit are in that group. None is a USPA or FAA figure, and each is cited as
-**"LSPC Weather — app heuristic"** rather than being dressed in a source that
-never set it.
+**There is no "app heuristic" label.** There used to be: a citation reading
+"LSPC Weather — app heuristic" that let a threshold this dashboard invented
+still show a "Source:" line. It is gone, and so are the flags that needed it —
+the ceiling bands, the fog dew-point spread, the precipitation and
+forecast-thunderstorm chances, the licensed wind bands, the winds-aloft trigger
+speed, the density-altitude bands, the last-load countdown, and every "watch"
+band that sat a few knots under a real limit. They were removed rather than
+relabelled, because a threshold nobody published is not something a reader can
+check. Rule 3 in [`src/config/thresholds.ts`](src/config/thresholds.ts) now
+forbids a citation pointing back into the app, and `tests/thresholds.test.ts`
+enforces it.
 
-One flag is mixed: **winds aloft** fires at a speed the app chose, but what it
-tells you (strong upper winds lengthen the spot — plan jump run and exit
-separation) is skydiving practice a SIM section very likely governs. It keeps
-the section-less SIM citation for that claim and states in the flag text that
-the trigger speed is the dashboard's.
+(The **Watch** badge itself still appears, on the two flags that fire on a
+reported condition rather than on a chosen number: MVFR flight category and an
+overcast layer. What went was the watch *threshold*.)
+
+Where a removed flag's **guidance** was itself sourced, the guidance stayed and
+only the invented trigger went. "Strong upper winds lengthen the spot — plan
+jump run and exit separation" now stands under the winds-aloft table at any wind
+speed, and the climb-performance note stands on the density-altitude card, each
+still carrying its citation. Neither waits on a speed or an altitude the app
+picked.
+
+One invented number is still on screen and it triggers nothing: 25 kt, which
+sets where the Licensed surface-wind bar tops out.
 
 The dashboard's own **Citations** page — the `#citations` route in the running
-app — lists exactly those unsourced numbers, for an instructor or S&TA to rule
-on.
+app — lists the claims that need a current SIM, plus that one remaining number,
+for an instructor or S&TA to rule on.
 
 Every citation here is **AI-derived and unverified** — nothing in this repo has
 been checked against a current SIM or CFR — so **re-verify each against the

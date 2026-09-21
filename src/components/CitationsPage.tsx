@@ -10,15 +10,22 @@ import { Panel } from './common/Panel';
  * page names each unverified claim and the number behind it, so the check can be
  * done by someone holding the real document.
  *
- * It is the single source of truth for that list: the app heuristics cited in
- * CITATIONS link here, so a "Source: LSPC Weather — app heuristic" line in the
- * dashboard leads to the entry explaining what the number is and is not.
+ * Nothing in the dashboard links here, and that is the point: there is no
+ * "Source: LSPC Weather — app heuristic" line left to follow. A threshold no
+ * published source sets no longer raises a flag at all (thresholds.ts, rule 3),
+ * so this page is reached from the footer link and read as a checklist someone
+ * works through — not as a glossary the dashboard defers to mid-flag.
  */
 
 interface Lookup {
   id: string;
   title: string;
-  onScreen: string;
+  /** The sentence the app attaches to this claim, quoted verbatim. Usually it
+   *  is on screen; `where` says so, and says so when it is not — a claim that
+   *  has dropped off the page still has to be checked, because the citation
+   *  behind it is still in the code and could be rendered again. Named for the
+   *  claim rather than the screen so no entry has to pretend to be visible. */
+  claim: string;
   value?: string;
   where: string;
   cites: string;
@@ -28,16 +35,17 @@ interface Lookup {
 /** Claims needing someone with a current SIM open.
  *
  *  Each entry states only what can be checked without leaving this repo: the
- *  sentence the app prints, the number behind it, where it appears, and what it
- *  currently links to. The open items are written as questions rather than
- *  suspicions — an AI recollection of what a SIM section says is not evidence,
- *  and putting one in front of an instructor as though it were would repeat the
- *  problem this page exists to fix. */
+ *  sentence the app attaches to the claim, the number behind it, where it
+ *  appears (or that it currently appears nowhere), and what it links to. The
+ *  open items are written as questions rather than suspicions — an AI
+ *  recollection of what a SIM section says is not evidence, and putting one in
+ *  front of an instructor as though it were would repeat the problem this page
+ *  exists to fix. */
 const LOOKUPS: Lookup[] = [
   {
     id: 'A1',
     title: 'Student ground-wind limit',
-    onScreen:
+    claim:
       'USPA recommends max ~14 mph (~12 kt) ground winds for solo students on ram-air reserves.',
     value: '14 mph, stored as 12 kt — the caution band',
     where: 'Surface wind card, and the Surface wind flag, with Student selected',
@@ -51,7 +59,7 @@ const LOOKUPS: Lookup[] = [
   {
     id: 'A2',
     title: 'Minimum opening altitudes',
-    onScreen:
+    claim:
       'USPA BSR minimum container-opening altitudes: students & A-license 3,000 ft AGL, B-license 2,500 ft, C/D 2,000 ft (tandem 5,000 ft). These are floors — deploy above your minimum, not at it.',
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
     cites: 'USPA SIM, Section 2-1 (BSR)',
@@ -64,7 +72,7 @@ const LOOKUPS: Lookup[] = [
   {
     id: 'A3',
     title: 'Night jumps',
-    onScreen:
+    claim:
       'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19); USPA also requires a B license (min 50 jumps) for night jumps.',
     where: 'Conditions to note, after sunset',
     cites: '14 CFR 105.19 — the only link offered, for both halves of the sentence',
@@ -76,22 +84,24 @@ const LOOKUPS: Lookup[] = [
   {
     id: 'A4',
     title: 'No USPA wind limit for licensed jumpers',
-    onScreen:
-      'No USPA hard wind limit for licensed jumpers — included for awareness; consider canopy size and currency.',
+    claim:
+      'No USPA hard wind limit for licensed jumpers — the BSR ground-wind limit is written for students. Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA — ask the PIC.',
     where:
-      'Not currently on screen. This sentence reached the reader only through the licensed surface-wind flag, which no longer fires — no published source sets a trigger for it. The claim and its citation survive in the code.',
+      'Surface wind card with Licensed selected — a standing note under the reading, at any wind speed. It used to reach the reader only through a flag that fired on a number the app invented; that flag is gone, so the claim now stands on its own.',
     cites: 'USPA SIM, Section 2-1 (BSR), cited for the absence of a limit',
     asks: [
       'Do the BSRs state a wind limit that applies to licensed jumpers? The app asserts they do not, and an absence is easy to get wrong.',
-      'Still worth answering even though the sentence is off screen: if the BSRs DO set a limit for licensed jumpers, the app is currently silent where it should be flagging.',
+      'If the BSRs DO set a limit that applies to licensed jumpers, this is the most consequential error on the page: no surface-wind flag fires on that profile at any speed, so the app would be silent exactly where it should warn.',
+      'The second half — that takeoff limits belong to the aircraft and the PIC rather than to USPA — is cited to the same BSR section. Is that the right authority for it, or should it cite nothing and simply point at the PIC?',
     ],
   },
   {
     id: 'A5',
     title: 'The BSR-excursion rule behind the club waiver',
-    onScreen:
+    claim:
       'Any excursion above the USPA BSR requires on-site approval by a USPA instructor; consult the S&TA.',
-    where: 'Surface wind card and wind flags, with any LSPC waiver tier selected',
+    where:
+      'Surface wind flag, with any LSPC waiver tier selected. The card carries the club-policy link behind that tier’s limit, but this sentence itself reaches the reader only when the flag fires.',
     cites: 'LSPC waivered wind limits (club policy)',
     asks: [
       'The sentence is quoted from the club document, so citing club policy matches what is printed.',
@@ -101,7 +111,7 @@ const LOOKUPS: Lookup[] = [
   {
     id: 'A6',
     title: 'General weather guidance',
-    onScreen: 'Source line reads “USPA SIM” and links to the table of contents',
+    claim: 'Source line reads “USPA SIM” and links to the table of contents',
     where: 'Thunderstorm flag (observed) in Conditions to note',
     cites: 'uspa.org/sim — no section identified',
     asks: [
@@ -112,7 +122,7 @@ const LOOKUPS: Lookup[] = [
   {
     id: 'A7',
     title: 'Exit separation and spotting in strong upper winds',
-    onScreen:
+    claim:
       'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
     where: 'Winds aloft card, standing note under the table',
     cites: 'uspa.org/sim — no section identified',
@@ -130,13 +140,13 @@ interface Heuristic {
   where: string;
 }
 
-/** Numbers this dashboard invented that still drive something on screen.
+/** Numbers this dashboard invented that are still on screen.
  *
- *  This list used to be long. Everything that decided whether a flag appeared,
- *  or painted a figure in a warning colour, has been removed rather than
- *  labelled — a threshold with no published source is not something a reader
- *  can check, so it does not get to assert anything. One number survives, and
- *  only because it sets the length of a bar. */
+ *  Anything that decided whether a flag appeared, or painted a figure in a
+ *  warning colour, was removed rather than labelled: a threshold with no
+ *  published source is not something a reader can check, so it does not get to
+ *  assert anything. What is left asserts nothing — it sets the length of a
+ *  bar — which is why the list is one row. */
 const HEURISTICS: Heuristic[] = [
   {
     id: 'B1',
@@ -168,17 +178,12 @@ export function CitationsPage(): JSX.Element {
         <em>the claim itself is wrong</em>.
       </p>
       <p className="muted small cite-intro">
-        Everything below points at a source outside this app. Anything that fired on a number
-        nobody published has been removed rather than relabelled, because a threshold with no
-        source is not something a reader can check: the ceiling bands, a dew-point spread, a
-        chance of rain, a chance of storms, a gust spread, a wind speed aloft, the density-altitude
-        bands, the last-load countdown, and every “watch” band — which were the app’s own
-        arithmetic on someone else’s limit. Two colour thresholds went with them, in the 10-day
-        outlook and the storms card, and so did a “fog/low-cloud favorable” verdict on the humidity
-        line: a figure in a warning colour, or a worded judgement, asserts something even when no
-        rule is quoted. The open questions here are written as questions: a guess
-        about what a SIM section says is not evidence, and presenting one as though it were would
-        repeat the problem this page exists to fix.
+        Everything below points at a source outside this app, so every item is one you can settle
+        with a document. There is no “app heuristic” line left to rule on: where nothing published
+        set a number, the flag that fired on it was removed rather than relabelled. The open items
+        are written as questions because a guess about what a SIM section says is not evidence, and
+        putting one in front of you as though it were would repeat the problem this page exists to
+        fix.
       </p>
 
       <h2 className="cite-heading">Part A · needs a current SIM</h2>
@@ -189,7 +194,7 @@ export function CitationsPage(): JSX.Element {
 
       {LOOKUPS.map((item) => (
         <Panel key={item.id} title={`${item.id} · ${item.title}`}>
-          <p className="cite-quote">{item.onScreen}</p>
+          <p className="cite-quote">{item.claim}</p>
           <dl className="kv cite-kv">
             {item.value && (
               <>
@@ -242,10 +247,14 @@ export function CitationsPage(): JSX.Element {
           </table>
         </div>
         <p className="muted small">
-          There is no longer a “watch” band anywhere in the app. Every profile used to carry one —
-          the student caution minus 2 kt, the waiver tiers minus 3 mph — so a card could be
-          honestly sourced and still warn you first on a number of the app’s own. Flags now fire at
-          the published limit or not at all.
+          No flag fires on a “watch” <em>threshold</em> any more. Every wind profile used to carry
+          one — the student caution minus 2 kt, the waiver tiers minus 3 mph — so a card could be
+          honestly sourced and still warn you first on a number of the app’s own. Those bands are
+          gone; the wind flags fire at the published limit or not at all. The <strong>Watch</strong>{' '}
+          badge is still in use, on the two flags that fire on a reported condition rather than on
+          a number: MVFR flight category (AIM 7-1-7) and an overcast layer (14 CFR 105.17). Nothing
+          to rule on there — it is noted so a Watch badge on the dashboard does not read as a
+          leftover.
         </p>
         <p className="muted small">
           The club waiver tiers (0–5 jumps: 15 mph wind / 16 mph gust · 6–10: 16/18 · 10–20: 18/19 ·
