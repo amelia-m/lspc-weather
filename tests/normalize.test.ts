@@ -334,7 +334,7 @@ describe('aggregateDailyFromHourly', () => {
     expect(days).toHaveLength(2);
   });
 
-  it('aggregates maxima/minima and derives a coarse weather code', () => {
+  it('aggregates maxima/minima', () => {
     const days = aggregateDailyFromHourly(
       [
         hour('2026-07-03T18:00:00Z', { tempC: 18, windSpeedKt: 8, windGustKt: null }),
@@ -350,27 +350,55 @@ describe('aggregateDailyFromHourly', () => {
     expect(d.windMaxKt).toBe(16);
     expect(d.gustMaxKt).toBe(24);
     expect(d.precipProbMaxPct).toBe(55);
-    expect(d.weatherCode).toBe(61); // pop >= 50 → rain-ish
   });
 
-  it('derives sky-cover codes when precip is low and handles missing data', () => {
-    const clear = aggregateDailyFromHourly([hour('2026-07-03T18:00:00Z', { skyCoverPct: 5 })], CHI);
-    expect(clear[0].weatherCode).toBe(0);
-    const ovc = aggregateDailyFromHourly([hour('2026-07-03T18:00:00Z', { skyCoverPct: 95 })], CHI);
-    expect(ovc[0].weatherCode).toBe(3);
-    // A day with no values at all (the padded tail of the hourly series) is dropped.
-    const empty = aggregateDailyFromHourly(
+  // The NWS gridpoint publishes no weather-interpretation code, and this app
+  // derives none: the cutoffs it used to derive one through (50 % precip chance
+  // → rain, 10/30/60 % cover → clear/mostly clear/partly cloudy/overcast) were
+  // its own, and they decided a one-word verdict in the outlook's Sky column.
+  it('never invents a weather code, whatever the cover or precip chance', () => {
+    const codeFor = (over: Record<string, number | null>): number | null =>
+      aggregateDailyFromHourly([hour('2026-07-03T18:00:00Z', over)], CHI)[0].weatherCode;
+
+    for (const sky of [0, 5, 20, 40, 55, 95, 100]) expect(codeFor({ skyCoverPct: sky })).toBeNull();
+    for (const pop of [0, 30, 49, 50, 51, 100]) expect(codeFor({ precipProbPct: pop })).toBeNull();
+  });
+
+  // The failure this removes: two days a single point apart in rain chance read
+  // as "Partly cloudy" and "Rain". They now differ only in the figure the model
+  // actually gives, which the outlook prints in its own column.
+  it('separates neighbouring days by their precip probability alone', () => {
+    const days = aggregateDailyFromHourly(
       [
-        hour('2026-07-03T18:00:00Z', {
-          skyCoverPct: null,
-          precipProbPct: null,
-          tempC: null,
-          windSpeedKt: null,
-          windGustKt: null,
-        }),
+        hour('2026-07-03T18:00:00Z', { skyCoverPct: 55, precipProbPct: 49 }),
+        hour('2026-07-04T18:00:00Z', { skyCoverPct: 55, precipProbPct: 50 }),
       ],
       CHI,
     );
+    expect(days).toHaveLength(2);
+    expect(days.map((d) => d.precipProbMaxPct)).toEqual([49, 50]);
+    expect(days.map((d) => d.weatherCode)).toEqual([null, null]);
+  });
+
+  it('keeps a day whose only forecast value is sky cover, and drops empty ones', () => {
+    const nulls = {
+      skyCoverPct: null,
+      precipProbPct: null,
+      tempC: null,
+      windSpeedKt: null,
+      windGustKt: null,
+    };
+    // Sky cover no longer reaches DailyPoint (it fed the derived code), but the
+    // gridpoint's cover series can outrun its temperature and wind series, and
+    // the outlook reads the cover for such a day from the hourlies directly.
+    const skyOnly = aggregateDailyFromHourly(
+      [hour('2026-07-03T18:00:00Z', { ...nulls, skyCoverPct: 70 })],
+      CHI,
+    );
+    expect(skyOnly).toHaveLength(1);
+    expect(skyOnly[0].weatherCode).toBeNull();
+    // A day with no values at all (the padded tail of the hourly series) is dropped.
+    const empty = aggregateDailyFromHourly([hour('2026-07-03T18:00:00Z', nulls)], CHI);
     expect(empty).toHaveLength(0);
   });
 });
