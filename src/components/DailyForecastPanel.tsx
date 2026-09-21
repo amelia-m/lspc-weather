@@ -21,7 +21,13 @@ import { fmtTime } from './format';
  *  USPA and club wind limits are same-day surface limits for the jump being
  *  made, not a test to apply to a model maximum eight days out. The figures are
  *  printed plainly so the reader judges them against the limits on the surface
- *  wind card. */
+ *  wind card.
+ *
+ *  On the Open-Meteo path the Sky column shows that service's own WMO weather
+ *  code as an icon and a word. The NWS gridpoint fallback publishes no such
+ *  code, so the column shows the day's mean cloud cover as a percentage
+ *  instead: a figure from the grid, not a one-word verdict this app derived
+ *  from cutoffs of its own. */
 export function DailyForecastPanel({
   daily,
   source,
@@ -85,6 +91,10 @@ export function DailyForecastPanel({
               {daily.map((d, i) => {
                 const wx = weatherCode(d.weatherCode);
                 const key = localDayKey(d.date);
+                // Fallback path: the same hourlies these days were aggregated
+                // from are already grouped here, so the cover figure comes from
+                // the grid rather than from anything derived about the day.
+                const skyAvgPct = fallback ? meanSkyCoverPct(hourlyByDay.get(key)) : null;
                 const isOpen = selected === key;
                 return (
                   <tr
@@ -105,12 +115,18 @@ export function DailyForecastPanel({
                       {isOpen ? '▾' : '▸'}
                     </td>
                     <td>{dayLabel(d.date, i)}</td>
-                    <td className="daily-sky" title={wx.label}>
-                      <span className="daily-icon" aria-hidden>
-                        {wx.icon}
-                      </span>{' '}
-                      {wx.label}
-                    </td>
+                    {fallback ? (
+                      <td className="daily-sky" title="Mean cloud cover over the day’s forecast hours">
+                        {skyAvgPct != null ? `${round(skyAvgPct)}% cover` : '—'}
+                      </td>
+                    ) : (
+                      <td className="daily-sky" title={wx.label}>
+                        <span className="daily-icon" aria-hidden>
+                          {wx.icon}
+                        </span>{' '}
+                        {wx.label}
+                      </td>
+                    )}
                     <td>{tempRange(d.tempMaxC, d.tempMinC)}</td>
                     <td>{windText(d, unit)}</td>
                     <td>{d.precipProbMaxPct != null ? `${round(d.precipProbMaxPct)}%` : '—'}</td>
@@ -135,8 +151,10 @@ export function DailyForecastPanel({
       {fallback && (
         <p className="muted small">
           <strong>Fallback source:</strong> Open-Meteo was unreachable, so these days are
-          aggregated from the NWS gridpoint forecast (~7 days instead of 10; the sky icon is
-          derived from cloud cover and precip chance).
+          aggregated from the NWS gridpoint forecast (~7 days instead of 10). Sky shows the day’s
+          mean cloud cover, not an icon: a weather icon is the forecasting service's own reading of
+          its model, this source publishes none, and the cutoffs this app used to derive one from
+          cloud cover and rain chance were its own. Rain chance is in its own column.
         </p>
       )}
       <p className="muted small">
@@ -301,7 +319,16 @@ const hourWind = (h: HourlyPoint, unit: SpeedUnit): string => {
   return h.windGustKt != null ? `${base} g ${round(toSpeed(h.windGustKt, unit))}` : base;
 };
 
-/** WMO weather interpretation codes → compact icon + label. */
+/** Mean sky cover across a day's forecast hours, or null when none carry it.
+ *  Used only on the gridpoint fallback, where the day has no published weather
+ *  code and the outlook shows the cover figure in its place. */
+function meanSkyCoverPct(points: HourlyPoint[] | undefined): number | null {
+  const vals = (points ?? []).map((p) => p.skyCoverPct).filter((v): v is number => v != null);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+/** WMO weather interpretation codes → compact icon + label. Open-Meteo's own
+ *  codes only; nothing in this app derives one. */
 function weatherCode(code: number | null): { icon: string; label: string } {
   if (code == null) return { icon: '·', label: '—' };
   if (code === 0) return { icon: '☀️', label: 'Clear' };
