@@ -43,3 +43,21 @@ export const toSpeed = (kt: number, u: SpeedUnit): number => (u === 'mph' ? ktTo
 /** Format a knots value in the selected unit, e.g. "12 kt" or "14 mph". */
 export const fmtSpeed = (kt: number, u: SpeedUnit, digits = 0): string =>
   `${round(toSpeed(kt, u), digits)} ${u}`;
+
+/**
+ * Format a wind LIMIT that its source posted in whole mph.
+ *
+ * The LSPC waiver sign states a gust ceiling per experience tier one mph apart
+ * at the top — under 19 mph at 10–20 jumps, under 20 mph at 21+ — and the app
+ * stores them converted to knots (16.51 and 17.38). Rounded to whole knots both
+ * print "17 kt", so in the default unit the tier a jumper earned changed nothing
+ * on screen and the dashboard misquoted the sign it asks an instructor to check
+ * it against. A tenth of a knot is finer than any windsock resolves, but it is
+ * what keeps two separately posted limits separate; in mph the figure lands back
+ * on the posted whole number, which is how the sign reads it.
+ *
+ * Readings keep `fmtSpeed`: a METAR reports wind in whole knots, so a decimal
+ * there would invent precision the observation does not have.
+ */
+export const fmtLimitSpeed = (kt: number, u: SpeedUnit): string =>
+  fmtSpeed(kt, u, u === 'kt' ? 1 : 0);
