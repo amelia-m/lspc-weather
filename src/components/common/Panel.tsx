@@ -32,7 +32,10 @@ export function Panel({
     ) : null;
   return (
     <section className="panel">
-      <header className="panel-head">
+      {/* `has-aside` lets the stylesheet allow the header to wrap only on the
+          cards that carry a toggle. Cards without one keep the unwrapped
+          header they have always had, with the subtitle beside the title. */}
+      <header className={unitToggle ? 'panel-head has-aside' : 'panel-head'}>
         <h2 id={headingId}>{title}</h2>
         {/* Subtitle and toggle share one right-hand cluster so the toggle keeps
             its place against the card edge when a long subtitle ("freefall

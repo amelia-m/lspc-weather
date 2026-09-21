@@ -112,12 +112,17 @@ a {
   cursor: pointer;
   text-transform: uppercase;
 }
-.unit-toggle button:first-child,
-.range-toggle button:first-child {
+/* Round only the outer edges so the buttons read as one segmented pill.
+   Matched by type, not by child position: the unit toggle also carries a
+   hidden <span> that names the group for a screen reader ("Winds aloft wind
+   speed unit"), and a :first-child rule would land on that span instead of
+   on the kt button. */
+.unit-toggle button:first-of-type,
+.range-toggle button:first-of-type {
   border-radius: 6px 0 0 6px;
 }
-.unit-toggle button:last-child,
-.range-toggle button:last-child {
+.unit-toggle button:last-of-type,
+.range-toggle button:last-of-type {
   border-radius: 0 6px 6px 0;
 }
 .unit-toggle button.active,
@@ -126,9 +131,10 @@ a {
   color: #04121f;
   font-weight: 600;
 }
-/* Collapse the shared left/right border between adjacent toggle buttons. */
-.range-toggle button:not(:first-child),
-.unit-toggle button:not(:first-child) {
+/* Collapse the shared left/right border between adjacent toggle buttons.
+   By type for the same reason as the radii above. */
+.range-toggle button:not(:first-of-type),
+.unit-toggle button:not(:first-of-type) {
   border-left: none;
 }
 /* The unit toggle is repeated on every card that shows a wind speed, so it is
@@ -138,6 +144,13 @@ a {
   padding: 2px 8px;
   font-size: 0.7rem;
   line-height: 1.6;
+}
+/* In the page header the toggle is the only unit control in view and sits
+   beside the Student/Licensed profile buttons, so it keeps the full-size
+   treatment instead of the shrunken card-header one. */
+.toggles .unit-toggle button {
+  padding: 3px 10px;
+  font-size: 0.78rem;
 }
 
 /* Drift / spot */
@@ -198,9 +211,15 @@ a {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   gap: 8px;
-  /* A phone-width card cannot fit "Current conditions" and "KPMV · obs 14:32"
-     on one line, let alone the unit toggle after it — let the right-hand
-     cluster drop to its own line rather than squeezing the title. */
+}
+/* A phone-width card cannot fit "Current conditions" and "KPMV · obs 14:32"
+   on one line, let alone the unit toggle after it — let the right-hand
+   cluster drop to its own line rather than squeezing the title. Only cards
+   that actually carry a toggle wrap: on the rest (Density altitude, TAF,
+   Settings) the subtitle still belongs beside the title, where it has always
+   been. Set by Panel from a modifier class rather than by `:has()`, which the
+   build's baseline browsers do not all support. */
+.panel-head.has-aside {
   flex-wrap: wrap;
   row-gap: 6px;
 }
@@ -266,9 +285,11 @@ a {
   margin: 0;
   padding: 0;
   /* Flow warnings into columns on wider viewports so each flag isn't a
-     full-width band; collapses to a single column on narrow screens. */
+     full-width band; collapses to a single column on narrow screens. The
+     `min()` is what makes that collapse real: a bare 340px minimum is wider
+     than a 320px phone, which pushed the whole page into a sideways scroll. */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
   gap: 10px;
 }
 .advisory {
@@ -445,9 +466,6 @@ a {
   height: 100%;
   z-index: 2;
 }
-.band-watch {
-  background: var(--watch);
-}
 .band-caution {
   background: var(--caution);
 }
@@ -483,10 +501,6 @@ a {
 .aloft-table th {
   color: var(--muted);
   font-weight: 500;
-}
-.aloft-strong {
-  color: var(--watch);
-  font-weight: 600;
 }
 .aloft-arrow {
   display: inline-block;
