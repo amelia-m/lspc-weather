@@ -263,13 +263,21 @@ export function CitationsPage(): JSX.Element {
         </p>
       </Panel>
 
-      <h2 className="cite-heading">Already checked and correct</h2>
+      <h2 className="cite-heading">Why some citations are not on the list</h2>
       <p className="muted small cite-intro">
-        Not everything needs review. These were audited and judged right, so they are deliberately
-        absent above: the 3 SM visibility floor → 14 CFR 105.17 (the rule literally says 3 SM);
-        overcast / no gaps → 105.17; flight category → AIM 7-1-7; density altitude → FAA-P-8740-2
-        (FAA is the correct authority here — a SIM citation would be <em>wrong</em>); and the waiver
-        gust ceiling → club policy.
+        Part A is where the <em>section number</em> is uncertain. These are absent from it because
+        the authority cited looks like the right <em>kind</em> of authority for the claim: flight
+        visibility and cloud clearance to 14 CFR 105.17, the flight categories to AIM 7-1-7,
+        density altitude to FAA-P-8740-2 rather than to USPA — an aircraft-performance matter, so a
+        SIM citation there would be citing the wrong body entirely — and the waiver gust ceiling to
+        the club’s own posted policy.
+      </p>
+      <p className="muted small cite-intro">
+        That is a judgement about attribution, reached by reading this repository. It is{' '}
+        <strong>not</strong> a check against the documents, and nothing here has been read in the
+        source — the same caveat that applies to every entry above. If you have the CFR or the AIM
+        to hand they are still worth a glance; they are only ranked lower because a wrong body is
+        easier to spot than a wrong section.
       </p>
 
       <footer className="app-foot">
