@@ -58,7 +58,10 @@ export function UnitToggle({
       aria-labelledby={scopeId ? `${scopeId} ${ownLabelId}` : undefined}
     >
       {/* Hidden, but referenced by aria-labelledby above, which reads hidden
-          text: it supplies the "what" the card heading does not say. */}
+          text: it supplies the "what" the card heading does not say. It shares
+          the container with the buttons, so the stylesheet rounds and joins
+          them with `button:first-of-type` / `:last-of-type` rather than
+          child-position selectors this span would otherwise capture. */}
       <span id={ownLabelId} hidden>
         wind speed unit
       </span>
