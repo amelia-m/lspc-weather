@@ -192,7 +192,7 @@ export function WindsAloftPanel({
           crossed. Read the speeds above and judge them. */}
       <p className="muted small">
         Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit
-        separation accordingly. Source: <SourceLink citation={CITATIONS.uspaWeather} />
+        separation accordingly. Source: <SourceLink citation={CITATIONS.uspaSpotting} />
       </p>
       {!expanded && toggleable && (
         <p className="muted small">

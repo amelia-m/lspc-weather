@@ -12,14 +12,19 @@ import { mphToKt } from '../domain/units';
 const VERIFY_NOTE =
   'AI-derived citation — may be inaccurate. Verify against the linked primary source and a licensed professional before use.';
 
+/** Note for a citation whose section text was read in the SIM that uspa.org
+ *  served on 2026-09-22. It says what was done rather than "verified": the
+ *  online SIM is not a printed edition, USPA revises it, and a reader deciding
+ *  whether to trust a wind limit deserves the date and the source of the
+ *  reading rather than a bare tick. Still not a substitute for an instructor:
+ *  reading a rule is not the same as knowing how the DZ applies it. */
+const SIM_READ_NOTE =
+  'Section text read in the online SIM at uspa.org on 2026-09-22 and matches this claim. USPA revises the SIM — re-check against the current one, and confirm with the S&TA before relying on it.';
+
 /** SIM section URLs all take this shape — `simUrl('2-1')` → …/sim/2-1. Written
  *  once so a citation cannot drift into a different URL shape (deep anchors,
  *  PDF mirrors) that may not resolve. */
 const simUrl = (section: string) => `https://www.uspa.org/sim/${section}`;
-
-/** The SIM's table of contents. Used when no section has been identified for a
- *  claim — see the honesty rule in the CITATIONS doc comment below. */
-const SIM_INDEX_URL = 'https://www.uspa.org/sim';
 
 /**
  * Citations — the product, not decoration.
@@ -36,11 +41,16 @@ const SIM_INDEX_URL = 'https://www.uspa.org/sim';
  *     /sim/2-1; a source naming no section links to the SIM index. Naming a
  *     section while linking to the index claims a precision the link does not
  *     deliver.
- *  2. Where the governing section is NOT known, the citation stays on the index
- *     and says so in its note. A confidently wrong section number is worse than
- *     an honest general link — it sends a jumper to the wrong rule while
- *     looking authoritative. Pin such a citation to a section only after
- *     someone has read it in a current SIM.
+ *  2. Where the governing section is NOT known, the citation stays on the SIM
+ *     index (https://www.uspa.org/sim) and says so in its note. A confidently
+ *     wrong section number is worse than an honest general link — it sends a
+ *     jumper to the wrong rule while looking authoritative. Pin such a citation
+ *     to a section only after someone has read it in a current SIM.
+ *
+ *     No citation needs the index today: the two that did — general weather and
+ *     exit separation — were pinned to 4-5 and 4-7 once those sections were
+ *     read. The rule stands for the next claim that arrives without a section,
+ *     and tests/thresholds.test.ts still enforces it.
  *  3. Where NO published rule sets the number at all, the app does not raise a
  *     flag on it. There is deliberately no house-heuristic citation to fall back
  *     on: a threshold nobody published cannot be checked, and a dashboard whose
@@ -54,9 +64,9 @@ export const CITATIONS = {
    *  the waiver tiers below cite the club policy rather than this. */
   uspaStudentWinds: {
     source: 'USPA SIM, Section 2-1 (BSR)',
-    ref: 'Basic Safety Requirements — student ground-wind limits',
+    ref: 'BSR 2-1 H, Winds — maximum ground winds for all solo students: 14 mph for ram-air canopies, 10 mph for round reserves',
     url: simUrl('2-1'),
-    note: VERIFY_NOTE,
+    note: SIM_READ_NOTE,
   },
   /** Same BSR section, different claim: the ground-wind limit is written for
    *  solo students, so for a licensed jumper the section is cited for the
@@ -65,9 +75,9 @@ export const CITATIONS = {
    *  licensed jumpers no such limit binds them. */
   uspaLicensedWinds: {
     source: 'USPA SIM, Section 2-1 (BSR)',
-    ref: 'Basic Safety Requirements — wind limits stated for students, not licensed jumpers',
+    ref: 'BSR 2-1 H, Winds — maximum ground winds “for licensed skydivers are unlimited”',
     url: simUrl('2-1'),
-    note: VERIFY_NOTE,
+    note: SIM_READ_NOTE,
   },
   far10517: {
     source: '14 CFR § 105.17',
@@ -99,37 +109,101 @@ export const CITATIONS = {
     note: VERIFY_NOTE,
   },
   /**
-   * General weather awareness. Used by the two flags whose CLAIM is skydiving
-   * practice a SIM section very likely governs, even though no section has been
-   * identified: a thunderstorm reported at the station, and strong upper winds
-   * lengthening the spot (where the practice claim is about jump run and exit
-   * separation, not about the trigger speed, which is the app's own).
+   * General weather awareness — the thunderstorm flag's claim.
    *
-   * DELIBERATELY still the SIM index. The BSRs (2-1) set wind limits, opening
-   * altitudes and cloud clearance, but none of them govern "it is gusty" or
-   * "there is a 40% chance of storms", and the SIM section that carries general
-   * weather guidance has not been identified from this environment. Guessing a
-   * number here would point a jumper at the wrong rule with a confident-looking
-   * link, so the note tells the reader the link is an index on purpose.
+   * This used to link to the SIM contents page because the governing section
+   * had not been identified. It has been now: 4-5 is "Weather", and its part B
+   * ("Hazardous Weather") covers gust fronts, turbulence in gusty winds,
+   * spontaneously generating thunderstorms and dust devils, while part A
+   * ("Determining Winds") covers checking winds before and during the jump.
+   * That is the section a reader wants behind "thunderstorms reported at the
+   * station", so the citation now names it.
    *
-   * It is NOT a home for a number the app invented — see rule 3 above. The
-   * flags that used to lean on it that way (ceiling, fog spread, precipitation
-   * and forecast-storm chance) have been removed rather than relabelled.
+   * It is still NOT a home for a number the app invented — see rule 3 above.
+   * The flags that used to lean on it that way (ceiling, fog spread,
+   * precipitation and forecast-storm chance) have been removed rather than
+   * relabelled, and pinning this citation to a real section does not license
+   * bringing any of them back.
    */
   uspaWeather: {
-    source: 'USPA SIM',
-    ref: 'Weather awareness — winds, clouds, precipitation, storms',
-    url: SIM_INDEX_URL,
-    note: `${VERIFY_NOTE} Links to the SIM contents, not a section: the SIM section governing general weather guidance has not been identified, and a wrong section number would be worse than a general link.`,
+    source: 'USPA SIM, Section 4-5 (Weather)',
+    ref: 'SIM 4-5 B, Hazardous Weather — gust fronts, turbulence, thunderstorms, dust devils',
+    url: simUrl('4-5'),
+    note: SIM_READ_NOTE,
   },
-  /** BSR minimum container-opening altitudes (students & A 3,000 ft; B 2,500;
-   *  C/D 2,000; tandem 5,000) — same Section 2-1 as the wind limits. Drives the
-   *  drift card's deploy-altitude floor via recommendedDeployFt(). */
+  /**
+   * Exit separation and spotting in strong upper winds — the winds-aloft card's
+   * standing note.
+   *
+   * Split out of `uspaWeather`, which the note used to share with the
+   * thunderstorm flag while both pointed at the SIM index. They are different
+   * claims governed by different sections, and 4-7 C ("Exit Separation on Jump
+   * Run") is the one that carries this: "On days with strong upper headwinds,
+   * allow more time between groups on the same pass to get sufficient
+   * horizontal separation over the ground."
+   *
+   * The card states the guidance at any wind speed. The trigger that used to
+   * gate it (upper winds above 20 kt) was the app's own and is gone; 4-7 sets
+   * separation distances, not a wind speed at which to start caring.
+   */
+  uspaSpotting: {
+    source: 'USPA SIM, Section 4-7 (Spotting)',
+    ref: 'SIM 4-7 C, Exit Separation on Jump Run — allow more time between groups in strong upper headwinds',
+    url: simUrl('4-7'),
+    note: SIM_READ_NOTE,
+  },
+  /**
+   * Night jumps, USPA's half of the after-sunset flag.
+   *
+   * The flag used to make two claims — the FAA light requirement and a USPA
+   * licence requirement — and offer one source, 14 CFR 105.19, which supports
+   * only the first. 5-3 is the section behind the second. It also settles when
+   * the flag should fire: "Any jumps made between official sunset and official
+   * sunrise are considered night jumps", which is the same trigger the reg
+   * uses, so the flag firing at sunset matches both authorities.
+   *
+   * Note the modal verb. 5-3 B says participants "should meet all the
+   * requirements for a USPA B or higher license" — a recommendation — while
+   * 3-1 lists performing night jumps among the B licence's privileges. The
+   * guidance text says "should" for that reason; it read "requires" before.
+   */
+  uspaNightJumps: {
+    source: 'USPA SIM, Section 5-3 (Night Jumps)',
+    ref: 'SIM 5-3 — any jump between official sunset and sunrise is a night jump; participants should meet USPA B-licence requirements (50 jumps, per 3-1)',
+    url: simUrl('5-3'),
+    note: SIM_READ_NOTE,
+  },
+  /**
+   * The rule underneath the club waiver: which BSRs an S&TA may waive.
+   *
+   * The LSPC waiver document says excursions from the BSR wind limits are
+   * "approved on site", and 2-2 is what makes that possible — a BSR marked [S]
+   * is waiverable by an S&TA or Examiner, and the student ground-wind BSR
+   * (2-1 H) carries that marking. The waiver tiers still cite club policy for
+   * their numbers, because the numbers are the club's; this is cited for the
+   * authority the club is exercising.
+   */
+  uspaWaivers: {
+    source: 'USPA SIM, Section 2-2 (Waivers to the BSRs)',
+    ref: 'SIM 2-2 B — a BSR marked [S] may be waived by an S&TA or Examiner; the student ground-wind BSR (2-1 H) is so marked',
+    url: simUrl('2-2'),
+    note: SIM_READ_NOTE,
+  },
+  /** BSR minimum container-opening altitudes — same Section 2-1 as the wind
+   *  limits. Drives the drift card's deploy-altitude floor via
+   *  recommendedDeployFt().
+   *
+   *  2-1 I reads: tandem 5,000 ft AGL; all students and A-license 3,000 ft;
+   *  B-license 2,500 ft; C- and D-license 2,500 ft [S], waiverable to no lower
+   *  than 2,000 ft. This app previously printed a flat 2,000 ft for C/D, which
+   *  is the waiver floor rather than the BSR minimum — 2-2 C confirms the
+   *  direction, describing an S&TA waiving the deployment altitude "from 2,500
+   *  feet down to 2,000 feet". */
   uspaOpeningAltitude: {
     source: 'USPA SIM, Section 2-1 (BSR)',
-    ref: 'Basic Safety Requirements — minimum container opening altitudes',
+    ref: 'BSR 2-1 I — minimum container opening altitudes: tandem 5,000 ft AGL; students & A 3,000 ft; B 2,500 ft; C/D 2,500 ft, waiverable to no lower than 2,000 ft',
     url: simUrl('2-1'),
-    note: VERIFY_NOTE,
+    note: SIM_READ_NOTE,
   },
   lspcWaiver: {
     source: 'LSPC Waivered Wind Limits',
@@ -184,7 +258,7 @@ export interface Thresholds {
   visibilityCautionSm: number;
 }
 
-const STUDENT_WIND_KT = 12; // USPA ~14 mph rounded to whole knots
+const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
 
 /** Licensed profile: nobody publishes a surface-wind limit for licensed
  *  jumpers, so no band is drawn and no flag fires. This number is NOT a limit —
@@ -195,8 +269,14 @@ const LICENSED_BAR_SCALE_KT = 25;
 
 const STUDENT: Thresholds = {
   windCautionKt: STUDENT_WIND_KT,
+  // "Maximum", not "recommends": BSR 2-1 H states a maximum, and the [S]
+  // marking makes it waiverable by an S&TA rather than advisory. The old
+  // wording read as guidance a jumper could weigh, which is what the club
+  // waiver document contradicted — it treats the figure as a limit needing
+  // on-site approval to exceed. The canopy qualifier is the BSR's own: the
+  // 14 mph figure is paired with ram-air canopies, 10 mph with round reserves.
   windGuidance:
-    'USPA recommends max ~14 mph (~12 kt) ground winds for solo students on ram-air reserves.',
+    'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it on site.',
   windCitation: CITATIONS.uspaStudentWinds,
   windLimitCitation: CITATIONS.uspaStudentWinds,
   visibilityCautionSm: 3,
@@ -221,7 +301,7 @@ const STUDENT: Thresholds = {
 const LICENSED: Thresholds = {
   windCautionKt: LICENSED_BAR_SCALE_KT,
   windGuidance:
-    'No USPA hard wind limit for licensed jumpers — the BSR ground-wind limit is written for students. Judge it on your canopy, your currency and the conditions, with the S&TA. ' +
+    'No USPA ground-wind limit for licensed jumpers — the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. ' +
     'Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA — ask the PIC.',
   // Cites the BSR for the absence of a limit, not the student limit: a reader
   // who follows the link should land on the section that shows the wind rule is

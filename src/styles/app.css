@@ -1050,6 +1050,27 @@ a {
   line-height: 1.5;
   color: var(--muted);
 }
+.cite-found {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.cite-found-head,
+.cite-asks-head {
+  margin: 10px 0 2px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+/* The findings are what the section says; the open items are what it did not
+   settle. Keeping them visually distinct stops a reader skimming the page from
+   reading a confirmed quote as another unanswered question. */
+.cite-found li {
+  color: var(--text);
+}
+
 .cite-asks li + li {
   margin-top: 6px;
 }

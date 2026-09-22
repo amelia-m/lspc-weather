@@ -175,6 +175,12 @@ export interface Advisory {
   value: string; // "21 kt (24 mph), gusting 28"
   guidance: string; // brief paraphrase of the cited rule
   citation: Citation;
+  /** A second authority, where the guidance makes a claim the first does not
+   *  support. The after-sunset flag is the case it exists for: the FAA reg
+   *  sets the light requirement and the trigger, while the USPA licence claim
+   *  in the same sentence comes from the SIM. One link for two authorities let
+   *  a reader check the reg and find nothing about licences in it. */
+  secondaryCitation?: Citation;
 }
 
 export type JumperClass = 'student' | 'licensed';

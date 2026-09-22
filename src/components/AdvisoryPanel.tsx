@@ -64,7 +64,14 @@ export function AdvisoryPanel({
                 </div>
                 <p className="advisory-guidance">{a.guidance}</p>
                 <div className="advisory-cite">
-                  Source: <SourceLink citation={a.citation} />
+                  {a.secondaryCitation ? 'Sources: ' : 'Source: '}
+                  <SourceLink citation={a.citation} />
+                  {a.secondaryCitation && (
+                    <>
+                      {' · '}
+                      <SourceLink citation={a.secondaryCitation} />
+                    </>
+                  )}
                 </div>
               </li>
             ))}
