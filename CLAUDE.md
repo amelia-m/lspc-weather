@@ -99,14 +99,28 @@ became checkable and were checked — see `docs/open-questions.md`:
 
 Still not checkable here, so do not imply a green suite covers them:
 
-- **The app in a browser.** Playwright's Chromium does not trust the proxy's
-  TLS-intercepting CA, and the fixes for that (installing the CA into the NSS
-  store, or a Chromium enterprise policy) are blocked by the sandbox's own
-  guardrails. So nothing on the deployed site has been *seen*: layout, the
-  390px/320px widths, the radar `<img>` loading cross-origin under the page's
-  CSP, and the DZ marker's placement on screen are all unverified. A run script
-  under Node is not a substitute — `renderToStaticMarkup` does not run effects,
-  load images or apply CSS.
+- **The deployed site in a browser.** Playwright's Chromium does not trust the
+  proxy's TLS-intercepting CA, so it cannot load any https:// page, and the
+  fixes for that (the NSS store, a Chromium enterprise policy) are blocked by
+  the sandbox's own guardrails. <https://amelia-m.github.io/lspc-weather/> has
+  therefore never been loaded, and the app has never been seen in a browser
+  against *live* data.
+
+  What can still be checked in a browser, and is worth doing rather than
+  skipping: serve the production build over local http and let Playwright
+  fulfil cross-origin images itself. That is how the radar marker was verified
+  —
+
+  ```
+  BASE_PATH=/ VITE_USE_FIXTURES=true npm run build
+  (cd dist && npx http-server -p 8788 -s &)
+  # in the script: page.route('https://radar.weather.gov/**', r => r.fulfill({ body: localGif }))
+  ```
+
+  It exercises the real bundle under the real CSP, at 1280/390/320 px. Only the
+  live data and the real cross-origin fetch are missing. A Node render is not a
+  substitute for either — `renderToStaticMarkup` does not run effects, load
+  images or apply CSS.
 - **ecfr.gov, faa.gov, faasafety.gov** — still blocked, so the CFR and FAA
   citations remain AI-derived and unread.
 - CI is no better: it runs the same fixture-backed suite. Nothing in `npm test`
