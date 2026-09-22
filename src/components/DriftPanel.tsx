@@ -131,22 +131,25 @@ export function DriftPanel({
           </p>
 
           {/* Only when the winds source stops above the ground — on the NOAA FD
-              fallback, whose lowest level is 3,000 ft MSL. The number is
+              fallback, whose lowest level is 3,000 ft MSL. The assumption is
               invisible in the result otherwise: the drift figure looks the same
-              whether the last stretch of canopy flight was integrated over real
-              levels or over an assumed one, and that stretch is the wind the
-              jumper lands in. */}
-          {drift.extrapolatedBelowFtAgl > 0 && (
+              whether the bottom of the descent was integrated over real levels
+              or an assumed one, and the bottom is the wind the jumper lands in.
+
+              Phrased around the level's own altitude, which is true whatever
+              the exit and deploy altitudes are. Naming the depth of descent
+              affected instead made this sentence claim a wind "at 1,500 ft"
+              when the wind had come from the 2,000 ft level. */}
+          {drift.lowestLevelFtAgl > 0 && (
             <p className="muted small">
               <strong>
-                Below {drift.extrapolatedBelowFtAgl.toLocaleString()} ft AGL this assumes the wind
-                at {drift.extrapolatedBelowFtAgl.toLocaleString()} ft.
+                No winds below {drift.lowestLevelFtAgl.toLocaleString()} ft AGL — this assumes the{' '}
+                {drift.lowestLevelFtAgl.toLocaleString()} ft wind all the way down.
               </strong>{' '}
-              The winds source in use has no level under that, so the last{' '}
-              {drift.extrapolatedBelowFtAgl.toLocaleString()} ft of canopy descent carries that wind
-              rather than a forecast one — the part of the flight where wind usually changes most.
-              Read the ground wind off the Surface wind card and treat the canopy figure as the
-              rougher half of this estimate.
+              The source in use has no level under that, so the last{' '}
+              {drift.lowestLevelFtAgl.toLocaleString()} ft of descent carries that wind rather than a
+              forecast one — the stretch where wind usually changes most. Read the ground wind off
+              the Surface wind card and treat this as the rougher half of the estimate.
             </p>
           )}
 

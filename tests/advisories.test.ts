@@ -152,6 +152,21 @@ describe('evaluateAdvisories', () => {
     expect(day?.guidance).not.toMatch(/USPA (also )?requires/i);
   });
 
+  /* The waiver guidance quotes the club's numbers and then the BSR-excursion
+   * rule, which is the SIM's rather than the club's. Both must be reachable
+   * from the flag — the SIM citation existed in the config for a while wired to
+   * nothing at all. */
+  it('waiver-tier wind flag cites the SIM waiver rule as well as club policy', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 20, wgst: 24 });
+    const wind = evaluateAdvisories(
+      snapshot({ current }),
+      resolveThresholds('waiver:0-5'),
+      now,
+    ).find((a) => a.id === 'surface-wind');
+    expect(wind?.citation.url).toContain('lspc-waivered-wind-limits');
+    expect(wind?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/2-2');
+  });
+
   it('LSPC waiver (0–5 jumps) flags wind over 15 mph and gust at/over the 16 mph ceiling', () => {
     // 14 kt ≈ 16 mph sustained, gusting 15 kt ≈ 17 mph.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 14, wgst: 15 });

@@ -52,6 +52,9 @@ export function evaluateAdvisories(
           value: formatWind(speedKt, gustKt, unit) + (gustDriven ? ' (gusts exceed limit)' : ''),
           guidance: thresholds.windGuidance,
           citation: thresholds.windCitation,
+          // Waiver tiers: the guidance quotes the club's numbers and then the
+          // BSR-excursion rule, which is the SIM's, not the club's.
+          secondaryCitation: thresholds.windSecondaryCitation,
         });
       }
     }

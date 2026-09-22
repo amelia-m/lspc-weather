@@ -56,16 +56,49 @@ describe('interpolateWindsAloft', () => {
   /* Open-Meteo's 10 m sample IS the ground wind, so it may fill the short gap
    * down to the published field elevation — the model's surface height and the
    * DZ's field elevation differ by a few tens of feet, which is not a layer of
-   * atmosphere. Without this the primary path would lose its Surface row. */
+   * atmosphere. Without this the primary path would lose its Surface row.
+   *
+   * The surface sample sits ABOVE the field elevation here, which is what puts
+   * the target below the lowest sample and so actually reaches the isSurface
+   * branch. An earlier version of this test used 1,178 ft against a 1,182 ft
+   * field: the target was above the sample, the value came from the
+   * interpolation loop, and the test passed identically with the flag deleted —
+   * it pinned nothing. The paired case below is what proves the flag is load
+   * bearing. */
+  const SURFACE_ABOVE_FIELD: RawWindSample[] = [
+    { heightFtMsl: 1200, speedKt: 6, directionDeg: 36, isSurface: true },
+    { heightFtMsl: 4200, speedKt: 30, directionDeg: 220 },
+  ];
+
   it('fills down to field elevation from a surface sample', () => {
-    const withSurface: RawWindSample[] = [
-      { heightFtMsl: 1178, speedKt: 6, directionDeg: 36, isSurface: true },
-      { heightFtMsl: 4200, speedKt: 30, directionDeg: 220 },
-    ];
-    const out = interpolateWindsAloft(withSurface, 1182, [0]);
+    const out = interpolateWindsAloft(SURFACE_ABOVE_FIELD, 1182, [0]);
     expect(out).toHaveLength(1);
     expect(out[0].speedKt).toBe(6);
     expect(out[0].directionDeg).toBe(36);
+  });
+
+  it('drops the same row when the lowest sample is not the surface wind', () => {
+    const notSurface: RawWindSample[] = SURFACE_ABOVE_FIELD.map((s) => ({
+      heightFtMsl: s.heightFtMsl,
+      speedKt: s.speedKt,
+      directionDeg: s.directionDeg,
+    }));
+    expect(interpolateWindsAloft(notSurface, 1182, [0])).toEqual([]);
+  });
+
+  /* A target sitting exactly ON a sample is a value the source states, so it is
+   * kept at both ends. The bottom test was `<=` and dropped it there while the
+   * top kept it — at a field elevation on the whole-thousand grid that quietly
+   * deleted the bulletin's own lowest row. */
+  it('keeps a target that lands exactly on the lowest or highest sample', () => {
+    const fd: RawWindSample[] = [
+      { heightFtMsl: 3000, speedKt: 9, directionDeg: 90 },
+      { heightFtMsl: 6000, speedKt: 4, directionDeg: 328 },
+    ];
+    const out = interpolateWindsAloft(fd, 1000, [2000, 5000]);
+    expect(out.map((l) => l.altitudeFtAgl)).toEqual([2000, 5000]);
+    expect(out[0].speedKt).toBe(9); // the 3,000 ft MSL row, verbatim
+    expect(out[1].speedKt).toBe(4); // the 6,000 ft MSL row, verbatim
   });
 
   it('returns nothing when there are no samples', () => {

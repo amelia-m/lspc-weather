@@ -90,22 +90,24 @@ describe('estimateDrift reports how far below the levels it had to assume', () =
     uniformLevels().filter((l) => l.altitudeFtAgl >= 2000);
 
   it('is zero when the levels reach the ground', () => {
-    expect(estimateDrift(uniformLevels(), opts).extrapolatedBelowFtAgl).toBe(0);
+    expect(estimateDrift(uniformLevels(), opts).lowestLevelFtAgl).toBe(0);
   });
 
   it('is the lowest level when the source stops above the ground', () => {
-    expect(estimateDrift(fdLevels(), opts).extrapolatedBelowFtAgl).toBe(2000);
+    expect(estimateDrift(fdLevels(), opts).lowestLevelFtAgl).toBe(2000);
   });
 
-  it('counts only the part the canopy leg flew through', () => {
-    // Deployment at 1,500 ft is below the lowest level, so the canopy leg
-    // extrapolates over 1,500 ft of descent, not 2,000.
+  /* It reports the altitude the wind is taken FROM, not the depth of descent
+   * affected. Those differ when deployment is below the lowest level, and
+   * reporting the depth made the card name a wind "at 1,500 ft" that had
+   * actually come from the 2,000 ft level — an altitude no level sits at. */
+  it('names the level the wind comes from, not the depth below deployment', () => {
     const d = estimateDrift(fdLevels(), { ...opts, deployFtAgl: 1500 });
-    expect(d.extrapolatedBelowFtAgl).toBe(1500);
+    expect(d.lowestLevelFtAgl).toBe(2000);
   });
 
   it('does not claim an extrapolation when there is nothing to integrate', () => {
-    expect(estimateDrift([], opts).extrapolatedBelowFtAgl).toBe(0);
+    expect(estimateDrift([], opts).lowestLevelFtAgl).toBe(0);
   });
 
   /* The drift number itself must not change: dropping the fabricated rows from

@@ -41,10 +41,10 @@ export function RadarPanel(): JSX.Element {
             onError={() => setFailed(true)}
           />
           {/* Positioned in percentages so it tracks the image at any card
-              width. Rendered as DOM rather than drawn into the image: the
-              page's CSP allows img-src from radar.weather.gov only, and an
-              overlay element also keeps the marker sharp when the image is
-              scaled up on a phone. */}
+              width. Rendered as DOM rather than drawn into the image: the GIF
+              is cross-origin, so a canvas holding it is tainted and cannot be
+              read back, and an overlay element also keeps the marker sharp when
+              the image is scaled up on a phone. */}
           {DZ_ON_RADAR_IMAGE && (
             <span
               className="radar-dz"

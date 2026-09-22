@@ -22,10 +22,11 @@
  * The image is a plate carrée (equirectangular) rendering of a bbox that is
  * *square in degrees*, centred on the radar in longitude and a fixed distance
  * north of it in latitude. Because the box is square in degrees while the
- * image is 600x550 px, the scale differs between axes — 140.1 px/deg of
- * longitude against 128.2 px/deg of latitude — but that difference is entirely
- * absorbed by the image's own aspect ratio, so a position expressed as a
- * *fraction* of width and height needs neither pixel dimension.
+ * image is 600x550 px, the pixel scale differs between axes — 600/span across
+ * against 550/span down — but that difference is entirely absorbed by the
+ * image's own aspect ratio, so a position expressed as a *fraction* of width
+ * and height needs neither pixel dimension and neither figure is written down
+ * here to drift out of step with `spanDeg`.
  */
 export interface RadarImageGeoref {
   /** Side of the bbox, in degrees — the same figure for latitude and longitude. */

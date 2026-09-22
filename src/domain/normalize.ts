@@ -568,9 +568,10 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
       speedKt: surfaceSpd,
       directionDeg: surfaceDir,
       tempC: num('temperature_2m'),
-      // This one is the ground wind, which is what lets the table fill its
-      // Surface row from it even though the model's surface height and the
-      // DZ's published field elevation differ by a few tens of feet.
+      // This one is the ground wind. It lets interpolateWindsAloft fill down to
+      // the field elevation when this is the lowest sample — which it is only
+      // when 1000 hPa is missing or above it, since that level usually sits
+      // below the model's terrain. See RawWindSample.isSurface.
       isSurface: true,
     });
   }
