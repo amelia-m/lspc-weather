@@ -305,7 +305,10 @@ describe('fetchWindsAloftFd discovery', () => {
 
     const fd = await fetchWindsAloftFd('OMA', 1182, TARGETS, NOW);
     expect(fd).not.toBeNull();
-    expect(fd!.levels).toHaveLength(2);
+    // Only 2,000 ft AGL survives: at this field elevation 1,000 ft AGL is
+    // 2,182 ft MSL, below the bulletin's lowest level (3,000 ft MSL), and
+    // interpolateWindsAloft lists no level a source does not cover.
+    expect(fd!.levels.map((l) => l.altitudeFtAgl)).toEqual([2000]);
     expect(JSON.parse(localStorage.getItem('nws-fd-source')!)).toMatchObject({ wmoid: 'FBUS33' });
     // The duplicate FBUS31 entry was deduped: list + p1 + p3 = 3 fetches.
     expect(fetchMock).toHaveBeenCalledTimes(3);

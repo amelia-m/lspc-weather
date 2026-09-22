@@ -205,8 +205,10 @@ export function WindsAloftPanel({
           <strong>Fallback source:</strong> Open-Meteo was unreachable, so these levels are
           interpolated from the NOAA winds-aloft (FD) forecast for {SITE.fdWindsStation} (Omaha,
           ~30 mi from the DZ) — 3/6/9/12k-ft MSL levels, the same bulletin jump pilots brief from.
-          The surface row is omitted (the bulletin&rsquo;s lowest level is 3,000 ft MSL); see the
-          Surface wind card for ground wind.
+          Levels below the bulletin&rsquo;s lowest (3,000 ft MSL, roughly{' '}
+          {(Math.round((3000 - SITE.dz.elevationFt) / 100) * 100).toLocaleString()} ft above the DZ) are not listed at
+          all, the surface row among them — the bulletin says nothing about them; see the Surface
+          wind card for ground wind.
         </p>
       ) : (
         <>

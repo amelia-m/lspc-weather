@@ -7,6 +7,13 @@ export interface RawWindSample {
   speedKt: number;
   directionDeg: number;
   tempC?: number | null;
+  /** True only when this sample *is* the surface wind — Open-Meteo's 10 m
+   *  level. It is what licenses filling the rows between the field elevation
+   *  and this height: a 10 m wind is the ground wind, so the few tens of feet
+   *  between the model's own surface height and the DZ's published field
+   *  elevation carry nothing. A level aloft licenses nothing below itself, and
+   *  the NOAA FD bulletin has no surface level at all — see `sampleAt`. */
+  isSurface?: boolean;
 }
 
 /**
@@ -26,17 +33,24 @@ export function interpolateWindsAloft(
   const sorted = [...samples].sort((a, b) => a.heightFtMsl - b.heightFtMsl);
   if (sorted.length === 0) return [];
 
-  return targetAltitudesFtAgl.map((agl) => {
+  const out: WindsAloftLevel[] = [];
+  for (const agl of targetAltitudesFtAgl) {
     const msl = fieldElevationFt + agl;
-    const { speedKt, directionDeg, tempC } = sampleAt(sorted, msl);
-    return {
+    const s = sampleAt(sorted, msl);
+    // No sample covers this altitude, so there is no wind to report for it.
+    // The level is dropped rather than filled from the nearest one: see
+    // `sampleAt` for why a clamped value would be an assertion the source
+    // never made.
+    if (s === null) continue;
+    out.push({
       altitudeFtAgl: agl,
       altitudeFtMsl: Math.round(msl),
-      speedKt: Math.round(speedKt),
-      directionDeg: Math.round(((directionDeg % 360) + 360) % 360),
-      tempC: tempC != null ? Math.round(tempC) : null,
-    };
-  });
+      speedKt: Math.round(s.speedKt),
+      directionDeg: Math.round(((s.directionDeg % 360) + 360) % 360),
+      tempC: s.tempC != null ? Math.round(s.tempC) : null,
+    });
+  }
+  return out;
 }
 
 interface Sampled {
@@ -45,13 +59,34 @@ interface Sampled {
   tempC: number | null;
 }
 
-function sampleAt(sorted: RawWindSample[], msl: number): Sampled {
+/**
+ * Sample the profile at one MSL height, or null where no sample covers it.
+ *
+ * Outside the sampled range the honest answer is "this source does not say".
+ * Returning the nearest sample instead used to put the NOAA FD bulletin's
+ * lowest level — 3,000 ft MSL, about 1,800 ft above the DZ — in the Surface
+ * and 1,000 ft rows of the winds-aloft table. On a night with an inversion
+ * that read "Surface E 9 kt" against a METAR reporting NE 3 kt: a wind from
+ * most of a freefall away, printed where a jumper reads ground wind, with
+ * nothing on the card to say it was extrapolated. The card has always said
+ * that row is omitted on the FD path; this is what omits it.
+ *
+ * The one extrapolation that is sound runs downward from a sample that is
+ * itself the surface wind (`isSurface`) — Open-Meteo's 10 m level — because
+ * the gap it spans is the mismatch between the model's surface height and the
+ * DZ's published field elevation, not a layer of atmosphere.
+ */
+function sampleAt(sorted: RawWindSample[], msl: number): Sampled | null {
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
   if (msl <= first.heightFtMsl)
-    return { speedKt: first.speedKt, directionDeg: first.directionDeg, tempC: first.tempC ?? null };
+    return first.isSurface
+      ? { speedKt: first.speedKt, directionDeg: first.directionDeg, tempC: first.tempC ?? null }
+      : null;
   if (msl >= last.heightFtMsl)
-    return { speedKt: last.speedKt, directionDeg: last.directionDeg, tempC: last.tempC ?? null };
+    return msl === last.heightFtMsl
+      ? { speedKt: last.speedKt, directionDeg: last.directionDeg, tempC: last.tempC ?? null }
+      : null;
 
   for (let i = 0; i < sorted.length - 1; i++) {
     const lo = sorted[i];
@@ -68,7 +103,7 @@ function sampleAt(sorted: RawWindSample[], msl: number): Sampled {
       };
     }
   }
-  return { speedKt: last.speedKt, directionDeg: last.directionDeg, tempC: last.tempC ?? null };
+  return null;
 }
 
 /** Interpolate between two headings along the shortest arc. */
