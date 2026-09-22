@@ -76,30 +76,26 @@ Still unexercised:
   and `DataFreshness` render it by hand instead of going through `Panel`.
   `SettingsPanel` uses a `<summary class="panel-head">`, so it is not a drop-in.
 
-## Winds aloft: two known gaps, neither reachable today
-
-Both surfaced in an adversarial review of the 2026-09-22 work. Neither can be
-triggered by current data, and neither is fixed.
-
-- **The Surface row can carry a share of a wind from below the ground.**
-  Open-Meteo's 1000 hPa level usually sits under the model's own terrain — at
-  NE69 around 560 ft MSL against a 1,182 ft field — so it sorts below the 10 m
-  sample and the Surface row is interpolated between the two. In the fixtures
-  that is a ~4% share of a sub-surface value, and up to ~15% on a high-pressure
-  day. It is pre-existing, and it sits awkwardly beside this branch's own rule
-  that a level aloft licenses nothing below itself. Dropping sub-surface
-  pressure levels in `normalizeOpenMeteo` would settle it; nobody has checked
-  whether the model's sub-surface winds are meaningless or merely
-  extrapolated.
+## Winds aloft: one gap left, not reachable today
 
 - **Rows lost at the TOP of the profile are silent.** `interpolateWindsAloft`
   drops altitudes above the highest sample, which is the honest behaviour, but
   nothing says so on screen: if the 500 and 600 hPa levels were both missing
   the table would stop at 9,000 ft while the expand toggle still offered "up to
   13k ft", and the drift estimate would extrapolate the top of the freefall
-  with the 700 hPa wind with no note. The FD path has a note for the equivalent
-  gap at the bottom (`lowestLevelFtAgl`); the top has no equivalent. Not
-  observed live — the 48-hour window checked had no nulls at any level.
+  with the 700 hPa wind with no note. The bottom has such a note on the FD path
+  (`lowestLevelFtAgl`); the top has no equivalent. Not observed live — the
+  384-hour window checked had no nulls at any level.
+
+The sub-surface question that sat here is settled and fixed: pressure levels
+below the model's terrain are dropped in `normalizeOpenMeteo`. The share this
+entry used to quote (~4%, rising to ~15%) was a property of the **fixture**,
+which sets `elevation: 360`; live Open-Meteo returns 349, which put the 10 m
+sample below the field elevation and the sub-surface share at 0% in all 384
+hours. The fix is worth having anyway — see the commit and the comment in
+`normalizeOpenMeteo` — because which side of that 10-metre line the DEM lands
+on is not something this app controls, and an hour missing `wind_speed_10m`
+would have built the Surface row 70% out of a wind stamped below ground.
 
 ## Radar card: a pin at the drop zone
 

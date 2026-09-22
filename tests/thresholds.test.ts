@@ -248,7 +248,14 @@ describe('no citation is defined and then left unreachable', () => {
       import: 'default',
       eager: true,
     }) as Record<string, string>;
-    const source = Object.values(modules).join('\n');
+    // Comments are stripped first: a mention inside a doc comment is exactly
+    // what a dead citation has — `uspaWaivers` was described as cited while
+    // nothing rendered it — so matching prose would make this test agree with
+    // the very claim it exists to check.
+    const source = Object.values(modules)
+      .join('\n')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
     const unreferenced = Object.keys(CITATIONS).filter(
       (key) => !source.includes(`CITATIONS.${key}`),
     );

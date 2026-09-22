@@ -173,9 +173,12 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       .catch(async (e) => {
         logSource('windsAloft', 'failure', 'Open-Meteo unreachable, trying NOAA FD fallback', e);
         // Open-Meteo unreachable (some networks block that host) — fall back
-        // to the NOAA FD winds-aloft product on api.weather.gov. No surface
-        // (0 AGL) target: the bulletin's lowest level is 3,000 ft MSL and
-        // extrapolating it to the ground would overstate surface wind.
+        // to the NOAA FD winds-aloft product on api.weather.gov. The 0 AGL
+        // target is dropped here as well as by interpolateWindsAloft, which no
+        // longer extrapolates below the lowest sample: asking for a level the
+        // bulletin cannot answer and discarding the answer is wasted work, and
+        // leaving the filter also keeps this call honest if the interpolator's
+        // contract ever loosens again.
         try {
           const fd = await fetchWindsAloftFd(
             SITE.fdWindsStation,

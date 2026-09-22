@@ -17,13 +17,15 @@ export interface RawWindSample {
    * itself, and the NOAA FD bulletin has no surface level at all — see
    * `sampleAt`.
    *
-   * It bites less often than it looks. `sampleAt` consults it only on the
-   * LOWEST sample, and Open-Meteo's 1000 hPa level usually sits below the
-   * model's own terrain (at NE69, around 560 ft MSL against a 1,182 ft field),
-   * so the lowest sample is normally that pressure level and the Surface row
-   * comes from the interpolation loop instead. The flag matters when 1000 hPa
-   * is absent, or in high pressure when it rises above the 10 m sample. Without
-   * it those cases would drop the Surface row from the primary path.
+   * `sampleAt` consults it only on the LOWEST sample. Since `normalizeOpenMeteo`
+   * drops pressure levels below the model's terrain, the 10 m sample normally
+   * is that lowest sample — but the flag only does anything when the requested
+   * altitude falls beneath it, i.e. when the DZ's published field elevation is
+   * below the model's surface height plus 10 m. Whether it is depends on a DEM
+   * lookup: at NE69 the model surface is 1,145 ft and the field 1,182 ft, so
+   * today the Surface row comes from the interpolation loop and this flag is
+   * not reached. A DEM refresh could move it either way, and without the flag
+   * the case where it is reached would drop the Surface row entirely.
    */
   isSurface?: boolean;
 }

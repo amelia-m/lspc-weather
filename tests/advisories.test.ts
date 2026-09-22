@@ -152,6 +152,29 @@ describe('evaluateAdvisories', () => {
     expect(day?.guidance).not.toMatch(/USPA (also )?requires/i);
   });
 
+  /* The data field being set is not the same as the reader seeing a link.
+   * Deleting the secondaryCitation block from AdvisoryPanel left the whole
+   * suite green, because every assertion checked the advisory object. This
+   * renders the panel and looks for the second source on screen. */
+  it('renders both sources on a flag that carries two', () => {
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 20, wgst: 24 });
+    const advisories = evaluateAdvisories(
+      snapshot({ current }),
+      resolveThresholds('waiver:0-5'),
+      now,
+    );
+    const html = renderToStaticMarkup(
+      createElement(AdvisoryPanel, {
+        advisories,
+        profile: '0–5 jumps',
+        hasSourcedWindLimit: true,
+      }),
+    );
+    expect(html).toContain('Sources:');
+    expect(html).toContain('https://www.uspa.org/sim/2-2');
+    expect(html).toContain('lspc-waivered-wind-limits');
+  });
+
   /* The waiver guidance quotes the club's numbers and then the BSR-excursion
    * rule, which is the SIM's rather than the club's. Both must be reachable
    * from the flag — the SIM citation existed in the config for a while wired to

@@ -80,7 +80,7 @@ const LOOKUPS: Lookup[] = [
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
     cites: 'USPA SIM, Section 2-1 (BSR)',
     found: [
-      'The app was wrong about C/D. BSR 2-1 I reads: “Tandem jumps: 5,000 feet AGL; All students and A-license holders: 3,000 feet AGL; B-license holders: 2,500 feet AGL; C- and D-license holders: 2,500 feet AGL [S] (waiverable to no lower than 2,000 feet AGL).” The app printed a flat 2,000 ft for C/D, which is the waiver floor, not the BSR minimum. Corrected on the card.',
+      'The app was wrong about C/D. BSR 2-1 I reads: “Tandem jumps: 5,000 feet AGL [E]; All students and A-license holders: 3,000 feet AGL [E]; B-license holders: 2,500 feet AGL [E]; C- and D-license holders: 2,500 feet AGL [S] (waiverable to no lower than 2,000 feet AGL).” The app printed a flat 2,000 ft for C/D, which is the waiver floor, not the BSR minimum. Corrected on the card. (The bracketed letters are the BSR’s waiverability markers — [E] the Executive Committee, [S] an S&TA or Examiner; see 2-2 B.)',
       'SIM 2-2 C corroborates the direction, describing an S&TA waiving the deployment altitude “from 2,500 feet down to 2,000 feet”, and notes this is the one S&TA waiver that needs no written filing.',
       'Tandem 5,000 ft, students & A 3,000 ft and B 2,500 ft are all as the app stated.',
     ],
@@ -97,7 +97,7 @@ const LOOKUPS: Lookup[] = [
     where: 'Conditions to note, after sunset',
     cites: '14 CFR 105.19 for the light; USPA SIM 5-3 (Night Jumps) for the USPA claim',
     found: [
-      'The flag used to make both claims and offer only 14 CFR 105.19, which says nothing about licences. It now carries a second citation to SIM 5-3.',
+      'The flag used to make both claims and offer only 14 CFR 105.19 — a reg about lighting an aircraft and a jumper, which is not where a licence requirement would live. It now carries a second citation to SIM 5-3, which is. Note this entry cannot say what 105.19 does or does not contain: ecfr.gov is unreachable from the environment this was written in, so the CFR half remains unread.',
       'SIM 5-3 A: “Any jumps made between official sunset and official sunrise are considered night jumps.” So the flag firing at sunset matches USPA’s own definition as well as the reg’s trigger — the app’s second open question is answered.',
       'SIM 5-3 B says participants “should meet all the requirements for a USPA B or higher license” — a recommendation, not a BSR. SIM 3-1 lists performing night jumps among the B licence’s privileges and requires 50 jumps for it, so the “50 jumps” figure is right. The app said USPA “requires”; it now says “should”.',
       'Separately, BSR 2-1 G requires all student jumps to take place between official sunrise and sunset (tandem students, civil twilight).',

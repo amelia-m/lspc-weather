@@ -1,4 +1,8 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
+import type { WindsAloftLevel } from '../src/domain/types';
 import { interpAngle, interpolateWindsAloft, type RawWindSample } from '../src/domain/windsAloft';
 
 describe('interpAngle', () => {
@@ -115,5 +119,47 @@ describe('interpolateWindsAloft', () => {
 
     const noTemp = interpolateWindsAloft(samples, 1182, [1518]);
     expect(noTemp[0].tempC).toBeNull();
+  });
+});
+
+/**
+ * The collapsed winds table keeps a fixed set of key altitudes, chosen for the
+ * primary path where the lowest row is the surface. The NOAA FD fallback's
+ * profile starts at 2,000 ft AGL — not in that set — so the collapsed view
+ * opened at 3,000 ft and hid the lowest wind the bulletin actually offers,
+ * while the note beneath it said levels below the bulletin's floor are not
+ * listed. A reader would read 3,000 ft as the floor.
+ */
+describe('the collapsed winds table never hides the lowest available level', () => {
+  const rows = (levels: WindsAloftLevel[], source: 'open-meteo' | 'nws-fd'): string[] => {
+    const html = renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels,
+        source,
+        validity: { validMs: Date.parse('2026-09-22T04:00:00Z') },
+        unit: 'kt',
+        onUnitChange: () => {},
+      } as never),
+    );
+    return [...html.matchAll(/>([\d,]+ ft|Surface)</g)].map((m) => m[1]);
+  };
+  const level = (agl: number): WindsAloftLevel => ({
+    altitudeFtAgl: agl,
+    altitudeFtMsl: 1182 + agl,
+    directionDeg: 270,
+    speedKt: 10,
+    tempC: 0,
+  });
+
+  it('shows the 2,000 ft row on the FD path, where it is the lowest', () => {
+    const fd = [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level);
+    expect(rows(fd, 'nws-fd')).toContain('2,000 ft');
+  });
+
+  it('still collapses the primary path to the key altitudes', () => {
+    const om = Array.from({ length: 14 }, (_, i) => level(i * 1000));
+    const shown = rows(om, 'open-meteo');
+    expect(shown).toContain('Surface');
+    expect(shown).not.toContain('2,000 ft'); // not a key altitude, and not lowest
   });
 });
