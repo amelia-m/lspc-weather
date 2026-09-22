@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { compass } from '../domain/units';
 import { haversineMiles, initialBearingDeg } from '../domain/geo';
-import { SITE } from '../config/site';
+import { DZ_ON_RADAR_IMAGE, SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 
@@ -27,7 +27,12 @@ export function RadarPanel(): JSX.Element {
           </a>
         </p>
       ) : (
-        <a href={DATA_SOURCES.radar.url} target="_blank" rel="noopener noreferrer">
+        <a
+          className="radar-frame"
+          href={DATA_SOURCES.radar.url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <img
             className="radar-img"
             src={loop}
@@ -35,7 +40,29 @@ export function RadarPanel(): JSX.Element {
             loading="lazy"
             onError={() => setFailed(true)}
           />
+          {/* Positioned in percentages so it tracks the image at any card
+              width. Rendered as DOM rather than drawn into the image: the
+              page's CSP allows img-src from radar.weather.gov only, and an
+              overlay element also keeps the marker sharp when the image is
+              scaled up on a phone. */}
+          {DZ_ON_RADAR_IMAGE && (
+            <span
+              className="radar-dz"
+              style={{
+                left: `${DZ_ON_RADAR_IMAGE.x * 100}%`,
+                top: `${DZ_ON_RADAR_IMAGE.y * 100}%`,
+              }}
+              aria-hidden="true"
+            />
+          )}
         </a>
+      )}
+      {DZ_ON_RADAR_IMAGE && (
+        <p className="muted small">
+          <span className="radar-dz-key" aria-hidden="true" /> marks the drop zone. Its position is
+          derived from the DZ coordinates and the image&rsquo;s georeferencing, which NWS does not
+          publish — it was measured against county boundaries, so read it as approximate.
+        </p>
       )}
       <p className="muted small">Tap the image for the interactive radar; the loop updates every few minutes.</p>
     </Panel>
