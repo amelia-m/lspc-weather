@@ -41,10 +41,13 @@ export function RadarPanel(): JSX.Element {
             onError={() => setFailed(true)}
           />
           {/* Positioned in percentages so it tracks the image at any card
-              width. Rendered as DOM rather than drawn into the image: the GIF
-              is cross-origin, so a canvas holding it is tainted and cannot be
-              read back, and an overlay element also keeps the marker sharp when
-              the image is scaled up on a phone. */}
+              width. Rendered as DOM rather than composited into the image: the
+              source is an animated GIF and a canvas would freeze it to one
+              frame, and an overlay stays sharp when the 600x550 image is
+              scaled. (An earlier version of this comment blamed the CSP, and
+              the one after it blamed canvas cross-origin taint. Neither is the
+              reason — taint blocks reading pixels back out, not drawing over
+              them.) */}
           {DZ_ON_RADAR_IMAGE && (
             <span
               className="radar-dz"

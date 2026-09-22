@@ -485,3 +485,74 @@ describe('parseFdTiming', () => {
     expect(parseFdTiming('VALID 009900Z', Date.parse('2026-06-04T02:00:00Z')).validMs).toBeNull();
   });
 });
+
+/**
+ * A pressure surface can lie below the model's own terrain — at NE69 the
+ * 1000 hPa level runs underground in every hour of the forecast window. What
+ * NOAA's post-processor writes there is not model output: it fills the wind
+ * with "the lowest level above ground" and the temperature with a 6.5 K/km
+ * lapse rate, so the value is a near-surface wind wearing a false altitude.
+ * Open-Meteo's own docs say such data should not be used.
+ */
+describe('normalizeOpenMeteo drops levels below the model terrain', () => {
+  /** `levels` are [hPa, geopotential height in m, wind speed kt] — distinct
+   *  speeds so a surviving sample can be told from a dropped one. */
+  const at = (elevation: number, levels: Array<[number, number, number]>) => {
+    const hourly: Record<string, unknown> = {
+      time: ['2026-09-22T04:00'],
+      wind_speed_10m: [6],
+      wind_direction_10m: [36],
+      temperature_2m: [16],
+    };
+    for (const [hPa, gphM, spd] of levels) {
+      hourly[`wind_speed_${hPa}hPa`] = [spd];
+      hourly[`wind_direction_${hPa}hPa`] = [270];
+      hourly[`geopotential_height_${hPa}hPa`] = [gphM];
+      hourly[`temperature_${hPa}hPa`] = [-40];
+    }
+    return normalizeOpenMeteo(
+      { elevation, hourly } as never,
+      Date.parse('2026-09-22T04:00:00Z'),
+    );
+  };
+
+  it('keeps a level above the terrain and drops one below it', () => {
+    // Model surface 349 m. 1000 hPa underground at 173 m; 925 hPa above at 836 m.
+    const { samples } = at(349, [
+      [1000, 173, 99],
+      [925, 836, 12],
+    ]);
+    // Only the 10 m sample (6 kt) and the above-ground 925 hPa level (12 kt).
+    expect(samples.map((s) => s.speedKt)).toEqual([6, 12]);
+    expect(samples.some((s) => s.speedKt === 99)).toBe(false);
+  });
+
+  it('keeps a level sitting exactly at the terrain height', () => {
+    const { samples } = at(349, [[1000, 349, 99]]);
+    expect(samples.some((s) => s.speedKt === 99)).toBe(true);
+  });
+
+  /* Without the filter this is the damaging case: no 10 m wind, so the Surface
+   * row would have been built mostly out of a wind stamped below ground. With
+   * it, the only sample left is the one genuinely above ground. */
+  it('leaves no underground sample to stand in for a missing surface wind', () => {
+    const hourly: Record<string, unknown> = {
+      time: ['2026-09-22T04:00'],
+      wind_speed_1000hPa: [99],
+      wind_direction_1000hPa: [270],
+      geopotential_height_1000hPa: [173],
+      temperature_1000hPa: [-40],
+      wind_speed_925hPa: [12],
+      wind_direction_925hPa: [200],
+      geopotential_height_925hPa: [836],
+      temperature_925hPa: [10],
+    };
+    const { samples } = normalizeOpenMeteo(
+      { elevation: 349, hourly } as never,
+      Date.parse('2026-09-22T04:00:00Z'),
+    );
+    expect(samples).toHaveLength(1);
+    expect(samples[0].speedKt).toBe(12);
+  });
+});
+

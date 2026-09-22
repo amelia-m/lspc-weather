@@ -568,10 +568,10 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
       speedKt: surfaceSpd,
       directionDeg: surfaceDir,
       tempC: num('temperature_2m'),
-      // This one is the ground wind. It lets interpolateWindsAloft fill down to
-      // the field elevation when this is the lowest sample — which it is only
-      // when 1000 hPa is missing or above it, since that level usually sits
-      // below the model's terrain. See RawWindSample.isSurface.
+      // This one is the ground wind. Now that sub-surface pressure levels are
+      // dropped above, it is normally the lowest sample, so it is what lets
+      // interpolateWindsAloft fill down to a field elevation that sits below
+      // the model's surface + 10 m. See RawWindSample.isSurface.
       isSurface: true,
     });
   }
@@ -580,14 +580,36 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
     const spd = num(`wind_speed_${p}hPa`);
     const dir = num(`wind_direction_${p}hPa`);
     const gph = num(`geopotential_height_${p}hPa`); // m MSL
-    if (spd != null && dir != null && gph != null) {
-      samples.push({
-        heightFtMsl: mToFt(gph),
-        speedKt: spd,
-        directionDeg: dir,
-        tempC: num(`temperature_${p}hPa`),
-      });
-    }
+    if (spd == null || dir == null || gph == null) continue;
+    // Drop pressure levels that sit below the model's own terrain.
+    //
+    // A pressure surface can lie underground — at NE69 the 1000 hPa level runs
+    // 85–738 ft MSL against a 1,145 ft model surface, i.e. below ground in every
+    // hour of the 384-hour window. The wind reported there is not model output:
+    // NOAA's Unified Post Processor, which writes these fields, fills
+    // underground levels with "WIND TO BE THE SAME AS THE LOWEST LEVEL ABOVE
+    // GOUND" (sorc/ncep_post.fd/MDL2P.f), and the temperature with a 6.5 K/km
+    // lapse rate. So the value is a real near-surface wind wearing a false
+    // altitude, and the temperature is manufactured outright. Open-Meteo's own
+    // docs say it plainly, on the GEM page: "If geopotential height is below
+    // ground, data should not be used."
+    //
+    // Compared against the model's surface height rather than the DZ's
+    // published field elevation, because "below ground" is a fact about the
+    // model's terrain, not about the airport. They differ by ~37 ft here.
+    //
+    // Today this changes nothing on screen: the 10 m sample already outranks
+    // the 1000 hPa level, so no displayed row draws on it. It matters because
+    // that depends on a DEM lookup landing within 10 m of the field elevation —
+    // and because without it, an hour missing `wind_speed_10m` would build the
+    // Surface row 70% out of a wind stamped 600 ft underground.
+    if (elevM != null && gph < elevM) continue;
+    samples.push({
+      heightFtMsl: mToFt(gph),
+      speedKt: spd,
+      directionDeg: dir,
+      tempC: num(`temperature_${p}hPa`),
+    });
   }
   return { samples, validMs: times[idx] };
 }

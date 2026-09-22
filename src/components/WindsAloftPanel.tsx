@@ -83,7 +83,19 @@ export function WindsAloftPanel({
   const validMs = validity?.validMs ?? null;
   const offsetMin = validMs != null ? Math.round((validMs - now) / 60_000) : 0;
   const showOffset = validMs != null && Math.abs(offsetMin) >= OFFSET_NOTE_MIN;
-  const collapsedLevels = levels.filter((l) => COLLAPSED_ALTITUDES_FT.has(l.altitudeFtAgl));
+  // Always keep the lowest level the source offers, whether or not it lands on
+  // the key set. That set was picked for the primary path, whose lowest row is
+  // the surface; on the NOAA FD fallback the profile starts at 2,000 ft AGL,
+  // which the set does not contain — so the collapsed table used to open at
+  // 3,000 ft and hide the closest thing to a landing-pattern wind that path
+  // has. Worse, it is the level the drift card names as the one it assumes all
+  // the way down, and the note under the table says levels below the
+  // bulletin's floor are not listed, so a reader had every reason to read
+  // 3,000 ft as the floor.
+  const lowestFtAgl = levels.length > 0 ? Math.min(...levels.map((l) => l.altitudeFtAgl)) : null;
+  const collapsedLevels = levels.filter(
+    (l) => COLLAPSED_ALTITUDES_FT.has(l.altitudeFtAgl) || l.altitudeFtAgl === lowestFtAgl,
+  );
   // The key set assumes the whole-thousand grid. If the level altitudes ever
   // stop intersecting it, don't hide every row behind a collapse — show all and
   // drop the toggle. Only collapse when it actually thins a non-empty subset.

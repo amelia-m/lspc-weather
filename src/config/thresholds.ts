@@ -156,8 +156,10 @@ export const CITATIONS = {
    * Night jumps, USPA's half of the after-sunset flag.
    *
    * The flag used to make two claims — the FAA light requirement and a USPA
-   * licence requirement — and offer one source, 14 CFR 105.19, which supports
-   * only the first. 5-3 is the section behind the second. It also settles when
+   * licence requirement — and offer one source, 14 CFR 105.19. 5-3 is the
+   * section behind the second. Phrased that way round deliberately: the CFR is
+   * unread (ecfr.gov is blocked here), so this can say where the USPA claim
+   * comes from without asserting what the reg does not contain. It also settles when
    * the flag should fire: "Any jumps made between official sunset and official
    * sunrise are considered night jumps", which is the same trigger the reg
    * uses, so the flag firing at sunset matches both authorities.
@@ -284,6 +286,11 @@ const STUDENT: Thresholds = {
   windGuidance:
     'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it on site.',
   windCitation: CITATIONS.uspaStudentWinds,
+  // The guidance's last clause — that an S&TA or Examiner may waive it — is
+  // 2-2's rule, not 2-1's. 2-1 carries the [S] marker; 2-2 B is what says the
+  // marker means S&TA or Examiner. The waiver tiers cite it for the same
+  // sentence, and this profile makes the same claim.
+  windSecondaryCitation: CITATIONS.uspaWaivers,
   windLimitCitation: CITATIONS.uspaStudentWinds,
   visibilityCautionSm: 3,
 };
