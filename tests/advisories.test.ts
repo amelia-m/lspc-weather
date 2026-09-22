@@ -136,6 +136,22 @@ describe('evaluateAdvisories', () => {
     expect(JSON.stringify(out).toLowerCase()).not.toContain('night rating');
   });
 
+  /* The guidance makes two claims from two authorities: the FAA light
+   * requirement and a USPA licence claim. It used to offer only 14 CFR 105.19,
+   * so a reader checking the licence half landed on a reg that says nothing
+   * about licences. Both must be reachable from the flag. */
+  it('after-sunset advisory cites the SIM for its USPA claim, not just the reg', () => {
+    const snap = snapshot({ sun: { sunrise: now - 8 * 3600_000, sunset: now - 3600_000 } });
+    const day = evaluateAdvisories(snap, DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'daylight',
+    );
+    expect(day?.guidance).toMatch(/USPA/);
+    expect(day?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/5-3');
+    // SIM 5-3 B says participants "should" meet B-licence requirements; it is
+    // not a BSR, so the flag must not upgrade it to a requirement.
+    expect(day?.guidance).not.toMatch(/USPA (also )?requires/i);
+  });
+
   it('LSPC waiver (0–5 jumps) flags wind over 15 mph and gust at/over the 16 mph ceiling', () => {
     // 14 kt ≈ 16 mph sustained, gusting 15 kt ≈ 17 mph.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 14, wgst: 15 });

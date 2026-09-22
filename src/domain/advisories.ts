@@ -133,12 +133,10 @@ export function evaluateAdvisories(
         level: 'caution',
         metric: 'Thunderstorm',
         value: current.wxString.trim(),
-        // Kept on the general-weather SIM citation: this flag invents no
-        // number (it fires on TS in the METAR), and staying clear of
-        // thunderstorms is genuine skydiving practice that a SIM section very
-        // likely governs — it just has not been identified yet (see the
-        // uspaWeather note). An unpinned SIM link is honest here; a house
-        // heuristic would understate whose rule this is.
+        // Cites SIM 4-5 (Weather), whose "Hazardous Weather" part covers
+        // thunderstorms generating spontaneously and the turbulence that comes
+        // with convection. The flag invents no number — it fires on TS in the
+        // METAR — so the citation carries the practice, not a trigger.
         guidance: 'Thunderstorms reported at the station — convective hazard for aircraft and canopies.',
         citation: CITATIONS.uspaWeather,
       });
@@ -164,9 +162,15 @@ export function evaluateAdvisories(
         level: 'caution',
         metric: 'Daylight',
         value: 'After sunset',
+        // Two claims from two authorities. The flag carries the FAA one, which
+        // is the harder requirement and sets the trigger; the USPA one is
+        // stated as the SIM states it — "should", not "requires" — and names
+        // its own section rather than riding on the reg's citation, which
+        // says nothing about licences.
         guidance:
-          'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19); USPA also requires a B license (min 50 jumps) for night jumps. Not a daytime operation.',
+          'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19). USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements (50 jumps) — see SIM 5-3. Not a daytime operation.',
         citation: CITATIONS.far10519,
+        secondaryCitation: CITATIONS.uspaNightJumps,
       });
     }
   }

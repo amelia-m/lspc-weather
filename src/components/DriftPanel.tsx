@@ -123,12 +123,13 @@ export function DriftPanel({
 
           <p className="muted small">
             USPA BSR minimum container-opening altitudes:{' '}
-            <strong>students &amp; A-license 3,000 ft AGL</strong>, B-license 2,500 ft, C/D 2,000 ft
-            (tandem 5,000 ft). These are floors — deploy above your minimum, not at it. See the{' '}
+            <strong>students &amp; A-license 3,000 ft AGL</strong>, B-license 2,500 ft, C/D
+            2,500 ft (waiverable by an S&amp;TA to no lower than 2,000 ft), tandem 5,000 ft. These
+            are floors — deploy above your minimum, not at it. See the{' '}
             <a href={CITATIONS.uspaOpeningAltitude.url} target="_blank" rel="noopener noreferrer">
               USPA SIM §2-1 (BSR)
             </a>
-            ; AI-derived, verify against the current SIM.
+            ; section text read at uspa.org on 2026-09-22 — re-check against the current SIM.
           </p>
           <p className="muted small">
             *Canopy drift assumes you don’t steer (1,000 ft/min descent); you normally fly it out.
