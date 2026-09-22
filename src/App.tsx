@@ -278,7 +278,11 @@ export default function App(): JSX.Element {
           unit={unit}
           onUnitChange={setUnit}
         />
-        <DriftPanel levels={snapshot.windsAloft} profile={profile} />
+        <DriftPanel
+          levels={snapshot.windsAloft}
+          profile={profile}
+          source={snapshot.windsAloftSource}
+        />
         <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} onUnitChange={setUnit} />
         <DailyForecastPanel
           daily={snapshot.daily}

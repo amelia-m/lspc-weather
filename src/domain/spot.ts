@@ -27,6 +27,19 @@ export interface DriftEstimate {
   freefall: DriftLeg; // exit → deployment
   canopy: DriftLeg; // deployment → ground (if you don't steer)
   total: DriftLeg; // vector sum
+  /**
+   * Height AGL below which no level was available, so the integral carried the
+   * lowest level's wind down to the ground. 0 when the levels reach the ground,
+   * which is the normal case.
+   *
+   * Reported rather than left implicit because the assumption is invisible in
+   * the result: the drift figure looks the same whether it was integrated over
+   * real levels or over an assumed one. On the NOAA FD fallback the bulletin's
+   * lowest level is 3,000 ft MSL, so roughly the last 1,800 ft of canopy flight
+   * — the part flown in the wind a jumper actually lands in — is an
+   * extrapolation. The card says so when this is non-zero.
+   */
+  extrapolatedBelowFtAgl: number;
 }
 
 export interface DriftOptions {
@@ -138,9 +151,19 @@ export function estimateDrift(levels: WindsAloftLevel[], opts: DriftOptions): Dr
       : { e: 0, n: 0 };
   const can = integrate(levels, 0, canopyTopFtAgl, canopyFps);
 
+  // The lowest level the source actually covers. Derived from the levels
+  // themselves rather than from which source produced them: any source whose
+  // profile stops above the ground has the same gap, and the reader needs the
+  // altitude, not the provenance.
+  const lowestFtAgl = levels.length === 0 ? 0 : Math.min(...levels.map((l) => l.altitudeFtAgl));
+
   return {
     freefall: legFromComponents(ff.e, ff.n),
     canopy: legFromComponents(can.e, can.n),
     total: legFromComponents(ff.e + can.e, ff.n + can.n),
+    // Only the part of the gap the canopy leg actually flew through counts: a
+    // profile starting at 2,000 ft with deployment at 1,500 ft extrapolates
+    // over 1,500 ft of descent, not 2,000.
+    extrapolatedBelowFtAgl: Math.max(0, Math.min(lowestFtAgl, canopyTopFtAgl)),
   };
 }
