@@ -49,17 +49,19 @@ Settled:
 
 Still unexercised:
 
-- **The app running in a real browser against live data.** The checks above ran
+- **The deployed site, in a browser, on live data.** The data checks above ran
   the app's own fetch and render code under Node (`renderToStaticMarkup`, the
-  way the advisory tests work). The deployed site at
-  <https://amelia-m.github.io/lspc-weather/> was *not* loaded in a browser:
-  Playwright's Chromium does not trust the sandbox's TLS-intercepting proxy CA,
-  and the ways to fix that are blocked. So layout, the radar `<img>` actually
-  loading cross-origin under the page's CSP, the new DZ marker's placement on
-  screen, and the 390px/320px widths are all still unverified against the live
-  site.
-- **The radar image loading in the page.** The GIF was fetched and measured
-  directly (see below), but never seen rendering in the app.
+  way the advisory tests work). <https://amelia-m.github.io/lspc-weather/> has
+  never been loaded: Playwright's Chromium does not trust the sandbox's
+  TLS-intercepting proxy CA, so it cannot open any https:// page, and the fixes
+  for that are blocked.
+
+  Layout *was* checked, on the production bundle served over local http with
+  fixtures, at 1280/390/320 px — see CLAUDE.md for the recipe. The radar card,
+  the DZ marker's placement, the CSP and horizontal overflow are all verified
+  that way. What is left unverified is the combination: real data arriving over
+  the real network into a real browser, and the radar `<img>` actually being
+  fetched cross-origin from radar.weather.gov rather than fulfilled locally.
 
 ## Code
 
