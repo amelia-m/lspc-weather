@@ -180,8 +180,8 @@ export const CITATIONS = {
    * "approved on site", and 2-2 is what makes that possible — a BSR marked [S]
    * is waiverable by an S&TA or Examiner, and the student ground-wind BSR
    * (2-1 H) carries that marking. The waiver tiers still cite club policy for
-   * their numbers, because the numbers are the club's; this is cited for the
-   * authority the club is exercising.
+   * their numbers, because the numbers are the club's; this rides alongside as
+   * `windSecondaryCitation`, for the authority the club is exercising.
    */
   uspaWaivers: {
     source: 'USPA SIM, Section 2-2 (Waivers to the BSRs)',
@@ -242,6 +242,12 @@ export interface Thresholds {
    */
   windGuidance: string;
   windCitation: Citation;
+  /** A second authority for `windGuidance`, where the sentence makes a claim
+   *  the first does not carry. The waiver tiers are the case: their numbers are
+   *  the club's, but "any excursion above the BSR needs on-site approval" is
+   *  the SIM 2-2 [S] mechanism, and a reader following one link should not have
+   *  to take the other on trust. */
+  windSecondaryCitation?: Citation;
   /**
    * Source of the CAUTION band as a NUMBER, which is a different claim from
    * `windCitation` (that one sources the guidance SENTENCE). The card draws the
@@ -355,6 +361,11 @@ function waiverThresholds(tier: WaiverTier): Thresholds {
       `LSPC waivered limit (students, ${tier.label}): max wind ${tier.windMph} mph, gusts under ${tier.gustMph} mph. ` +
       'Any excursion above the USPA BSR requires on-site approval by a USPA instructor; consult the S&TA.',
     windCitation: CITATIONS.lspcWaiver,
+    // The tier's numbers are the club's, so the club document is the primary
+    // citation. The second sentence of the guidance is not the club's rule but
+    // the SIM one that permits it — 2-2 classifies the student wind BSR [S],
+    // waiverable by an S&TA or Examiner.
+    windSecondaryCitation: CITATIONS.uspaWaivers,
     windLimitCitation: CITATIONS.lspcWaiver,
   };
 }

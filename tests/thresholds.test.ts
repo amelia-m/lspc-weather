@@ -222,3 +222,36 @@ describe('wind-limit profiles', () => {
     expect(resolveThresholds('student').windCitation).toBe(CITATIONS.uspaStudentWinds);
   });
 });
+
+/* Every citation in the map should be reachable from the app. `uspaWaivers` was
+ * added with a doc comment saying it was cited for the authority the club
+ * exercises, and then not wired to anything — a citation nobody can reach is
+ * research, not a source line. The flag half of this is in advisories.test.ts. */
+describe('no citation is defined and then left unreachable', () => {
+  it('cites the SIM waiver rule alongside club policy on the waiver tiers', () => {
+    const t = resolveThresholds('waiver:0-5');
+    expect(t.windCitation).toBe(CITATIONS.lspcWaiver);
+    expect(t.windSecondaryCitation).toBe(CITATIONS.uspaWaivers);
+    // The guidance sentence that second citation exists for.
+    expect(t.windGuidance).toMatch(/excursion above the USPA BSR/);
+  });
+
+  it('leaves no citation in the map that nothing references', () => {
+    // Scans the source for `CITATIONS.<key>`. The definitions themselves use a
+    // bare key (`uspaWaivers: {`), so only real uses match — including the
+    // profile fields in this file, which is how most citations reach a card. A
+    // citation is only worth having if something renders it; one that nothing
+    // reads is a claim the reader cannot reach, and its doc comment will
+    // describe a source line that does not exist.
+    const modules = import.meta.glob('../src/**/*.{ts,tsx}', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }) as Record<string, string>;
+    const source = Object.values(modules).join('\n');
+    const unreferenced = Object.keys(CITATIONS).filter(
+      (key) => !source.includes(`CITATIONS.${key}`),
+    );
+    expect(unreferenced, 'citations nothing in src/ renders').toEqual([]);
+  });
+});

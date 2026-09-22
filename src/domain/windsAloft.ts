@@ -7,12 +7,24 @@ export interface RawWindSample {
   speedKt: number;
   directionDeg: number;
   tempC?: number | null;
-  /** True only when this sample *is* the surface wind — Open-Meteo's 10 m
-   *  level. It is what licenses filling the rows between the field elevation
-   *  and this height: a 10 m wind is the ground wind, so the few tens of feet
-   *  between the model's own surface height and the DZ's published field
-   *  elevation carry nothing. A level aloft licenses nothing below itself, and
-   *  the NOAA FD bulletin has no surface level at all — see `sampleAt`. */
+  /**
+   * True only when this sample *is* the surface wind — Open-Meteo's 10 m level.
+   *
+   * It licenses filling downward from this sample to the field elevation: a
+   * 10 m wind is the ground wind, so the few tens of feet between the model's
+   * own surface height and the DZ's published field elevation are a datum
+   * mismatch, not a layer of atmosphere. A level aloft licenses nothing below
+   * itself, and the NOAA FD bulletin has no surface level at all — see
+   * `sampleAt`.
+   *
+   * It bites less often than it looks. `sampleAt` consults it only on the
+   * LOWEST sample, and Open-Meteo's 1000 hPa level usually sits below the
+   * model's own terrain (at NE69, around 560 ft MSL against a 1,182 ft field),
+   * so the lowest sample is normally that pressure level and the Surface row
+   * comes from the interpolation loop instead. The flag matters when 1000 hPa
+   * is absent, or in high pressure when it rises above the 10 m sample. Without
+   * it those cases would drop the Surface row from the primary path.
+   */
   isSurface?: boolean;
 }
 
@@ -79,7 +91,13 @@ interface Sampled {
 function sampleAt(sorted: RawWindSample[], msl: number): Sampled | null {
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
-  if (msl <= first.heightFtMsl)
+  // Strictly below / above, so a target sitting exactly ON the lowest or
+  // highest sample is a value the source states verbatim and is kept. The
+  // bottom test used to be `<=`, which dropped that row at the bottom while the
+  // top kept it — a wind the bulletin prints, discarded for being on the edge.
+  // Equality at the bottom falls through to the interpolation loop (t = 0);
+  // with a single sample first === last and the top test returns it.
+  if (msl < first.heightFtMsl)
     return first.isSurface
       ? { speedKt: first.speedKt, directionDeg: first.directionDeg, tempC: first.tempC ?? null }
       : null;
