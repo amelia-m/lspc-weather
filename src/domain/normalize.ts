@@ -568,6 +568,10 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
       speedKt: surfaceSpd,
       directionDeg: surfaceDir,
       tempC: num('temperature_2m'),
+      // This one is the ground wind, which is what lets the table fill its
+      // Surface row from it even though the model's surface height and the
+      // DZ's published field elevation differ by a few tens of feet.
+      isSurface: true,
     });
   }
 
