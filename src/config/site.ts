@@ -1,5 +1,6 @@
 import { haversineMiles, initialBearingDeg } from '../domain/geo';
 import { compass } from '../domain/units';
+import { radarImageFraction, type RadarImageGeoref } from '../domain/radarGeo';
 
 /**
  * Fixed site configuration for the Lincoln Sport Parachute Club (LSPC).
@@ -88,6 +89,57 @@ export const SITE: SiteConfig = {
   fdWindsStation: 'OMA',
   timeZone: 'America/Chicago',
 };
+
+/**
+ * Georeferencing of the NWS RIDGE "standard" radar image the Radar card shows.
+ *
+ * **Measured, not published.** NWS serves no world file, `.aux.xml` or bbox
+ * alongside these GIFs (`/ridge/standard/` contains GIFs and nothing else),
+ * and radar.weather.gov's own viewer treats the file as an ungeoreferenced
+ * picture. These figures come from registering the image against county
+ * boundary geometry fetched from `api.weather.gov/zones/county/...`:
+ * projecting 11,000 authoritative boundary vertices into the image and fitting
+ * the transform that puts them on the drawn lines.
+ *
+ * Measured 2026-09-22 against KOAX, and cross-checked on KUEX and KDMX so the
+ * figures describe the product rather than one image:
+ *
+ * | site | bbox span | centre lon − radar | centre lat − radar |
+ * |------|-----------|--------------------|--------------------|
+ * | KOAX | 4.286°    | +0.001°            | +0.061°            |
+ * | KUEX | 4.288°    | +0.001°            | +0.059°            |
+ * | KDMX | 4.288°    | +0.001°            | +0.060°            |
+ *
+ * All three registered at a median residual of 0 px (90th percentile 1 px)
+ * under an equirectangular model; Mercator and azimuthal-equidistant models
+ * fitted an order of magnitude worse, and forcing the bbox to be centred on
+ * the radar — the obvious assumption — was off by a median of 2 px and 8 px at
+ * the 90th percentile. Hence `centreLatOffsetDeg`: the image is centred on the
+ * radar in longitude but not in latitude.
+ *
+ * Nothing upstream promises these will hold. If NWS changes the product the
+ * marker moves silently, so `docs/open-questions.md` carries the method for
+ * re-measuring it.
+ */
+export const RADAR_IMAGE_GEOREF: RadarImageGeoref = {
+  spanDeg: 4.287,
+  centreLatOffsetDeg: 0.0603,
+  // The 600x550 image carries a 24 px NWS header bar and a 24 px colour-scale
+  // and timestamp bar, both drawn over the map.
+  barTopFrac: 24 / 550,
+  barBottomFrac: 1 - 24 / 550,
+};
+
+/** Where the drop zone falls inside the radar loop image, as fractions of its
+ *  width and height — null if it is not on the visible map. Derived from the
+ *  DZ and radar coordinates above rather than written down as a pixel offset,
+ *  so a correction to either moves the marker with it. */
+export const DZ_ON_RADAR_IMAGE = radarImageFraction(
+  SITE.dz.lat,
+  SITE.dz.lon,
+  { lat: SITE.radarSite.lat, lon: SITE.radarSite.lon },
+  RADAR_IMAGE_GEOREF,
+);
 
 /** Jump-run / drift altitudes (ft AGL) shown in the winds-aloft panel —
  *  surface to 13,000 ft in 1,000-ft increments (covers C-182 exit altitudes). */

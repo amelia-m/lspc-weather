@@ -816,12 +816,41 @@ a {
 }
 
 /* Radar */
+.radar-frame {
+  position: relative;
+  display: block;
+}
 .radar-img {
   width: 100%;
   border-radius: 6px;
   display: block;
   background: var(--panel-2);
   min-height: 60px;
+}
+/* Drop-zone marker. A ring rather than a filled dot: the thing under it is
+   weather, and a jumper reads storm distance against this mark, so it must not
+   hide the returns it is being measured against. The white outer stroke keeps
+   it legible over both the near-white basemap and a red/magenta echo. */
+.radar-dz {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  margin: -7px 0 0 -7px; /* centre the ring on the coordinate, not its corner */
+  border: 2px solid #d61f26;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.95);
+  pointer-events: none;
+}
+/* Same ring at text size, for the sentence under the image that says what it
+   marks. Keeps the key and the mark from drifting apart. */
+.radar-dz-key {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #d61f26;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.95);
+  vertical-align: baseline;
 }
 
 /* Density altitude */
