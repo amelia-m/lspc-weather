@@ -219,7 +219,9 @@ export function WindsAloftPanel({
             </a>
             , the popular skydiving winds tool — so if its numbers differ from these, check its
             stated valid time (it labels forecasts in Z, e.g. “1600Z”) against the one above
-            before assuming the data disagrees.
+            before assuming the data disagrees. Its altitudes are{' '}
+            <strong>AGL, like these</strong>, so the two tables are directly comparable; the “MSL”
+            on its page is the ground elevation it looked up, not the scale of its wind table.
           </p>
           <p className="muted small">
             Each 1,000-ft level is <strong>linearly interpolated</strong> from the model’s

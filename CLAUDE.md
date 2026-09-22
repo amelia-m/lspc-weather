@@ -42,13 +42,15 @@ precisely because they were colour and text rather than flags.
 ## Consequences worth knowing before you "fix" them
 
 - **The Licensed profile raises no surface-wind flag at any speed.** Both its
-  bands were the app's own, and its guidance says no USPA limit binds a licensed
-  jumper, so there is no trigger a reader could check. This is deliberate. The
-  Surface wind card carries the profile's guidance and BSR citation as a
-  standing note, and the empty advisory list names the gap, so silence is not
-  left to read as an all-clear. If the BSRs *do* set a limit for licensed
-  jumpers, this is the most consequential error in the app — see A4 in
-  `src/components/CitationsPage.tsx`.
+  bands were the app's own, and no USPA limit binds a licensed jumper, so there
+  is no trigger a reader could check. This is deliberate, and it is **correct**:
+  BSR 2-1 H states maximum ground winds for solo students and then, in as many
+  words, "For licensed skydivers are unlimited" (read at uspa.org 2026-09-22).
+  This used to be the app's largest open risk — if the BSRs had set a limit, the
+  app would have been silent exactly where it should warn. They do not. The
+  Surface wind card still carries the profile's guidance and BSR citation as a
+  standing note, and the empty advisory list still names the gap, so silence is
+  not left to read as an all-clear.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed
@@ -58,10 +60,13 @@ precisely because they were colour and text rather than flags.
 
 ## Citations
 
-Every USPA reference in this app was AI-derived and **none has been verified
-against a current SIM**. That is not a disclaimer to be quietly dropped: the
-in-app page at `#citations` (`src/components/CitationsPage.tsx`, linked from the
-footer) exists so an instructor can work through the open items.
+Every reference in this app began as an AI recollection. The **USPA SIM**
+sections were read at uspa.org on 2026-09-22 and the claims corrected against
+them; the **CFR and FAA** ones are still unread, because those hosts are
+blocked. Neither state is an instructor's sign-off, and the distinction between
+them is not a detail to smooth over. The in-app page at `#citations`
+(`src/components/CitationsPage.tsx`, linked from the footer) records, per claim,
+what the section says and what a reading could not settle.
 
 When touching a citation:
 
@@ -71,24 +76,46 @@ When touching a citation:
   index **and says so in its note**. A confidently wrong section number is worse
   than an honest general link — it sends a jumper to the wrong rule while
   looking authoritative.
-- Never write that a citation has been checked. Reading this repository and
-  judging that the cited authority is the right *kind* of authority is not the
-  same as opening the document.
+- Never write that a citation has been checked unless you opened the document.
+  Judging from this repository that the cited authority is the right *kind* of
+  authority is not the same as reading it. Where you did read it, say what you
+  read and when — "read in the online SIM at uspa.org on <date>" — rather than
+  "verified": the website's SIM on one day is not a printed edition, USPA
+  revises it, and a bare tick invites a reader to assume more than was done.
 
-## What cannot be verified from a sandbox
+## What can and cannot be verified from a sandbox
 
-Outbound network access goes through a policy-enforcing egress proxy, and the
-hosts this app depends on are blocked unless the environment's allowlist
-includes them. With them blocked:
+Outbound network access goes through a policy-enforcing egress proxy. With
+`api.weather.gov`, `api.open-meteo.com`, `radar.weather.gov`, `www.uspa.org`,
+`www.markschulze.net` and `amelia-m.github.io` allowlisted (2026-09-22), these
+became checkable and were checked — see `docs/open-questions.md`:
 
-- the app runs only against the fixtures in `src/api/fixtures/`;
-- the live NWS and Open-Meteo paths, the NOAA FD winds fallback UI, the radar
-  image and every citation URL are **unexercised, not passing**;
-- CI is no better — it runs the same fixture-backed suite.
+- the live NWS and Open-Meteo paths, the TAF fallback chain and the NOAA FD
+  winds fallback, by running the app's own fetch and domain code under Node;
+- component output on live data, via `renderToStaticMarkup` — the same trick the
+  advisory tests use. This is how the FD fallback's fake Surface row was found;
+- the radar GIF and its georeferencing, by fetching and measuring it;
+- the USPA SIM sections behind the citations.
 
-Say so plainly rather than implying a green suite covers them. Hosts worth
-allowlisting: `api.weather.gov`, `api.open-meteo.com`, `radar.weather.gov`,
-`www.uspa.org`, `www.markschulze.net`, `amelia-m.github.io`.
+Still not checkable here, so do not imply a green suite covers them:
+
+- **The app in a browser.** Playwright's Chromium does not trust the proxy's
+  TLS-intercepting CA, and the fixes for that (installing the CA into the NSS
+  store, or a Chromium enterprise policy) are blocked by the sandbox's own
+  guardrails. So nothing on the deployed site has been *seen*: layout, the
+  390px/320px widths, the radar `<img>` loading cross-origin under the page's
+  CSP, and the DZ marker's placement on screen are all unverified. A run script
+  under Node is not a substitute — `renderToStaticMarkup` does not run effects,
+  load images or apply CSS.
+- **ecfr.gov, faa.gov, faasafety.gov** — still blocked, so the CFR and FAA
+  citations remain AI-derived and unread.
+- CI is no better: it runs the same fixture-backed suite. Nothing in `npm test`
+  touches the network.
+
+Two habits worth keeping. `NODE_USE_ENV_PROXY=1` plus
+`NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` makes Node's fetch go through the
+proxy, which is what let the live paths run at all. And some hosts refuse a bare
+request: `markschulze.net` 403s without a `Referer`.
 
 ## Conventions
 
@@ -109,10 +136,18 @@ allowlisting: `api.weather.gov`, `api.open-meteo.com`, `radar.weather.gov`,
 
 ## Verifying UI work
 
-Playwright is available. Chromium is at `/opt/pw-browsers/chromium` — pass it as
-`executablePath` and do **not** run `playwright install`. `npm run dev` serves
-the app with fixtures. Run throwaway scripts from the repo root (node cannot
-resolve `playwright` from a scratch directory), then delete them.
+Playwright is available, but **it cannot currently reach any https:// site**:
+its Chromium does not trust the egress proxy's CA and fails with
+`ERR_CERT_AUTHORITY_INVALID`. Local `npm run dev` over http works; the deployed
+site does not. Do not report a live-site UI check as done on the strength of a
+Node render.
+
+When it does run: the browser binary is `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`
+(the `chromium` symlink next to it is not the executable) — pass it as
+`executablePath` and do **not** run `playwright install`. Playwright itself is
+installed globally, not in `node_modules`, so import it by path:
+`/opt/node22/lib/node_modules/playwright/index.mjs`. `npm run dev` serves the
+app with fixtures. Run throwaway scripts from the repo root, then delete them.
 
 Check 390px and 320px, not just desktop. Several defects this repo has had were
 phone-only: a page-wide horizontal scroll, headers overflowing, and a control
