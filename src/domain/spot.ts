@@ -54,10 +54,26 @@ function legFromComponents(e: number, n: number): DriftLeg {
  * Integrate drift between two AGL altitudes at a constant vertical speed.
  *
  * Outside the sampled altitude range the wind is extrapolated as a constant —
- * the nearest sample's vector — matching how `sampleAt` in windsAloft.ts
- * extrapolates when interpolating. Without this, any band above the highest
- * sample (e.g. exit at 18,000 ft with winds sampled to 13,000 ft) contributed
- * ZERO drift and the estimate silently underestimated.
+ * the nearest sample's vector. Without this, any band above the highest sample
+ * (e.g. exit at 18,000 ft with winds sampled to 13,000 ft) contributed ZERO
+ * drift and the estimate silently underestimated.
+ *
+ * This deliberately differs from `sampleAt` in windsAloft.ts, which used to
+ * extrapolate the same way and now returns null outside the sampled range. The
+ * two are answering different questions. The table states a wind AT an
+ * altitude, and where no source covers that altitude the honest answer is to
+ * show no row — a clamped value there reads as a measurement (it printed the
+ * NOAA FD bulletin's 3,000 ft MSL wind as the surface wind). This is an
+ * integral OVER a depth, and it needs some wind for every foot of it; refusing
+ * to assume one does not produce silence, it produces a drift figure that is
+ * too small by however much of the descent went unaccounted. Too small is the
+ * dangerous direction — it shortens the spot.
+ *
+ * So on the FD path the canopy leg is carried by the lowest level the bulletin
+ * supports, now ~2,000 ft AGL rather than a fabricated surface row. That is a
+ * real limitation of a drift estimate built on a winds-aloft bulletin, and the
+ * card says the estimate is guidance; it is not a number this function can
+ * improve by declining to state it.
  */
 function integrate(
   levels: WindsAloftLevel[],
