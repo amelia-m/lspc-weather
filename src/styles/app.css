@@ -835,7 +835,10 @@ a {
   position: absolute;
   width: 13px;
   height: 13px;
-  margin: -7px 0 0 -7px; /* centre the ring on the coordinate, not its corner */
+  /* Centre the ring on the coordinate rather than hanging its top-left corner
+     there. A transform does it exactly at any ring size; a negative margin has
+     to be kept at half the box and was half a pixel out. */
+  transform: translate(-50%, -50%);
   border: 2px solid #d61f26;
   border-radius: 50%;
   box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.95);
