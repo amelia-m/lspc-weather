@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { WindsAloftLevel } from '../domain/types';
+import type { WindsAloftLevel, WindsAloftSource } from '../domain/types';
 import { compass, round } from '../domain/units';
 import { estimateDrift, type DriftLeg } from '../domain/spot';
 import { DATA_SOURCES } from '../config/sources';
@@ -30,9 +30,14 @@ const dir = (deg: number): string => `${compass(deg)} (${round(deg)}°)`;
 export function DriftPanel({
   levels,
   profile,
+  source,
 }: {
   levels: WindsAloftLevel[];
   profile: WindProfileId;
+  /** Which source produced `levels`. The card credited Open-Meteo whatever it
+   *  was actually handed, so on the NOAA FD fallback it named a source the
+   *  numbers had not come from. */
+  source?: WindsAloftSource | null;
 }): JSX.Element {
   const [exitFt, setExit] = useState(10000);
   const [deployFt, setDeploy] = useState(() => recommendedDeployFt(profile));
@@ -78,7 +83,11 @@ export function DriftPanel({
   const spotToward = (drift.total.towardDeg + 180) % 360;
 
   return (
-    <Panel title="Freefall drift / spot" subtitle="estimate" sources={[DATA_SOURCES.openMeteo]}>
+    <Panel
+      title="Freefall drift / spot"
+      subtitle="estimate"
+      sources={[source === 'nws-fd' ? DATA_SOURCES.fdWinds : DATA_SOURCES.openMeteo]}
+    >
       {levels.length === 0 ? (
         <p className="muted">No winds-aloft data.</p>
       ) : (
@@ -120,6 +129,26 @@ export function DriftPanel({
             Plan to spot <strong>upwind</strong>: exit ~{fmtDist(drift.total.distanceFt)} toward{' '}
             <strong>{dir(spotToward)}</strong> of the target so you drift back over it.
           </p>
+
+          {/* Only when the winds source stops above the ground — on the NOAA FD
+              fallback, whose lowest level is 3,000 ft MSL. The number is
+              invisible in the result otherwise: the drift figure looks the same
+              whether the last stretch of canopy flight was integrated over real
+              levels or over an assumed one, and that stretch is the wind the
+              jumper lands in. */}
+          {drift.extrapolatedBelowFtAgl > 0 && (
+            <p className="muted small">
+              <strong>
+                Below {drift.extrapolatedBelowFtAgl.toLocaleString()} ft AGL this assumes the wind
+                at {drift.extrapolatedBelowFtAgl.toLocaleString()} ft.
+              </strong>{' '}
+              The winds source in use has no level under that, so the last{' '}
+              {drift.extrapolatedBelowFtAgl.toLocaleString()} ft of canopy descent carries that wind
+              rather than a forecast one — the part of the flight where wind usually changes most.
+              Read the ground wind off the Surface wind card and treat the canopy figure as the
+              rougher half of this estimate.
+            </p>
+          )}
 
           <p className="muted small">
             USPA BSR minimum container-opening altitudes:{' '}

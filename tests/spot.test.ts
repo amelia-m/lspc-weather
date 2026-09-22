@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { estimateDrift } from '../src/domain/spot';
+import { DriftPanel } from '../src/components/DriftPanel';
 import type { WindsAloftLevel } from '../src/domain/types';
 
 /** Uniform 10 kt wind FROM the west (270°) at every 1,000 ft → drift TOWARD east (90°). */
@@ -66,5 +69,73 @@ describe('estimateDrift', () => {
     // canopy: 2,000 ft at 16.667 ft/s → 120 s × 16.878 ft/s ≈ 2025 ft
     expect(d.canopy.distanceFt).toBeCloseTo(2025, -1);
     expect(d.total.distanceFt).toBeCloseTo(d.canopy.distanceFt, 5);
+  });
+});
+
+/**
+ * The integral extrapolates a constant wind below the lowest level, which is
+ * right — a drift figure missing the bottom of the descent is too short, and
+ * too short is the direction that hurts. But the assumption is invisible in the
+ * result, so the estimate reports how far it reached.
+ *
+ * The arrangement that produces it is the NOAA FD fallback: its lowest level is
+ * 3,000 ft MSL, so at this field elevation the winds-aloft table's lowest row is
+ * 2,000 ft AGL and everything under that is assumed.
+ */
+describe('estimateDrift reports how far below the levels it had to assume', () => {
+  const opts = { exitFtAgl: 13000, deployFtAgl: 3000, fallRateMph: 120, canopyRateFpm: 1000 };
+
+  /** Levels as the FD path yields them at NE69: nothing below 2,000 ft AGL. */
+  const fdLevels = (): WindsAloftLevel[] =>
+    uniformLevels().filter((l) => l.altitudeFtAgl >= 2000);
+
+  it('is zero when the levels reach the ground', () => {
+    expect(estimateDrift(uniformLevels(), opts).extrapolatedBelowFtAgl).toBe(0);
+  });
+
+  it('is the lowest level when the source stops above the ground', () => {
+    expect(estimateDrift(fdLevels(), opts).extrapolatedBelowFtAgl).toBe(2000);
+  });
+
+  it('counts only the part the canopy leg flew through', () => {
+    // Deployment at 1,500 ft is below the lowest level, so the canopy leg
+    // extrapolates over 1,500 ft of descent, not 2,000.
+    const d = estimateDrift(fdLevels(), { ...opts, deployFtAgl: 1500 });
+    expect(d.extrapolatedBelowFtAgl).toBe(1500);
+  });
+
+  it('does not claim an extrapolation when there is nothing to integrate', () => {
+    expect(estimateDrift([], opts).extrapolatedBelowFtAgl).toBe(0);
+  });
+
+  /* The drift number itself must not change: dropping the fabricated rows from
+   * the table was a display fix, and the integral covered that depth with the
+   * same constant wind before and after. A uniform wind makes them identical. */
+  it('leaves the drift figure unchanged under a uniform wind', () => {
+    const withGround = estimateDrift(uniformLevels(), opts);
+    const withoutGround = estimateDrift(fdLevels(), opts);
+    expect(withoutGround.canopy.distanceFt).toBeCloseTo(withGround.canopy.distanceFt, 5);
+    expect(withoutGround.total.distanceFt).toBeCloseTo(withGround.total.distanceFt, 5);
+  });
+});
+
+/* The card names its data source in the footer, and named Open-Meteo whatever
+ * it was handed — so on the NOAA FD fallback it credited a source the numbers
+ * had not come from, on the one path where the distinction matters most. */
+describe('the drift card credits the source the numbers came from', () => {
+  const levels = uniformLevels();
+  const markup = (source?: 'open-meteo' | 'nws-fd'): string =>
+    renderToStaticMarkup(
+      createElement(DriftPanel, { levels, profile: 'licensed', source } as never),
+    );
+
+  it('names Open-Meteo on the primary path', () => {
+    expect(markup('open-meteo')).toContain('Open-Meteo');
+  });
+
+  it('names the NOAA FD product on the fallback path, not Open-Meteo', () => {
+    const html = markup('nws-fd');
+    expect(html).toContain('NOAA winds aloft (FD)');
+    expect(html).not.toContain('>Open-Meteo<');
   });
 });
