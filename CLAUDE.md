@@ -129,6 +129,12 @@ When touching a citation:
   read and when — "read in the online SIM at uspa.org on <date>" — rather than
   "verified": the website's SIM on one day is not a printed edition, USPA
   revises it, and a bare tick invites a reader to assume more than was done.
+- SIM links carry the page's own part anchor (`…/sim/2-1#1H` for 2-1 H). The
+  served HTML marks each part with `<a class="anchoroffset" name="1H">` and its
+  copy-link icon offers the same fragment, so the anchors are readable with
+  curl and were read that way on 2026-09-23. The scheme is the section's digit
+  within its chapter plus the part letter, and a test checks the anchor names
+  the part the ref cites. Add an anchor only after reading it on the page.
 - `www.ecfr.gov` answers a script with a 302 to a bot-check host, so its section
   pages cannot be read with curl or WebFetch even when the host is allowlisted.
   The eCFR API serves the same text and needs only `--compressed`:

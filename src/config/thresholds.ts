@@ -42,10 +42,17 @@ const AIM_READ_NOTE =
 const FAA_PAMPHLET_READ_NOTE =
   'Read on 2026-09-23 from the linked PDF (FAA-P-8740-2, AFS-8, 2008) and matches this claim. The link is a copy in a FAASTeam event folder, not a catalogue entry — if it stops resolving, the pamphlet is what to look for.';
 
-/** SIM section URLs all take this shape — `simUrl('2-1')` → …/sim/2-1. Written
- *  once so a citation cannot drift into a different URL shape (deep anchors,
- *  PDF mirrors) that may not resolve. */
-const simUrl = (section: string) => `https://www.uspa.org/sim/${section}`;
+/** SIM section URLs all take this shape — `simUrl('2-1', '1H')` → …/sim/2-1#1H.
+ *  Written once so a citation cannot drift into a URL shape (PDF mirrors, a
+ *  guessed anchor) that may not resolve. The anchor is the page's own: uspa.org
+ *  marks each part with `<a class="anchoroffset" name="1H">` and offers the
+ *  same fragment from its copy-link icon, so `#1H` lands the reader on "H.
+ *  Winds" rather than at the top of a long section. Every anchor here was
+ *  read from the served page on 2026-09-23; add one only after reading it
+ *  there, and never from the part letter alone (the scheme is section digit
+ *  plus part letter, and one page skips letters). */
+const simUrl = (section: string, anchor?: string) =>
+  `https://www.uspa.org/sim/${section}${anchor ? `#${anchor}` : ''}`;
 
 /**
  * Citations — the product, not decoration.
@@ -59,9 +66,9 @@ const simUrl = (section: string) => `https://www.uspa.org/sim/${section}`;
  * Two rules keep that honest, both enforced by tests/thresholds.test.ts:
  *
  *  1. `source` and `url` must agree. A source naming "Section 2-1" links to
- *     /sim/2-1; a source naming no section links to the SIM index. Naming a
- *     section while linking to the index claims a precision the link does not
- *     deliver.
+ *     /sim/2-1 (with the part's own anchor, see simUrl); a source naming no
+ *     section links to the SIM index. Naming a section while linking to the
+ *     index claims a precision the link does not deliver.
  *  2. Where the governing section is NOT known, the citation stays on the SIM
  *     index (https://www.uspa.org/sim) and says so in its note. A confidently
  *     wrong section number is worse than an honest general link — it sends a
@@ -86,7 +93,7 @@ export const CITATIONS = {
   uspaStudentWinds: {
     source: 'USPA SIM, Section 2-1 (BSR)',
     ref: 'BSR 2-1 H, Winds — maximum ground winds for all solo students: 14 mph for ram-air canopies, 10 mph for round reserves',
-    url: simUrl('2-1'),
+    url: simUrl('2-1', '1H'),
     note: SIM_READ_NOTE,
   },
   /** Same BSR section, different claim: the ground-wind limit is written for
@@ -97,7 +104,7 @@ export const CITATIONS = {
   uspaLicensedWinds: {
     source: 'USPA SIM, Section 2-1 (BSR)',
     ref: 'BSR 2-1 H, Winds — maximum ground winds “for licensed skydivers are unlimited”',
-    url: simUrl('2-1'),
+    url: simUrl('2-1', '1H'),
     note: SIM_READ_NOTE,
   },
   /** 105.17 bars parachute ops into or through cloud outright, then sets
@@ -179,7 +186,7 @@ export const CITATIONS = {
   uspaWeather: {
     source: 'USPA SIM, Section 4-5 (Weather)',
     ref: 'SIM 4-5 B, Hazardous Weather — gust fronts, turbulence, thunderstorms, dust devils',
-    url: simUrl('4-5'),
+    url: simUrl('4-5', '5B'),
     note: SIM_READ_NOTE,
   },
   /**
@@ -200,7 +207,7 @@ export const CITATIONS = {
   uspaSpotting: {
     source: 'USPA SIM, Section 4-7 (Spotting)',
     ref: 'SIM 4-7 C, Exit Separation on Jump Run — allow more time between groups in strong upper headwinds',
-    url: simUrl('4-7'),
+    url: simUrl('4-7', '7C'),
     note: SIM_READ_NOTE,
   },
   /**
@@ -227,8 +234,8 @@ export const CITATIONS = {
    */
   uspaNightJumps: {
     source: 'USPA SIM, Section 5-3 (Night Jumps)',
-    ref: 'SIM 5-3 — any jump between official sunset and sunrise is a night jump; participants should meet USPA B-licence requirements',
-    url: simUrl('5-3'),
+    ref: 'SIM 5-3 A, Introduction and Definition — any jump between official sunset and sunrise is a night jump; 5-3 B, Qualifications — participants should meet USPA B-licence requirements',
+    url: simUrl('5-3', '3A'),
     note: SIM_READ_NOTE,
   },
   /**
@@ -244,7 +251,7 @@ export const CITATIONS = {
   uspaWaivers: {
     source: 'USPA SIM, Section 2-2 (Waivers to the BSRs)',
     ref: 'SIM 2-2 B — a BSR marked [S] may be waived by an S&TA or Examiner; the student ground-wind BSR (2-1 H) is so marked',
-    url: simUrl('2-2'),
+    url: simUrl('2-2', '2B'),
     note: SIM_READ_NOTE,
   },
   /** BSR minimum container-opening altitudes — same Section 2-1 as the wind
@@ -260,7 +267,7 @@ export const CITATIONS = {
   uspaOpeningAltitude: {
     source: 'USPA SIM, Section 2-1 (BSR)',
     ref: 'BSR 2-1 I — minimum container opening altitudes: tandem 5,000 ft AGL; students & A 3,000 ft; B 2,500 ft; C/D 2,500 ft, waiverable to no lower than 2,000 ft',
-    url: simUrl('2-1'),
+    url: simUrl('2-1', '1I'),
     note: SIM_READ_NOTE,
   },
   lspcWaiver: {
