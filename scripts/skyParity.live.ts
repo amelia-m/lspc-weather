@@ -42,6 +42,13 @@ async function get(url: string, accept: string): Promise<Response> {
   return res;
 }
 
+/** Straight to stdout: Vitest's default reporter keeps console output from
+ *  passing tests to itself, and these lines are the point of the run — the
+ *  workflow log has to say who decoded what even when nothing failed. */
+const say = (line: string): void => {
+  process.stdout.write(`${line}\n`);
+};
+
 const showSky = (layers: SkyLayer[]): string =>
   layers.length === 0
     ? '(none)'
@@ -58,8 +65,8 @@ describe(`sky decode parity for ${station}`, () => {
 
     const ours = parseSkyGroups(awc.rawOb);
     const theirs = normalizeMetar(awc).skyLayers;
-    console.log(`[awc]  ${awc.rawOb}`);
-    console.log(`[awc]  app parse: ${showSky(ours)} · aviationweather decode: ${showSky(theirs)}`);
+    say(`[awc]  ${awc.rawOb}`);
+    say(`[awc]  app parse: ${showSky(ours)} · aviationweather decode: ${showSky(theirs)}`);
     // Bases from the text are exact hundreds; aviationweather's are too.
     expect(ours).toEqual(theirs);
   });
@@ -71,8 +78,8 @@ describe(`sky decode parity for ${station}`, () => {
     );
     const obs = (await res.json()) as RawNwsObservation;
     const c = normalizeNwsObservation(obs, station);
-    console.log(`[nws]  ${c.raw || '(no rawMessage)'}`);
-    console.log(
+    say(`[nws]  ${c.raw || '(no rawMessage)'}`);
+    say(
       `[nws]  sky: ${showSky(c.skyLayers)} · decode check: ${c.skyDecode} · ceiling: ${c.ceilingFtAgl ?? 'none'} · category: ${observedFlightCategory(c) ?? '—'}`,
     );
     expect(c.skyDecode).toBeDefined();
@@ -90,9 +97,9 @@ describe(`sky decode parity for ${station}`, () => {
         .replace(/\s+/g, ' ');
       const clouds = /Cloud Level\(s\): (.*?)(?= Current Conditions| Wind Data|$)/.exec(text)?.[1];
       const rule = /Flight Rule: (VFR|MVFR|IFR|LIFR)/.exec(text)?.[1];
-      console.log(`[usairnet]  clouds: ${clouds ?? '?'} · flight rule: ${rule ?? '?'}`);
+      say(`[usairnet]  clouds: ${clouds ?? '?'} · flight rule: ${rule ?? '?'}`);
     } catch (err) {
-      console.log(`[usairnet]  not read: ${err instanceof Error ? err.message : String(err)}`);
+      say(`[usairnet]  not read: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
 });
