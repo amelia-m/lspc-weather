@@ -6,6 +6,7 @@ import {
   normalizeGridpoint,
   normalizeMetar,
   normalizeNwsObservation,
+  parseSkyGroups,
   normalizeOpenMeteo,
   normalizeOpenMeteoDaily,
   parseFdTiming,
@@ -13,6 +14,7 @@ import {
   parseTaf,
   parseValidTime,
   toSkyCover,
+  type RawNwsObservation,
 } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 import { GRIDPOINT_FIXTURE } from '../src/api/fixtures/gridpoint';
@@ -101,7 +103,7 @@ describe('normalizeNwsObservation', () => {
     expect(c.station).toBe('KPMV');
     expect(c.wind.speedKt).toBe(12); // 22.2 km/h
     expect(c.wind.gustKt).toBe(22); // 40.7 km/h
-    expect(c.ceilingFtAgl).toBe(4501); // FEW ignored, BKN 1372 m → 4501 ft
+    expect(c.ceilingFtAgl).toBe(4500); // FEW035 ignored, BKN045 from the raw METAR
     expect(c.visibilitySm).toBeCloseTo(10, 0);
     expect(c.altimeterInHg).toBe(29.96); // from A2996 in rawMessage
   });
@@ -139,6 +141,75 @@ describe('normalizeNwsObservation', () => {
     };
     const c = normalizeNwsObservation(obs, 'KPMV');
     expect(c.wind.speedKt).toBe(0);
+  });
+});
+
+/* The sky is read from the METAR text, and the API's decoded cloudLayers only
+ * when the text has no sky group. On 2026-09-23 api.weather.gov served seven
+ * consecutive KPMV observations with cloudLayers: [] while rawMessage read
+ * OVC027–OVC035; the dashboard showed "Clear" and VFR under a 2,700 ft
+ * overcast. The first case below is that report, verbatim. */
+describe('normalizeNwsObservation sky', () => {
+  const withRaw = (rawMessage: string, cloudLayers: RawNwsObservation['properties']['cloudLayers']) =>
+    normalizeNwsObservation(
+      { properties: { ...OBSERVATION_FIXTURE.properties, rawMessage, cloudLayers } },
+      'KPMV',
+    );
+
+  it('reads the sky from the raw METAR when the API decode is empty', () => {
+    const c = withRaw('KPMV 230355Z AUTO 08003KT 10SM OVC027 15/13 A3028 RMK AO2 T01530132', []);
+    expect(c.skyLayers).toEqual([{ cover: 'OVC', baseFtAgl: 2700 }]);
+    expect(c.ceilingFtAgl).toBe(2700);
+  });
+
+  it('prefers the raw METAR over cloudLayers when both are present', () => {
+    // The decode says BKN at 4,501 ft; the text says BKN020. The text wins.
+    const c = withRaw(
+      'KPMV 271300Z AUTO 19012G22KT 10SM BKN020 28/19 A2996 RMK AO2',
+      OBSERVATION_FIXTURE.properties.cloudLayers,
+    );
+    expect(c.ceilingFtAgl).toBe(2000);
+  });
+
+  it('falls back to cloudLayers when the raw text has no sky group', () => {
+    const c = withRaw('KPMV 271300Z AUTO 19012G22KT 10SM 28/19 A2996', [
+      { base: { unitCode: 'wmoUnit:m', value: 610 }, amount: 'OVC' },
+    ]);
+    expect(c.skyLayers).toEqual([{ cover: 'OVC', baseFtAgl: 2001 }]);
+  });
+
+  it('keeps a clear report as a CLR layer, distinct from an unreported sky', () => {
+    const clear = withRaw('KPMV 271300Z AUTO 19012KT 10SM CLR 28/19 A2996', []);
+    expect(clear.skyLayers).toEqual([{ cover: 'CLR', baseFtAgl: null }]);
+    expect(clear.ceilingFtAgl).toBeNull();
+    // Four of the same forty observations had no METAR text at all.
+    const none = withRaw('', []);
+    expect(none.skyLayers).toEqual([]);
+    expect(none.ceilingFtAgl).toBeNull();
+  });
+});
+
+describe('parseSkyGroups', () => {
+  it('reads cover and height in hundreds of feet, with CB/TCU and missing heights', () => {
+    expect(parseSkyGroups('KPMV 1200Z 10SM SCT005 BKN010CB OVC018 15/13 A3028')).toEqual([
+      { cover: 'SCT', baseFtAgl: 500 },
+      { cover: 'BKN', baseFtAgl: 1000 },
+      { cover: 'OVC', baseFtAgl: 1800 },
+    ]);
+    expect(parseSkyGroups('KPMV 1200Z 1/4SM FG VV002 10/10 A3028')).toEqual([
+      { cover: 'VV', baseFtAgl: 200 },
+    ]);
+    expect(parseSkyGroups('KPMV 1200Z AUTO 10SM BKN/// 15/13 A3028')).toEqual([
+      { cover: 'BKN', baseFtAgl: null },
+    ]);
+  });
+
+  it('ignores the remarks, which carry tokens that look like sky groups', () => {
+    // "SCT V BKN" is a variable-sky remark; "SCT" alone would match the group
+    // pattern and invent a layer with no height.
+    expect(parseSkyGroups('KPMV 1200Z 10SM CLR 15/13 A3028 RMK AO2 SCT V BKN')).toEqual([
+      { cover: 'CLR', baseFtAgl: null },
+    ]);
   });
 });
 

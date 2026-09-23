@@ -73,6 +73,18 @@ precisely because they were colour and text rather than flags.
   nothing on screen. Readings stay whole — a METAR reports whole knots.
 - **`compass()` is 16-point.** An 8-point label put 060° in the "NE" bucket, a
   15° error that matters over a 10,000 ft freefall.
+- **The sky is read from the METAR text, not from the API's `cloudLayers`.** On
+  2026-09-23 api.weather.gov served seven consecutive KPMV observations with
+  `cloudLayers: []` and an empty `textDescription` while `rawMessage` read
+  `OVC027`–`OVC035`. The dashboard showed "Clear", "No ceiling" and VFR under a
+  2,700 ft overcast, with no flag — found from a screenshot of the deployed
+  site, which no sandbox check had covered. `normalizeNwsObservation` now
+  parses the sky groups from the METAR text and uses the decoded layers only
+  when the text has none, the order it already used for the altimeter. Do not
+  "simplify" it back. Four more of those forty observations had no
+  `rawMessage` at all: an empty `skyLayers` means *not reported*, the cards say
+  so, and `observedFlightCategory` never shows VFR from a report with no
+  ceiling in it — visibility alone can establish MVFR/IFR/LIFR, not VFR.
 
 ## Citations
 

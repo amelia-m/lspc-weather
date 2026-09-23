@@ -79,10 +79,18 @@ function describeWind(c: CurrentConditions, unit: SpeedUnit): string {
   return `${dir} ${fmtSpeed(speedKt, unit)}${g}`;
 }
 
+/** "Clear" only when the report says so (CLR/SKC). An empty layer list used to
+ *  print "Clear" too, which is the wrong word for a sky nobody reported — and
+ *  was what the card said under a 2,700 ft overcast when the API's decode came
+ *  back empty (2026-09-23). "Not reported" is the observed fact. */
 function describeSky(c: CurrentConditions): string {
-  if (c.skyLayers.length === 0) return 'Clear';
+  if (c.skyLayers.length === 0) return 'Not reported';
   return c.skyLayers
-    .map((l) => (l.baseFtAgl != null ? `${l.cover} ${l.baseFtAgl.toLocaleString()} ft` : l.cover))
+    .map((l) => {
+      if (l.cover === 'CLR' || l.cover === 'SKC') return 'Clear';
+      if (l.cover === 'NSC') return 'No significant cloud';
+      return l.baseFtAgl != null ? `${l.cover} ${l.baseFtAgl.toLocaleString()} ft` : l.cover;
+    })
     .join(', ');
 }
 

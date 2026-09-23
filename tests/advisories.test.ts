@@ -4,12 +4,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { evaluateAdvisories } from '../src/domain/advisories';
 import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
+import { MetarPanel } from '../src/components/MetarPanel';
 import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
 import { CITATIONS, DEFAULT_THRESHOLDS, resolveThresholds } from '../src/config/thresholds';
 import type { Thresholds } from '../src/config/thresholds';
 import type { SpeedUnit } from '../src/domain/units';
 import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
-import { normalizeMetar } from '../src/domain/normalize';
+import { normalizeMetar, normalizeNwsObservation } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 
 const now = Date.parse('2025-06-27T13:30:00Z');
@@ -622,5 +623,50 @@ describe('guidance matches the section as read', () => {
     expect(html).toMatch(/5 SM/);
     expect(html).toMatch(/1 mile horizontal/);
     expect(html).toContain(CITATIONS.far10517.url);
+  });
+});
+
+/* Seen on the deployed site on 2026-09-23: the KPMV METAR read OVC027 while
+ * the Current conditions card said "Clear", the Ceiling card "No ceiling", the
+ * pill VFR, and no flag fired — because api.weather.gov's decoded cloudLayers
+ * was empty and the app trusted it over the METAR text. These render the two
+ * cards and the flags from that report, and from a report with no sky at all. */
+describe('a live observation whose API decode is empty', () => {
+  const live = (rawMessage: string) =>
+    normalizeNwsObservation(
+      {
+        properties: {
+          timestamp: '2026-09-23T03:55:00+00:00',
+          rawMessage,
+          visibility: { unitCode: 'wmoUnit:m', value: 16090 },
+          cloudLayers: [],
+        },
+      },
+      'KPMV',
+    );
+  const overcast = live('KPMV 230355Z AUTO 08003KT 10SM OVC027 15/13 A3028 RMK AO2 T01530132');
+  const unreported = live('');
+
+  it('flags the overcast and the MVFR category from the METAR text', () => {
+    const out = evaluateAdvisories(snapshot({ current: overcast }), DEFAULT_THRESHOLDS.student, now);
+    expect(out.some((a) => a.id === 'overcast')).toBe(true);
+    expect(out.find((a) => a.id === 'flight-category')?.value).toContain('MVFR');
+  });
+
+  it('says "OVC 2,700 ft", not "Clear", on the Current conditions card', () => {
+    const html = markup(createElement(MetarPanel, { current: overcast, unit: 'kt', onUnitChange: () => {} }));
+    expect(html).toContain('OVC 2,700 ft');
+    expect(html).not.toMatch(/>Clear</);
+  });
+
+  it('says "Not reported" rather than "Clear" or "No ceiling" when there is no sky group, and shows no VFR pill', () => {
+    const metar = markup(createElement(MetarPanel, { current: unreported, unit: 'kt', onUnitChange: () => {} }));
+    expect(metar).toContain('Not reported');
+    expect(metar).not.toMatch(/>Clear</);
+    const sky = markup(createElement(CeilingSkyPanel, { current: unreported, hourly: [] }));
+    expect(sky).toContain('Not reported');
+    expect(sky).not.toContain('No ceiling');
+    expect(sky).not.toContain('VFR');
+    expect(evaluateAdvisories(snapshot({ current: unreported }), DEFAULT_THRESHOLDS.student, now).some((a) => a.id === 'flight-category')).toBe(false);
   });
 });

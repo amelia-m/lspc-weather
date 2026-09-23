@@ -1,6 +1,6 @@
 import type { CurrentConditions, HourlyPoint } from '../domain/types';
 import { round } from '../domain/units';
-import { flightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
+import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
@@ -19,7 +19,7 @@ export function CeilingSkyPanel({
 }): JSX.Element {
   const now = Date.now();
   const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
-  const category = current ? flightCategory(current.ceilingFtAgl, current.visibilitySm) : null;
+  const category = current ? observedFlightCategory(current) : null;
 
   return (
     <Panel
@@ -36,10 +36,15 @@ export function CeilingSkyPanel({
       <div className="ceil-now">
         <span className="ceil-label">Ceiling</span>
         <span className="ceil-value">
+          {/* "No ceiling" is a reading — a CLR or FEW/SCT sky. An observation
+              with no sky group at all is a different thing and must not read
+              as the better one. */}
           {current?.ceilingFtAgl != null
             ? `${current.ceilingFtAgl.toLocaleString()} ft AGL`
             : current
-              ? 'No ceiling'
+              ? current.skyLayers.length > 0
+                ? 'No ceiling'
+                : 'Not reported'
               : '—'}
         </span>
       </div>
