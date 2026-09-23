@@ -5,6 +5,7 @@ import {
   durationToHours,
   normalizeGridpoint,
   normalizeMetar,
+  compareSkyDecodes,
   normalizeNwsObservation,
   parseSkyGroups,
   normalizeOpenMeteo,
@@ -186,6 +187,41 @@ describe('normalizeNwsObservation sky', () => {
     const none = withRaw('', []);
     expect(none.skyLayers).toEqual([]);
     expect(none.ceilingFtAgl).toBeNull();
+  });
+});
+
+describe('compareSkyDecodes', () => {
+  const ovc = (baseFtAgl: number | null) => ({ cover: 'OVC' as const, baseFtAgl });
+
+  it('grades the 2026-09-23 gap as decode-empty, and the mirror case as text-empty', () => {
+    expect(compareSkyDecodes([ovc(2700)], [])).toBe('decode-empty');
+    expect(compareSkyDecodes([], [ovc(2690)])).toBe('text-empty');
+    expect(compareSkyDecodes([], [])).toBe('not-reported');
+  });
+
+  it('allows the rounding between hundreds of feet and metres, and no more', () => {
+    // OVC027 is 2,700 ft; the API's 820 m rounds to 2,690 ft. Same layer.
+    expect(compareSkyDecodes([ovc(2700)], [ovc(2690)])).toBe('agrees');
+    expect(compareSkyDecodes([ovc(2700)], [ovc(2600)])).toBe('decode-differs');
+    expect(compareSkyDecodes([ovc(2700)], [{ cover: 'BKN', baseFtAgl: 2700 }])).toBe('decode-differs');
+    expect(compareSkyDecodes([ovc(2700)], [ovc(2700), ovc(4000)])).toBe('decode-differs');
+    expect(compareSkyDecodes([ovc(null)], [ovc(null)])).toBe('agrees');
+    expect(compareSkyDecodes([ovc(null)], [ovc(2700)])).toBe('decode-differs');
+  });
+
+  it('is carried on the observation', () => {
+    const c = normalizeNwsObservation(
+      {
+        properties: {
+          ...OBSERVATION_FIXTURE.properties,
+          rawMessage: 'KPMV 230355Z AUTO 08003KT 10SM OVC027 15/13 A3028',
+          cloudLayers: [],
+        },
+      },
+      'KPMV',
+    );
+    expect(c.skyDecode).toBe('decode-empty');
+    expect(normalizeNwsObservation(OBSERVATION_FIXTURE, 'KPMV').skyDecode).toBe('agrees');
   });
 });
 

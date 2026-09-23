@@ -19,6 +19,18 @@ export interface SkyLayer {
   baseFtAgl: number | null;
 }
 
+/** How the two decodes of one observation compared — the METAR text the
+ *  normaliser parses itself, and api.weather.gov's `cloudLayers`. The text
+ *  wins whenever it has a sky group; this records whether the decode agreed,
+ *  so Data health can show when it did not. On 2026-09-23 the decode was
+ *  empty for a two-hour overcast and nothing on screen said so. */
+export type SkyDecodeCheck =
+  | 'agrees' // same layers, bases within rounding
+  | 'decode-empty' // text has sky groups, the decode has none
+  | 'decode-differs' // both present, different layers
+  | 'text-empty' // text has no sky group; layers came from the decode
+  | 'not-reported'; // neither has anything
+
 /** Current observation, from a METAR (KPMV). */
 export interface CurrentConditions {
   station: string;
@@ -35,6 +47,9 @@ export interface CurrentConditions {
   /** Lowest BKN/OVC/VV layer base, ft AGL. null = no ceiling reported, which
    *  with an empty `skyLayers` means unknown rather than unlimited. */
   ceilingFtAgl: number | null;
+  /** Set by normalizeNwsObservation, which has two decodes to compare. Absent
+   *  on the aviationweather path (normalizeMetar), which has one. */
+  skyDecode?: SkyDecodeCheck;
   tempC: number | null;
   dewpointC: number | null;
   altimeterInHg: number | null;

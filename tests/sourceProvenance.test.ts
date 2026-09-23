@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveProvenance } from '../src/domain/sourceProvenance';
+import { normalizeNwsObservation } from '../src/domain/normalize';
+import { OBSERVATION_FIXTURE } from '../src/api/fixtures/observation';
 import type { WeatherSnapshot } from '../src/domain/types';
 
 const EMPTY: WeatherSnapshot = {
@@ -45,8 +47,35 @@ describe('deriveProvenance', () => {
     expect(prov.windsAloft).toBeUndefined();
     expect(prov.daily).toBeUndefined();
     expect(prov.taf).toBeUndefined();
-    // METAR and NWS forecast are single-source and never carry a chip.
+    // The NWS forecast is single-source and never carries a chip; the METAR
+    // carries one only once an observation is loaded.
     expect(prov.metar).toBeUndefined();
     expect(prov.nws).toBeUndefined();
+  });
+
+  /* The METAR chip reports how api.weather.gov's decode of the report compared
+   * with the METAR text the app parses. Amber for anything but agreement: on
+   * 2026-09-23 the decode was empty through a two-hour overcast and the card
+   * read "Clear" with nothing on screen to say why. */
+  it('shows the METAR sky-decode comparison, amber unless the decodes agree', () => {
+    const current = normalizeNwsObservation(OBSERVATION_FIXTURE, 'KPMV');
+    expect(deriveProvenance({ ...EMPTY, current })).toMatchObject({
+      metar: { fallback: false, detail: expect.stringContaining('NWS decode agrees') },
+    });
+    const gap = normalizeNwsObservation(
+      {
+        properties: {
+          ...OBSERVATION_FIXTURE.properties,
+          rawMessage: 'KPMV 230355Z AUTO 08003KT 10SM OVC027 15/13 A3028',
+          cloudLayers: [],
+        },
+      },
+      'KPMV',
+    );
+    expect(deriveProvenance({ ...EMPTY, current: gap })).toMatchObject({
+      metar: { fallback: true, detail: expect.stringContaining('NWS decode had none') },
+    });
+    // The aviationweather path has one decode and nothing to compare.
+    expect(deriveProvenance({ ...EMPTY, current: { ...current, skyDecode: undefined } }).metar).toBeUndefined();
   });
 });

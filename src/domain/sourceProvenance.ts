@@ -1,4 +1,4 @@
-import type { SourceKey, WeatherSnapshot } from './types';
+import type { SkyDecodeCheck, SourceKey, WeatherSnapshot } from './types';
 import { SITE } from '../config/site';
 
 /** Which provider a source is currently served from, and whether that is the
@@ -8,10 +8,24 @@ export interface SourceProvenance {
   fallback: boolean;
 }
 
+/** Amber ("fallback") whenever the two decodes did not simply agree: that is
+ *  the state a reader should glance at the raw METAR for. */
+const METAR_SKY_PROVENANCE: Record<SkyDecodeCheck, SourceProvenance> = {
+  agrees: { detail: 'sky from METAR text · NWS decode agrees', fallback: false },
+  'decode-empty': { detail: 'sky from METAR text · NWS decode had none', fallback: true },
+  'decode-differs': { detail: 'sky from METAR text · NWS decode differs', fallback: true },
+  'text-empty': { detail: 'sky from NWS decode · METAR text had no sky group', fallback: true },
+  'not-reported': { detail: 'sky not reported', fallback: true },
+};
+
 /** Describe which provider each fallback-capable source is currently served
- *  from, so Data health can show primary vs fallback. Sources with a single
- *  provider (METAR, NWS forecast) are omitted — no chip is shown for them.
- *  Pure so it can be unit-tested without rendering. */
+ *  from, so Data health can show primary vs fallback. The NWS forecast has a
+ *  single provider and no chip. The METAR has one provider but two decodes of
+ *  each report — the text, which the app parses, and api.weather.gov's
+ *  cloudLayers — and its chip says whether they agreed, because on 2026-09-23
+ *  the decode was empty through a two-hour overcast and the card read "Clear"
+ *  with nothing on screen to say why. Pure so it can be unit-tested without
+ *  rendering. */
 export function deriveProvenance(
   snapshot: WeatherSnapshot,
 ): Partial<Record<SourceKey, SourceProvenance>> {
@@ -28,6 +42,9 @@ export function deriveProvenance(
   } else if (snapshot.dailySource === 'nws-gridpoint') {
     prov.daily = { detail: 'NWS gridpoint (~7-day)', fallback: true };
   }
+
+  const sky = snapshot.current?.skyDecode;
+  if (sky !== undefined) prov.metar = METAR_SKY_PROVENANCE[sky];
 
   if (snapshot.taf) {
     const primaryTaf = SITE.tafStations[0].id;
