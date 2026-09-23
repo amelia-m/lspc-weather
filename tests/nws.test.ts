@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchJson, HttpError, TimeoutError } from '../src/api/http';
-import { fetchGridpoint, fetchTaf, fetchTafChain, fetchWindsAloftFd, type ResolvedGridpoint } from '../src/api/nws';
+import { fetchJson, HttpError, TimeoutError, USE_FIXTURES } from '../src/api/http';
+import {
+  fetchDailyFromGridpoint,
+  fetchGridpoint,
+  fetchTaf,
+  fetchTafChain,
+  fetchWindsAloftFd,
+  type ResolvedGridpoint,
+} from '../src/api/nws';
 import type { RawGridpoint } from '../src/domain/normalize';
 
 /** Minimal Response stand-ins for the global fetch stub. */
@@ -423,5 +430,21 @@ describe('fetchTaf query forms', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     await expect(fetchTaf('KOMA', 'OMA')).rejects.toBeInstanceOf(HttpError);
+  });
+});
+
+describe('fetchDailyFromGridpoint', () => {
+  it('builds the daily fallback from the gridpoint fixture, off the network, in fixture mode', async () => {
+    // Vitest runs with import.meta.env.DEV set, which is the fixture default;
+    // stated here so the assertion below is about the gate, not the environment.
+    expect(USE_FIXTURES).toBe(true);
+    // This was the one fixture-mode path that still went to the network — and
+    // failed there, so the daily fallback could never be exercised offline.
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const daily = await fetchDailyFromGridpoint(40.8675, -96.11, 'America/Chicago');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(daily.length).toBeGreaterThan(0);
   });
 });

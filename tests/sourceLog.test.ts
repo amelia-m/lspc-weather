@@ -4,7 +4,6 @@ import {
   getLogs,
   loadPersistedLogs,
   logSource,
-  subscribe,
   type SourceLog,
 } from '../src/api/sourceLog';
 
@@ -139,20 +138,6 @@ describe('getLogs snapshot identity', () => {
     // The old snapshot is frozen, so a consumer holding it cannot be surprised.
     expect(Object.isFrozen(a)).toBe(true);
     expect(a).toHaveLength(1);
-  });
-});
-
-describe('subscribe', () => {
-  it('notifies on log and clear, and stops after unsubscribe', () => {
-    const listener = vi.fn();
-    const unsubscribe = subscribe(listener);
-    logSource('metar', 'success', 'one');
-    clearLogs();
-    expect(listener).toHaveBeenCalledTimes(2);
-
-    unsubscribe();
-    logSource('metar', 'success', 'two');
-    expect(listener).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -59,25 +59,26 @@ function safeLocalRemove(key: string): void {
   }
 }
 
-const listeners = new Set<() => void>();
-
 let logs: SourceLog[] = [];
 /** Cached frozen copy of `logs`, replaced only when the buffer actually
- *  changes. `subscribe` + `getLogs` form a useSyncExternalStore pair, and React
- *  compares snapshots by identity — returning a fresh array per read would
- *  re-render a subscriber on every poll of the store (and React would flag an
- *  infinite loop). No component subscribes today; the contract is kept intact
- *  so a reader added later cannot reintroduce that bug. */
+ *  changes. The only reader is `window.LSPC_DEBUG.getLogs()` from a devtools
+ *  console, and a frozen snapshot means a console session cannot mutate the
+ *  buffer by accident (`getLogs().push(...)`) or watch it change under a
+ *  reference it is holding. There used to be a `subscribe` alongside this, a
+ *  useSyncExternalStore pair for an in-page log viewer that was removed; the
+ *  pair went with it once nothing subscribed. If a React reader is added again,
+ *  it needs a subscribe that fires from commit() and clearLogs(), and this
+ *  identity-stable snapshot as its getSnapshot — a fresh array per read would
+ *  re-render on every poll and React would flag an infinite loop. */
 let snapshot: readonly SourceLog[] = Object.freeze([]);
 
-/** Publish the working buffer as a new immutable snapshot and wake subscribers.
- *  Persistence rides along so the log survives a tab close and a reload: the
- *  point of the feature is noticing a discrepancy against another tool now and
- *  being able to reconstruct which provider served it hours later. */
+/** Publish the working buffer as a new immutable snapshot. Persistence rides
+ *  along so the log survives a tab close and a reload: the point of the
+ *  feature is noticing a discrepancy against another tool now and being able
+ *  to reconstruct which provider served it hours later. */
 function commit(): void {
   snapshot = Object.freeze(logs.slice());
   safeLocalSet(STORAGE_KEY, JSON.stringify(snapshot));
-  for (const listener of listeners) listener();
 }
 
 /** Trim to MAX_LOGS by dropping the oldest 'success' entry first, and only
@@ -170,17 +171,9 @@ export function logSource(
 }
 
 /** The current log, as a snapshot whose identity is stable until the log
- *  changes. Safe to use directly as a useSyncExternalStore getSnapshot. */
+ *  changes. */
 export function getLogs(): readonly SourceLog[] {
   return snapshot;
-}
-
-/** Subscribe to log changes; returns the unsubscribe function. */
-export function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
 }
 
 /** Drop everything, in memory and in storage — otherwise a "clear" would come
@@ -189,7 +182,6 @@ export function clearLogs(): void {
   logs = [];
   snapshot = Object.freeze([]);
   safeLocalRemove(STORAGE_KEY);
-  for (const listener of listeners) listener();
 }
 
 /** Restore the log written by an earlier session (called once on app init).
