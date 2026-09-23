@@ -98,7 +98,21 @@ are built from the same samples, and the widest gap in the 13,000 ft column is
 about 2,100 ft. Open-Meteo also serves 775 and 725 hPa (checked 2026-09-23);
 they were left out so that the sampling matches the tool's exactly, which is
 what makes it a cross-check. `scripts/schulzeCompare.live.ts` prints the two
-profiles side by side at the same valid hour.
+profiles side by side at the same valid hour. Run after the change, the same
+day at 19Z:
+
+| ft AGL | app dir/kt/°C | Schulze dir/kt/°C | Δ dir |
+|---|---|---|---|
+| 0 | 126 / 7 / 19 | 128 / 8 / 19 | 2° |
+| 1,000–4,000 | identical | | 0° |
+| 5,000 | 221 / 8 / 12 | 217 / 8 / 12 | 4° |
+| 6,000 | 288 / 9 / 11 | 288 / 8 / 11 | 0° |
+| 7,000–13,000 | identical | | 0° |
+
+The 4° at 5,000 ft is the two tools interpolating direction across the 166°
+turn between the 850 and 800 hPa samples (124° at 4,062 ft, 290° at 5,732 ft)
+and rounding differently; the surface row differs because this app's surface
+is Open-Meteo's 10 m wind and the tool's is its own ground value.
 
 Its `hourOffset` parameter and its "Forecast valid now / valid in about N
 minutes" line are the equivalent of this app's valid-time note. When the two
