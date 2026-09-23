@@ -171,7 +171,7 @@ export function evaluateAdvisories(
         // its own section rather than riding on the reg's citation, which
         // says nothing about licences.
         guidance:
-          'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19). USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements (50 jumps) — see SIM 5-3. Not a daytime operation.',
+          'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19). USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements — see SIM 5-3. Not a daytime operation.',
         citation: CITATIONS.far10519,
         secondaryCitation: CITATIONS.uspaNightJumps,
       });

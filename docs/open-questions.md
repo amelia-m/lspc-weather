@@ -76,6 +76,27 @@ Still unexercised:
   and `DataFreshness` render it by hand instead of going through `Panel`.
   `SettingsPanel` uses a `<summary class="panel-head">`, so it is not a drop-in.
 
+## The Student profile models no canopy type
+
+BSR 2-1 H states two maximum ground winds for solo students: 14 mph on ram-air
+canopies, 10 mph on round reserves. The app has one Student profile with one
+band, set to the 14 mph figure, so a student on a round reserve gets no flag at
+their own published limit. The Surface wind card now says so rather than leaving
+the silence to be read as an all-clear, but saying so is not the same as
+handling it.
+
+Two ways to close it, both needing a decision this repo cannot make from code:
+
+- **Model canopy type** — a second Student profile, or a toggle. Correct, and it
+  costs a UI control on the most-read card.
+- **Drop the round-reserve figure** from the guidance and scope the profile to
+  ram-air explicitly. Cheaper, but it hides a published limit.
+
+Worth asking an instructor first whether LSPC puts any student on a round
+reserve. If nobody does, the second option is honest and the first is dead
+weight — but that is a fact about the DZ, not about the BSRs, and nothing in
+this repository establishes it.
+
 ## Winds aloft: one gap left, not reachable today
 
 - **Rows lost at the TOP of the profile are silent.** `interpolateWindsAloft`

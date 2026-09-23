@@ -60,14 +60,25 @@ export function RadarPanel(): JSX.Element {
           )}
         </a>
       )}
-      {DZ_ON_RADAR_IMAGE && (
-        <p className="muted small">
-          <span className="radar-dz-key" aria-hidden="true" /> marks the drop zone. Its position is
-          derived from the DZ coordinates and the image&rsquo;s georeferencing, which NWS does not
-          publish — it was measured against county boundaries, so read it as approximate.
-        </p>
+      {/* Both of these describe the image, so both go when it does. They used
+          to sit outside the branch above: on a failed load the card said a ring
+          marked the drop zone with no ring on screen, and invited the reader to
+          tap an image that was not there. */}
+      {!failed && (
+        <>
+          {DZ_ON_RADAR_IMAGE && (
+            <p className="muted small">
+              <span className="radar-dz-key" aria-hidden="true" /> marks the drop zone. Its position
+              is derived from the DZ coordinates and the image&rsquo;s georeferencing, which NWS
+              does not publish — it was measured against county boundaries, so read it as
+              approximate.
+            </p>
+          )}
+          <p className="muted small">
+            Tap the image for the interactive radar; the loop updates every few minutes.
+          </p>
+        </>
       )}
-      <p className="muted small">Tap the image for the interactive radar; the loop updates every few minutes.</p>
     </Panel>
   );
 }

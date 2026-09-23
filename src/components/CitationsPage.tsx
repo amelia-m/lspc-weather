@@ -93,7 +93,7 @@ const LOOKUPS: Lookup[] = [
     id: 'A3',
     title: 'Night jumps',
     claim:
-      'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19). USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements (50 jumps) — see SIM 5-3.',
+      'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19). USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements — see SIM 5-3.',
     where: 'Conditions to note, after sunset',
     cites: '14 CFR 105.19 for the light; USPA SIM 5-3 (Night Jumps) for the USPA claim',
     found: [
