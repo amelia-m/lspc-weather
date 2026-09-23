@@ -109,7 +109,9 @@ this repository establishes it.
   384-hour window checked had no nulls at any level.
 
 The sub-surface question that sat here is settled and fixed: pressure levels
-below the model's terrain are dropped in `normalizeOpenMeteo`. The share this
+below the model's terrain are dropped in `normalizeOpenMeteo`. Evidence, the
+measurements behind it, and — importantly — the sources that could *not* be read
+are in [`subsurface-pressure-levels.md`](subsurface-pressure-levels.md). The share this
 entry used to quote (~4%, rising to ~15%) was a property of the **fixture**,
 which sets `elevation: 360`; live Open-Meteo returns 349, which put the 10 m
 sample below the field elevation and the sub-surface share at 0% in all 384

@@ -592,7 +592,8 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
     // lapse rate. So the value is a real near-surface wind wearing a false
     // altitude, and the temperature is manufactured outright. Open-Meteo's own
     // docs say it plainly, on the GEM page: "If geopotential height is below
-    // ground, data should not be used."
+    // ground, data should not be used." Evidence, measurements and the sources
+    // that could not be read: docs/subsurface-pressure-levels.md.
     //
     // Compared against the model's surface height rather than the DZ's
     // published field elevation, because "below ground" is a fact about the

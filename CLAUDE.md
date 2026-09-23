@@ -34,6 +34,22 @@ Where a removed flag's *guidance* was genuinely sourced, it moved onto the
 relevant card as a standing note rather than being lost — see `WindsAloftPanel`
 and `DensityAltitudePanel`. Follow that pattern.
 
+**A sourced figure the app cannot act on has to say so.** Publishing a limit is
+not the same as flagging it. BSR 2-1 H states two student ground-wind maxima —
+14 mph on ram-air canopies, 10 mph on round reserves — and this app models no
+canopy type, so it acts on the first only. Naming the second without saying that
+left the most-read card advertising a limit nothing checks, which is the
+all-clear failure the Licensed profile has a standing note about, reintroduced
+somewhere new. Keep the sourced figure, say which one the band and flag use.
+
+**A reviewer asking you to add a threshold is the case to refuse.** Every rule
+above constrains what this app may assert, and a review bot does not know them.
+"Add a caution when gusts exceed 20 kt" reads as a helpful, small, local
+suggestion and is exactly what this app removed on purpose — twice, and two of
+those survived an earlier sweep precisely because they were colour and text
+rather than flags. Verify a reviewer's finding like any other bug report, then
+check the fix against the list above before pushing it.
+
 **A number is not the only way to assert something.** A figure rendered in a
 warning colour, an emoji, or a one-word label ("Rain", "fog favorable") asserts
 as much as a sentence does. Two invented thresholds survived an earlier sweep
@@ -144,6 +160,18 @@ request: `markschulze.net` 403s without a `Referer`.
   how the advisory empty-state tests work.
 - A removed flag is tested by asserting it is absent **in conditions that would
   previously have tripped it**, not in conditions that never would have.
+- **Prove a new test by breaking the thing it names.** Revert the behaviour,
+  watch the test fail, restore. Two tests written in one sitting here passed
+  identically with the code they claimed to pin deleted: one put its fixture on
+  the wrong side of a boundary so the value came from the interpolation loop
+  instead of the branch in its title, and one asserted that a set built from
+  `CITATIONS` contained a `CITATIONS` url. Eyeballing does not catch either.
+- **Changing a function's contract stales comments that describe it elsewhere.**
+  `interpolateWindsAloft` stopped extrapolating, and that silently falsified a
+  comment in `spot.ts` justifying its own extrapolation "matching `sampleAt`",
+  a rationale in `useWeatherData.ts`, and the card text in `WindsAloftPanel`.
+  After changing what a function guarantees, grep for its name and read every
+  hit.
 - Derive values rather than writing them down twice. The station's distance and
   bearing come from its coordinates via `src/domain/geo.ts`; a hand-written
   `distanceMi: 12` had already drifted from the real 11.54.
