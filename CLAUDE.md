@@ -76,9 +76,12 @@ precisely because they were colour and text rather than flags.
 - **The sky is read from the METAR text, not from the API's `cloudLayers`.** On
   2026-09-23 api.weather.gov served seven consecutive KPMV observations with
   `cloudLayers: []` and an empty `textDescription` while `rawMessage` read
-  `OVC027`–`OVC035`. The dashboard showed "Clear", "No ceiling" and VFR under a
-  2,700 ft overcast, with no flag — found from a screenshot of the deployed
-  site, which no sandbox check had covered. `normalizeNwsObservation` now
+  `OVC027`–`OVC035`. Re-read twenty minutes later the same seven were still
+  empty while the next report was decoded, so it is a gap, not a lag; usairnet's
+  own decode of the same METAR read "Solid Overcast at 2700 ft", MVFR. The
+  dashboard showed "Clear", "No ceiling" and VFR under a 2,700 ft overcast, with
+  no flag — found from a screenshot of the deployed site, which no sandbox
+  check had covered. `normalizeNwsObservation` now
   parses the sky groups from the METAR text and uses the decoded layers only
   when the text has none, the order it already used for the altimeter. Do not
   "simplify" it back. Four more of those forty observations had no
@@ -123,8 +126,9 @@ When touching a citation:
 Outbound network access goes through a policy-enforcing egress proxy. With
 `api.weather.gov`, `api.open-meteo.com`, `radar.weather.gov`, `www.uspa.org`,
 `www.markschulze.net` and `amelia-m.github.io` allowlisted (2026-09-22), then
-`www.ecfr.gov`, `www.faa.gov` and `www.faasafety.gov` (2026-09-23), these
-became checkable and were checked — see `docs/open-questions.md`:
+`www.ecfr.gov`, `www.faa.gov`, `www.faasafety.gov` and `www.usairnet.com`
+(2026-09-23), these became checkable and were checked — see
+`docs/open-questions.md`:
 
 - the live NWS and Open-Meteo paths, the TAF fallback chain and the NOAA FD
   winds fallback, by running the app's own fetch and domain code under Node;
@@ -132,7 +136,9 @@ became checkable and were checked — see `docs/open-questions.md`:
   advisory tests use. This is how the FD fallback's fake Surface row was found;
 - the radar GIF and its georeferencing, by fetching and measuring it;
 - the USPA SIM sections behind the citations, and the CFR sections, AIM 7-1-7
-  and FAA-P-8740-2 behind the FAA ones.
+  and FAA-P-8740-2 behind the FAA ones;
+- the usairnet KPMV page the Ceiling & sky card links to, as a second decode of
+  the same METAR (plain HTML, fetchable with a browser User-Agent).
 
 Still not checkable here, so do not imply a green suite covers them:
 
