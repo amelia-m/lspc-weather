@@ -157,9 +157,17 @@ Worth knowing if this needs revisiting:
   the bbox and still have nothing under it but NWS chrome. `radarImageFraction`
   returns null there.
 
-Approach 3 (centring the interactive-radar link on the DZ) is untouched and
-still open: modern `radar.weather.gov` encodes map state in an opaque
-`?settings=v1_<base64>` blob, and the app still links to the plain station page.
+Approach 3 (centring the interactive-radar link on the DZ) is still open, but
+no longer opaque. The `?settings=v1_<base64>` parameter is base64 JSON, and
+both the site's encoder and its reader were read from its bundles on
+2026-09-23 — see [`radar-interactive-link.md`](radar-interactive-link.md).
+The reading says a single-station view is re-centred on the radar once the
+station list loads, so "centred on the DZ" and "KOAX's own product" cannot be
+had in one link; only the national mosaic takes a centre. That is a code
+reading, not an observation: no URL has been opened in a browser from here.
+The doc lists six links (A–F) for a person to open on a phone and desktop, and
+what to look for; B is the one that settles it. Until then the card keeps its
+plain station link.
 
 ## Mark Schulze's Winds Aloft: AGL or MSL?
 
