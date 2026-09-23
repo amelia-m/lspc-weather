@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity } from '../domain/types';
 import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
-import { SITE } from '../config/site';
+import { windsAloftTop } from '../domain/windsAloft';
+import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
@@ -13,8 +14,12 @@ import { fmtClock, fmtTime } from './format';
  *  around 10,000 ft, so the default view stops there and keeps the low levels
  *  that matter for the landing pattern and opening (surface, 1k, 3k) plus a
  *  couple in between for the exit/freefall drift. Expanding reveals every
- *  1,000-ft level up to 13k. */
+ *  level the source answered for, up to the top of `WINDS_ALOFT_LEVELS_AGL`
+ *  when the profile is complete. */
 const COLLAPSED_ALTITUDES_FT = new Set([0, 1000, 3000, 5000, 7000, 10000]);
+
+/** "9,000 ft" — the form every altitude on this card takes. */
+const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
 
 /** How far the forecast hour must sit from the clock before the card spells the
  *  gap out in words.
@@ -102,6 +107,15 @@ export function WindsAloftPanel({
   const canCollapse = collapsedLevels.length > 0 && collapsedLevels.length < levels.length;
   const shown = expanded || !canCollapse ? levels : collapsedLevels;
   const toggleable = canCollapse;
+  // Where the profile actually ends, against the altitudes the hook asked for
+  // (the same list, so the two cannot disagree). Every "up to" on this card is
+  // derived from it: the toggle and the collapsed note used to hard-code the
+  // configured top, so a profile that stopped short — Open-Meteo serving nulls
+  // at 500 and 600 hPa ends the table at 9,000 ft — was offered as running to
+  // 13k, with nothing to say the upper rows were missing rather than folded.
+  const top = windsAloftTop(levels, WINDS_ALOFT_LEVELS_AGL);
+  const collapsedTopFtAgl =
+    collapsedLevels.length > 0 ? Math.max(...collapsedLevels.map((l) => l.altitudeFtAgl)) : null;
   return (
     <Panel
       title="Winds aloft"
@@ -187,14 +201,25 @@ export function WindsAloftPanel({
           </tbody>
         </table>
       )}
-      {toggleable && (
+      {/* An observed fact about this report, in words: the rows are absent
+          because no sample covered them (see `windsAloftTop`), not folded away
+          by the collapse. Both figures are derived, never typed in. */}
+      {top.stopsShort && top.highestFtAgl != null && top.requestedFtAgl != null && (
+        <p className="muted small">
+          This report has no wind above {fmtFt(top.highestFtAgl)} AGL, so the rows above it are
+          not shown. The table normally runs to {fmtFt(top.requestedFtAgl)}.
+        </p>
+      )}
+      {toggleable && top.highestFtAgl != null && (
         <button
           type="button"
           className="aloft-toggle"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
         >
-          {expanded ? 'Show fewer altitudes' : 'Show more altitudes (more increments, up to 13k ft)'}
+          {expanded
+            ? 'Show fewer altitudes'
+            : `Show more altitudes (more increments, up to ${fmtFt(top.highestFtAgl)})`}
         </button>
       )}
       <p className="muted small">Arrow shows drift direction (where wind pushes you).</p>
@@ -206,10 +231,11 @@ export function WindsAloftPanel({
         Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit
         separation accordingly. Source: <SourceLink citation={CITATIONS.uspaSpotting} />
       </p>
-      {!expanded && toggleable && (
+      {!expanded && toggleable && collapsedTopFtAgl != null && top.highestFtAgl != null && (
         <p className="muted small">
-          Showing key altitudes to 10,000 ft (LSPC&rsquo;s usual max). Expand for every 1,000-ft
-          level up to 13k.
+          Showing key altitudes to {fmtFt(collapsedTopFtAgl)}
+          {collapsedTopFtAgl === 10000 ? ' (LSPC’s usual max)' : ''}. Expand for every
+          1,000-ft level up to {fmtFt(top.highestFtAgl)}.
         </p>
       )}
       {fallback ? (

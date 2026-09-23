@@ -12,7 +12,10 @@ const range = (lo: number, hi: number, step: number): number[] =>
   Array.from({ length: Math.floor((hi - lo) / step) + 1 }, (_, i) => lo + i * step);
 
 // Exit / deploy altitudes in 500-ft steps; fall rate in 10-mph steps. Exit
-// tops out at the DZ's usual 10k but allows higher (winds data runs to 13k).
+// tops out at the DZ's usual 10k but allows higher: the winds table is asked
+// for levels to 13k, and when the profile stops below the chosen exit the card
+// says so rather than shrinking the selector — the exit altitude is the
+// jumper's, and the estimate still needs a wind for every foot of it.
 const EXIT_OPTIONS = range(3000, 13000, 500);
 const DEPLOY_OPTIONS = range(2000, 6000, 500);
 const FALL_RATE_OPTIONS = range(90, 180, 10);
@@ -150,6 +153,28 @@ export function DriftPanel({
               {drift.lowestLevelFtAgl.toLocaleString()} ft of descent carries that wind rather than a
               forecast one — the stretch where wind usually changes most. Read the ground wind off
               the Surface wind card and treat this as the rougher half of the estimate.
+            </p>
+          )}
+
+          {/* The mirror at the top: only when the chosen exit is above the
+              highest level the source covers. The integral carries that level's
+              wind up to exit (see `integrate`), which is invisible in the
+              figure — a 10,000 ft exit over a profile that stopped at 9,000 ft
+              looks fully sampled. Normally the profile reaches every exit the
+              selector offers and this never renders; it exists for the report
+              that answers for fewer levels than were asked for (Open-Meteo
+              serving nulls at 500 and 600 hPa). Same phrasing as the bottom
+              note — the level's own altitude, then the depth it stands in for,
+              which here is a plain subtraction from the exit the reader set. */}
+          {drift.highestLevelFtAgl != null && exitFt > drift.highestLevelFtAgl && (
+            <p className="muted small">
+              <strong>
+                No winds above {fmtFt(drift.highestLevelFtAgl)} AGL — this assumes the{' '}
+                {fmtFt(drift.highestLevelFtAgl)} wind up to exit.
+              </strong>{' '}
+              The source in use has no level over that, so the top{' '}
+              {fmtFt(exitFt - drift.highestLevelFtAgl)} of the descent carries that wind rather
+              than a forecast one.
             </p>
           )}
 

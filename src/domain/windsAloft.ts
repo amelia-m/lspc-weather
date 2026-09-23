@@ -67,6 +67,53 @@ export function interpolateWindsAloft(
   return out;
 }
 
+/** Where a winds-aloft profile stops at the top, against what was asked for. */
+export interface WindsAloftTop {
+  /** Highest altitude AGL the profile reached; null when it has no levels. */
+  highestFtAgl: number | null;
+  /** Highest altitude AGL that was asked for; null when nothing was. */
+  requestedFtAgl: number | null;
+  /**
+   * True when the profile stops below the highest requested altitude — the
+   * rows above `highestFtAgl` were dropped by `interpolateWindsAloft` because
+   * no sample covered them, not merely hidden by a collapsed view.
+   */
+  stopsShort: boolean;
+}
+
+/**
+ * Report the top of a profile so the card can say where its rows end.
+ *
+ * `interpolateWindsAloft` drops every target above the highest sample, which
+ * is the honest thing to do with a wind nobody forecast — but a dropped row
+ * is invisible. If Open-Meteo served nulls at 500 and 600 hPa, the table would
+ * end at 9,000 ft while the card's own text still offered every level "up to
+ * 13k", and a reader would take the missing rows for a display choice rather
+ * than a hole in the report. The bottom of the profile has long had its
+ * counterpart (the FD fallback's note about the bulletin's lowest level); this
+ * gives the top one.
+ *
+ * The comparison is against the altitudes that were ASKED for, not a fixed
+ * ceiling, so the card and the config cannot drift apart. Levels are
+ * contiguous from the lowest covered target to the highest — `sampleAt` only
+ * returns null outside the sampled range — so "no wind above the highest
+ * level" describes the rows exactly.
+ */
+export function windsAloftTop(
+  levels: readonly WindsAloftLevel[],
+  targetAltitudesFtAgl: readonly number[],
+): WindsAloftTop {
+  const highestFtAgl = levels.length > 0 ? Math.max(...levels.map((l) => l.altitudeFtAgl)) : null;
+  const requestedFtAgl = targetAltitudesFtAgl.length > 0 ? Math.max(...targetAltitudesFtAgl) : null;
+  return {
+    highestFtAgl,
+    requestedFtAgl,
+    // With no levels at all there is no "highest" for rows to sit above, and
+    // the card already says there is no data; that is a different message.
+    stopsShort: highestFtAgl != null && requestedFtAgl != null && highestFtAgl < requestedFtAgl,
+  };
+}
+
 interface Sampled {
   speedKt: number;
   directionDeg: number;

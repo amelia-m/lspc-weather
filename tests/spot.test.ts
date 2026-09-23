@@ -4,6 +4,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { estimateDrift } from '../src/domain/spot';
 import { DriftPanel } from '../src/components/DriftPanel';
 import type { WindsAloftLevel } from '../src/domain/types';
+import {
+  fullProfile,
+  REQUESTED_TOP_FT_AGL,
+  SHORT_PROFILE_TOP_FT_AGL,
+  shortProfile,
+} from './support/openMeteoProfiles';
 
 /** Uniform 10 kt wind FROM the west (270°) at every 1,000 ft → drift TOWARD east (90°). */
 function uniformLevels(count = 14): WindsAloftLevel[] {
@@ -139,5 +145,58 @@ describe('the drift card credits the source the numbers came from', () => {
     const html = markup('nws-fd');
     expect(html).toContain('NOAA winds aloft (FD)');
     expect(html).not.toContain('>Open-Meteo<');
+  });
+});
+
+/**
+ * The integral extrapolates a constant wind ABOVE the highest level too (see
+ * `integrate`), for the same reason as below the lowest: the alternative is a
+ * drift figure that is short by however much of the descent went unaccounted.
+ * The assumption is just as invisible at the top, so the estimate reports how
+ * high the levels reached and the card compares that with the exit the reader
+ * chose. The arrangement that produces it is a report answering for fewer
+ * levels than were asked for — Open-Meteo serving nulls at 500 and 600 hPa
+ * ends the profile at 9,000 ft AGL under a 10,000 ft exit.
+ */
+describe('estimateDrift reports how high the levels reached', () => {
+  const opts = { exitFtAgl: 10000, deployFtAgl: 3000, fallRateMph: 120, canopyRateFpm: 1000 };
+
+  it('is the configured top when the profile is complete', () => {
+    expect(estimateDrift(fullProfile(), opts).highestLevelFtAgl).toBe(REQUESTED_TOP_FT_AGL);
+  });
+
+  it('is the highest level present when the profile stops short', () => {
+    expect(estimateDrift(shortProfile(), opts).highestLevelFtAgl).toBe(SHORT_PROFILE_TOP_FT_AGL);
+  });
+
+  it('is null when there is nothing to integrate', () => {
+    expect(estimateDrift([], opts).highestLevelFtAgl).toBeNull();
+  });
+});
+
+/* The card's default exit is 10,000 ft. Over the short profile the top 1,000 ft
+ * of that descent is carried by the 9,000 ft wind, and the card has to say so
+ * in the same plain terms the bottom note uses. Over a complete profile no
+ * exit the selector offers is above the top level, so the note must not
+ * appear — the previous silence was correct there, and only there. */
+describe('the drift card says when it assumes the top wind up to exit', () => {
+  const markup = (levels: WindsAloftLevel[]): string =>
+    renderToStaticMarkup(
+      createElement(DriftPanel, { levels, profile: 'licensed', source: 'open-meteo' } as never),
+    );
+  const short = SHORT_PROFILE_TOP_FT_AGL.toLocaleString();
+
+  it('names the highest level and the depth it stands in for', () => {
+    const html = markup(shortProfile());
+    expect(html).toContain(
+      `No winds above ${short} ft AGL — this assumes the ${short} ft wind up to exit.`,
+    );
+    expect(html).toContain('so the top 1,000 ft of the descent carries that wind');
+  });
+
+  it('is silent when the levels reach the exit altitude', () => {
+    const html = markup(fullProfile());
+    expect(html).not.toContain('No winds above');
+    expect(html).not.toContain('up to exit');
   });
 });
