@@ -168,10 +168,15 @@ export const CITATIONS = {
    * requirements for a USPA B or higher license" — a recommendation — while
    * 3-1 lists performing night jumps among the B licence's privileges. The
    * guidance text says "should" for that reason; it read "requires" before.
+   *
+   * It also no longer prints "(50 jumps)". That figure is real but it is in
+   * 3-1, not here, so a reader following this link could not check it — the
+   * same defect as citing a section a claim does not appear in. The number is
+   * on the #citations page, where 3-1 is named as its source.
    */
   uspaNightJumps: {
     source: 'USPA SIM, Section 5-3 (Night Jumps)',
-    ref: 'SIM 5-3 — any jump between official sunset and sunrise is a night jump; participants should meet USPA B-licence requirements (50 jumps, per 3-1)',
+    ref: 'SIM 5-3 — any jump between official sunset and sunrise is a night jump; participants should meet USPA B-licence requirements',
     url: simUrl('5-3'),
     note: SIM_READ_NOTE,
   },
@@ -283,8 +288,15 @@ const STUDENT: Thresholds = {
   // waiver document contradicted — it treats the figure as a limit needing
   // on-site approval to exceed. The canopy qualifier is the BSR's own: the
   // 14 mph figure is paired with ram-air canopies, 10 mph with round reserves.
+  // The BSR states two figures and this profile can only act on one. Naming
+  // the 10 mph round-reserve limit without saying the flag does not use it
+  // left the card advertising a published limit nothing here checks — the same
+  // "silence reads as an all-clear" failure the Licensed profile has a whole
+  // standing note about. The app models no canopy type, so the honest move is
+  // to keep both sourced figures and say which one the band and flag use.
+  // Modelling canopy type is in docs/open-questions.md.
   windGuidance:
-    'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it on site.',
+    'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. The band and flag here use the 14 mph figure — on a round reserve the limit is lower and nothing on this page flags it. An S&TA or Examiner may waive it on site.',
   windCitation: CITATIONS.uspaStudentWinds,
   // The guidance's last clause — that an S&TA or Examiner may waive it — is
   // 2-2's rule, not 2-1's. 2-1 carries the [S] marker; 2-2 B is what says the

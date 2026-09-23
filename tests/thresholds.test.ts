@@ -262,3 +262,31 @@ describe('no citation is defined and then left unreachable', () => {
     expect(unreferenced, 'citations nothing in src/ renders').toEqual([]);
   });
 });
+
+/**
+ * Two claims that must stay checkable at the source the app links to. Both
+ * were flagged in review: a guidance sentence may not assert something the
+ * linked section does not contain, and may not name a published limit this
+ * app cannot act on without saying so.
+ */
+describe('guidance says only what its own citation carries', () => {
+  it('does not print a jump count the linked night-jump section never states', () => {
+    // SIM 5-3 B says "should meet all the requirements for a USPA B or higher
+    // license". The 50-jump figure is in 3-1. The flag links to 5-3, so a
+    // reader following it could not check the number.
+    expect(CITATIONS.uspaNightJumps.url).toBe('https://www.uspa.org/sim/5-3');
+    expect(CITATIONS.uspaNightJumps.ref).not.toMatch(/50 jumps/);
+  });
+
+  /* BSR 2-1 H states 14 mph for ram-air canopies and 10 mph for round
+   * reserves. The Student profile has one band and no canopy-type model, so it
+   * acts on the first only. Naming the second without saying that left the
+   * card advertising a limit nothing checks. */
+  it('names the round-reserve limit and says the flag does not use it', () => {
+    const g = resolveThresholds('student').windGuidance;
+    expect(g).toMatch(/10 mph on round reserves/);
+    expect(g).toMatch(/nothing on this page flags it/);
+    // And the band really is the ram-air figure, not the lower one.
+    expect(resolveThresholds('student').windCautionKt).toBe(12);
+  });
+});
