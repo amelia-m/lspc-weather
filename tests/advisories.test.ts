@@ -659,6 +659,16 @@ describe('a live observation whose API decode is empty', () => {
     expect(html).not.toMatch(/>Clear</);
   });
 
+  it('says "Height not reported" for a BKN///, not "No ceiling", and shows no VFR pill', () => {
+    const heightless = live('KPMV 230355Z AUTO 08003KT 10SM BKN/// 15/13 A3028 RMK AO2');
+    const sky = markup(createElement(CeilingSkyPanel, { current: heightless, hourly: [] }));
+    expect(sky).toContain('Height not reported');
+    expect(sky).not.toContain('No ceiling');
+    expect(sky).not.toContain('VFR');
+    const metar = markup(createElement(MetarPanel, { current: heightless, unit: 'kt', onUnitChange: () => {} }));
+    expect(metar).toMatch(/<dd>BKN<\/dd>/);
+  });
+
   it('says "Not reported" rather than "Clear" or "No ceiling" when there is no sky group, and shows no VFR pill', () => {
     const metar = markup(createElement(MetarPanel, { current: unreported, unit: 'kt', onUnitChange: () => {} }));
     expect(metar).toContain('Not reported');

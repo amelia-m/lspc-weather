@@ -89,6 +89,7 @@ function describeSky(c: CurrentConditions): string {
     .map((l) => {
       if (l.cover === 'CLR' || l.cover === 'SKC') return 'Clear';
       if (l.cover === 'NSC') return 'No significant cloud';
+      if (l.cover === 'NCD') return 'No cloud detected';
       return l.baseFtAgl != null ? `${l.cover} ${l.baseFtAgl.toLocaleString()} ft` : l.cover;
     })
     .join(', ');

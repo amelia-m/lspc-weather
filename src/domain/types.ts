@@ -2,7 +2,10 @@
  *  by src/domain/normalize.ts so the UI and advisory engine never touch raw
  *  vendor JSON. Units are explicit in field names. */
 
-export type SkyCover = 'SKC' | 'CLR' | 'NSC' | 'FEW' | 'SCT' | 'BKN' | 'OVC' | 'VV';
+/** METAR sky covers. SKC, CLR, NSC and NCD all mean no cloud to report (NCD is
+ *  the automated-station form used outside the US); FEW/SCT are layers that
+ *  are not a ceiling; BKN/OVC/VV are. */
+export type SkyCover = 'SKC' | 'CLR' | 'NSC' | 'NCD' | 'FEW' | 'SCT' | 'BKN' | 'OVC' | 'VV';
 
 export interface SurfaceWind {
   /** Degrees true. null when calm or variable. */
@@ -38,14 +41,17 @@ export interface CurrentConditions {
   raw: string;
   wind: SurfaceWind;
   visibilitySm: number | null;
-  /** Sky groups as reported. A clear sky is a CLR/SKC layer with no base, so an
-   *  EMPTY list means the sky was not reported (an observation with no METAR
-   *  text, or one whose sensor reported nothing) — not that it was clear. The
-   *  cards say "Not reported" for it and withhold the VFR label, which needs a
-   *  ceiling to be established. */
+  /** Sky groups as reported. A clear sky is a CLR/SKC/NCD layer with no base,
+   *  so an EMPTY list means the sky was not reported (an observation with no
+   *  METAR text, or one whose sensor reported nothing) — not that it was clear.
+   *  The cards say "Not reported" for it and withhold the VFR label, which
+   *  needs a ceiling to be established. */
   skyLayers: SkyLayer[];
-  /** Lowest BKN/OVC/VV layer base, ft AGL. null = no ceiling reported, which
-   *  with an empty `skyLayers` means unknown rather than unlimited. */
+  /** Lowest BKN/OVC/VV layer base, ft AGL. null means no ceiling could be
+   *  computed, which is NOT the same as "no ceiling": a `BKN///` (a broken
+   *  layer whose height the sensor could not measure) and a report with no
+   *  sky group both leave it null. `ceilingState()` in normalize.ts says
+   *  which; the cards and `observedFlightCategory` go through it. */
   ceilingFtAgl: number | null;
   /** Set by normalizeNwsObservation, which has two decodes to compare. Absent
    *  on the aviationweather path (normalizeMetar), which has one. */

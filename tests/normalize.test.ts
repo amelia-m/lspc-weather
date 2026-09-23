@@ -5,6 +5,7 @@ import {
   durationToHours,
   normalizeGridpoint,
   normalizeMetar,
+  ceilingState,
   compareSkyDecodes,
   normalizeNwsObservation,
   parseSkyGroups,
@@ -225,6 +226,19 @@ describe('compareSkyDecodes', () => {
   });
 });
 
+describe('ceilingState', () => {
+  it('tells a clear sky, a heightless ceiling layer and no sky apart', () => {
+    expect(ceilingState({ skyLayers: [{ cover: 'CLR', baseFtAgl: null }] })).toBe('known');
+    expect(ceilingState({ skyLayers: [{ cover: 'FEW', baseFtAgl: null }] })).toBe('known');
+    expect(ceilingState({ skyLayers: [{ cover: 'BKN', baseFtAgl: 2000 }] })).toBe('known');
+    expect(ceilingState({ skyLayers: [{ cover: 'BKN', baseFtAgl: null }] })).toBe('height-unknown');
+    expect(ceilingState({ skyLayers: [{ cover: 'SCT', baseFtAgl: 1500 }, { cover: 'OVC', baseFtAgl: null }] })).toBe(
+      'height-unknown',
+    );
+    expect(ceilingState({ skyLayers: [] })).toBe('unreported');
+  });
+});
+
 describe('parseSkyGroups', () => {
   it('reads cover and height in hundreds of feet, with CB/TCU and missing heights', () => {
     expect(parseSkyGroups('KPMV 1200Z 10SM SCT005 BKN010CB OVC018 15/13 A3028')).toEqual([
@@ -237,6 +251,10 @@ describe('parseSkyGroups', () => {
     ]);
     expect(parseSkyGroups('KPMV 1200Z AUTO 10SM BKN/// 15/13 A3028')).toEqual([
       { cover: 'BKN', baseFtAgl: null },
+    ]);
+    // The automated no-cloud form used outside the US.
+    expect(parseSkyGroups('EGLL 1200Z AUTO 9999 NCD 15/13 Q1025')).toEqual([
+      { cover: 'NCD', baseFtAgl: null },
     ]);
   });
 
