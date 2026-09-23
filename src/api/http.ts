@@ -14,8 +14,6 @@ export const USE_FIXTURES: boolean =
   env.VITE_USE_FIXTURES != null ? env.VITE_USE_FIXTURES === 'true' : env.DEV;
 
 export const NWS_BASE = env.VITE_NWS_BASE ?? 'https://api.weather.gov';
-export const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
-
 /**
  * Thrown for any non-ok HTTP response. `status` lets callers react to specific
  * classes of failure (e.g. dropping a cached URL that now 404s). fetchJson

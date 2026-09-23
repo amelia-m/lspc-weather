@@ -111,7 +111,7 @@ export function WindsAloftPanel({
   // (the same list, so the two cannot disagree). Every "up to" on this card is
   // derived from it: the toggle and the collapsed note used to hard-code the
   // configured top, so a profile that stopped short — Open-Meteo serving nulls
-  // at 500 and 600 hPa ends the table at 9,000 ft — was offered as running to
+  // above 700 hPa ends the table at 9,000 ft — was offered as running to
   // 13k, with nothing to say the upper rows were missing rather than folded.
   const top = windsAloftTop(levels, WINDS_ALOFT_LEVELS_AGL);
   const collapsedTopFtAgl =
@@ -257,7 +257,9 @@ export function WindsAloftPanel({
             </a>
             , the popular skydiving winds tool — so if its numbers differ from these, check its
             stated valid time (it labels forecasts in Z, e.g. “1600Z”) against the one above
-            before assuming the data disagrees. Its altitudes are{' '}
+            before assuming the data disagrees: this card shows the hour nearest the clock, that
+            tool the hour in progress, so late in an hour the two can be an hour apart. Its
+            altitudes are{' '}
             <strong>AGL, like these</strong>, so the two tables are directly comparable; the “MSL”
             on its page is the ground elevation it looked up, not the scale of its wind table.
           </p>

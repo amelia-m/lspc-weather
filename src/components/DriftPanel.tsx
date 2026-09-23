@@ -163,7 +163,7 @@ export function DriftPanel({
               looks fully sampled. Normally the profile reaches every exit the
               selector offers and this never renders; it exists for the report
               that answers for fewer levels than were asked for (Open-Meteo
-              serving nulls at 500 and 600 hPa). Same phrasing as the bottom
+              serving nulls above 700 hPa). Same phrasing as the bottom
               note — the level's own altitude, then the depth it stands in for,
               which here is a plain subtraction from the exit the reader set. */}
           {drift.highestLevelFtAgl != null && exitFt > drift.highestLevelFtAgl && (

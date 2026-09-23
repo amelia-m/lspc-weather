@@ -178,7 +178,7 @@ describe('the collapsed winds table never hides the lowest available level', () 
 
 /**
  * `interpolateWindsAloft` drops the rows above the highest sample, which is
- * right, but a dropped row is invisible. With the 500 and 600 hPa levels
+ * right, but a dropped row is invisible. With the levels above 700 hPa
  * missing the profile ends at 9,000 ft AGL while the app asked for 13,000; the
  * report has to say where it stops so the missing rows read as a hole in the
  * data and not a display choice.
@@ -191,7 +191,7 @@ describe('windsAloftTop says where the profile ends against what was asked for',
     expect(top.stopsShort).toBe(false);
   });
 
-  it('reports the 700 hPa top when 500 and 600 hPa are missing', () => {
+  it('reports the 700 hPa top when the levels above 700 hPa are missing', () => {
     const levels = shortProfile();
     // The fixture arrangement the test is about: rows above 9,000 ft are gone.
     expect(Math.max(...levels.map((l) => l.altitudeFtAgl))).toBe(SHORT_PROFILE_TOP_FT_AGL);
@@ -228,7 +228,7 @@ describe('the winds table says where its rows stop', () => {
   const short = SHORT_PROFILE_TOP_FT_AGL.toLocaleString();
   const requested = REQUESTED_TOP_FT_AGL.toLocaleString();
 
-  describe('with the 500 and 600 hPa levels missing', () => {
+  describe('with the levels above 700 hPa missing', () => {
     const html = markup(shortProfile());
 
     it('states, in words, the altitude above which the report has no wind', () => {

@@ -254,5 +254,9 @@ dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
 app's METAR sky parse disagrees with aviationweather.gov's decoder, and opens
 one issue labelled `sky-parity` when it does. aviationweather.gov is not on the
 sandbox allowlist, so run it from a runner, not from here.
+`scripts/schulzeCompare.live.ts` runs in the same job and prints this app's
+winds-aloft profile beside Mark Schulze's at the same valid hour; it is a
+report and never fails the run. It does run from here (markschulze.net is
+allowlisted; it needs a Referer and a browser-like User-Agent).
 
 Open items live in `docs/open-questions.md`.
