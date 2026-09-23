@@ -109,10 +109,23 @@ day at 19Z:
 | 6,000 | 288 / 9 / 11 | 288 / 8 / 11 | 0° |
 | 7,000–13,000 | identical | | 0° |
 
-The 4° at 5,000 ft is the two tools interpolating direction across the 166°
-turn between the 850 and 800 hPa samples (124° at 4,062 ft, 290° at 5,732 ft)
-and rounding differently; the surface row differs because this app's surface
-is Open-Meteo's 10 m wind and the tool's is its own ground value.
+Every remaining difference has a known cause, none of them the data:
+
+- **Direction across a large turn.** Both tools interpolate direction linearly
+  along the shortest arc between the two samples that bracket a row, then
+  round to whole degrees. The 5,000 ft row sits between the 850 hPa sample
+  (124° at 4,062 ft) and the 800 hPa one (290° at 5,732 ft), a 166° turn; the
+  app's arithmetic gave 221° and the tool's 217°. The bigger the turn between
+  two samples, the more a rounding choice moves the row between them.
+- **The surface row.** This app's is Open-Meteo's 10 m wind
+  (`wind_speed_10m`/`wind_direction_10m`); the tool's is the
+  `groundDir`/`groundSpd` its API reports, whose derivation has not been read.
+  2° and 1 kt apart here.
+- **The valid hour**, when the two are not aligned: see "Re-checking this".
+
+Before 2026-09-23 there was a fourth, and it dwarfed the others: the sampling
+gap described above. It is gone, and the comparison script exists so that its
+return would be noticed.
 
 Its `hourOffset` parameter and its "Forecast valid now / valid in about N
 minutes" line are the equivalent of this app's valid-time note. When the two
