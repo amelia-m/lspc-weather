@@ -236,9 +236,11 @@ export default function App(): JSX.Element {
           In development — not endorsed or approved by USPA, LSPC, or any licensed professional.
         </strong>{' '}
         Advisory only: this dashboard flags conditions and cites guidance — it does not decide
-        whether it is safe to jump. The citations to the USPA SIM, the CFRs, and other sources are{' '}
-        <strong>AI-derived and may be inaccurate</strong>; verify every value against the primary
-        source and with a licensed professional before relying on it. Always confirm conditions with
+        whether it is safe to jump. The citations to the USPA SIM, the CFRs and the FAA began as AI
+        recollections and were read at their sources on 2026-09-22 and 2026-09-23; the club wind
+        tiers are transcribed from a photo of the posted sign.{' '}
+        <strong>None of that is a licensed professional&rsquo;s sign-off</strong> — verify every
+        value against the primary source before relying on it. Always confirm conditions with
         current official sources, the S&amp;TA, and the pilot in command. Observations are from{' '}
         {SITE.metarStation.id} (~{Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
         {METAR_STATION_OFFSET.compass}); forecasts and winds are
