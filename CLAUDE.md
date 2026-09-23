@@ -99,26 +99,11 @@ precisely because they were colour and text rather than flags.
   `.github/workflows/sky-parity.yml` compares the app's parse against
   aviationweather.gov's decoder on today's report every morning.
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
-  known.** Both read Open-Meteo for the same coordinates. Until 2026-09-23 the
-  app sampled six pressure levels to the tool's twenty and was 38° off at
-  6,000 ft on a day the wind backed 56° between 850 and 700 hPa, where the app
-  had no sample; it now asks for the thirteen levels the tool samples below
-  18,000 ft (`OPEN_METEO_PRESSURE_LEVELS`), and the same hour then agreed
-  within 4° and 1 kt at every row. What can still differ, in order of size:
-  1. **The valid hour.** This app snaps to the hour nearest the clock; the tool
-     shows the hour in progress. At 07:57Z the app showed 08Z and the tool 07Z,
-     two different forecasts. The card says so; compare valid times first.
-  2. **Direction across a large turn.** Both interpolate direction linearly
-     along the shortest arc between the samples that bracket a row, then round
-     to whole degrees. Where the wind turned 166° between 4,062 and 5,732 ft,
-     the 5,000 ft row came out 221° here and 217° there. That is arithmetic on
-     the same two samples, not a disagreement about the data.
-  3. **The surface row.** This app's is Open-Meteo's 10 m wind; the tool's is
-     the `groundDir`/`groundSpd` its API reports, whose derivation has not been
-     read. They were 2° and 1 kt apart.
-  Anything beyond that at the same valid hour is a real disagreement. Run
-  `scripts/schulzeCompare.live.ts` and read
-  `docs/markschulze-altitude-reference.md` before touching the interpolation.
+  known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
+  thirteen pressure levels the tool does (`OPEN_METEO_PRESSURE_LEVELS`), and
+  the same hour agreed within 4° and 1 kt everywhere. What can still differ,
+  and why, is in `docs/markschulze-altitude-reference.md`; run
+  `scripts/schulzeCompare.live.ts` before touching the interpolation.
 
 ## Citations
 
@@ -268,6 +253,13 @@ overlaying the Refresh button.
 pull requests only (`.github/workflows/ci.yml`), so commits pushed to a branch
 with no open PR are never checked by CI — a long branch can accumulate a lot of
 unverified work. `main` deploys to GitHub Pages on push.
+
+Copilot code review draws on the account's monthly premium-request quota, and
+on 2026-09-23 it ran out mid-PR after eight reviews across three PRs in one
+day. Request it once per PR when the work is complete, and once more after
+the batch of fixes it asks for — not after every small push. Run the four
+gates and read your own diff first; a review spent on a typo is a review not
+available for the change that needs one.
 
 `.github/workflows/sky-parity.yml` is not a gate: it runs daily and on
 dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
