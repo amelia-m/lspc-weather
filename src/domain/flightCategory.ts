@@ -4,6 +4,7 @@
  *  jump go/no-go verdict; the UI surfaces it and cites the source. */
 
 import type { CurrentConditions } from './types';
+import { ceilingState } from './normalize';
 
 export type FlightCategory = 'VFR' | 'MVFR' | 'IFR' | 'LIFR';
 
@@ -46,20 +47,21 @@ function visibilityCategory(sm: number): FlightCategory {
 }
 
 /**
- * Flight category for a current observation, which may have no sky group at
- * all (the sky was not reported — see `CurrentConditions.skyLayers`).
+ * Flight category for a current observation, which may establish nothing
+ * about the ceiling: no sky group at all, or a `BKN///` — a broken layer
+ * whose height the sensor could not measure (see `ceilingState`).
  *
  * The AIM's "and/or" lets visibility alone establish MVFR, IFR or LIFR, so a
- * report with 2 SM and no sky group is still IFR. It cannot establish VFR:
- * that needs a ceiling above 3,000 ft AND visibility above 5 miles, and with
- * the sky unreported the first is unknown. `flightCategory` reads a null
- * ceiling as "no ceiling" because that is what a clear METAR yields, so this
- * wrapper is where "not reported" is told apart from "clear": it never
- * returns VFR from half a report. Four of forty KPMV observations on
- * 2026-09-23 had no sky group; without this they wore a VFR pill.
+ * report with 2 SM and no usable ceiling is still IFR. It cannot establish
+ * VFR: that needs a ceiling above 3,000 ft AND visibility above 5 miles, and
+ * the first is unknown. `flightCategory` reads a null ceiling as "no ceiling"
+ * because that is what a clear METAR yields, so this wrapper is where an
+ * unknown ceiling is told apart from a clear sky: it never returns VFR from
+ * half a report. Four of forty KPMV observations on 2026-09-23 had no sky
+ * group; without this they wore a VFR pill, and a `BKN///` would have too.
  */
 export function observedFlightCategory(c: CurrentConditions): FlightCategory | null {
-  if (c.skyLayers.length > 0) return flightCategory(c.ceilingFtAgl, c.visibilitySm);
+  if (ceilingState(c) === 'known') return flightCategory(c.ceilingFtAgl, c.visibilitySm);
   const byVisibility = flightCategory(null, c.visibilitySm);
   return byVisibility === 'VFR' ? null : byVisibility;
 }

@@ -1,12 +1,20 @@
 import type { CurrentConditions, HourlyPoint } from '../domain/types';
 import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
+import { ceilingState, type CeilingState } from '../domain/normalize';
 import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
 import { fmtTime } from './format';
+
+/** What the Ceiling line says when no ceiling height could be computed. */
+const CEILING_LABEL: Record<CeilingState, string> = {
+  known: 'No ceiling',
+  'height-unknown': 'Height not reported',
+  unreported: 'Not reported',
+};
 
 /** Current ceiling + an hourly sky-cover / ceiling timeline (mirrors the
  *  usairnet cloud forecast), built from NWS gridpoint data. */
@@ -36,15 +44,14 @@ export function CeilingSkyPanel({
       <div className="ceil-now">
         <span className="ceil-label">Ceiling</span>
         <span className="ceil-value">
-          {/* "No ceiling" is a reading — a CLR or FEW/SCT sky. An observation
-              with no sky group at all is a different thing and must not read
-              as the better one. */}
+          {/* "No ceiling" is a reading — a CLR or FEW/SCT sky. A BKN/// (a
+              ceiling layer whose height the sensor could not measure) and an
+              observation with no sky group at all are different things and
+              must not read as the better one. */}
           {current?.ceilingFtAgl != null
             ? `${current.ceilingFtAgl.toLocaleString()} ft AGL`
             : current
-              ? current.skyLayers.length > 0
-                ? 'No ceiling'
-                : 'Not reported'
+              ? CEILING_LABEL[ceilingState(current)]
               : '—'}
         </span>
       </div>

@@ -31,7 +31,21 @@ export interface RawMetar {
 
 const CEILING_COVERS: SkyCover[] = ['BKN', 'OVC', 'VV'];
 
-const SKY_COVERS: readonly SkyCover[] = ['SKC', 'CLR', 'NSC', 'FEW', 'SCT', 'BKN', 'OVC', 'VV'];
+/** What a report establishes about the ceiling. A null `ceilingFtAgl` is
+ *  ambiguous on its own: it is what a clear sky yields, and also what `BKN///`
+ *  yields — a broken layer whose height the sensor could not measure — and
+ *  what a report with no sky group yields. Only the first is "no ceiling". */
+export type CeilingState = 'known' | 'height-unknown' | 'unreported';
+
+export function ceilingState(c: Pick<CurrentConditions, 'skyLayers'>): CeilingState {
+  if (c.skyLayers.length === 0) return 'unreported';
+  const heightless = c.skyLayers.some(
+    (l) => CEILING_COVERS.includes(l.cover) && l.baseFtAgl == null,
+  );
+  return heightless ? 'height-unknown' : 'known';
+}
+
+const SKY_COVERS: readonly SkyCover[] = ['SKC', 'CLR', 'NSC', 'NCD', 'FEW', 'SCT', 'BKN', 'OVC', 'VV'];
 
 /** Validate a vendor sky-cover string against the SkyCover union instead of
  *  blind-casting. Missing or unrecognized covers map to 'SKC': an unknown
@@ -109,7 +123,7 @@ export interface RawNwsObservation {
 
 /** One sky-condition group in the body of a METAR: cover, height in hundreds
  *  of feet (or `///` when the sensor could not measure it), optional CB/TCU. */
-const SKY_GROUP = /^(SKC|CLR|NSC|FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)?(CB|TCU)?$/;
+const SKY_GROUP = /^(SKC|CLR|NSC|NCD|FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)?(CB|TCU)?$/;
 
 /**
  * Sky layers from the body of a METAR — the text before RMK, because remarks

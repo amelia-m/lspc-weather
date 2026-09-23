@@ -62,6 +62,16 @@ describe('observedFlightCategory', () => {
     expect(observedFlightCategory(obs('', null))).toBeNull();
   });
 
+  it('never returns VFR from a ceiling layer whose height was not measured', () => {
+    // BKN/// is a broken layer, height unknown: evidence of a ceiling, not of
+    // its absence. flightCategory alone would read the null base as unlimited.
+    expect(observedFlightCategory(obs('KPMV 230355Z AUTO 08003KT 10SM BKN/// 15/13 A3028', 16090))).toBeNull();
+    expect(observedFlightCategory(obs('KPMV 230355Z AUTO 08003KT 10SM VV/// 15/13 A3028', 16090))).toBeNull();
+    expect(observedFlightCategory(obs('KPMV 230355Z AUTO 08003KT 2SM BR OVC/// 15/13 A3028', 3219))).toBe('IFR');
+    // A FEW/// is not a ceiling layer; the sky is known and clear of ceiling.
+    expect(observedFlightCategory(obs('KPMV 230355Z AUTO 08003KT 10SM FEW/// 15/13 A3028', 16090))).toBe('VFR');
+  });
+
   it('still classifies below VFR on visibility alone when the sky is unreported', () => {
     expect(observedFlightCategory(obs('KPMV 230355Z AUTO 08003KT 2SM BR 15/13 A3028', 3219))).toBe('IFR');
   });
