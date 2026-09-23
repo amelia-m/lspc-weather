@@ -105,6 +105,7 @@ export function CitationsPage(): JSX.Element {
 
   const { answered, total } = countAnswered(answers, CHECKLIST);
   const issue = issueUrl(REPO_URL, answers, CHECKLIST);
+  const exportText = formatAnswers(answers, CHECKLIST);
 
   return (
     <div className="app">
@@ -160,7 +161,8 @@ export function CitationsPage(): JSX.Element {
             </a>
           ) : (
             <span className="muted small">
-              Too long for a GitHub link — copy the answers and paste them into a new issue.
+              Too long for a GitHub link — copy the answers, or select the text under
+              &ldquo;Answers as text&rdquo;, and paste them into a new issue.
             </span>
           )}
           <button className="refresh-btn" type="button" onClick={() => void copy()}>
@@ -172,10 +174,24 @@ export function CitationsPage(): JSX.Element {
           {copied === 'copied' && <span className="muted small">Copied.</span>}
           {copied === 'failed' && (
             <span className="muted small">
-              Could not reach the clipboard — select the text below the page and copy it by hand.
+              Could not reach the clipboard — select the text under &ldquo;Answers as text&rdquo;
+              and copy it by hand.
             </span>
           )}
         </div>
+        {/* The same Markdown the buttons send, always on the page: the
+            clipboard needs a permission some browsers withhold, and the issue
+            link has a length limit, so the reader is never told to copy text
+            that is not there. */}
+        <details className="cite-export">
+          <summary>Answers as text</summary>
+          <textarea
+            className="cite-note cite-export-text"
+            readOnly
+            aria-label="Answers as text"
+            value={exportText}
+          />
+        </details>
       </Panel>
 
       <h2 className="cite-heading">Part A · the USPA and FAA claims</h2>
@@ -324,13 +340,13 @@ function ChecklistPanel({
                 const response = answers.questions[key];
                 return (
                   <li key={key}>
-                    <p className="cite-question-text">
+                    <p className="cite-question-text" id={`q-${key}-text`}>
                       Q{i + 1}. {ask}
                     </p>
                     <div
                       className="cite-choices"
                       role="radiogroup"
-                      aria-label={`${item.id} question ${i + 1}`}
+                      aria-labelledby={`q-${key}-text`}
                     >
                       {QUESTION_ANSWERS.map((a) => (
                         <label key={a}>

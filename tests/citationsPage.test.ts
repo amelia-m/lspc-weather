@@ -37,6 +37,25 @@ describe('CitationsPage', () => {
     expect(html).toMatch(/href="https:\/\/github\.com\/amelia-m\/lspc-weather\/issues\/new\?title=/);
   });
 
+  it('keeps the export text on the page, and labels each question group by its question', () => {
+    // The clipboard needs a permission some browsers withhold and the issue
+    // link has a length limit, so the Markdown the buttons send is rendered
+    // too — otherwise a "select the text" fallback points at nothing.
+    const exported = html.match(/<textarea[^>]*aria-label="Answers as text"[^>]*>([^<]*)<\/textarea>/);
+    expect(exported?.[1]).toContain('Citations review by');
+    expect(exported?.[1]).toContain('(no answers yet)');
+    // A screen reader names a radio group by its label; "A1 question 1" said
+    // which group, not what was asked. Each group is labelled by the element
+    // that carries the question text.
+    for (const entry of CHECKLIST) {
+      entry.asks.forEach((_ask, i) => {
+        const id = `q-${entry.id}:${i}-text`;
+        expect(html).toContain(`id="${id}"`);
+        expect(html).toContain(`aria-labelledby="${id}"`);
+      });
+    }
+  });
+
   it('links every claim to the section it cites', () => {
     // The same links the cards show, so a reader lands on the section rather
     // than a name. Each of these is cited by at least one entry.
