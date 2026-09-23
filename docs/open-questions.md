@@ -26,11 +26,12 @@ These cannot be settled from the code.
    E6B. Decide whether the dry-air figure should be the headline with the
    humidity correction as a separate line. A10 on the #citations page.
 
-3. **The claims still need an instructor, not another reading.** Every
-   citation has now been read at its source — the SIM at uspa.org on
-   2026-09-22; 14 CFR 105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on
+3. **The claims still need an instructor, not another reading.** Every USPA,
+   CFR and FAA citation has now been read at its source — the SIM at uspa.org
+   on 2026-09-22; 14 CFR 105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on
    2026-09-23 — and the claims corrected against them, so the section numbers
-   are no longer guesses. What a reading could not settle is on the #citations
+   are no longer guesses. The club's posted tiers are a transcription of an
+   undated photo of the sign, which no reading can improve on. What a reading could not settle is on the #citations
    page under "Still open" — among them whether rounding the 14 mph student
    limit *down* to 12 kt is the right direction for a limit a jumper reads off
    a card, and whether the club's posted waiver tiers have been filed as a SIM

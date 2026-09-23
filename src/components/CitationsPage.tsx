@@ -4,8 +4,10 @@ import { Panel } from './common/Panel';
  * The verification checklist, as a page a jumper or instructor can actually
  * open from a phone at the DZ.
  *
- * Every reference in this dashboard began as an AI recollection, written in an
- * environment that could not reach the sources. On 2026-09-22 that changed for
+ * Every USPA, CFR and FAA reference in this dashboard began as an AI
+ * recollection, written in an environment that could not reach the sources.
+ * (The club's posted wind-limit tiers are the exception in kind: a
+ * transcription of an undated photo of the sign, labelled as such on A5.) On 2026-09-22 that changed for
  * USPA: the SIM sections behind these claims were fetched from uspa.org and
  * read. On 2026-09-23 the rest followed — 14 CFR 105.17 and 105.19 through the
  * eCFR, AIM 7-1-7 on faa.gov and FAA-P-8740-2 from the linked PDF. Each entry
@@ -310,9 +312,12 @@ export function CitationsPage(): JSX.Element {
 
       <p className="disclaimer">
         <strong>
-          These references began as AI recollections. Every one has since been read at its source.
+          The USPA, CFR and FAA references began as AI recollections. Every one of those has since
+          been read at its source.
         </strong>{' '}
-        Every claim below was written by an AI assistant in an environment that could not reach the
+        The club&rsquo;s posted wind-limit tiers are different in kind: a transcription of an
+        undated photo of the sign, not a document anyone opened, and labelled that way (A5). Every
+        claim below was written by an AI assistant in an environment that could not reach the
         sources. On 2026-09-22 the SIM sections were fetched from uspa.org and read; on 2026-09-23
         the two CFR sections, AIM 7-1-7 and the FAA density-altitude pamphlet followed. Each Part A
         entry records what the source says and when it was read. Two USPA claims were wrong and are

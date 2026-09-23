@@ -12,10 +12,12 @@ freefall drift and **density altitude** for jump-plane climb performance.
 > professional.**
 >
 > **Advisory only.** This dashboard *flags conditions and cites guidance* — it
-> does **not** decide whether it's safe to jump. Every citation here began as an
-> AI recollection. Each has since been read at its source — the **USPA SIM** at
-> uspa.org on 2026-09-22, the **CFR sections, AIM 7-1-7 and FAA-P-8740-2** on
-> 2026-09-23 — and the claims corrected against them. A reading is not a
+> does **not** decide whether it's safe to jump. Every USPA, CFR and FAA
+> citation here began as an AI recollection. Each has since been read at its
+> source — the **USPA SIM** at uspa.org on 2026-09-22, the **CFR sections, AIM
+> 7-1-7 and FAA-P-8740-2** on 2026-09-23 — and the claims corrected against
+> them. The club's wind-limit tiers are different in kind: a transcription of an
+> undated photo of the posted sign, not a document anyone opened. Neither is a
 > licensed professional's sign-off — verify against the primary source before
 > relying on it. Always confirm conditions with current official sources, the
 > S&TA, and the pilot in command.
@@ -157,8 +159,10 @@ The dashboard's own **Citations** page — the `#citations` route in the running
 app — lists each claim, what the cited section says, what is still open, plus
 that one remaining number, for an instructor or S&TA to rule on.
 
-Every citation here began as an AI recollection. On 2026-09-22 the USPA SIM
-sections were fetched from uspa.org and read: two claims were wrong and were
+Every USPA, CFR and FAA citation here began as an AI recollection; the club's
+posted wind-limit tiers did not — they are a transcription of an undated photo
+of the sign, and stay that. On 2026-09-22 the USPA SIM sections were fetched
+from uspa.org and read: two claims were wrong and were
 fixed (the C/D minimum opening altitude, and a USPA licence claim cited to a CFR
 that does not mention licences), and two citations that pointed at the SIM
 contents page now name sections (4-5 Weather, 4-7 Spotting). On 2026-09-23 the
