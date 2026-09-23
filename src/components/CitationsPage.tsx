@@ -1,4 +1,7 @@
+import type { Citation } from '../domain/types';
+import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
+import { SourceLink } from './common/SourceLink';
 
 /**
  * The verification checklist, as a page a jumper or instructor can actually
@@ -35,7 +38,12 @@ interface Lookup {
   claim: string;
   value?: string;
   where: string;
-  cites: string;
+  /** The citation(s) the dashboard attaches to the claim, rendered as the
+   *  same links the cards show, so the reader lands on the section. */
+  sources: Citation[];
+  /** What the citation is cited for, when the link alone would mislead — an
+   *  absence, or a sentence the source does not cover. */
+  citesNote?: string;
   found?: Reading;
   /** What the reader is asked to confirm or decide — the things a document
    *  could not settle, because they are about how this DZ applies a rule. */
@@ -51,7 +59,7 @@ const LOOKUPS: Lookup[] = [
       'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it on site.',
     value: '14 mph, stored as 12 kt — the caution band',
     where: 'Surface wind card, and the Surface wind flag, with Student selected',
-    cites: 'USPA SIM, Section 2-1 (BSR)',
+    sources: [CITATIONS.uspaStudentWinds],
     found: {
       read: 'the SIM at uspa.org, 2026-09-22',
       says: [
@@ -70,7 +78,7 @@ const LOOKUPS: Lookup[] = [
     claim:
       'USPA BSR minimum container-opening altitudes: students & A-license 3,000 ft AGL, B-license 2,500 ft, C/D 2,500 ft (waiverable by an S&TA to no lower than 2,000 ft), tandem 5,000 ft. These are floors — deploy above your minimum, not at it.',
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
-    cites: 'USPA SIM, Section 2-1 (BSR)',
+    sources: [CITATIONS.uspaOpeningAltitude],
     found: {
       read: 'the SIM at uspa.org, 2026-09-22',
       says: [
@@ -89,7 +97,8 @@ const LOOKUPS: Lookup[] = [
     claim:
       'Between sunset and sunrise, 14 CFR 105.19 requires the jumper to display a light visible for at least 3 statute miles, from open canopy until landing. USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements — see SIM 5-3.',
     where: 'Conditions to note, after sunset',
-    cites: '14 CFR 105.19 for the light; USPA SIM 5-3 (Night Jumps) for the USPA claim',
+    sources: [CITATIONS.far10519, CITATIONS.uspaNightJumps],
+    citesNote: '105.19 for the light; SIM 5-3 for the USPA sentence',
     found: {
       read: 'the SIM at uspa.org, 2026-09-22, and the eCFR, 2026-09-23',
       says: [
@@ -110,7 +119,8 @@ const LOOKUPS: Lookup[] = [
       'No USPA ground-wind limit for licensed jumpers — the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA — ask the PIC.',
     where:
       'Surface wind card with Licensed selected — a standing note under the reading, at any wind speed. No surface-wind flag fires on this profile at any speed.',
-    cites: 'USPA SIM, Section 2-1 (BSR), cited for the absence of a limit',
+    sources: [CITATIONS.uspaLicensedWinds],
+    citesNote: 'cited for the absence of a limit',
     found: {
       read: 'the SIM at uspa.org, 2026-09-22',
       says: [
@@ -129,7 +139,8 @@ const LOOKUPS: Lookup[] = [
       'Any excursion above the USPA BSR requires on-site approval by a USPA instructor; consult the S&TA.',
     where:
       'Surface wind flag, with any LSPC waiver tier selected. The card carries the club-policy link behind that tier’s limit; this sentence reaches the reader only when the flag fires.',
-    cites: 'LSPC waivered wind limits (club policy)',
+    sources: [CITATIONS.lspcWaiver, CITATIONS.uspaWaivers],
+    citesNote: 'the club policy for the sentence; SIM 2-2 for the waiver rule behind it',
     found: {
       read: 'the SIM at uspa.org, 2026-09-22, and the club document as transcribed in docs/lspc-waivered-wind-limits.md — an undated photo of the posted sign, in this repository since 2026-07-04',
       says: [
@@ -147,7 +158,7 @@ const LOOKUPS: Lookup[] = [
     title: 'General weather guidance',
     claim: 'Thunderstorms reported at the station — convective hazard for aircraft and canopies.',
     where: 'Thunderstorm flag (observed) in Conditions to note',
-    cites: 'USPA SIM, Section 4-5 (Weather)',
+    sources: [CITATIONS.uspaWeather],
     found: {
       read: 'the SIM at uspa.org, 2026-09-22',
       says: [
@@ -165,7 +176,7 @@ const LOOKUPS: Lookup[] = [
     claim:
       'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
     where: 'Winds aloft card, standing note under the table, at any wind speed',
-    cites: 'USPA SIM, Section 4-7 (Spotting)',
+    sources: [CITATIONS.uspaSpotting],
     found: {
       read: 'the SIM at uspa.org, 2026-09-22',
       says: [
@@ -185,7 +196,7 @@ const LOOKUPS: Lookup[] = [
     value: 'Flag fires below 3 SM',
     where:
       'Visibility flag in Conditions to note; the overcast flag (“jumps may not be made into or through clouds”); and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
-    cites: '14 CFR § 105.17',
+    sources: [CITATIONS.far10517],
     found: {
       read: 'the eCFR (Title 14 current as of 2026-09-21), 2026-09-23',
       says: [
@@ -205,8 +216,9 @@ const LOOKUPS: Lookup[] = [
       'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the PIC.',
     value: 'MVFR is a watch; IFR and LIFR a caution',
     where: 'Flight-category flag in Conditions to note, and the category pill on the Ceiling & sky card.',
-    cites:
-      'FAA AIM 7-1-7, for the categories. The second sentence cites nothing: it names no rule number and no figure, and sends the reader to the PIC.',
+    sources: [CITATIONS.aimFlightCategory],
+    citesNote:
+      'for the categories only. The second sentence cites nothing: it names no rule number and no figure, and sends the reader to the PIC.',
     found: {
       read: 'the AIM on faa.gov (Change 3, effective 2026-07-09), 2026-09-23',
       says: [
@@ -226,7 +238,7 @@ const LOOKUPS: Lookup[] = [
     claim:
       'High density altitude reduces a loaded jump plane’s climb performance — expect longer climbs to altitude.',
     where: 'Density altitude card, as a standing note under the figure. No flag fires on density altitude.',
-    cites: 'FAA-P-8740-2',
+    sources: [CITATIONS.faaDensityAltitude],
     found: {
       read: 'the linked PDF (FAA-P-8740-2, AFS-8, 2008 edition), 2026-09-23',
       says: [
@@ -304,7 +316,15 @@ export function CitationsPage(): JSX.Element {
             <dt>Where</dt>
             <dd>{item.where}</dd>
             <dt>Cites</dt>
-            <dd>{item.cites}</dd>
+            <dd>
+              {item.sources.map((s, i) => (
+                <span key={s.url}>
+                  {i > 0 && ' · '}
+                  <SourceLink citation={s} />
+                </span>
+              ))}
+              {item.citesNote && <> — {item.citesNote}</>}
+            </dd>
           </dl>
           {item.found && (
             <>
