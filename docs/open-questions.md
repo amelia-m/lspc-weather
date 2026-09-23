@@ -46,6 +46,31 @@ These cannot be settled from the code.
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
 
+## Which forecast run the winds-aloft request is served
+
+Seen once, 2026-09-23 18:42Z, first run of `scripts/schulzeCompare.live.ts` on
+a GitHub runner: for the same 19Z hour the app's profile was unchanged from a
+run eleven minutes earlier while Mark Schulze's tool, reading the same
+Open-Meteo, had moved to a newer forecast (700 hPa 274°/9 kt against 261°/8 kt),
+so the two tables were up to 12° apart from 5,000 to 10,000 ft. Details in
+`docs/markschulze-altitude-reference.md`. Two candidate causes, neither checked:
+
+- Open-Meteo caching the app's request. The URL is byte-identical from run to
+  run; the tool's PHP builds a different one. Check: read the response headers
+  (`Cache-Control`, `Age`) of the app's exact URL from a runner, and request
+  the same URL twice fifteen minutes apart across a model-run boundary. The
+  sandbox cannot do this today — its shared egress address is over
+  Open-Meteo's daily limit.
+- The two requests naming different models. The tool's `winds_openmeteo.php`
+  request has not been read; if it passes `models=`, the two are not the same
+  forecast even when they agree.
+
+If it is the cache, a jumper who refreshes the card gets a forecast up to some
+minutes older than the tool shows, and the card should say so or the request
+should defeat the cache. If it is the model, the "same source" sentence on the
+card is wrong. Either answer changes card text, so this is worth settling
+before the next winds-aloft change.
+
 ## Live-site smoke test
 
 Run against live data on 2026-09-22 (first time the app had ever been exercised

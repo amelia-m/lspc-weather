@@ -123,7 +123,21 @@ Every remaining difference has a known cause, none of them the data:
   2° and 1 kt apart here.
 - **The valid hour**, when the two are not aligned: see "Re-checking this".
 
-Before 2026-09-23 there was a fourth, and it dwarfed the others: the sampling
+- **Which forecast run each request was served.** Not yet explained. The first
+  run of `scripts/schulzeCompare.live.ts` on a GitHub runner, 2026-09-23 at
+  18:42Z for the same 19Z hour as the sandbox run at 18:31Z above, printed the
+  app within 4° of the tool below 5,000 ft but 7–12° off from 5,000 to
+  10,000 ft. The app's numbers were identical to the 18:31Z run at every level
+  (274° / 9 kt at 700 hPa); the tool's had changed (261° / 8 kt), and were
+  still those values when read again at 18:46Z. So a newer forecast reached
+  the tool's request and not the app's, in the same two seconds from the same
+  runner. Two candidates, neither checked: Open-Meteo serving a cached response
+  for the app's URL, which is byte-identical from run to run, or the two
+  requests naming different models (the tool's request has not been read).
+  This one is a difference in the data, and it is the one to chase; the
+  parity job's daily table will show how often it happens.
+
+Before 2026-09-23 there was a fifth, and it dwarfed the others: the sampling
 gap described above. It is gone, and the comparison script exists so that its
 return would be noticed.
 
