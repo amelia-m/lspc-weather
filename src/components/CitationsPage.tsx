@@ -171,13 +171,13 @@ export function CitationsPage(): JSX.Element {
           <button className="refresh-btn" type="button" onClick={reset}>
             Clear answers
           </button>
-          {copied === 'copied' && <span className="muted small">Copied.</span>}
-          {copied === 'failed' && (
-            <span className="muted small">
-              Could not reach the clipboard — select the text under &ldquo;Answers as text&rdquo;
-              and copy it by hand.
-            </span>
-          )}
+          {/* A status region, so a screen reader hears the result of the
+              copy rather than finding it by chance next to the button. */}
+          <span className="muted small" role="status">
+            {copied === 'copied' && 'Copied.'}
+            {copied === 'failed' &&
+              'Could not reach the clipboard — select the text under “Answers as text” and copy it by hand.'}
+          </span>
         </div>
         {/* The same Markdown the buttons send, always on the page: the
             clipboard needs a permission some browsers withhold, and the issue
