@@ -14,6 +14,8 @@ import {
   parseSkyGroups,
   normalizeOpenMeteo,
   openMeteoHourlyVariables,
+  openMeteoWindsUrl,
+  OPEN_METEO_FORECAST_URL,
   normalizeOpenMeteoDaily,
   parseFdTiming,
   parseFdWinds,
@@ -711,6 +713,22 @@ describe('Open-Meteo pressure levels', () => {
       expect(vars).toContain(`geopotential_height_${p}hPa`);
       expect(vars).toContain(`temperature_${p}hPa`);
     }
+  });
+
+  it('builds the winds request the normaliser expects', () => {
+    // The fetch and the live comparison script both send this URL, and the
+    // normaliser assumes what it asks for: knots, Unix times in UTC, and
+    // every level above. A builder that dropped a parameter would still pass
+    // every fixture test, so the query is pinned here.
+    const url = new URL(openMeteoWindsUrl(40.8675, -96.11));
+    expect(`${url.origin}${url.pathname}`).toBe(OPEN_METEO_FORECAST_URL);
+    expect(url.searchParams.get('latitude')).toBe('40.8675');
+    expect(url.searchParams.get('longitude')).toBe('-96.11');
+    expect(url.searchParams.get('hourly')?.split(',')).toEqual(openMeteoHourlyVariables());
+    expect(url.searchParams.get('wind_speed_unit')).toBe('kn');
+    expect(url.searchParams.get('forecast_days')).toBe('2');
+    expect(url.searchParams.get('timeformat')).toBe('unixtime');
+    expect(url.searchParams.get('timezone')).toBe('UTC');
   });
 
   it('reads the 800 and 750 hPa samples between 850 and 700 hPa from the fixture', () => {
