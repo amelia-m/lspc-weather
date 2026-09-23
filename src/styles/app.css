@@ -871,8 +871,11 @@ a {
   color: var(--muted);
 }
 
-/* Freshness */
-.freshness .refresh-btn {
+/* Shared panel button. Named for the freshness card's Refresh, it is also
+   the Settings reset, the 10-day detail's close and the citations-page
+   actions, so the rule is unscoped: scoped to .freshness it left the other
+   three as bare browser buttons. */
+.refresh-btn {
   background: var(--panel-2);
   color: var(--text);
   border: 1px solid var(--border);
@@ -955,7 +958,7 @@ a {
     opacity: 0.35;
   }
 }
-.freshness .refresh-btn:disabled {
+.refresh-btn:disabled {
   opacity: 0.6;
   cursor: default;
 }
@@ -1106,8 +1109,12 @@ a {
   align-items: center;
   margin-top: 6px;
 }
+/* One of the three actions is a link, so the row sets one font for all
+   three rather than leaving the link at body size next to button-default. */
 .cite-actions .refresh-btn {
   text-decoration: none;
+  font: inherit;
+  font-size: 0.85rem;
 }
 .cite-actions .muted {
   flex-basis: 100%;
