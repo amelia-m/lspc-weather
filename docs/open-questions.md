@@ -37,15 +37,7 @@ These cannot be settled from the code.
    a card, and whether the club's posted waiver tiers have been filed as a SIM
    2-2 waiver.
 
-4. **Simplify the citations page to what is being asked.** Each entry now
-   carries the history of what the app used to claim and how it changed —
-   which was the right record for the reading, and is the wrong thing to hand
-   an instructor at the DZ: it reads as a changelog, and the reader has to
-   work out which sentence is the live claim. Reduce each entry to the claim
-   as it stands, what the source says, and the question being asked. The
-   history belongs in the commit log and the PRs, which already have it.
-
-5. **The app's own thresholds, for an instructor's judgement rather than a
+4. **The app's own thresholds, for an instructor's judgement rather than a
    lookup.** Part B of the citations page — currently one entry, the 25 kt
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
