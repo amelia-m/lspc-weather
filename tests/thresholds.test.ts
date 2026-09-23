@@ -68,9 +68,23 @@ describe('USPA SIM citations', () => {
   });
 
   it.each(sim)('%s uses the repo-wide SIM URL shape', (_key, citation) => {
-    // Either the section index or /sim/<section> — no deep anchors or PDF
-    // mirrors, which are the shapes most likely to rot or 404.
-    expect(citation.url).toMatch(/^https:\/\/www\.uspa\.org\/sim(\/\d+-\d+)?$/);
+    // The section index, /sim/<section>, or /sim/<section>#<anchor> where the
+    // anchor is the page's own part marker (section digit + part letter, e.g.
+    // 1H for 2-1 H) — no PDF mirrors or other shapes, which rot or 404.
+    expect(citation.url).toMatch(/^https:\/\/www\.uspa\.org\/sim(\/\d+-\d+(#\d+[A-Z][A-Za-z0-9]*)?)?$/);
+  });
+
+  it.each(sim)('%s: a section link lands on the part it cites', (_key, citation) => {
+    // Every section citation names a part in its ref ("BSR 2-1 H", "SIM 4-7 C"),
+    // and the anchor must be that part: the digit is the section's own number
+    // within its chapter and the letter the part. A link to the top of a long
+    // section is what the anchors exist to avoid; a link to the wrong part is
+    // worse than none.
+    const m = /\/sim\/(\d+)-(\d+)#(\d+)([A-Z])/.exec(citation.url);
+    if (!m) return;
+    const [, , section, anchorSection, part] = m;
+    expect(anchorSection).toBe(section);
+    expect(citation.ref).toMatch(new RegExp(`\\b${m[1]}-${section} ${part}\\b`));
   });
 
   it.each(sim)('%s: the source string agrees with the URL it points at', (_key, citation) => {
@@ -78,7 +92,7 @@ describe('USPA SIM citations', () => {
     // while the link drops the reader on the SIM contents page. Either the
     // source names the section the URL opens, or it names no section at all.
     const named = /Section (\d+-\d+)/.exec(citation.source)?.[1] ?? null;
-    const linked = /\/sim\/(\d+-\d+)$/.exec(citation.url)?.[1] ?? null;
+    const linked = /\/sim\/(\d+-\d+)(?:#[^/]*)?$/.exec(citation.url)?.[1] ?? null;
     expect(named).toBe(linked);
   });
 
@@ -87,7 +101,7 @@ describe('USPA SIM citations', () => {
     // has checked would send a jumper to the wrong rule while looking
     // authoritative — but it has to be visibly deliberate, not an oversight.
     for (const [key, citation] of sim) {
-      if (/\/sim\/\d+-\d+$/.test(citation.url)) continue;
+      if (/\/sim\/\d+-\d+(#[^/]*)?$/.test(citation.url)) continue;
       expect(citation.note, `${key} links to the SIM index without saying why`).toMatch(
         /not been identified/,
       );
@@ -280,7 +294,7 @@ describe('guidance says only what its own citation carries', () => {
     // SIM 5-3 B says "should meet all the requirements for a USPA B or higher
     // license". The 50-jump figure is in 3-1. The flag links to 5-3, so a
     // reader following it could not check the number.
-    expect(CITATIONS.uspaNightJumps.url).toBe('https://www.uspa.org/sim/5-3');
+    expect(CITATIONS.uspaNightJumps.url).toBe('https://www.uspa.org/sim/5-3#3A');
     expect(CITATIONS.uspaNightJumps.ref).not.toMatch(/50 jumps/);
   });
 

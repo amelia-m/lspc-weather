@@ -148,7 +148,7 @@ describe('evaluateAdvisories', () => {
       (a) => a.id === 'daylight',
     );
     expect(day?.guidance).toMatch(/USPA/);
-    expect(day?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/5-3');
+    expect(day?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/5-3#3A');
     // SIM 5-3 B says participants "should" meet B-licence requirements; it is
     // not a BSR, so the flag must not upgrade it to a requirement.
     expect(day?.guidance).not.toMatch(/USPA (also )?requires/i);
@@ -189,7 +189,7 @@ describe('evaluateAdvisories', () => {
       now,
     ).find((a) => a.id === 'surface-wind');
     expect(wind?.citation.url).toContain('lspc-waivered-wind-limits');
-    expect(wind?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/2-2');
+    expect(wind?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/2-2#2B');
   });
 
   it('LSPC waiver (0–5 jumps) flags wind over 15 mph and gust at/over the 16 mph ceiling', () => {
