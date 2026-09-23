@@ -43,7 +43,13 @@ jobs:
             echo "Either the app's METAR sky parse disagrees with aviationweather.gov's decoder on today's report, or a fetch failed — the log says which."
             echo
             echo '```'
-            tail -n 60 parity.log
+            # The log exists only if the check itself ran; a failed checkout or
+            # npm ci must still produce an issue rather than kill this step.
+            if [ -f parity.log ]; then
+              tail -n 60 parity.log
+            else
+              echo "(no parity.log: the run failed before the check started — see the run for the setup error)"
+            fi
             echo '```'
           } > body.md
           # `.[0].number` on an empty list prints the word null, which is a
