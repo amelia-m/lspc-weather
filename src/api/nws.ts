@@ -109,7 +109,10 @@ export async function fetchDailyFromGridpoint(
   lon: number,
   timeZone: string,
 ): Promise<DailyPoint[]> {
-  const grid = await fetchGridpoint(lat, lon);
+  // Same gate as fetchHourly. This used to call the live endpoint regardless,
+  // so in fixture mode the daily fallback was the one path that still went to
+  // the network — and failed there, which made it untestable offline.
+  const grid = USE_FIXTURES ? GRIDPOINT_FIXTURE : await fetchGridpoint(lat, lon);
   return aggregateDailyFromHourly(normalizeGridpoint(grid, 7 * 24), timeZone);
 }
 

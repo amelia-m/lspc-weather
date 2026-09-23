@@ -9,6 +9,9 @@ export function Panel({
   sources,
   unit,
   onUnitChange,
+  className,
+  action,
+  footer,
   children,
 }: {
   title: string;
@@ -21,6 +24,19 @@ export function Panel({
    *  omitted on cards with no speed in them, which leaves the header as-is. */
   unit?: SpeedUnit;
   onUnitChange?: (u: SpeedUnit) => void;
+  /** Extra class on the card, for the few the stylesheet styles by name: the
+   *  accent border on `advisory-panel`, the `freshness` card. */
+  className?: string;
+  /** A control that lives in the header, right-aligned — the Data health
+   *  card's Refresh button. It is rendered as a direct child of the header, so
+   *  the flex layout is the one every card has; wrapped in the subtitle span it
+   *  would inherit the subtitle's muted small type, and a control overlaying
+   *  the Refresh button is a phone-width defect this app has already had. */
+  action?: ReactNode;
+  /** A footer other than the "Data:" source list — the advisory card's "Flag
+   *  values from … guidance sources are linked on each flag" line. Takes the
+   *  same `panel-sources` slot; a card supplies this or `sources`, not both. */
+  footer?: ReactNode;
   children: ReactNode;
 }): JSX.Element {
   const headingId = useId();
@@ -31,7 +47,7 @@ export function Panel({
       </UnitToggleScope>
     ) : null;
   return (
-    <section className="panel">
+    <section className={className ? `panel ${className}` : 'panel'}>
       {/* `has-aside` lets the stylesheet allow the header to wrap only on the
           cards that carry a toggle. Cards without one keep the unwrapped
           header they have always had, with the subtitle beside the title. */}
@@ -50,20 +66,26 @@ export function Panel({
         ) : (
           subtitle && <span className="panel-sub">{subtitle}</span>
         )}
+        {action}
       </header>
       <div className="panel-body">{children}</div>
-      {sources && sources.length > 0 && (
-        <footer className="panel-sources">
-          Data:{' '}
-          {sources.map((s, i) => (
-            <span key={s.url}>
-              {i > 0 && ' · '}
-              <a href={s.url} target="_blank" rel="noopener noreferrer">
-                {s.label}
-              </a>
-            </span>
-          ))}
-        </footer>
+      {footer !== undefined ? (
+        <footer className="panel-sources">{footer}</footer>
+      ) : (
+        sources &&
+        sources.length > 0 && (
+          <footer className="panel-sources">
+            Data:{' '}
+            {sources.map((s, i) => (
+              <span key={s.url}>
+                {i > 0 && ' · '}
+                <a href={s.url} target="_blank" rel="noopener noreferrer">
+                  {s.label}
+                </a>
+              </span>
+            ))}
+          </footer>
+        )
       )}
     </section>
   );

@@ -2,6 +2,7 @@ import type { SourceKey, SourceStatus } from '../domain/types';
 import type { SourceProvenance } from '../domain/sourceProvenance';
 import { USE_FIXTURES } from '../api/http';
 import { DATA_SOURCES, type DataSource } from '../config/sources';
+import { Panel } from './common/Panel';
 import { fmtAgo } from './format';
 
 const LABELS: Record<SourceKey, string> = {
@@ -33,14 +34,16 @@ export function DataFreshness({
 }): JSX.Element {
   const refreshing = Object.values(status).some((s) => s.pending);
   return (
-    <section className="panel freshness">
-      <header className="panel-head">
-        <h2>Data health</h2>
+    <Panel
+      className="freshness"
+      title="Data health"
+      action={
         <button className="refresh-btn" onClick={onRefresh} disabled={refreshing}>
           {refreshing ? '↻ Refreshing…' : '↻ Refresh'}
         </button>
-      </header>
-      <div className="panel-body">
+      }
+    >
+      <>
         {USE_FIXTURES && (
           <p className="fixtures-banner">
             Showing <strong>sample data</strong> (offline / dev mode), not live weather.
@@ -81,8 +84,8 @@ export function DataFreshness({
           })}
         </ul>
         <p className="muted small">Updated {fmtAgo(lastUpdated)}.</p>
-      </div>
-    </section>
+      </>
+    </Panel>
   );
 }
 

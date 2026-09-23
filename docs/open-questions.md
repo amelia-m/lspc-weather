@@ -37,7 +37,15 @@ These cannot be settled from the code.
    a card, and whether the club's posted waiver tiers have been filed as a SIM
    2-2 waiver.
 
-4. **The app's own thresholds, for an instructor's judgement rather than a
+4. **Simplify the citations page to what is being asked.** Each entry now
+   carries the history of what the app used to claim and how it changed —
+   which was the right record for the reading, and is the wrong thing to hand
+   an instructor at the DZ: it reads as a changelog, and the reader has to
+   work out which sentence is the live claim. Reduce each entry to the claim
+   as it stands, what the source says, and the question being asked. The
+   history belongs in the commit log and the PRs, which already have it.
+
+5. **The app's own thresholds, for an instructor's judgement rather than a
    lookup.** Part B of the citations page — currently one entry, the 25 kt
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
@@ -78,19 +86,6 @@ Still unexercised:
   that way. What is left unverified is the combination: real data arriving over
   the real network into a real browser, and the radar `<img>` actually being
   fetched cross-origin from radar.weather.gov rather than fulfilled locally.
-
-## Code
-
-- **`fetchDailyFromGridpoint` ignores `USE_FIXTURES`** (`src/api/nws.ts`) and
-  calls the live endpoint unconditionally, so the daily gridpoint fallback
-  cannot be exercised in fixture mode at all — it just fails to the network.
-  Fixing this would make that path testable on screen.
-- **`subscribe` in `src/api/sourceLog.ts` has no consumer** outside its own
-  test. The `useSyncExternalStore` contract was kept intact deliberately when
-  the in-page log viewer was removed; decide whether to keep or drop it.
-- **`.panel-head` is styled in four places.** `AdvisoryPanel`, `SettingsPanel`
-  and `DataFreshness` render it by hand instead of going through `Panel`.
-  `SettingsPanel` uses a `<summary class="panel-head">`, so it is not a drop-in.
 
 ## The Student profile models no canopy type
 

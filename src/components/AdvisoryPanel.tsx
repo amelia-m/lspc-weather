@@ -1,4 +1,5 @@
 import type { Advisory } from '../domain/types';
+import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { DATA_SOURCES } from '../config/sources';
 
@@ -34,13 +35,30 @@ export function AdvisoryPanel({
    *  i.e. whether a surface-wind flag can appear in this list at all. */
   hasSourcedWindLimit: boolean;
 }): JSX.Element {
+  const footer = (
+    <>
+      Flag values from:{' '}
+      {[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast, DATA_SOURCES.openMeteo].map(
+        (s, i) => (
+          <span key={s.url}>
+            {i > 0 && ' · '}
+            <a href={s.url} target="_blank" rel="noopener noreferrer">
+              {s.label}
+            </a>
+          </span>
+        ),
+      )}
+      . Guidance sources are linked on each flag above.
+    </>
+  );
   return (
-    <section className="panel advisory-panel">
-      <header className="panel-head">
-        <h2>Conditions to note</h2>
-        <span className="panel-sub">Flags only — not a go/no-go call. You decide.</span>
-      </header>
-      <div className="panel-body">
+    <Panel
+      className="advisory-panel"
+      title="Conditions to note"
+      subtitle="Flags only — not a go/no-go call. You decide."
+      footer={footer}
+    >
+      <>
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}
@@ -77,21 +95,7 @@ export function AdvisoryPanel({
             ))}
           </ul>
         )}
-      </div>
-      <footer className="panel-sources">
-        Flag values from:{' '}
-        {[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast, DATA_SOURCES.openMeteo].map(
-          (s, i) => (
-            <span key={s.url}>
-              {i > 0 && ' · '}
-              <a href={s.url} target="_blank" rel="noopener noreferrer">
-                {s.label}
-              </a>
-            </span>
-          ),
-        )}
-        . Guidance sources are linked on each flag above.
-      </footer>
-    </section>
+      </>
+    </Panel>
   );
 }
