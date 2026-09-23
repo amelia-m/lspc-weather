@@ -112,16 +112,7 @@ reserve. If nobody does, the second option is honest and the first is dead
 weight — but that is a fact about the DZ, not about the BSRs, and nothing in
 this repository establishes it.
 
-## Winds aloft: one gap left, not reachable today
-
-- **Rows lost at the TOP of the profile are silent.** `interpolateWindsAloft`
-  drops altitudes above the highest sample, which is the honest behaviour, but
-  nothing says so on screen: if the 500 and 600 hPa levels were both missing
-  the table would stop at 9,000 ft while the expand toggle still offered "up to
-  13k ft", and the drift estimate would extrapolate the top of the freefall
-  with the 700 hPa wind with no note. The bottom has such a note on the FD path
-  (`lowestLevelFtAgl`); the top has no equivalent. Not observed live — the
-  384-hour window checked had no nulls at any level.
+## Winds aloft
 
 The sub-surface question that sat here is settled and fixed: pressure levels
 below the model's terrain are dropped in `normalizeOpenMeteo`. Evidence, the
