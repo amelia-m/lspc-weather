@@ -31,6 +31,13 @@ export interface RawMetar {
 
 const CEILING_COVERS: SkyCover[] = ['BKN', 'OVC', 'VV'];
 
+/** The covers that mean "no cloud to report". They carry no height in the
+ *  METAR text, but api.weather.gov's decode gives CLR a base anyway — 3,810 m,
+ *  the 12,500 ft ceilometer limit an ASOS reports "clear below" — so a no-cloud
+ *  layer is the same layer as any other no-cloud layer, whatever the base and
+ *  whichever token (a CLR text against an SKC decode is still agreement). */
+const NO_CLOUD_COVERS: readonly SkyCover[] = ['SKC', 'CLR', 'NSC', 'NCD'];
+
 /** What a report establishes about the ceiling. A null `ceilingFtAgl` is
  *  ambiguous on its own: it is what a clear sky yields, and also what `BKN///`
  *  yields — a broken layer whose height the sensor could not measure — and
@@ -162,6 +169,7 @@ export function compareSkyDecodes(fromText: SkyLayer[], fromDecode: SkyLayer[]):
     fromText.length === fromDecode.length &&
     fromText.every((l, i) => {
       const d = fromDecode[i];
+      if (NO_CLOUD_COVERS.includes(l.cover)) return NO_CLOUD_COVERS.includes(d.cover);
       if (l.cover !== d.cover) return false;
       if (l.baseFtAgl == null || d.baseFtAgl == null) return l.baseFtAgl === d.baseFtAgl;
       return Math.abs(l.baseFtAgl - d.baseFtAgl) <= SKY_BASE_SLACK_FT;

@@ -11,6 +11,7 @@ import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
 import { logSource } from '../api/sourceLog';
+import { METAR_SKY_PROVENANCE } from '../domain/sourceProvenance';
 import type {
   Advisory,
   SourceKey,
@@ -144,7 +145,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         // The two decodes of the report disagreeing is worth a log line of its
         // own: the chip on Data health shows it now, and this is how it is
         // reconstructed later from a laptop (window.LSPC_DEBUG.getLogs()).
-        if (current?.skyDecode !== undefined && current.skyDecode !== 'agrees') {
+        if (current?.skyDecode !== undefined && METAR_SKY_PROVENANCE[current.skyDecode].fallback) {
           logSource('metar', 'fallback', `sky decode: ${current.skyDecode} (${current.raw})`);
         }
         updateSource('metar', okStatus());

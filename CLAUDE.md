@@ -88,8 +88,14 @@ precisely because they were colour and text rather than flags.
   `rawMessage` at all: an empty `skyLayers` means *not reported*, the cards say
   so, and `observedFlightCategory` never shows VFR from a report with no
   ceiling in it — visibility alone can establish MVFR/IFR/LIFR, not VFR.
-  Two things now watch for a repeat: the METAR row on Data health grades the
-  two decodes against each other (`skyDecode`, amber unless they agree), and
+  The API also serves records with no `rawMessage` at all but a full decode —
+  37 of the last 40 at KLNK and KAUS, 4 of 40 at KPMV — and its decode gives
+  `CLR` a base of 3,810 m (the 12,500 ft ceilometer limit) where the text has
+  none; aviationweather.gov represents a clear sky as no `clouds` entries at
+  all. Every comparison in the code allows for those three shapes; do not
+  tighten them without re-sampling the APIs. Two things now watch for a
+  repeat: the METAR row on Data health grades the two decodes against each
+  other (`skyDecode`, amber when the decode is missing or disagrees), and
   `.github/workflows/sky-parity.yml` compares the app's parse against
   aviationweather.gov's decoder on today's report every morning.
 

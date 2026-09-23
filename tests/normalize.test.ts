@@ -194,6 +194,18 @@ describe('normalizeNwsObservation sky', () => {
 describe('compareSkyDecodes', () => {
   const ovc = (baseFtAgl: number | null) => ({ cover: 'OVC' as const, baseFtAgl });
 
+  it('treats no-cloud layers as the same layer whatever base or token the decode gives them', () => {
+    // api.weather.gov gives CLR a base of 3,810 m — the 12,500 ft ceilometer
+    // limit — where the text has none (five clear stations sampled 2026-09-23).
+    const clr = { cover: 'CLR' as const, baseFtAgl: null };
+    expect(compareSkyDecodes([clr], [{ cover: 'CLR', baseFtAgl: 12500 }])).toBe('agrees');
+    expect(compareSkyDecodes([clr], [{ cover: 'SKC', baseFtAgl: null }])).toBe('agrees');
+    expect(compareSkyDecodes([clr], [ovc(2700)])).toBe('decode-differs');
+    // An empty decode under a CLR text is still a gap: the API sends a CLR
+    // entry for a clear sky, so nothing at all is the decode missing.
+    expect(compareSkyDecodes([clr], [])).toBe('decode-empty');
+  });
+
   it('grades the 2026-09-23 gap as decode-empty, and the mirror case as text-empty', () => {
     expect(compareSkyDecodes([ovc(2700)], [])).toBe('decode-empty');
     expect(compareSkyDecodes([], [ovc(2690)])).toBe('text-empty');
