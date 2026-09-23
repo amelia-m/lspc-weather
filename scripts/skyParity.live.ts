@@ -78,18 +78,23 @@ describe(`sky decode parity for ${station}`, () => {
     expect(cloudsOnly(ours)).toEqual(cloudsOnly(theirs));
   });
 
-  it('reports how api.weather.gov decoded the same station (informational)', async () => {
-    const res = await get(
-      `https://api.weather.gov/stations/${station}/observations/latest`,
-      'application/geo+json',
-    );
-    const obs = (await res.json()) as RawNwsObservation;
-    const c = normalizeNwsObservation(obs, station);
-    say(`[nws]  ${c.raw || '(no rawMessage)'}`);
-    say(
-      `[nws]  sky: ${showSky(c.skyLayers)} · decode check: ${c.skyDecode} · ceiling: ${c.ceilingFtAgl ?? 'none'} · category: ${observedFlightCategory(c) ?? '—'}`,
-    );
-    expect(c.skyDecode).toBeDefined();
+  it('reports how api.weather.gov decoded the same station (informational, never fails)', async () => {
+    // Informational means an NWS outage must not open a parity issue: only
+    // the aviationweather comparison above is allowed to fail the run.
+    try {
+      const res = await get(
+        `https://api.weather.gov/stations/${station}/observations/latest`,
+        'application/geo+json',
+      );
+      const obs = (await res.json()) as RawNwsObservation;
+      const c = normalizeNwsObservation(obs, station);
+      say(`[nws]  ${c.raw || '(no rawMessage)'}`);
+      say(
+        `[nws]  sky: ${showSky(c.skyLayers)} · decode check: ${c.skyDecode} · ceiling: ${c.ceilingFtAgl ?? 'none'} · category: ${observedFlightCategory(c) ?? '—'}`,
+      );
+    } catch (err) {
+      say(`[nws]  not read: ${err instanceof Error ? err.message : String(err)}`);
+    }
   });
 
   it('shows what usairnet says, as a third opinion (informational, never fails)', async () => {

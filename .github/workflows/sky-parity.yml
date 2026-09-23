@@ -46,7 +46,9 @@ jobs:
             tail -n 60 parity.log
             echo '```'
           } > body.md
-          existing=$(gh issue list --label sky-parity --state open --json number --jq '.[0].number')
+          # `.[0].number` on an empty list prints the word null, which is a
+          # non-empty string; `// empty` prints nothing, which is what -n tests.
+          existing=$(gh issue list --label sky-parity --state open --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body-file body.md
           else
