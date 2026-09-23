@@ -7,21 +7,36 @@ repository history is the record.
 
 These cannot be settled from the code.
 
-1. **The CFR and FAA citations.** `14 CFR 105.17`, `14 CFR 105.19`, `FAA AIM
-   7-1-7` and `FAA-P-8740-2` are still AI-derived and unread — ecfr.gov,
-   faa.gov and faasafety.gov are not reachable from the development sandbox
-   even with the current allowlist. The USPA references were read on
-   2026-09-22 (see below); these were not, and the #citations page says so.
+1. **Which 105.17 visibility row the flag should use.** The visibility flag
+   fires below 3 SM, the section's row for jumps below 10,000 ft MSL. Brown's
+   is at 1,182 ft MSL, so a 10,000 ft AGL exit is in the other row: 5 SM and
+   1 mile from cloud. The reading is the METAR's surface visibility and the
+   reg's measure is flight visibility at altitude, so the flag stays on the
+   lower row and prints both (read through the eCFR 2026-09-23; A8 on the
+   #citations page). Whether a surface reading should be held to the 5 SM row
+   is a call for the S&TA and the PIC, not for this code.
 
-2. **The USPA claims still need an instructor, not another reading.** The SIM
-   sections were read at uspa.org on 2026-09-22 and the claims corrected
-   against them, so the section numbers are no longer guesses. What a reading
-   could not settle is on the #citations page under "Still open" — among them
-   whether rounding the 14 mph student limit *down* to 12 kt is the right
-   direction for a limit a jumper reads off a card, and whether the club's
-   posted waiver tiers have been filed as a SIM 2-2 waiver.
+2. **Density altitude: the card's number is not the pamphlet's.** FAA-P-8740-2
+   (read 2026-09-23) supports the card's claim — reduced rate of climb, longer
+   takeoff — but states no 120 ft/°C coefficient (its rule-of-thumb chart
+   implies roughly 100–115) and explicitly leaves humidity *out* of the
+   density-altitude computation, treating it as an engine-power effect. The
+   card folds humidity in via virtual temperature, so on a humid day its
+   headline figure will not match the one the PIC computes from ASOS or an
+   E6B. Decide whether the dry-air figure should be the headline with the
+   humidity correction as a separate line. A10 on the #citations page.
 
-3. **The app's own thresholds, for an instructor's judgement rather than a
+3. **The claims still need an instructor, not another reading.** Every
+   citation has now been read at its source — the SIM at uspa.org on
+   2026-09-22; 14 CFR 105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on
+   2026-09-23 — and the claims corrected against them, so the section numbers
+   are no longer guesses. What a reading could not settle is on the #citations
+   page under "Still open" — among them whether rounding the 14 mph student
+   limit *down* to 12 kt is the right direction for a limit a jumper reads off
+   a card, and whether the club's posted waiver tiers have been filed as a SIM
+   2-2 waiver.
+
+4. **The app's own thresholds, for an instructor's judgement rather than a
    lookup.** Part B of the citations page — currently one entry, the 25 kt
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.

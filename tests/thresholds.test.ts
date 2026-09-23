@@ -46,10 +46,11 @@ describe('CITATIONS', () => {
     expect(citation.url).toMatch(/^https:\/\//);
   });
 
-  it.each(entries)('%s carries a verification caveat', (_key, citation) => {
-    // Every figure here is AI-derived; the caveat is what keeps the UI honest
-    // (SourceLink renders it as the ⓘ tooltip). A citation without one reads as
-    // verified when nothing in this repo has verified it.
+  it.each(entries)('%s carries a note saying where and when it was read', (_key, citation) => {
+    // Every figure here began as an AI recollection; the note is what keeps
+    // the UI honest (SourceLink renders it as the ⓘ tooltip). It says where
+    // the section was read and on what date — never "verified" — so a
+    // citation without one would read as checked when nothing has said so.
     expect(citation.note?.trim()).toBeTruthy();
   });
 });

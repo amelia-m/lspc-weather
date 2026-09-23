@@ -77,12 +77,12 @@ precisely because they were colour and text rather than flags.
 ## Citations
 
 Every reference in this app began as an AI recollection. The **USPA SIM**
-sections were read at uspa.org on 2026-09-22 and the claims corrected against
-them; the **CFR and FAA** ones are still unread, because those hosts are
-blocked. Neither state is an instructor's sign-off, and the distinction between
-them is not a detail to smooth over. The in-app page at `#citations`
-(`src/components/CitationsPage.tsx`, linked from the footer) records, per claim,
-what the section says and what a reading could not settle.
+sections were read at uspa.org on 2026-09-22, and the **CFR sections, AIM 7-1-7
+and FAA-P-8740-2** on 2026-09-23, and the claims corrected against them. A
+reading is not an instructor's sign-off, and the difference is not a detail to
+smooth over. The in-app page at `#citations` (`src/components/CitationsPage.tsx`,
+linked from the footer) records, per claim, what the section says, when and
+where it was read, and what a reading could not settle.
 
 When touching a citation:
 
@@ -98,12 +98,19 @@ When touching a citation:
   read and when — "read in the online SIM at uspa.org on <date>" — rather than
   "verified": the website's SIM on one day is not a printed edition, USPA
   revises it, and a bare tick invites a reader to assume more than was done.
+- `www.ecfr.gov` answers a script with a 302 to a bot-check host, so its section
+  pages cannot be read with curl or WebFetch even when the host is allowlisted.
+  The eCFR API serves the same text and needs only `--compressed`:
+  `https://www.ecfr.gov/api/versioner/v1/full/<date>/title-14.xml?part=105&section=105.17`.
+  Leave citation URLs on the human-facing pages; say in the note that the API
+  was read and which "current as of" date it served.
 
 ## What can and cannot be verified from a sandbox
 
 Outbound network access goes through a policy-enforcing egress proxy. With
 `api.weather.gov`, `api.open-meteo.com`, `radar.weather.gov`, `www.uspa.org`,
-`www.markschulze.net` and `amelia-m.github.io` allowlisted (2026-09-22), these
+`www.markschulze.net` and `amelia-m.github.io` allowlisted (2026-09-22), then
+`www.ecfr.gov`, `www.faa.gov` and `www.faasafety.gov` (2026-09-23), these
 became checkable and were checked — see `docs/open-questions.md`:
 
 - the live NWS and Open-Meteo paths, the TAF fallback chain and the NOAA FD
@@ -111,7 +118,8 @@ became checkable and were checked — see `docs/open-questions.md`:
 - component output on live data, via `renderToStaticMarkup` — the same trick the
   advisory tests use. This is how the FD fallback's fake Surface row was found;
 - the radar GIF and its georeferencing, by fetching and measuring it;
-- the USPA SIM sections behind the citations.
+- the USPA SIM sections behind the citations, and the CFR sections, AIM 7-1-7
+  and FAA-P-8740-2 behind the FAA ones.
 
 Still not checkable here, so do not imply a green suite covers them:
 
@@ -137,8 +145,6 @@ Still not checkable here, so do not imply a green suite covers them:
   live data and the real cross-origin fetch are missing. A Node render is not a
   substitute for either — `renderToStaticMarkup` does not run effects, load
   images or apply CSS.
-- **ecfr.gov, faa.gov, faasafety.gov** — still blocked, so the CFR and FAA
-  citations remain AI-derived and unread.
 - CI is no better: it runs the same fixture-backed suite. Nothing in `npm test`
   touches the network.
 

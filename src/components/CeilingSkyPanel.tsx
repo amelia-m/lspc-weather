@@ -47,10 +47,18 @@ export function CeilingSkyPanel({
         // Naming the regulation and rendering no link left the reader with a
         // section number and nowhere to check it — the citation layer exists
         // precisely so that does not happen.
+        //
+        // It says what 105.17 says and no more. It used to add that jumps
+        // "require VFR flight conditions" under the same source line; the
+        // section never mentions VFR (read 2026-09-23) — the pilot's VFR
+        // minimums are 91.155, which this app does not cite. Both altitude
+        // rows are printed because an exit from this DZ is above 10,000 ft
+        // MSL, where the figures are the higher ones.
         <p className="muted small">
-          {CATEGORY_LABEL[category]}: reduced ceiling/visibility. Jumps still require VFR flight
-          conditions and the cloud-clearance minimums for parachute ops (500 ft below / 1,000 ft
-          above / 2,000 ft horizontal below 10,000 ft MSL). Source:{' '}
+          {CATEGORY_LABEL[category]}: reduced ceiling/visibility. 14 CFR 105.17 bars parachute ops
+          into or through cloud and sets flight visibility and distance from cloud: below 10,000 ft
+          MSL, 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft
+          MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile horizontal. Source:{' '}
           <SourceLink citation={CITATIONS.far10517} />
         </p>
       )}
