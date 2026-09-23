@@ -26,8 +26,14 @@ export interface CurrentConditions {
   raw: string;
   wind: SurfaceWind;
   visibilitySm: number | null;
+  /** Sky groups as reported. A clear sky is a CLR/SKC layer with no base, so an
+   *  EMPTY list means the sky was not reported (an observation with no METAR
+   *  text, or one whose sensor reported nothing) — not that it was clear. The
+   *  cards say "Not reported" for it and withhold the VFR label, which needs a
+   *  ceiling to be established. */
   skyLayers: SkyLayer[];
-  /** Lowest BKN/OVC/VV layer base, ft AGL. null = no ceiling. */
+  /** Lowest BKN/OVC/VV layer base, ft AGL. null = no ceiling reported, which
+   *  with an empty `skyLayers` means unknown rather than unlimited. */
   ceilingFtAgl: number | null;
   tempC: number | null;
   dewpointC: number | null;

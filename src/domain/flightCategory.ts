@@ -3,6 +3,8 @@
  *  unit-tested. This is a factual weather category (FAA AIM 7-1-7), NOT a
  *  jump go/no-go verdict; the UI surfaces it and cites the source. */
 
+import type { CurrentConditions } from './types';
+
 export type FlightCategory = 'VFR' | 'MVFR' | 'IFR' | 'LIFR';
 
 /** Restrictiveness order — a higher rank is worse (more limiting). */
@@ -41,6 +43,25 @@ function visibilityCategory(sm: number): FlightCategory {
   if (sm < 3) return 'IFR';
   if (sm <= 5) return 'MVFR';
   return 'VFR';
+}
+
+/**
+ * Flight category for a current observation, which may have no sky group at
+ * all (the sky was not reported — see `CurrentConditions.skyLayers`).
+ *
+ * The AIM's "and/or" lets visibility alone establish MVFR, IFR or LIFR, so a
+ * report with 2 SM and no sky group is still IFR. It cannot establish VFR:
+ * that needs a ceiling above 3,000 ft AND visibility above 5 miles, and with
+ * the sky unreported the first is unknown. `flightCategory` reads a null
+ * ceiling as "no ceiling" because that is what a clear METAR yields, so this
+ * wrapper is where "not reported" is told apart from "clear": it never
+ * returns VFR from half a report. Four of forty KPMV observations on
+ * 2026-09-23 had no sky group; without this they wore a VFR pill.
+ */
+export function observedFlightCategory(c: CurrentConditions): FlightCategory | null {
+  if (c.skyLayers.length > 0) return flightCategory(c.ceilingFtAgl, c.visibilitySm);
+  const byVisibility = flightCategory(null, c.visibilitySm);
+  return byVisibility === 'VFR' ? null : byVisibility;
 }
 
 export const CATEGORY_LABEL: Record<FlightCategory, string> = {

@@ -67,6 +67,11 @@ Settled:
   behaviour `SITE.tafStations` predicts.
 - **The FD fallback was wrong, and is fixed.** See the commit; it printed the
   bulletin's 3,000 ft MSL wind as the Surface row.
+- **The sky decode was wrong on live data, and is fixed.** Seen in a screenshot
+  of the deployed site on 2026-09-23: "Sky: Clear", "No ceiling", VFR and no
+  flag while the raw METAR on the same card read `OVC027`. api.weather.gov's
+  `cloudLayers` was `[]` for seven consecutive reports. The normaliser now
+  reads the sky from the METAR text; see CLAUDE.md.
 - **The Licensed profile reads correctly with no flag**: card header "Licensed —
   no published limit", no band, the standing note and BSR citation present, and
   the advisory list naming the gap.

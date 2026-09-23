@@ -106,6 +106,32 @@ export interface RawNwsObservation {
   };
 }
 
+/** One sky-condition group in the body of a METAR: cover, height in hundreds
+ *  of feet (or `///` when the sensor could not measure it), optional CB/TCU. */
+const SKY_GROUP = /^(SKC|CLR|NSC|FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)?(CB|TCU)?$/;
+
+/**
+ * Sky layers from the body of a METAR — the text before RMK, because remarks
+ * carry tokens that look like sky groups and are not ("SCT V BKN" is a
+ * variable-sky remark with no heights). Heights are hundreds of feet AGL, so
+ * OVC027 is an overcast at 2,700 ft; `///` means the sensor reported the cover
+ * without a height.
+ */
+export function parseSkyGroups(raw: string): SkyLayer[] {
+  const body = raw.split(' RMK ')[0];
+  const layers: SkyLayer[] = [];
+  for (const token of body.split(/\s+/)) {
+    const m = SKY_GROUP.exec(token);
+    if (!m) continue;
+    const height = m[2];
+    layers.push({
+      cover: m[1] as SkyCover,
+      baseFtAgl: height != null && height !== '///' ? Number(height) * 100 : null,
+    });
+  }
+  return layers;
+}
+
 export function normalizeNwsObservation(
   obs: RawNwsObservation,
   fallbackStationId: string,
@@ -113,10 +139,24 @@ export function normalizeNwsObservation(
   const p = obs.properties;
   const raw = p.rawMessage ?? '';
 
-  const skyLayers: SkyLayer[] = (p.cloudLayers ?? []).map((l) => ({
-    cover: toSkyCover(l.amount),
-    baseFtAgl: l.base?.value != null ? Math.round(mToFt(l.base.value)) : null,
-  }));
+  // The sky comes from the METAR text first and from the API's decoded
+  // `cloudLayers` only when the text has no sky group — the same order this
+  // function already uses for the altimeter. The decode is not reliable: on
+  // 2026-09-23 api.weather.gov served seven consecutive KPMV observations with
+  // `cloudLayers: []` and an empty `textDescription` while `rawMessage` read
+  // OVC027–OVC035, and the dashboard showed "Clear", "No ceiling" and VFR under
+  // a 2,700 ft overcast. The raw METAR is the observation; the decode is a
+  // convenience. An empty result here means the sky was not reported at all
+  // (four of the same forty observations had no rawMessage either) — see the
+  // `skyLayers` doc in types.ts for what the cards make of that.
+  const rawSky = parseSkyGroups(raw);
+  const skyLayers: SkyLayer[] =
+    rawSky.length > 0
+      ? rawSky
+      : (p.cloudLayers ?? []).map((l) => ({
+          cover: toSkyCover(l.amount),
+          baseFtAgl: l.base?.value != null ? Math.round(mToFt(l.base.value)) : null,
+        }));
   const ceiling = skyLayers
     .filter((l) => CEILING_COVERS.includes(l.cover) && l.baseFtAgl != null)
     .reduce<number | null>((min, l) => (min == null ? l.baseFtAgl : Math.min(min, l.baseFtAgl!)), null);

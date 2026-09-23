@@ -1,7 +1,7 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, type Thresholds } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
-import { flightCategory, CATEGORY_LABEL } from './flightCategory';
+import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
 
 /**
  * Turn a weather snapshot into a list of ADVISORIES — conditions worth noting,
@@ -102,7 +102,7 @@ export function evaluateAdvisories(
     }
 
     // --- Flight category (FAA VFR/MVFR/IFR/LIFR from ceiling + visibility) ---
-    const category = flightCategory(current.ceilingFtAgl, current.visibilitySm);
+    const category = observedFlightCategory(current);
     if (category && category !== 'VFR') {
       out.push({
         id: 'flight-category',
