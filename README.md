@@ -13,12 +13,12 @@ freefall drift and **density altitude** for jump-plane climb performance.
 >
 > **Advisory only.** This dashboard *flags conditions and cites guidance* — it
 > does **not** decide whether it's safe to jump. Every citation here began as an
-> AI recollection. The **USPA SIM** sections were read at uspa.org on
-> 2026-09-22 and the claims corrected against them; the **CFR and FAA**
-> citations remain **unread and may be inaccurate**. Neither case is a licensed
-> professional's sign-off — verify against the primary source before relying on
-> it. Always confirm conditions with current official sources, the S&TA, and the
-> pilot in command.
+> AI recollection. Each has since been read at its source — the **USPA SIM** at
+> uspa.org on 2026-09-22, the **CFR sections, AIM 7-1-7 and FAA-P-8740-2** on
+> 2026-09-23 — and the claims corrected against them. A reading is not a
+> licensed professional's sign-off — verify against the primary source before
+> relying on it. Always confirm conditions with current official sources, the
+> S&TA, and the pilot in command.
 
 ## What it shows
 
@@ -161,10 +161,15 @@ Every citation here began as an AI recollection. On 2026-09-22 the USPA SIM
 sections were fetched from uspa.org and read: two claims were wrong and were
 fixed (the C/D minimum opening altitude, and a USPA licence claim cited to a CFR
 that does not mention licences), and two citations that pointed at the SIM
-contents page now name sections (4-5 Weather, 4-7 Spotting). The **CFR and FAA
-citations are still unread** — those sites are not reachable from the
-development environment. What was read is the SIM the website served on one day,
-not a printed edition, so **re-verify against the linked primary source** before
+contents page now name sections (4-5 Weather, 4-7 Spotting). On 2026-09-23 the
+rest followed: 14 CFR 105.17 and 105.19 through the eCFR, AIM 7-1-7 on faa.gov
+and FAA-P-8740-2 from the linked PDF. All four say what the app claimed. Two
+sentences said more than their section does and were tightened — the sky card
+no longer says jumps "require VFR flight conditions", which 105.17 never
+mentions, and the night flag now says whose light it is — and the 105.17 row
+for exits at or above 10,000 ft MSL (5 SM, 1 mile from cloud) is printed where
+only the lower row was. What was read is each source as served on one day, not
+a printed edition, so **re-verify against the linked primary source** before
 relying on any of it operationally.
 
 ## Deploy

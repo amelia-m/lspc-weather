@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { evaluateAdvisories } from '../src/domain/advisories';
 import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
+import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
 import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
 import { CITATIONS, DEFAULT_THRESHOLDS, resolveThresholds } from '../src/config/thresholds';
 import type { Thresholds } from '../src/config/thresholds';
@@ -575,5 +576,51 @@ describe('waiver tiers that post different ceilings display different ceilings',
     const [a, b] = tiers.map((id) => windPanel(resolveThresholds(id), 'LSPC waiver', 'mph', gusty));
     expect(a).toContain('Gust ceiling 19 mph');
     expect(b).toContain('Gust ceiling 20 mph');
+  });
+});
+
+/* Read against the sources on 2026-09-23. Each pins a sentence to what its
+ * section actually says, so a later edit cannot drift back to a claim the link
+ * would not support. */
+describe('guidance matches the section as read', () => {
+  it('prints both 105.17 visibility rows, since an exit from this DZ is above 10,000 ft MSL', () => {
+    // Brown's is at 1,182 ft MSL; a 10,000 ft AGL exit is in the 5 SM row.
+    const current = normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 });
+    const vis = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'visibility',
+    );
+    expect(vis?.guidance).toMatch(/3 SM/);
+    expect(vis?.guidance).toMatch(/5 SM/);
+    expect(vis?.guidance).toMatch(/10,000 ft MSL/);
+    // And still fires at the lower row: the reading is surface visibility, and
+    // the reg's measure is flight visibility at altitude.
+    expect(DEFAULT_THRESHOLDS.student.visibilityCautionSm).toBe(3);
+  });
+
+  it('says whose light 105.19 requires, and from when', () => {
+    // 105.19(b): displayed by the person descending, from a properly
+    // functioning open parachute until the surface. Not a light on the plane.
+    const snap = snapshot({ sun: { sunrise: now - 8 * 3600_000, sunset: now - 3600_000 } });
+    const day = evaluateAdvisories(snap, DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'daylight',
+    );
+    expect(day?.guidance).toMatch(/the jumper to display a light/);
+    expect(day?.guidance).toMatch(/3 statute miles/);
+    expect(day?.guidance).toMatch(/open canopy/);
+  });
+
+  it('the sky card states 105.17 and no longer claims jumps "require VFR flight conditions"', () => {
+    // 105.17 never mentions VFR; the pilot's minimums are 91.155, which the
+    // app does not cite. MVFR ceiling so the note renders.
+    const current = normalizeMetar({
+      ...METAR_FIXTURE[0],
+      clouds: [{ cover: 'BKN', base: 2000 }],
+    });
+    const html = markup(createElement(CeilingSkyPanel, { current, hourly: [] }));
+    expect(html).not.toMatch(/VFR flight conditions/);
+    expect(html).toMatch(/into or through cloud/);
+    expect(html).toMatch(/5 SM/);
+    expect(html).toMatch(/1 mile horizontal/);
+    expect(html).toContain(CITATIONS.far10517.url);
   });
 });

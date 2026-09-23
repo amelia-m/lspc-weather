@@ -84,6 +84,11 @@ export function evaluateAdvisories(
     }
 
     // --- Visibility (105.17 floor below 10k MSL is 3 SM) ---
+    // The trigger is the section's lower row. Its upper row — 5 SM at or above
+    // 10,000 ft MSL — is the one an exit from this DZ is in, and the guidance
+    // prints it, but the reading is the METAR's surface visibility and the
+    // reg's measure is flight visibility at altitude, so the flag holds a
+    // surface figure only to the row it can honestly be held to.
     if (current.visibilitySm != null && current.visibilitySm < thresholds.visibilityCautionSm) {
       out.push({
         id: 'visibility',
@@ -91,7 +96,7 @@ export function evaluateAdvisories(
         metric: 'Visibility',
         value: `${round(current.visibilitySm, 1)} SM`,
         guidance:
-          '14 CFR 105.17 requires at least 3 SM flight visibility for jumps below 10,000 ft MSL.',
+          '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.',
         citation: CITATIONS.far10517,
       });
     }
@@ -169,9 +174,12 @@ export function evaluateAdvisories(
         // is the harder requirement and sets the trigger; the USPA one is
         // stated as the SIM states it — "should", not "requires" — and names
         // its own section rather than riding on the reg's citation, which
-        // says nothing about licences.
+        // says nothing about licences. The FAA sentence follows 105.19 (a)
+        // and (b) as read on 2026-09-23: the light is the descending
+        // jumper's, shown from open canopy to the surface — not a light on
+        // the aircraft, which an earlier wording left open.
         guidance:
-          'Parachute ops between sunset and sunrise require a light visible for at least 3 statute miles (14 CFR 105.19). USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements — see SIM 5-3. Not a daytime operation.',
+          'Between sunset and sunrise, 14 CFR 105.19 requires the jumper to display a light visible for at least 3 statute miles, from open canopy until landing. USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements — see SIM 5-3. Not a daytime operation.',
         citation: CITATIONS.far10519,
         secondaryCitation: CITATIONS.uspaNightJumps,
       });

@@ -9,9 +9,6 @@ import { mphToKt } from '../domain/units';
  * the authoritative source so THEY (or the S&TA / instructor / PIC) decide.
  */
 
-const VERIFY_NOTE =
-  'AI-derived citation — may be inaccurate. Verify against the linked primary source and a licensed professional before use.';
-
 /** Note for a citation whose section text was read in the SIM that uspa.org
  *  served on 2026-09-22. It says what was done rather than "verified": the
  *  online SIM is not a printed edition, USPA revises it, and a reader deciding
@@ -20,6 +17,30 @@ const VERIFY_NOTE =
  *  reading a rule is not the same as knowing how the DZ applies it. */
 const SIM_READ_NOTE =
   'Section text read in the online SIM at uspa.org on 2026-09-22 and matches this claim. USPA revises the SIM — re-check against the current one, and confirm with the S&TA before relying on it.';
+
+/** The same shape for the two CFR sections, read on 2026-09-23. They were read
+ *  through the eCFR API (api/versioner/v1/full/2026-09-21/title-14.xml — Title
+ *  14 as current on 2026-09-21), which serves the text the linked page renders;
+ *  the page itself answers a script with a redirect to a bot check, so the API
+ *  is what was actually read and the note says so. The URL stays on the page a
+ *  person would open. */
+const CFR_READ_NOTE =
+  'Section text read through the eCFR (Title 14 current as of 2026-09-21) on 2026-09-23 and matches this claim. The CFR is amended — re-check the linked section, and confirm with the S&TA and the PIC before relying on it.';
+
+/** AIM 7-1-7 as faa.gov served it on 2026-09-23: the HTML edition, Change 3,
+ *  effective 2026-07-09. The FAA issues AIM changes on a schedule, so the
+ *  change number is part of what was read, not decoration. */
+const AIM_READ_NOTE =
+  'Read in the AIM on faa.gov on 2026-09-23 (Change 3, effective 2026-07-09) and matches this claim. The FAA revises the AIM — re-check the linked section before relying on it.';
+
+/** FAA-P-8740-2 as read on 2026-09-23 from the linked PDF: the 2008 AFS-8
+ *  edition (cover "FAA–P–8740–2 • AFS–8 (2008) HQ-08561 Density Altitude",
+ *  8 pages). The link is a copy in a FAASTeam event folder rather than a
+ *  catalogue page — the shape most likely to rot — and no other FAA home for
+ *  the pamphlet was found, so the note names the document so a reader can
+ *  find it again if the link dies. */
+const FAA_PAMPHLET_READ_NOTE =
+  'Read on 2026-09-23 from the linked PDF (FAA-P-8740-2, AFS-8, 2008) and matches this claim. The link is a copy in a FAASTeam event folder, not a catalogue entry — if it stops resolving, the pamphlet is what to look for.';
 
 /** SIM section URLs all take this shape — `simUrl('2-1')` → …/sim/2-1. Written
  *  once so a citation cannot drift into a different URL shape (deep anchors,
@@ -79,34 +100,64 @@ export const CITATIONS = {
     url: simUrl('2-1'),
     note: SIM_READ_NOTE,
   },
+  /** 105.17 bars parachute ops into or through cloud outright, then sets
+   *  flight visibility and distance from cloud by altitude. Two of its rows
+   *  matter at this DZ: below 10,000 ft MSL, 3 SM and 500 ft below / 1,000 ft
+   *  above / 2,000 ft horizontal; at or above 10,000 ft MSL, 5 SM and 1,000 /
+   *  1,000 ft / 1 mile. Brown's is at 1,182 ft MSL, so a 10,000 ft AGL exit is
+   *  in the 5 SM row and the freefall drops into the 3 SM row on the way down.
+   *
+   *  The visibility flag fires at 3 SM, the lower row. The METAR reports
+   *  surface visibility and the reg's measure is flight visibility at
+   *  altitude, so the lower row is the one a surface reading can be held
+   *  against without claiming it says more than it does; both rows are
+   *  printed so the reader can check the exit against the right one. Whether
+   *  the flag should fire at 5 SM instead is an open question on #citations. */
   far10517: {
     source: '14 CFR § 105.17',
-    ref: 'Flight visibility & clearance from cloud (parachute ops)',
+    ref: 'Flight visibility and clearance from cloud — never into or through cloud; below 10,000 ft MSL 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft MSL 5 SM and 1,000 / 1,000 ft / 1 mile',
     url: 'https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-105/subpart-B/section-105.17',
-    note: VERIFY_NOTE,
+    note: CFR_READ_NOTE,
   },
+  /** 105.19 (a) sets the trigger — "between sunset and sunrise" — and the
+   *  light; (b) says whose it is and when: displayed by the person or object
+   *  descending, from a properly functioning open parachute until the surface.
+   *  It is the jumper's light, not the aircraft's, and the section says nothing
+   *  about licences — the USPA half of the after-sunset flag cites 5-3. */
   far10519: {
     source: '14 CFR § 105.19',
-    ref: 'Parachute ops between sunset and sunrise (light visible ≥ 3 SM)',
+    ref: 'Parachute operations between sunset and sunrise — the jumper must display a light visible for at least 3 statute miles, from open canopy until reaching the surface',
     url: 'https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-105/subpart-B/section-105.19',
-    note: VERIFY_NOTE,
+    note: CFR_READ_NOTE,
   },
+  /** The four bands in src/domain/flightCategory.ts were checked against this
+   *  section on 2026-09-23 and match at every boundary, inclusive ends
+   *  included (a 3,000 ft ceiling or exactly 5 SM is MVFR; 1,000 ft or 3 SM is
+   *  MVFR, not IFR). The AIM calls these terms a description of "reported or
+   *  forecast general ceiling and visibility conditions" — a classification,
+   *  which is how the flag presents it. */
   aimFlightCategory: {
     source: 'FAA AIM 7-1-7',
-    ref: 'Categorical ceiling & visibility (VFR / MVFR / IFR / LIFR)',
+    ref: 'Categorical ceiling and visibility conditions — LIFR / IFR / MVFR / VFR',
     url: 'https://www.faa.gov/air_traffic/publications/atpubs/aim_html/chap7_section_1.html',
-    note: VERIFY_NOTE,
+    note: AIM_READ_NOTE,
   },
   /** Density altitude and its effect on climb performance. Backs the standing
    *  note on the density-altitude card, not a flag: the claim (a loaded jump
    *  plane climbs worse in high DA) is FAA-sourced and true at any DA, but the
    *  ft-above-field bands that used to raise a watch/caution were the app's
-   *  own. The card prints the DA figure; the reader judges it. */
+   *  own. The card prints the DA figure; the reader judges it.
+   *
+   *  Cited for the CLAIM, not the arithmetic: the pamphlet states no ft-per-°C
+   *  coefficient and leaves humidity out of the density-altitude computation
+   *  altogether (it treats humidity as an engine-power effect). The card's
+   *  formula and its virtual-temperature correction are in
+   *  src/domain/densityAltitude.ts, which says so. */
   faaDensityAltitude: {
     source: 'FAA-P-8740-2',
-    ref: 'Density Altitude (FAA Safety pamphlet)',
+    ref: 'Density Altitude (FAA Safety pamphlet, AFS-8, 2008) — high density altitude means "reduced rate of climb" and "increased takeoff distance"',
     url: 'https://www.faasafety.gov/files/events/NM/NM07/2023/NM07120280/FAA-P-8740-02-DensityAltitude.pdf',
-    note: VERIFY_NOTE,
+    note: FAA_PAMPHLET_READ_NOTE,
   },
   /**
    * General weather awareness — the thunderstorm flag's claim.
@@ -157,12 +208,12 @@ export const CITATIONS = {
    *
    * The flag used to make two claims — the FAA light requirement and a USPA
    * licence requirement — and offer one source, 14 CFR 105.19. 5-3 is the
-   * section behind the second. Phrased that way round deliberately: the CFR is
-   * unread (ecfr.gov is blocked here), so this can say where the USPA claim
-   * comes from without asserting what the reg does not contain. It also settles when
-   * the flag should fire: "Any jumps made between official sunset and official
-   * sunrise are considered night jumps", which is the same trigger the reg
-   * uses, so the flag firing at sunset matches both authorities.
+   * section behind the second. The CFR was read on 2026-09-23 and confirms
+   * the split: 105.19 is about the light the descending jumper displays and
+   * says nothing about licences. 5-3 also settles when the flag should fire:
+   * "Any jumps made between official sunset and official sunrise are
+   * considered night jumps", which is the same trigger the reg uses, so the
+   * flag firing at sunset matches both authorities.
    *
    * Note the modal verb. 5-3 B says participants "should meet all the
    * requirements for a USPA B or higher license" — a recommendation — while
