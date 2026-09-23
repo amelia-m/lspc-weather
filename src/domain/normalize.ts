@@ -3,6 +3,7 @@ import type {
   DailyPoint,
   HourlyPoint,
   SkyCover,
+  SkyDecodeCheck,
   SkyLayer,
   TafForecast,
 } from './types';
@@ -132,6 +133,28 @@ export function parseSkyGroups(raw: string): SkyLayer[] {
   return layers;
 }
 
+/** Bases from the text are hundreds of feet; the decode's are metres rounded
+ *  to feet (OVC027 → 2,700 ft against 820 m → 2,690 ft), so "the same layer"
+ *  allows that much slack and no more. */
+const SKY_BASE_SLACK_FT = 60;
+
+/** Grade the API's decode against the text — see SkyDecodeCheck. Exported so
+ *  the grading is tested on its own, apart from which decode won. */
+export function compareSkyDecodes(fromText: SkyLayer[], fromDecode: SkyLayer[]): SkyDecodeCheck {
+  if (fromText.length === 0 && fromDecode.length === 0) return 'not-reported';
+  if (fromText.length === 0) return 'text-empty';
+  if (fromDecode.length === 0) return 'decode-empty';
+  const same =
+    fromText.length === fromDecode.length &&
+    fromText.every((l, i) => {
+      const d = fromDecode[i];
+      if (l.cover !== d.cover) return false;
+      if (l.baseFtAgl == null || d.baseFtAgl == null) return l.baseFtAgl === d.baseFtAgl;
+      return Math.abs(l.baseFtAgl - d.baseFtAgl) <= SKY_BASE_SLACK_FT;
+    });
+  return same ? 'agrees' : 'decode-differs';
+}
+
 export function normalizeNwsObservation(
   obs: RawNwsObservation,
   fallbackStationId: string,
@@ -150,13 +173,12 @@ export function normalizeNwsObservation(
   // (four of the same forty observations had no rawMessage either) — see the
   // `skyLayers` doc in types.ts for what the cards make of that.
   const rawSky = parseSkyGroups(raw);
-  const skyLayers: SkyLayer[] =
-    rawSky.length > 0
-      ? rawSky
-      : (p.cloudLayers ?? []).map((l) => ({
-          cover: toSkyCover(l.amount),
-          baseFtAgl: l.base?.value != null ? Math.round(mToFt(l.base.value)) : null,
-        }));
+  const decodedSky: SkyLayer[] = (p.cloudLayers ?? []).map((l) => ({
+    cover: toSkyCover(l.amount),
+    baseFtAgl: l.base?.value != null ? Math.round(mToFt(l.base.value)) : null,
+  }));
+  const skyLayers: SkyLayer[] = rawSky.length > 0 ? rawSky : decodedSky;
+  const skyDecode = compareSkyDecodes(rawSky, decodedSky);
   const ceiling = skyLayers
     .filter((l) => CEILING_COVERS.includes(l.cover) && l.baseFtAgl != null)
     .reduce<number | null>((min, l) => (min == null ? l.baseFtAgl : Math.min(min, l.baseFtAgl!)), null);
@@ -181,6 +203,7 @@ export function normalizeNwsObservation(
     visibilitySm: p.visibility?.value != null ? round(mToSm(p.visibility.value), 1) : null,
     skyLayers,
     ceilingFtAgl: ceiling,
+    skyDecode,
     tempC: p.temperature?.value ?? null,
     dewpointC: p.dewpoint?.value ?? null,
     // Prefer the altimeter setting parsed from the raw METAR; fall back to

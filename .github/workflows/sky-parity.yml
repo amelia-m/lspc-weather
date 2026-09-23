@@ -1,0 +1,54 @@
+name: Sky decode parity
+
+# Daily, and on demand: compare the app's own METAR sky parse against
+# aviationweather.gov's decoder on today's report, and print what
+# api.weather.gov and usairnet said. Opens (or updates) one issue on failure.
+# Not part of CI: it needs the network, and the PR suite stays hermetic.
+on:
+  schedule:
+    - cron: '0 13 * * *' # 08:00 CDT / 07:00 CST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Compare decoders on today's report
+        shell: bash
+        run: |
+          set -o pipefail
+          npx vitest run --config vitest.live.config.ts 2>&1 | tee parity.log
+      - name: Open or update the parity issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          gh label create sky-parity --color D93F0B --force \
+            --description "The app's METAR sky parse disagreed with another decoder"
+          {
+            echo "The daily sky-decode parity check failed on $(date -u +%Y-%m-%d). Run: $RUN_URL"
+            echo
+            echo "Either the app's METAR sky parse disagrees with aviationweather.gov's decoder on today's report, or a fetch failed — the log says which."
+            echo
+            echo '```'
+            tail -n 60 parity.log
+            echo '```'
+          } > body.md
+          existing=$(gh issue list --label sky-parity --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh issue create --title "Sky decode parity check failed" --label sky-parity --body-file body.md
+          fi

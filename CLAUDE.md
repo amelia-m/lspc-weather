@@ -88,6 +88,10 @@ precisely because they were colour and text rather than flags.
   `rawMessage` at all: an empty `skyLayers` means *not reported*, the cards say
   so, and `observedFlightCategory` never shows VFR from a report with no
   ceiling in it — visibility alone can establish MVFR/IFR/LIFR, not VFR.
+  Two things now watch for a repeat: the METAR row on Data health grades the
+  two decodes against each other (`skyDecode`, amber unless they agree), and
+  `.github/workflows/sky-parity.yml` compares the app's parse against
+  aviationweather.gov's decoder on today's report every morning.
 
 ## Citations
 
@@ -226,5 +230,12 @@ overlaying the Refresh button.
 pull requests only (`.github/workflows/ci.yml`), so commits pushed to a branch
 with no open PR are never checked by CI — a long branch can accumulate a lot of
 unverified work. `main` deploys to GitHub Pages on push.
+
+`.github/workflows/sky-parity.yml` is not a gate: it runs daily and on
+dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
+`vitest.live.config.ts` so `npm test` stays hermetic. It fails only when the
+app's METAR sky parse disagrees with aviationweather.gov's decoder, and opens
+one issue labelled `sky-parity` when it does. aviationweather.gov is not on the
+sandbox allowlist, so run it from a runner, not from here.
 
 Open items live in `docs/open-questions.md`.

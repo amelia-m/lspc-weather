@@ -56,7 +56,10 @@ freefall drift and **density altitude** for jump-plane climb performance.
 - **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
   countdown, because no published source sets a minutes-before-sunset figure.
-- **Data health** — per-source freshness, staleness, and error state.
+- **Data health** — per-source freshness, staleness, and error state, plus which
+  provider each source is served from. The METAR row says whether the NWS
+  API's decode of the report agreed with the METAR text the app parses, amber
+  when it did not.
 
 ## Data sources (all free, no API key)
 

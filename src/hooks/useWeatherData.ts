@@ -141,6 +141,12 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
               : prev.densityAltitude,
         }));
         logSource('metar', 'success', `METAR from ${metarStation.id}`);
+        // The two decodes of the report disagreeing is worth a log line of its
+        // own: the chip on Data health shows it now, and this is how it is
+        // reconstructed later from a laptop (window.LSPC_DEBUG.getLogs()).
+        if (current?.skyDecode !== undefined && current.skyDecode !== 'agrees') {
+          logSource('metar', 'fallback', `sky decode: ${current.skyDecode} (${current.raw})`);
+        }
         updateSource('metar', okStatus());
       })
       .catch((e) => {
