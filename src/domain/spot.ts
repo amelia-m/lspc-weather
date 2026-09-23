@@ -46,6 +46,19 @@ export interface DriftEstimate {
    * depth reading silently did not.
    */
   lowestLevelFtAgl: number;
+  /**
+   * The highest altitude AGL the winds source covers, or null with no levels.
+   *
+   * The mirror of `lowestLevelFtAgl`. Above it the integral carries this
+   * level's wind up to exit, and that assumption is as invisible as the one at
+   * the bottom: an exit at 10,000 ft over a profile that stopped at 9,000 ft
+   * produces a drift figure that looks fully sampled. Normally the profile
+   * reaches every altitude the exit selector offers, so nothing is assumed;
+   * whether it was is for the card to decide, since only it knows the exit
+   * altitude that was chosen. Reported as the level's own altitude, for the
+   * same reason as the bottom figure: it is true whatever exit was picked.
+   */
+  highestLevelFtAgl: number | null;
 }
 
 export interface DriftOptions {
@@ -86,7 +99,10 @@ function legFromComponents(e: number, n: number): DriftLeg {
  * integral OVER a depth, and it needs some wind for every foot of it; refusing
  * to assume one does not produce silence, it produces a drift figure that is
  * too small by however much of the descent went unaccounted. Too small is the
- * dangerous direction — it shortens the spot.
+ * dangerous direction — it shortens the spot. The assumption is not hidden,
+ * though: `estimateDrift` reports where the levels stop at both ends
+ * (`lowestLevelFtAgl`, `highestLevelFtAgl`) so the card can say which part of
+ * the descent was carried by an assumed wind.
  *
  * So on the FD path the canopy leg is carried by the lowest level the bulletin
  * supports, now ~2,000 ft AGL rather than a fabricated surface row. That is a
@@ -158,13 +174,14 @@ export function estimateDrift(levels: WindsAloftLevel[], opts: DriftOptions): Dr
   const can = integrate(levels, 0, canopyTopFtAgl, canopyFps);
 
   // Derived from the levels themselves rather than from which source produced
-  // them: any profile that stops above the ground has the same gap, and the
-  // reader needs the altitude, not the provenance.
+  // them: any profile that stops above the ground, or short of the exit, has
+  // the same gap, and the reader needs the altitude, not the provenance.
+  const altitudes = levels.map((l) => l.altitudeFtAgl);
   return {
     freefall: legFromComponents(ff.e, ff.n),
     canopy: legFromComponents(can.e, can.n),
     total: legFromComponents(ff.e + can.e, ff.n + can.n),
-    lowestLevelFtAgl:
-      levels.length === 0 ? 0 : Math.max(0, Math.min(...levels.map((l) => l.altitudeFtAgl))),
+    lowestLevelFtAgl: levels.length === 0 ? 0 : Math.max(0, Math.min(...altitudes)),
+    highestLevelFtAgl: levels.length === 0 ? null : Math.max(...altitudes),
   };
 }

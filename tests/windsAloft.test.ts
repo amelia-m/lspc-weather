@@ -2,8 +2,20 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
+import { WINDS_ALOFT_LEVELS_AGL } from '../src/config/site';
 import type { WindsAloftLevel } from '../src/domain/types';
-import { interpAngle, interpolateWindsAloft, type RawWindSample } from '../src/domain/windsAloft';
+import {
+  interpAngle,
+  interpolateWindsAloft,
+  windsAloftTop,
+  type RawWindSample,
+} from '../src/domain/windsAloft';
+import {
+  fullProfile,
+  REQUESTED_TOP_FT_AGL,
+  SHORT_PROFILE_TOP_FT_AGL,
+  shortProfile,
+} from './support/openMeteoProfiles';
 
 describe('interpAngle', () => {
   it('takes the short arc across north', () => {
@@ -161,5 +173,100 @@ describe('the collapsed winds table never hides the lowest available level', () 
     const shown = rows(om, 'open-meteo');
     expect(shown).toContain('Surface');
     expect(shown).not.toContain('2,000 ft'); // not a key altitude, and not lowest
+  });
+});
+
+/**
+ * `interpolateWindsAloft` drops the rows above the highest sample, which is
+ * right, but a dropped row is invisible. With the 500 and 600 hPa levels
+ * missing the profile ends at 9,000 ft AGL while the app asked for 13,000; the
+ * report has to say where it stops so the missing rows read as a hole in the
+ * data and not a display choice.
+ */
+describe('windsAloftTop says where the profile ends against what was asked for', () => {
+  it('reports a complete profile as reaching the requested top', () => {
+    const top = windsAloftTop(fullProfile(), WINDS_ALOFT_LEVELS_AGL);
+    expect(top.highestFtAgl).toBe(REQUESTED_TOP_FT_AGL);
+    expect(top.requestedFtAgl).toBe(REQUESTED_TOP_FT_AGL);
+    expect(top.stopsShort).toBe(false);
+  });
+
+  it('reports the 700 hPa top when 500 and 600 hPa are missing', () => {
+    const levels = shortProfile();
+    // The fixture arrangement the test is about: rows above 9,000 ft are gone.
+    expect(Math.max(...levels.map((l) => l.altitudeFtAgl))).toBe(SHORT_PROFILE_TOP_FT_AGL);
+    const top = windsAloftTop(levels, WINDS_ALOFT_LEVELS_AGL);
+    expect(top.highestFtAgl).toBe(SHORT_PROFILE_TOP_FT_AGL);
+    expect(top.requestedFtAgl).toBe(REQUESTED_TOP_FT_AGL);
+    expect(top.stopsShort).toBe(true);
+  });
+
+  it('does not claim a truncated profile when there are no levels at all', () => {
+    const top = windsAloftTop([], WINDS_ALOFT_LEVELS_AGL);
+    expect(top.highestFtAgl).toBeNull();
+    expect(top.stopsShort).toBe(false);
+  });
+});
+
+/**
+ * Every "up to" on the card is derived from the profile's real top. The toggle
+ * and the collapsed note used to hard-code the configured 13k, so a profile
+ * that ended at 9,000 ft was still offered as running to 13k, and nothing said
+ * the rows above 9,000 ft were absent rather than folded.
+ */
+describe('the winds table says where its rows stop', () => {
+  const markup = (levels: WindsAloftLevel[]): string =>
+    renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels,
+        source: 'open-meteo',
+        validity: { validMs: Date.parse('2026-09-22T04:00:00Z') },
+        unit: 'kt',
+        onUnitChange: () => {},
+      } as never),
+    );
+  const short = SHORT_PROFILE_TOP_FT_AGL.toLocaleString();
+  const requested = REQUESTED_TOP_FT_AGL.toLocaleString();
+
+  describe('with the 500 and 600 hPa levels missing', () => {
+    const html = markup(shortProfile());
+
+    it('states, in words, the altitude above which the report has no wind', () => {
+      expect(html).toContain(
+        `This report has no wind above ${short} ft AGL, so the rows above it are not shown. ` +
+          `The table normally runs to ${requested} ft.`,
+      );
+    });
+
+    it('offers the expand toggle only up to the altitude the data reaches', () => {
+      expect(html).toContain(`Show more altitudes (more increments, up to ${short} ft)`);
+      expect(html).not.toContain(`up to ${requested} ft`);
+      expect(html).not.toContain('13k');
+    });
+
+    it('describes the collapsed view by the rows it actually holds', () => {
+      // The key set's 10,000 ft row is gone with the profile, so the collapsed
+      // view ends at 7,000 ft and must not call that LSPC's usual max.
+      expect(html).toContain(
+        `Showing key altitudes to 7,000 ft. Expand for every 1,000-ft level up to ${short} ft.`,
+      );
+      expect(html).not.toContain('usual max');
+    });
+  });
+
+  describe('with a complete profile', () => {
+    const html = markup(fullProfile());
+
+    it('says nothing about missing rows', () => {
+      expect(html).not.toContain('no wind above');
+      expect(html).not.toContain('rows above it');
+    });
+
+    it('offers the toggle up to the configured top', () => {
+      expect(html).toContain(`Show more altitudes (more increments, up to ${requested} ft)`);
+      expect(html).toContain(
+        `Showing key altitudes to 10,000 ft (LSPC’s usual max). Expand for every 1,000-ft level up to ${requested} ft.`,
+      );
+    });
   });
 });
