@@ -267,7 +267,12 @@ export const CITATIONS = {
     source: 'LSPC Waivered Wind Limits',
     ref: 'Club wind-limit policy (posted at the DZ)',
     url: 'https://github.com/amelia-m/lspc-weather/blob/main/docs/lspc-waivered-wind-limits.md',
-    note: 'Transcribed from the LSPC posted policy photo — verify against the current posted sign.',
+    // The one citation with no document to "read": its provenance is a photo
+    // of the sign, undated, transcribed into docs/. The date here is the
+    // earliest the repository can vouch for — when the transcription and the
+    // photo arrived — so the note carries a date like every other, without
+    // pretending the photo itself is dated.
+    note: 'Transcribed from a photo of the LSPC posted policy sign (the photo is undated; in this repository since 2026-07-04) — verify against the current posted sign.',
   },
 } satisfies Record<string, Citation>;
 

@@ -159,7 +159,7 @@ const LOOKUPS: Lookup[] = [
       'Surface wind flag, with any LSPC waiver tier selected. The card carries the club-policy link behind that tier’s limit, but this sentence itself reaches the reader only when the flag fires.',
     cites: 'LSPC waivered wind limits (club policy)',
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22',
+      read: 'the SIM at uspa.org, 2026-09-22, and the club document as transcribed in docs/lspc-waivered-wind-limits.md — an undated photo of the posted sign, in this repository since 2026-07-04',
       says: [
         'The SIM rule underneath it has been identified: 2-2 (“Waivers to the Basic Safety Requirements”). Each BSR is waiverable only by the full board “except for those BSRs designated as being waiverable by: S&TA or Examiner only [S]”. The student ground-wind BSR carries [S], so an S&TA may waive it — which is the authority the club document is exercising.',
         'SIM 2-2 C adds that an S&TA waiver must be filed in writing on the USPA waiver form, with copies to the Regional Director and USPA Headquarters, and remains in place until rescinded or the DZ changes hands.',
@@ -236,13 +236,15 @@ const LOOKUPS: Lookup[] = [
       'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the PIC.',
     value: 'MVFR is a watch; IFR and LIFR a caution',
     where: 'Flight-category flag in Conditions to note, and the category pill on the Ceiling & sky card.',
-    cites: 'FAA AIM 7-1-7',
+    cites:
+      'FAA AIM 7-1-7, for the categories. The second sentence cites nothing: it names no rule number and no figure, and sends the reader to the PIC.',
     found: {
       read: 'the AIM on faa.gov (Change 3, effective 2026-07-09), 2026-09-23',
       says: [
         'AIM 7-1-7, Categorical Ceiling and Visibility Conditions: “LIFR (Low IFR). Ceiling less than 500 feet and/or visibility less than 1 mile. IFR. Ceiling 500 to less than 1,000 feet and/or visibility 1 to less than 3 miles. MVFR (Marginal VFR). Ceiling 1,000 to 3,000 feet and/or visibility 3 to 5 miles inclusive. VFR. Ceiling greater than 3,000 feet and visibility greater than 5 miles; includes sky clear.”',
         'The app’s bands match at every boundary, including the inclusive ends: a 3,000 ft ceiling or exactly 5 SM is MVFR, and 1,000 ft or 3 SM is MVFR rather than IFR. The overall category is the worse of the two, which is what the AIM’s “and/or” gives.',
         'The AIM says the terms describe “either reported or forecast general ceiling and visibility conditions” — a classification, not a rule — which is how the flag presents it.',
+        'The second sentence is not an AIM claim and the AIM link is not offered for it. It says the pilot’s VFR minimums and the parachute cloud-clearance rules will be what binds below VFR, and names neither: the pilot’s minimums are 14 CFR 91.155, which this app does not cite (the flag used to name it while linking only to the AIM, and a test now keeps it out), and 105.17 has its own entry, A8. It is a referral to the PIC, deliberately without a number.',
       ],
     },
     asks: [],

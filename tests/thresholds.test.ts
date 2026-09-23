@@ -52,6 +52,11 @@ describe('CITATIONS', () => {
     // the section was read and on what date — never "verified" — so a
     // citation without one would read as checked when nothing has said so.
     expect(citation.note?.trim()).toBeTruthy();
+    // The date is the minimum a provenance claim needs: every source here is
+    // revised, so "read" without "when" overstates itself. The club-policy
+    // note has no document to have read; it dates its transcription instead
+    // and says so, which is the same contract stated honestly.
+    expect(citation.note, `${_key} note names no date`).toMatch(/\d{4}-\d{2}-\d{2}/);
   });
 });
 
