@@ -1086,3 +1086,77 @@ a {
   font-size: 0.8rem;
   color: var(--muted);
 }
+
+/* Answer controls on the citations page. The page is worked through with a
+   SIM open, on a phone; the controls are the same panel-2 fields the settings
+   card uses, and radios sit in a wrapping row so a phone width stacks them. */
+.cite-review {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 14px;
+  margin: 4px 0 10px;
+}
+.cite-review .settings-field input {
+  font-variant-numeric: normal;
+}
+.cite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+.cite-actions .refresh-btn {
+  text-decoration: none;
+}
+.cite-actions .muted {
+  flex-basis: 100%;
+}
+.cite-answer {
+  margin: 4px 0 10px;
+  font-size: 0.85rem;
+}
+.cite-answer-head {
+  margin: 10px 0 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.cite-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 2px 0 6px;
+}
+.cite-choices label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.cite-question {
+  margin: 8px 0 0;
+  padding-left: 0;
+  list-style: none;
+}
+.cite-question li + li {
+  margin-top: 10px;
+}
+.cite-question-text {
+  margin: 0 0 4px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.cite-note {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 2.4em;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+}

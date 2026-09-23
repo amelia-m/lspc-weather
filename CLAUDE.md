@@ -107,8 +107,13 @@ say so). The **USPA SIM** sections were read at uspa.org on 2026-09-22, and the 
 and FAA-P-8740-2** on 2026-09-23, and the claims corrected against them. A
 reading is not an instructor's sign-off, and the difference is not a detail to
 smooth over. The in-app page at `#citations` (`src/components/CitationsPage.tsx`,
-linked from the footer) records, per claim, what the section says, when and
-where it was read, and what a reading could not settle.
+data in `src/config/citationsChecklist.ts`) records, per claim, what the section
+says, when and where it was read, and what a reading could not settle — and
+takes the reviewer's answers: a verdict per claim, an answer and note per
+question, kept in the browser (`src/api/citationAnswers.ts`) and sent as a
+prefilled GitHub issue or copied text (`src/domain/citationAnswers.ts`, pure).
+The page says nothing about what the app used to claim; a test rejects that
+wording. History lives in the commit log.
 
 When touching a citation:
 

@@ -159,8 +159,12 @@ One invented number is still on screen and it triggers nothing: 25 kt, which
 sets where the Licensed surface-wind bar tops out.
 
 The dashboard's own **Citations** page — the `#citations` route in the running
-app — lists each claim, what the cited section says, what is still open, plus
-that one remaining number, for an instructor or S&TA to rule on.
+app — lists each claim, what the cited section says, and the questions an
+instructor or S&TA is asked to settle, plus that one remaining number. Rulings
+are entered on the page itself: a verdict per claim, an answer and a note per
+question, kept in the browser until sent. The site has no backend, so "Send as
+a GitHub issue" opens a prefilled issue in this repository, and "Copy answers"
+gives the same text for anyone without a GitHub account.
 
 Every USPA, CFR and FAA citation here began as an AI recollection; the club's
 posted wind-limit tiers did not — they are a transcription of an undated photo
