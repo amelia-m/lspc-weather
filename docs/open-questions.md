@@ -31,11 +31,15 @@ These cannot be settled from the code.
    on 2026-09-22; 14 CFR 105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on
    2026-09-23 — and the claims corrected against them, so the section numbers
    are no longer guesses. The club's posted tiers are a transcription of an
-   undated photo of the sign, which no reading can improve on. What a reading could not settle is on the #citations
-   page under "Still open" — among them whether rounding the 14 mph student
-   limit *down* to 12 kt is the right direction for a limit a jumper reads off
-   a card, and whether the club's posted waiver tiers have been filed as a SIM
-   2-2 waiver.
+   undated photo of the sign, which no reading can improve on. What a reading
+   could not settle is on the #citations page as each entry's "Please confirm"
+   list — among them whether rounding the 14 mph student limit *down* to 12 kt
+   is the right direction for a limit a jumper reads off a card (A1), and
+   whether the club's posted waiver tiers have been filed as a SIM 2-2 waiver
+   (A5). The page takes the answers in place — a verdict per claim, yes / no /
+   not sure and a note per question, kept in the browser — and sends them as a
+   prefilled GitHub issue or as copied text. The next step is an instructor or
+   S&TA working through it.
 
 4. **The app's own thresholds, for an instructor's judgement rather than a
    lookup.** Part B of the citations page — currently one entry, the 25 kt
