@@ -231,7 +231,8 @@ export const CITATIONS = {
    * It also no longer prints "(50 jumps)". That figure is real but it is in
    * 3-1, not here, so a reader following this link could not check it — the
    * same defect as citing a section a claim does not appear in. The number is
-   * on the #citations page, where 3-1 is named as its source.
+   * not printed anywhere in the app; the #citations entry for this claim (A3)
+   * names 3-1 as where the B licence's privileges are listed.
    */
   uspaNightJumps: {
     source: 'USPA SIM, Section 5-3 (Night Jumps)',
