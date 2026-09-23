@@ -76,8 +76,9 @@ precisely because they were colour and text rather than flags.
 
 ## Citations
 
-Every reference in this app began as an AI recollection. The **USPA SIM**
-sections were read at uspa.org on 2026-09-22, and the **CFR sections, AIM 7-1-7
+Every USPA, CFR and FAA reference in this app began as an AI recollection (the
+club's posted tiers are a transcription of an undated photo of the sign, and
+say so). The **USPA SIM** sections were read at uspa.org on 2026-09-22, and the **CFR sections, AIM 7-1-7
 and FAA-P-8740-2** on 2026-09-23, and the claims corrected against them. A
 reading is not an instructor's sign-off, and the difference is not a detail to
 smooth over. The in-app page at `#citations` (`src/components/CitationsPage.tsx`,
