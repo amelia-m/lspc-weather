@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { OPEN_METEO_FIXTURE } from '../src/api/fixtures/openMeteo';
+import { hourStartMs } from '../src/api/fixtures/_time';
+import { mToFt } from '../src/domain/units';
 import {
   aggregateDailyFromHourly,
   altimeterFromRaw,
@@ -10,6 +13,7 @@ import {
   normalizeNwsObservation,
   parseSkyGroups,
   normalizeOpenMeteo,
+  openMeteoHourlyVariables,
   normalizeOpenMeteoDaily,
   parseFdTiming,
   parseFdWinds,
@@ -693,3 +697,37 @@ describe('normalizeOpenMeteo drops levels below the model terrain', () => {
   });
 });
 
+describe('Open-Meteo pressure levels', () => {
+  // On 2026-09-23 a same-hour comparison with Mark Schulze's Winds Aloft (the
+  // same Open-Meteo data at twenty levels) was 38° apart at 6,000 ft: 850 hPa
+  // sits near 4,000 ft AGL here and 700 hPa near 9,300, and a wind that backed
+  // between them was drawn as a straight line. These four levels close the
+  // gaps; the request and the fixture profile must both carry them.
+  it('asks Open-Meteo for the levels that fill the freefall column', () => {
+    const vars = openMeteoHourlyVariables();
+    for (const p of [975, 950, 900, 800, 750, 650, 550]) {
+      expect(vars).toContain(`wind_speed_${p}hPa`);
+      expect(vars).toContain(`wind_direction_${p}hPa`);
+      expect(vars).toContain(`geopotential_height_${p}hPa`);
+      expect(vars).toContain(`temperature_${p}hPa`);
+    }
+  });
+
+  it('reads the 800 and 750 hPa samples between 850 and 700 hPa from the fixture', () => {
+    const { samples } = normalizeOpenMeteo(OPEN_METEO_FIXTURE, hourStartMs());
+    const h850 = mToFt(OPEN_METEO_FIXTURE.hourly.geopotential_height_850hPa[0] as number);
+    const h700 = mToFt(OPEN_METEO_FIXTURE.hourly.geopotential_height_700hPa[0] as number);
+    const between = samples.filter((x) => x.heightFtMsl > h850 + 1 && x.heightFtMsl < h700 - 1);
+    expect(between).toHaveLength(2);
+    // And through the 13,000 ft column (up to 600 hPa) no two consecutive
+    // samples are further apart than ~2,200 ft; with six levels the 850 → 700
+    // gap was over 5,000 ft.
+    const h600 = mToFt(OPEN_METEO_FIXTURE.hourly.geopotential_height_600hPa[0] as number);
+    const heights = samples
+      .map((x) => x.heightFtMsl)
+      .filter((h) => h <= h600 + 1)
+      .sort((a, b) => a - b);
+    const gaps = heights.slice(1).map((h, i) => h - heights[i]);
+    expect(Math.max(...gaps)).toBeLessThan(2500);
+  });
+});

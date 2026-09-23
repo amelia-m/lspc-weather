@@ -609,7 +609,72 @@ export interface RawOpenMeteo {
   // wind_speed_unit requested as "kn"
 }
 
-const PRESSURE_LEVELS = [1000, 925, 850, 700, 600, 500] as const;
+/**
+ * The pressure levels asked of Open-Meteo, lowest first. One list, imported by
+ * the fetch that builds the request and by the normaliser that reads it, so
+ * the two cannot drift.
+ *
+ * It was six levels — 1000, 925, 850, 700, 600, 500 hPa — until 2026-09-23,
+ * when a same-hour comparison against Mark Schulze's Winds Aloft (the same
+ * Open-Meteo data) put the two tables 38° apart at 6,000 ft and 25° at
+ * 3,000 ft while agreeing within 3° at the surface and from 9,000 ft up. The
+ * cause was the gaps: 850 hPa sits near 4,000 ft AGL here and 700 hPa near
+ * 9,300, and a wind that backed 56° between them was drawn as a straight
+ * line. These are now the levels that tool samples below 18,000 ft, read from
+ * its API's `altFtRaw` that day, so the two tables are built from the same
+ * samples; the widest gap in the 13,000 ft column is about 2,100 ft (650 to
+ * 600 hPa). Each was confirmed served with values by api.open-meteo.com on
+ * 2026-09-23. docs/markschulze-altitude-reference.md carries the numbers.
+ */
+export const OPEN_METEO_PRESSURE_LEVELS = [
+  1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500,
+] as const;
+
+/** The hourly variables the winds-aloft request asks for: the 10 m wind and
+ *  2 m temperature, then wind, height and temperature at every level above.
+ *  Built here, beside the list the normaliser reads, so the request and the
+ *  reader cannot name different levels. Pure: a list of strings. */
+export function openMeteoHourlyVariables(): string[] {
+  const vars = ['wind_speed_10m', 'wind_direction_10m', 'temperature_2m'];
+  for (const p of OPEN_METEO_PRESSURE_LEVELS) {
+    vars.push(
+      `wind_speed_${p}hPa`,
+      `wind_direction_${p}hPa`,
+      `geopotential_height_${p}hPa`,
+      `temperature_${p}hPa`,
+    );
+  }
+  return vars;
+}
+
+export const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
+
+/** The winds-aloft request, as one string, so the app's fetch and the live
+ *  comparison script (scripts/schulzeCompare.live.ts) ask Open-Meteo the same
+ *  question. Two days of hourly steps, knots, Unix times in UTC. */
+export function openMeteoWindsUrl(lat: number, lon: number): string {
+  return (
+    `${OPEN_METEO_FORECAST_URL}?latitude=${lat}&longitude=${lon}` +
+    `&hourly=${openMeteoHourlyVariables().join(',')}` +
+    `&wind_speed_unit=kn&forecast_days=2&timeformat=unixtime&timezone=UTC`
+  );
+}
+
+/** `timeformat=unixtime` returns seconds; the normaliser reads ISO strings,
+ *  so the times are coerced once here to keep it single-pathed. */
+export function coerceOpenMeteoTimes(data: RawOpenMeteo): RawOpenMeteo {
+  const t = data.hourly.time as unknown[];
+  if (t.length > 0 && typeof t[0] === 'number') {
+    return {
+      ...data,
+      hourly: {
+        ...data.hourly,
+        time: (t as number[]).map((sec) => new Date(sec * 1000).toISOString()),
+      },
+    };
+  }
+  return data;
+}
 
 /**
  * Winds-aloft samples for ONE forecast hour, together with which hour that was.
@@ -661,7 +726,7 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
     });
   }
 
-  for (const p of PRESSURE_LEVELS) {
+  for (const p of OPEN_METEO_PRESSURE_LEVELS) {
     const spd = num(`wind_speed_${p}hPa`);
     const dir = num(`wind_direction_${p}hPa`);
     const gph = num(`geopotential_height_${p}hPa`); // m MSL

@@ -155,7 +155,7 @@ describe('the drift card credits the source the numbers came from', () => {
  * The assumption is just as invisible at the top, so the estimate reports how
  * high the levels reached and the card compares that with the exit the reader
  * chose. The arrangement that produces it is a report answering for fewer
- * levels than were asked for — Open-Meteo serving nulls at 500 and 600 hPa
+ * levels than were asked for — Open-Meteo serving nulls above 700 hPa
  * ends the profile at 9,000 ft AGL under a 10,000 ft exit.
  */
 describe('estimateDrift reports how high the levels reached', () => {

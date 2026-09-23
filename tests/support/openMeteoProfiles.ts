@@ -35,11 +35,13 @@ function levelsFrom(raw: RawOpenMeteo): WindsAloftLevel[] {
 /** The full profile: every configured altitude, surface to the top. */
 export const fullProfile = (): WindsAloftLevel[] => levelsFrom(OPEN_METEO_FIXTURE);
 
-/** The profile with the 500 and 600 hPa levels missing. The highest sample is
- *  then 700 hPa, whose fixture height (3,120 m, 10,236 ft MSL) puts it at
+/** The profile with every level above 700 hPa (650, 600, 550, 500) missing —
+ *  Open-Meteo reports a level it has no value for as nulls. The highest sample
+ *  is then 700 hPa, whose fixture height (3,120 m, 10,236 ft MSL) puts it at
  *  ~9,050 ft above the field, so the interpolated profile ends at 9,000 ft AGL
  *  — four rows short of the 13,000 ft the app asks for. */
-export const shortProfile = (): WindsAloftLevel[] => levelsFrom(withLevelsMissing([500, 600]));
+export const shortProfile = (): WindsAloftLevel[] =>
+  levelsFrom(withLevelsMissing([500, 550, 600, 650]));
 
 /** Where the short profile ends, stated once so the assertions and the fixture
  *  cannot disagree about it. */

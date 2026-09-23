@@ -86,7 +86,7 @@ export interface WindsAloftTop {
  *
  * `interpolateWindsAloft` drops every target above the highest sample, which
  * is the honest thing to do with a wind nobody forecast — but a dropped row
- * is invisible. If Open-Meteo served nulls at 500 and 600 hPa, the table would
+ * is invisible. If Open-Meteo served nulls above 700 hPa, the table would
  * end at 9,000 ft while the card's own text still offered every level "up to
  * 13k", and a reader would take the missing rows for a display choice rather
  * than a hole in the report. The bottom of the profile has long had its
