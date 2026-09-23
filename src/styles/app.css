@@ -1160,3 +1160,22 @@ a {
   font-size: 0.85rem;
   resize: vertical;
 }
+.cite-choices input[type='radio'] {
+  accent-color: var(--accent);
+}
+/* The export text sits collapsed under the buttons: it is the fallback for a
+   withheld clipboard or an over-long issue link, not the first thing to read. */
+.cite-export {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+.cite-export summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.cite-export-text {
+  margin-top: 6px;
+  min-height: 8em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
