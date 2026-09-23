@@ -9,16 +9,17 @@ export interface SourceProvenance {
 }
 
 /** Amber ("fallback") when the decode was missing or disagreed — the state a
- *  reader should glance at the raw METAR for. A record with no METAR text but
- *  a decode is not amber: api.weather.gov serves many of those (37 of the last
- *  40 at KLNK and KAUS on 2026-09-23, 4 of 40 at KPMV), the decode is the only
- *  sky there is, and the chip says so. Exported for the fetch hook, which logs
- *  exactly the amber states. */
+ *  reader should glance at the raw METAR for. Text with no sky group — most
+ *  often no METAR text at all, which api.weather.gov serves in quantity (37 of
+ *  the last 40 at KLNK and KAUS on 2026-09-23, 4 of 40 at KPMV), but also a
+ *  report whose text simply lacks the group — is not amber when the decode
+ *  supplies the sky: it is the only sky there is, and the chip says so.
+ *  Exported for the fetch hook, which logs exactly the amber states. */
 export const METAR_SKY_PROVENANCE: Record<SkyDecodeCheck, SourceProvenance> = {
   agrees: { detail: 'sky from METAR text · NWS decode agrees', fallback: false },
   'decode-empty': { detail: 'sky from METAR text · NWS decode had none', fallback: true },
   'decode-differs': { detail: 'sky from METAR text · NWS decode differs', fallback: true },
-  'text-empty': { detail: 'sky from NWS decode · this report has no METAR text', fallback: false },
+  'text-empty': { detail: 'sky from NWS decode · no sky group in the METAR text', fallback: false },
   'not-reported': { detail: 'sky not reported', fallback: true },
 };
 
