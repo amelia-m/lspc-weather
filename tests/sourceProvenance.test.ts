@@ -75,6 +75,16 @@ describe('deriveProvenance', () => {
     expect(deriveProvenance({ ...EMPTY, current: gap })).toMatchObject({
       metar: { fallback: true, detail: expect.stringContaining('NWS decode had none') },
     });
+    // No METAR text but a decode is the API's ordinary shape for many records
+    // (37 of 40 at KLNK on 2026-09-23): the decode serves the sky, and that is
+    // said without amber.
+    const textless = normalizeNwsObservation(
+      { properties: { ...OBSERVATION_FIXTURE.properties, rawMessage: '' } },
+      'KPMV',
+    );
+    expect(deriveProvenance({ ...EMPTY, current: textless })).toMatchObject({
+      metar: { fallback: false, detail: expect.stringContaining('no METAR text') },
+    });
     // The aviationweather path has one decode and nothing to compare.
     expect(deriveProvenance({ ...EMPTY, current: { ...current, skyDecode: undefined } }).metar).toBeUndefined();
   });

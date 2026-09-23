@@ -49,6 +49,9 @@ const say = (line: string): void => {
   process.stdout.write(`${line}\n`);
 };
 
+const NO_CLOUD = new Set(['SKC', 'CLR', 'NSC', 'NCD']);
+const cloudsOnly = (layers: SkyLayer[]): SkyLayer[] => layers.filter((l) => !NO_CLOUD.has(l.cover));
+
 const showSky = (layers: SkyLayer[]): string =>
   layers.length === 0
     ? '(none)'
@@ -67,8 +70,12 @@ describe(`sky decode parity for ${station}`, () => {
     const theirs = normalizeMetar(awc).skyLayers;
     say(`[awc]  ${awc.rawOb}`);
     say(`[awc]  app parse: ${showSky(ours)} · aviationweather decode: ${showSky(theirs)}`);
-    // Bases from the text are exact hundreds; aviationweather's are too.
-    expect(ours).toEqual(theirs);
+    // aviationweather represents a clear sky as no `clouds` entries at all
+    // (13 of 13 CLR reports sampled on 2026-09-23), where the app keeps the
+    // CLR as a layer so an empty list can mean "not reported". Compare the
+    // cloud layers, then; bases from the text are exact hundreds, and so are
+    // aviationweather's.
+    expect(cloudsOnly(ours)).toEqual(cloudsOnly(theirs));
   });
 
   it('reports how api.weather.gov decoded the same station (informational)', async () => {
