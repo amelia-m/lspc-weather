@@ -17,10 +17,22 @@ Two pages sit beside the dashboard, both reached from its footer:
 |---|---|---|---|
 | Winds aloft | the table the Winds aloft card shows, built by the app's own request and normaliser | Mark Schulze's Winds Aloft (markschulze.net), the same Open-Meteo data at the same thirteen pressure levels | `scripts/schulzeCompare.live.ts` |
 | Latest observation | the app's decode of the latest KPMV report (api.weather.gov → `normalizeNwsObservation`) | usairnet's decode of the same report, scraped from its KPMV page | `scripts/usairnetCompare.live.ts` |
+| Sunrise and sunset | the app's computed times at the DZ (`sunTimes`), which the night-jump flag hangs on | usairnet's sun almanac for KPMV, on the same page | `scripts/usairnetCompare.live.ts` |
+| METAR sky groups | the app's parse of the METAR text | aviationweather.gov's decoder | `scripts/skyParity.live.ts` (a gate: fails on disagreement) |
+| Flight category | the app's derived VFR/MVFR/IFR/LIFR | aviationweather.gov's `fltCat` for the same report | `scripts/skyParity.live.ts` (a gate, when both give a category) |
+| TAF shown | the TAF text the card shows, from the NWS text-products feed, first station in the chain with a product | the current TAF aviationweather.gov has for that station | `scripts/skyParity.live.ts` (informational: says whether the card's issuance is the current one) |
 
-Both scripts print a human-readable table and one machine-readable line,
-`@@parity {json}`, per run. Neither ever fails a run: they are reports, and
-the other side is a third-party page that can change or lag.
+The Schulze and usairnet scripts print a human-readable table and one
+machine-readable line, `@@parity {json}`, per run. Neither ever fails a run:
+they are reports, and the other side is a third-party page that can change or
+lag. The sky-parity script is different: its sky-group and flight-category
+comparisons are gates that fail the daily run and open an issue, because the
+other side there is aviationweather.gov's decoder and a disagreement means the
+app's own parse or derivation is wrong. Its TAF line is informational.
+
+The sun almanac rows compare the app's sunrise and sunset at the DZ with
+usairnet's for KPMV, 0.19° east, so a gap of a minute is the geography; on
+2026-09-24 the app read one minute later at sunrise and two at sunset.
 
 The winds comparison is made at the **same valid hour** on both sides, since
 this card snaps to the nearest hour and Schulze's page shows the hour in

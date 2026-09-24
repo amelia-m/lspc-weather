@@ -28,6 +28,7 @@ import { SITE } from '../src/config/site';
 import { normalizeNwsObservation, type RawNwsObservation } from '../src/domain/normalize';
 import { observedFlightCategory } from '../src/domain/flightCategory';
 import { cToF, ktToMph } from '../src/domain/units';
+import { sunTimes } from '../src/domain/sun';
 import type { CurrentConditions, SkyLayer } from '../src/domain/types';
 
 const station = SITE.metarStation.id;
@@ -55,6 +56,9 @@ interface UsairnetObs {
   windMph: number | null; // 0 for "Calm"
   windDirDeg: number | null;
   clouds: string | null; // "Few at 10000 ft, Broken at 25000 ft" or "Clear"
+  /** The page's sun almanac for the station, its local clock: "7:13 AM". */
+  sunrise: string | null;
+  sunset: string | null;
 }
 
 /** Strip the page to text and read the block for our station. The block is
@@ -98,6 +102,9 @@ function parseUsairnet(html: string): UsairnetObs | null {
     windMph: windCalm ? 0 : num(/Wind Data\|(\d+) MPH/),
     windDirDeg: windCalm ? null : num(/Wind Data\|\d+ MPH\|(\d+)°/),
     clouds: str(/Cloud Level\(s\): ([^|]+)/),
+    // "|Sunrise:|7:13 AM" — the bar keeps this from matching "Civil Sunrise:".
+    sunrise: str(/\|Sunrise:\|(\d{1,2}:\d{2} [AP]M)/),
+    sunset: str(/\|Sunset:\|(\d{1,2}:\d{2} [AP]M)/),
   };
 }
 
@@ -221,6 +228,19 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   row('clouds', cloudsInTheirWords(ours.skyLayers), theirs.clouds, 'text');
   row('ceiling ft (theirs implied)', ours.ceilingFtAgl, ceilingFromTheirClouds(theirs.clouds));
   row('flight rule', observedFlightCategory(ours) ?? '(withheld)', theirs.flightRule, 'text');
+  // The night-jump flag hangs on the app's computed sunset; the page prints
+  // an almanac for the same day. Compared as minutes past local midnight so
+  // the gap is a number. The page's almanac is for KPMV, 0.19° east of the
+  // DZ, so its sun runs about three-quarters of a minute ahead of ours.
+  const sun = sunTimes(SITE.dz.lat, SITE.dz.lon, new Date());
+  const minutesOfDay = (clock: string | null): number | null => {
+    const m = clock?.match(/^(\d{1,2}):(\d{2}) ([AP]M)$/);
+    if (!m) return null;
+    const h = (Number(m[1]) % 12) + (m[3] === 'PM' ? 12 : 0);
+    return h * 60 + Number(m[2]);
+  };
+  row('sunrise (min past midnight)', minutesOfDay(localClock(sun.sunrise)), minutesOfDay(theirs.sunrise));
+  row('sunset (min past midnight)', minutesOfDay(localClock(sun.sunset)), minutesOfDay(theirs.sunset));
 
   let agree = 0;
   const fields: { name: string; same: boolean; delta?: number }[] = [];
