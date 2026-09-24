@@ -87,7 +87,11 @@ the comparison every fifteen minutes from 2026-09-24 until 2026-09-27T02:00Z
 and then skips itself; each run's log carries both raw profiles, the aligned
 table, and one line on what a jumper comparing the two pages at that minute
 would see (the hours differ after :30, since this app snaps to the nearest
-hour and Schulze's shows the hour in progress). Read them under Actions,
+hour and Schulze's shows the hour in progress). From 2026-09-24 it also runs
+four ninety-minute bursts a day at five-minute spacing, each starting at a
+different minute past the hour, until 2026-09-28T02:00Z. Every run's
+machine-readable line is combined daily into the #parity page, "How different
+from other sources", which is where to read the answer once the window closes. Read them under Actions,
 "Schulze comparison (hourly, temporary)". Delete the workflow, or move its end
 date, once the question is settled — and settle it before the next
 winds-aloft change, since either answer changes card text.

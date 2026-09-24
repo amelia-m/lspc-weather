@@ -1,22 +1,39 @@
-name: Live comparisons every fifteen minutes (temporary)
+name: Live comparisons (temporary)
 
-# Every fifteen minutes for three days from 2026-09-24, then self-skipping:
-# print this app's winds-aloft profile beside Mark Schulze's at the same valid
-# hour, raw samples included, so the run-boundary case seen on 2026-09-23 (one
-# tool served a newer forecast than the other for the same hour) can be
-# counted rather than argued about; and print the dashboard's decode of the
-# latest KPMV observation beside usairnet's, field by field, for the same
-# reason. Four samples an hour, not one, because the
-# minute matters: this app snaps to the nearest hour and Schulze's shows the
-# hour in progress, so the two agree on the hour before :30 and disagree after,
-# and a new model run can land at any minute. GitHub's scheduling jitter adds
-# further spread. See docs/open-questions.md, "Which forecast run the
-# winds-aloft request is served". Never fails: the script is a report.
+# Until 2026-09-28T02:00Z, then self-skipping: print this app's winds-aloft
+# profile beside Mark Schulze's at the same valid hour (raw samples and the
+# unaligned view included) and this app's decode of the latest KPMV
+# observation beside usairnet's, field by field. Each run also uploads its
+# @@parity lines as an artifact; parity-summary.yml combines them into the
+# #parity page's summary. See docs/open-questions.md, "Which forecast run the
+# winds-aloft request is served". Never fails: the scripts are reports.
+#
+# Two schedules. Every fifteen minutes, because this app snaps to the nearest
+# hour and Schulze's page shows the hour in progress, so the two agree on the
+# hour before :30 and disagree after, and a new model run can land at any
+# minute. And four ninety-minute bursts a day at five-minute spacing, each
+# starting at a different minute past the hour (:07, :23, :41, :53) and at a
+# different time of day, so the sample is not the same minute every hour.
+# GitHub's scheduling jitter adds further spread.
 #
 # Delete this file, or move the end date, once the question is settled.
 on:
   schedule:
     - cron: '*/15 * * * *'
+    # 06:07–07:37 CDT
+    - cron: '7-59/5 11 * * *'
+    - cron: '2-37/5 12 * * *'
+    # 10:23–11:53 CDT
+    - cron: '23-59/5 15 * * *'
+    - cron: '3-53/5 16 * * *'
+    # 15:41–17:11 CDT
+    - cron: '41-59/5 20 * * *'
+    - cron: '1-59/5 21 * * *'
+    - cron: '1-11/5 22 * * *'
+    # 21:53–23:23 CDT
+    - cron: '53-59/5 2 * * *'
+    - cron: '3-59/5 3 * * *'
+    - cron: '3-23/5 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -30,10 +47,10 @@ jobs:
         id: window
         shell: bash
         run: |
-          end=$(date -u -d '2026-09-27T02:00:00Z' +%s)
+          end=$(date -u -d '2026-09-28T02:00:00Z' +%s)
           now=$(date -u +%s)
           if [ "$now" -ge "$end" ] && [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "past the window (ends 2026-09-27T02:00Z); nothing to do"
+            echo "past the window (ends 2026-09-28T02:00Z); nothing to do"
             echo "run=false" >> "$GITHUB_OUTPUT"
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -49,4 +66,18 @@ jobs:
         if: steps.window.outputs.run == 'true'
       - name: Compare winds aloft with Schulze, and the observation with usairnet
         if: steps.window.outputs.run == 'true'
-        run: npx vitest run --config vitest.live.config.ts scripts/schulzeCompare.live.ts scripts/usairnetCompare.live.ts
+        shell: bash
+        run: |
+          set -o pipefail
+          npx vitest run --config vitest.live.config.ts scripts/schulzeCompare.live.ts scripts/usairnetCompare.live.ts 2>&1 | tee live.log
+      - name: Keep this run's @@parity lines
+        if: steps.window.outputs.run == 'true'
+        shell: bash
+        run: grep -a '@@parity ' live.log > "parity-${{ github.run_id }}.jsonl" || true
+      - uses: actions/upload-artifact@v4
+        if: steps.window.outputs.run == 'true'
+        with:
+          name: parity-${{ github.run_id }}
+          path: parity-${{ github.run_id }}.jsonl
+          retention-days: 14
+          if-no-files-found: ignore

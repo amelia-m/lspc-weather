@@ -274,10 +274,19 @@ allowlisted; it needs a Referer and a browser-like User-Agent).
 `scripts/usairnetCompare.live.ts` does the same for the latest KPMV
 observation: the dashboard's decode beside usairnet's, every field the page
 shows, matched by observation time; also a report that never fails, since
-usairnet is a page scrape. Until 2026-09-27
-`.github/workflows/schulze-compare.yml` runs both every fifteen minutes, to
-count how often the two winds tools are served different forecast runs for
-the same hour and how the observation decodes compare through a day; it skips
-itself after that and should then be deleted.
+usairnet is a page scrape. Both print one `@@parity {json}` line per run,
+which every comparison run uploads as a `parity-<run id>` artifact (kept 14
+days). `.github/workflows/parity-summary.yml` combines them daily with
+`scripts/paritySummary.ts` into `public/parity/summary.json` — the arithmetic
+is `src/domain/paritySummary.ts`, pure and tested — commits that file to
+`main` and dispatches the Pages deploy (a push made with the workflow token
+starts no other workflow). The in-app page at `#parity`, "How different from
+other sources", renders it: counts and spreads, never a grade. Until
+2026-09-28 `.github/workflows/schulze-compare.yml` runs both scripts every
+fifteen minutes plus four ninety-minute bursts a day at five-minute spacing,
+each starting at a different minute past the hour, to count how often the two
+winds tools are served different forecast runs for the same hour and how the
+observation decodes compare through a day; it skips itself after that and
+should then be deleted, leaving the daily run to feed the summary.
 
 Open items live in `docs/open-questions.md`.

@@ -167,6 +167,14 @@ question, kept in the browser until sent. The site has no backend, so "Send as
 a GitHub issue" opens a prefilled issue in this repository, and "Copy answers"
 gives the same text for anyone without a GitHub account.
 
+A second page, **How different from other sources** (`#parity`), shows what
+the scheduled comparison logs add up to: the winds-aloft table against Mark
+Schulze's Winds Aloft at the same valid hour, row by row, and the dashboard's
+decode of the latest KPMV observation against usairnet's, field by field. It
+reports counts and spreads across runs — medians, 90th percentiles, how often
+any row was more than 10° apart, how often the two pages showed different
+hours — and never a grade. A daily workflow writes its data from the logs.
+
 Every USPA, CFR and FAA citation here began as an AI recollection; the club's
 posted wind-limit tiers did not — they are a transcription of an undated photo
 of the sign, and stay that. On 2026-09-22 the USPA SIM sections were fetched

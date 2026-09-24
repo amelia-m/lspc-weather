@@ -1,0 +1,227 @@
+{
+  "generatedAt": "2026-09-24T05:04:03.296Z",
+  "from": "2026-09-24T05:04:00.599Z",
+  "to": "2026-09-24T05:04:00.600Z",
+  "schulze": {
+    "runs": 1,
+    "unreadable": 0,
+    "aligned": 1,
+    "byAltitude": [
+      {
+        "ft": 0,
+        "n": 1,
+        "medianAbsDir": 4,
+        "p90AbsDir": 4,
+        "maxAbsDir": 4,
+        "medianAbsSpd": 5,
+        "p90AbsSpd": 5,
+        "maxAbsSpd": 5
+      },
+      {
+        "ft": 1000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 2000,
+        "n": 1,
+        "medianAbsDir": 1,
+        "p90AbsDir": 1,
+        "maxAbsDir": 1,
+        "medianAbsSpd": 1,
+        "p90AbsSpd": 1,
+        "maxAbsSpd": 1
+      },
+      {
+        "ft": 3000,
+        "n": 1,
+        "medianAbsDir": 1,
+        "p90AbsDir": 1,
+        "maxAbsDir": 1,
+        "medianAbsSpd": 1,
+        "p90AbsSpd": 1,
+        "maxAbsSpd": 1
+      },
+      {
+        "ft": 4000,
+        "n": 1,
+        "medianAbsDir": 1,
+        "p90AbsDir": 1,
+        "maxAbsDir": 1,
+        "medianAbsSpd": 1,
+        "p90AbsSpd": 1,
+        "maxAbsSpd": 1
+      },
+      {
+        "ft": 5000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 6000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 7000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 8000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 9000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 10000,
+        "n": 1,
+        "medianAbsDir": 1,
+        "p90AbsDir": 1,
+        "maxAbsDir": 1,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 11000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 12000,
+        "n": 1,
+        "medianAbsDir": 1,
+        "p90AbsDir": 1,
+        "maxAbsDir": 1,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      },
+      {
+        "ft": 13000,
+        "n": 1,
+        "medianAbsDir": 0,
+        "p90AbsDir": 0,
+        "maxAbsDir": 0,
+        "medianAbsSpd": 0,
+        "p90AbsSpd": 0,
+        "maxAbsSpd": 0
+      }
+    ],
+    "runsWithRowOver10Deg": 0,
+    "runsWithRowOver3Kt": 1,
+    "unaligned": {
+      "runs": 1,
+      "hoursDiffered": 0,
+      "medianMaxDirWhenDiffer": null,
+      "p90MaxDirWhenDiffer": null
+    },
+    "rawMismatch": {
+      "judged": 1,
+      "mismatched": 0
+    },
+    "ground": {
+      "n": 1,
+      "medianOurKt": 5.8,
+      "medianTheirKt": 11,
+      "medianRatio": 1.9
+    }
+  },
+  "usairnet": {
+    "runs": 1,
+    "unreadable": 0,
+    "sameReport": 1,
+    "fields": [
+      {
+        "name": "temperature °F",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "dew point °F",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "humidity % (derived)",
+        "n": 1,
+        "agree": 0
+      },
+      {
+        "name": "visibility mi",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "pressure inHg",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "wind mph",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "wind dir °",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "clouds",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "ceiling ft (theirs implied)",
+        "n": 1,
+        "agree": 1
+      },
+      {
+        "name": "flight rule",
+        "n": 1,
+        "agree": 1
+      }
+    ]
+  }
+}
