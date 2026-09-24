@@ -44,20 +44,33 @@ export interface UsairnetRecord {
   error?: string;
   /** Whether both sides showed the same observation time. */
   sameReport?: boolean;
-  fields?: { name: string; same: boolean }[];
+  /** `delta` is dashboard minus usairnet where both sides were numbers
+   *  (signed angular difference for wind direction); absent for text fields
+   *  and for runs logged before it was recorded. */
+  fields?: { name: string; same: boolean; delta?: number | null }[];
 }
 
 export type ParityRecord = SchulzeRecord | UsairnetRecord;
 
+/** How far apart a set of paired values were: absolute gaps summarised
+ *  every way a reader might ask for them, plus the signed mean, which says
+ *  which side ran higher. */
+export interface Spread {
+  n: number;
+  meanAbs: number;
+  medianAbs: number;
+  p90Abs: number;
+  minAbs: number;
+  maxAbs: number;
+  /** Signed mean (dashboard minus the other source); the sign is the point. */
+  mean: number;
+}
+
 export interface AltitudeSpread {
   ft: number;
   n: number;
-  medianAbsDir: number;
-  p90AbsDir: number;
-  maxAbsDir: number;
-  medianAbsSpd: number;
-  p90AbsSpd: number;
-  maxAbsSpd: number;
+  dir: Spread;
+  spd: Spread;
 }
 
 export interface ParitySummary {
@@ -88,7 +101,8 @@ export interface ParitySummary {
     runs: number;
     unreadable: number;
     sameReport: number;
-    fields: { name: string; n: number; agree: number }[];
+    /** `spread` is null for text fields and when no run recorded a gap. */
+    fields: { name: string; n: number; agree: number; spread: Spread | null }[];
   };
 }
 
@@ -110,6 +124,24 @@ export function percentile(xs: readonly number[], p: number): number | null {
 }
 
 const round1 = (n: number | null): number | null => (n == null ? null : Math.round(n * 10) / 10);
+const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+/** The spread of a set of signed gaps; null with none. Rounded to two
+ *  places so the JSON does not carry floating-point noise. */
+export function spreadOf(deltas: readonly number[]): Spread | null {
+  if (deltas.length === 0) return null;
+  const abs = deltas.map((d) => Math.abs(d));
+  const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0);
+  return {
+    n: deltas.length,
+    meanAbs: round2(sum(abs) / abs.length),
+    medianAbs: round2(median(abs) as number),
+    p90Abs: round2(percentile(abs, 0.9) as number),
+    minAbs: round2(Math.min(...abs)),
+    maxAbs: round2(Math.max(...abs)),
+    mean: round2(sum(deltas) / deltas.length),
+  };
+}
 
 export function summarizeParity(records: readonly ParityRecord[], now: number): ParitySummary {
   const times = records.map((r) => Date.parse(r.at)).filter((t) => Number.isFinite(t));
@@ -128,8 +160,8 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
     let worstSpd = 0;
     for (const row of r.aligned!.rows) {
       const cell = byFt.get(row.ft) ?? { dir: [], spd: [] };
-      cell.dir.push(Math.abs(row.dDir));
-      cell.spd.push(Math.abs(row.dSpd));
+      cell.dir.push(row.dDir);
+      cell.spd.push(row.dSpd);
       byFt.set(row.ft, cell);
       worstDir = Math.max(worstDir, Math.abs(row.dDir));
       worstSpd = Math.max(worstSpd, Math.abs(row.dSpd));
@@ -142,12 +174,8 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
     .map(([ft, c]) => ({
       ft,
       n: c.dir.length,
-      medianAbsDir: median(c.dir) ?? 0,
-      p90AbsDir: percentile(c.dir, 0.9) ?? 0,
-      maxAbsDir: Math.max(...c.dir),
-      medianAbsSpd: median(c.spd) ?? 0,
-      p90AbsSpd: percentile(c.spd, 0.9) ?? 0,
-      maxAbsSpd: Math.max(...c.spd),
+      dir: spreadOf(c.dir) as Spread,
+      spd: spreadOf(c.spd) as Spread,
     }));
 
   const unalignedRuns = readable.filter((r) => r.unaligned != null);
@@ -162,12 +190,13 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
 
   const usair = records.filter((r): r is UsairnetRecord => r.kind === 'usairnet');
   const usairReadable = usair.filter((r) => !r.error && r.fields != null);
-  const fieldMap = new Map<string, { n: number; agree: number }>();
+  const fieldMap = new Map<string, { n: number; agree: number; deltas: number[] }>();
   for (const r of usairReadable) {
     for (const f of r.fields!) {
-      const c = fieldMap.get(f.name) ?? { n: 0, agree: 0 };
+      const c = fieldMap.get(f.name) ?? { n: 0, agree: 0, deltas: [] };
       c.n += 1;
       if (f.same) c.agree += 1;
+      if (typeof f.delta === 'number' && Number.isFinite(f.delta)) c.deltas.push(f.delta);
       fieldMap.set(f.name, c);
     }
   }
@@ -201,7 +230,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
       runs: usair.length,
       unreadable: usair.length - usairReadable.length,
       sameReport: usairReadable.filter((r) => r.sameReport).length,
-      fields: [...fieldMap.entries()].map(([name, c]) => ({ name, n: c.n, agree: c.agree })),
+      fields: [...fieldMap.entries()].map(([name, c]) => ({ name, n: c.n, agree: c.agree, spread: spreadOf(c.deltas) })),
     },
   };
 }

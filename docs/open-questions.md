@@ -91,7 +91,8 @@ hour and Schulze's shows the hour in progress). From 2026-09-24 it also runs
 four ninety-minute bursts a day at five-minute spacing, each starting at a
 different minute past the hour, until 2026-09-28T02:00Z. Every run's
 machine-readable line is combined daily into the #parity page, "How different
-from other sources", which is where to read the answer once the window closes. Read them under Actions,
+from other sources" (`docs/source-parity.md`), which is where to read the
+answer once the window closes. Read them under Actions,
 "Schulze comparison (hourly, temporary)". Delete the workflow, or move its end
 date, once the question is settled — and settle it before the next
 winds-aloft change, since either answer changes card text.

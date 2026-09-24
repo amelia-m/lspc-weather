@@ -189,9 +189,23 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       : 'DIFFERENT observation times — one side is a report behind; the rows below compare two reports',
   );
 
-  const rows: [string, string, string][] = [];
-  const row = (name: string, a: number | string | null | undefined, b: number | string | null | undefined): void => {
-    rows.push([name, show(a), show(b)]);
+  // Each row keeps the numeric gap (dashboard minus usairnet) where both
+  // sides are numbers, so the summary can say how far apart the values were,
+  // not only whether they matched. Wind direction is the signed angular
+  // difference; text fields (clouds, flight rule) have no gap.
+  const rows: [string, string, string, number | null][] = [];
+  const angular = (a: number, b: number): number => ((a - b + 540) % 360) - 180;
+  const row = (
+    name: string,
+    a: number | string | null | undefined,
+    b: number | string | null | undefined,
+    kind: 'number' | 'angle' | 'text' = 'number',
+  ): void => {
+    const na = typeof a === 'number' ? a : typeof a === 'string' && a !== '' && !Number.isNaN(Number(a)) ? Number(a) : null;
+    const nb = typeof b === 'number' ? b : typeof b === 'string' && b !== '' && !Number.isNaN(Number(b)) ? Number(b) : null;
+    const delta =
+      kind === 'text' || na == null || nb == null ? null : kind === 'angle' ? angular(na, nb) : Math.round((na - nb) * 100) / 100;
+    rows.push([name, show(a), show(b), delta]);
   };
   row('temperature °F', ours.tempC == null ? null : Math.round(cToF(ours.tempC)), theirs.tempF);
   row('dew point °F', ours.dewpointC == null ? null : Math.round(cToF(ours.dewpointC)), theirs.dewpointF);
@@ -203,19 +217,19 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   row('visibility mi', ours.visibilitySm, theirs.visibilityMi);
   row('pressure inHg', ours.altimeterInHg == null ? null : ours.altimeterInHg.toFixed(2), theirs.pressureInHg?.toFixed(2));
   row('wind mph', ours.wind.speedKt == null ? null : Math.round(ktToMph(ours.wind.speedKt)), theirs.windMph);
-  row('wind dir °', ours.wind.directionDeg, theirs.windDirDeg);
-  row('clouds', cloudsInTheirWords(ours.skyLayers), theirs.clouds);
+  row('wind dir °', ours.wind.directionDeg, theirs.windDirDeg, 'angle');
+  row('clouds', cloudsInTheirWords(ours.skyLayers), theirs.clouds, 'text');
   row('ceiling ft (theirs implied)', ours.ceilingFtAgl, ceilingFromTheirClouds(theirs.clouds));
-  row('flight rule', observedFlightCategory(ours) ?? '(withheld)', theirs.flightRule);
+  row('flight rule', observedFlightCategory(ours) ?? '(withheld)', theirs.flightRule, 'text');
 
   let agree = 0;
-  const fields: { name: string; same: boolean }[] = [];
-  out.push('field                          dashboard                       usairnet');
-  for (const [name, a, b] of rows) {
+  const fields: { name: string; same: boolean; delta?: number }[] = [];
+  out.push('field                          dashboard                       usairnet             Δ');
+  for (const [name, a, b, delta] of rows) {
     const same = a === b;
     if (same) agree += 1;
-    fields.push({ name, same });
-    out.push(`${same ? ' ' : '≠'} ${name.padEnd(28)} ${a.padEnd(31)} ${b}`);
+    fields.push(delta == null ? { name, same } : { name, same, delta });
+    out.push(`${same ? ' ' : '≠'} ${name.padEnd(28)} ${a.padEnd(31)} ${b.padEnd(20)} ${delta == null ? '' : delta}`);
   }
   out.push(`${agree} of ${rows.length} fields agree${sameReport ? '' : ' (different reports, so differences are expected)'}`);
   // Seen on the first run: dew point 56 against 57 °F, humidity 70 against 72,
