@@ -1,0 +1,79 @@
+name: Parity summary
+
+# Daily, and on demand: gather the @@parity lines every comparison run
+# uploaded (parity-*.jsonl artifacts from schulze-compare.yml and
+# sky-parity.yml, kept fourteen days), combine them into
+# public/parity/summary.json with scripts/paritySummary.ts, and commit the
+# result to main so the #parity page ("How different from other sources")
+# shows it. A push made with the workflow token does not start other
+# workflows, so this one dispatches the Pages deploy itself when the summary
+# changed. The arithmetic is in src/domain/paritySummary.ts, pure and tested;
+# nothing here grades a source.
+on:
+  schedule:
+    - cron: '40 12 * * *' # 07:40 CDT, after the morning sky-parity run
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: parity-summary
+  cancel-in-progress: false
+
+jobs:
+  summarise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download every recent parity artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p logs
+          # Artifacts named parity-<run id>, newest first, not yet expired.
+          gh api --paginate "repos/${{ github.repository }}/actions/artifacts?per_page=100&name=" \
+            --jq '.artifacts[] | select(.name | startswith("parity-")) | select(.expired | not) | "\(.id) \(.name)"' \
+            > artifacts.txt || true
+          count=0
+          while read -r id name; do
+            [ -z "$id" ] && continue
+            gh api "repos/${{ github.repository }}/actions/artifacts/$id/zip" > "logs/$name.zip" \
+              && unzip -o -q "logs/$name.zip" -d logs \
+              && rm "logs/$name.zip" \
+              && count=$((count + 1)) || echo "could not fetch $name"
+          done < artifacts.txt
+          echo "downloaded $count artifacts"
+          ls logs | head -50
+      - name: Combine into the summary
+        shell: bash
+        run: |
+          mkdir -p public/parity
+          shopt -s nullglob
+          npx tsx scripts/paritySummary.ts logs/*.jsonl > public/parity/summary.json
+          head -c 600 public/parity/summary.json; echo
+      - name: Commit the summary and deploy if it changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if git diff --quiet -- public/parity/summary.json; then
+            echo "summary unchanged; nothing to commit"
+            exit 0
+          fi
+          git config user.name "parity-summary workflow"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/parity/summary.json
+          git commit -m "Update the source-parity summary ($(date -u +%Y-%m-%d))" \
+            -m "Written by .github/workflows/parity-summary.yml from the comparison logs. The #parity page reads this file."
+          git push origin HEAD:main
+          gh workflow run deploy.yml --ref main

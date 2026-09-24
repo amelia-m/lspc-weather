@@ -25,6 +25,8 @@ import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CitationsPage } from './components/CitationsPage';
+import { ParityPage, type ParityState } from './components/ParityPage';
+import type { ParitySummary } from './domain/paritySummary';
 import { UnitToggle } from './components/common/UnitToggle';
 import { deriveProvenance } from './domain/sourceProvenance';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
@@ -88,21 +90,49 @@ function sanitizeOverrides(raw: unknown): Overrides {
   return out;
 }
 
-/** Whether the citations page is showing. A hash rather than a router: the app
- *  is a single page served from a GitHub Pages subpath, and `#citations` needs
- *  no server rewrite, no dependency, and survives a reload and a shared link. */
-function useIsCitationsRoute(): boolean {
+/** Which secondary page is showing, if any. A hash rather than a router: the
+ *  app is a single page served from a GitHub Pages subpath, and `#citations`
+ *  or `#parity` needs no server rewrite, no dependency, and survives a reload
+ *  and a shared link. */
+function useRoute(): 'citations' | 'parity' | null {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHashChange = (): void => setHash(window.location.hash);
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
-  return hash === '#citations';
+  return hash === '#citations' ? 'citations' : hash === '#parity' ? 'parity' : null;
+}
+
+/** The parity page with its data: the summary the parity-summary workflow
+ *  last published beside the site. Fetched relative to the page so it works
+ *  under the Pages subpath and under a local build alike. */
+function ParityRoute(): JSX.Element {
+  const [state, setState] = useState<ParityState>('loading');
+  const [summary, setSummary] = useState<ParitySummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${import.meta.env.BASE_URL}parity/summary.json`, { cache: 'no-cache' })
+      .then(async (res) => {
+        if (res.status === 404) return 'missing' as const;
+        if (!res.ok) return 'error' as const;
+        const data = (await res.json()) as ParitySummary;
+        if (!cancelled) setSummary(data);
+        return 'ready' as const;
+      })
+      .catch(() => 'error' as const)
+      .then((next) => {
+        if (!cancelled) setState(next);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return <ParityPage summary={summary} state={state} />;
 }
 
 export default function App(): JSX.Element {
-  const showCitations = useIsCitationsRoute();
+  const route = useRoute();
   /* Rehydrate the source log from localStorage before the first fetch runs, so
      a reload while chasing a flaky upstream keeps the history that explains it,
      and publish it on window for devtools. There is deliberately no in-page log
@@ -173,7 +203,8 @@ export default function App(): JSX.Element {
   // Every hook above runs in both views, so switching routes cannot change hook
   // order. The weather polling keeps running behind the citations page, which is
   // what you want when someone ducks in to check a reference and comes back.
-  if (showCitations) return <CitationsPage />;
+  if (route === 'citations') return <CitationsPage />;
+  if (route === 'parity') return <ParityRoute />;
 
   return (
     <div className="app">
@@ -321,6 +352,9 @@ export default function App(): JSX.Element {
         <br />
         <a href="#citations">Citations to verify</a> — what this dashboard claims, and what nobody
         has checked yet.
+        <br />
+        <a href="#parity">How different from other sources</a> — the winds table against Mark
+        Schulze&rsquo;s and the observation against usairnet&rsquo;s, from the comparison logs.
       </footer>
     </div>
   );

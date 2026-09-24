@@ -38,6 +38,10 @@ const say = (lines: string[]): void => {
   process.stdout.write(lines.join('\n') + '\n');
 };
 
+/** One machine-readable line per run, for the parity-summary workflow
+ *  (domain/paritySummary.ts parses it). Printed last, after the table. */
+const record = (obj: Record<string, unknown>): string => `@@parity ${JSON.stringify(obj)}`;
+
 /** The fields usairnet prints for a station, as the page states them. */
 interface UsairnetObs {
   asOf: string; // "8:15 PM", their local clock
@@ -143,6 +147,7 @@ const show = (v: number | string | null | undefined): string =>
   v == null || v === '' ? '—' : String(v);
 
 it('prints the dashboard’s decode of the latest observation beside usairnet’s', async () => {
+  const startedAt = new Date().toISOString();
   const out: string[] = ['', `=== ${station}: dashboard vs usairnet ===`];
 
   let ours: CurrentConditions;
@@ -154,7 +159,7 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     ours = normalizeNwsObservation((await res.json()) as RawNwsObservation, station);
   } catch (e) {
-    say([...out, `api.weather.gov could not be read: ${(e as Error).message}`]);
+    say([...out, `api.weather.gov could not be read: ${(e as Error).message}`, record({ kind: 'usairnet', at: startedAt, error: `nws: ${(e as Error).message}` })]);
     return;
   }
 
@@ -167,11 +172,11 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     theirs = parseUsairnet(await res.text());
   } catch (e) {
-    say([...out, `usairnet could not be read: ${(e as Error).message}`]);
+    say([...out, `usairnet could not be read: ${(e as Error).message}`, record({ kind: 'usairnet', at: startedAt, error: `usairnet: ${(e as Error).message}` })]);
     return;
   }
   if (theirs == null) {
-    say([...out, 'usairnet page did not parse (markup changed?); nothing compared.']);
+    say([...out, 'usairnet page did not parse (markup changed?); nothing compared.', record({ kind: 'usairnet', at: startedAt, error: 'usairnet: page did not parse' })]);
     return;
   }
 
@@ -204,10 +209,12 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   row('flight rule', observedFlightCategory(ours) ?? '(withheld)', theirs.flightRule);
 
   let agree = 0;
+  const fields: { name: string; same: boolean }[] = [];
   out.push('field                          dashboard                       usairnet');
   for (const [name, a, b] of rows) {
     const same = a === b;
     if (same) agree += 1;
+    fields.push({ name, same });
     out.push(`${same ? ' ' : '≠'} ${name.padEnd(28)} ${a.padEnd(31)} ${b}`);
   }
   out.push(`${agree} of ${rows.length} fields agree${sameReport ? '' : ' (different reports, so differences are expected)'}`);
@@ -222,5 +229,6 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   if ((off('temperature °F') ?? 0) === 1 || (off('dew point °F') ?? 0) === 1) {
     out.push('note: a 1 °F gap in temperature or dew point is the METAR body’s whole degrees against the T group’s tenths, which the dashboard reads');
   }
+  out.push(record({ kind: 'usairnet', at: startedAt, sameReport, fields }));
   say(out);
 });

@@ -28,6 +28,21 @@ jobs:
         run: |
           set -o pipefail
           npx vitest run --config vitest.live.config.ts 2>&1 | tee parity.log
+      # The comparison scripts' @@parity lines feed the #parity page's summary
+      # (parity-summary.yml); the daily run keeps that fed after the temporary
+      # high-frequency workflow ends.
+      - name: Keep this run's @@parity lines
+        if: always()
+        shell: bash
+        run: |
+          if [ -f parity.log ]; then grep -a '@@parity ' parity.log > "parity-${{ github.run_id }}.jsonl" || true; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parity-${{ github.run_id }}
+          path: parity-${{ github.run_id }}.jsonl
+          retention-days: 14
+          if-no-files-found: ignore
       - name: Open or update the parity issue
         if: failure()
         env:
