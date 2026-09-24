@@ -270,6 +270,9 @@ sandbox allowlist, so run it from a runner, not from here.
 `scripts/schulzeCompare.live.ts` runs in the same job and prints this app's
 winds-aloft profile beside Mark Schulze's at the same valid hour; it is a
 report and never fails the run. It does run from here (markschulze.net is
-allowlisted; it needs a Referer and a browser-like User-Agent).
+allowlisted; it needs a Referer and a browser-like User-Agent). Until
+2026-09-27 `.github/workflows/schulze-compare.yml` also runs it hourly, to
+count how often the two tools are served different forecast runs for the same
+hour; it skips itself after that and should then be deleted.
 
 Open items live in `docs/open-questions.md`.

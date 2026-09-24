@@ -65,11 +65,29 @@ so the two tables were up to 12° apart from 5,000 to 10,000 ft. Details in
   request has not been read; if it passes `models=`, the two are not the same
   forecast even when they agree.
 
-If it is the cache, a jumper who refreshes the card gets a forecast up to some
-minutes older than the tool shows, and the card should say so or the request
-should defeat the cache. If it is the model, the "same source" sentence on the
-card is wrong. Either answer changes card text, so this is worth settling
-before the next winds-aloft change.
+Checked 2026-09-24 01:28Z, once the sandbox was under the daily limit again:
+
+- **Different models: effectively ruled out.** At 01Z the tool's raw 700 hPa
+  level (260° / 9 kt, at the `best_match` geopotential to the metre) matched
+  Open-Meteo's `best_match`, `gfs_seamless` and `ncep_hrrr_conus` exactly and
+  none of `ecmwf_ifs025` (258/9.9), `gfs_global` (264/10.4), `icon_seamless`
+  (267/11.4) or `gem_seamless` (250/12.1). The two tools read the same model.
+- **HTTP caching: nothing asks for it.** The app's exact request comes back
+  with no `Cache-Control`, `Age`, `ETag` or `Expires` header. A cache behind
+  the API is not excluded, but nothing in the response invites one.
+- **Third candidate, now the likeliest:** Open-Meteo serves from several API
+  servers that ingest a new model run independently, so two requests seconds
+  apart can land on servers in different states. That fits a case that showed
+  once in four comparisons, near a run boundary, better than either of the
+  above. If it holds, the remedy is a sentence on the card: after a new run
+  lands, one tool can be a few minutes behind another.
+
+To count it rather than argue it, `.github/workflows/schulze-compare.yml` runs
+the comparison hourly from 2026-09-24 until 2026-09-27T02:00Z and then skips
+itself; each run's log carries both raw profiles. Read them under Actions,
+"Schulze comparison (hourly, temporary)". Delete the workflow, or move its end
+date, once the question is settled — and settle it before the next
+winds-aloft change, since either answer changes card text.
 
 ## Live-site smoke test
 

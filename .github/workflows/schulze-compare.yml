@@ -1,0 +1,46 @@
+name: Schulze comparison (hourly, temporary)
+
+# Hourly for three days from 2026-09-24, then self-skipping: print this app's
+# winds-aloft profile beside Mark Schulze's at the same valid hour, raw samples
+# included, so the run-boundary case seen on 2026-09-23 (one tool served a
+# newer forecast than the other for the same hour) can be counted rather than
+# argued about. See docs/open-questions.md, "Which forecast run the
+# winds-aloft request is served". Never fails: the script is a report.
+#
+# Delete this file, or move the end date, once the question is settled.
+on:
+  schedule:
+    - cron: '10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stop after the logging window
+        id: window
+        shell: bash
+        run: |
+          end=$(date -u -d '2026-09-27T02:00:00Z' +%s)
+          now=$(date -u +%s)
+          if [ "$now" -ge "$end" ] && [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "past the window (ends 2026-09-27T02:00Z); nothing to do"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.window.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.window.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.window.outputs.run == 'true'
+      - name: Compare the two winds-aloft profiles
+        if: steps.window.outputs.run == 'true'
+        run: npx vitest run --config vitest.live.config.ts scripts/schulzeCompare.live.ts
