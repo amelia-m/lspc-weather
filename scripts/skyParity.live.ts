@@ -83,6 +83,11 @@ interface AwcTaf {
   fcsts?: AwcFcst[];
 }
 
+/** aviationweather sends an empty string, not null, for an element a
+ *  change group does not state (a TEMPO's visib on 2026-09-24 read ""), so
+ *  "present" has to exclude both. */
+const present = <T,>(v: T | null | undefined | ''): v is T => v != null && v !== '';
+
 /** Differences between one decoded period and aviationweather's, as lines;
  *  empty when they agree. */
 function comparePeriod(p: TafPeriod, f: AwcFcst): string[] {
@@ -100,23 +105,28 @@ function comparePeriod(p: TafPeriod, f: AwcFcst): string[] {
   if (p.toMs != null && theirTo != null && p.toMs / 1000 !== theirTo) {
     out.push(`to ${new Date(p.toMs).toISOString()} vs ${new Date(theirTo * 1000).toISOString()}`);
   }
+  const theirSpd = present(f.wspd) ? f.wspd : null;
+  const theirGst = present(f.wgst) ? f.wgst : null;
+  const theirDir = present(f.wdir) ? f.wdir : null;
   if (p.wind) {
-    if (p.wind.speedKt !== (f.wspd ?? null)) out.push(`wind speed ${p.wind.speedKt} vs ${f.wspd}`);
-    if ((p.wind.gustKt ?? null) !== (f.wgst ?? null)) out.push(`gust ${p.wind.gustKt} vs ${f.wgst}`);
+    if (p.wind.speedKt !== theirSpd) out.push(`wind speed ${p.wind.speedKt} vs ${f.wspd}`);
+    if ((p.wind.gustKt ?? null) !== theirGst) out.push(`gust ${p.wind.gustKt} vs ${f.wgst}`);
     const ourDir = p.wind.variable ? 'VRB' : p.wind.speedKt === 0 ? 0 : p.wind.directionDeg;
-    if (ourDir !== (f.wdir ?? null)) out.push(`wind dir ${ourDir} vs ${f.wdir}`);
-  } else if (f.wspd != null) {
+    if (ourDir !== theirDir) out.push(`wind dir ${ourDir} vs ${f.wdir}`);
+  } else if (theirSpd != null) {
     out.push(`wind not stated by app, theirs ${f.wdir}/${f.wspd}`);
   }
+  const theirVisRaw = present(f.visib) ? f.visib : null;
   if (p.visibilitySm != null) {
     const ourVis = p.visibilityPlus ? '6+' : p.visibilitySm;
-    const theirVis = typeof f.visib === 'string' && /^\d+(\.\d+)?$/.test(f.visib) ? Number(f.visib) : f.visib;
+    const theirVis =
+      typeof theirVisRaw === 'string' && /^\d+(\.\d+)?$/.test(theirVisRaw) ? Number(theirVisRaw) : theirVisRaw;
     const same =
       typeof ourVis === 'number' && typeof theirVis === 'number'
         ? Math.abs(ourVis - theirVis) < 0.01
         : ourVis === theirVis;
     if (!same) out.push(`visibility ${ourVis} vs ${f.visib}`);
-  } else if (f.visib != null) {
+  } else if (theirVisRaw != null) {
     out.push(`visibility not stated by app, theirs ${f.visib}`);
   }
   const ourWx = p.wxString ?? null;
