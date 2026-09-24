@@ -12,11 +12,11 @@ import { fmtClock, fmtTime } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
  *  around 10,000 ft, so the default view stops there and keeps the low levels
- *  that matter for the landing pattern and opening (surface, 1k, 3k) plus a
+ *  that matter for the landing pattern and opening (surface, 500, 1k, 3k) plus a
  *  couple in between for the exit/freefall drift. Expanding reveals every
  *  level the source answered for, up to the top of `WINDS_ALOFT_LEVELS_AGL`
  *  when the profile is complete. */
-const COLLAPSED_ALTITUDES_FT = new Set([0, 1000, 3000, 5000, 7000, 10000]);
+const COLLAPSED_ALTITUDES_FT = new Set([0, 500, 1000, 3000, 5000, 7000, 10000]);
 
 /** "9,000 ft" — the form every altitude on this card takes. */
 const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
@@ -235,7 +235,7 @@ export function WindsAloftPanel({
         <p className="muted small">
           Showing key altitudes to {fmtFt(collapsedTopFtAgl)}
           {collapsedTopFtAgl === 10000 ? ' (LSPC’s usual max)' : ''}. Expand for every
-          1,000-ft level up to {fmtFt(top.highestFtAgl)}.
+          level up to {fmtFt(top.highestFtAgl)}.
         </p>
       )}
       {fallback ? (
@@ -264,7 +264,7 @@ export function WindsAloftPanel({
             on its page is the ground elevation it looked up, not the scale of its wind table.
           </p>
           <p className="muted small">
-            Each 1,000-ft level is <strong>linearly interpolated</strong> from the model’s
+            Each level is <strong>linearly interpolated</strong> from the model’s
             pressure-level winds (Open-Meteo gives wind at fixed pressure surfaces — e.g.
             925/850/700 hPa — with their geopotential heights, which we convert to ft MSL and
             interpolate to these AGL altitudes). Direction is interpolated along the shortest

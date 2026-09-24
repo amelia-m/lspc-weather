@@ -183,6 +183,25 @@ describe('the collapsed winds table never hides the lowest available level', () 
  * report has to say where it stops so the missing rows read as a hole in the
  * data and not a display choice.
  */
+describe('the 500 ft row', () => {
+  // The landing pattern's altitude. It is asked for as a target like every
+  // other row and interpolated between the samples that bracket it — the
+  // surface sample and the 950 hPa level in the fixture — so it carries a
+  // wind of its own rather than a copy of the surface or 1,000 ft row.
+  it('is requested, and sits between its neighbours', () => {
+    expect(WINDS_ALOFT_LEVELS_AGL).toContain(500);
+    const levels = fullProfile();
+    const at = (ft: number) => levels.find((l) => l.altitudeFtAgl === ft);
+    const row = at(500);
+    expect(row).toBeDefined();
+    const lo = at(0)!;
+    const hi = at(1000)!;
+    expect(row!.speedKt).toBeGreaterThanOrEqual(Math.min(lo.speedKt, hi.speedKt));
+    expect(row!.speedKt).toBeLessThanOrEqual(Math.max(lo.speedKt, hi.speedKt));
+    expect(row!.speedKt).not.toBe(lo.speedKt);
+  });
+});
+
 describe('windsAloftTop says where the profile ends against what was asked for', () => {
   it('reports a complete profile as reaching the requested top', () => {
     const top = windsAloftTop(fullProfile(), WINDS_ALOFT_LEVELS_AGL);
@@ -248,7 +267,7 @@ describe('the winds table says where its rows stop', () => {
       // The key set's 10,000 ft row is gone with the profile, so the collapsed
       // view ends at 7,000 ft and must not call that LSPC's usual max.
       expect(html).toContain(
-        `Showing key altitudes to 7,000 ft. Expand for every 1,000-ft level up to ${short} ft.`,
+        `Showing key altitudes to 7,000 ft. Expand for every level up to ${short} ft.`,
       );
       expect(html).not.toContain('usual max');
     });
@@ -265,7 +284,7 @@ describe('the winds table says where its rows stop', () => {
     it('offers the toggle up to the configured top', () => {
       expect(html).toContain(`Show more altitudes (more increments, up to ${requested} ft)`);
       expect(html).toContain(
-        `Showing key altitudes to 10,000 ft (LSPC’s usual max). Expand for every 1,000-ft level up to ${requested} ft.`,
+        `Showing key altitudes to 10,000 ft (LSPC’s usual max). Expand for every level up to ${requested} ft.`,
       );
     });
   });
