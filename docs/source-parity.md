@@ -21,6 +21,7 @@ Two pages sit beside the dashboard, both reached from its footer:
 | METAR sky groups | the app's parse of the METAR text | aviationweather.gov's decoder | `scripts/skyParity.live.ts` (a gate: fails on disagreement) |
 | Flight category | the app's derived VFR/MVFR/IFR/LIFR | aviationweather.gov's `fltCat` for the same report | `scripts/skyParity.live.ts` (a gate, when both give a category) |
 | TAF shown | the TAF text the card shows, from the NWS text-products feed, first station in the chain with a product | the current TAF aviationweather.gov has for that station | `scripts/skyParity.live.ts` (informational: says whether the card's issuance is the current one) |
+| TAF decode | `decodeTaf` run on aviationweather.gov's own TAF text for every station in the chain: change type, period times, wind, visibility, weather, cloud layers per period | the `fcsts` decode aviationweather.gov returns beside that text | `scripts/skyParity.live.ts` (gate: any difference fails the run) |
 
 The Schulze and usairnet scripts print a human-readable table and one
 machine-readable line, `@@parity {json}`, per run. Neither ever fails a run:
@@ -28,7 +29,7 @@ they are reports, and the other side is a third-party page that can change or
 lag. The sky-parity script is different: its sky-group and flight-category
 comparisons are gates that fail the daily run and open an issue, because the
 other side there is aviationweather.gov's decoder and a disagreement means the
-app's own parse or derivation is wrong. Its TAF line is informational.
+app's own parse or derivation is wrong. Its TAF freshness line is informational; its TAF decode comparison is a gate.
 
 The sun almanac rows compare the app's sunrise and sunset at the DZ with
 usairnet's for KPMV, 0.19° east, so a gap of a minute is the geography; on

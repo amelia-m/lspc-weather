@@ -52,7 +52,7 @@ freefall drift and **density altitude** for jump-plane climb performance.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline.
 - 📡 **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
-- 📝 **TAF** — nearest available TAF (see cross-references below).
+- 📝 **TAF** — nearest available TAF, raw text plus a decoded table: one row per period (prevailing, FM, TEMPO, BECMG, PROB) with wind, visibility, sky, weather in words and the FAA flight category (see cross-references below).
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
 - 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"

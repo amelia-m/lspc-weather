@@ -94,9 +94,11 @@ describe('evaluateAdvisories', () => {
   });
 
   it('flags a marginal (MVFR) ceiling as watch', () => {
-    // Lower the BKN base to 2000 ft → MVFR ceiling.
+    // Lower the BKN base to 2000 ft → MVFR ceiling. The text is read first,
+    // so it has to carry the change, not only the decode.
     const current = normalizeMetar({
       ...METAR_FIXTURE[0],
+      rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'BKN020'),
       clouds: [{ cover: 'BKN', base: 2000 }],
     });
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
@@ -612,9 +614,11 @@ describe('guidance matches the section as read', () => {
 
   it('the sky card states 105.17 and no longer claims jumps "require VFR flight conditions"', () => {
     // 105.17 never mentions VFR; the pilot's minimums are 91.155, which the
-    // app does not cite. MVFR ceiling so the note renders.
+    // app does not cite. MVFR ceiling so the note renders; the text is read
+    // first, so it carries the change.
     const current = normalizeMetar({
       ...METAR_FIXTURE[0],
+      rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'BKN020'),
       clouds: [{ cover: 'BKN', base: 2000 }],
     });
     const html = markup(createElement(CeilingSkyPanel, { current, hourly: [] }));

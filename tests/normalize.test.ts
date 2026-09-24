@@ -68,9 +68,23 @@ describe('normalizeMetar', () => {
     expect(c.wind.speedKt).toBe(0);
   });
 
-  it('maps an unrecognized vendor sky-cover string to SKC instead of casting it through', () => {
+  it('reads the sky from the METAR text when the decode has no layers', () => {
+    // aviationweather.gov's decode has no `clouds` entries for a clear sky;
+    // the text says CLR, and a CLR layer is what lets a category be VFR.
     const c = normalizeMetar({
       ...METAR_FIXTURE[0],
+      rawOb: 'KPMV 241152Z AUTO 13006KT 10SM CLR 14/12 A3012 RMK AO2',
+      clouds: [],
+    });
+    expect(c.skyLayers).toEqual([{ cover: 'CLR', baseFtAgl: null }]);
+    expect(ceilingState(c)).toBe('known');
+  });
+
+  it('maps an unrecognized vendor sky-cover string to SKC instead of casting it through', () => {
+    // The text has no sky group here, so the decode is what gets read.
+    const c = normalizeMetar({
+      ...METAR_FIXTURE[0],
+      rawOb: 'KPMV 241152Z AUTO 13006KT 10SM 14/12 A3012',
       clouds: [
         { cover: 'BOGUS', base: 1200 },
         { cover: 'BKN', base: 4500 },

@@ -66,10 +66,18 @@ export function toSkyCover(s: string | undefined | null): SkyCover {
 }
 
 export function normalizeMetar(m: RawMetar): CurrentConditions {
-  const skyLayers: SkyLayer[] = (m.clouds ?? []).map((c) => ({
+  // The text first, the decode when the text has no sky group: the same
+  // order normalizeNwsObservation uses. aviationweather.gov's decode leaves
+  // `clouds` empty for a clear sky, which the app reads as "not reported",
+  // so on that path a CLR report withheld its flight category while the
+  // decoder it was being checked against said VFR (sky-parity run of
+  // 2026-09-24), and the comparison skipped the very reports it had.
+  const decodedSky: SkyLayer[] = (m.clouds ?? []).map((c) => ({
     cover: toSkyCover(c.cover),
     baseFtAgl: c.base ?? null,
   }));
+  const rawSky = m.rawOb ? parseSkyGroups(m.rawOb) : [];
+  const skyLayers = rawSky.length > 0 ? rawSky : decodedSky;
 
   const ceiling = skyLayers
     .filter((l) => CEILING_COVERS.includes(l.cover) && l.baseFtAgl != null)
