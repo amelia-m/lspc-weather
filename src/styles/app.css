@@ -260,16 +260,26 @@ a {
   /* Don't stretch a short card (Daylight, Sun) to the height of a tall
      neighbour (Radar) — let each card be its natural height. */
   align-items: start;
-  /* Backfill any gap the span-2 outlook would leave at odd column counts. */
+  /* Dense, so a later card fills an earlier hole. With MasonryGrid's row
+     spans this is what packs each card into the shortest column. */
   grid-auto-flow: row dense;
 }
-/* Where supported, pack cards vertically (masonry) so a short card doesn't
-   leave a tall gap under it before the next row. Falls back to the aligned
-   grid above otherwise. */
-@supports (grid-template-rows: masonry) {
-  .grid {
-    grid-template-rows: masonry;
-    grid-auto-flow: row;
+/* Packed vertically by MasonryGrid: rows a few pixels tall, each card
+   spanning as many as its measured height needs, the row gap folded into
+   the span. Dense placement then drops each card into the shortest column.
+   Without the script (a static render) the aligned grid above stands. */
+.grid.masonry {
+  grid-auto-rows: 4px;
+  row-gap: 0;
+}
+/* The secondary cards (density altitude, daylight, radar) are placed after
+   the full-width TAF card where the grid has columns: three cards of
+   different heights before a full-width card leave a hole beside the
+   shortest, and after it they only leave a ragged bottom edge. On a phone
+   the single column keeps the DOM order, which is the decision flow. */
+@media (min-width: 640px) {
+  .grid.masonry .panel-secondary {
+    order: 1;
   }
 }
 .grid .panel {
@@ -530,10 +540,13 @@ a {
 .daily-scroll {
   overflow-x: auto;
 }
-/* Five columns don't fit a single grid cell — span two when the grid has them. */
+/* Five columns don't fit a single grid cell. The card takes the full grid
+   width where there is more than one column: a two-column span in a
+   three-column grid pinned a third-column hole beside it that nothing after
+   it could fill. */
 @media (min-width: 640px) {
   .grid .panel:has(.daily-table) {
-    grid-column: span 2;
+    grid-column: 1 / -1;
   }
 }
 .daily-table {
@@ -625,11 +638,11 @@ a {
   display: block;
   white-space: nowrap;
 }
-/* Seven columns do not fit one grid cell; span two where the grid has them,
-   as the 10-day table does. */
+/* Seven columns do not fit one grid cell; the full grid width where there
+   is more than one column, as the 10-day table takes. */
 @media (min-width: 640px) {
   .grid .panel:has(.taf-table) {
-    grid-column: span 2;
+    grid-column: 1 / -1;
   }
 }
 

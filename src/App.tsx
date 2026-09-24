@@ -24,6 +24,7 @@ import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
+import { MasonryGrid } from './components/common/MasonryGrid';
 import { CitationsPage } from './components/CitationsPage';
 import { ParityPage, type ParityState } from './components/ParityPage';
 import type { ParitySummary } from './domain/paritySummary';
@@ -292,9 +293,9 @@ export default function App(): JSX.Element {
           category), then skydiver-specific (winds aloft/drift), then planning
           (hourly/outlook/precip), then secondary (DA/daylight) and reference
           (radar/TAF). Order matters most on mobile, where the grid is a single
-          linear column. Six cards precede the span-2 outlook so it packs onto a
-          fresh row at both 2- and 3-column widths. */}
-      <div className="grid">
+          linear column; at wider widths MasonryGrid drops each card into the
+          shortest column, so a later card can sit above an earlier one. */}
+      <MasonryGrid>
         <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} />
         <SurfaceWindPanel
           current={snapshot.current}
@@ -329,7 +330,7 @@ export default function App(): JSX.Element {
         <SunPanel sun={snapshot.sun} />
         <RadarPanel />
         <TafPanel taf={snapshot.taf} status={status.taf} />
-      </div>
+      </MasonryGrid>
 
       <DataFreshness
         status={status}
