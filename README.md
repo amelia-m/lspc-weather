@@ -1,4 +1,4 @@
-# LSPC Weather
+# 🪂 LSPC Weather
 
 A skydiving weather dashboard for the **Lincoln Sport Parachute Club** (Brown's
 Airport, **NE69**) in Weeping Water, NE — tuned to the conditions that matter
@@ -22,9 +22,9 @@ freefall drift and **density altitude** for jump-plane climb performance.
 > relying on it. Always confirm conditions with current official sources, the
 > S&TA, and the pilot in command.
 
-## What it shows
+## 🌤️ What it shows
 
-- **Conditions to note** — the flagged conditions, each with the source it
+- ⚠️ **Conditions to note** — the flagged conditions, each with the source it
   relates to: surface wind, the LSPC waiver gust ceiling, visibility, FAA flight
   category, overcast sky, a thunderstorm reported in the METAR, and parachute
   ops after sunset. Every one fires either on a **published limit** (USPA / the
@@ -32,37 +32,37 @@ freefall drift and **density altitude** for jump-plane climb performance.
   overcast reported, `TS` in the METAR, the sun is down. Where nothing published
   sets a trigger, **no flag fires at all**; there is no "app heuristic" label to
   fall back on. No go/no-go verdict.
-- **Current conditions** — decoded KPMV METAR (raw text included).
-- **Surface wind** — sustained + gust on a scale, kt/mph toggle. A band is
+- 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
+- 💨 **Surface wind** — sustained + gust on a scale, kt/mph toggle. A band is
   drawn only where a published source sets it — the USPA ground-wind figure for
   Student, the posted club policy for the LSPC waiver tiers — and is labelled
   with that source. The Licensed profile draws no band and says so: nobody
   publishes a surface-wind limit for licensed jumpers.
-- **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
+- 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   pressure-level model winds, with the
   spot/exit-separation note standing under the table at any wind speed.
-- **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
+- 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs.
-- **Hourly wind** — wind/gust chart with precip-probability bars, over a
+- 📈 **Hourly wind** — wind/gust chart with precip-probability bars, over a
   selectable 18 / 36 / 72 h horizon (18 h by default).
-- **10-day outlook** — daily sky, high/low, max wind/gust, precip chance; tap a
+- 📅 **10-day outlook** — daily sky, high/low, max wind/gust, precip chance; tap a
   day for its hourly detail.
-- **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
-- **Precipitation & storms** — max precip and thunderstorm chance over the next
+- ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
+- ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline.
-- **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
-- **TAF** — nearest available TAF (see cross-references below).
-- **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
-- **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
+- 📡 **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
+- 📝 **TAF** — nearest available TAF (see cross-references below).
+- 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
+- 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
   countdown, because no published source sets a minutes-before-sunset figure.
-- **Data health** — per-source freshness, staleness, and error state, plus which
+- 🩺 **Data health** — per-source freshness, staleness, and error state, plus which
   provider each source is served from. The METAR row says whether the NWS
   API's decode of the report agreed with the METAR text the app parses, amber
   when it did not.
 
-## Data sources (all free, no API key)
+## 🔗 Data sources (all free, no API key)
 
 | Source | Used for |
 |---|---|
@@ -79,7 +79,7 @@ endpoint rather than AviationWeather.gov because `api.weather.gov` sends CORS
 headers and is reliably reachable from a browser, while `aviationweather.gov`
 is not.
 
-## Cross-references
+## 🔁 Cross-references
 
 This dashboard gathers a lot of sources in one place — it is **not a
 replacement** for the tools jumpers already check. Several cards link out to
@@ -104,7 +104,7 @@ sanity-check the dashboard against sources you already trust:
 If a dashboard number and its cross-reference disagree meaningfully, trust
 neither — check the primary source and ask the S&TA.
 
-## Develop
+## 🛠️ Develop
 
 ```bash
 npm install
@@ -119,7 +119,7 @@ npm run build        # production build (uses live APIs)
 **sample data**; production builds default to **live APIs**. Live `.gov` calls
 work from a normal browser; some sandboxed/CI networks block them.
 
-## Citations
+## 📚 Citations
 
 Advisory thresholds and their sources live in
 [`src/config/thresholds.ts`](src/config/thresholds.ts).
@@ -194,7 +194,7 @@ only the lower row was. What was read is each source as served on one day, not
 a printed edition, so **re-verify against the linked primary source** before
 relying on any of it operationally.
 
-## Deploy
+## 🚀 Deploy
 
 Pushing to `main` runs
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (lint + tests +
