@@ -24,6 +24,7 @@ import {
   normalizeMetar,
   normalizeNwsObservation,
   parseSkyGroups,
+  parseTaf,
   type RawMetar,
   type RawNwsObservation,
 } from '../src/domain/normalize';
@@ -76,6 +77,83 @@ describe(`sky decode parity for ${station}`, () => {
     // cloud layers, then; bases from the text are exact hundreds, and so are
     // aviationweather's.
     expect(cloudsOnly(ours)).toEqual(cloudsOnly(theirs));
+  });
+
+  it('derives the flight category aviationweather.gov derives from the same report', async () => {
+    // The one derived value on the sky card a jumper reads as a word. Both
+    // sides work from ceiling and visibility with the same bands (MVFR at a
+    // 3,000 ft ceiling or 5 SM inclusive, per AIM 7-1-7), so on a report
+    // where both give a category they must give the same one. The app
+    // withholds VFR when no ceiling can be established; aviationweather does
+    // not, so a report with no sky group is compared only when both answer.
+    const res = await get(
+      `https://aviationweather.gov/api/data/metar?ids=${station}&format=json`,
+      'application/json',
+    );
+    const [awc] = (await res.json()) as RawMetar[];
+    expect(awc?.rawOb, 'aviationweather.gov returned no METAR').toBeTruthy();
+    const ours = observedFlightCategory(normalizeMetar(awc));
+    const theirs = awc.fltCat ?? null;
+    say(`[awc]  flight category: app ${ours ?? '(withheld)'} · aviationweather ${theirs ?? '(none)'}`);
+    if (ours != null && theirs != null) expect(ours).toBe(theirs);
+  });
+
+  it('shows the TAF the card would show beside the one aviationweather.gov has (informational, never fails)', async () => {
+    // The card shows the raw TAF text from the NWS text-products feed, first
+    // station in the chain with a product. That feed can lag or list an older
+    // issuance; this says whether the TAF a reader sees is the current one.
+    // Informational: the products index is known to be flaky (see fetchTaf),
+    // and a lag there is not a bug in this app's parse.
+    try {
+      const ids = SITE.tafStations.map((t) => t.id).join(',');
+      const awcRes = await get(
+        `https://aviationweather.gov/api/data/taf?ids=${ids}&format=json`,
+        'application/json',
+      );
+      const awc = (await awcRes.json()) as Array<{ icaoId: string; rawTAF?: string; issueTime?: string }>;
+      let shown: { station: string; raw: string; issuedMs: number | null } | null = null;
+      for (const t of SITE.tafStations) {
+        const loc = encodeURIComponent(t.nwsProductLocation);
+        for (const url of [
+          `https://api.weather.gov/products/types/TAF/locations/${loc}`,
+          `https://api.weather.gov/products?type=TAF&location=${loc}&limit=1`,
+        ]) {
+          try {
+            const list = (await (await get(url, 'application/geo+json')).json()) as {
+              '@graph'?: Array<{ '@id': string; issuanceTime?: string }>;
+            };
+            const latest = list['@graph']?.[0];
+            if (!latest) continue;
+            const product = (await (await get(latest['@id'], 'application/geo+json')).json()) as {
+              productText?: string;
+              issuanceTime?: string;
+            };
+            const taf = parseTaf(product.productText ?? '', t.id, product.issuanceTime ?? latest.issuanceTime);
+            if (taf) shown = { station: taf.station, raw: taf.raw, issuedMs: taf.issuedMs };
+            break;
+          } catch {
+            // try the other list form, then the next station
+          }
+        }
+        if (shown) break;
+      }
+      if (!shown) {
+        say('[taf]  the NWS products feed listed no TAF for any station in the chain');
+        return;
+      }
+      const theirs = awc.find((x) => x.icaoId === shown!.station);
+      const squash = (x: string): string => x.replace(/\s+/g, ' ').trim();
+      const same = theirs?.rawTAF != null && squash(theirs.rawTAF) === squash(shown.raw);
+      say(`[taf]  card shows ${shown.station}, issued ${shown.issuedMs != null ? new Date(shown.issuedMs).toISOString() : '?'}`);
+      say(`[taf]  aviationweather has ${theirs ? `${theirs.icaoId}, issued ${theirs.issueTime ?? '?'}` : 'no TAF for that station'}`);
+      say(`[taf]  same text: ${same ? 'yes' : 'NO'}`);
+      if (!same && theirs?.rawTAF) {
+        say(`[taf]  card:  ${squash(shown.raw).slice(0, 200)}`);
+        say(`[taf]  theirs: ${squash(theirs.rawTAF).slice(0, 200)}`);
+      }
+    } catch (err) {
+      say(`[taf]  not compared: ${err instanceof Error ? err.message : String(err)}`);
+    }
   });
 
   it('reports how api.weather.gov decoded the same station (informational, never fails)', async () => {

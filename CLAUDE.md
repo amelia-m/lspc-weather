@@ -264,8 +264,10 @@ available for the change that needs one.
 `.github/workflows/sky-parity.yml` is not a gate: it runs daily and on
 dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
 `vitest.live.config.ts` so `npm test` stays hermetic. It fails only when the
-app's METAR sky parse disagrees with aviationweather.gov's decoder, and opens
-one issue labelled `sky-parity` when it does. aviationweather.gov is not on the
+app's METAR sky parse, or its derived flight category, disagrees with
+aviationweather.gov's decoder on today's report, and opens one issue labelled
+`sky-parity` when it does; it also prints whether the TAF the card shows is
+the issuance aviationweather.gov currently has (informational). aviationweather.gov is not on the
 sandbox allowlist, so run it from a runner, not from here.
 `scripts/schulzeCompare.live.ts` runs in the same job and prints this app's
 winds-aloft profile beside Mark Schulze's at the same valid hour; it is a

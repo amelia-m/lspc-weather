@@ -27,6 +27,9 @@ export interface RawMetar {
   altim: number | null; // hPa
   wxString: string | null;
   clouds?: Array<{ cover: string; base: number | null }>; // base ft AGL
+  /** aviationweather.gov's own flight category for the report (VFR/MVFR/IFR/LIFR);
+   *  absent from other feeds. The parity check compares the app's against it. */
+  fltCat?: string | null;
 }
 
 const CEILING_COVERS: SkyCover[] = ['BKN', 'OVC', 'VV'];
