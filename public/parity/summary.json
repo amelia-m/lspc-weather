@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T05:10:27.375Z",
+  "generatedAt": "2026-09-24T06:23:12.667Z",
   "from": "2026-09-24T05:09:51.010Z",
   "to": "2026-09-24T05:09:51.011Z",
   "schulze": {
@@ -10,142 +10,310 @@
       {
         "ft": 0,
         "n": 1,
-        "medianAbsDir": 4,
-        "p90AbsDir": 4,
-        "maxAbsDir": 4,
-        "medianAbsSpd": 5,
-        "p90AbsSpd": 5,
-        "maxAbsSpd": 5
+        "dir": {
+          "n": 1,
+          "meanAbs": 4,
+          "medianAbs": 4,
+          "p90Abs": 4,
+          "minAbs": 4,
+          "maxAbs": 4,
+          "mean": -4
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 5,
+          "medianAbs": 5,
+          "p90Abs": 5,
+          "minAbs": 5,
+          "maxAbs": 5,
+          "mean": -5
+        }
       },
       {
         "ft": 1000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 2000,
         "n": 1,
-        "medianAbsDir": 1,
-        "p90AbsDir": 1,
-        "maxAbsDir": 1,
-        "medianAbsSpd": 1,
-        "p90AbsSpd": 1,
-        "maxAbsSpd": 1
+        "dir": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": 1
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": -1
+        }
       },
       {
         "ft": 3000,
         "n": 1,
-        "medianAbsDir": 1,
-        "p90AbsDir": 1,
-        "maxAbsDir": 1,
-        "medianAbsSpd": 1,
-        "p90AbsSpd": 1,
-        "maxAbsSpd": 1
+        "dir": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": 1
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": -1
+        }
       },
       {
         "ft": 4000,
         "n": 1,
-        "medianAbsDir": 1,
-        "p90AbsDir": 1,
-        "maxAbsDir": 1,
-        "medianAbsSpd": 1,
-        "p90AbsSpd": 1,
-        "maxAbsSpd": 1
+        "dir": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": 1
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": -1
+        }
       },
       {
         "ft": 5000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 6000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 7000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 8000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 9000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 10000,
         "n": 1,
-        "medianAbsDir": 1,
-        "p90AbsDir": 1,
-        "maxAbsDir": 1,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": -1
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 11000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 12000,
         "n": 1,
-        "medianAbsDir": 1,
-        "p90AbsDir": 1,
-        "maxAbsDir": 1,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 1,
+          "medianAbs": 1,
+          "p90Abs": 1,
+          "minAbs": 1,
+          "maxAbs": 1,
+          "mean": -1
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       },
       {
         "ft": 13000,
         "n": 1,
-        "medianAbsDir": 0,
-        "p90AbsDir": 0,
-        "maxAbsDir": 0,
-        "medianAbsSpd": 0,
-        "p90AbsSpd": 0,
-        "maxAbsSpd": 0
+        "dir": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        },
+        "spd": {
+          "n": 1,
+          "meanAbs": 0,
+          "medianAbs": 0,
+          "p90Abs": 0,
+          "minAbs": 0,
+          "maxAbs": 0,
+          "mean": 0
+        }
       }
     ],
     "runsWithRowOver10Deg": 0,
@@ -175,52 +343,62 @@
       {
         "name": "temperature °F",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "dew point °F",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "humidity % (derived)",
         "n": 1,
-        "agree": 0
+        "agree": 0,
+        "spread": null
       },
       {
         "name": "visibility mi",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "pressure inHg",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "wind mph",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "wind dir °",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "clouds",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "ceiling ft (theirs implied)",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       },
       {
         "name": "flight rule",
         "n": 1,
-        "agree": 1
+        "agree": 1,
+        "spread": null
       }
     ]
   }
