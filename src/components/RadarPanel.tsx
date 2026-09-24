@@ -15,7 +15,7 @@ export function RadarPanel(): JSX.Element {
   const loop = `https://radar.weather.gov/ridge/standard/${r.id}_loop.gif`;
 
   return (
-    <Panel title="Radar" subtitle={`${r.id} · ~${miles} mi ${bearing}`} sources={[DATA_SOURCES.radar]}>
+    <Panel className="panel-secondary" title="Radar" subtitle={`${r.id} · ~${miles} mi ${bearing}`} sources={[DATA_SOURCES.radar]}>
       <p className="muted small">
         {r.name} ({r.id}) WSR-88D — covers the drop zone (~{miles} mi {bearing}).
       </p>

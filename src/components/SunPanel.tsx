@@ -20,6 +20,7 @@ export function SunPanel({ sun }: { sun: SunTimes | null }): JSX.Element {
   const minsToSunset = sun ? Math.round((sun.sunset - now) / 60000) : null;
   return (
     <Panel
+      className="panel-secondary"
       title="Daylight"
       subtitle="sunrise, sunset, time remaining"
       sources={[DATA_SOURCES.computed]}

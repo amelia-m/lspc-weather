@@ -41,3 +41,17 @@ describe('cards that go through Panel', () => {
     expect(html).not.toMatch(/<span class="panel-sub"><button/);
   });
 });
+
+describe('MasonryGrid without a layout engine', () => {
+  it('renders the plain grid, leaving the packing to the browser', async () => {
+    // Vitest runs in node: no ResizeObserver, no layout. The static render
+    // must be the aligned grid the stylesheet falls back to, with the cards
+    // in DOM order and no masonry class, so a test render never depends on
+    // measurements it cannot make.
+    const { MasonryGrid } = await import('../src/components/common/MasonryGrid');
+    const html = renderToStaticMarkup(
+      createElement(MasonryGrid, null, createElement('section', { className: 'panel' }, 'a'), createElement('section', { className: 'panel' }, 'b')),
+    );
+    expect(html).toBe('<div class="grid"><section class="panel">a</section><section class="panel">b</section></div>');
+  });
+});

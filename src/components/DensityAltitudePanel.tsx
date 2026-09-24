@@ -11,6 +11,7 @@ export function DensityAltitudePanel({
 }): JSX.Element {
   return (
     <Panel
+      className="panel-secondary"
       title="Density altitude"
       subtitle="C-182 climb performance"
       sources={[DATA_SOURCES.nwsObservation]}
