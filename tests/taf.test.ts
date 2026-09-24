@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseTaf } from '../src/domain/normalize';
-import { decodeTaf, prevailingFor, resolveTafTime, type DecodedTaf } from '../src/domain/taf';
+import { decodeTaf, periodFlightCategory, prevailingFor, resolveTafTime, type DecodedTaf } from '../src/domain/taf';
 import { KLNK_2026_09_23_1120, KOMA_2026_09_24_0521 } from './support/tafProducts';
 
 const utc = (m: number, d: number, h: number, min = 0): number => Date.UTC(2026, m - 1, d, h, min);
@@ -127,8 +127,70 @@ describe('decodeTaf on the change groups NWS offices rarely write here', () => {
     expect(d.undecoded).toEqual(['TX25/0318Z', 'TN12/0309Z']);
   });
 
-  it('keeps the base period running to the validity end when no FM group follows', () => {
-    expect(d.periods[0].toMs).toBe(utc(10, 4, 0));
+  it('ends the base period where the BECMG window starts, as a FM group would', () => {
+    expect(d.periods[0].toMs).toBe(utc(10, 3, 6));
+  });
+
+  it('keeps the base period running to the validity end when no FM or BECMG follows', () => {
+    const only = decodeTaf('KOMA 022000Z 0220/0324 15011KT P6SM SCT020 TEMPO 0220/0222 BKN020', utc(10, 2, 20))!;
+    expect(only.periods[0].toMs).toBe(utc(10, 4, 0));
+  });
+});
+
+describe('decodeTaf on the KOFF TAF aviationweather.gov served on 2026-09-24', () => {
+  // USAF format: metre visibilities, QNH groups, and a BECMG for every
+  // change. Read from the sky-parity run of that morning; aviationweather's
+  // own decode of it agreed with this one on every period once the base
+  // period ended at the first BECMG.
+  const raw =
+    'TAF KOFF 240200Z 2402/2508 12006KT 9999 SCT100 BKN200 QNH3025INS BECMG 2409/2410 14006KT 9999 VCSH BKN080 OVC180 QNH3025INS BECMG 2415/2416 16009KT 9000 -RA OVC060 QNH3021INS BECMG 2421/2422 13006KT 6000 -RA OVC025 QNH3016INS BECMG 2501/2502 13006KT 4800 -RA BR OVC010 QNH3019INS BECMG 2505/2506 13006KT 4800 -RA BR OVC007 QNH3018INS TX19/2420Z TN15/2411Z';
+  const d = decodeTaf(raw, utc(9, 24, 2))!;
+
+  it('decodes six periods, the base ending at the first BECMG window', () => {
+    expect(d.periods.map((p) => p.change)).toEqual(['BASE', 'BECMG', 'BECMG', 'BECMG', 'BECMG', 'BECMG']);
+    expect(d.periods[0].toMs).toBe(utc(9, 24, 9));
+    expect(d.periods[1].fromMs).toBe(utc(9, 24, 9));
+    expect(d.periods[1].toMs).toBe(utc(9, 24, 10));
+  });
+
+  it('converts metre visibilities and leaves the QNH and temperature groups undecoded', () => {
+    expect(d.periods[2].visibilitySm).toBe(5.59); // 9000 m
+    expect(d.periods[4].visibilitySm).toBe(2.98); // 4800 m
+    expect(d.periods[1].wxString).toBe('VCSH');
+    expect(d.undecoded).toEqual([
+      'QNH3025INS',
+      'QNH3025INS',
+      'QNH3021INS',
+      'QNH3016INS',
+      'QNH3019INS',
+      'QNH3018INS',
+      'TX19/2420Z',
+      'TN15/2411Z',
+    ]);
+  });
+});
+
+describe('periodFlightCategory', () => {
+  it('reads a TEMPO after a BECMG against the BECMG conditions, not the base ones', () => {
+    // Base: 9999 (6+ SM). BECMG: 4800 m, 2.98 SM. The TEMPO states only a
+    // 2,000 ft ceiling: MVFR on the base visibility, IFR on the BECMG's.
+    const d = decodeTaf(
+      'KOFF 240200Z 2402/2508 12006KT 9999 SCT100 BECMG 2409/2410 4800 -RA BR OVC010 TEMPO 2412/2414 BKN020',
+      utc(9, 24, 2),
+    )!;
+    expect(d.periods[2].change).toBe('TEMPO');
+    expect(periodFlightCategory(d.periods, 2)).toBe('IFR');
+    expect(periodFlightCategory(d.periods, 1)).toBe('IFR'); // the BECMG row itself
+    expect(periodFlightCategory(d.periods, 0)).toBe('VFR');
+  });
+
+  it('lets an NSW on a BECMG clear the weather for the rows after it', () => {
+    const d = decodeTaf(
+      'KOFF 240200Z 2402/2508 12006KT 4800 -RA OVC010 BECMG 2409/2410 P6SM NSW SCT050 TEMPO 2412/2414 BKN030',
+      utc(9, 24, 2),
+    )!;
+    expect(prevailingFor(d.periods, 2)?.wxString).toBeNull();
+    expect(periodFlightCategory(d.periods, 2)).toBe('MVFR');
   });
 });
 
