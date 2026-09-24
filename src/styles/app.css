@@ -592,6 +592,47 @@ a {
   margin-top: 8px;
 }
 
+/* Decoded TAF periods. Eight columns never fit a phone, so the table scrolls
+   inside the card instead of widening the page (a page-wide horizontal scroll
+   is a defect this app has had). */
+.taf-scroll {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+.taf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.taf-table th,
+.taf-table td {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: top;
+}
+.taf-table th {
+  color: var(--muted);
+  font-weight: 500;
+  white-space: normal;
+}
+.taf-table td.taf-wrap {
+  white-space: normal;
+  min-width: 6.5em;
+}
+.taf-layer {
+  display: block;
+  white-space: nowrap;
+}
+/* Seven columns do not fit one grid cell; span two where the grid has them,
+   as the 10-day table does. */
+@media (min-width: 640px) {
+  .grid .panel:has(.taf-table) {
+    grid-column: span 2;
+  }
+}
+
 /* Flight category (standard aviation colors) */
 .fc-pill {
   display: inline-block;

@@ -1,8 +1,9 @@
 name: Sky decode parity
 
-# Daily, and on demand: compare the app's own METAR sky parse against
-# aviationweather.gov's decoder on today's report, and print what
-# api.weather.gov and usairnet said. Opens (or updates) one issue on failure.
+# Daily, and on demand: compare the app's own METAR sky parse, flight
+# category and TAF group decode against aviationweather.gov's decoder on
+# today's reports, and print what api.weather.gov and usairnet said. Opens
+# (or updates) one issue on failure.
 # Not part of CI: it needs the network, and the PR suite stays hermetic.
 on:
   schedule:
@@ -43,8 +44,10 @@ jobs:
           path: parity-${{ github.run_id }}.jsonl
           retention-days: 14
           if-no-files-found: ignore
+      # A run dispatched on a branch is a trial of that branch's checks and
+      # must not open an issue against main.
       - name: Open or update the parity issue
-        if: failure()
+        if: failure() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

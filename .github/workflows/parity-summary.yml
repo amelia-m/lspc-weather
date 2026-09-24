@@ -11,7 +11,11 @@ name: Parity summary
 # nothing here grades a source.
 on:
   schedule:
-    - cron: '40 12 * * *' # 07:40 CDT, after the morning sky-parity run
+    # Every three hours while the high-frequency logging runs, so the #parity
+    # page is at most a few hours behind the comparisons; 12:40 UTC is after
+    # the morning sky-parity run. Drop back to once a day with the temporary
+    # workflow.
+    - cron: '40 0,3,6,9,12,15,18,21 * * *'
   workflow_dispatch:
 
 permissions:

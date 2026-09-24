@@ -25,10 +25,12 @@ import {
   normalizeNwsObservation,
   parseSkyGroups,
   parseTaf,
+  toSkyCover,
   type RawMetar,
   type RawNwsObservation,
 } from '../src/domain/normalize';
 import { observedFlightCategory } from '../src/domain/flightCategory';
+import { decodeTaf, type TafPeriod } from '../src/domain/taf';
 import type { SkyLayer } from '../src/domain/types';
 
 const station = SITE.metarStation.id;
@@ -58,6 +60,78 @@ const showSky = (layers: SkyLayer[]): string =>
     ? '(none)'
     : layers.map((l) => (l.baseFtAgl == null ? l.cover : `${l.cover}${l.baseFtAgl / 100}`)).join(' ');
 
+/** The parts of aviationweather.gov's TAF JSON the comparison reads. Field
+ *  names as the API served them on 2026-09-24; `visib` is a number or the
+ *  string "6+", `wdir` a number or "VRB". */
+interface AwcFcst {
+  timeFrom?: number;
+  timeTo?: number;
+  timeBec?: number | null;
+  fcstChange?: string | null;
+  probability?: number | null;
+  wdir?: number | string | null;
+  wspd?: number | null;
+  wgst?: number | null;
+  visib?: number | string | null;
+  wxString?: string | null;
+  clouds?: Array<{ cover?: string; base?: number | null; type?: string | null }>;
+}
+interface AwcTaf {
+  icaoId: string;
+  rawTAF?: string;
+  issueTime?: string;
+  fcsts?: AwcFcst[];
+}
+
+/** Differences between one decoded period and aviationweather's, as lines;
+ *  empty when they agree. */
+function comparePeriod(p: TafPeriod, f: AwcFcst): string[] {
+  const out: string[] = [];
+  const theirChange = f.fcstChange ?? (f.probability != null ? 'PROB' : 'BASE');
+  if (p.change !== theirChange && !(p.change === 'PROB' && f.probability != null)) {
+    out.push(`change ${p.change} vs ${theirChange}`);
+  }
+  if (p.fromMs != null && f.timeFrom != null && p.fromMs / 1000 !== f.timeFrom) {
+    out.push(`from ${new Date(p.fromMs).toISOString()} vs ${new Date(f.timeFrom * 1000).toISOString()}`);
+  }
+  // A BECMG's window end is their timeBec; its timeTo runs on to the next
+  // change, which the app does not model.
+  const theirTo = p.change === 'BECMG' ? (f.timeBec ?? f.timeTo) : f.timeTo;
+  if (p.toMs != null && theirTo != null && p.toMs / 1000 !== theirTo) {
+    out.push(`to ${new Date(p.toMs).toISOString()} vs ${new Date(theirTo * 1000).toISOString()}`);
+  }
+  if (p.wind) {
+    if (p.wind.speedKt !== (f.wspd ?? null)) out.push(`wind speed ${p.wind.speedKt} vs ${f.wspd}`);
+    if ((p.wind.gustKt ?? null) !== (f.wgst ?? null)) out.push(`gust ${p.wind.gustKt} vs ${f.wgst}`);
+    const ourDir = p.wind.variable ? 'VRB' : p.wind.speedKt === 0 ? 0 : p.wind.directionDeg;
+    if (ourDir !== (f.wdir ?? null)) out.push(`wind dir ${ourDir} vs ${f.wdir}`);
+  } else if (f.wspd != null) {
+    out.push(`wind not stated by app, theirs ${f.wdir}/${f.wspd}`);
+  }
+  if (p.visibilitySm != null) {
+    const ourVis = p.visibilityPlus ? '6+' : p.visibilitySm;
+    const theirVis = typeof f.visib === 'string' && /^\d+(\.\d+)?$/.test(f.visib) ? Number(f.visib) : f.visib;
+    const same =
+      typeof ourVis === 'number' && typeof theirVis === 'number'
+        ? Math.abs(ourVis - theirVis) < 0.01
+        : ourVis === theirVis;
+    if (!same) out.push(`visibility ${ourVis} vs ${f.visib}`);
+  } else if (f.visib != null) {
+    out.push(`visibility not stated by app, theirs ${f.visib}`);
+  }
+  const ourWx = p.wxString ?? null;
+  const theirWx = f.wxString?.replace(/\s+/g, ' ').trim() || null;
+  if (ourWx !== theirWx) out.push(`weather ${ourWx} vs ${theirWx}`);
+  const ourClouds = cloudsOnly(p.skyLayers ?? []).map((l) => `${l.cover}${l.baseFtAgl ?? ''}`);
+  const theirClouds = (f.clouds ?? [])
+    .filter((c) => c.cover && !NO_CLOUD.has(c.cover))
+    .map((c) => `${c.cover}${c.base ?? ''}`);
+  if (ourClouds.join(' ') !== theirClouds.join(' ')) {
+    out.push(`clouds ${ourClouds.join(' ') || '(none)'} vs ${theirClouds.join(' ') || '(none)'}`);
+  }
+  return out;
+}
+
 describe(`sky decode parity for ${station}`, () => {
   it('parses the METAR text the way aviationweather.gov decodes it', async () => {
     const res = await get(
@@ -68,7 +142,13 @@ describe(`sky decode parity for ${station}`, () => {
     expect(awc?.rawOb, 'aviationweather.gov returned no METAR').toBeTruthy();
 
     const ours = parseSkyGroups(awc.rawOb);
-    const theirs = normalizeMetar(awc).skyLayers;
+    // Straight from the response: normalizeMetar now reads the text first,
+    // so its layers would be this same parse and the comparison would pass
+    // against itself.
+    const theirs: SkyLayer[] = (awc.clouds ?? []).map((c) => ({
+      cover: toSkyCover(c.cover),
+      baseFtAgl: c.base ?? null,
+    }));
     say(`[awc]  ${awc.rawOb}`);
     say(`[awc]  app parse: ${showSky(ours)} · aviationweather decode: ${showSky(theirs)}`);
     // aviationweather represents a clear sky as no `clouds` entries at all
@@ -142,7 +222,10 @@ describe(`sky decode parity for ${station}`, () => {
         return;
       }
       const theirs = awc.find((x) => x.icaoId === shown!.station);
-      const squash = (x: string): string => x.replace(/\s+/g, ' ').trim();
+      // aviationweather's rawTAF starts with the "TAF " token the NWS product
+      // carries on its own line, which parseTaf leaves out of the body; the
+      // 2026-09-24 run read "same text: NO" on identical forecasts for it.
+      const squash = (x: string): string => x.replace(/\s+/g, ' ').replace(/^TAF /, '').trim();
       const same = theirs?.rawTAF != null && squash(theirs.rawTAF) === squash(shown.raw);
       say(`[taf]  card shows ${shown.station}, issued ${shown.issuedMs != null ? new Date(shown.issuedMs).toISOString() : '?'}`);
       say(`[taf]  aviationweather has ${theirs ? `${theirs.icaoId}, issued ${theirs.issueTime ?? '?'}` : 'no TAF for that station'}`);
@@ -154,6 +237,52 @@ describe(`sky decode parity for ${station}`, () => {
     } catch (err) {
       say(`[taf]  not compared: ${err instanceof Error ? err.message : String(err)}`);
     }
+  });
+
+  it('decodes each TAF period the way aviationweather.gov decodes it', async () => {
+    // The card's decoded table comes from decodeTaf. This runs that decoder
+    // on aviationweather's own TAF text and compares, period by period,
+    // with the decode aviationweather returns beside it (`fcsts`): the
+    // same text through two parsers, so a feed lag on the NWS side cannot
+    // make them differ. Every station in the chain that has a TAF is
+    // checked. Any difference in change type, times, wind, visibility,
+    // weather or cloud layers fails the run, the way the sky parse does.
+    const ids = SITE.tafStations.map((t) => t.id).join(',');
+    const res = await get(
+      `https://aviationweather.gov/api/data/taf?ids=${ids}&format=json`,
+      'application/json',
+    );
+    const tafs = (await res.json()) as AwcTaf[];
+    expect(tafs.length, 'aviationweather.gov returned no TAF for the chain').toBeGreaterThan(0);
+    const problems: string[] = [];
+    for (const t of tafs) {
+      if (!t.rawTAF) continue;
+      const issuedMs = t.issueTime ? Date.parse(t.issueTime) : NaN;
+      const ours = decodeTaf(t.rawTAF, Number.isNaN(issuedMs) ? null : issuedMs);
+      const theirs = t.fcsts ?? [];
+      say(`[taf]  ${t.icaoId}: ${t.rawTAF.replace(/\s+/g, ' ')}`);
+      if (!ours) {
+        problems.push(`${t.icaoId}: decodeTaf returned null`);
+        continue;
+      }
+      if (theirs.length === 0) {
+        problems.push(`${t.icaoId}: aviationweather returned no fcsts (shape changed?)`);
+        continue;
+      }
+      say(`[taf]  ${t.icaoId}: app ${ours.periods.length} periods · aviationweather ${theirs.length}`);
+      if (ours.periods.length !== theirs.length) {
+        problems.push(
+          `${t.icaoId}: ${ours.periods.length} periods vs ${theirs.length} (theirs: ${theirs.map((f) => f.fcstChange ?? 'BASE').join(' ')})`,
+        );
+        continue;
+      }
+      ours.periods.forEach((p, i) => {
+        for (const d of comparePeriod(p, theirs[i])) problems.push(`${t.icaoId} period ${i} (${p.raw}): ${d}`);
+      });
+    }
+    for (const line of problems) say(`[taf]  DIFF ${line}`);
+    if (problems.length > 0) say(`[taf]  first fcst as served: ${JSON.stringify(tafs[0]?.fcsts?.[0])}`);
+    expect(problems).toEqual([]);
   });
 
   it('reports how api.weather.gov decoded the same station (informational, never fails)', async () => {
