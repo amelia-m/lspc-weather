@@ -148,31 +148,34 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
       </p>
       <SpreadTable title="Direction" unit="°" rows={w.byAltitude.map((r) => [r.ft, r.dir])} />
       <SpreadTable title="Speed" unit=" kt" rows={w.byAltitude.map((r) => [r.ft, r.spd])} />
-      <dl className="kv">
-        <dt>Runs with any row over 10° apart</dt>
-        <dd>
-          {w.runsWithRowOver10Deg} of {w.aligned} ({pct(w.runsWithRowOver10Deg, w.aligned)})
-        </dd>
-        <dt>Runs with any row over 3 kt apart</dt>
-        <dd>
-          {w.runsWithRowOver3Kt} of {w.aligned} ({pct(w.runsWithRowOver3Kt, w.aligned)})
-        </dd>
-        <dt>Raw profiles disagreed (a newer forecast on one side)</dt>
-        <dd>
-          {w.rawMismatch.mismatched} of {w.rawMismatch.judged} ({pct(w.rawMismatch.mismatched, w.rawMismatch.judged)})
-        </dd>
-        <dt>Pages showed different hours at that minute</dt>
-        <dd>
-          {w.unaligned.hoursDiffered} of {w.unaligned.runs} ({pct(w.unaligned.hoursDiffered, w.unaligned.runs)}); when
-          they did, the largest row difference was {deg(w.unaligned.medianMaxDirWhenDiffer)} median,{' '}
-          {deg(w.unaligned.p90MaxDirWhenDiffer)} at the 90th percentile
-        </dd>
-        <dt>Ground row, median</dt>
-        <dd>
-          this dashboard {kt(w.ground.medianOurKt)}, Schulze&rsquo;s {kt(w.ground.medianTheirKt)}
-          {w.ground.medianRatio != null && ` (ratio ${w.ground.medianRatio})`}, over {w.ground.n} runs
-        </dd>
-      </dl>
+      {/* Sentences, not a key-value grid: the kv layout is for short values
+          beside short labels and wraps a sentence one word per line on a
+          phone. */}
+      <ul className="cite-found">
+        <li>
+          <strong>Runs with any row over 10° apart:</strong> {w.runsWithRowOver10Deg} of {w.aligned} (
+          {pct(w.runsWithRowOver10Deg, w.aligned)}).
+        </li>
+        <li>
+          <strong>Runs with any row over 3 kt apart:</strong> {w.runsWithRowOver3Kt} of {w.aligned} (
+          {pct(w.runsWithRowOver3Kt, w.aligned)}).
+        </li>
+        <li>
+          <strong>Raw profiles disagreed</strong> (a newer forecast on one side):{' '}
+          {w.rawMismatch.mismatched} of {w.rawMismatch.judged} ({pct(w.rawMismatch.mismatched, w.rawMismatch.judged)}).
+        </li>
+        <li>
+          <strong>Pages showed different hours at that minute:</strong> {w.unaligned.hoursDiffered} of{' '}
+          {w.unaligned.runs} ({pct(w.unaligned.hoursDiffered, w.unaligned.runs)}). When they did, the largest
+          row difference was {deg(w.unaligned.medianMaxDirWhenDiffer)} median,{' '}
+          {deg(w.unaligned.p90MaxDirWhenDiffer)} at the 90th percentile.
+        </li>
+        <li>
+          <strong>Ground row, median:</strong> this dashboard {kt(w.ground.medianOurKt)}, Schulze&rsquo;s{' '}
+          {kt(w.ground.medianTheirKt)}
+          {w.ground.medianRatio != null && ` (ratio ${w.ground.medianRatio})`}, over {w.ground.n} runs.
+        </li>
+      </ul>
       <p className="muted small">
         The two pages show different hours in the second half of every hour: this card snaps to the
         nearest hour, Schulze&rsquo;s shows the hour in progress. That row measures what a reader
