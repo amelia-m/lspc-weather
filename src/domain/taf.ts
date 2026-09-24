@@ -330,6 +330,17 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
       if (w) {
         [p.fromMs, p.toMs] = w;
         c.i += 1;
+        // A BECMG ends the prevailing period where its window starts, as a
+        // FM group does: from then on the conditions are in transition, and
+        // after the window the BECMG's elements prevail (see prevailingFor).
+        // aviationweather.gov's decoder draws the same boundary (KOFF,
+        // 2026-09-24, five BECMG groups). A TEMPO or PROB ends nothing.
+        // Only the first BECMG after a prevailing period ends it; a later
+        // one follows a BECMG, whose window is already bounded.
+        if (p.change === 'BECMG' && p.fromMs != null) {
+          const prev = [...periods].reverse().find((q) => q.change !== 'TEMPO' && q.change !== 'PROB');
+          if (prev && (prev.change === 'BASE' || prev.change === 'FM')) prev.toMs = p.fromMs;
+        }
       }
       readElements(c, p, undecoded);
       p.raw = tokens.slice(start, c.i).join(' ');
@@ -341,14 +352,39 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
   return { station, amendment, validFromMs, validToMs, periods, undecoded };
 }
 
-/** The prevailing (BASE or FM) period that a TEMPO, BECMG or PROB row
- *  modifies: the last prevailing row before it. Exposed so the card and the
- *  parity script fill a change row's unstated elements the same way. */
+/**
+ * The conditions prevailing at a row: the last BASE or FM period before it,
+ * with every BECMG between the two laid over it, since a BECMG's stated
+ * elements prevail once its window has passed. An NSW on a BECMG clears
+ * the weather. Returns the period itself when no BECMG intervenes, so a
+ * caller can tell an untouched row from a merged one by identity.
+ */
 export function prevailingFor(periods: TafPeriod[], index: number): TafPeriod | null {
+  const becoming: TafPeriod[] = [];
+  let base: TafPeriod | null = null;
   for (let i = index; i >= 0; i -= 1) {
-    if (periods[i].change === 'BASE' || periods[i].change === 'FM') return periods[i];
+    const p = periods[i];
+    if (p.change === 'BASE' || p.change === 'FM') {
+      base = p;
+      break;
+    }
+    if (p.change === 'BECMG') becoming.unshift(p);
   }
-  return null;
+  if (!base || becoming.length === 0) return base;
+  const merged: TafPeriod = { ...base };
+  for (const b of becoming) {
+    if (b.wind) merged.wind = b.wind;
+    if (b.visibilitySm != null) {
+      merged.visibilitySm = b.visibilitySm;
+      merged.visibilityPlus = b.visibilityPlus;
+    }
+    if (b.wxString != null) merged.wxString = b.wxString === 'NSW' ? null : b.wxString;
+    if (b.skyLayers) {
+      merged.skyLayers = b.skyLayers;
+      merged.ceilingFtAgl = b.ceilingFtAgl;
+    }
+  }
+  return merged;
 }
 
 /**
