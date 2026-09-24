@@ -97,6 +97,26 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     `app valid ${new Date(validMs).toISOString()} (now ${new Date(now).toISOString()});` +
       ` Schulze offsets 0→${m0?.validtime ?? 'unreachable'}Z 1→${m1?.validtime ?? 'unreachable'}Z`,
   );
+  // What a jumper comparing the two right now would see, before any hour
+  // alignment: Schulze's page shows the hour in progress (offset 0) and this
+  // card the nearest hour, so in the second half of every hour the two show
+  // different forecasts. Reported as its own line so the log can say how
+  // large that difference is at this minute, separately from the data
+  // question below.
+  if (m0 != null && Number(m0.validtime) !== appHour) {
+    let worst = 0;
+    for (const l of levels) {
+      const k = String(l.altitudeFtAgl);
+      if (!(k in m0.direction)) continue;
+      worst = Math.max(worst, Math.abs(((l.directionDeg - m0.direction[k] + 540) % 360) - 180));
+    }
+    out.push(
+      `unaligned at this minute: Schulze's page shows ${m0.validtime}Z, this card ${String(appHour).padStart(2, '0')}Z;` +
+        ` largest row difference between those two tables ${worst}°`,
+    );
+  } else if (m0 != null) {
+    out.push(`unaligned at this minute: both show ${m0.validtime}Z`);
+  }
   if (ms == null) {
     say([...out, 'No Schulze table for the same hour; nothing compared.']);
     return;

@@ -1,16 +1,20 @@
 name: Schulze comparison (hourly, temporary)
 
-# Hourly for three days from 2026-09-24, then self-skipping: print this app's
-# winds-aloft profile beside Mark Schulze's at the same valid hour, raw samples
-# included, so the run-boundary case seen on 2026-09-23 (one tool served a
-# newer forecast than the other for the same hour) can be counted rather than
-# argued about. See docs/open-questions.md, "Which forecast run the
+# Every fifteen minutes for three days from 2026-09-24, then self-skipping:
+# print this app's winds-aloft profile beside Mark Schulze's at the same valid
+# hour, raw samples included, so the run-boundary case seen on 2026-09-23 (one
+# tool served a newer forecast than the other for the same hour) can be
+# counted rather than argued about. Four samples an hour, not one, because the
+# minute matters: this app snaps to the nearest hour and Schulze's shows the
+# hour in progress, so the two agree on the hour before :30 and disagree after,
+# and a new model run can land at any minute. GitHub's scheduling jitter adds
+# further spread. See docs/open-questions.md, "Which forecast run the
 # winds-aloft request is served". Never fails: the script is a report.
 #
 # Delete this file, or move the end date, once the question is settled.
 on:
   schedule:
-    - cron: '10 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
