@@ -83,8 +83,11 @@ Checked 2026-09-24 01:28Z, once the sandbox was under the daily limit again:
   lands, one tool can be a few minutes behind another.
 
 To count it rather than argue it, `.github/workflows/schulze-compare.yml` runs
-the comparison hourly from 2026-09-24 until 2026-09-27T02:00Z and then skips
-itself; each run's log carries both raw profiles. Read them under Actions,
+the comparison every fifteen minutes from 2026-09-24 until 2026-09-27T02:00Z
+and then skips itself; each run's log carries both raw profiles, the aligned
+table, and one line on what a jumper comparing the two pages at that minute
+would see (the hours differ after :30, since this app snaps to the nearest
+hour and Schulze's shows the hour in progress). Read them under Actions,
 "Schulze comparison (hourly, temporary)". Delete the workflow, or move its end
 date, once the question is settled — and settle it before the next
 winds-aloft change, since either answer changes card text.
