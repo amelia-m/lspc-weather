@@ -142,11 +142,15 @@ export const DZ_ON_RADAR_IMAGE = radarImageFraction(
 );
 
 /** Jump-run / drift altitudes (ft AGL) shown in the winds-aloft panel —
- *  surface to 13,000 ft in 1,000-ft increments (covers C-182 exit altitudes). */
-export const WINDS_ALOFT_LEVELS_AGL: readonly number[] = Array.from(
-  { length: 14 },
-  (_, i) => i * 1000,
-);
+ *  surface, 500 ft, then 1,000-ft steps to 13,000 ft (covers C-182 exit
+ *  altitudes). The 500 ft row is the landing pattern's altitude, and it is
+ *  bracketed by real samples: here the 975 hPa level sits near 250 ft AGL
+ *  and 950 hPa near 960 ft, so the row is interpolated, not extrapolated. */
+export const WINDS_ALOFT_LEVELS_AGL: readonly number[] = [
+  0,
+  500,
+  ...Array.from({ length: 13 }, (_, i) => (i + 1) * 1000),
+];
 
 /** How far a point lies from the drop zone, and in which direction. */
 export interface DzOffset {

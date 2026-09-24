@@ -38,8 +38,9 @@ freefall drift and **density altitude** for jump-plane climb performance.
   Student, the posted club policy for the LSPC waiver tiers — and is labelled
   with that source. The Licensed profile draws no band and says so: nobody
   publishes a surface-wind limit for licensed jumpers.
-- **Winds aloft** — speed/direction/temperature at surface → 13,000 ft AGL in
-  1,000-ft steps, interpolated from pressure-level model winds, with the
+- **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
+  altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
+  pressure-level model winds, with the
   spot/exit-separation note standing under the table at any wind speed.
 - **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs.
