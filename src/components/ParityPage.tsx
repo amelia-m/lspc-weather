@@ -1,4 +1,4 @@
-import type { AltitudeSpread, ParitySummary } from '../domain/paritySummary';
+import type { ParitySummary, Spread } from '../domain/paritySummary';
 import { Panel } from './common/Panel';
 
 /**
@@ -31,6 +31,8 @@ const fmtDay = (iso: string | null): string =>
 const pct = (part: number, whole: number): string =>
   whole === 0 ? '—' : `${Math.round((100 * part) / whole)}%`;
 
+const num = (n: number | null | undefined): string =>
+  n == null ? '—' : Number.isInteger(n) ? String(n) : n.toFixed(n < 10 ? 2 : 1);
 const deg = (n: number | null): string => (n == null ? '—' : `${Math.round(n)}°`);
 const kt = (n: number | null): string => (n == null ? '—' : `${Math.round(n)} kt`);
 
@@ -90,44 +92,62 @@ export function ParityPage({
   );
 }
 
+/** One quantity per table, six columns, so a phone can read it without the
+ *  eight-column squeeze one combined table would need. Old summaries without a
+ *  spread for a row render dashes rather than failing. */
+function SpreadTable({
+  title,
+  unit,
+  rows,
+}: {
+  title: string;
+  unit: string;
+  rows: [number, Spread | undefined][];
+}): JSX.Element {
+  const v = (x: number | undefined): string => (x == null ? '—' : `${num(x)}${unit}`);
+  return (
+    <div className="sky-scroll">
+      <table className="aloft-table">
+        <thead>
+          <tr>
+            <th>{title}, ft AGL</th>
+            <th>runs</th>
+            <th>avg diff</th>
+            <th>median</th>
+            <th>90th</th>
+            <th>min diff</th>
+            <th>max diff</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([ft, sp]) => (
+            <tr key={ft}>
+              <td>{ft.toLocaleString()}</td>
+              <td>{sp?.n ?? '—'}</td>
+              <td>{v(sp?.meanAbs)}</td>
+              <td>{v(sp?.medianAbs)}</td>
+              <td>{v(sp?.p90Abs)}</td>
+              <td>{v(sp?.minAbs)}</td>
+              <td>{v(sp?.maxAbs)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
   const w = s.schulze;
   return (
     <Panel title="Winds aloft vs Mark Schulze’s" subtitle={`${w.runs} runs, ${w.aligned} with a same-hour table`}>
       <p className="muted small">
-        Same valid hour on both sides, row by row. Median and 90th-percentile absolute
-        differences across runs, and the largest seen. {w.unreadable > 0 && `${w.unreadable} runs could not read one side.`}
+        Same valid hour on both sides, row by row: how far apart the two tables were, as the
+        average, median, 90th-percentile, smallest and largest absolute difference across runs.{' '}
+        {w.unreadable > 0 && `${w.unreadable} runs could not read one side.`}
       </p>
-      <div className="sky-scroll">
-        <table className="aloft-table">
-          <thead>
-            <tr>
-              <th>ft AGL</th>
-              <th>runs</th>
-              <th>dir median</th>
-              <th>dir 90th</th>
-              <th>dir max</th>
-              <th>speed median</th>
-              <th>speed 90th</th>
-              <th>speed max</th>
-            </tr>
-          </thead>
-          <tbody>
-            {w.byAltitude.map((r: AltitudeSpread) => (
-              <tr key={r.ft}>
-                <td>{r.ft.toLocaleString()}</td>
-                <td>{r.n}</td>
-                <td>{deg(r.medianAbsDir)}</td>
-                <td>{deg(r.p90AbsDir)}</td>
-                <td>{deg(r.maxAbsDir)}</td>
-                <td>{kt(r.medianAbsSpd)}</td>
-                <td>{kt(r.p90AbsSpd)}</td>
-                <td>{kt(r.maxAbsSpd)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <SpreadTable title="Direction" unit="°" rows={w.byAltitude.map((r) => [r.ft, r.dir])} />
+      <SpreadTable title="Speed" unit=" kt" rows={w.byAltitude.map((r) => [r.ft, r.spd])} />
       <dl className="kv">
         <dt>Runs with any row over 10° apart</dt>
         <dd>
@@ -180,6 +200,9 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
               <th>runs</th>
               <th>agreed</th>
               <th>share</th>
+              <th>avg diff</th>
+              <th>min diff</th>
+              <th>max diff</th>
             </tr>
           </thead>
           <tbody>
@@ -189,11 +212,18 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
                 <td>{f.n}</td>
                 <td>{f.agree}</td>
                 <td>{pct(f.agree, f.n)}</td>
+                <td>{f.spread ? num(f.spread.meanAbs) : '—'}</td>
+                <td>{f.spread ? num(f.spread.minAbs) : '—'}</td>
+                <td>{f.spread ? num(f.spread.maxAbs) : '—'}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <p className="muted small">
+        Differences are absolute, in each field&rsquo;s own unit, over the runs that recorded a
+        numeric gap; text fields (clouds, flight rule) only agree or differ.
+      </p>
       <p className="muted small">
         A one-degree gap in temperature or dew point is the METAR body&rsquo;s whole degrees
         against the remarks&rsquo; tenths, which this dashboard reads.

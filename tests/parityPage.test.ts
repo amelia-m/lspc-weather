@@ -13,7 +13,7 @@ const records: ParityRecord[] = [
     rawMismatch: true,
     ground: { ourKt: 6, theirKt: 12 },
   },
-  { kind: 'usairnet', at: '2026-09-24T01:00:05Z', sameReport: true, fields: [{ name: 'clouds', same: true }] },
+  { kind: 'usairnet', at: '2026-09-24T01:00:05Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -1 }] },
 ];
 const summary = summarizeParity(records, Date.parse('2026-09-25T12:00:00Z'));
 const render = (state: 'loading' | 'missing' | 'error' | 'ready', s = summary) =>
@@ -25,7 +25,14 @@ describe('ParityPage', () => {
     expect(html).toContain('How different from other sources');
     // altitude rows in ascending order, with the 90th-percentile column present
     expect(html.indexOf('<td>1,000</td>')).toBeLessThan(html.indexOf('<td>9,000</td>'));
-    expect(html).toContain('dir 90th');
+    // direction and speed each get a table with the average, smallest and
+    // largest gap beside the median and 90th percentile
+    expect(html).toContain('Direction, ft AGL');
+    expect(html).toContain('Speed, ft AGL');
+    expect((html.match(/<th>avg diff<\/th>/g) ?? []).length).toBe(3); // two winds tables + usairnet
+    expect((html.match(/<th>min diff<\/th>/g) ?? []).length).toBe(3);
+    expect((html.match(/<th>max diff<\/th>/g) ?? []).length).toBe(3);
+    expect(html).toContain('<td>12°</td>'); // 9,000 ft direction: one run, so avg = min = max
     expect(html).toContain('1 of 1 (100%)'); // any row over 10°
     expect(html).toContain('Raw profiles disagreed');
     expect(html).toContain('ratio 2');

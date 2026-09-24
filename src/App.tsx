@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { METAR_STATION_OFFSET, SITE } from './config/site';
+import { METAR_STATION_OFFSET, REPO_URL, SITE } from './config/site';
 import {
   resolveThresholds,
   profileLabel,
@@ -355,6 +355,11 @@ export default function App(): JSX.Element {
         <br />
         <a href="#parity">How different from other sources</a> — the winds table against Mark
         Schulze&rsquo;s and the observation against usairnet&rsquo;s, from the comparison logs.
+        <br />
+        <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+          Source on GitHub
+        </a>{' '}
+        — the code, the citations&rsquo; readings, and the open questions.
       </footer>
     </div>
   );

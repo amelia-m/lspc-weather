@@ -38,9 +38,14 @@ describe('summarizeParity', () => {
     const s = summarizeParity(records, NOW);
     const row = s.schulze.byAltitude.find((r) => r.ft === 9000)!;
     expect(row.n).toBe(10);
-    expect(row.medianAbsDir).toBe(2);
-    expect(row.p90AbsDir).toBe(2);
-    expect(row.maxAbsDir).toBe(40);
+    expect(row.dir.medianAbs).toBe(2);
+    expect(row.dir.p90Abs).toBe(2);
+    expect(row.dir.maxAbs).toBe(40);
+    expect(row.dir.minAbs).toBe(2);
+    expect(row.dir.meanAbs).toBe(5.8);
+    // the signed mean keeps the direction of the gap: every run had the
+    // dashboard reading the higher direction
+    expect(row.dir.mean).toBe(5.8);
     expect(s.schulze.runsWithRowOver10Deg).toBe(1);
     expect(s.schulze.runsWithRowOver3Kt).toBe(0);
   });
@@ -70,22 +75,32 @@ describe('summarizeParity', () => {
     expect(s.schulze.unreadable).toBe(1);
     expect(s.schulze.aligned).toBe(1);
     expect(s.schulze.byAltitude[0].n).toBe(1);
+    expect(s.schulze.byAltitude[0].dir.meanAbs).toBe(3);
   });
 
   it('tallies usairnet agreement per field and how often both sides showed the same report', () => {
     const records: ParityRecord[] = [
-      { kind: 'usairnet', at: '2026-09-24T01:00:00Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false }] },
-      { kind: 'usairnet', at: '2026-09-24T01:15:00Z', sameReport: false, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: true }] },
+      { kind: 'usairnet', at: '2026-09-24T01:00:00Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -1 }] },
+      { kind: 'usairnet', at: '2026-09-24T01:15:00Z', sameReport: false, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: true, delta: 0 }] },
+      { kind: 'usairnet', at: '2026-09-24T01:45:00Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -3 }] },
       { kind: 'usairnet', at: '2026-09-24T01:30:00Z', error: 'HTTP 503' },
     ];
     const s = summarizeParity(records, NOW);
     expect(s.usairnet).toEqual({
-      runs: 3,
+      runs: 4,
       unreadable: 1,
-      sameReport: 1,
+      sameReport: 2,
       fields: [
-        { name: 'clouds', n: 2, agree: 2 },
-        { name: 'dew point °F', n: 2, agree: 1 },
+        // a text field has agreement but no gap
+        { name: 'clouds', n: 3, agree: 3, spread: null },
+        // gaps -1, 0, -3: average 1.33 apart, from 0 to 3, and the sign says
+        // the dashboard read lower every time it differed
+        {
+          name: 'dew point °F',
+          n: 3,
+          agree: 1,
+          spread: { n: 3, meanAbs: 1.33, medianAbs: 1, p90Abs: 3, minAbs: 0, maxAbs: 3, mean: -1.33 },
+        },
       ],
     });
   });

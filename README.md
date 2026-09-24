@@ -171,9 +171,11 @@ A second page, **How different from other sources** (`#parity`), shows what
 the scheduled comparison logs add up to: the winds-aloft table against Mark
 Schulze's Winds Aloft at the same valid hour, row by row, and the dashboard's
 decode of the latest KPMV observation against usairnet's, field by field. It
-reports counts and spreads across runs — medians, 90th percentiles, how often
-any row was more than 10° apart, how often the two pages showed different
-hours — and never a grade. A daily workflow writes its data from the logs.
+reports counts and spreads across runs — average, median, 90th percentile,
+smallest and largest gap; how often any row was more than 10° apart; how often
+the two pages showed different hours — and never a grade. A daily workflow
+writes its data from the logs. The pipeline and how to read the page are in
+[`docs/source-parity.md`](docs/source-parity.md).
 
 Every USPA, CFR and FAA citation here began as an AI recollection; the club's
 posted wind-limit tiers did not — they are a transcription of an undated photo
