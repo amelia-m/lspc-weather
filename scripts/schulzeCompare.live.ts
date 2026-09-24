@@ -102,6 +102,15 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     return;
   }
 
+  // Both raw profiles, so a run-boundary case — one tool served a newer
+  // forecast than the other for the same hour — is visible as the raw
+  // samples disagreeing, not just the interpolated rows.
+  out.push(
+    'app raw samples (ft AGL: dir/kt): ' +
+      samples
+        .map((x) => `${Math.round(x.heightFtMsl - dz.elevationFt)}: ${x.directionDeg}/${x.speedKt}`)
+        .join('  '),
+  );
   out.push(
     'Schulze raw levels (ft AGL: dir/kt): ' +
       ms.altFtRaw
