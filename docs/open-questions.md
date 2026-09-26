@@ -82,18 +82,19 @@ Checked 2026-09-24 01:28Z, once the sandbox was under the daily limit again:
   above. If it holds, the remedy is a sentence on the card: after a new run
   lands, one tool can be a few minutes behind another.
 
-To count it rather than argue it, `.github/workflows/schulze-compare.yml` runs
-the comparison every fifteen minutes from 2026-09-24 until 2026-09-27T02:00Z
-and then skips itself; each run's log carries both raw profiles, the aligned
-table, and one line on what a jumper comparing the two pages at that minute
-would see (the hours differ after :30, since this app snaps to the nearest
-hour and Schulze's shows the hour in progress). From 2026-09-24 it also runs
-four ninety-minute bursts a day at five-minute spacing, each starting at a
-different minute past the hour, until 2026-09-28T02:00Z. Every run's
-machine-readable line is combined daily into the #parity page, "How different
-from other sources" (`docs/source-parity.md`), which is where to read the
-answer once the window closes. Read them under Actions,
-"Schulze comparison (hourly, temporary)". Delete the workflow, or move its end
+To count it rather than argue it, `.github/workflows/schulze-compare.yml`
+samples the comparison until 2026-09-28T02:00Z and then skips itself; each
+sample's log carries both raw profiles, the aligned table, and every row of
+what a jumper comparing the two pages at that minute would see (the hours
+differ after :30, since this app snaps to the nearest hour and Schulze's
+shows the hour in progress). From 2026-09-24 to 26 it was a cron line every
+fifteen minutes plus five-minute bursts, which GitHub ran under ten percent of
+the time; from 2026-09-26 it is one job started four times a day that samples
+every five minutes for five hours (`scripts/sampleLoop.sh`). Every sample's
+machine-readable line is combined into the #parity page, "How different from
+other sources" (`docs/source-parity.md`), whose "Time the tables represent"
+table is where to read the answer once the window closes. Read the raw logs
+under Actions, "Live comparisons (temporary)". Delete the workflow, or move its end
 date, once the question is settled — and settle it before the next
 winds-aloft change, since either answer changes card text.
 

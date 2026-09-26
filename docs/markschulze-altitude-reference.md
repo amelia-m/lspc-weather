@@ -145,6 +145,41 @@ Its `hourOffset` parameter and its "Forecast valid now / valid in about N
 minutes" line are the equivalent of this app's valid-time note. When the two
 tables differ, compare those before concluding the winds differ.
 
+## How far apart the tables are, by the time they represent
+
+The valid hour is the largest cause of a difference by far. Measured once, on
+2026-09-26 at 16:19Z: this app's own request and interpolation for each of the
+next 32 hours, against Schulze's endpoint at `hourOffset` 0 to 31 fetched the
+same minute, every app hour paired with every Schulze hour and grouped by how
+many hours apart the two valid times were. Rows from 1,000 to 13,000 ft,
+absolute differences:
+
+| hours apart | pairs | dir avg | dir 90th | dir max | speed avg | speed 90th | speed max |
+|---|---|---|---|---|---|---|---|
+| 0 | 416 | 0.5° | 1° | 7° | 0.0 kt | 0 kt | 1 kt |
+| 1 | 806 | 9.6° | 24° | 175° | 1.2 kt | 3 kt | 5 kt |
+| 2 | 780 | 18° | 48° | 169° | 2.0 kt | 5 kt | 9 kt |
+| 3 | 754 | 26° | 69° | 179° | 2.8 kt | 6 kt | 10 kt |
+| 6 | 676 | 47° | 143° | 180° | 4.4 kt | 9 kt | 18 kt |
+| 12 | 520 | 85° | 157° | 180° | 6.8 kt | 14 kt | 18 kt |
+| 24 | 208 | 143° | 175° | 180° | 9.4 kt | 18 kt | 25 kt |
+
+At the same hour the two tools agree to a degree; each hour between the valid
+times adds roughly as much as the forecast itself changes in an hour. The
+large direction maxima are light winds, where a few knots of change swings
+the arrow: of the one-hour pairs where both speeds were 10 kt or more, the
+largest direction difference was 21° and the 90th percentile 9°, against 175°
+and 24° over all pairs. One day's weather, a front coming through, so treat
+the figures as the shape of the effect rather than a constant.
+
+The two pages are one hour apart in the second half of every hour (this card
+snaps to the nearest hour, Schulze's shows the hour in progress), and on
+13 percent of same-hour samples between 2026-09-24 and 26 one side was on a
+newer model run than the other (5 of 38). The #parity page tracks both from
+the live samples, in its "Time the tables represent" table. To repeat the
+measurement above, fetch the two for a run of hours and pair them; the
+endpoint serves `hourOffset` up to at least 47.
+
 ## Re-checking this
 
 ```

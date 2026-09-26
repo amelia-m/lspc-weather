@@ -4,7 +4,9 @@ import {
   parseParityLines,
   percentile,
   summarizeParity,
+  timeGapGroups,
   type ParityRecord,
+  type SchulzeRecord,
 } from '../src/domain/paritySummary';
 
 const NOW = Date.parse('2026-09-25T12:00:00Z');
@@ -138,5 +140,59 @@ describe('median and percentile', () => {
     expect(percentile([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 0.9)).toBe(9);
     expect(percentile([7], 0.9)).toBe(7);
     expect(percentile([], 0.9)).toBeNull();
+  });
+});
+
+describe('timeGapGroups', () => {
+  const row = (ft: number, dDir: number, dSpd = 0) => ({ ft, dDir, dSpd, dT: 0 });
+  const recs: SchulzeRecord[] = [
+    // Same hour, raw profiles agreed: the tools' own arithmetic.
+    { kind: 'schulze', at: '2026-09-26T16:10:00Z', gapHours: 0, rawMismatch: false, aligned: { rows: [row(0, 30, 5), row(1000, 1), row(5000, -2, 1)] } },
+    // Same hour, one side on a newer run.
+    { kind: 'schulze', at: '2026-09-26T17:10:00Z', gapHours: 0, rawMismatch: true, aligned: { rows: [row(0, 3), row(1000, 12, 2), row(5000, -8, -1)] } },
+    // Same hour, not judged: in neither same-hour group.
+    { kind: 'schulze', at: '2026-09-26T18:10:00Z', gapHours: 0, rawMismatch: null, aligned: { rows: [row(1000, 90, 9)] } },
+    // After half past: the pages showed different hours, rows recorded.
+    {
+      kind: 'schulze',
+      at: '2026-09-26T16:40:00Z',
+      gapHours: 1,
+      rawMismatch: false,
+      aligned: { rows: [row(1000, 0)] },
+      unaligned: { hoursDiffer: true, maxDir: 20, rows: [{ ft: 0, dDir: 40, dSpd: 6 }, { ft: 1000, dDir: -20, dSpd: 3 }, { ft: 5000, dDir: 10, dSpd: -1 }] },
+    },
+    // Logged before rows were recorded: only the worst direction survives.
+    { kind: 'schulze', at: '2026-09-25T16:40:00Z', rawMismatch: false, aligned: { rows: [row(1000, 1)] }, unaligned: { hoursDiffer: true, maxDir: 25 } },
+    { kind: 'schulze', at: '2026-09-26T19:00:00Z', error: 'open-meteo: HTTP 500' },
+  ];
+  const groups = timeGapGroups(recs);
+  const by = Object.fromEntries(groups.map((g) => [g.key, g]));
+
+  it('returns the three groups in order, same run first', () => {
+    expect(groups.map((g) => g.key)).toEqual(['same-hour-same-run', 'same-hour-different-run', 'one-hour-apart']);
+  });
+
+  it('pools the aligned rows of runs whose raw profiles agreed, leaving the surface row out', () => {
+    // Runs 1, 4 and 5 agreed: rows 1°, -2°, 0°, 1° (surface 30° left out).
+    expect(by['same-hour-same-run'].runs).toBe(3);
+    expect(by['same-hour-same-run'].dir).toMatchObject({ n: 4, maxAbs: 2, meanAbs: 1 });
+  });
+
+  it('keeps a newer-run run apart from the rest, and an unjudged run out of both', () => {
+    expect(by['same-hour-different-run'].runs).toBe(1);
+    expect(by['same-hour-different-run'].dir).toMatchObject({ n: 2, maxAbs: 12, meanAbs: 10 });
+    expect(by['same-hour-different-run'].spd).toMatchObject({ maxAbs: 2 });
+    // The unjudged run's 90° row appears nowhere.
+    for (const g of groups) expect(g.dir?.maxAbs ?? 0).toBeLessThan(90);
+  });
+
+  it('takes the one-hour-apart rows as the pages showed them, only from runs that recorded rows', () => {
+    expect(by['one-hour-apart'].runs).toBe(1);
+    expect(by['one-hour-apart'].dir).toMatchObject({ n: 2, maxAbs: 20, meanAbs: 15 });
+    expect(by['one-hour-apart'].spd).toMatchObject({ n: 2, maxAbs: 3, meanAbs: 2 });
+  });
+
+  it('is carried in the summary', () => {
+    expect(summarizeParity(recs, Date.parse('2026-09-26T20:00:00Z')).schulze.byTimeGap).toEqual(groups);
   });
 });

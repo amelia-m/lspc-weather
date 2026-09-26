@@ -287,11 +287,16 @@ is `src/domain/paritySummary.ts`, pure and tested — commits that file to
 `main` and dispatches the Pages deploy (a push made with the workflow token
 starts no other workflow). The in-app page at `#parity`, "How different from
 other sources", renders it: counts and spreads, never a grade. Until
-2026-09-28 `.github/workflows/schulze-compare.yml` runs both scripts every
-fifteen minutes plus four ninety-minute bursts a day at five-minute spacing,
-each starting at a different minute past the hour, to count how often the two
-winds tools are served different forecast runs for the same hour and how the
-observation decodes compare through a day; it skips itself after that and
-should then be deleted, leaving the daily run to feed the summary.
+2026-09-28 `.github/workflows/schulze-compare.yml` samples the Schulze
+comparison every five minutes and the usairnet one every fifteen, in one job
+started four times a day that loops for five hours (`scripts/sampleLoop.sh`),
+uploading an artifact per hour. It is a loop and not a cron line per sample
+because GitHub ran the old every-fifteen-minutes schedule under ten percent of
+the time, and moving it off the quarter-hour marks did not help; a running job
+is not throttled. It counts how often the two winds tools are served
+different forecast runs for the same hour, how far apart the two pages are
+when they show different hours, and how the observation decodes compare
+through a day; it skips itself after that and should then be deleted,
+leaving the daily run to feed the summary.
 
 Open items live in `docs/open-questions.md`.

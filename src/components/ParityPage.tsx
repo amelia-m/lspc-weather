@@ -1,4 +1,4 @@
-import type { ParitySummary, Spread } from '../domain/paritySummary';
+import type { ParitySummary, Spread, TimeGapGroup, TimeGapKey } from '../domain/paritySummary';
 import { Panel } from './common/Panel';
 
 /**
@@ -137,10 +137,67 @@ function SpreadTable({
   );
 }
 
+const GAP_LABEL: Record<TimeGapKey, string> = {
+  'same-hour-same-run': 'Same hour, same forecast run',
+  'same-hour-different-run': 'Same hour, one side on a newer run',
+  'one-hour-apart': 'One hour apart',
+};
+
+/** The differences grouped by the time the two tables represented, one row
+ *  per group, direction and speed side by side so the rows compare at a
+ *  glance. Dashes where a group has no runs yet. */
+function TimeGapTable({ groups }: { groups: TimeGapGroup[] }): JSX.Element {
+  const d = (x: number | undefined): string => (x == null ? '—' : `${num(x)}°`);
+  const k = (x: number | undefined): string => (x == null ? '—' : `${num(x)} kt`);
+  return (
+    <div className="sky-scroll">
+      <table className="aloft-table">
+        <thead>
+          <tr>
+            <th>Time the tables represent</th>
+            <th>runs</th>
+            <th>avg dir</th>
+            <th>90th dir</th>
+            <th>max dir</th>
+            <th>avg speed</th>
+            <th>90th speed</th>
+            <th>max speed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((g) => (
+            <tr key={g.key}>
+              <td>{GAP_LABEL[g.key]}</td>
+              <td>{g.runs}</td>
+              <td>{d(g.dir?.meanAbs)}</td>
+              <td>{d(g.dir?.p90Abs)}</td>
+              <td>{d(g.dir?.maxAbs)}</td>
+              <td>{k(g.spd?.meanAbs)}</td>
+              <td>{k(g.spd?.p90Abs)}</td>
+              <td>{k(g.spd?.maxAbs)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
   const w = s.schulze;
   return (
     <Panel title="Winds aloft vs Mark Schulze’s" subtitle={`${w.runs} runs, ${w.aligned} with a same-hour table`}>
+      {w.byTimeGap && (
+        <>
+          <p className="muted small">
+            By how far apart in time the two tables were, every row from 1,000 ft up pooled. The
+            surface row is left out because it differs for a reason of its own (the ground-row
+            line below). &ldquo;One hour apart&rdquo; is what a reader comparing both pages sees
+            after half past each hour, and fills from runs logged since Sep 26.
+          </p>
+          <TimeGapTable groups={w.byTimeGap} />
+        </>
+      )}
       <p className="muted small">
         Same valid hour on both sides, row by row: how far apart the two tables were, as the
         average, median, 90th-percentile, smallest and largest absolute difference across runs.{' '}
@@ -178,8 +235,9 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
       </ul>
       <p className="muted small">
         The two pages show different hours in the second half of every hour: this card snaps to the
-        nearest hour, Schulze&rsquo;s shows the hour in progress. That row measures what a reader
-        comparing both pages at that minute sees; the table above measures the data.
+        nearest hour, Schulze&rsquo;s shows the hour in progress. That line and the &ldquo;One hour
+        apart&rdquo; row measure what a reader comparing both pages at that minute sees; the
+        per-altitude tables measure the same hour on both sides.
       </p>
     </Panel>
   );

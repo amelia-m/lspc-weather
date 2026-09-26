@@ -39,6 +39,28 @@ describe('ParityPage', () => {
     expect(html).toContain('<td>clouds</td>');
   });
 
+  it('breaks the winds differences down by the time the two tables represent', () => {
+    const html = render('ready');
+    const table = /<th>Time the tables represent<\/th>[\s\S]*?<\/table>/.exec(html)?.[0] ?? '';
+    // One row per group, same run first; the fixture's run had profiles
+    // that disagreed, so its aloft rows (12° and 1°) are in the second row
+    // and the first row is empty.
+    const rows = table.match(/<tr><td>[^<]*<\/td>(?:<td>[^<]*<\/td>)*<\/tr>/g) ?? [];
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toContain('<td>Same hour, same forecast run</td><td>0</td><td>—</td>');
+    expect(rows[1]).toContain('<td>Same hour, one side on a newer run</td><td>1</td><td>6.50°</td>');
+    expect(rows[1]).toContain('<td>12°</td>');
+    // Logged without rows, so the one-hour-apart group has none yet.
+    expect(rows[2]).toContain('<td>One hour apart</td><td>0</td>');
+  });
+
+  it('leaves the breakdown out of a summary written before it existed', () => {
+    const old = { ...summary, schulze: { ...summary.schulze, byTimeGap: undefined } };
+    const html = render('ready', old);
+    expect(html).not.toContain('Time the tables represent');
+    expect(html).toContain('Direction, ft AGL');
+  });
+
   it('never grades: no verdict words, no warning classes', () => {
     const html = render('ready');
     for (const word of ['good', 'bad', 'acceptable', 'unsafe', 'safe', 'ok']) {

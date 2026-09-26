@@ -27,9 +27,20 @@ export interface SchulzeRecord {
    *  minute (his offset 0), "01Z". */
   appHour?: string;
   pageHour?: string;
+  /** The app's valid time minus the hour in progress, in hours: 0 before
+   *  half past, 1 after. Absent on runs logged before 2026-09-26. */
+  gapHours?: number;
+  /** Minute past the hour the run sampled at, UTC. */
+  minute?: number;
   aligned?: { rows: { ft: number; dDir: number; dSpd: number; dT: number | null }[] } | null;
-  /** What a jumper comparing both pages at that minute would see. */
-  unaligned?: { hoursDiffer: boolean; maxDir: number | null };
+  /** What a jumper comparing both pages at that minute would see. `rows`
+   *  (every height, when the hours differed) was added on 2026-09-26; older
+   *  runs carry only the worst row's direction. */
+  unaligned?: {
+    hoursDiffer: boolean;
+    maxDir: number | null;
+    rows?: { ft: number; dDir: number; dSpd: number }[];
+  };
   /** Whether the two raw profiles disagree at a shared level — the stale-run
    *  signal. null when it could not be judged. */
   rawMismatch?: boolean | null;
@@ -73,6 +84,24 @@ export interface AltitudeSpread {
   spd: Spread;
 }
 
+/** One way the two winds tables can differ in the time they represent. */
+export type TimeGapKey = 'same-hour-same-run' | 'same-hour-different-run' | 'one-hour-apart';
+
+/**
+ * The winds-aloft differences grouped by how far apart in time the two
+ * tables were, pooled over every height from 1,000 ft up. The surface row is
+ * left out: it differs for a reason of its own (the ground-row line on the
+ * page, and docs/markschulze-altitude-reference.md), which would blur the
+ * time effect this is meant to show.
+ */
+export interface TimeGapGroup {
+  key: TimeGapKey;
+  /** Runs that contributed rows. */
+  runs: number;
+  dir: Spread | null;
+  spd: Spread | null;
+}
+
 export interface ParitySummary {
   generatedAt: string;
   /** Earliest and latest run times summarised, ISO; null with no records. */
@@ -96,6 +125,8 @@ export interface ParitySummary {
     };
     rawMismatch: { judged: number; mismatched: number };
     ground: { n: number; medianOurKt: number | null; medianTheirKt: number | null; medianRatio: number | null };
+    /** Absent in summaries written before 2026-09-26. */
+    byTimeGap?: TimeGapGroup[];
   };
   usairnet: {
     runs: number;
@@ -141,6 +172,55 @@ export function spreadOf(deltas: readonly number[]): Spread | null {
     maxAbs: round2(Math.max(...abs)),
     mean: round2(sum(deltas) / deltas.length),
   };
+}
+
+/**
+ * Group the runs by the time the two tables represented:
+ *
+ *   same hour, same forecast run      the aligned rows of a run whose raw
+ *                                     profiles agreed; what is left is the
+ *                                     two tools' own arithmetic
+ *   same hour, different forecast run the aligned rows of a run whose raw
+ *                                     profiles disagreed; one side had been
+ *                                     served a newer model run
+ *   one hour apart                    the rows as the two pages showed them
+ *                                     at that minute, when the card had
+ *                                     snapped to the next hour and his page
+ *                                     still showed the hour in progress
+ *
+ * A same-hour run whose raw profiles could not be judged is in neither of
+ * the first two. The third fills only from runs logged since the rows were
+ * recorded (2026-09-26); older runs kept only the worst row, which the
+ * `unaligned` counts still report.
+ */
+export function timeGapGroups(records: readonly SchulzeRecord[]): TimeGapGroup[] {
+  const aloft = (rows: readonly { ft: number; dDir: number; dSpd: number }[]) => rows.filter((r) => r.ft > 0);
+  const group = (key: TimeGapKey, rowSets: { ft: number; dDir: number; dSpd: number }[][]): TimeGapGroup => {
+    const rows = rowSets.flatMap(aloft);
+    return {
+      key,
+      runs: rowSets.filter((set) => aloft(set).length > 0).length,
+      dir: spreadOf(rows.map((r) => r.dDir)),
+      spd: spreadOf(rows.map((r) => r.dSpd)),
+    };
+  };
+  const aligned = records.filter((r) => !r.error && r.aligned != null);
+  return [
+    group(
+      'same-hour-same-run',
+      aligned.filter((r) => r.rawMismatch === false).map((r) => r.aligned!.rows),
+    ),
+    group(
+      'same-hour-different-run',
+      aligned.filter((r) => r.rawMismatch === true).map((r) => r.aligned!.rows),
+    ),
+    group(
+      'one-hour-apart',
+      records
+        .filter((r) => !r.error && r.unaligned?.hoursDiffer && r.unaligned.rows != null)
+        .map((r) => r.unaligned!.rows!),
+    ),
+  ];
 }
 
 export function summarizeParity(records: readonly ParityRecord[], now: number): ParitySummary {
@@ -225,6 +305,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
         medianTheirKt: round1(median(ground.map((r) => r.ground!.theirKt as number))),
         medianRatio: ratios.length ? Math.round((median(ratios) as number) * 100) / 100 : null,
       },
+      byTimeGap: timeGapGroups(schulze),
     },
     usairnet: {
       runs: usair.length,
