@@ -1,62 +1,63 @@
 name: Live comparisons (temporary)
 
-# Until 2026-09-28T02:00Z, then self-skipping: print this app's winds-aloft
-# profile beside Mark Schulze's at the same valid hour (raw samples and the
-# unaligned view included) and this app's decode of the latest KPMV
-# observation beside usairnet's, field by field. Each run also uploads its
-# @@parity lines as an artifact; parity-summary.yml combines them into the
+# Until 2026-09-28T02:00Z, then self-skipping: sample this app's winds-aloft
+# profile beside Mark Schulze's (scripts/schulzeCompare.live.ts) every five
+# minutes, and this app's decode of the latest KPMV observation beside
+# usairnet's (scripts/usairnetCompare.live.ts) every fifteen. Every @@parity
+# line is uploaded as an artifact; parity-summary.yml combines them into the
 # #parity page's summary. See docs/open-questions.md, "Which forecast run the
 # winds-aloft request is served". Never fails: the scripts are reports.
 #
-# Two schedules. Every fifteen minutes, because this app snaps to the nearest
-# hour and Schulze's page shows the hour in progress, so the two agree on the
-# hour before :30 and disagree after, and a new model run can land at any
-# minute. And four ninety-minute bursts a day at five-minute spacing, each
-# starting at a different minute past the hour (:07, :23, :41, :53) and at a
-# different time of day, so the sample is not the same minute every hour.
-# GitHub's scheduling jitter adds further spread.
+# One job that loops, started four times a day, in place of a cron line per
+# sample. GitHub ran the old every-fifteen-minutes schedule under ten percent
+# of the time on 2026-09-24 to 26, and moving it off the quarter-hour marks
+# did not help; a job already running is not throttled. Each start samples
+# for five hours in five one-hour steps, uploading after each, so a late or
+# cancelled job still keeps what it gathered and the three-hourly summary
+# picks records up within the hour. GitHub's start-time jitter moves which
+# minutes of the hour the five-minute samples land on from one start to the
+# next, which is what spreads them across the half-past boundary where the
+# two pages start showing different hours.
 #
 # Delete this file, or move the end date, once the question is settled.
 on:
   schedule:
-    # Off the quarter-hour marks: GitHub delays and drops scheduled runs at
-    # busy minutes, and on 2026-09-24 the '*/15' schedule fired once in the
-    # five hours after it was merged.
-    - cron: '7,22,37,52 * * * *'
-    # 06:07–07:37 CDT
-    - cron: '7-59/5 11 * * *'
-    - cron: '2-37/5 12 * * *'
-    # 10:23–11:53 CDT
-    - cron: '23-59/5 15 * * *'
-    - cron: '3-53/5 16 * * *'
-    # 15:41–17:11 CDT
-    - cron: '41-59/5 20 * * *'
-    - cron: '1-59/5 21 * * *'
-    - cron: '1-11/5 22 * * *'
-    # 21:53–23:23 CDT
-    - cron: '53-59/5 2 * * *'
-    - cron: '3-59/5 3 * * *'
-    - cron: '3-23/5 4 * * *'
+    # Six hours apart, off the busy top of the hour. Five hours of sampling
+    # from each start leaves an hour's gap before the next.
+    - cron: '17 0,6,12,18 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# A start that fires while the previous one is still sampling waits for it
+# rather than doubling the requests to both sites.
+concurrency:
+  group: live-sampler
+  cancel-in-progress: false
+
+env:
+  WINDOW_END: '2026-09-28T02:00:00Z'
+
 jobs:
-  compare:
+  sample:
     runs-on: ubuntu-latest
+    # Five one-hour slices plus setup and uploads; GitHub's ceiling is 360.
+    timeout-minutes: 330
     steps:
       - name: Stop after the logging window
         id: window
         shell: bash
         run: |
-          end=$(date -u -d '2026-09-28T02:00:00Z' +%s)
-          now=$(date -u +%s)
-          if [ "$now" -ge "$end" ] && [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "past the window (ends 2026-09-28T02:00Z); nothing to do"
+          # A dispatched run samples whatever the date; only the schedule
+          # stops at the end of the window.
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%s)" -ge "$(date -u -d "$WINDOW_END" +%s)" ]; then
+            echo "past the window (ends $WINDOW_END); nothing to do"
             echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "end=" >> "$GITHUB_OUTPUT"
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
+            if [ "${{ github.event_name }}" = "schedule" ]; then echo "end=$WINDOW_END" >> "$GITHUB_OUTPUT"; else echo "end=" >> "$GITHUB_OUTPUT"; fi
           fi
       - uses: actions/checkout@v4
         if: steps.window.outputs.run == 'true'
@@ -67,20 +68,58 @@ jobs:
           cache: npm
       - run: npm ci
         if: steps.window.outputs.run == 'true'
-      - name: Compare winds aloft with Schulze, and the observation with usairnet
+
+      - name: Sample, hour 1
         if: steps.window.outputs.run == 'true'
-        shell: bash
-        run: |
-          set -o pipefail
-          npx vitest run --config vitest.live.config.ts scripts/schulzeCompare.live.ts scripts/usairnetCompare.live.ts 2>&1 | tee live.log
-      - name: Keep this run's @@parity lines
-        if: steps.window.outputs.run == 'true'
-        shell: bash
-        run: grep -a '@@parity ' live.log > "parity-${{ github.run_id }}.jsonl" || true
+        run: scripts/sampleLoop.sh 60 "parity-${{ github.run_id }}-1.jsonl" "${{ steps.window.outputs.end }}"
       - uses: actions/upload-artifact@v4
-        if: steps.window.outputs.run == 'true'
+        if: always() && steps.window.outputs.run == 'true'
         with:
-          name: parity-${{ github.run_id }}
-          path: parity-${{ github.run_id }}.jsonl
+          name: parity-${{ github.run_id }}-1
+          path: parity-${{ github.run_id }}-1.jsonl
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Sample, hour 2
+        if: steps.window.outputs.run == 'true'
+        run: scripts/sampleLoop.sh 60 "parity-${{ github.run_id }}-2.jsonl" "${{ steps.window.outputs.end }}"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: parity-${{ github.run_id }}-2
+          path: parity-${{ github.run_id }}-2.jsonl
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Sample, hour 3
+        if: steps.window.outputs.run == 'true'
+        run: scripts/sampleLoop.sh 60 "parity-${{ github.run_id }}-3.jsonl" "${{ steps.window.outputs.end }}"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: parity-${{ github.run_id }}-3
+          path: parity-${{ github.run_id }}-3.jsonl
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Sample, hour 4
+        if: steps.window.outputs.run == 'true'
+        run: scripts/sampleLoop.sh 60 "parity-${{ github.run_id }}-4.jsonl" "${{ steps.window.outputs.end }}"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: parity-${{ github.run_id }}-4
+          path: parity-${{ github.run_id }}-4.jsonl
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Sample, hour 5
+        if: steps.window.outputs.run == 'true'
+        run: scripts/sampleLoop.sh 60 "parity-${{ github.run_id }}-5.jsonl" "${{ steps.window.outputs.end }}"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: parity-${{ github.run_id }}-5
+          path: parity-${{ github.run_id }}-5.jsonl
           retention-days: 14
           if-no-files-found: ignore

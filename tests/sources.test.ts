@@ -38,4 +38,13 @@ describe('DATA_SOURCES', () => {
     // guessing. The OMA provenance still shows on the winds-aloft card itself.
     expect(DATA_SOURCES.fdWinds.label).not.toContain(SITE.fdWindsStation);
   });
+
+  it("opens Mark Schulze's Winds Aloft on the drop zone, not on the reader's own position", () => {
+    // His page falls back to the browser's geolocation when the query string
+    // has no lat and lon; a reader away from the field then saw their own
+    // winds under a link that promised the drop zone's.
+    const url = new URL(DATA_SOURCES.markschulze.url);
+    expect(Number(url.searchParams.get('lat'))).toBe(SITE.dz.lat);
+    expect(Number(url.searchParams.get('lon'))).toBe(SITE.dz.lon);
+  });
 });

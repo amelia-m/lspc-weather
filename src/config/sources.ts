@@ -25,10 +25,14 @@ export const DATA_SOURCES = {
     label: 'Open-Meteo',
     url: 'https://open-meteo.com/',
   },
-  /** Mark Schulze's Winds Aloft — same Open-Meteo source; cross-reference. */
+  /** Mark Schulze's Winds Aloft — same Open-Meteo source; cross-reference.
+   *  The page reads `lat` and `lon` from its query string and asks the
+   *  browser for the reader's own position only when they are missing
+   *  (getPos_maptest.js, read 2026-09-26), so the bare URL opened on
+   *  wherever the reader was standing, not the drop zone. */
   markschulze: {
     label: 'Winds Aloft · Mark Schulze',
-    url: 'https://www.markschulze.net/winds/',
+    url: `https://www.markschulze.net/winds/?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}`,
   },
   /** usairnet aviation forecast for KPMV — a page many jumpers use. Presents
    *  the same NWS forecast data; cross-reference only. */

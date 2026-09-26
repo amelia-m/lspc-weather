@@ -45,14 +45,16 @@ is a report behind, the run says so rather than comparing two reports.
 
 ## How the logs are gathered
 
-1. `.github/workflows/schulze-compare.yml` runs both scripts every fifteen
-   minutes, plus four ninety-minute bursts a day at five-minute spacing, each
-   starting at a different minute past the hour, until 2026-09-28T02:00Z; it
-   then skips itself and should be deleted. `.github/workflows/sky-parity.yml`
-   runs them once a day for good.
-2. Each run uploads its `@@parity` lines as an artifact named
-   `parity-<run id>`, kept fourteen days.
-3. `.github/workflows/parity-summary.yml` runs daily at 07:40 CDT and on
+1. `.github/workflows/schulze-compare.yml` is one job, started four times a
+   day, that loops for five hours: the Schulze comparison every five minutes,
+   the usairnet one every fifteen (`scripts/sampleLoop.sh`). It runs until
+   2026-09-28T02:00Z, then skips itself and should be deleted. It replaced a
+   cron line per sample, which GitHub ran under ten percent of the time.
+   `.github/workflows/sky-parity.yml` runs both scripts once a day for good.
+2. Each run uploads its `@@parity` lines as artifacts named
+   `parity-<run id>` (the daily run) or `parity-<run id>-<hour>` (one per
+   hour of the sampler), kept fourteen days.
+3. `.github/workflows/parity-summary.yml` runs every three hours and on
    demand: it downloads every unexpired artifact, combines the lines with
    `scripts/paritySummary.ts`, writes `public/parity/summary.json`, commits it
    to `main` and dispatches the Pages deploy (a push made with the workflow
@@ -62,7 +64,17 @@ is a report behind, the run says so rather than comparing two reports.
 
 ## What the page shows, and what it deliberately does not
 
-For each row of the winds table, per altitude: the **average, median,
+First, the winds differences **by the time the two tables represent**: same
+hour on the same forecast run, same hour with one side on a newer run, and
+one hour apart as the two pages show it after half past. Each is pooled over
+every row from 1,000 ft up (the surface row differs for its own reason) and
+given as the average, 90th-percentile and largest difference in direction and
+speed. The one-hour row fills only from samples logged since 2026-09-26, when
+the comparison started recording every row of the as-seen tables; before
+that it kept only the worst row. A one-off measurement of how the difference
+grows with larger gaps is in `docs/markschulze-altitude-reference.md`.
+
+Then, for each row of the winds table, per altitude: the **average, median,
 90th-percentile, smallest and largest** absolute difference in direction and
 in speed across runs, and the number of runs. Then counts: runs with any row
 more than 10° or 3 kt apart; runs where the raw profiles disagreed; runs where
@@ -88,6 +100,11 @@ question in `docs/open-questions.md`.
 - `schulze.byAltitude[].dir` and `.spd`: the spreads above; `mean` is signed
   (dashboard minus Schulze), so its sign says which side ran higher.
 - `schulze.rawMismatch`: how many runs could be judged, and how many disagreed.
+- `schulze.byTimeGap[]`: one entry per time group (`same-hour-same-run`,
+  `same-hour-different-run`, `one-hour-apart`), with the runs that
+  contributed rows and the pooled `dir` and `spd` spreads from 1,000 ft up.
+  A same-hour run whose raw profiles could not be judged is in neither
+  same-hour group. Absent in summaries written before 2026-09-26.
 - `schulze.ground.medianRatio`: Schulze's ground speed over ours in knots.
   A ratio near 1.85 across many runs would support the reading that his
   figure is a km/h value taken as knots; that reading is unconfirmed.

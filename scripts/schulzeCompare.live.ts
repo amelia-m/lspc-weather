@@ -110,19 +110,34 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   // large that difference is at this minute, separately from the data
   // question below.
   const appHourLabel = `${String(appHour).padStart(2, '0')}Z`;
-  let unaligned: { hoursDiffer: boolean; maxDir: number | null } | undefined;
+  // How far apart in time the two tables a reader sees are: this card's
+  // valid time minus the hour in progress, which is what his page shows.
+  // 0 before half past, 1 after, by the two tools' rules; logged as a number
+  // so the summary can group runs by it rather than infer it from labels.
+  const hourInProgress = Math.floor(now / 3_600_000) * 3_600_000;
+  const gapHours = Math.round((validMs - hourInProgress) / 3_600_000);
+  let unaligned:
+    | { hoursDiffer: boolean; maxDir: number | null; rows?: { ft: number; dDir: number; dSpd: number }[] }
+    | undefined;
   if (m0 != null && Number(m0.validtime) !== appHour) {
-    let worst = 0;
+    // Every row, not just the worst, so the summary can say how far apart
+    // the two pages are at each height when they show different hours.
+    const rows: { ft: number; dDir: number; dSpd: number }[] = [];
     for (const l of levels) {
       const k = String(l.altitudeFtAgl);
       if (!(k in m0.direction)) continue;
-      worst = Math.max(worst, Math.abs(((l.directionDeg - m0.direction[k] + 540) % 360) - 180));
+      rows.push({
+        ft: l.altitudeFtAgl,
+        dDir: ((l.directionDeg - m0.direction[k] + 540) % 360) - 180,
+        dSpd: l.speedKt - m0.speed[k],
+      });
     }
+    const worst = rows.reduce((w, r) => Math.max(w, Math.abs(r.dDir)), 0);
     out.push(
       `unaligned at this minute: Schulze's page shows ${m0.validtime}Z, this card ${appHourLabel};` +
         ` largest row difference between those two tables ${worst}°`,
     );
-    unaligned = { hoursDiffer: true, maxDir: worst };
+    unaligned = { hoursDiffer: true, maxDir: worst, rows };
   } else if (m0 != null) {
     out.push(`unaligned at this minute: both show ${m0.validtime}Z`);
     unaligned = { hoursDiffer: false, maxDir: null };
@@ -132,6 +147,8 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     at: new Date(now).toISOString(),
     appHour: appHourLabel,
     pageHour: m0 ? `${m0.validtime}Z` : null,
+    gapHours,
+    minute: new Date(now).getUTCMinutes(),
     unaligned,
   };
   if (ms == null) {
