@@ -632,6 +632,14 @@ a {
   cursor: pointer;
 }
 
+/* Parity page: a table's own heading, above it, left-aligned. */
+.parity-caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  padding: 10px 0 4px;
+}
+
 /* Winds aloft */
 .aloft-table {
   width: 100%;

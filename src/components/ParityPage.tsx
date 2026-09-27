@@ -1,4 +1,4 @@
-import type { ParitySummary, Spread, TimeGapGroup, TimeGapKey } from '../domain/paritySummary';
+import type { ParitySummary, Spread, TimeGapGroup, TimeGapKey, UsairnetField } from '../domain/paritySummary';
 import { Panel } from './common/Panel';
 
 /**
@@ -243,44 +243,114 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
   );
 }
 
+/** One field per row: runs, agreements, and the absolute gaps where both
+ *  sides were numbers. */
+function FieldTable({ fields, caption }: { fields: UsairnetField[]; caption: string }): JSX.Element {
+  return (
+    <div className="sky-scroll">
+      <table className="aloft-table">
+        <caption className="parity-caption">{caption}</caption>
+        <thead>
+          <tr>
+            <th>field</th>
+            <th>runs</th>
+            <th>agreed</th>
+            <th>share</th>
+            <th>avg diff</th>
+            <th>min diff</th>
+            <th>max diff</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fields.map((f) => (
+            <tr key={f.name}>
+              <td>{f.name}</td>
+              <td>{f.n}</td>
+              <td>{f.agree}</td>
+              <td>{pct(f.agree, f.n)}</td>
+              <td>{f.spread ? num(f.spread.meanAbs) : '—'}</td>
+              <td>{f.spread ? num(f.spread.minAbs) : '—'}</td>
+              <td>{f.spread ? num(f.spread.maxAbs) : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** "20 min" for a signed minute gap, as its size. */
+const mins = (n: number | null | undefined): string => (n == null ? '—' : `${Math.round(Math.abs(n))} min`);
+
+/**
+ * Two comparisons that must not share a table. When both sides show the
+ * same observation, a difference is a decode difference. When they show two
+ * observations twenty minutes apart, most of the difference is the weather
+ * changing between them, and pooling the two would let that pass for a
+ * decode gap (or hide one). So each gets its own table, and the runs where
+ * the times differed also say which side was behind.
+ */
 function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
   const u = s.usairnet;
   const readable = u.runs - u.unreadable;
+  const t = u.timing;
   return (
     <Panel title="Latest observation vs usairnet’s decode" subtitle={`${u.runs} runs`}>
       <p className="muted small">
         Both sides showed the same observation time in {u.sameReport} of {readable} readable runs (
-        {pct(u.sameReport, readable)}); the rest compared a report against the one before it.
+        {pct(u.sameReport, readable)}); in the rest each showed a different report.
         {u.unreadable > 0 && ` ${u.unreadable} runs could not read one side.`}
       </p>
-      <div className="sky-scroll">
-        <table className="aloft-table">
-          <thead>
-            <tr>
-              <th>field</th>
-              <th>runs</th>
-              <th>agreed</th>
-              <th>share</th>
-              <th>avg diff</th>
-              <th>min diff</th>
-              <th>max diff</th>
-            </tr>
-          </thead>
-          <tbody>
-            {u.fields.map((f) => (
-              <tr key={f.name}>
-                <td>{f.name}</td>
-                <td>{f.n}</td>
-                <td>{f.agree}</td>
-                <td>{pct(f.agree, f.n)}</td>
-                <td>{f.spread ? num(f.spread.meanAbs) : '—'}</td>
-                <td>{f.spread ? num(f.spread.minAbs) : '—'}</td>
-                <td>{f.spread ? num(f.spread.maxAbs) : '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {t && t.mismatched > 0 && (
+        <ul className="cite-found">
+          <li>
+            <strong>Which side was behind:</strong>{' '}
+            {t.timed === 0
+              ? `none of the ${t.mismatched} runs with different times logged both times yet (logged since Sep 27).`
+              : `of the ${t.timed} runs with different times that logged both, usairnet had the newer report in ${t.usairnetNewer} and this dashboard in ${t.dashboardNewer}${
+                  t.timed < t.mismatched ? ` (${t.mismatched - t.timed} earlier runs did not log the times)` : ''
+                }.`}
+          </li>
+          {t.gapMin && (
+            <li>
+              <strong>How far apart the two reports were:</strong> {mins(t.gapMin.medianAbs)} median,{' '}
+              {mins(t.gapMin.minAbs)} to {mins(t.gapMin.maxAbs)}. KPMV reports every 20 minutes, so
+              20 min is one report behind.
+            </li>
+          )}
+          {t.usairnetNewer > 0 && (
+            <li>
+              <strong>When this dashboard was behind:</strong> NWS&rsquo;s own observation list
+              already held the newer report in {t.dashboardBehindNwsListHadIt} of {t.usairnetNewer}{' '}
+              (the endpoint this dashboard reads had not caught up), and did not yet have it in{' '}
+              {t.dashboardBehindNwsListLacked}.
+            </li>
+          )}
+        </ul>
+      )}
+      {u.fieldsSameReport ? (
+        <>
+          <FieldTable fields={u.fieldsSameReport} caption="Same observation on both sides" />
+          <FieldTable
+            fields={u.fieldsDifferentReport ?? []}
+            caption="Different observations, usually one report (20 min) apart"
+          />
+          <p className="muted small">
+            The second table compares two reports taken at different times, so its differences
+            are mostly the weather changing between them, not how either side decodes a report.
+          </p>
+        </>
+      ) : (
+        u.fields && (
+          <>
+            <FieldTable fields={u.fields} caption="All runs" />
+            <p className="muted small">
+              This summary was written before same-observation and different-observation runs
+              were kept apart, so this one table pools both.
+            </p>
+          </>
+        )
+      )}
       <p className="muted small">
         Differences are absolute, in each field&rsquo;s own unit, over the runs that recorded a
         numeric gap; text fields (clouds, flight rule) only agree or differ.

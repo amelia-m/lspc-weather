@@ -80,31 +80,65 @@ describe('summarizeParity', () => {
     expect(s.schulze.byAltitude[0].dir.meanAbs).toBe(3);
   });
 
-  it('tallies usairnet agreement per field and how often both sides showed the same report', () => {
+  it('keeps same-observation and different-observation runs in separate field tables', () => {
     const records: ParityRecord[] = [
       { kind: 'usairnet', at: '2026-09-24T01:00:00Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -1 }] },
-      { kind: 'usairnet', at: '2026-09-24T01:15:00Z', sameReport: false, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: true, delta: 0 }] },
+      { kind: 'usairnet', at: '2026-09-24T01:15:00Z', sameReport: false, fields: [{ name: 'clouds', same: false }, { name: 'dew point °F', same: false, delta: 4 }] },
       { kind: 'usairnet', at: '2026-09-24T01:45:00Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -3 }] },
       { kind: 'usairnet', at: '2026-09-24T01:30:00Z', error: 'HTTP 503' },
     ];
     const s = summarizeParity(records, NOW);
-    expect(s.usairnet).toEqual({
-      runs: 4,
-      unreadable: 1,
-      sameReport: 2,
-      fields: [
-        // a text field has agreement but no gap
-        { name: 'clouds', n: 3, agree: 3, spread: null },
-        // gaps -1, 0, -3: average 1.33 apart, from 0 to 3, and the sign says
-        // the dashboard read lower every time it differed
-        {
-          name: 'dew point °F',
-          n: 3,
-          agree: 1,
-          spread: { n: 3, meanAbs: 1.33, medianAbs: 1, p90Abs: 3, minAbs: 0, maxAbs: 3, mean: -1.33 },
-        },
-      ],
+    expect(s.usairnet.runs).toBe(4);
+    expect(s.usairnet.unreadable).toBe(1);
+    expect(s.usairnet.sameReport).toBe(2);
+    // Only the two same-observation runs: gaps -1 and -3.
+    expect(s.usairnet.fieldsSameReport).toEqual([
+      { name: 'clouds', n: 2, agree: 2, spread: null },
+      { name: 'dew point °F', n: 2, agree: 0, spread: { n: 2, meanAbs: 2, medianAbs: 2, p90Abs: 3, minAbs: 1, maxAbs: 3, mean: -2 } },
+    ]);
+    // The different-observation run on its own, its 4 °F gap kept out of the
+    // table above.
+    expect(s.usairnet.fieldsDifferentReport).toEqual([
+      { name: 'clouds', n: 1, agree: 0, spread: null },
+      { name: 'dew point °F', n: 1, agree: 0, spread: { n: 1, meanAbs: 4, medianAbs: 4, p90Abs: 4, minAbs: 4, maxAbs: 4, mean: 4 } },
+    ]);
+    // No longer pooled.
+    expect(s.usairnet.fields).toBeUndefined();
+  });
+
+  it('says which side was behind when the observations differed, and whether NWS already had the newer one', () => {
+    const run = (at: string, obsGapMin: number | null, ourObsAt: string, nwsNewestAt: string | null): ParityRecord => ({
+      kind: 'usairnet',
+      at,
+      sameReport: false,
+      ourObsAt,
+      obsGapMin,
+      nwsNewestAt,
+      fields: [],
     });
+    const s = summarizeParity(
+      [
+        // Dashboard 20 min behind, and NWS's list already had the newer report.
+        run('2026-09-27T13:40:00Z', -20, '2026-09-27T13:15:00Z', '2026-09-27T13:35:00Z'),
+        // Dashboard 20 min behind, and NWS did not have it yet.
+        run('2026-09-27T13:41:00Z', -20, '2026-09-27T13:15:00Z', '2026-09-27T13:15:00Z'),
+        // usairnet behind.
+        run('2026-09-27T14:00:00Z', 20, '2026-09-27T13:55:00Z', '2026-09-27T13:55:00Z'),
+        // Logged before the times were recorded.
+        { kind: 'usairnet', at: '2026-09-25T01:15:00Z', sameReport: false, fields: [] },
+        { kind: 'usairnet', at: '2026-09-25T01:35:00Z', sameReport: true, fields: [] },
+      ],
+      NOW,
+    );
+    expect(s.usairnet.timing).toMatchObject({
+      mismatched: 4,
+      timed: 3,
+      usairnetNewer: 2,
+      dashboardNewer: 1,
+      dashboardBehindNwsListHadIt: 1,
+      dashboardBehindNwsListLacked: 1,
+    });
+    expect(s.usairnet.timing?.gapMin).toMatchObject({ n: 3, medianAbs: 20, mean: -6.67 });
   });
 
   it('is empty, not broken, with no records', () => {
@@ -112,7 +146,9 @@ describe('summarizeParity', () => {
     expect(s.from).toBeNull();
     expect(s.schulze.byAltitude).toEqual([]);
     expect(s.schulze.ground.medianRatio).toBeNull();
-    expect(s.usairnet.fields).toEqual([]);
+    expect(s.usairnet.fieldsSameReport).toEqual([]);
+    expect(s.usairnet.fieldsDifferentReport).toEqual([]);
+    expect(s.usairnet.timing).toMatchObject({ mismatched: 0, timed: 0, gapMin: null });
   });
 });
 

@@ -3,7 +3,8 @@
  *
  * Runs with the other live checks (`npx vitest run --config
  * vitest.live.config.ts`, daily by .github/workflows/sky-parity.yml and every
- * fifteen minutes by .github/workflows/schulze-compare.yml while that runs)
+ * fifteen minutes by .github/workflows/schulze-compare.yml's sampler while that
+ * runs)
  * and by hand from the sandbox with the proxy env (see CLAUDE.md). Never by
  * `npm test`: it needs the network.
  *
@@ -29,6 +30,7 @@ import { normalizeNwsObservation, type RawNwsObservation } from '../src/domain/n
 import { observedFlightCategory } from '../src/domain/flightCategory';
 import { cToF, ktToMph } from '../src/domain/units';
 import { sunTimes } from '../src/domain/sun';
+import { resolveLocalClock } from '../src/domain/localClock';
 import type { CurrentConditions, SkyLayer } from '../src/domain/types';
 
 const station = SITE.metarStation.id;
@@ -187,13 +189,45 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
     return;
   }
 
+  // The newest report in NWS's own list for the station, beside the one its
+  // `latest` endpoint (the dashboard's source) returned: when the dashboard
+  // is the side behind, this says whether the report had not reached NWS
+  // yet or had reached its list but not `latest`. Informational; a failure
+  // here leaves the field out.
+  let nwsNewestAt: string | null = null;
+  try {
+    const res = await fetch(`https://api.weather.gov/stations/${station}/observations?limit=1`, {
+      headers: { 'User-Agent': UA, Accept: 'application/geo+json' },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (res.ok) {
+      const list = (await res.json()) as { features?: { properties?: { timestamp?: string } }[] };
+      nwsNewestAt = list.features?.[0]?.properties?.timestamp ?? null;
+    }
+  } catch {
+    // leave it null
+  }
+
   out.push(`dashboard report: ${ours.raw || '(no METAR text)'}`);
   out.push(`observed: dashboard ${localClock(ours.observedAt)} · usairnet as of ${theirs.asOf} (both ${ZONE})`);
   const sameReport = localClock(ours.observedAt) === theirs.asOf;
+  // usairnet gives a bare local clock; resolved to the date nearest the
+  // dashboard's report so the two can be subtracted. Positive: the
+  // dashboard had the newer report.
+  const theirObsMs = resolveLocalClock(theirs.asOf, ours.observedAt, ZONE);
+  const obsGapMin = theirObsMs == null ? null : Math.round((ours.observedAt - theirObsMs) / 60_000);
+  const startedMs = Date.parse(startedAt);
   out.push(
     sameReport
       ? 'same observation on both sides'
-      : 'DIFFERENT observation times — one side is a report behind; the rows below compare two reports',
+      : `DIFFERENT observation times — ${
+          obsGapMin == null ? 'one side' : obsGapMin > 0 ? `usairnet is ${obsGapMin} min` : `the dashboard is ${-obsGapMin} min`
+        } behind; the rows below compare two reports`,
+  );
+  out.push(
+    `ages at sampling: dashboard report ${Math.round((startedMs - ours.observedAt) / 60_000)} min` +
+      (theirObsMs != null ? `, usairnet report ${Math.round((startedMs - theirObsMs) / 60_000)} min` : '') +
+      (nwsNewestAt ? `; newest in NWS's list ${new Date(nwsNewestAt).toISOString().slice(11, 16)}Z` : ''),
   );
 
   // Each row keeps the numeric gap (dashboard minus usairnet) where both
@@ -263,6 +297,17 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   if ((off('temperature °F') ?? 0) === 1 || (off('dew point °F') ?? 0) === 1) {
     out.push('note: a 1 °F gap in temperature or dew point is the METAR body’s whole degrees against the T group’s tenths, which the dashboard reads');
   }
-  out.push(record({ kind: 'usairnet', at: startedAt, sameReport, fields }));
+  out.push(
+    record({
+      kind: 'usairnet',
+      at: startedAt,
+      sameReport,
+      ourObsAt: new Date(ours.observedAt).toISOString(),
+      theirObsAt: theirObsMs == null ? null : new Date(theirObsMs).toISOString(),
+      obsGapMin,
+      nwsNewestAt,
+      fields,
+    }),
+  );
   say(out);
 });

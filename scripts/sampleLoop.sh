@@ -47,7 +47,7 @@ while :; do
   if [ $((n % 3)) -eq 0 ]; then files="$files scripts/usairnetCompare.live.ts"; fi
   echo "== sample $n at $(date -u +%Y-%m-%dT%H:%M:%SZ): $files"
   # shellcheck disable=SC2086
-  npx vitest run --config vitest.live.config.ts $files 2>&1 | tee sample.log | grep -a -E 'app valid|unaligned at|largest difference|same observation|fields agree|could not' || true
+  npx vitest run --config vitest.live.config.ts $files 2>&1 | tee sample.log | grep -a -E 'app valid|unaligned at|largest difference|observed:|same observation|DIFFERENT observation|ages at sampling|fields agree|could not' || true
   grep -a '@@parity ' sample.log >> "$out" || true
   n=$((n + 1))
   echo "$n" > "$count_file"
