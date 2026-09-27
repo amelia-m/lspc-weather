@@ -55,6 +55,13 @@ export interface UsairnetRecord {
   error?: string;
   /** Whether both sides showed the same observation time. */
   sameReport?: boolean;
+  /** Both observation times (ISO), the dashboard's minus usairnet's in
+   *  minutes (positive: the dashboard had the newer report), and the newest
+   *  report in NWS's own list at that moment. Logged from 2026-09-27. */
+  ourObsAt?: string;
+  theirObsAt?: string | null;
+  obsGapMin?: number | null;
+  nwsNewestAt?: string | null;
   /** `delta` is dashboard minus usairnet where both sides were numbers
    *  (signed angular difference for wind direction); absent for text fields
    *  and for runs logged before it was recorded. */
@@ -102,6 +109,31 @@ export interface TimeGapGroup {
   spd: Spread | null;
 }
 
+/** `spread` is null for text fields and when no run recorded a gap. */
+export interface UsairnetField {
+  name: string;
+  n: number;
+  agree: number;
+  spread: Spread | null;
+}
+
+/** When the two sides showed different observations, which was behind. */
+export interface UsairnetTiming {
+  /** Runs with different observation times. */
+  mismatched: number;
+  /** Of those, runs that logged both times (from 2026-09-27). */
+  timed: number;
+  dashboardNewer: number;
+  usairnetNewer: number;
+  /** Dashboard minus usairnet, minutes, over the timed mismatches. */
+  gapMin: Spread | null;
+  /** Timed runs where the dashboard was behind, split by whether NWS's own
+   *  observation list already held the newer report (so its `latest`
+   *  endpoint had not caught up) or did not (so NWS had not received it). */
+  dashboardBehindNwsListHadIt: number;
+  dashboardBehindNwsListLacked: number;
+}
+
 export interface ParitySummary {
   generatedAt: string;
   /** Earliest and latest run times summarised, ISO; null with no records. */
@@ -132,8 +164,17 @@ export interface ParitySummary {
     runs: number;
     unreadable: number;
     sameReport: number;
-    /** `spread` is null for text fields and when no run recorded a gap. */
-    fields: { name: string; n: number; agree: number; spread: Spread | null }[];
+    /** Every run pooled. Only in summaries written before 2026-09-27; it
+     *  mixed runs comparing one report with runs comparing two. */
+    fields?: UsairnetField[];
+    /** Runs where both sides showed the same observation: a decode
+     *  comparison. */
+    fieldsSameReport?: UsairnetField[];
+    /** Runs where they showed different observations: mostly the weather
+     *  changing between two reports, kept apart so it cannot blur the first. */
+    fieldsDifferentReport?: UsairnetField[];
+    /** Which side had the newer report when the two differed. */
+    timing?: UsairnetTiming;
   };
 }
 
@@ -270,16 +311,12 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
 
   const usair = records.filter((r): r is UsairnetRecord => r.kind === 'usairnet');
   const usairReadable = usair.filter((r) => !r.error && r.fields != null);
-  const fieldMap = new Map<string, { n: number; agree: number; deltas: number[] }>();
-  for (const r of usairReadable) {
-    for (const f of r.fields!) {
-      const c = fieldMap.get(f.name) ?? { n: 0, agree: 0, deltas: [] };
-      c.n += 1;
-      if (f.same) c.agree += 1;
-      if (typeof f.delta === 'number' && Number.isFinite(f.delta)) c.deltas.push(f.delta);
-      fieldMap.set(f.name, c);
-    }
-  }
+  const sameRuns = usairReadable.filter((r) => r.sameReport === true);
+  const diffRuns = usairReadable.filter((r) => r.sameReport === false);
+  const timed = diffRuns.filter((r) => typeof r.obsGapMin === 'number');
+  const behind = timed.filter((r) => (r.obsGapMin as number) < 0);
+  const listHadIt = (r: UsairnetRecord): boolean =>
+    r.nwsNewestAt != null && r.ourObsAt != null && Date.parse(r.nwsNewestAt) > Date.parse(r.ourObsAt);
 
   return {
     generatedAt: new Date(now).toISOString(),
@@ -310,10 +347,35 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
     usairnet: {
       runs: usair.length,
       unreadable: usair.length - usairReadable.length,
-      sameReport: usairReadable.filter((r) => r.sameReport).length,
-      fields: [...fieldMap.entries()].map(([name, c]) => ({ name, n: c.n, agree: c.agree, spread: spreadOf(c.deltas) })),
+      sameReport: sameRuns.length,
+      fieldsSameReport: fieldTable(sameRuns),
+      fieldsDifferentReport: fieldTable(diffRuns),
+      timing: {
+        mismatched: diffRuns.length,
+        timed: timed.length,
+        dashboardNewer: timed.filter((r) => (r.obsGapMin as number) > 0).length,
+        usairnetNewer: behind.length,
+        gapMin: spreadOf(timed.map((r) => r.obsGapMin as number)),
+        dashboardBehindNwsListHadIt: behind.filter(listHadIt).length,
+        dashboardBehindNwsListLacked: behind.filter((r) => r.nwsNewestAt != null && !listHadIt(r)).length,
+      },
     },
   };
+}
+
+/** Per field: runs, agreements and the spread of the numeric gaps. */
+function fieldTable(runs: readonly UsairnetRecord[]): UsairnetField[] {
+  const fieldMap = new Map<string, { n: number; agree: number; deltas: number[] }>();
+  for (const r of runs) {
+    for (const f of r.fields ?? []) {
+      const c = fieldMap.get(f.name) ?? { n: 0, agree: 0, deltas: [] };
+      c.n += 1;
+      if (f.same) c.agree += 1;
+      if (typeof f.delta === 'number' && Number.isFinite(f.delta)) c.deltas.push(f.delta);
+      fieldMap.set(f.name, c);
+    }
+  }
+  return [...fieldMap.entries()].map(([name, c]) => ({ name, n: c.n, agree: c.agree, spread: spreadOf(c.deltas) }));
 }
 
 /** Parse the `@@parity` lines out of a log, ignoring everything else. A line

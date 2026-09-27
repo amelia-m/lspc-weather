@@ -29,9 +29,10 @@ describe('ParityPage', () => {
     // largest gap beside the median and 90th percentile
     expect(html).toContain('Direction, ft AGL');
     expect(html).toContain('Speed, ft AGL');
-    expect((html.match(/<th>avg diff<\/th>/g) ?? []).length).toBe(3); // two winds tables + usairnet
-    expect((html.match(/<th>min diff<\/th>/g) ?? []).length).toBe(3);
-    expect((html.match(/<th>max diff<\/th>/g) ?? []).length).toBe(3);
+    // two winds tables + the two usairnet tables
+    expect((html.match(/<th>avg diff<\/th>/g) ?? []).length).toBe(4);
+    expect((html.match(/<th>min diff<\/th>/g) ?? []).length).toBe(4);
+    expect((html.match(/<th>max diff<\/th>/g) ?? []).length).toBe(4);
     expect(html).toContain('<td>12°</td>'); // 9,000 ft direction: one run, so avg = min = max
     expect(html).toContain('1 of 1 (100%)'); // any row over 10°
     expect(html).toContain('Raw profiles disagreed');
@@ -52,6 +53,35 @@ describe('ParityPage', () => {
     expect(rows[1]).toContain('<td>12°</td>');
     // Logged without rows, so the one-hour-apart group has none yet.
     expect(rows[2]).toContain('<td>One hour apart</td><td>0</td>');
+  });
+
+  it('shows same-observation and different-observation runs in separate tables', () => {
+    const recs: ParityRecord[] = [
+      { kind: 'usairnet', at: '2026-09-27T13:00:00Z', sameReport: true, fields: [{ name: 'temperature °F', same: true, delta: 0 }] },
+      {
+        kind: 'usairnet',
+        at: '2026-09-27T13:40:00Z',
+        sameReport: false,
+        ourObsAt: '2026-09-27T13:15:00Z',
+        obsGapMin: -20,
+        nwsNewestAt: '2026-09-27T13:35:00Z',
+        fields: [{ name: 'temperature °F', same: false, delta: -3 }],
+      },
+    ];
+    const html = render('ready', summarizeParity(recs, Date.parse('2026-09-27T14:00:00Z')));
+    const same = html.indexOf('<caption class="parity-caption">Same observation on both sides</caption>');
+    const diff = html.indexOf('<caption class="parity-caption">Different observations, usually one report (20 min) apart</caption>');
+    expect(same).toBeGreaterThan(-1);
+    expect(diff).toBeGreaterThan(same);
+    // The 3 °F gap between two reports sits in the second table only.
+    expect(html.slice(same, diff)).not.toContain('<td>3</td>');
+    expect(html.slice(diff)).toContain('<td>3</td>');
+    // And only that run: one temperature row in each table, not both runs in
+    // the second.
+    expect(html.slice(same, diff).match(/<tr><td>temperature °F<\/td>/g)).toHaveLength(1);
+    expect(html.slice(diff).match(/<tr><td>temperature °F<\/td>/g)).toHaveLength(1);
+    expect(html).toContain('usairnet had the newer report in 1 and this dashboard in 0');
+    expect(html).toContain('already held the newer report in 1 of 1');
   });
 
   it('leaves the breakdown out of a summary written before it existed', () => {

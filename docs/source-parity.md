@@ -40,8 +40,28 @@ this card snaps to the nearest hour and Schulze's page shows the hour in
 progress. It also records, separately, what a reader looking at both pages at
 that minute would see, and whether the two **raw profiles** disagreed — the
 sign that one side was served a newer forecast run than the other. The
-observation comparison is matched by **observation time** first; when usairnet
-is a report behind, the run says so rather than comparing two reports.
+observation comparison is matched by **observation time** first. When the two
+sides show different reports, the run says so and which side was behind, and
+the summary keeps those runs out of the decode comparison.
+
+### Why the observation times differ
+
+In the 45 logged runs to 2026-09-26 that printed both times, the two sides
+showed different reports in 10, and in all 10 this dashboard was the one
+behind, by exactly one report (20 minutes); its report was 39 to 47 minutes
+old at the time. usairnet was never the one behind.
+
+One report traced on 2026-09-27, polling both every 30 seconds: KPMV's 13:35Z
+report reached usairnet at 13:52Z (17 minutes after it was taken), NWS's own
+observation list between 13:52Z and 14:02Z, and the `latest` endpoint this
+dashboard reads at 14:03Z (28 minutes). So the delay is api.weather.gov
+receiving the report ten minutes or so after usairnet does; its `latest`
+endpoint trailed its own list by about a minute. For those minutes of every
+20-minute cycle the dashboard shows the previous report. aviationweather.gov,
+which the daily sky-parity job also reads, sometimes had a report newer than
+both; the browser cannot read it (no CORS). The comparison now logs both times
+and NWS's newest listed report on every run, so the page counts this rather
+than resting on one trace.
 
 ## How the logs are gathered
 
@@ -80,9 +100,16 @@ in speed across runs, and the number of runs. Then counts: runs with any row
 more than 10° or 3 kt apart; runs where the raw profiles disagreed; runs where
 the two pages showed different hours at that minute, and how large that
 difference was; and the ground row on each side, with the ratio between them.
-For the observation: per field, how many runs agreed, and the average,
-smallest and largest gap in that field's own unit where both sides gave a
-number.
+For the observation, two tables that are never pooled: runs where both sides
+showed the same observation (a decode comparison), and runs where they
+showed different ones, usually a report apart (mostly the weather changing
+between two reports). Per field, each gives how many runs agreed, and the
+average, smallest and largest gap in that field's own unit where both sides
+gave a number. Above them: which side had the newer report when the times
+differed, how far apart the two reports were, and, when this dashboard was
+the one behind, whether NWS's own observation list already held the newer
+report (so the `latest` endpoint the dashboard reads had not caught up) or
+not (so the report had not reached NWS yet).
 
 Medians and percentiles sit beside the averages because one stale-forecast
 run puts a 40° outlier into a row that is otherwise within 2°; an average
@@ -108,8 +135,13 @@ question in `docs/open-questions.md`.
 - `schulze.ground.medianRatio`: Schulze's ground speed over ours in knots.
   A ratio near 1.85 across many runs would support the reading that his
   figure is a km/h value taken as knots; that reading is unconfirmed.
-- `usairnet.fields[].spread`: null for text fields, and for runs logged before
-  gaps were recorded (2026-09-24).
+- `usairnet.fieldsSameReport` and `usairnet.fieldsDifferentReport`: the two
+  field tables. `spread` is null for text fields, and for runs logged before
+  gaps were recorded (2026-09-24). Summaries written before 2026-09-27 carry
+  one pooled `usairnet.fields` instead.
+- `usairnet.timing`: runs with different observation times, how many logged
+  both times (from 2026-09-27), which side was newer, the gap in minutes
+  (signed, dashboard minus usairnet), and the two dashboard-behind cases.
 
 ## Running a comparison by hand
 
