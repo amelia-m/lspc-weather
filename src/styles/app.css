@@ -447,6 +447,17 @@ a {
 .wind-unit {
   color: var(--muted);
 }
+/* The model's 500 ft wind under the observed reading: label left, figure
+   right, wrapping to two lines on a phone rather than squeezing. */
+.wind-500 {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 10px;
+  margin: 12px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
 .wind-mph,
 .wind-gust {
   color: var(--muted);
@@ -560,7 +571,6 @@ a {
 }
 .fc-track-now {
   position: absolute;
-  left: 50%;
   top: -4px;
   bottom: -4px;
   width: 2px;
@@ -594,11 +604,17 @@ a {
   right: 12px;
 }
 .fc-track-labels {
+  position: relative;
   display: flex;
   justify-content: space-between;
   margin-top: 4px;
   font-size: 0.7rem;
   color: var(--muted);
+}
+/* "now" sits under the now line wherever the scale puts it, not midway. */
+.fc-track-now-label {
+  position: absolute;
+  transform: translateX(-50%);
 }
 .fc-offset-text {
   margin: 2px 0 0;

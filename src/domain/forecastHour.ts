@@ -19,6 +19,20 @@
  */
 import type { WindsAloftHour, WindsAloftLevel } from './types';
 
+/** How far the buttons reach from the hour nearest the clock: two hours
+ *  back, to line the table up with Mark Schulze's page or re-read the hour
+ *  just gone, and four forward, for the next few loads. Not the whole
+ *  two-day forecast: a table for tomorrow afternoon sitting beside today's
+ *  surface wind invites reading it as today's. */
+export const STEP_BACK_HOURS = 2;
+export const STEP_FORWARD_HOURS = 4;
+
+export interface StepWindow {
+  back: number;
+  forward: number;
+}
+const DEFAULT_WINDOW: StepWindow = { back: STEP_BACK_HOURS, forward: STEP_FORWARD_HOURS };
+
 export interface ChosenHour {
   validMs: number;
   levels: WindsAloftLevel[];
@@ -38,22 +52,42 @@ function nearestIndex(hours: readonly WindsAloftHour[], now: number): number {
   return best;
 }
 
-/** The hour to show: the one the reader stepped to if it is still in the
- *  data, otherwise the hour nearest `now`. null with no hours. */
+/** The first and last index the buttons may reach at `now`. */
+function reach(hours: readonly WindsAloftHour[], now: number, w: StepWindow): [number, number] {
+  const n = nearestIndex(hours, now);
+  return [Math.max(0, n - w.back), Math.min(hours.length - 1, n + w.forward)];
+}
+
+/** The hour nearest `now`, or null with no hours. */
+export function nearestForecastHour(
+  hours: readonly WindsAloftHour[] | null | undefined,
+  now: number,
+): WindsAloftHour | null {
+  return hours && hours.length > 0 ? hours[nearestIndex(hours, now)] : null;
+}
+
+/** The hour to show: the one the reader stepped to while it is still in the
+ *  data and inside the step window, otherwise the hour nearest `now`. A
+ *  stepped hour the clock has carried outside the window (two hours back,
+ *  an hour later) lets go rather than hold a table the buttons could not
+ *  have reached. null with no hours. */
 export function chooseForecastHour(
   hours: readonly WindsAloftHour[] | null | undefined,
   selectedMs: number | null,
   now: number,
+  w: StepWindow = DEFAULT_WINDOW,
 ): ChosenHour | null {
   if (!hours || hours.length === 0) return null;
-  const picked = selectedMs == null ? -1 : hours.findIndex((h) => h.validMs === selectedMs);
+  const [lo, hi] = reach(hours, now, w);
+  const found = selectedMs == null ? -1 : hours.findIndex((h) => h.validMs === selectedMs);
+  const picked = found >= lo && found <= hi ? found : -1;
   const i = picked >= 0 ? picked : nearestIndex(hours, now);
   return {
     validMs: hours[i].validMs,
     levels: hours[i].levels,
     following: picked < 0,
-    canBack: i > 0,
-    canForward: i < hours.length - 1,
+    canBack: i > lo,
+    canForward: i < hi,
   };
 }
 
@@ -81,18 +115,24 @@ export function offsetFromNow(validMs: number, now: number): { minutes: number; 
   return { minutes, text: `${span} ${minutes > 0 ? 'ahead of' : 'behind'} now` };
 }
 
-/** Where the valid-time mark sits on the card's timeline bar, as a percent
- *  of its width, with now at the middle and `spanMin` either side to the
- *  edges. An hour beyond the span pins to the edge and says which, so the
- *  bar never draws a far hour as a near one. */
+/** Where now and the valid-time mark sit on the card's timeline bar, as
+ *  percents of its width, the bar running `backMin` before now to
+ *  `forwardMin` after. The defaults are the step window plus the half hour
+ *  the nearest hour can sit either side of the clock, rounded out to whole
+ *  hours (three back, five forward), so every hour the buttons reach lands
+ *  on the bar. An hour beyond it (the FD fallback's bulletin can be) pins to
+ *  the edge and says which, so the bar never draws a far hour as a near one. */
 export function offsetBarPosition(
   minutes: number,
-  spanMin = 180,
-): { markPct: number; beyond: 'before' | 'after' | null } {
-  const raw = 50 + (minutes / spanMin) * 50;
-  if (raw < 0) return { markPct: 0, beyond: 'before' };
-  if (raw > 100) return { markPct: 100, beyond: 'after' };
-  return { markPct: Math.round(raw * 10) / 10, beyond: null };
+  backMin = (STEP_BACK_HOURS + 1) * 60,
+  forwardMin = (STEP_FORWARD_HOURS + 1) * 60,
+): { nowPct: number; markPct: number; beyond: 'before' | 'after' | null } {
+  const r1 = (x: number): number => Math.round(x * 10) / 10;
+  const nowPct = r1((backMin / (backMin + forwardMin)) * 100);
+  const raw = ((minutes + backMin) / (backMin + forwardMin)) * 100;
+  if (raw < 0) return { nowPct, markPct: 0, beyond: 'before' };
+  if (raw > 100) return { nowPct, markPct: 100, beyond: 'after' };
+  return { nowPct, markPct: r1(raw), beyond: null };
 }
 
 /**
@@ -107,9 +147,12 @@ export function selectionAfterStep(
   fromMs: number,
   delta: number,
   now: number,
+  w: StepWindow = DEFAULT_WINDOW,
 ): number | null | undefined {
   const next = stepForecastHour(hours, fromMs, delta);
   if (next == null) return undefined;
-  const nearest = chooseForecastHour(hours, null, now);
-  return nearest != null && next === nearest.validMs ? null : next;
+  const [lo, hi] = reach(hours, now, w);
+  const i = hours.findIndex((h) => h.validMs === next);
+  if (i < lo || i > hi) return undefined;
+  return i === nearestIndex(hours, now) ? null : next;
 }

@@ -143,7 +143,8 @@ return would be noticed.
 
 Its `hourOffset` parameter and its "Forecast valid now / valid in about N
 minutes" line are the equivalent of this app's valid-time line and offset bar,
-and its ±1 hr buttons of the card's −1 h / +1 h buttons (added 2026-09-27).
+and its ±1 hr buttons of the card's −1 h / +1 h buttons (added 2026-09-27;
+they reach two hours back and four ahead of the hour nearest the clock).
 When the two tables differ, compare the valid times before concluding the
 winds differ; after half past, one press of −1 h on this card, or +1 hr on
 his, lines the two up.
