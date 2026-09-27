@@ -711,7 +711,18 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
   const times = data.hourly.time.map((t) => Date.parse(t));
   if (times.length === 0) return { samples: [], validMs: null };
   const idx = nearestIndex(times, now);
+  return { samples: samplesAtIndex(data, idx), validMs: times[idx] };
+}
 
+/** Every hour the response carries, in the order served (ascending), each
+ *  with its samples. The Winds aloft card steps through these a hour at a
+ *  time, as Mark Schulze's page does; one request already holds them all
+ *  (forecast_days=2), so stepping costs no fetch. */
+export function normalizeOpenMeteoHours(data: RawOpenMeteo): OpenMeteoWindsAtHour[] {
+  return data.hourly.time.map((t, idx) => ({ samples: samplesAtIndex(data, idx), validMs: Date.parse(t) }));
+}
+
+function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
   const samples: RawWindSample[] = [];
   const num = (key: string): number | null => {
     const arr = data.hourly[key] as number[] | undefined;
@@ -773,7 +784,7 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
       tempC: num(`temperature_${p}hPa`),
     });
   }
-  return { samples, validMs: times[idx] };
+  return samples;
 }
 
 function nearestIndex(times: number[], target: number): number {

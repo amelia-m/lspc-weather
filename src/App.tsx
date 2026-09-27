@@ -8,6 +8,7 @@ import {
   type WindProfileId,
 } from './config/thresholds';
 import { useWeatherData } from './hooks/useWeatherData';
+import { useWindsHour } from './hooks/useWindsHour';
 import { AdvisoryPanel } from './components/AdvisoryPanel';
 import { MetarPanel } from './components/MetarPanel';
 import { CeilingSkyPanel } from './components/CeilingSkyPanel';
@@ -199,6 +200,7 @@ export default function App(): JSX.Element {
     });
 
   const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds, unit);
+  const winds = useWindsHour(snapshot);
   const provenance = useMemo(() => deriveProvenance(snapshot), [snapshot]);
 
   // Every hook above runs in both views, so switching routes cannot change hook
@@ -306,16 +308,19 @@ export default function App(): JSX.Element {
         />
         <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
         <WindsAloftPanel
-          levels={snapshot.windsAloft}
+          levels={winds.levels}
           source={snapshot.windsAloftSource}
-          validity={snapshot.windsAloftValidity}
+          validity={winds.validity}
+          hourNav={winds.nav}
           unit={unit}
           onUnitChange={setUnit}
         />
         <DriftPanel
-          levels={snapshot.windsAloft}
+          levels={winds.levels}
           profile={profile}
           source={snapshot.windsAloftSource}
+          validMs={winds.validity?.validMs ?? null}
+          stepped={winds.nav != null && !winds.nav.following}
         />
         <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} onUnitChange={setUnit} />
         <DailyForecastPanel

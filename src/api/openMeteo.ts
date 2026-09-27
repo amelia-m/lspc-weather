@@ -2,6 +2,7 @@ import { fetchJson, USE_FIXTURES } from './http';
 import {
   normalizeOpenMeteo,
   normalizeOpenMeteoDaily,
+  normalizeOpenMeteoHours,
   coerceOpenMeteoTimes,
   OPEN_METEO_FORECAST_URL,
   openMeteoWindsUrl,
@@ -43,6 +44,13 @@ export async function fetchWindsAloft(
   return {
     levels: interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl),
     validity: { validMs },
+    hours: normalizeOpenMeteoHours(coerced)
+      .filter((h): h is { samples: typeof h.samples; validMs: number } => h.validMs != null && Number.isFinite(h.validMs))
+      .map((h) => ({
+        validMs: h.validMs,
+        levels: interpolateWindsAloft(h.samples, fieldElevationFt, targetAltitudesFtAgl),
+      }))
+      .filter((h) => h.levels.length > 0),
   };
 }
 

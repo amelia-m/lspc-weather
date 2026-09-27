@@ -156,9 +156,18 @@ export interface WindsAloftValidity {
 /** One fetch of winds aloft: the interpolated levels and the time they are for.
  *  Returned by both the Open-Meteo path and the NOAA FD fallback so neither can
  *  hand the UI altitudes without a valid time. */
+/** The levels for one forecast hour. */
+export interface WindsAloftHour {
+  validMs: number;
+  levels: WindsAloftLevel[];
+}
+
 export interface WindsAloftForecast {
   levels: WindsAloftLevel[];
   validity: WindsAloftValidity;
+  /** Every hour the source served, ascending, for stepping the card through
+   *  them. Absent on the NOAA FD fallback, which is one bulletin. */
+  hours?: WindsAloftHour[];
 }
 
 /** Where the daily outlook came from: Open-Meteo (10 days) or the NWS
@@ -177,6 +186,9 @@ export interface WeatherSnapshot {
   windsAloftSource?: WindsAloftSource | null;
   /** Forecast time the `windsAloft` levels are valid for. null until they load. */
   windsAloftValidity?: WindsAloftValidity | null;
+  /** Every forecast hour behind `windsAloft`, for the card's hour buttons.
+   *  null on the FD fallback and until the winds load. */
+  windsAloftHours?: WindsAloftHour[] | null;
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
   taf: TafForecast | null;

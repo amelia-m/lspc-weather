@@ -6,6 +6,9 @@ import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS, recommendedDeployFt, type WindProfileId } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { SelectField } from './common/SelectField';
+import { ForecastOffset } from './common/ForecastOffset';
+import { useNow } from '../hooks/useNow';
+import { fmtTime } from './format';
 
 /** Build an inclusive numeric range [lo, hi] stepping by `step`. */
 const range = (lo: number, hi: number, step: number): number[] =>
@@ -34,14 +37,24 @@ export function DriftPanel({
   levels,
   profile,
   source,
+  validMs,
+  stepped = false,
 }: {
   levels: WindsAloftLevel[];
   profile: WindProfileId;
+  /** The forecast hour `levels` are for, so the estimate says which winds it
+   *  used. Stepping the Winds aloft card moves this card with it: a drift
+   *  worked from one hour beside a table for another would be two answers to
+   *  one question. */
+  validMs?: number | null;
+  /** Whether that hour was stepped to rather than followed from the clock. */
+  stepped?: boolean;
   /** Which source produced `levels`. The card credited Open-Meteo whatever it
    *  was actually handed, so on the NOAA FD fallback it named a source the
    *  numbers had not come from. */
   source?: WindsAloftSource | null;
 }): JSX.Element {
+  const now = useNow(60_000);
   const [exitFt, setExit] = useState(10000);
   const [deployFt, setDeploy] = useState(() => recommendedDeployFt(profile));
   const [fallRate, setFallRate] = useState(120);
@@ -95,6 +108,12 @@ export function DriftPanel({
         <p className="muted">No winds-aloft data.</p>
       ) : (
         <>
+          {validMs != null && (
+            <p className="muted small">
+              With the winds for {fmtTime(validMs)}, <ForecastOffset validMs={validMs} now={now} compact />
+              {stepped ? ', the hour stepped to on the Winds aloft card.' : '.'}
+            </p>
+          )}
           <div className="drift-inputs">
             <SelectField
               label="Exit (ft AGL)"

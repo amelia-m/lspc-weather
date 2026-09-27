@@ -13,6 +13,7 @@ import {
   normalizeNwsObservation,
   parseSkyGroups,
   normalizeOpenMeteo,
+  normalizeOpenMeteoHours,
   openMeteoHourlyVariables,
   openMeteoWindsUrl,
   OPEN_METEO_FORECAST_URL,
@@ -606,6 +607,18 @@ describe('normalizeOpenMeteo hour selection', () => {
   it('reports a null valid time for an empty series', () => {
     const empty = normalizeOpenMeteo({ hourly: { time: [] } }, Date.now());
     expect(empty).toEqual({ samples: [], validMs: null });
+  });
+
+  it('gives every hour of the series, each with its own samples, for the card to step through', () => {
+    const all = normalizeOpenMeteoHours(SERIES);
+    expect(all.map((h) => h.validMs)).toEqual([
+      Date.parse('2026-06-04T12:00:00Z'),
+      Date.parse('2026-06-04T13:00:00Z'),
+      Date.parse('2026-06-04T14:00:00Z'),
+    ]);
+    expect(all.map((h) => h.samples[0].speedKt)).toEqual([10, 20, 30]);
+    // The same samples the nearest-hour pick gives for that hour.
+    expect(all[1]).toEqual(normalizeOpenMeteo(SERIES, Date.parse('2026-06-04T12:31:00Z')));
   });
 });
 
