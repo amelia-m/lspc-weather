@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   chooseForecastHour,
+  nearestForecastHour,
   offsetBarPosition,
   offsetFromNow,
   selectionAfterStep,
+  STEP_BACK_HOURS,
+  STEP_FORWARD_HOURS,
   stepForecastHour,
 } from '../src/domain/forecastHour';
 import type { WindsAloftHour } from '../src/domain/types';
@@ -71,15 +74,47 @@ describe('offsetFromNow', () => {
 });
 
 describe('offsetBarPosition', () => {
-  it('puts now in the middle and scales three hours to either edge', () => {
-    expect(offsetBarPosition(0)).toEqual({ markPct: 50, beyond: null });
-    expect(offsetBarPosition(90)).toEqual({ markPct: 75, beyond: null });
-    expect(offsetBarPosition(-180)).toEqual({ markPct: 0, beyond: null });
+  it('runs three hours back to five forward by default, now three-eighths along', () => {
+    expect(offsetBarPosition(0)).toEqual({ nowPct: 37.5, markPct: 37.5, beyond: null });
+    expect(offsetBarPosition(-180)).toEqual({ nowPct: 37.5, markPct: 0, beyond: null });
+    expect(offsetBarPosition(300)).toEqual({ nowPct: 37.5, markPct: 100, beyond: null });
+    expect(offsetBarPosition(120).markPct).toBe(62.5);
+  });
+
+  it('keeps every hour the buttons can reach on the bar', () => {
+    // Nearest hour 30 min off the clock, then the full step either way.
+    expect(offsetBarPosition(-(STEP_BACK_HOURS * 60 + 30)).beyond).toBeNull();
+    expect(offsetBarPosition(STEP_FORWARD_HOURS * 60 + 30).beyond).toBeNull();
   });
 
   it('pins an hour beyond the span to the edge and says so', () => {
-    expect(offsetBarPosition(240)).toEqual({ markPct: 100, beyond: 'after' });
-    expect(offsetBarPosition(-600)).toEqual({ markPct: 0, beyond: 'before' });
+    expect(offsetBarPosition(360)).toMatchObject({ markPct: 100, beyond: 'after' });
+    expect(offsetBarPosition(-600)).toMatchObject({ markPct: 0, beyond: 'before' });
+  });
+});
+
+describe('the step window', () => {
+  // Twelve hours from 12Z; the clock at 16:10Z, so the nearest hour is 16Z
+  // (index 4): the buttons reach 14Z to 20Z.
+  const day: WindsAloftHour[] = Array.from({ length: 12 }, (_, k) => ({ validMs: t0 + k * H, levels: level(k) }));
+  const now = t0 + 4 * H + 10 * 60_000;
+
+  it('reaches two hours back and four forward from the hour nearest the clock', () => {
+    expect(chooseForecastHour(day, t0 + 2 * H, now)).toMatchObject({ following: false, canBack: false, canForward: true });
+    expect(chooseForecastHour(day, t0 + 8 * H, now)).toMatchObject({ following: false, canBack: true, canForward: false });
+    expect(selectionAfterStep(day, t0 + 2 * H, -1, now)).toBeUndefined();
+    expect(selectionAfterStep(day, t0 + 8 * H, 1, now)).toBeUndefined();
+    expect(selectionAfterStep(day, t0 + 7 * H, 1, now)).toBe(t0 + 8 * H);
+  });
+
+  it('lets go of a stepped hour the clock has carried outside the window', () => {
+    // 14Z was two back at 16:10; at 17:10 it is three back.
+    expect(chooseForecastHour(day, t0 + 2 * H, now + H)).toMatchObject({ validMs: t0 + 5 * H, following: true });
+  });
+
+  it('finds the hour nearest the clock for a card that does not step', () => {
+    expect(nearestForecastHour(day, now)?.validMs).toBe(t0 + 4 * H);
+    expect(nearestForecastHour(null, now)).toBeNull();
   });
 });
 

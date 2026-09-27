@@ -37,14 +37,16 @@ freefall drift and **density altitude** for jump-plane climb performance.
   drawn only where a published source sets it — the USPA ground-wind figure for
   Student, the posted club policy for the LSPC waiver tiers — and is labelled
   with that source. The Licensed profile draws no band and says so: nobody
-  publishes a surface-wind limit for licensed jumpers.
+  publishes a surface-wind limit for licensed jumpers. Under the reading, the
+  model's 500 ft AGL wind for the hour nearest the clock, labelled as a
+  forecast and measured against no limit.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   pressure-level model winds, with the
   spot/exit-separation note standing under the table at any wind speed. It
-  follows the forecast hour nearest the clock; −1 h / +1 h buttons step to
-  another hour, and a bar and a line of text always say how far the hour shown
-  is from now.
+  follows the forecast hour nearest the clock; −1 h / +1 h buttons step up to
+  two hours back and four ahead, and a bar and a line of text always say how
+  far the hour shown is from now.
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs, worked from whichever hour the winds card shows.
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars, over a
