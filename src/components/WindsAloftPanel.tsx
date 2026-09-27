@@ -8,6 +8,7 @@ import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
+import { ForecastOffset } from './common/ForecastOffset';
 import { fmtClock, fmtTime } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
@@ -21,18 +22,17 @@ const COLLAPSED_ALTITUDES_FT = new Set([0, 500, 1000, 3000, 5000, 7000, 10000]);
 /** "9,000 ft" — the form every altitude on this card takes. */
 const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
 
-/** How far the forecast hour must sit from the clock before the card spells the
- *  gap out in words.
- *
- *  Deliberately a quarter of the model step, not a half: Open-Meteo is hourly
- *  and snapped to the NEAREST step in either direction, which bounds the offset
- *  at ±30 min, so a 30-minute gate would fire only at the exact half hour and
- *  would stay silent in the case that actually confuses people — 12:31, where
- *  the card is already showing the 13:00 forecast. Past a quarter hour the
- *  displayed hour is closer to a different part of the day than to the moment
- *  you are standing in, and during a frontal passage that is enough for the
- *  winds to have turned. Below it the valid time alone says enough. */
-const OFFSET_NOTE_MIN = 15;
+/** The hour buttons, when the source has more than one hour to offer. The
+ *  NOAA FD fallback is one bulletin and gets none. */
+export interface WindsHourNav {
+  canBack: boolean;
+  canForward: boolean;
+  /** True while the card follows the hour nearest the clock. */
+  following: boolean;
+  onStep: (delta: -1 | 1) => void;
+  /** Back to following the hour nearest the clock. */
+  onFollow: () => void;
+}
 
 /** UTC "1800Z". Mark Schulze's Winds Aloft — the tool jumpers cross-check this
  *  card against — labels its forecast in exactly this form, so printing it
@@ -66,6 +66,7 @@ export function WindsAloftPanel({
   levels,
   source,
   validity,
+  hourNav,
   unit,
   onUnitChange,
 }: {
@@ -73,6 +74,8 @@ export function WindsAloftPanel({
   source: WindsAloftSource | null | undefined;
   /** When these levels are valid. Undefined until winds aloft have loaded. */
   validity?: WindsAloftValidity | null;
+  /** Step buttons; absent on a source with one hour. */
+  hourNav?: WindsHourNav | null;
   unit: SpeedUnit;
   /** Page-wide unit setter, handed to the header toggle. Required rather than
    *  optional: the level speeds here are what a jumper cross-checks against
@@ -86,8 +89,7 @@ export function WindsAloftPanel({
   const now = useNow(60_000);
   const fallback = source === 'nws-fd';
   const validMs = validity?.validMs ?? null;
-  const offsetMin = validMs != null ? Math.round((validMs - now) / 60_000) : 0;
-  const showOffset = validMs != null && Math.abs(offsetMin) >= OFFSET_NOTE_MIN;
+  const shifted = hourNav != null && !hourNav.following;
   // Always keep the lowest level the source offers, whether or not it lands on
   // the key set. That set was picked for the primary path, whose lowest row is
   // the surface; on the NOAA FD fallback the profile starts at 2,000 ft AGL,
@@ -131,25 +133,59 @@ export function WindsAloftPanel({
       {levels.length > 0 && (
         <>
           {validMs != null ? (
-            <p className="wind-readout">
-              <strong>Valid {fmtValidLocal(validMs, now)} local</strong>
-              <strong className="wind-unit">·</strong>
-              <strong>{fmtZulu(validMs)}</strong>
-            </p>
+            <>
+              {/* The valid time between the step buttons, as Mark Schulze's
+                  page lays it out, so the control reads as moving this time. */}
+              <div className={`fc-nav${shifted ? ' fc-shifted' : ''}`}>
+                {hourNav && (
+                  <button
+                    type="button"
+                    className="fc-step"
+                    onClick={() => hourNav.onStep(-1)}
+                    disabled={!hourNav.canBack}
+                    aria-label="Show the forecast one hour earlier"
+                  >
+                    −1 h
+                  </button>
+                )}
+                <p className="wind-readout fc-readout">
+                  <strong>
+                    Valid <span className="nowrap">{fmtValidLocal(validMs, now)} local</span>
+                  </strong>
+                  <strong className="wind-unit">·</strong>
+                  <strong>{fmtZulu(validMs)}</strong>
+                </p>
+                {hourNav && (
+                  <button
+                    type="button"
+                    className="fc-step"
+                    onClick={() => hourNav.onStep(1)}
+                    disabled={!hourNav.canForward}
+                    aria-label="Show the forecast one hour later"
+                  >
+                    +1 h
+                  </button>
+                )}
+              </div>
+              <ForecastOffset validMs={validMs} now={now} />
+              <p className="muted small">
+                Now {fmtTime(now)}.{' '}
+                {shifted
+                  ? 'You stepped to this hour, so the table no longer follows the clock. '
+                  : fallback
+                    ? 'The FD bulletin is issued every 6 hours, so the nearest one is used.'
+                    : 'The model steps hourly, so the table follows the hour nearest the clock and moves on at half past.'}
+                {shifted && hourNav && (
+                  <button type="button" className="fc-follow" onClick={hourNav.onFollow}>
+                    Back to the nearest hour
+                  </button>
+                )}
+              </p>
+            </>
           ) : (
             <p className="muted small">
               This source stated no forecast valid time, so the hour these winds
               are for cannot be shown.
-            </p>
-          )}
-          {showOffset && (
-            <p className="muted small">
-              {offsetMin > 0
-                ? `That is ${offsetMin} min ahead of the current time (${fmtTime(now)}) — `
-                : `That is ${Math.abs(offsetMin)} min behind the current time (${fmtTime(now)}) — `}
-              {fallback
-                ? 'the FD bulletin is issued every 6 hours, so the nearest one is used.'
-                : 'the model steps hourly, so the nearest hour is used.'}
             </p>
           )}
           {fallback && (validity?.forUseRaw != null || validity?.basedOnMs != null) && (
@@ -257,8 +293,9 @@ export function WindsAloftPanel({
             </a>
             , the popular skydiving winds tool — so if its numbers differ from these, check its
             stated valid time (it labels forecasts in Z, e.g. “1600Z”) against the one above
-            before assuming the data disagrees: this card shows the hour nearest the clock, that
-            tool the hour in progress, so late in an hour the two can be an hour apart. Its
+            before assuming the data disagrees: this card follows the hour nearest the clock, that
+            tool the hour in progress, so after half past the two are an hour apart until one of
+            them is stepped with its hour buttons. Its
             altitudes are{' '}
             <strong>AGL, like these</strong>, so the two tables are directly comparable; the “MSL”
             on its page is the ground elevation it looked up, not the scale of its wind table.

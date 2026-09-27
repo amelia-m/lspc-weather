@@ -41,9 +41,12 @@ freefall drift and **density altitude** for jump-plane climb performance.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   pressure-level model winds, with the
-  spot/exit-separation note standing under the table at any wind speed.
+  spot/exit-separation note standing under the table at any wind speed. It
+  follows the forecast hour nearest the clock; −1 h / +1 h buttons step to
+  another hour, and a bar and a line of text always say how far the hour shown
+  is from now.
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
-  deploy, and fall-rate inputs.
+  deploy, and fall-rate inputs, worked from whichever hour the winds card shows.
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars, over a
   selectable 18 / 36 / 72 h horizon (18 h by default).
 - 📅 **10-day outlook** — daily sky, high/low, max wind/gust, precip chance; tap a
@@ -94,8 +97,9 @@ sanity-check the dashboard against sources you already trust:
   the dashboard's forecast grid is centered on the DZ itself (only the METAR
   observation comes from KPMV).
 - **Winds aloft ↔ [Mark Schulze's Winds
-  Aloft](https://www.markschulze.net/winds/)** — the popular skydiving winds
-  tool; same Open-Meteo model source.
+  Aloft](https://www.markschulze.net/winds/?lat=40.8675&lon=-96.11)** — the popular
+  skydiving winds tool; same Open-Meteo model source. After half past the two
+  show different hours until one is stepped.
 - **TAF ↔ [AWC TAF
   viewer](https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK)** —
   shows all three chain stations, including KOFF's USAF-issued TAF on days it

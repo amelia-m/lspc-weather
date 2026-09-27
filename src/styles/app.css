@@ -496,6 +496,126 @@ a {
   margin: 0;
 }
 
+/* Winds aloft: the valid time between the hour buttons, and how far it is
+   from now. The shifted outline says the reader has stepped away from the
+   clock; it is the app's interface accent, not a weather colour. */
+.fc-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+.fc-nav.fc-shifted {
+  border-color: var(--accent);
+}
+.fc-readout {
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0;
+  text-align: center;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.fc-step {
+  flex: none;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fc-step:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.fc-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.fc-offset {
+  margin: 10px 4px 0;
+}
+.fc-track {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.fc-track-span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  opacity: 0.45;
+}
+.fc-track-now {
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text);
+}
+.fc-track-mark {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+}
+/* Beyond the bar's span: the dot sits on the edge with an arrow past it. */
+.fc-track-beyond-after::after,
+.fc-track-beyond-before::after {
+  position: absolute;
+  top: -6px;
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+.fc-track-beyond-after::after {
+  content: '›';
+  left: 12px;
+}
+.fc-track-beyond-before::after {
+  content: '‹';
+  right: 12px;
+}
+.fc-track-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.fc-offset-text {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 0.95rem;
+}
+.fc-follow {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* Winds aloft */
 .aloft-table {
   width: 100%;
