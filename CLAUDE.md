@@ -98,6 +98,20 @@ precisely because they were colour and text rather than flags.
   other (`skyDecode`, amber when the decode is missing or disagrees), and
   `.github/workflows/sky-parity.yml` compares the app's parse against
   aviationweather.gov's decoder on today's report every morning.
+  `normalizeIemCurrent` reads IEM's record in the same order (text first,
+  its skyc/skyl decode only when the text has no sky group).
+- **The observation is read from IEM first, NWS second, and the newer
+  report wins** (`src/domain/iem.ts`, `src/api/iem.ts`), polled every 2
+  minutes on its own loop. Timed on 2026-09-27, IEM had each KPMV report 4 to
+  6 minutes after it was taken and api.weather.gov 24 to 33; reading NWS alone
+  left the dashboard one report behind usairnet for most of every cycle.
+  aviationweather.gov and NOAA's raw files are as quick but send no CORS
+  header, so a browser cannot read them. NWS is kept because IEM is a
+  university service with no uptime promise; a tie goes to IEM. Temperatures
+  come from the METAR's T group, not IEM's `dwpf`, which is whole °F and
+  converts back a tenth off. `mesonet.agron.iastate.edu` is **not** on the
+  sandbox allowlist: check the IEM path from a runner (the usairnet
+  comparison reads both feeds and logs which served).
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
   thirteen pressure levels the tool does (`OPEN_METEO_PRESSURE_LEVELS`), and

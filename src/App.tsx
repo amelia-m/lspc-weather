@@ -355,7 +355,7 @@ export default function App(): JSX.Element {
       />
 
       <footer className="app-foot">
-        Data: NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.
+        Data: Iowa Environmental Mesonet, NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.
         <br />
         <a href="#citations">Citations to verify</a> — what this dashboard claims, and what nobody
         has checked yet.

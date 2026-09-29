@@ -1111,6 +1111,7 @@ a {
 }
 .source-info {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
@@ -1166,9 +1167,17 @@ a {
 .source.error .source-dot {
   background: var(--error);
 }
+/* An error here quotes the failed URL, one unbroken word far wider than a
+   phone; without a break point it widened the whole page, and without a cap
+   it squeezed the source's name until the two overlapped. It does not shrink
+   below its text either, or "just now" broke mid-word at 320 px. */
 .source-meta {
+  flex-shrink: 0;
   margin-left: auto;
   color: var(--muted);
+  max-width: 60%;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .app-foot {

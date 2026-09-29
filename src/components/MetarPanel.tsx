@@ -26,7 +26,7 @@ export function MetarPanel({
       subtitle={
         current ? `${current.station} · obs ${fmtTime(current.observedAt)}` : SITE.metarStation.id
       }
-      sources={[DATA_SOURCES.nwsObservation]}
+      sources={[DATA_SOURCES.iemObservation, DATA_SOURCES.nwsObservation]}
       unit={unit}
       onUnitChange={onUnitChange}
     >

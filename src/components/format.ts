@@ -24,3 +24,10 @@ export const fmtAgo = (ms: number | null): string => {
   const h = Math.round(mins / 60);
   return h === 1 ? '1 hr ago' : `${h} hr ago`;
 };
+
+/** An error message for a one-line status: each URL cut to its host. The
+ *  fetch errors quote the whole request URL, and Open-Meteo's runs to a
+ *  thousand characters, which filled a phone screen on Data health. The
+ *  host says which service failed; the full text stays in the source log
+ *  and the row's tooltip. */
+export const shortError = (msg: string): string => msg.replace(/https?:\/\/([^/\s?#]+)[^\s;)]*/g, '$1');

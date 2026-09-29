@@ -118,9 +118,10 @@ export async function fetchDailyFromGridpoint(
 
 /**
  * Fetch + normalize the latest observation (current conditions) for a station.
- * This replaces the AviationWeather.gov METAR call, which the browser blocks on
- * CORS; api.weather.gov is CORS-enabled. The response's `rawMessage` is the
- * actual METAR, so the displayed raw text is unchanged.
+ * The backup to IEM's (see src/api/iem.ts, which fetches both and shows the
+ * newer report): api.weather.gov is CORS-enabled but has each report 20
+ * minutes or more after IEM does. The response's `rawMessage` is the actual
+ * METAR, so the displayed raw text is the same whichever feed served it.
  */
 export async function fetchLatestObservation(
   stationId: string,

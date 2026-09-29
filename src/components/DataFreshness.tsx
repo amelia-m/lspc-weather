@@ -3,7 +3,7 @@ import type { SourceProvenance } from '../domain/sourceProvenance';
 import { USE_FIXTURES } from '../api/http';
 import { DATA_SOURCES, type DataSource } from '../config/sources';
 import { Panel } from './common/Panel';
-import { fmtAgo } from './format';
+import { fmtAgo, shortError } from './format';
 
 const LABELS: Record<SourceKey, string> = {
   metar: 'METAR (KPMV)',
@@ -14,7 +14,7 @@ const LABELS: Record<SourceKey, string> = {
 };
 
 const SOURCE_LINKS: Record<SourceKey, DataSource> = {
-  metar: DATA_SOURCES.nwsObservation,
+  metar: DATA_SOURCES.iemObservation,
   nws: DATA_SOURCES.nwsForecast,
   windsAloft: DATA_SOURCES.openMeteo,
   taf: DATA_SOURCES.taf,
@@ -70,11 +70,11 @@ export function DataFreshness({
                     </span>
                   )}
                 </span>
-                <span className="source-meta">
+                <span className="source-meta" title={status[k].error ?? undefined}>
                   {status[k].pending
                     ? 'fetching…'
                     : status[k].error
-                      ? `error: ${status[k].error}`
+                      ? `error: ${shortError(status[k].error)}`
                       : status[k].stale
                         ? 'stale'
                         : fmtAgo(status[k].fetchedAt)}

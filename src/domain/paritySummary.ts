@@ -62,6 +62,12 @@ export interface UsairnetRecord {
   theirObsAt?: string | null;
   obsGapMin?: number | null;
   nwsNewestAt?: string | null;
+  /** Which feed the dashboard's report came from, and when each feed's
+   *  report was taken. Logged from 2026-09-29, when the dashboard began
+   *  reading IEM first; absent before, when NWS was the only feed. */
+  ourSource?: 'iem' | 'nws';
+  iemObsAt?: string | null;
+  nwsObsAt?: string | null;
   /** `delta` is dashboard minus usairnet where both sides were numbers
    *  (signed angular difference for wind direction); absent for text fields
    *  and for runs logged before it was recorded. */
@@ -173,8 +179,14 @@ export interface ParitySummary {
     /** Runs where they showed different observations: mostly the weather
      *  changing between two reports, kept apart so it cannot blur the first. */
     fieldsDifferentReport?: UsairnetField[];
-    /** Which side had the newer report when the two differed. */
+    /** Which side had the newer report when the two differed, over the
+     *  runs from before the dashboard read IEM (NWS its only feed). */
     timing?: UsairnetTiming;
+    /** The same over the runs since, kept apart because the change was
+     *  made to move exactly these numbers. Absent before 2026-09-29. */
+    timingSinceIem?: UsairnetTiming;
+    /** Of the readable runs since then, which feed served the dashboard. */
+    feeds?: { iem: number; nws: number };
   };
 }
 
@@ -313,10 +325,6 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
   const usairReadable = usair.filter((r) => !r.error && r.fields != null);
   const sameRuns = usairReadable.filter((r) => r.sameReport === true);
   const diffRuns = usairReadable.filter((r) => r.sameReport === false);
-  const timed = diffRuns.filter((r) => typeof r.obsGapMin === 'number');
-  const behind = timed.filter((r) => (r.obsGapMin as number) < 0);
-  const listHadIt = (r: UsairnetRecord): boolean =>
-    r.nwsNewestAt != null && r.ourObsAt != null && Date.parse(r.nwsNewestAt) > Date.parse(r.ourObsAt);
 
   return {
     generatedAt: new Date(now).toISOString(),
@@ -350,16 +358,30 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
       sameReport: sameRuns.length,
       fieldsSameReport: fieldTable(sameRuns),
       fieldsDifferentReport: fieldTable(diffRuns),
-      timing: {
-        mismatched: diffRuns.length,
-        timed: timed.length,
-        dashboardNewer: timed.filter((r) => (r.obsGapMin as number) > 0).length,
-        usairnetNewer: behind.length,
-        gapMin: spreadOf(timed.map((r) => r.obsGapMin as number)),
-        dashboardBehindNwsListHadIt: behind.filter(listHadIt).length,
-        dashboardBehindNwsListLacked: behind.filter((r) => r.nwsNewestAt != null && !listHadIt(r)).length,
+      timing: timingOf(diffRuns.filter((r) => r.ourSource == null)),
+      timingSinceIem: timingOf(diffRuns.filter((r) => r.ourSource != null)),
+      feeds: {
+        iem: usairReadable.filter((r) => r.ourSource === 'iem').length,
+        nws: usairReadable.filter((r) => r.ourSource === 'nws').length,
       },
     },
+  };
+}
+
+/** Which side was behind, over runs whose two observation times differed. */
+function timingOf(diffRuns: readonly UsairnetRecord[]): UsairnetTiming {
+  const timed = diffRuns.filter((r) => typeof r.obsGapMin === 'number');
+  const behind = timed.filter((r) => (r.obsGapMin as number) < 0);
+  const listHadIt = (r: UsairnetRecord): boolean =>
+    r.nwsNewestAt != null && r.ourObsAt != null && Date.parse(r.nwsNewestAt) > Date.parse(r.ourObsAt);
+  return {
+    mismatched: diffRuns.length,
+    timed: timed.length,
+    dashboardNewer: timed.filter((r) => (r.obsGapMin as number) > 0).length,
+    usairnetNewer: behind.length,
+    gapMin: spreadOf(timed.map((r) => r.obsGapMin as number)),
+    dashboardBehindNwsListHadIt: behind.filter(listHadIt).length,
+    dashboardBehindNwsListLacked: behind.filter((r) => r.nwsNewestAt != null && !listHadIt(r)).length,
   };
 }
 

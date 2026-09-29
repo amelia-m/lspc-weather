@@ -84,6 +84,39 @@ describe('ParityPage', () => {
     expect(html).toContain('already held the newer report in 1 of 1');
   });
 
+  it('shows the runs since the dashboard read IEM apart from the ones before', () => {
+    const run = (at: string, obsGapMin: number, ourSource?: 'iem' | 'nws'): ParityRecord => ({
+      kind: 'usairnet',
+      at,
+      sameReport: false,
+      ourObsAt: at,
+      obsGapMin,
+      nwsNewestAt: at,
+      ...(ourSource ? { ourSource } : {}),
+      fields: [],
+    });
+    const html = render(
+      'ready',
+      summarizeParity(
+        [run('2026-09-27T13:40:00Z', -20), run('2026-09-29T13:40:00Z', 20, 'iem'), run('2026-09-29T14:00:00Z', 20, 'iem')],
+        Date.parse('2026-09-29T15:00:00Z'),
+      ),
+    );
+    const since = html.indexOf('Since this dashboard reads IEM first');
+    const before = html.indexOf('Before, when NWS was its only feed');
+    expect(since).toBeGreaterThan(-1);
+    expect(before).toBeGreaterThan(since);
+    expect(html).toContain('IEM served the dashboard’s report in 2 of 2');
+    expect(html.slice(since, before)).toContain('usairnet had the newer report in 0 and this dashboard in 2');
+    expect(html.slice(before)).toContain('usairnet had the newer report in 1 and this dashboard in 0');
+  });
+
+  it('shows no since-IEM section for a summary with no runs since', () => {
+    const html = render('ready');
+    expect(html).not.toContain('Since this dashboard reads IEM first');
+    expect(html).not.toContain('Before, when NWS was its only feed');
+  });
+
   it('leaves the breakdown out of a summary written before it existed', () => {
     const old = { ...summary, schulze: { ...summary.schulze, byTimeGap: undefined } };
     const html = render('ready', old);

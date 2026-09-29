@@ -63,15 +63,17 @@ freefall drift and **density altitude** for jump-plane climb performance.
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
   countdown, because no published source sets a minutes-before-sunset figure.
 - 🩺 **Data health** — per-source freshness, staleness, and error state, plus which
-  provider each source is served from. The METAR row says whether the NWS
-  API's decode of the report agreed with the METAR text the app parses, amber
-  when it did not.
+  provider each source is served from. The METAR row names the feed that
+  served the report (IEM, or NWS when its report was the newer one), how old
+  the other feed's report was, and whether the feed's decode of the report
+  agreed with the METAR text the app parses, amber when it did not.
 
 ## 🔗 Data sources (all free, no API key)
 
 | Source | Used for |
 |---|---|
-| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ, the current KPMV observation (raw METAR + decoded), and TAF text products |
+| [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/) | the current KPMV observation (raw METAR + decoded), read first |
+| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ, the current KPMV observation as the backup to IEM's, and TAF text products |
 | [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels) and the 10-day daily outlook |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 
@@ -79,10 +81,15 @@ KPMV (~12 mi from the DZ) is the nearest reporting station and issues METARs;
 it does not issue a TAF. TAFs are fetched through a fallback chain —
 **KOFF → KOMA → KLNK** — because Offutt's TAF is USAF-issued and not always
 carried on the NWS text-product feed; the card labels whichever station
-supplied the forecast. Current conditions come from the NWS observation
-endpoint rather than AviationWeather.gov because `api.weather.gov` sends CORS
-headers and is reliably reachable from a browser, while `aviationweather.gov`
-is not.
+supplied the forecast.
+
+Current conditions come from the Iowa Environmental Mesonet first and
+api.weather.gov second, both fetched every 2 minutes, and the newer report of
+the two is shown. Timed on 2026-09-27, IEM had each KPMV report 4 to 6 minutes
+after it was taken and api.weather.gov 24 to 33, so reading NWS alone left the
+dashboard one report (20 minutes) behind for most of every cycle. Both send
+CORS headers; `aviationweather.gov`, as quick as IEM, does not, so a browser
+cannot read it.
 
 ## 🔁 Cross-references
 

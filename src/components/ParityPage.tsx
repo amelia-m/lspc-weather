@@ -1,4 +1,11 @@
-import type { ParitySummary, Spread, TimeGapGroup, TimeGapKey, UsairnetField } from '../domain/paritySummary';
+import type {
+  ParitySummary,
+  Spread,
+  TimeGapGroup,
+  TimeGapKey,
+  UsairnetField,
+  UsairnetTiming,
+} from '../domain/paritySummary';
 import { Panel } from './common/Panel';
 
 /**
@@ -282,6 +289,39 @@ function FieldTable({ fields, caption }: { fields: UsairnetField[]; caption: str
 /** "20 min" for a signed minute gap, as its size. */
 const mins = (n: number | null | undefined): string => (n == null ? '—' : `${Math.round(Math.abs(n))} min`);
 
+/** Which side had the newer report, over runs whose observation times
+ *  differed. The NWS-list line only means something while NWS was the
+ *  dashboard's only feed. */
+function TimingList({ t, nwsOnly }: { t: UsairnetTiming; nwsOnly: boolean }): JSX.Element {
+  return (
+    <ul className="cite-found">
+      <li>
+        <strong>Which side was behind:</strong>{' '}
+        {t.timed === 0
+          ? `none of the ${t.mismatched} runs with different times logged both times yet (logged since Sep 27).`
+          : `of the ${t.timed} runs with different times that logged both, usairnet had the newer report in ${t.usairnetNewer} and this dashboard in ${t.dashboardNewer}${
+              t.timed < t.mismatched ? ` (${t.mismatched - t.timed} earlier runs did not log the times)` : ''
+            }.`}
+      </li>
+      {t.gapMin && (
+        <li>
+          <strong>How far apart the two reports were:</strong> {mins(t.gapMin.medianAbs)} median,{' '}
+          {mins(t.gapMin.minAbs)} to {mins(t.gapMin.maxAbs)}. KPMV reports every 20 minutes, so
+          20 min is one report behind.
+        </li>
+      )}
+      {nwsOnly && t.usairnetNewer > 0 && (
+        <li>
+          <strong>When this dashboard was behind:</strong> NWS&rsquo;s own observation list
+          already held the newer report in {t.dashboardBehindNwsListHadIt} of {t.usairnetNewer}{' '}
+          (the endpoint this dashboard read had not caught up), and did not yet have it in{' '}
+          {t.dashboardBehindNwsListLacked}.
+        </li>
+      )}
+    </ul>
+  );
+}
+
 /**
  * Two comparisons that must not share a table. When both sides show the
  * same observation, a difference is a decode difference. When they show two
@@ -301,32 +341,23 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
         {pct(u.sameReport, readable)}); in the rest each showed a different report.
         {u.unreadable > 0 && ` ${u.unreadable} runs could not read one side.`}
       </p>
+      {u.timingSinceIem && u.feeds && u.feeds.iem + u.feeds.nws > 0 && (
+        <>
+          <h4 className="cite-found-head">Since this dashboard reads IEM first (Sep 29)</h4>
+          <p className="muted small">
+            IEM served the dashboard&rsquo;s report in {u.feeds.iem} of {u.feeds.iem + u.feeds.nws}{' '}
+            runs, NWS in {u.feeds.nws} (NWS is shown only when its report is the newer one).
+          </p>
+          <TimingList t={u.timingSinceIem} nwsOnly={false} />
+        </>
+      )}
       {t && t.mismatched > 0 && (
-        <ul className="cite-found">
-          <li>
-            <strong>Which side was behind:</strong>{' '}
-            {t.timed === 0
-              ? `none of the ${t.mismatched} runs with different times logged both times yet (logged since Sep 27).`
-              : `of the ${t.timed} runs with different times that logged both, usairnet had the newer report in ${t.usairnetNewer} and this dashboard in ${t.dashboardNewer}${
-                  t.timed < t.mismatched ? ` (${t.mismatched - t.timed} earlier runs did not log the times)` : ''
-                }.`}
-          </li>
-          {t.gapMin && (
-            <li>
-              <strong>How far apart the two reports were:</strong> {mins(t.gapMin.medianAbs)} median,{' '}
-              {mins(t.gapMin.minAbs)} to {mins(t.gapMin.maxAbs)}. KPMV reports every 20 minutes, so
-              20 min is one report behind.
-            </li>
+        <>
+          {u.feeds && u.feeds.iem + u.feeds.nws > 0 && (
+            <h4 className="cite-found-head">Before, when NWS was its only feed</h4>
           )}
-          {t.usairnetNewer > 0 && (
-            <li>
-              <strong>When this dashboard was behind:</strong> NWS&rsquo;s own observation list
-              already held the newer report in {t.dashboardBehindNwsListHadIt} of {t.usairnetNewer}{' '}
-              (the endpoint this dashboard reads had not caught up), and did not yet have it in{' '}
-              {t.dashboardBehindNwsListLacked}.
-            </li>
-          )}
-        </ul>
+          <TimingList t={t} nwsOnly />
+        </>
       )}
       {u.fieldsSameReport ? (
         <>
