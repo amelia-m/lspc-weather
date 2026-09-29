@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-28T21:22:41.405Z",
+  "generatedAt": "2026-09-29T01:13:59.667Z",
   "from": "2026-09-24T05:09:51.010Z",
   "to": "2026-09-28T19:52:35.025Z",
   "schulze": {
@@ -731,6 +731,19 @@
       },
       "dashboardBehindNwsListHadIt": 3,
       "dashboardBehindNwsListLacked": 8
+    },
+    "timingSinceIem": {
+      "mismatched": 0,
+      "timed": 0,
+      "dashboardNewer": 0,
+      "usairnetNewer": 0,
+      "gapMin": null,
+      "dashboardBehindNwsListHadIt": 0,
+      "dashboardBehindNwsListLacked": 0
+    },
+    "feeds": {
+      "iem": 0,
+      "nws": 0
     }
   }
 }
