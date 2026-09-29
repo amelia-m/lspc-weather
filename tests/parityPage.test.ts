@@ -13,7 +13,7 @@ const records: ParityRecord[] = [
     rawMismatch: true,
     ground: { ourKt: 6, theirKt: 12 },
   },
-  { kind: 'usairnet', at: '2026-09-24T01:00:05Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -1 }] },
+  { kind: 'usairnet', at: '2026-09-24T01:00:05Z', v: 2, sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -1 }] },
 ];
 const summary = summarizeParity(records, Date.parse('2026-09-25T12:00:00Z'));
 const render = (state: 'loading' | 'missing' | 'error' | 'ready', s = summary) =>
@@ -57,10 +57,11 @@ describe('ParityPage', () => {
 
   it('shows same-observation and different-observation runs in separate tables', () => {
     const recs: ParityRecord[] = [
-      { kind: 'usairnet', at: '2026-09-27T13:00:00Z', sameReport: true, fields: [{ name: 'temperature °F', same: true, delta: 0 }] },
+      { kind: 'usairnet', at: '2026-09-27T13:00:00Z', v: 2, sameReport: true, fields: [{ name: 'temperature °F', same: true, delta: 0 }] },
       {
         kind: 'usairnet',
         at: '2026-09-27T13:40:00Z',
+        v: 2,
         sameReport: false,
         ourObsAt: '2026-09-27T13:15:00Z',
         obsGapMin: -20,
@@ -122,6 +123,24 @@ describe('ParityPage', () => {
     const html = render('ready', old);
     expect(html).not.toContain('Time the tables represent');
     expect(html).toContain('Direction, ft AGL');
+  });
+
+  it('shows how soon each source had each report once samples bracket an arrival, and not before', () => {
+    expect(render('ready')).not.toContain('How soon each source had each report');
+    const at = (m: number): string => new Date(Date.parse('2026-09-30T13:36:00Z') + m * 60_000).toISOString();
+    const recs: ParityRecord[] = [0, 2, 4, 6, 8].map((m) => ({
+      kind: 'usairnet',
+      at: at(m),
+      v: 2,
+      ourSource: 'iem',
+      iemObsAt: m >= 6 ? '2026-09-30T13:35:00Z' : '2026-09-30T13:15:00Z',
+      fields: [],
+    }));
+    const html = render('ready', summarizeParity(recs, Date.parse('2026-09-30T14:00:00Z')));
+    expect(html).toContain('How soon each source had each report');
+    // IEM first found the 13:35Z report at 13:42Z.
+    expect(html).toContain('<td>IEM (the dashboard reads first)</td><td>1</td><td>7 min</td>');
+    expect(html).toContain('<td>usairnet</td><td>0</td><td>—</td>');
   });
 
   it('never grades: no verdict words, no warning classes', () => {

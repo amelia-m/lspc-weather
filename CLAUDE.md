@@ -109,8 +109,8 @@ precisely because they were colour and text rather than flags.
   header, so a browser cannot read them. NWS is kept because IEM is a
   university service with no uptime promise; a tie goes to IEM. Temperatures
   come from the METAR's T group, not IEM's `dwpf`, which is whole °F and
-  converts back a tenth off. `mesonet.agron.iastate.edu` is **not** on the
-  sandbox allowlist: check the IEM path from a runner (the usairnet
+  converts back a tenth off. `mesonet.agron.iastate.edu` is on the sandbox
+  allowlist since 2026-09-29, so the IEM path runs from here (the usairnet
   comparison reads both feeds and logs which served).
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
@@ -169,7 +169,14 @@ Outbound network access goes through a policy-enforcing egress proxy. With
 `www.markschulze.net` and `amelia-m.github.io` allowlisted (2026-09-22), then
 `www.ecfr.gov`, `www.faa.gov`, `www.faasafety.gov` and `www.usairnet.com`
 (2026-09-23), these became checkable and were checked — see
-`docs/open-questions.md`:
+`docs/open-questions.md`. The environment's list as of 2026-09-29 is
+`*.weather.gov`, `aviationweather.gov`, `gml.noaa.gov`, Open-Meteo, USPA,
+eCFR, FAA, FAASafety, usairnet, markschulze.net, `amelia-m.github.io`,
+`mesonet.agron.iastate.edu` (IEM) and `tgftp.nws.noaa.gov` (NOAA's raw
+METAR and TAF files), each with its subdomains. A change to it applies to a
+running session as soon as it is saved. GitHub's artifact downloads
+redirect to Azure blob storage, which is not on it; read artifacts from a
+runner.
 
 - the live NWS and Open-Meteo paths, the TAF fallback chain and the NOAA FD
   winds fallback, by running the app's own fetch and domain code under Node;
@@ -284,8 +291,8 @@ period by period with the `fcsts` decode served beside it) disagrees with
 aviationweather.gov's decoder on today's reports, and opens one issue labelled
 `sky-parity` when it does on `main` (a run dispatched on a branch opens none);
 it also prints whether the TAF the card shows is the issuance
-aviationweather.gov currently has (informational). aviationweather.gov is not on the
-sandbox allowlist, so run it from a runner, not from here.
+aviationweather.gov currently has (informational). aviationweather.gov is on
+the sandbox allowlist since 2026-09-29, so it runs from here too.
 `scripts/schulzeCompare.live.ts` runs in the same job and prints this app's
 winds-aloft profile beside Mark Schulze's at the same valid hour; it is a
 report and never fails the run. It does run from here (markschulze.net is
@@ -301,16 +308,29 @@ is `src/domain/paritySummary.ts`, pure and tested — commits that file to
 `main` and dispatches the Pages deploy (a push made with the workflow token
 starts no other workflow). The in-app page at `#parity`, "How different from
 other sources", renders it: counts and spreads, never a grade. Until
-2026-09-28 `.github/workflows/schulze-compare.yml` samples the Schulze
-comparison every five minutes and the usairnet one every fifteen, in one job
+2026-10-05 `.github/workflows/schulze-compare.yml` samples the usairnet
+comparison every two minutes and the Schulze one every four, in one job
 started four times a day that loops for five hours (`scripts/sampleLoop.sh`),
-uploading an artifact per hour. It is a loop and not a cron line per sample
+uploading an artifact per hour. Two minutes is what lets the summary time
+when each source first had each report (`arrivalLags`); the first window, to
+2026-09-28, sampled every five and fifteen minutes and timed none. It is a loop and not a cron line per sample
 because GitHub ran the old every-fifteen-minutes schedule under ten percent of
 the time, and moving it off the quarter-hour marks did not help; a running job
 is not throttled. It counts how often the two winds tools are served
 different forecast runs for the same hour, how far apart the two pages are
-when they show different hours, and how the observation decodes compare
-through a day; it skips itself after that and should then be deleted,
-leaving the daily run to feed the summary.
+when they show different hours, how the observation decodes compare through
+a day, and how many minutes after each report IEM, usairnet, both NWS
+endpoints and NOAA's raw file first had it; it skips itself after that and
+should then be deleted, leaving the daily run to feed the summary.
+
+usairnet's page is read by `src/domain/usairnet.ts`, tested against station
+blocks saved from the live pages (`tests/fixtures/usairnet/`). Its first
+parser, in the script, misread three formats and each showed on `#parity`
+as a disagreement that was the parser's: a gust between the speed and the
+direction, present weather in the heading, and "Solid Overcast" (the FAA's
+word for OVC is plain "Overcast", AC 00-45H Table 3-3). Records carry
+`v: 2` from the fix, and the summary counts those three rows only from
+them. A calm wind is compared as no direction on both sides: NWS's decode
+gives calm 0°, which no card shows.
 
 Open items live in `docs/open-questions.md`.

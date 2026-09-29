@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  arrivalLags,
   median,
   parseParityLines,
   percentile,
@@ -7,6 +8,7 @@ import {
   timeGapGroups,
   type ParityRecord,
   type SchulzeRecord,
+  type UsairnetRecord,
 } from '../src/domain/paritySummary';
 
 const NOW = Date.parse('2026-09-25T12:00:00Z');
@@ -82,9 +84,9 @@ describe('summarizeParity', () => {
 
   it('keeps same-observation and different-observation runs in separate field tables', () => {
     const records: ParityRecord[] = [
-      { kind: 'usairnet', at: '2026-09-24T01:00:00Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -1 }] },
-      { kind: 'usairnet', at: '2026-09-24T01:15:00Z', sameReport: false, fields: [{ name: 'clouds', same: false }, { name: 'dew point °F', same: false, delta: 4 }] },
-      { kind: 'usairnet', at: '2026-09-24T01:45:00Z', sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -3 }] },
+      { kind: 'usairnet', at: '2026-09-24T01:00:00Z', v: 2, sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -1 }] },
+      { kind: 'usairnet', at: '2026-09-24T01:15:00Z', v: 2, sameReport: false, fields: [{ name: 'clouds', same: false }, { name: 'dew point °F', same: false, delta: 4 }] },
+      { kind: 'usairnet', at: '2026-09-24T01:45:00Z', v: 2, sameReport: true, fields: [{ name: 'clouds', same: true }, { name: 'dew point °F', same: false, delta: -3 }] },
       { kind: 'usairnet', at: '2026-09-24T01:30:00Z', error: 'HTTP 503' },
     ];
     const s = summarizeParity(records, NOW);
@@ -168,6 +170,63 @@ describe('summarizeParity', () => {
     expect(s.usairnet.timing).toMatchObject({ mismatched: 2, dashboardNewer: 0, usairnetNewer: 2 });
     expect(s.usairnet.timingSinceIem).toMatchObject({ mismatched: 3, dashboardNewer: 2, usairnetNewer: 1 });
     expect(s.usairnet.feeds).toEqual({ iem: 3, nws: 1 });
+  });
+
+  it('leaves the rows corrected in record version 2 out of older records, and keeps the rest', () => {
+    const fields = [
+      { name: 'clouds', same: false },
+      { name: 'wind dir °', same: false },
+      { name: 'temperature °F', same: false },
+      { name: 'pressure inHg', same: true, delta: 0 },
+    ];
+    const s = summarizeParity(
+      [
+        { kind: 'usairnet', at: '2026-09-26T20:00:00Z', sameReport: true, fields },
+        { kind: 'usairnet', at: '2026-09-30T20:00:00Z', v: 2, sameReport: true, fields },
+      ],
+      NOW,
+    );
+    const n = Object.fromEntries((s.usairnet.fieldsSameReport ?? []).map((f) => [f.name, f.n]));
+    expect(n).toEqual({ clouds: 1, 'wind dir °': 1, 'temperature °F': 1, 'pressure inHg': 2 });
+  });
+
+  it('times each report at each source from the first sample that found it', () => {
+    // Samples every 2 minutes from 13:36Z. KPMV's 13:35Z report reaches the
+    // raw file by 13:40, IEM by 13:42, usairnet by 13:52, NWS's list by
+    // 13:56 and its latest by 14:02; before that each shows 13:15Z.
+    const R0 = '2026-09-30T13:15:00Z';
+    const R1 = '2026-09-30T13:35:00Z';
+    const mins = (m: number): string => new Date(Date.parse('2026-09-30T13:36:00Z') + m * 60_000).toISOString();
+    const has = (at: number, by: number): string => (at >= by ? R1 : R0);
+    const recs: UsairnetRecord[] = [];
+    for (let m = 0; m <= 26; m += 2) {
+      recs.push({
+        kind: 'usairnet',
+        at: mins(m),
+        v: 2,
+        ourSource: 'iem',
+        rawFileObsAt: has(m, 4),
+        iemObsAt: has(m, 6),
+        theirObsAt: has(m, 16),
+        nwsNewestAt: has(m, 20),
+        nwsObsAt: has(m, 26),
+        fields: [],
+      });
+    }
+    const lag = Object.fromEntries(arrivalLags(recs).map((a) => [a.source, a.lagMin?.medianAbs ?? null]));
+    expect(lag).toEqual({ rawFile: 5, iem: 7, usairnet: 17, nwsList: 21, nwsLatest: 27 });
+  });
+
+  it('times nothing across a gap longer than the bracket, or from a source’s first sample', () => {
+    const rec = (at: string, iemObsAt: string): UsairnetRecord => ({ kind: 'usairnet', at, v: 2, iemObsAt, fields: [] });
+    const a = arrivalLags([
+      // First sample: already has 13:35Z, so when it arrived is unknown.
+      rec('2026-09-30T13:50:00Z', '2026-09-30T13:35:00Z'),
+      // An hour later, the 14:35Z report: the gap brackets nothing.
+      rec('2026-09-30T14:50:00Z', '2026-09-30T14:35:00Z'),
+    ]).find((x) => x.source === 'iem')!;
+    expect(a.reports).toBe(0);
+    expect(a.lagMin).toBeNull();
   });
 
   it('is empty, not broken, with no records', () => {
