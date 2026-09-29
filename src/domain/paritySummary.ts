@@ -68,6 +68,15 @@ export interface UsairnetRecord {
   ourSource?: 'iem' | 'nws';
   iemObsAt?: string | null;
   nwsObsAt?: string | null;
+  /** 2 from 2026-09-30: usairnet's page read for gusts, present weather
+   *  and "Solid Overcast", and calm compared as no direction. Absent
+   *  before. See CORRECTED_IN_V2. */
+  v?: number;
+  /** When NOAA's raw METAR file had its latest report taken, a reference
+   *  clock (from 2026-09-30). */
+  rawFileObsAt?: string | null;
+  /** usairnet's wind line as printed, for reading a row that did not parse. */
+  theirWind?: string | null;
   /** `delta` is dashboard minus usairnet where both sides were numbers
    *  (signed angular difference for wind direction); absent for text fields
    *  and for runs logged before it was recorded. */
@@ -140,6 +149,18 @@ export interface UsairnetTiming {
   dashboardBehindNwsListLacked: number;
 }
 
+/** Minutes from a report's own time to the first sample that found it at
+ *  one source, over every report timed there. */
+export interface ArrivalLag {
+  source: ArrivalSource;
+  /** Reports timed: the sample before the first to find it had not, and was
+   *  at most MAX_ARRIVAL_BRACKET_MIN earlier. */
+  reports: number;
+  lagMin: Spread | null;
+}
+
+export type ArrivalSource = 'rawFile' | 'iem' | 'usairnet' | 'nwsList' | 'nwsLatest';
+
 export interface ParitySummary {
   generatedAt: string;
   /** Earliest and latest run times summarised, ISO; null with no records. */
@@ -187,6 +208,9 @@ export interface ParitySummary {
     timingSinceIem?: UsairnetTiming;
     /** Of the readable runs since then, which feed served the dashboard. */
     feeds?: { iem: number; nws: number };
+    /** How long after each report each source first had it (see
+     *  arrivalLags). Absent before 2026-09-30. */
+    arrival?: ArrivalLag[];
   };
 }
 
@@ -364,6 +388,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
         iem: usairReadable.filter((r) => r.ourSource === 'iem').length,
         nws: usairReadable.filter((r) => r.ourSource === 'nws').length,
       },
+      arrival: arrivalLags(usair),
     },
   };
 }
@@ -385,11 +410,74 @@ function timingOf(diffRuns: readonly UsairnetRecord[]): UsairnetTiming {
   };
 }
 
+/** Each source's report time in a record. NWS's `latest` is the dashboard's
+ *  own report in records from before IEM (no `ourSource`), and `nwsObsAt`
+ *  since. */
+const ARRIVAL_TIME: Record<ArrivalSource, (r: UsairnetRecord) => string | null | undefined> = {
+  rawFile: (r) => r.rawFileObsAt,
+  iem: (r) => r.iemObsAt,
+  usairnet: (r) => r.theirObsAt,
+  nwsList: (r) => r.nwsNewestAt,
+  nwsLatest: (r) => (r.ourSource != null ? r.nwsObsAt : r.ourObsAt),
+};
+
+/** A report is timed at a source only when the sample before the first one
+ *  to find it is this close: the true arrival lies between the two, so the
+ *  gap is the timing's uncertainty. The sampler runs every 2 minutes; the
+ *  hour between its batches, and the day between daily runs, time nothing. */
+export const MAX_ARRIVAL_BRACKET_MIN = 5;
+
+/**
+ * For each source, how many minutes after a report was taken the first
+ * sample found that report (or a newer one) there. The minutes are to that
+ * first sample, so each is at most one sampling interval late, never early.
+ *
+ * Why: the dashboard reads IEM first because IEM had KPMV's reports within
+ * minutes (a 20-second trace of three cycles on 2026-09-27). This counts the
+ * same thing across every sampled cycle, beside usairnet and both NWS
+ * endpoints, with NOAA's raw file as the quickest reference.
+ */
+export function arrivalLags(records: readonly UsairnetRecord[]): ArrivalLag[] {
+  const samples = records
+    .filter((r) => !r.error && typeof r.at === 'string')
+    .map((r) => ({ r, at: Date.parse(r.at) }))
+    .filter((x) => Number.isFinite(x.at))
+    .sort((a, b) => a.at - b.at);
+  return (Object.keys(ARRIVAL_TIME) as ArrivalSource[]).map((source) => {
+    const seen = samples
+      .map(({ r, at }) => {
+        const t = ARRIVAL_TIME[source](r);
+        return { at, obs: t ? Date.parse(t) : NaN };
+      })
+      .filter((x) => Number.isFinite(x.obs));
+    const lags: number[] = [];
+    for (let i = 1; i < seen.length; i++) {
+      const prev = seen[i - 1];
+      const cur = seen[i];
+      // A new report appeared between these two samples.
+      if (cur.obs <= prev.obs) continue;
+      if (cur.at - prev.at > MAX_ARRIVAL_BRACKET_MIN * 60_000) continue;
+      lags.push(Math.round((cur.at - cur.obs) / 60_000));
+    }
+    return { source, reports: lags.length, lagMin: spreadOf(lags) };
+  });
+}
+
+/** Rows whose comparison was wrong before record version 2, so older
+ *  records do not count toward them: usairnet's page was misread for gusting
+ *  winds (no direction), for a heading carrying present weather (no
+ *  temperature) and for every overcast layer ("Solid Overcast"), and a calm
+ *  wind read as 0° against usairnet's none. 23 of the 24 same-report
+ *  wind-direction mismatches to 2026-09-29 were the first and last of
+ *  those. The records themselves are unchanged. */
+export const CORRECTED_IN_V2: ReadonlySet<string> = new Set(['temperature °F', 'wind dir °', 'clouds']);
+
 /** Per field: runs, agreements and the spread of the numeric gaps. */
 function fieldTable(runs: readonly UsairnetRecord[]): UsairnetField[] {
   const fieldMap = new Map<string, { n: number; agree: number; deltas: number[] }>();
   for (const r of runs) {
     for (const f of r.fields ?? []) {
+      if ((r.v ?? 1) < 2 && CORRECTED_IN_V2.has(f.name)) continue;
       const c = fieldMap.get(f.name) ?? { n: 0, agree: 0, deltas: [] };
       c.n += 1;
       if (f.same) c.agree += 1;

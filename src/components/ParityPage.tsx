@@ -3,6 +3,8 @@ import type {
   Spread,
   TimeGapGroup,
   TimeGapKey,
+  ArrivalLag,
+  ArrivalSource,
   UsairnetField,
   UsairnetTiming,
 } from '../domain/paritySummary';
@@ -286,6 +288,60 @@ function FieldTable({ fields, caption }: { fields: UsairnetField[]; caption: str
   );
 }
 
+const ARRIVAL_LABEL: Record<ArrivalSource, string> = {
+  rawFile: 'NOAA raw METAR file',
+  iem: 'IEM (the dashboard reads first)',
+  usairnet: 'usairnet',
+  nwsList: 'NWS observation list',
+  nwsLatest: 'NWS latest (the dashboard’s backup)',
+};
+
+/**
+ * How long after each report each source first had it. Only counted where
+ * two samples a few minutes apart bracket the report's arrival, which the
+ * two-minute sampler provides and the daily run does not; so the table
+ * waits for sampled cycles rather than showing a thin one.
+ */
+function ArrivalTable({ lags }: { lags: ArrivalLag[] }): JSX.Element | null {
+  if (!lags.some((a) => a.reports > 0)) return null;
+  return (
+    <>
+      <div className="sky-scroll">
+        <table className="aloft-table">
+          <caption className="parity-caption">How soon each source had each report</caption>
+          <thead>
+            <tr>
+              <th>source</th>
+              <th>reports</th>
+              <th>median</th>
+              <th>90% within</th>
+              <th>fastest</th>
+              <th>slowest</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lags.map((a) => (
+              <tr key={a.source}>
+                <td>{ARRIVAL_LABEL[a.source]}</td>
+                <td>{a.reports}</td>
+                <td>{mins(a.lagMin?.medianAbs)}</td>
+                <td>{mins(a.lagMin?.p90Abs)}</td>
+                <td>{mins(a.lagMin?.minAbs)}</td>
+                <td>{mins(a.lagMin?.maxAbs)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="muted small">
+        Minutes from the time a KPMV report was taken to the first sample that found it at each
+        source. Samples are two minutes apart, so each figure is up to two minutes later than the
+        report really arrived, never earlier.
+      </p>
+    </>
+  );
+}
+
 /** "20 min" for a signed minute gap, as its size. */
 const mins = (n: number | null | undefined): string => (n == null ? '—' : `${Math.round(Math.abs(n))} min`);
 
@@ -359,6 +415,7 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
           <TimingList t={t} nwsOnly />
         </>
       )}
+      {u.arrival && <ArrivalTable lags={u.arrival} />}
       {u.fieldsSameReport ? (
         <>
           <FieldTable fields={u.fieldsSameReport} caption="Same observation on both sides" />
@@ -370,6 +427,14 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
             The second table compares two reports taken at different times, so its differences
             are mostly the weather changing between them, not how either side decodes a report.
           </p>
+          {u.arrival && (
+            <p className="muted small">
+              The temperature, wind direction and clouds rows count only runs from Sep 30 on.
+              Before then the comparison misread usairnet&rsquo;s page for gusting winds, for
+              rain or fog in its heading, and for every overcast layer, which it writes
+              &ldquo;Solid Overcast&rdquo;.
+            </p>
+          )}
         </>
       ) : (
         u.fields && (

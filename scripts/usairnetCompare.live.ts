@@ -34,7 +34,14 @@ import { observedFlightCategory } from '../src/domain/flightCategory';
 import { cToF, ktToMph } from '../src/domain/units';
 import { sunTimes } from '../src/domain/sun';
 import { resolveLocalClock } from '../src/domain/localClock';
-import type { CurrentConditions, SkyLayer } from '../src/domain/types';
+import type { CurrentConditions } from '../src/domain/types';
+import {
+  ceilingFromTheirClouds,
+  cloudsInTheirWords,
+  comparableDirection,
+  parseUsairnet,
+  type UsairnetObs,
+} from '../src/domain/usairnet';
 
 const station = SITE.metarStation.id;
 const UA = 'lspc-weather usairnet-compare (github.com/amelia-m/lspc-weather)';
@@ -47,103 +54,6 @@ const say = (lines: string[]): void => {
 /** One machine-readable line per run, for the parity-summary workflow
  *  (domain/paritySummary.ts parses it). Printed last, after the table. */
 const record = (obj: Record<string, unknown>): string => `@@parity ${JSON.stringify(obj)}`;
-
-/** The fields usairnet prints for a station, as the page states them. */
-interface UsairnetObs {
-  asOf: string; // "8:15 PM", their local clock
-  tempF: number | null;
-  condition: string | null;
-  humidityPct: number | null;
-  dewpointF: number | null;
-  visibilityMi: number | null;
-  pressureInHg: number | null;
-  flightRule: string | null;
-  windMph: number | null; // 0 for "Calm"
-  windDirDeg: number | null;
-  clouds: string | null; // "Few at 10000 ft, Broken at 25000 ft" or "Clear"
-  /** The page's sun almanac for the station, its local clock: "7:13 AM". */
-  sunrise: string | null;
-  sunset: string | null;
-}
-
-/** Strip the page to text and read the block for our station. The block is
- *  "Current Conditions at|<NAME> - (KPMV)|66°|Clear|as of 8:15 PM CDST|…"
- *  once tags collapse to bars; the next "Current Conditions at" (another
- *  station on the same page) ends it. */
-function parseUsairnet(html: string): UsairnetObs | null {
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, '|')
-    .replace(/&deg;/g, '°')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/\s*\|\s*(\|\s*)+/g, '|')
-    .replace(/[ \t]+/g, ' ');
-  const start = text.indexOf(`(${station})`);
-  if (start < 0) return null;
-  const rest = text.slice(start);
-  const end = rest.indexOf('Current Conditions at', 10);
-  const block = end > 0 ? rest.slice(0, end) : rest;
-
-  const num = (re: RegExp): number | null => {
-    const m = block.match(re);
-    return m ? Number(m[1]) : null;
-  };
-  const str = (re: RegExp): string | null => block.match(re)?.[1]?.trim() ?? null;
-
-  const asOf = str(/as of (\d{1,2}:\d{2} [AP]M)/);
-  if (!asOf) return null;
-  const head = block.match(/\(\w{4}\)\|(-?\d+)°\|([^|]+)\|as of/);
-  const windCalm = /Wind Data\|Calm/i.test(block);
-  return {
-    asOf,
-    tempF: head ? Number(head[1]) : null,
-    condition: head ? head[2].trim() : null,
-    humidityPct: num(/Rel\. Humidity: (\d+)%/),
-    dewpointF: num(/Dew Point: (-?\d+)°F/),
-    visibilityMi: num(/Visibility: ([\d.]+) Mile/),
-    pressureInHg: num(/Pressure: ([\d.]+) in/),
-    flightRule: str(/Flight Rule: (\w+)/),
-    windMph: windCalm ? 0 : num(/Wind Data\|(\d+) MPH/),
-    windDirDeg: windCalm ? null : num(/Wind Data\|\d+ MPH\|(\d+)°/),
-    clouds: str(/Cloud Level\(s\): ([^|]+)/),
-    // "|Sunrise:|7:13 AM" — the bar keeps this from matching "Civil Sunrise:".
-    sunrise: str(/\|Sunrise:\|(\d{1,2}:\d{2} [AP]M)/),
-    sunset: str(/\|Sunset:\|(\d{1,2}:\d{2} [AP]M)/),
-  };
-}
-
-const COVER_WORD: Record<string, string> = {
-  FEW: 'Few',
-  SCT: 'Scattered',
-  BKN: 'Broken',
-  OVC: 'Overcast',
-  VV: 'Obscured',
-  CLR: 'Clear',
-  SKC: 'Clear',
-  NSC: 'Clear',
-  NCD: 'Clear',
-};
-
-/** The dashboard's layers in usairnet's words, so the two strings compare. */
-function cloudsInTheirWords(layers: SkyLayer[]): string {
-  if (layers.length === 0) return '(not reported)';
-  const clouds = layers.filter((l) => l.baseFtAgl != null);
-  if (clouds.length === 0) return 'Clear';
-  return clouds.map((l) => `${COVER_WORD[l.cover] ?? l.cover} at ${l.baseFtAgl} ft`).join(', ');
-}
-
-/** Lowest broken/overcast/obscured base in usairnet's cloud string, as their
- *  page implies a ceiling; they do not print one. */
-function ceilingFromTheirClouds(clouds: string | null): number | null {
-  if (!clouds) return null;
-  let lowest: number | null = null;
-  for (const m of clouds.matchAll(/(Broken|Overcast|Obscured) at (\d+) ft/g)) {
-    const ft = Number(m[2]);
-    if (lowest == null || ft < lowest) lowest = ft;
-  }
-  return lowest;
-}
 
 /** Relative humidity from temperature and dew point (Magnus), the way any
  *  decoder derives the figure usairnet prints; the METAR carries none. */
@@ -206,7 +116,7 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    theirs = parseUsairnet(await res.text());
+    theirs = parseUsairnet(await res.text(), station);
   } catch (e) {
     say([...out, `usairnet could not be read: ${(e as Error).message}`, record({ kind: 'usairnet', at: startedAt, error: `usairnet: ${(e as Error).message}` })]);
     return;
@@ -235,10 +145,28 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
     // leave it null
   }
 
+  // When NOAA's raw METAR file for the station was last written, as a
+  // reference clock for the timing records: it had each report 4 to 5
+  // minutes after it was taken on 2026-09-27, the quickest of every source
+  // timed. The first line is the report time, "2026/09/29 19:15".
+  // Informational; a failure leaves it null.
+  let rawFileObsAt: string | null = null;
+  try {
+    const res = await fetch(`https://tgftp.nws.noaa.gov/data/observations/metar/stations/${station}.TXT`, {
+      headers: { 'User-Agent': UA },
+      signal: AbortSignal.timeout(20_000),
+    });
+    const m = res.ok ? (await res.text()).match(/^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2})/) : null;
+    if (m) rawFileObsAt = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00.000Z`;
+  } catch {
+    // leave it null
+  }
+
   out.push(`dashboard report (via ${chosen.source.toUpperCase()}): ${ours.raw || '(no METAR text)'}`);
   out.push(
     `feeds: IEM ${iemObsAt?.slice(11, 16) ?? `none (${feedErr(iemRes) ?? 'no report'})`}` +
-      ` · NWS latest ${nwsObsAt?.slice(11, 16) ?? `none (${feedErr(nwsRes) ?? 'no report'})`}`,
+      ` · NWS latest ${nwsObsAt?.slice(11, 16) ?? `none (${feedErr(nwsRes) ?? 'no report'})`}` +
+      ` · NOAA raw file ${rawFileObsAt?.slice(11, 16) ?? 'unread'}`,
   );
   out.push(`observed: dashboard ${localClock(ours.observedAt)} · usairnet as of ${theirs.asOf} (both ${ZONE})`);
   const sameReport = localClock(ours.observedAt) === theirs.asOf;
@@ -289,7 +217,8 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   row('visibility mi', ours.visibilitySm, theirs.visibilityMi);
   row('pressure inHg', ours.altimeterInHg == null ? null : ours.altimeterInHg.toFixed(2), theirs.pressureInHg?.toFixed(2));
   row('wind mph', ours.wind.speedKt == null ? null : Math.round(ktToMph(ours.wind.speedKt)), theirs.windMph);
-  row('wind dir °', ours.wind.directionDeg, theirs.windDirDeg, 'angle');
+  row('wind gust mph', ours.wind.gustKt == null ? null : Math.round(ktToMph(ours.wind.gustKt)), theirs.windGustMph);
+  row('wind dir °', comparableDirection(ours.wind.speedKt, ours.wind.directionDeg), theirs.windDirDeg, 'angle');
   row('clouds', cloudsInTheirWords(ours.skyLayers), theirs.clouds, 'text');
   row('ceiling ft (theirs implied)', ours.ceilingFtAgl, ceilingFromTheirClouds(theirs.clouds));
   row('flight rule', observedFlightCategory(ours) ?? '(withheld)', theirs.flightRule, 'text');
@@ -333,8 +262,14 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       kind: 'usairnet',
       at: startedAt,
       sameReport,
+      // 2: usairnet's page parsed for gusts, present weather and "Solid
+      // Overcast", and a calm wind compared as no direction. The summary
+      // leaves the rows those changed out of older records.
+      v: 2,
       ourObsAt: new Date(ours.observedAt).toISOString(),
       ourSource: chosen.source,
+      rawFileObsAt,
+      theirWind: theirs.windText,
       iemObsAt,
       nwsObsAt,
       theirObsAt: theirObsMs == null ? null : new Date(theirObsMs).toISOString(),

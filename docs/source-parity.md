@@ -85,10 +85,13 @@ the change was made to move exactly those numbers.
 ## How the logs are gathered
 
 1. `.github/workflows/schulze-compare.yml` is one job, started four times a
-   day, that loops for five hours: the Schulze comparison every five minutes,
-   the usairnet one every fifteen (`scripts/sampleLoop.sh`). It runs until
-   2026-09-28T02:00Z, then skips itself and should be deleted. It replaced a
-   cron line per sample, which GitHub ran under ten percent of the time.
+   day, that loops for five hours: the usairnet comparison every two minutes
+   and the Schulze one every four (`scripts/sampleLoop.sh`). It runs until
+   2026-10-05T02:00Z, then skips itself and should be deleted. Its first
+   window (2026-09-24 to 28) sampled every five and fifteen minutes; it was
+   restarted denser so the summary can time each report's arrival at each
+   source (below). It replaced a cron line per sample, which GitHub ran under
+   ten percent of the time.
    `.github/workflows/sky-parity.yml` runs both scripts once a day for good.
 2. Each run uploads its `@@parity` lines as artifacts named
    `parity-<run id>` (the daily run) or `parity-<run id>-<hour>` (one per
@@ -128,7 +131,25 @@ gave a number. Above them: which side had the newer report when the times
 differed, how far apart the two reports were, and, when this dashboard was
 the one behind, whether NWS's own observation list already held the newer
 report (so the `latest` endpoint the dashboard reads had not caught up) or
-not (so the report had not reached NWS yet).
+not (so the report had not reached NWS yet). Runs since the dashboard read
+IEM first are counted apart from the NWS-only runs before.
+
+Also for the observation: **how soon each source had each report**, in
+minutes from the report's own time to the first sample that found it at
+NOAA's raw file, IEM, usairnet, NWS's observation list and NWS's `latest`.
+A report is timed at a source only where the sample before had not found it
+and was at most five minutes earlier, so the figure is at most one sampling
+interval (two minutes) late and never early; the hour between sampler
+batches and the day between daily runs time nothing
+(`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`).
+
+The temperature, wind direction and clouds rows count only records from
+2026-09-30 (`v: 2`). Before then the comparison misread usairnet's page
+for gusting winds, for present weather in its heading and for every
+overcast layer ("Solid Overcast"), and compared NWS's 0° for a calm wind
+against usairnet's none; 23 of the 24 same-report direction mismatches to
+2026-09-29 were those. The older records are kept; those three rows skip
+them (`CORRECTED_IN_V2`).
 
 Medians and percentiles sit beside the averages because one stale-forecast
 run puts a 40° outlier into a row that is otherwise within 2°; an average

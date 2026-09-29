@@ -1,12 +1,18 @@
 name: Live comparisons (temporary)
 
-# Until 2026-09-28T02:00Z, then self-skipping: sample this app's winds-aloft
-# profile beside Mark Schulze's (scripts/schulzeCompare.live.ts) every five
-# minutes, and this app's decode of the latest KPMV observation beside
-# usairnet's (scripts/usairnetCompare.live.ts) every fifteen. Every @@parity
+# Until 2026-10-05T02:00Z, then self-skipping: sample this app's decode of
+# the latest KPMV observation beside usairnet's, with the report time each
+# feed (IEM, both NWS endpoints, NOAA's raw file) had at that moment
+# (scripts/usairnetCompare.live.ts), every two minutes; and this app's
+# winds-aloft profile beside Mark Schulze's (scripts/schulzeCompare.live.ts)
+# every four. The two-minute cadence is what times each report's arrival at
+# each source, the measure of the switch to IEM on 2026-09-29. Every @@parity
 # line is uploaded as an artifact; parity-summary.yml combines them into the
-# #parity page's summary. See docs/open-questions.md, "Which forecast run the
-# winds-aloft request is served". Never fails: the scripts are reports.
+# #parity page's summary. Never fails: the scripts are reports.
+#
+# The first window (2026-09-24 to 28) sampled every five and fifteen
+# minutes. It was restarted denser once the dashboard read IEM first and the
+# comparison's reading of usairnet's page was corrected.
 #
 # One job that loops, started four times a day, in place of a cron line per
 # sample. GitHub ran the old every-fifteen-minutes schedule under ten percent
@@ -14,10 +20,9 @@ name: Live comparisons (temporary)
 # did not help; a job already running is not throttled. Each start samples
 # for five hours in five one-hour steps, uploading after each, so a late or
 # cancelled job still keeps what it gathered and the three-hourly summary
-# picks records up within the hour. GitHub's start-time jitter moves which
-# minutes of the hour the five-minute samples land on from one start to the
-# next, which is what spreads them across the half-past boundary where the
-# two pages start showing different hours.
+# picks records up within the hour. Four five-hour batches a day cover
+# twenty hours of report cycles, and the hour between batches keeps each
+# start's samples its own.
 #
 # Delete this file, or move the end date, once the question is settled.
 on:
@@ -37,7 +42,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  WINDOW_END: '2026-09-28T02:00:00Z'
+  WINDOW_END: '2026-10-05T02:00:00Z'
 
 jobs:
   sample:
