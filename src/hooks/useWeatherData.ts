@@ -2,16 +2,17 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   fetchDailyFromGridpoint,
   fetchHourly,
-  fetchLatestObservation,
   fetchTafAny,
   fetchWindsAloftFd,
 } from '../api/nws';
 import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
+import { fetchObservation } from '../api/iem';
+import { supersedes } from '../domain/iem';
 import { evaluateAdvisories } from '../domain/advisories';
 import { densityAltitude } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
 import { logSource } from '../api/sourceLog';
-import { METAR_SKY_PROVENANCE } from '../domain/sourceProvenance';
+import { describeObservationFeed, METAR_SKY_PROVENANCE } from '../domain/sourceProvenance';
 import type {
   Advisory,
   SourceKey,
@@ -27,6 +28,12 @@ import { usePolling } from './usePolling';
 
 const STALE_AFTER_MS = 30 * 60 * 1000;
 const REFRESH_MS = 10 * 60 * 1000;
+/** The observation alone is re-read every 2 minutes. KPMV reports every 20,
+ *  IEM has each report 4 to 6 minutes after it is taken, and a 10-minute
+ *  poll would add up to 10 more on top: this keeps the card within about 8
+ *  minutes of the station. That is 30 small requests an hour to each of IEM
+ *  and NWS from an open tab; polling pauses while the tab is hidden. */
+const OBSERVATION_REFRESH_MS = 2 * 60 * 1000;
 /** How soon to re-try after a cycle with failures (see quick-retry below). */
 const QUICK_RETRY_MS = 45 * 1000;
 
@@ -84,9 +91,94 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
   const quickRetryUsed = useRef(false);
   const quickRetryTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  // Each settle bumps the panel's "Updated" line, so fast sources register
+  // immediately instead of waiting for the slowest fetch to time out.
+  const updateSource = useCallback((key: SourceKey, next: SourceStatus): void => {
+    setLastUpdated(Date.now());
+    setStatus((prev) => ({ ...prev, [key]: next }));
+  }, []);
+
+  const setStale = useCallback((key: SourceKey, err: unknown): void => {
+    setLastUpdated(Date.now());
+    setStatus((prev) => ({
+      ...prev,
+      // Keep the last-good fetchedAt so the freshness panel still shows when
+      // the data we're displaying was actually retrieved; just flag it stale.
+      [key]: {
+        ...prev[key],
+        ok: false,
+        stale: true,
+        error: err instanceof Error ? err.message : String(err),
+        pending: false,
+      },
+    }));
+  }, []);
+
+  // When the observation was last asked for, so the 2-minute poll can skip a
+  // turn that the full refresh has just taken (both fire on load and when the
+  // tab comes back into view). The report last logged, so the log gets one
+  // line per report rather than one per poll: 200 lines at every 2 minutes
+  // would hold under three hours.
+  const lastObservationAsk = useRef(0);
+  const lastLoggedReport = useRef<string | null>(null);
+
+  const refreshObservation = useCallback(
+    (onFailure: (err: unknown) => void): Promise<void> => {
+      const { dz, metarStation } = SITE;
+      lastObservationAsk.current = Date.now();
+      return fetchObservation(metarStation)
+        .then(({ current, otherObservedAt, iemError }) => {
+          setSnapshot((prev) =>
+            // Never back in time (see supersedes); the card's own "obs" time
+            // shows how old a kept report is.
+            !supersedes(current, prev.current)
+              ? prev
+              : {
+                  ...prev,
+                  current,
+                  currentOtherObservedAt: otherObservedAt,
+                  densityAltitude:
+                    current.altimeterInHg != null && current.tempC != null
+                      ? densityAltitude({
+                          elevationFt: dz.elevationFt,
+                          altimeterInHg: current.altimeterInHg,
+                          oatC: current.tempC,
+                          dewpointC: current.dewpointC,
+                        })
+                      : prev.densityAltitude,
+                },
+          );
+          const feed = describeObservationFeed(current.source ?? 'nws', current.observedAt, otherObservedAt);
+          const report = `${current.source}@${current.observedAt}`;
+          if (report !== lastLoggedReport.current) {
+            lastLoggedReport.current = report;
+            const at = new Date(current.observedAt).toISOString().slice(11, 16);
+            logSource(
+              'metar',
+              feed.fallback ? 'fallback' : 'success',
+              `METAR from ${metarStation.id} ${at}Z via ${feed.detail}`,
+              feed.fallback ? iemError : undefined,
+            );
+            // The two decodes of the report disagreeing is worth a log line of
+            // its own: the chip on Data health shows it now, and this is how it
+            // is reconstructed later from a laptop (window.LSPC_DEBUG.getLogs()).
+            if (current.skyDecode !== undefined && METAR_SKY_PROVENANCE[current.skyDecode].fallback) {
+              logSource('metar', 'fallback', `sky decode: ${current.skyDecode} (${current.raw})`);
+            }
+          }
+          updateSource('metar', okStatus());
+        })
+        .catch((e) => {
+          logSource('metar', 'failure', 'METAR fetch failed (IEM and NWS)', e);
+          onFailure(e);
+        });
+    },
+    [updateSource],
+  );
+
   const refresh = useCallback(() => {
     const now = Date.now();
-    const { dz, metarStation } = SITE;
+    const { dz } = SITE;
     clearTimeout(quickRetryTimer.current);
     let failures = 0;
 
@@ -100,60 +192,14 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       return out;
     });
 
-    // Each settle bumps the panel's "Updated" line, so fast sources register
-    // immediately instead of waiting for the slowest fetch to time out.
-    const updateSource = (key: SourceKey, next: SourceStatus): void => {
-      setLastUpdated(Date.now());
-      setStatus((prev) => ({ ...prev, [key]: next }));
-    };
-
     const markStale = (key: SourceKey, err: unknown): void => {
       failures++;
-      setLastUpdated(Date.now());
-      setStatus((prev) => ({
-        ...prev,
-        // Keep the last-good fetchedAt so the freshness panel still shows when
-        // the data we're displaying was actually retrieved; just flag it stale.
-        [key]: {
-          ...prev[key],
-          ok: false,
-          stale: true,
-          error: err instanceof Error ? err.message : String(err),
-          pending: false,
-        },
-      }));
+      setStale(key, err);
     };
 
     // Each source is fetched and applied independently so one failure doesn't
     // blank the others; on error we keep prior data and mark it stale.
-    const metarP = fetchLatestObservation(metarStation.id)
-      .then((current) => {
-        setSnapshot((prev) => ({
-          ...prev,
-          current,
-          densityAltitude:
-            current?.altimeterInHg != null && current.tempC != null
-              ? densityAltitude({
-                  elevationFt: dz.elevationFt,
-                  altimeterInHg: current.altimeterInHg,
-                  oatC: current.tempC,
-                  dewpointC: current.dewpointC,
-                })
-              : prev.densityAltitude,
-        }));
-        logSource('metar', 'success', `METAR from ${metarStation.id}`);
-        // The two decodes of the report disagreeing is worth a log line of its
-        // own: the chip on Data health shows it now, and this is how it is
-        // reconstructed later from a laptop (window.LSPC_DEBUG.getLogs()).
-        if (current?.skyDecode !== undefined && METAR_SKY_PROVENANCE[current.skyDecode].fallback) {
-          logSource('metar', 'fallback', `sky decode: ${current.skyDecode} (${current.raw})`);
-        }
-        updateSource('metar', okStatus());
-      })
-      .catch((e) => {
-        logSource('metar', 'failure', 'METAR fetch failed', e);
-        markStale('metar', e);
-      });
+    const metarP = refreshObservation((e) => markStale('metar', e));
 
     const hourlyP = fetchHourly(dz.lat, dz.lon)
       .then((hourly) => {
@@ -279,10 +325,20 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         quickRetryTimer.current = setTimeout(() => refreshRef.current(), QUICK_RETRY_MS);
       }
     });
-  }, []);
+  }, [refreshObservation, setStale, updateSource]);
   refreshRef.current = refresh;
 
   usePolling(refresh, REFRESH_MS);
+
+  // The observation's own faster loop. Declared after the full refresh so its
+  // immediate first call finds the refresh's request just made and skips it.
+  // A failure here marks the METAR stale but does not arm the quick retry:
+  // the next turn is two minutes away anyway.
+  const pollObservation = useCallback(() => {
+    if (Date.now() - lastObservationAsk.current < OBSERVATION_REFRESH_MS / 2) return;
+    void refreshObservation((e) => setStale('metar', e));
+  }, [refreshObservation, setStale]);
+  usePolling(pollObservation, OBSERVATION_REFRESH_MS);
 
   // Ticks every minute so time-based advisories (sunset countdowns, "after
   // sunset") stay current between the 10-minute data polls.

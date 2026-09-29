@@ -63,7 +63,7 @@ export function SurfaceWindPanel({
          profile it named bands over a bar that draws none, for a profile that
          raises no wind flag — a label describing a different card. */
       subtitle={t.windLimitCitation ? `${label} flag bands` : `${label} — no published limit`}
-      sources={[DATA_SOURCES.nwsObservation]}
+      sources={[DATA_SOURCES.iemObservation, DATA_SOURCES.nwsObservation]}
       unit={unit}
       onUnitChange={onUnitChange}
     >

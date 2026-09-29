@@ -63,6 +63,25 @@ both; the browser cannot read it (no CORS). The comparison now logs both times
 and NWS's newest listed report on every run, so the page counts this rather
 than resting on one trace.
 
+Timed again on 2026-09-27 from a GitHub runner, polling every 20 seconds
+through three report cycles (20:55Z, 21:15Z, 21:35Z), minutes after the
+report was taken:
+
+| Source | Had the report after | Readable from a browser |
+|---|---|---|
+| NOAA's raw METAR files (tgftp) | 4 to 5 min | no (no CORS) |
+| Iowa Environmental Mesonet | 4 to 6 min | yes |
+| aviationweather.gov | 5 to 6 min | no (no CORS) |
+| usairnet | 17 to 18 min | no (a page) |
+| api.weather.gov | 24 to 33 min | yes |
+
+So from 2026-09-29 the dashboard reads IEM first and keeps api.weather.gov as
+the backup, fetches both every 2 minutes rather than every 10, and shows the
+newer report (`src/domain/iem.ts`, `src/api/iem.ts`). The comparison logs
+which feed served (`ourSource`) and each feed's report time, and the page
+keeps the runs since the change apart from the NWS-only runs before it, since
+the change was made to move exactly those numbers.
+
 ## How the logs are gathered
 
 1. `.github/workflows/schulze-compare.yml` is one job, started four times a

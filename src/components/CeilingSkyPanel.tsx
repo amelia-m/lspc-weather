@@ -33,7 +33,12 @@ export function CeilingSkyPanel({
     <Panel
       title="Ceiling & sky"
       subtitle="now + next hours"
-      sources={[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast, DATA_SOURCES.usairnet]}
+      sources={[
+        DATA_SOURCES.iemObservation,
+        DATA_SOURCES.nwsObservation,
+        DATA_SOURCES.nwsForecast,
+        DATA_SOURCES.usairnet,
+      ]}
     >
       <div className="ceil-now">
         <span className="ceil-label">Flight category</span>

@@ -15,8 +15,10 @@
  * aviationweather.gov's decoder; this prints every field usairnet shows —
  * temperature, dew point, humidity, visibility, pressure, wind, cloud
  * layers, ceiling and flight rule — beside what the dashboard's own path
- * (api.weather.gov → normalizeNwsObservation) makes of the same report, so a
- * disagreement in any of them is in the log the same day.
+ * (IEM and api.weather.gov, the newer report of the two, as
+ * src/api/iem.ts's fetchObservation chooses) makes of the same report, so a
+ * disagreement in any of them is in the log the same day. The record says
+ * which feed served, and when each feed's report was taken.
  *
  * It is a report, not a gate. usairnet is a page scrape — its markup can
  * change any day — and a lagging page is not a bug in this app, so the run
@@ -27,6 +29,7 @@
 import { it } from 'vitest';
 import { SITE } from '../src/config/site';
 import { normalizeNwsObservation, type RawNwsObservation } from '../src/domain/normalize';
+import { chooseObservation, normalizeIemCurrent, type RawIemCurrents } from '../src/domain/iem';
 import { observedFlightCategory } from '../src/domain/flightCategory';
 import { cToF, ktToMph } from '../src/domain/units';
 import { sunTimes } from '../src/domain/sun';
@@ -159,18 +162,42 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   const startedAt = new Date().toISOString();
   const out: string[] = ['', `=== ${station}: dashboard vs usairnet ===`];
 
-  let ours: CurrentConditions;
-  try {
-    const res = await fetch(`https://api.weather.gov/stations/${station}/observations/latest`, {
-      headers: { 'User-Agent': UA, Accept: 'application/geo+json' },
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    ours = normalizeNwsObservation((await res.json()) as RawNwsObservation, station);
-  } catch (e) {
-    say([...out, `api.weather.gov could not be read: ${(e as Error).message}`, record({ kind: 'usairnet', at: startedAt, error: `nws: ${(e as Error).message}` })]);
+  // The dashboard's own choice: both feeds, the newer report. The fetches
+  // are written out here rather than imported from src/api, which reads
+  // import.meta.env and so does not load under the live config.
+  const { iemId, iemNetwork } = SITE.metarStation;
+  const [iemRes, nwsRes] = await Promise.allSettled([
+    (async () => {
+      const res = await fetch(
+        `https://mesonet.agron.iastate.edu/api/1/currents.json?station=${iemId}&network=${iemNetwork}`,
+        { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(20_000) },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rec = ((await res.json()) as RawIemCurrents).data?.find((r) => r.station === iemId);
+      return rec ? normalizeIemCurrent(rec, station) : null;
+    })(),
+    (async () => {
+      const res = await fetch(`https://api.weather.gov/stations/${station}/observations/latest`, {
+        headers: { 'User-Agent': UA, Accept: 'application/geo+json' },
+        signal: AbortSignal.timeout(20_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return normalizeNwsObservation((await res.json()) as RawNwsObservation, station);
+    })(),
+  ]);
+  const iemCur = iemRes.status === 'fulfilled' ? iemRes.value : null;
+  const nwsCur = nwsRes.status === 'fulfilled' ? nwsRes.value : null;
+  const feedErr = (r: PromiseSettledResult<unknown>): string | null =>
+    r.status === 'rejected' ? (r.reason as Error).message : null;
+  const chosen = chooseObservation(iemCur, nwsCur);
+  if (!chosen) {
+    const msg = `iem: ${feedErr(iemRes) ?? 'no report'}; nws: ${feedErr(nwsRes) ?? 'no report'}`;
+    say([...out, `neither observation feed could be read (${msg})`, record({ kind: 'usairnet', at: startedAt, error: msg })]);
     return;
   }
+  const ours: CurrentConditions = chosen.current;
+  const iemObsAt = iemCur ? new Date(iemCur.observedAt).toISOString() : null;
+  const nwsObsAt = nwsCur ? new Date(nwsCur.observedAt).toISOString() : null;
 
   let theirs: UsairnetObs | null;
   try {
@@ -208,7 +235,11 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
     // leave it null
   }
 
-  out.push(`dashboard report: ${ours.raw || '(no METAR text)'}`);
+  out.push(`dashboard report (via ${chosen.source.toUpperCase()}): ${ours.raw || '(no METAR text)'}`);
+  out.push(
+    `feeds: IEM ${iemObsAt?.slice(11, 16) ?? `none (${feedErr(iemRes) ?? 'no report'})`}` +
+      ` · NWS latest ${nwsObsAt?.slice(11, 16) ?? `none (${feedErr(nwsRes) ?? 'no report'})`}`,
+  );
   out.push(`observed: dashboard ${localClock(ours.observedAt)} · usairnet as of ${theirs.asOf} (both ${ZONE})`);
   const sameReport = localClock(ours.observedAt) === theirs.asOf;
   // usairnet gives a bare local clock; resolved to the date nearest the
@@ -303,6 +334,9 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       at: startedAt,
       sameReport,
       ourObsAt: new Date(ours.observedAt).toISOString(),
+      ourSource: chosen.source,
+      iemObsAt,
+      nwsObsAt,
       theirObsAt: theirObsMs == null ? null : new Date(theirObsMs).toISOString(),
       obsGapMin,
       nwsNewestAt,

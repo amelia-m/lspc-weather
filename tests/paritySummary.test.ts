@@ -141,6 +141,35 @@ describe('summarizeParity', () => {
     expect(s.usairnet.timing?.gapMin).toMatchObject({ n: 3, medianAbs: 20, mean: -6.67 });
   });
 
+  it('keeps the runs since the dashboard read IEM apart from the NWS-only runs before, and counts the feed', () => {
+    const run = (at: string, obsGapMin: number, ourSource?: 'iem' | 'nws'): ParityRecord => ({
+      kind: 'usairnet',
+      at,
+      sameReport: false,
+      ourObsAt: at,
+      obsGapMin,
+      nwsNewestAt: null,
+      ...(ourSource ? { ourSource } : {}),
+      fields: [],
+    });
+    const s = summarizeParity(
+      [
+        // Before: NWS only, the dashboard behind twice.
+        run('2026-09-27T13:40:00Z', -20),
+        run('2026-09-27T14:00:00Z', -20),
+        // Since: IEM served and the dashboard was ahead; once NWS served.
+        run('2026-09-29T13:40:00Z', 20, 'iem'),
+        run('2026-09-29T14:00:00Z', 20, 'iem'),
+        run('2026-09-29T14:20:00Z', -20, 'nws'),
+        { kind: 'usairnet', at: '2026-09-29T14:40:00Z', sameReport: true, ourSource: 'iem', fields: [] },
+      ],
+      NOW,
+    );
+    expect(s.usairnet.timing).toMatchObject({ mismatched: 2, dashboardNewer: 0, usairnetNewer: 2 });
+    expect(s.usairnet.timingSinceIem).toMatchObject({ mismatched: 3, dashboardNewer: 2, usairnetNewer: 1 });
+    expect(s.usairnet.feeds).toEqual({ iem: 3, nws: 1 });
+  });
+
   it('is empty, not broken, with no records', () => {
     const s = summarizeParity([], NOW);
     expect(s.from).toBeNull();

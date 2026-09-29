@@ -35,10 +35,18 @@ export type SkyDecodeCheck =
   | 'not-reported'; // neither has anything
 
 /** Current observation, from a METAR (KPMV). */
+/** Which feed served an observation: the Iowa Environmental Mesonet
+ *  (primary, minutes after the report) or api.weather.gov (the backup). */
+export type ObservationSource = 'iem' | 'nws';
+
 export interface CurrentConditions {
   station: string;
   observedAt: number; // epoch ms
   raw: string;
+  /** Which feed the report came from. chooseObservation sets it on the one
+   *  shown; normalizeNwsObservation leaves it unset, having been written
+   *  when there was one feed. */
+  source?: ObservationSource;
   wind: SurfaceWind;
   visibilitySm: number | null;
   /** Sky groups as reported. A clear sky is a CLR/SKC/NCD layer with no base,
@@ -177,6 +185,9 @@ export type DailySource = 'open-meteo' | 'nws-gridpoint';
 /** Merged, normalized snapshot fed to the advisory engine and the UI. */
 export interface WeatherSnapshot {
   current: CurrentConditions | null;
+  /** When the observation feed NOT shown had its latest report taken (see
+   *  chooseObservation); null when that feed failed or had none. */
+  currentOtherObservedAt?: number | null;
   hourly: HourlyPoint[];
   daily: DailyPoint[];
   /** null until the daily outlook has loaded. */

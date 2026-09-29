@@ -38,7 +38,12 @@ export function AdvisoryPanel({
   const footer = (
     <>
       Flag values from:{' '}
-      {[DATA_SOURCES.nwsObservation, DATA_SOURCES.nwsForecast, DATA_SOURCES.openMeteo].map(
+      {[
+        DATA_SOURCES.iemObservation,
+        DATA_SOURCES.nwsObservation,
+        DATA_SOURCES.nwsForecast,
+        DATA_SOURCES.openMeteo,
+      ].map(
         (s, i) => (
           <span key={s.url}>
             {i > 0 && ' · '}

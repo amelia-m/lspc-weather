@@ -24,6 +24,11 @@ export interface SiteConfig {
   /** Nearest reporting station for METARs. */
   metarStation: {
     id: string; // ICAO
+    /** The Iowa Environmental Mesonet's id and network for the same station
+     *  (the ICAO id without the K, and the state ASOS network), which its
+     *  currents API needs both of. */
+    iemId: string;
+    iemNetwork: string;
     name: string;
     lat: number;
     lon: number;
@@ -64,6 +69,8 @@ export const SITE: SiteConfig = {
   },
   metarStation: {
     id: 'KPMV',
+    iemId: 'PMV',
+    iemNetwork: 'NE_ASOS',
     name: 'Plattsmouth Municipal / Douglas V Duey Field',
     lat: 40.9502,
     lon: -95.9179,

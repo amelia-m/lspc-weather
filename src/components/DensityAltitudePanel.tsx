@@ -14,7 +14,7 @@ export function DensityAltitudePanel({
       className="panel-secondary"
       title="Density altitude"
       subtitle="C-182 climb performance"
-      sources={[DATA_SOURCES.nwsObservation]}
+      sources={[DATA_SOURCES.iemObservation, DATA_SOURCES.nwsObservation]}
     >
       {!da ? (
         <p className="muted">Needs altimeter + temperature from the METAR.</p>

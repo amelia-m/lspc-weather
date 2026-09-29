@@ -8,9 +8,18 @@ export interface DataSource {
 }
 
 export const DATA_SOURCES = {
-  /** Current observation (the METAR). The app fetches the CORS-enabled
-   *  api.weather.gov JSON endpoint, but that link points to the human-readable
-   *  NWS observation-history page (the API endpoint downloads as JSON). */
+  /** Current observation from the Iowa Environmental Mesonet, read first
+   *  because it carries each report within minutes (see src/domain/iem.ts).
+   *  The label names IEM's own id (PMV), which is what the link selects.
+   *  The link is IEM's page for the station; the API answers JSON. */
+  iemObservation: {
+    label: `IEM observation · ${SITE.metarStation.iemId}`,
+    url: `https://mesonet.agron.iastate.edu/sites/site.php?station=${SITE.metarStation.iemId}&network=${SITE.metarStation.iemNetwork}`,
+  },
+  /** Current observation (the METAR), the backup to IEM's. The app fetches
+   *  the CORS-enabled api.weather.gov JSON endpoint, but that link points to
+   *  the human-readable NWS observation-history page (the API endpoint
+   *  downloads as JSON). */
   nwsObservation: {
     label: `NWS observation · ${SITE.metarStation.id}`,
     url: `https://forecast.weather.gov/data/obhistory/${SITE.metarStation.id}.html`,
