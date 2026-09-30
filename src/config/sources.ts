@@ -55,6 +55,16 @@ export const DATA_SOURCES = {
     label: 'NWS TAF',
     url: `https://aviationweather.gov/data/taf/?ids=${SITE.tafStations.map((s) => s.id).join('%2C')}`,
   },
+  /** Offutt's own TAF on aviationweather.gov. api.weather.gov, the only TAF
+   *  feed a browser here can read, has never had it (no product under any
+   *  lookup on 2026-09-27 or 2026-09-30, while Omaha's had 59); AWC and
+   *  NOAA's raw files carry it but send no CORS header. So the TAF card
+   *  shows the next station and links here for Offutt's. AWC's TAF page reads
+   *  `ids` (or `id`) from the query string (its own script, read 2026-09-30). */
+  awcTafPrimary: {
+    label: `AWC TAF · ${SITE.tafStations[0].id}`,
+    url: `https://aviationweather.gov/data/taf/?ids=${SITE.tafStations[0].id}`,
+  },
   /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source.
    *
    *  The label names no station even though the fetch uses SITE.fdWindsStation

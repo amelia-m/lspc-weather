@@ -96,8 +96,13 @@ export function TafPanel({
       </p>
       {taf && taf.station !== primary.id && (
         <p className="muted small">
-          {primary.id} ({primary.name}) had no TAF on the NWS feed — its USAF-issued TAF isn&rsquo;t
-          always carried there — so this is the next-nearest station.
+          {primary.name} ({primary.id}) is nearer, but its TAF is issued by the USAF and the NWS
+          feed this page reads does not carry it, so this is the next-nearest station. Read{' '}
+          {primary.id}&rsquo;s TAF at{' '}
+          <a href={DATA_SOURCES.awcTafPrimary.url} target="_blank" rel="noopener noreferrer">
+            aviationweather.gov
+          </a>
+          .
         </p>
       )}
       {!taf ? (

@@ -35,9 +35,12 @@ export interface SiteConfig {
     elevationFt: number;
   };
   /** TAF stations near the DZ, in preference order (KPMV issues no TAF).
-   *  Offutt is closest but its TAF is issued by the USAF and is not always
-   *  carried in the NWS text-product feed the app can reach from a browser,
-   *  so civilian fallbacks follow. */
+   *  Offutt is closest, but its TAF is issued by the USAF and the NWS
+   *  text-product feed, the only TAF source a browser here can read, does
+   *  not carry it: no product under any lookup on 2026-09-27 or 2026-09-30.
+   *  It stays first so the card picks it up if that ever changes (two small
+   *  requests a refresh), the civilian stations follow, and the card links
+   *  Offutt's TAF on aviationweather.gov (DATA_SOURCES.awcTafPrimary). */
   tafStations: Array<{
     id: string; // ICAO
     name: string;

@@ -140,9 +140,9 @@ export async function fetchLatestObservation(
  * (CORS-friendly, unlike aviationweather.gov). Two steps: list the latest TAF
  * product for the location code, then fetch that product's text. The products
  * index is flaky, so two equivalent query forms are tried — the typed-path
- * one, then the query-param one. Returns null when neither lists a product —
- * notably military fields like KOFF, whose USAF-issued TAFs are not always
- * carried on this feed.
+ * one, then the query-param one. Returns null when neither lists a product,
+ * which is every time for KOFF: its USAF-issued TAF is not carried on this
+ * feed (see SITE.tafStations).
  */
 export async function fetchTaf(
   station: string,
@@ -193,7 +193,7 @@ interface TafChainDeps {
  * yielding no product is normal (see fetchTaf) and falls through; a fetch
  * error also falls through so one bad request doesn't blank the card. If
  * nothing succeeded and ANY station errored, the last error propagates —
- * "KOFF has no product (as usual) and the rest failed" must read as a
+ * "KOFF has no product (as always) and the rest failed" must read as a
  * failure, not as "no TAF anywhere".
  */
 export async function fetchTafChain(
