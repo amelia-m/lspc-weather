@@ -79,9 +79,10 @@ freefall drift and **density altitude** for jump-plane climb performance.
 
 KPMV (~12 mi from the DZ) is the nearest reporting station and issues METARs;
 it does not issue a TAF. TAFs are fetched through a fallback chain —
-**KOFF → KOMA → KLNK** — because Offutt's TAF is USAF-issued and not always
-carried on the NWS text-product feed; the card labels whichever station
-supplied the forecast.
+**KOFF → KOMA → KLNK**. Offutt's TAF is USAF-issued and the NWS text-product
+feed, the only TAF source a browser can read, does not carry it, so the card
+normally shows Omaha's, labels the station, and links Offutt's TAF on
+aviationweather.gov.
 
 Current conditions come from the Iowa Environmental Mesonet first and
 api.weather.gov second, both fetched every 2 minutes, and the newer report of
@@ -111,8 +112,8 @@ sanity-check the dashboard against sources you already trust:
   show different hours until one is stepped.
 - **TAF ↔ [AWC TAF
   viewer](https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK)** —
-  shows all three chain stations, including KOFF's USAF-issued TAF on days it
-  isn't in the NWS feed.
+  shows all three chain stations, including KOFF's USAF-issued TAF, which
+  the NWS feed does not carry.
 
 If a dashboard number and its cross-reference disagree meaningfully, trust
 neither — check the primary source and ask the S&TA.

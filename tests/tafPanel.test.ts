@@ -83,4 +83,23 @@ describe('TafPanel without a decodable forecast', () => {
     const html = renderToStaticMarkup(createElement(TafPanel, { taf: null, status: idle }));
     expect(html).not.toContain('taf-table');
   });
+
+  /* Offutt's USAF-issued TAF is never on the NWS feed the app reads, so the
+   * card says so plainly (it used to say "isn't always carried") and sends
+   * the reader to Offutt's TAF on aviationweather.gov. */
+  it('says the NWS feed does not carry Offutt’s TAF, and links it on AWC', () => {
+    const html = render(KOMA_2026_09_24_0521, 'KOMA');
+    expect(html).toContain('the NWS feed this page reads does not carry it');
+    expect(html).toContain('href="https://aviationweather.gov/data/taf/?ids=KOFF"');
+    expect(html).not.toContain('always carried');
+  });
+
+  it('shows no Offutt note when the card shows Offutt’s own TAF', () => {
+    const koff = render(
+      { productText: KOMA_2026_09_24_0521.productText!.replace(/KOMA/g, 'KOFF'), issuanceTime: KOMA_2026_09_24_0521.issuanceTime },
+      'KOFF',
+    );
+    expect(koff).toContain('<pre class="metar-raw">');
+    expect(koff).not.toContain('does not carry it');
+  });
 });
