@@ -87,6 +87,7 @@ interface AwcTaf {
  *  change group does not state (a TEMPO's visib on 2026-09-24 read ""), so
  *  "present" has to exclude both. */
 const present = <T,>(v: T | null | undefined | ''): v is T => v != null && v !== '';
+const normNoWx = (wx: string | null): string | null => (wx === 'NSW' ? null : wx);
 
 /** Differences between one decoded period and aviationweather's, as lines;
  *  empty when they agree. */
@@ -129,8 +130,8 @@ function comparePeriod(p: TafPeriod, f: AwcFcst): string[] {
   } else if (theirVisRaw != null) {
     out.push(`visibility not stated by app, theirs ${f.visib}`);
   }
-  const ourWx = p.wxString ?? null;
-  const theirWx = f.wxString?.replace(/\s+/g, ' ').trim() || null;
+  const ourWx = normNoWx(p.wxString ?? null);
+  const theirWx = normNoWx(f.wxString?.replace(/\s+/g, ' ').trim() || null);
   if (ourWx !== theirWx) out.push(`weather ${ourWx} vs ${theirWx}`);
   const ourClouds = cloudsOnly(p.skyLayers ?? []).map((l) => `${l.cover}${l.baseFtAgl ?? ''}`);
   const theirClouds = (f.clouds ?? [])
