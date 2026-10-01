@@ -192,6 +192,16 @@ describe('periodFlightCategory', () => {
     expect(prevailingFor(d.periods, 2)?.wxString).toBeNull();
     expect(periodFlightCategory(d.periods, 2)).toBe('MVFR');
   });
+
+  it('keeps a later BECMG weather unstated after an earlier NSW BECMG', () => {
+    const d = decodeTaf(
+      'KOFF 261000Z 2610/2716 13012G18KT 8000 -RA OVC006 QNH3001INS BECMG 2611/2612 13012G18KT 9000 -DZ BR OVC015 QNH3000INS BECMG 2613/2614 14012G18KT 9999 NSW SCT010 OVC030 QNH2999INS BECMG 2617/2618 15010KT 9999 BKN030 OVC140 QNH2992INS',
+      utc(9, 26, 10),
+    )!;
+    const later = d.periods.find((p) => p.raw.startsWith('BECMG 2617/2618'))!;
+    expect(later.wxString).toBeNull();
+    expect(prevailingFor(d.periods, d.periods.indexOf(later))?.wxString).toBeNull();
+  });
 });
 
 describe('decodeTaf on the edges of the format', () => {
