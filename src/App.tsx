@@ -17,6 +17,7 @@ import { PrecipPanel } from './components/PrecipPanel';
 import { RadarPanel } from './components/RadarPanel';
 import { SectionalPanel } from './components/SectionalPanel';
 import { PilotLinksPanel } from './components/PilotLinksPanel';
+import { NearbyMetarsPanel } from './components/NearbyMetarsPanel';
 import { VIEW_CARDS, VIEW_HASH, VIEW_LABEL, type CardId, type View } from './config/views';
 import { HourlyForecastPanel } from './components/HourlyForecastPanel';
 import { DailyForecastPanel } from './components/DailyForecastPanel';
@@ -266,6 +267,7 @@ export default function App(): JSX.Element {
     sectional: <SectionalPanel />,
     taf: <TafPanel taf={snapshot.taf} status={status.taf} />,
     pilotLinks: <PilotLinksPanel />,
+    nearbyMetars: <NearbyMetarsPanel />,
   };
 
   return (

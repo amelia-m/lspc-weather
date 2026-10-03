@@ -101,6 +101,24 @@ export const SITE: SiteConfig = {
 };
 
 /**
+ * The airports around the drop zone whose METARs a pilot reads beside
+ * KPMV's, for the Pilots tab: Offutt, Eppley, Millard, Lincoln and Nebraska
+ * City. Each is in IEM's Nebraska ASOS network (`NE_ASOS`) under its id
+ * without the K, so one IEM request returns all six (2026-10-03), and IEM's
+ * record carries each station's position, from which distance and bearing
+ * are worked out rather than written here.
+ */
+export const NEARBY_METAR_STATIONS: readonly { id: string; iemId: string; name: string }[] = [
+  { id: 'KPMV', iemId: 'PMV', name: 'Plattsmouth' },
+  { id: 'KOFF', iemId: 'OFF', name: 'Offutt AFB' },
+  { id: 'KOMA', iemId: 'OMA', name: 'Omaha Eppley' },
+  { id: 'KMLE', iemId: 'MLE', name: 'Omaha Millard' },
+  { id: 'KLNK', iemId: 'LNK', name: 'Lincoln' },
+  { id: 'KAFK', iemId: 'AFK', name: 'Nebraska City' },
+];
+export const NEARBY_METAR_NETWORK = 'NE_ASOS';
+
+/**
  * Georeferencing of the NWS RIDGE "standard" radar image the Radar card shows.
  *
  * **Measured, not published.** NWS serves no world file, `.aux.xml` or bbox

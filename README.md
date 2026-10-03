@@ -25,8 +25,9 @@ freefall drift and **density altitude** for jump-plane climb performance.
 ## 🌤️ What it shows
 
 The dashboard has two tabs. **Jumpers** (the plain address) has the wind
-limits, drift and the day's planning. **Pilots** (`#pilots`) has the sectional,
-the TAF, density altitude, winds aloft and briefing links. Conditions now,
+limits, drift and the day's planning. **Pilots** (`#pilots`) has the nearby airports'
+METARs, the sectional, the TAF, density altitude, winds aloft and briefing
+links. Conditions now,
 the sky, daylight, radar and the advisories show on both. Which cards each tab
 shows is `src/config/views.ts`.
 
@@ -64,6 +65,11 @@ shows is `src/config/views.ts`.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline.
 - 📡 **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
+- 🛬 **Nearby METARs** (Pilots tab) — the latest report at KPMV, Offutt,
+  Eppley, Millard, Lincoln and Nebraska City, nearest first: distance and
+  bearing from the DZ, wind, visibility, sky, FAA flight category and the
+  report's age, with the raw METARs a tap away. One request to IEM's
+  Nebraska network, every five minutes while the card is on screen.
 - 🧭 **Pilot briefing links** (Pilots tab) — FAA NOTAM Search, TFRs, nearby
   METARs, PIREPs, the GFA, SIGMETs and the Chart Supplement. Links only: this
   site cannot read NOTAMs or TFRs, and a briefing is the pilot in command's.

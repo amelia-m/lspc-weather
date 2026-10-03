@@ -44,6 +44,9 @@ export interface RawIemCurrent {
   skyl2?: number | null;
   skyl3?: number | null;
   skyl4?: number | null;
+  /** The station's position, which the Nearby METARs card measures from. */
+  lat?: number | null;
+  lon?: number | null;
 }
 
 export interface RawIemCurrents {
