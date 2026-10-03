@@ -15,6 +15,7 @@ import { MetarPanel } from './components/MetarPanel';
 import { CeilingSkyPanel } from './components/CeilingSkyPanel';
 import { PrecipPanel } from './components/PrecipPanel';
 import { RadarPanel } from './components/RadarPanel';
+import { SectionalPanel } from './components/SectionalPanel';
 import { HourlyForecastPanel } from './components/HourlyForecastPanel';
 import { DailyForecastPanel } from './components/DailyForecastPanel';
 import { DriftPanel } from './components/DriftPanel';
@@ -298,7 +299,7 @@ export default function App(): JSX.Element {
       {/* Ordered by a jumper's decision flow — now (current/wind/sky/flight
           category), then skydiver-specific (winds aloft/drift), then planning
           (hourly/outlook/precip), then secondary (DA/daylight) and reference
-          (radar/TAF). Order matters most on mobile, where the grid is a single
+          (radar/sectional/TAF). Order matters most on mobile, where the grid is a single
           linear column; at wider widths MasonryGrid drops each card into the
           shortest column, so a later card can sit above an earlier one. */}
       <MasonryGrid>
@@ -339,6 +340,7 @@ export default function App(): JSX.Element {
         <DensityAltitudePanel da={snapshot.densityAltitude} />
         <SunPanel sun={snapshot.sun} />
         <RadarPanel />
+        <SectionalPanel />
         <TafPanel taf={snapshot.taf} status={status.taf} />
       </MasonryGrid>
 

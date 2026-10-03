@@ -1056,6 +1056,42 @@ a {
 }
 /* Same ring at text size, for the sentence under the image that says what it
    marks. Keeps the key and the mark from drifting apart. */
+/* The Sectional card: a fixed window onto a mosaic of 256 px chart tiles,
+   centred on the drop zone. Each tile is placed from the centre with calc(),
+   so the drop zone stays in the middle at any card width; the frame crops
+   the mosaic, which is wider than any card. */
+.sectional-frame {
+  position: relative;
+  display: block;
+  height: 280px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+.sectional-tile {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+  max-width: none;
+}
+.sectional-dz {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #d61f26;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.95);
+  pointer-events: none;
+}
+.sectional-zoom {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
 .radar-dz-key {
   display: inline-block;
   width: 9px;
