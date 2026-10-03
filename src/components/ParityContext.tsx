@@ -15,6 +15,7 @@ import { Panel } from './common/Panel';
 const doc = (path: string): string => `${REPO_URL}/blob/main/${path}`;
 const SCHULZE_DOC = doc('docs/markschulze-altitude-reference.md');
 const PARITY_DOC = doc('docs/source-parity.md');
+const SUN_SOURCE = doc('src/domain/sun.ts');
 
 /** docs/markschulze-altitude-reference.md, "How far apart the tables are, by
  *  the time they represent": 2026-09-26 16:19Z, rows 1,000 to 13,000 ft. */
@@ -96,6 +97,11 @@ export function ParityContext(): JSX.Element {
         now and 30 on average. That is why the two pages are an hour apart after half past every
         hour. Both pages have buttons to step an hour either way. Neither chooses the forecast
         run: the &ldquo;newer run&rdquo; rows above are whichever run Open-Meteo served each one.
+        The rule each page used when the gap above was measured, on Sep 26 (
+        <a href={SCHULZE_DOC} target="_blank" rel="noopener noreferrer">
+          write-up
+        </a>
+        ).
       </p>
 
       <h4 className="cite-found-head">How Schulze&rsquo;s Surface row was worked out</h4>
@@ -147,14 +153,19 @@ export function ParityContext(): JSX.Element {
         uses NOAA&rsquo;s own method, held by its tests to NOAA&rsquo;s script within 5&nbsp;ms.
         Rounded to the minute, it matched the US Naval Observatory&rsquo;s times for the drop zone in
         56 of 56 sunrises and sunsets across 2026 (read Oct 3). The sun rows above count only runs
-        since the change.
+        since the change (
+        <a href={SUN_SOURCE} target="_blank" rel="noopener noreferrer">
+          write-up
+        </a>
+        , in the method&rsquo;s own notes).
       </p>
 
       <h4 className="cite-found-head">Why older observation runs are left out of some rows</h4>
       <p className="muted small">
-        Each of these showed on this page as a disagreement and turned out to be the
-        comparison&rsquo;s own misreading, not either side&rsquo;s decode. Each row now counts only
-        runs from the version of the comparison that fixed it (
+        Each of these showed on this page as a disagreement. All but one turned out to be the
+        comparison&rsquo;s own misreading, not either side&rsquo;s decode, and each of those rows now
+        counts only runs from the version of the comparison that fixed it, logged from Sep 30 and
+        Oct 3 (
         <a href={PARITY_DOC} target="_blank" rel="noopener noreferrer">
           write-up
         </a>
@@ -172,8 +183,10 @@ export function ParityContext(): JSX.Element {
         </li>
         <li>
           <strong>One unexplained run:</strong> on Sep 27 at 19:45Z usairnet&rsquo;s page gave no
-          speed or direction for a 3&nbsp;kt wind. The comparison now keeps the page&rsquo;s text when
-          a field will not read, so a repeat can be explained.
+          speed or direction for a 3&nbsp;kt wind. It is not a known misreading and nothing was fixed
+          for it; its direction is left out only because it predates the runs the wind-direction
+          row now counts. The comparison now keeps the page&rsquo;s text when a field will not read,
+          so a repeat can be explained.
         </li>
         <li>
           <strong>Overcast:</strong> usairnet writes &ldquo;Solid Overcast&rdquo;; the FAA&rsquo;s word,
