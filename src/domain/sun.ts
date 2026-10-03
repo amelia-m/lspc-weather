@@ -13,7 +13,11 @@ import type { SunTimes } from './types';
  * 3 minutes late: 7:11:55 PM CDT on 2026-09-29, where NOAA's calculator gives
  * 7:09:34, the astral library 7:09:20 and Open-Meteo 7:09, and usairnet
  * printed 7:09 for KPMV. A late sunset means a late night flag. This port
- * agrees with NOAA's script to well under a second (tests/sun.test.ts).
+ * agrees with NOAA's script to well under a second (tests/sun.test.ts), and
+ * rounded to the minute it matched the US Naval Observatory's API
+ * (aa.usno.navy.mil/api/rstt/oneday, read 2026-10-03) in 56 of 56 events at
+ * the drop zone: sunrise and sunset on the 1st and 15th of every month of
+ * 2026, both solstices, Sep 29 and Oct 3.
  *
  * "Sunrise" and "sunset" are the sun's upper limb on a level horizon with
  * standard refraction (the 90.833° zenith), the definition the USNO and NOAA

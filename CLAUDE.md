@@ -115,7 +115,8 @@ precisely because they were colour and text rather than flags.
 - **Sunrise and sunset are NOAA's method, held to NOAA's own script.**
   `src/domain/sun.ts` ports the functions of NOAA's Solar Calculator
   (gml.noaa.gov/grad/solcalc/main.js), and its tests compare against that
-  script's output to 5 ms. It replaced a simplified "sunrise equation" that
+  script's output to 5 ms; rounded to the minute it matched the US Naval
+  Observatory's API in 56 of 56 events across 2026 (read 2026-10-03). It replaced a simplified "sunrise equation" that
   put the DZ's sunset 2 to 3 minutes late, so the 14 CFR 105.19 night flag
   fired late; usairnet's almanac, Open-Meteo and the astral library all
   showed it. Do not swap in a shorter formula without re-running that
@@ -189,8 +190,9 @@ Outbound network access goes through a policy-enforcing egress proxy. With
 `*.weather.gov`, `aviationweather.gov`, `gml.noaa.gov`, Open-Meteo, USPA,
 eCFR, FAA, FAASafety, usairnet, markschulze.net, `amelia-m.github.io`,
 `mesonet.agron.iastate.edu` (IEM) and `tgftp.nws.noaa.gov` (NOAA's raw
-METAR and TAF files), each with its subdomains. A change to it applies to a
-running session as soon as it is saved. GitHub's artifact downloads
+METAR and TAF files), each with its subdomains, and since 2026-10-03
+`aa.usno.navy.mil` (the US Naval Observatory's sun and moon API). A change
+to it applies to a running session as soon as it is saved. GitHub's artifact downloads
 redirect to Azure blob storage, which is not on it; read artifacts from a
 runner.
 

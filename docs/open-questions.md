@@ -3,18 +3,6 @@
 Live backlog. Closed items should be deleted rather than marked done — the
 repository history is the record.
 
-## Add the US Naval Observatory to the sandbox allowlist
-
-For the owner, in the cloud environment's settings (Network access, allowed
-domains): add `aa.usno.navy.mil`, the USNO's Astronomical Applications
-site and API. On 2026-10-03 the proxy refused it, so the app's sunset could
-only be checked against Open-Meteo, usairnet and the astral library, which
-put Sep 29's drop-zone sunset about 2.5 minutes before the app's. USNO is
-the authoritative reference for sunrise and sunset in the US; with it
-reachable, a check like
-`https://aa.usno.navy.mil/api/rstt/oneday?date=2026-09-29&coords=40.8675,-96.11&tz=-5&dst=true`
-can pin the app's sun times from here. Delete this item once it is added.
-
 ## Needs a human with a document
 
 These cannot be settled from the code.
