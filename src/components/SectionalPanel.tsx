@@ -36,7 +36,11 @@ export function SectionalPanel(): JSX.Element {
     <Panel
       title="Sectional chart"
       subtitle={`FAA VFR sectional · ${dz.icao}`}
-      sources={[DATA_SOURCES.faaSectional, DATA_SOURCES.skyvector, DATA_SOURCES.adsbTraffic]}
+      /* The chart's own source only: SkyVector (where a tap goes) and
+         adsb.lol (the traffic link) supply nothing on this card, and the
+         "Data:" footer would name them as if they did. Both are linked in
+         the card's body, where they say what they are. */
+      sources={[DATA_SOURCES.faaSectional]}
     >
       {failed ? (
         <p className="muted">

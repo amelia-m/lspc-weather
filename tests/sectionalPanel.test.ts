@@ -31,6 +31,13 @@ describe('SectionalPanel', () => {
     expect(html).toContain(`class="sectional-frame" href="${DATA_SOURCES.skyvector.url.replace(/&/g, '&amp;')}"`);
   });
 
+  it('names only FAA as the source of the chart', () => {
+    const footer = html.slice(html.indexOf('panel-sources'));
+    expect(footer).toContain('FAA VFR sectional');
+    expect(footer).not.toContain('adsb.lol');
+    expect(footer).not.toContain('SkyVector');
+  });
+
   it('links the live traffic map, saying what it does not show', () => {
     expect(html).toContain(`href="${DATA_SOURCES.adsbTraffic.url.replace(/&/g, '&amp;')}"`);
     expect(html).toContain('it is not a traffic service');
