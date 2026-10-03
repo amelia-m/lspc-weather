@@ -31,9 +31,14 @@ describe('SectionalPanel', () => {
     expect(html).toContain(`class="sectional-frame" href="${DATA_SOURCES.skyvector.url.replace(/&/g, '&amp;')}"`);
   });
 
-  it('offers both zoom steps from the default', () => {
-    expect(html).toContain('aria-label="Zoom out"');
-    expect(html).toContain('aria-label="Zoom in"');
+  it('offers both zoom steps from the default, each named by the word it shows', () => {
+    // WCAG 2.5.3: no aria-label to override the visible "wider" / "closer",
+    // and the signs beside them hidden from the accessible name.
+    const buttons = html.match(/<button[^>]*>.*?<\/button>/g) ?? [];
+    expect(buttons).toHaveLength(2);
+    for (const b of buttons) expect(b).not.toContain('aria-label');
+    expect(buttons[0]).toContain('<span aria-hidden="true">−</span> wider');
+    expect(buttons[1]).toContain('closer <span aria-hidden="true">+</span>');
     expect(html).not.toMatch(/<button[^>]*disabled/);
   });
 

@@ -75,18 +75,20 @@ export function SectionalPanel(): JSX.Element {
               className="fc-step"
               onClick={() => setZoom((z) => z - 1)}
               disabled={zoom <= FAA_SECTIONAL_TILES.minZoom}
-              aria-label="Zoom out"
+              title="Zoom out"
             >
-              − wider
+              {/* The visible word is the button's name (WCAG 2.5.3: a voice
+                  user says what they see); the sign is decoration. */}
+              <span aria-hidden="true">−</span> wider
             </button>
             <button
               type="button"
               className="fc-step"
               onClick={() => setZoom((z) => z + 1)}
               disabled={zoom >= FAA_SECTIONAL_TILES.maxZoom}
-              aria-label="Zoom in"
+              title="Zoom in"
             >
-              closer +
+              closer <span aria-hidden="true">+</span>
             </button>
           </div>
           <p className="muted small">
