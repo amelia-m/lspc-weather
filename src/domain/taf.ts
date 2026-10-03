@@ -187,7 +187,22 @@ function readElements(c: Cursor, p: TafPeriod, undecoded: string[]): void {
     if (/^FM\d{6}$/.test(t) || t === 'TEMPO' || t === 'BECMG' || /^PROB\d{2}$/.test(t) || t === 'RMK') {
       break;
     }
+    const prev = c.i > 0 ? c.tokens[c.i - 1] : '';
     c.i += 1;
+    // USAF TAFs (Offutt's, KOFF) add remarks inside a period with no RMK
+    // before them: `WND 06006KT AFT 0218`, the wind after 02/18Z, and
+    // `LAST NO AMDS AFT 0303 NEXT 0315`. The wind there is not the period's
+    // wind and the day-and-hour is not a visibility in metres, but each
+    // matches those groups, and until 2026-10-03 the decoder took them as
+    // such: the 0218 above read as 0.14 SM and the wind as 060° where the
+    // period's own groups said VRB06KT 9999. aviationweather.gov's decoder
+    // reads the main groups (the daily TAF decode comparison failed on
+    // Oct 1 and 2 over it). The remark's tokens are left undecoded, which
+    // the card lists under the table.
+    if ((prev === 'WND' && WIND.test(t)) || ((prev === 'AFT' || prev === 'NEXT') && /^\d{4}$/.test(t))) {
+      undecoded.push(t);
+      continue;
+    }
     const w = windOf(t);
     if (w) {
       p.wind = w;
