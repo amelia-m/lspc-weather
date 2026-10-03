@@ -640,6 +640,11 @@ a {
   color: var(--muted);
   font-weight: 600;
 }
+/* The #parity timeline: one change per item, its effect on the next line,
+   with room between items so each reads as its own entry. */
+.parity-timeline li {
+  margin-bottom: 8px;
+}
 .parity-caption {
   caption-side: top;
   text-align: left;

@@ -14,6 +14,7 @@ import type {
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { Panel } from './common/Panel';
 import { ParityContext } from './ParityContext';
+import { ParityTimeline } from './ParityTimeline';
 
 /**
  * "How different from other sources": what the live comparison logs add up
@@ -97,6 +98,7 @@ export function ParityPage({
           <GlancePanel s={summary} />
           <SchulzePanel s={summary} />
           <UsairnetPanel s={summary} />
+          <ParityTimeline />
           <ParityContext />
         </>
       )}
