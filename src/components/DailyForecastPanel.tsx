@@ -204,7 +204,8 @@ function DayDetail({
           <p className="hc-legend">
             <span className="hc-key hc-key-wind" /> wind &nbsp;
             <span className="hc-key hc-key-gust" /> gust ({unit}) &nbsp;
-            <span className="hc-key hc-key-precip" /> precip&nbsp;chance
+            <span className="hc-key hc-key-precip" /> precip&nbsp;chance &nbsp;
+            <span className="hc-key hc-key-night" /> sunset&nbsp;to&nbsp;sunrise
           </p>
           <div className="daily-scroll">
             <table className="daily-table hourly-detail-table">

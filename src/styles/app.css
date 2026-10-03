@@ -937,6 +937,11 @@ a {
   fill: var(--muted);
   font-size: 8px;
 }
+/* Night on the hourly chart, sunset to sunrise: a neutral shade, not a
+   warning colour; it marks a fact of the sky, and the legend names it. */
+.hc-night {
+  fill: rgba(128, 140, 160, 0.16);
+}
 .hc-precip {
   fill: rgba(74, 168, 255, 0.25);
 }
@@ -969,6 +974,10 @@ a {
 }
 .hc-key-precip {
   background: rgba(74, 168, 255, 0.35);
+  height: 9px;
+}
+.hc-key-night {
+  background: rgba(128, 140, 160, 0.35);
   height: 9px;
 }
 

@@ -43,6 +43,35 @@ export function sunTimes(lat: number, lon: number, date: Date): SunTimes {
 }
 
 const DAY_MS = 86_400_000;
+
+/**
+ * The spans of `[fromMs, toMs]` between sunset and the next sunrise at the
+ * point, as [start, end] pairs in time order, each clipped to the range. The
+ * same sunrise and sunset the 14 CFR 105.19 night flag and the Daylight card
+ * use, so a chart shaded with these agrees with the flag to the minute.
+ *
+ * Each local solar day in and around the range is computed once; night runs
+ * from one day's sunset to the next day's sunrise.
+ */
+export function nightIntervals(lat: number, lon: number, fromMs: number, toMs: number): [number, number][] {
+  if (!(toMs > fromMs)) return [];
+  const days: SunTimes[] = [];
+  // A day either side, and one more after: the last night in the range
+  // needs the sunrise of the day after it, and a time after midnight belongs
+  // to the solar day before (sunTimes picks the day whose noon is nearest).
+  for (let t = fromMs - DAY_MS; t <= toMs + 2 * DAY_MS; t += DAY_MS) {
+    const d = sunTimes(lat, lon, new Date(t));
+    if (!days.some((x) => x.sunrise === d.sunrise)) days.push(d);
+  }
+  days.sort((a, b) => a.sunrise - b.sunrise);
+  const out: [number, number][] = [];
+  for (let i = 0; i + 1 < days.length; i++) {
+    const start = Math.max(days[i].sunset, fromMs);
+    const end = Math.min(days[i + 1].sunrise, toMs);
+    if (end > start) out.push([start, end]);
+  }
+  return out;
+}
 const rad = Math.PI / 180;
 const deg = 180 / Math.PI;
 

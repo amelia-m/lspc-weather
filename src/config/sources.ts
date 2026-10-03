@@ -62,6 +62,20 @@ export const DATA_SOURCES = {
     label: 'FAA VFR sectional',
     url: 'https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59',
   },
+  /** Live air traffic around the drop zone on adsb.lol, a community-run
+   *  ADS-B network whose data is open (ODbL). Read from its map's own script
+   *  on 2026-10-03: `lat`/`lon`/`zoom` centre the map, `baseMap=VFR_Sectional`
+   *  draws it over FAA's sectional (the same tiles as the Sectional card),
+   *  and `SiteLat`/`SiteLon` put its site marker on the drop zone. A link and
+   *  not an embedded frame: the map's aircraft feed answers only with a
+   *  cookie its own page sets, without SameSite=None, so inside a frame on
+   *  this site the browser would not send it and the map would show no
+   *  aircraft (checked 2026-10-03: the feed returned 207 and no body without
+   *  the cookie, 200 and data with it). */
+  adsbTraffic: {
+    label: 'Live traffic · adsb.lol',
+    url: `https://adsb.lol/?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}&zoom=10&baseMap=VFR_Sectional&SiteLat=${SITE.dz.lat}&SiteLon=${SITE.dz.lon}`,
+  },
   /** usairnet aviation forecast for KPMV — a page many jumpers use. Presents
    *  the same NWS forecast data; cross-reference only. */
   usairnet: {
