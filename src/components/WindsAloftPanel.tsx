@@ -304,17 +304,23 @@ export function WindsAloftPanel({
               one readers notice first: worked out from 72 hours of that tool's
               output at four sites on 2026-10-03, see
               docs/markschulze-altitude-reference.md. No figure is quoted for
-              how far apart they run; it changes with the hour and the weather. */}
-          <p className="muted small">
-            The <strong>Surface</strong> row here is the model&rsquo;s wind at 10&nbsp;m (33&nbsp;ft),
-            the height an airport wind sensor measures, forecast for the hour above; the observed
-            wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
-            wind: it draws a straight line through the model&rsquo;s pressure levels and reads it at
-            the ground, here between a level the model places below the ground and the next one up.
-            So it reads more like the wind a couple of hundred feet up, and
-            often shows more wind than this row, most of all at night, when the air near the ground
-            goes calm while the air above keeps moving.
-          </p>
+              how far apart they run; it changes with the hour and the weather.
+              Gated on Open-Meteo, not on "not the fallback": with no source
+              loaded this branch still renders, beside "No winds-aloft data",
+              and the note would describe a Surface row and an hour that are
+              not there. */}
+          {source === 'open-meteo' && (
+            <p className="muted small">
+              The <strong>Surface</strong> row here is the model&rsquo;s wind at 10&nbsp;m (33&nbsp;ft),
+              the height an airport wind sensor measures, forecast for the hour above; the observed
+              wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
+              wind: it draws a straight line through the model&rsquo;s pressure levels and reads it at
+              the ground, here between a level the model places below the ground and the next one up.
+              So it reads more like the wind a couple of hundred feet up, and
+              often shows more wind than this row, most of all at night, when the air near the ground
+              goes calm while the air above keeps moving.
+            </p>
+          )}
           <p className="muted small">
             Each level is <strong>linearly interpolated</strong> from the model’s
             pressure-level winds (Open-Meteo gives wind at fixed pressure surfaces — e.g.
