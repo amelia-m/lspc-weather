@@ -5,9 +5,12 @@ import type {
   TimeGapKey,
   ArrivalLag,
   ArrivalSource,
+  GroundBand,
   UsairnetField,
+  UsairnetOutages,
   UsairnetTiming,
 } from '../domain/paritySummary';
+import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { Panel } from './common/Panel';
 
 /**
@@ -30,7 +33,7 @@ const fmtDay = (iso: string | null): string =>
   iso == null
     ? '—'
     : new Date(iso).toLocaleString('en-US', {
-        timeZone: 'America/Chicago',
+        timeZone: SITE.timeZone,
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
@@ -89,6 +92,7 @@ export function ParityPage({
             Runs from {fmtDay(summary.from)} to {fmtDay(summary.to)} (local), summarised{' '}
             {fmtDay(summary.generatedAt)}.
           </p>
+          <GlancePanel s={summary} />
           <SchulzePanel s={summary} />
           <UsairnetPanel s={summary} />
         </>
@@ -98,6 +102,69 @@ export function ParityPage({
         <a href="#">← Back to the dashboard</a>
       </footer>
     </div>
+  );
+}
+
+/**
+ * The few figures the sections below add up to, each computed from the
+ * summary, so they move with it. Sentences that state a count or a spread
+ * and stop: no line says whether a figure is good enough, which is the
+ * reader's call (the page's rule, and the dashboard's).
+ */
+function GlancePanel({ s }: { s: ParitySummary }): JSX.Element | null {
+  const sameRun = s.schulze.byTimeGap?.find((g) => g.key === 'same-hour-same-run');
+  const u = s.usairnet;
+  const fields = u.fieldsSameReport?.filter((f) => f.n > 0) ?? [];
+  const always = fields.filter((f) => f.agree === f.n);
+  const sometimes = fields.filter((f) => f.agree < f.n);
+  const t = u.timingSinceIem;
+  const lags = u.arrival?.filter((a) => a.lagMin != null) ?? [];
+  const lines: JSX.Element[] = [];
+  if (sameRun?.dir && sameRun.spd) {
+    lines.push(
+      <li key="winds">
+        <strong>Winds aloft, same hour and forecast run:</strong> {num(sameRun.dir.medianAbs)}° and{' '}
+        {num(sameRun.spd.medianAbs)} kt apart at the median, {num(sameRun.dir.maxAbs)}° and{' '}
+        {num(sameRun.spd.maxAbs)} kt at the most, over {sameRun.runs} runs (1,000 ft and up).
+      </li>,
+    );
+  }
+  if (fields.length > 0) {
+    lines.push(
+      <li key="fields">
+        <strong>Latest observation, same report on both sides:</strong> {always.length} of{' '}
+        {fields.length} fields agreed on every run
+        {sometimes.length > 0 &&
+          `; the others differed on some runs: ${sometimes
+            .map((f) =>
+              f.spread ? `${f.name} by up to ${num(f.spread.maxAbs)}` : `${f.name} on ${f.n - f.agree} of ${f.n}`,
+            )
+            .join(', ')}`}
+        .
+      </li>,
+    );
+  }
+  if (t && t.timed > 0) {
+    lines.push(
+      <li key="newer">
+        <strong>When the two showed different reports</strong> (since this dashboard reads IEM first):
+        this dashboard had the newer one in {t.dashboardNewer} of {t.timed} runs.
+      </li>,
+    );
+  }
+  if (lags.length > 0) {
+    lines.push(
+      <li key="arrival">
+        <strong>Median minutes from a report to each source:</strong>{' '}
+        {lags.map((a) => `${ARRIVAL_SHORT[a.source]} ${mins(a.lagMin?.medianAbs)}`).join(', ')}.
+      </li>,
+    );
+  }
+  if (lines.length === 0) return null;
+  return (
+    <Panel title="At a glance" subtitle="from the sections below">
+      <ul className="cite-found">{lines}</ul>
+    </Panel>
   );
 }
 
@@ -166,9 +233,11 @@ function TimeGapTable({ groups }: { groups: TimeGapGroup[] }): JSX.Element {
             <th>Time the tables represent</th>
             <th>runs</th>
             <th>avg dir</th>
+            <th>median dir</th>
             <th>90th dir</th>
             <th>max dir</th>
             <th>avg speed</th>
+            <th>median speed</th>
             <th>90th speed</th>
             <th>max speed</th>
           </tr>
@@ -179,9 +248,11 @@ function TimeGapTable({ groups }: { groups: TimeGapGroup[] }): JSX.Element {
               <td>{GAP_LABEL[g.key]}</td>
               <td>{g.runs}</td>
               <td>{d(g.dir?.meanAbs)}</td>
+              <td>{d(g.dir?.medianAbs)}</td>
               <td>{d(g.dir?.p90Abs)}</td>
               <td>{d(g.dir?.maxAbs)}</td>
               <td>{k(g.spd?.meanAbs)}</td>
+              <td>{k(g.spd?.medianAbs)}</td>
               <td>{k(g.spd?.p90Abs)}</td>
               <td>{k(g.spd?.maxAbs)}</td>
             </tr>
@@ -248,8 +319,107 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
         apart&rdquo; row measure what a reader comparing both pages at that minute sees; the
         per-altitude tables measure the same hour on both sides.
       </p>
+      <GroundSection bands={w.groundByLocalHour} />
     </Panel>
   );
+}
+
+/** "12–3\u00a0AM", "9\u00a0AM–12\u00a0PM": a three-hour block of the local day,
+ *  the suffix written once when both ends share it, and held to its number
+ *  so a phone column does not split "3" from "AM". */
+const blockLabel = (from: number): string => {
+  const to = (from + 3) % 24;
+  const twelve = (h: number): number => (h % 12 === 0 ? 12 : h % 12);
+  const half = (h: number): string => (h < 12 ? 'AM' : 'PM');
+  return half(from) === half(to)
+    ? `${twelve(from)}\u2013${twelve(to)}\u00a0${half(to)}`
+    : `${twelve(from)}\u00a0${half(from)}\u2013${twelve(to)}\u00a0${half(to)}`;
+};
+
+/** Knots to one decimal, whole numbers bare: the medians are of tenths. */
+const kt1 = (x: number): string => (Number.isInteger(x) ? String(x) : x.toFixed(1));
+
+/**
+ * Why the ground rows differ, and how far apart they ran through the day.
+ * The two rows are different heights, worked out from 72 hours of Schulze's
+ * output at four sites on 2026-10-03 (docs/markschulze-altitude-reference.md,
+ * "How the surface row was worked out"); the Winds aloft card says Schulze's reads
+ * higher most of all at night, and the table is the count behind that.
+ */
+function GroundSection({ bands }: { bands: GroundBand[] | undefined }): JSX.Element {
+  const k = (x: number | null): string => (x == null ? '—' : `${kt1(x)} kt`);
+  const signed = (x: number | null): string => (x == null ? '—' : `${x > 0 ? '+' : ''}${kt1(x)} kt`);
+  return (
+    <>
+      <h4 className="cite-found-head">The ground row</h4>
+      <p className="muted small">
+        The two Surface rows are different heights. This dashboard&rsquo;s is the model&rsquo;s
+        wind at 10&nbsp;m (33&nbsp;ft). Schulze&rsquo;s is a straight line through the model&rsquo;s
+        pressure levels read at 0&nbsp;ft: at this drop zone, between a level the model places below
+        the ground and the next one up; where no level is below ground, the two lowest extended
+        down. That rule matched Schulze&rsquo;s Surface row in 72 of 72 hours at four sites on Oct 3 (written
+        up in <code>docs/markschulze-altitude-reference.md</code>). So Schulze&rsquo;s reads more like the wind a
+        couple of hundred feet up.
+      </p>
+      {bands && bands.some((b) => b.runs > 0) && (
+        <div className="sky-scroll">
+          <table className="aloft-table">
+            <caption className="parity-caption">
+              Same hour on both sides, by the local time of the forecast hour
+            </caption>
+            <thead>
+              <tr>
+                <th>local hours</th>
+                <th>runs</th>
+                <th>this dashboard</th>
+                <th>Schulze&rsquo;s</th>
+                <th>Schulze&rsquo;s minus ours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bands.map((b) => (
+                <tr key={b.fromHour}>
+                  <td>{blockLabel(b.fromHour)}</td>
+                  <td>{b.runs}</td>
+                  <td>{k(b.medianOurKt)}</td>
+                  <td>{k(b.medianTheirKt)}</td>
+                  <td>{signed(b.medianGapKt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {bands && bands.some((b) => b.runs > 0) && (
+        <p className="muted small">
+          Medians over the runs in each block. The last column is the median of each run&rsquo;s
+          own difference, so it need not equal the gap between the two columns before it.
+        </p>
+      )}
+    </>
+  );
+}
+
+/** The fields in the order a jumper reads a report, under a heading row
+ *  each, so the surface wind can be read off without hunting through
+ *  thirteen rows. A name not listed (a field added later) goes under
+ *  "Other" rather than vanishing. */
+const FIELD_GROUPS: { title: string; names: string[] }[] = [
+  { title: 'Surface wind', names: ['wind mph', 'wind gust mph', 'wind dir °'] },
+  { title: 'Sky and visibility', names: ['clouds', 'ceiling ft (theirs implied)', 'visibility mi', 'flight rule'] },
+  { title: 'Temperature and moisture', names: ['temperature °F', 'dew point °F', 'humidity % (derived)'] },
+  { title: 'Pressure', names: ['pressure inHg'] },
+  { title: 'Sun', names: ['sunrise (min past midnight)', 'sunset (min past midnight)'] },
+];
+
+function groupFields(fields: readonly UsairnetField[]): { title: string; fields: UsairnetField[] }[] {
+  const listed = new Set(FIELD_GROUPS.flatMap((g) => g.names));
+  const groups = FIELD_GROUPS.map((g) => ({
+    title: g.title,
+    fields: g.names.flatMap((n) => fields.filter((f) => f.name === n)),
+  }));
+  groups.push({ title: 'Other', fields: fields.filter((f) => !listed.has(f.name)) });
+  return groups.filter((g) => g.fields.length > 0);
 }
 
 /** One field per row: runs, agreements, and the absolute gaps where both
@@ -270,19 +440,26 @@ function FieldTable({ fields, caption }: { fields: UsairnetField[]; caption: str
             <th>max diff</th>
           </tr>
         </thead>
-        <tbody>
-          {fields.map((f) => (
-            <tr key={f.name}>
-              <td>{f.name}</td>
-              <td>{f.n}</td>
-              <td>{f.agree}</td>
-              <td>{pct(f.agree, f.n)}</td>
-              <td>{f.spread ? num(f.spread.meanAbs) : '—'}</td>
-              <td>{f.spread ? num(f.spread.minAbs) : '—'}</td>
-              <td>{f.spread ? num(f.spread.maxAbs) : '—'}</td>
+        {groupFields(fields).map((g) => (
+          <tbody key={g.title}>
+            <tr className="parity-group">
+              <th colSpan={7} scope="rowgroup">
+                {g.title}
+              </th>
             </tr>
-          ))}
-        </tbody>
+            {g.fields.map((f) => (
+              <tr key={f.name}>
+                <td>{f.name}</td>
+                <td>{f.n}</td>
+                <td>{f.agree}</td>
+                <td>{pct(f.agree, f.n)}</td>
+                <td>{f.spread ? num(f.spread.meanAbs) : '—'}</td>
+                <td>{f.spread ? num(f.spread.minAbs) : '—'}</td>
+                <td>{f.spread ? num(f.spread.maxAbs) : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        ))}
       </table>
     </div>
   );
@@ -294,6 +471,15 @@ const ARRIVAL_LABEL: Record<ArrivalSource, string> = {
   usairnet: 'usairnet',
   nwsList: 'NWS observation list',
   nwsLatest: 'NWS latest (the dashboard’s backup)',
+};
+
+/** The same sources, short enough to list in one sentence. */
+const ARRIVAL_SHORT: Record<ArrivalSource, string> = {
+  rawFile: 'NOAA raw file',
+  iem: 'IEM',
+  usairnet: 'usairnet',
+  nwsList: 'NWS list',
+  nwsLatest: 'NWS latest',
 };
 
 /**
@@ -379,6 +565,85 @@ function TimingList({ t, nwsOnly }: { t: UsairnetTiming; nwsOnly: boolean }): JS
 }
 
 /**
+ * Why a field can differ on the same report, for the causes that are known
+ * and are neither side decoding the METAR wrongly. Shown only for a field
+ * that did differ, so a cause is never offered for a row that has nothing
+ * to explain. `upTo` is the largest gap the cause accounts for; a larger one
+ * on the page gets a sentence saying the cause does not cover it, so the
+ * line cannot pass for an explanation of a gap it does not explain (the
+ * sunset rows logged before the app's sun times were corrected ran 4 min
+ * apart, which no distance accounts for).
+ *
+ * The sun lines: usairnet's almanac is KPMV's, this dashboard's the drop
+ * zone's; by NOAA's method (domain/sun.ts) the sun rises and sets 30 to 63
+ * seconds earlier at KPMV through 2026, so rounded to the minute the two
+ * can be one apart.
+ */
+const KNOWN_CAUSE: Record<string, { why: string; upTo: number | null }> = {
+  'temperature °F': {
+    why: 'usairnet shows the METAR body\u2019s whole degrees; this dashboard reads the remarks\u2019 tenths.',
+    upTo: 1,
+  },
+  'dew point °F': {
+    why: 'usairnet shows the METAR body\u2019s whole degrees; this dashboard reads the remarks\u2019 tenths.',
+    upTo: 1,
+  },
+  'humidity % (derived)': {
+    why: 'a METAR carries no humidity; each side works it out from its own temperature and dew point, so it carries their rounding.',
+    upTo: null,
+  },
+  'sunrise (min past midnight)': {
+    why: `usairnet's times are for ${SITE.metarStation.id}, ~${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the drop zone, where the sun rises up to about a minute earlier; this dashboard's are for the drop zone.`,
+    upTo: 1,
+  },
+  'sunset (min past midnight)': {
+    why: `usairnet's times are for ${SITE.metarStation.id}, ~${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the drop zone, where the sun sets up to about a minute earlier; this dashboard's are for the drop zone.`,
+    upTo: 1,
+  },
+};
+
+function KnownCauses({ fields }: { fields: UsairnetField[] }): JSX.Element | null {
+  const explained = fields.filter((f) => f.agree < f.n && KNOWN_CAUSE[f.name]);
+  if (explained.length === 0) return null;
+  return (
+    <>
+      <h4 className="cite-found-head">Known reasons a field differs on the same report</h4>
+      <ul className="cite-found">
+        {explained.map((f) => {
+          const cause = KNOWN_CAUSE[f.name];
+          const beyond = cause.upTo != null && f.spread != null && f.spread.maxAbs > cause.upTo;
+          return (
+            <li key={f.name}>
+              <strong>{f.name}</strong> ({f.n - f.agree} of {f.n} runs
+              {f.spread ? `, by up to ${num(f.spread.maxAbs)}` : ''}): {cause.why}
+              {beyond && ` That accounts for a gap of ${cause.upTo}, not the larger ones here.`}
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+}
+
+/** Runs where one side could not be read, and the longest stretch
+ *  usairnet's page stayed unreadable. */
+function OutageLine({ o }: { o: UsairnetOutages }): JSX.Element | null {
+  if (o.theirs === 0 && o.ours === 0) return null;
+  const minutes = o.longest ? Math.round((Date.parse(o.longest.to) - Date.parse(o.longest.from)) / 60_000) : 0;
+  return (
+    <ul className="cite-found">
+      <li>
+        <strong>Runs that could not read one side:</strong> usairnet&rsquo;s page in {o.theirs}, this
+        dashboard&rsquo;s feeds in {o.ours}.
+        {o.longest &&
+          o.longest.samples > 1 &&
+          ` usairnet\u2019s failures came in ${o.stretches} unbroken ${o.stretches === 1 ? 'stretch' : 'stretches'}; the longest ran ${minutes} min, from ${fmtDay(o.longest.from)} to ${fmtDay(o.longest.to)} (${o.longest.samples} samples in a row).`}
+      </li>
+    </ul>
+  );
+}
+
+/**
  * Two comparisons that must not share a table. When both sides show the
  * same observation, a difference is a decode difference. When they show two
  * observations twenty minutes apart, most of the difference is the weather
@@ -395,8 +660,9 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
       <p className="muted small">
         Both sides showed the same observation time in {u.sameReport} of {readable} readable runs (
         {pct(u.sameReport, readable)}); in the rest each showed a different report.
-        {u.unreadable > 0 && ` ${u.unreadable} runs could not read one side.`}
+        {u.unreadable > 0 && !u.outages && ` ${u.unreadable} runs could not read one side.`}
       </p>
+      {u.outages && <OutageLine o={u.outages} />}
       {u.timingSinceIem && u.feeds && u.feeds.iem + u.feeds.nws > 0 && (
         <>
           <h4 className="cite-found-head">Since this dashboard reads IEM first (Sep 29)</h4>
@@ -419,6 +685,7 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
       {u.fieldsSameReport ? (
         <>
           <FieldTable fields={u.fieldsSameReport} caption="Same observation on both sides" />
+          <KnownCauses fields={u.fieldsSameReport} />
           <FieldTable
             fields={u.fieldsDifferentReport ?? []}
             caption="Different observations, usually one report (20 min) apart"
@@ -452,10 +719,6 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
       <p className="muted small">
         Differences are absolute, in each field&rsquo;s own unit, over the runs that recorded a
         numeric gap; text fields (clouds, flight rule) only agree or differ.
-      </p>
-      <p className="muted small">
-        A one-degree gap in temperature or dew point is the METAR body&rsquo;s whole degrees
-        against the remarks&rsquo; tenths, which this dashboard reads.
       </p>
     </Panel>
   );

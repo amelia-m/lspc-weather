@@ -143,6 +143,124 @@ describe('ParityPage', () => {
     expect(html).toContain('<td>usairnet</td><td>0</td><td>—</td>');
   });
 
+  /* The breakdowns added on 2026-10-03, from the questions asked of the
+   * logs that day: the headline figures, medians in the time-gap table, the
+   * ground rows through the day, the fields grouped with their known causes,
+   * and how long usairnet stayed unreadable. */
+  describe('the breakdowns', () => {
+    const at = (iso: string, m: number): string => new Date(Date.parse(iso) + m * 60_000).toISOString();
+    const recs: ParityRecord[] = [
+      // Two same-run winds runs at 9 PM CDT (02Z): Schulze's ground row 4 kt over ours.
+      ...[0, 4].map(
+        (m): ParityRecord => ({
+          kind: 'schulze',
+          at: at('2026-10-03T01:40:00Z', m),
+          appHour: '02Z',
+          // Aloft gaps 2, 2, 2 and 8°: average 3.5, median 2, 90th and max 8,
+          // so every column of the time-gap row is told apart.
+          aligned: {
+            rows: [
+              { ft: 0, dDir: 30, dSpd: 4, dT: null },
+              { ft: 3000, dDir: 2, dSpd: 1, dT: null },
+              { ft: 6000, dDir: m === 0 ? 2 : 8, dSpd: 1, dT: null },
+            ],
+          },
+          rawMismatch: false,
+          ground: { ourKt: 5, theirKt: 9 },
+        }),
+      ),
+      // Same report: wind speed agrees, dew point differs by 1, clouds agree,
+      // temperature agrees (it has a known cause, but nothing to explain).
+      ...[0, 2].map(
+        (m): ParityRecord => ({
+          kind: 'usairnet',
+          at: at('2026-10-03T13:00:00Z', m),
+          v: 3,
+          sameReport: true,
+          ourSource: 'iem',
+          fields: [
+            { name: 'wind mph', same: true, delta: 0 },
+            { name: 'dew point °F', same: m === 0, delta: m === 0 ? 0 : -1 },
+            { name: 'clouds', same: true },
+            { name: 'temperature °F', same: true, delta: 0 },
+            { name: 'a field added later', same: true },
+          ],
+        }),
+      ),
+      // usairnet unreadable three samples in a row, then once more alone.
+      ...[4, 6, 8].map((m): ParityRecord => ({ kind: 'usairnet', at: at('2026-10-03T13:00:00Z', m), error: 'usairnet: page did not parse' })),
+      { kind: 'usairnet', at: '2026-10-03T13:10:00Z', v: 3, sameReport: true, ourSource: 'iem', fields: [] },
+      { kind: 'usairnet', at: '2026-10-03T15:00:00Z', error: 'usairnet: fetch failed' },
+    ];
+    const html = render('ready', summarizeParity(recs, Date.parse('2026-10-03T16:00:00Z')));
+
+    it('opens with the headline figures, computed from the summary', () => {
+      const glance = html.slice(html.indexOf('At a glance'), html.indexOf('Winds aloft vs Mark Schulze'));
+      expect(glance).toContain('2° and 1 kt apart at the median, 8° and 1 kt at the most, over 2 runs');
+      expect(glance).toContain('4 of 5 fields agreed on every run; the others differed on some runs: dew point °F by up to 1');
+    });
+
+    it('adds the median to the time-gap table', () => {
+      expect(html).toContain('<th>median dir</th>');
+      expect(html).toContain('<td>Same hour, same forecast run</td><td>2</td><td>3.50°</td><td>2°</td><td>8°</td><td>8°</td>');
+    });
+
+    it('breaks the ground rows down by the local time of the forecast hour', () => {
+      expect(html).toContain('The two Surface rows are different heights');
+      expect(html).toContain('<td>9\u00a0PM–12\u00a0AM</td><td>2</td><td>5 kt</td><td>9 kt</td><td>+4 kt</td>');
+      expect(html).toContain('<td>12–3\u00a0AM</td><td>0</td><td>—</td>');
+    });
+
+    it('groups the fields under headings, the surface wind first, and keeps an unlisted one', () => {
+      const same = html.slice(html.indexOf('Same observation on both sides'));
+      const wind = same.indexOf('Surface wind</th>');
+      expect(wind).toBeGreaterThan(-1);
+      expect(same.indexOf('<td>wind mph</td>')).toBeGreaterThan(wind);
+      expect(same.indexOf('Temperature and moisture</th>')).toBeGreaterThan(same.indexOf('<td>clouds</td>'));
+      expect(same.indexOf('<td>a field added later</td>')).toBeGreaterThan(same.indexOf('Other</th>'));
+    });
+
+    it('gives a known cause only for a field that differed', () => {
+      const causes = html.slice(html.indexOf('Known reasons a field differs'));
+      expect(causes).toContain('<strong>dew point °F</strong> (1 of 2 runs, by up to 1)');
+      // Temperature has a known cause but agreed every time: nothing to explain.
+      expect(causes.slice(0, causes.indexOf('</ul>'))).not.toContain('temperature °F');
+      // A 1 °F gap is what the cause covers, so no caveat.
+      expect(causes).not.toContain('not the larger ones here');
+    });
+
+    it('says when a gap is larger than its known cause accounts for', () => {
+      const late: ParityRecord = {
+        kind: 'usairnet',
+        at: '2026-10-03T13:00:00Z',
+        v: 3,
+        sameReport: true,
+        fields: [{ name: 'sunset (min past midnight)', same: false, delta: 4 }],
+      };
+      const page = render('ready', summarizeParity([late], Date.parse('2026-10-03T14:00:00Z')));
+      expect(page).toContain('<strong>sunset (min past midnight)</strong> (1 of 1 runs, by up to 4)');
+      expect(page).toContain('That accounts for a gap of 1, not the larger ones here.');
+    });
+
+    it('says how long usairnet stayed unreadable, apart from the dashboard\'s own feeds', () => {
+      expect(html).toContain('usairnet’s page in 4, this dashboard’s feeds in 0');
+      expect(html).toContain('the longest ran 4 min');
+      expect(html).toContain('(3 samples in a row)');
+    });
+
+    it('renders a summary written before the breakdowns without them', () => {
+      const old = {
+        ...summary,
+        schulze: { ...summary.schulze, groundByLocalHour: undefined },
+        usairnet: { ...summary.usairnet, outages: undefined, unreadable: 2 },
+      };
+      const page = render('ready', old);
+      expect(page).toContain('The two Surface rows are different heights');
+      expect(page).not.toContain('by the local time of the forecast hour');
+      expect(page).toContain('2 runs could not read one side.');
+    });
+  });
+
   it('never grades: no verdict words, no warning classes', () => {
     const html = render('ready');
     for (const word of ['good', 'bad', 'acceptable', 'unsafe', 'safe', 'ok']) {

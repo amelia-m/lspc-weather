@@ -109,12 +109,20 @@ the change was made to move exactly those numbers.
 
 ## What the page shows, and what it deliberately does not
 
-First, the winds differences **by the time the two tables represent**: same
+It opens with **At a glance**: four sentences computed from the summary, each
+a figure from a section below. How far apart the winds tables were on the
+same hour and forecast run (median and largest); how many observation fields
+agreed on every same-report run, and how far the others ran; how often this
+dashboard had the newer report since it read IEM first; and the median
+minutes from a report to each source. They move with the summary and carry no
+judgement.
+
+Then the winds differences **by the time the two tables represent**: same
 hour on the same forecast run, same hour with one side on a newer run, and
 one hour apart as the two pages show it after half past. Each is pooled over
 every row from 1,000 ft up (the surface row differs for its own reason) and
-given as the average, 90th-percentile and largest difference in direction and
-speed. The one-hour row fills only from samples logged since 2026-09-26, when
+given as the average, median, 90th-percentile and largest difference in
+direction and speed. The one-hour row fills only from samples logged since 2026-09-26, when
 the comparison started recording every row of the as-seen tables; before
 that it kept only the worst row. A one-off measurement of how the difference
 grows with larger gaps is in `docs/markschulze-altitude-reference.md`.
@@ -125,12 +133,33 @@ in speed across runs, and the number of runs. Then counts: runs with any row
 more than 10° or 3 kt apart; runs where the raw profiles disagreed; runs where
 the two pages showed different hours at that minute, and how large that
 difference was; and the ground row on each side, with the ratio between them.
+
+**The ground row** gets its own section: why the two Surface rows are
+different heights (this dashboard's the model's 10 m wind, Schulze's a line
+through the pressure levels read at 0 ft, matched in 72 of 72 hours at four
+sites on 2026-10-03; `docs/markschulze-altitude-reference.md`), and a table
+of both rows by the drop zone's local time of the forecast hour, in
+three-hour blocks, with the median of each run's own difference
+(`groundByLocalHour`). A run is placed by the hour it compared, not the
+minute it sampled. It is the count behind the Winds aloft card's note that
+Schulze's row reads higher most of all at night: on the logs to 2026-10-03 the
+median gap was 3 kt from 9 PM to midnight and under 1 kt from 9 AM to 6 PM.
+
 For the observation, two tables that are never pooled: runs where both sides
 showed the same observation (a decode comparison), and runs where they
 showed different ones, usually a report apart (mostly the weather changing
 between two reports). Per field, each gives how many runs agreed, and the
 average, smallest and largest gap in that field's own unit where both sides
-gave a number. Above them: which side had the newer report when the times
+gave a number. The fields sit under headings in the order a report is read
+(surface wind, sky and visibility, temperature and moisture, pressure, sun),
+and a field the page does not know goes under "Other". Under the
+same-report table, **known reasons a field differs**: the 1 °F rounding of
+temperature and dew point, humidity worked out from each side's own figures,
+and the sun times being KPMV's on usairnet and the drop zone's here. A
+reason is shown only for a field that did differ, and where the largest gap
+is bigger than the reason accounts for (more than 1 °F, or more than a
+minute for the sun) the line says so, so it cannot pass for an explanation
+of a gap it does not cover. Above them: which side had the newer report when the times
 differed, how far apart the two reports were, and, when this dashboard was
 the one behind, whether NWS's own observation list already held the newer
 report (so the `latest` endpoint the dashboard reads had not caught up) or
@@ -145,6 +174,14 @@ and was at most five minutes earlier, so the figure is at most one sampling
 interval (two minutes) late and never early; the hour between sampler
 batches and the day between daily runs time nothing
 (`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`).
+
+And **runs that could not read one side**: usairnet's page (unreachable or
+unparsed) apart from this dashboard's own feeds, with the number of unbroken
+stretches of usairnet failures and the longest (`outagesOf`). Failures join
+a stretch only when consecutive samples are at most five minutes apart, so
+the hour between sampler batches never merges two. To 2026-10-03 that was
+74 failures in 3 stretches, the longest 72 samples on 2026-09-30, from 13:12
+to 15:31Z.
 
 Some rows count only records from the version of the comparison that
 corrected them (`FIELD_SINCE_VERSION`); older records are kept and those
@@ -182,8 +219,12 @@ question in `docs/open-questions.md`.
   A same-hour run whose raw profiles could not be judged is in neither
   same-hour group. Absent in summaries written before 2026-09-26.
 - `schulze.ground.medianRatio`: Schulze's ground speed over ours in knots.
-  A ratio near 1.85 across many runs would support the reading that his
-  figure is a km/h value taken as knots; that reading is unconfirmed.
+  It runs near 1.2, not the 1.85 a km/h value read as knots would give; the
+  difference is the two rows' heights (`docs/markschulze-altitude-reference.md`).
+- `schulze.groundByLocalHour[]`: eight three-hour blocks of the drop zone's
+  local day (`fromHour` 0 to 21), each with the runs whose forecast hour fell
+  in it, the median of each side's ground row, and the median of Schulze's
+  minus ours per run. Absent before 2026-10-03.
 - `usairnet.fieldsSameReport` and `usairnet.fieldsDifferentReport`: the two
   field tables. `spread` is null for text fields, and for runs logged before
   gaps were recorded (2026-09-24). Summaries written before 2026-09-27 carry
@@ -191,6 +232,11 @@ question in `docs/open-questions.md`.
 - `usairnet.timing`: runs with different observation times, how many logged
   both times (from 2026-09-27), which side was newer, the gap in minutes
   (signed, dashboard minus usairnet), and the two dashboard-behind cases.
+- `usairnet.outages`: `theirs` (usairnet's page could not be read or did
+  not parse) and `ours` (neither of the dashboard's feeds could be read),
+  the number of unbroken `stretches` of usairnet failures, and the
+  `longest` one's first and last sample times and its sample count. Absent
+  before 2026-10-03.
 
 ## Running a comparison by hand
 
