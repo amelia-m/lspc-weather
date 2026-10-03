@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { METAR_STATION_OFFSET, REPO_URL, SITE } from './config/site';
+import { DATA_SOURCES } from './config/sources';
 import {
   resolveThresholds,
   profileLabel,
@@ -215,7 +216,10 @@ export default function App(): JSX.Element {
         <div>
           <h1>LSPC Weather</h1>
           <p className="app-sub">
-            {SITE.dz.name} ({SITE.dz.icao}) · Weeping Water, NE · obs from {SITE.metarStation.id}
+            {SITE.dz.name} ({SITE.dz.icao}) · Weeping Water, NE · obs from {SITE.metarStation.id} ·{' '}
+            <a href={DATA_SOURCES.skyvector.url} target="_blank" rel="noopener noreferrer">
+              sectional chart
+            </a>
           </p>
         </div>
         {/* The kt/mph switch sits on each card that shows a wind speed AND

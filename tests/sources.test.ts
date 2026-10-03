@@ -39,6 +39,13 @@ describe('DATA_SOURCES', () => {
     expect(DATA_SOURCES.fdWinds.label).not.toContain(SITE.fdWindsStation);
   });
 
+  it('opens the sectional chart centred on the drop zone', () => {
+    const url = new URL(DATA_SOURCES.skyvector.url);
+    expect(url.hostname).toBe('skyvector.com');
+    expect(url.searchParams.get('ll')).toBe(`${SITE.dz.lat},${SITE.dz.lon}`);
+    expect(url.searchParams.get('chart')).toBe('301');
+  });
+
   it("opens Mark Schulze's Winds Aloft on the drop zone, not on the reader's own position", () => {
     // His page falls back to the browser's geolocation when the query string
     // has no lat and lon; a reader away from the field then saw their own
