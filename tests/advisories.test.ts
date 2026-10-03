@@ -140,6 +140,21 @@ describe('evaluateAdvisories', () => {
     expect(JSON.stringify(out).toLowerCase()).not.toContain('night rating');
   });
 
+  /* sunTimes gives the local solar day, which rolls over at solar midnight,
+   * so before dawn `sun` is that morning's sunrise and the evening's sunset.
+   * The flag checked only "after sunset" and went quiet from about 1:25 AM
+   * until sunrise, though 14 CFR 105.19 runs from sunset to sunrise. */
+  it('flags the hours before sunrise too, not only after sunset', () => {
+    const preDawn = snapshot({ sun: { sunrise: now + 3 * 3600_000, sunset: now + 15 * 3600_000 } });
+    const day = evaluateAdvisories(preDawn, DEFAULT_THRESHOLDS.student, now).find((a) => a.id === 'daylight');
+    expect(day?.level).toBe('caution');
+    expect(day?.value).toBe('Before sunrise');
+    expect(day?.citation.source).toContain('105.19');
+    // And not in daylight.
+    const midday = snapshot({ sun: { sunrise: now - 5 * 3600_000, sunset: now + 5 * 3600_000 } });
+    expect(evaluateAdvisories(midday, DEFAULT_THRESHOLDS.student, now).find((a) => a.id === 'daylight')).toBeUndefined();
+  });
+
   /* The guidance makes two claims from two authorities: the FAA light
    * requirement and a USPA licence claim. It used to offer only 14 CFR 105.19,
    * so a reader checking the licence half landed on a reg that says nothing
