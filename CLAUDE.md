@@ -120,10 +120,14 @@ precisely because they were colour and text rather than flags.
   fired late; usairnet's almanac, Open-Meteo and the astral library all
   showed it. Do not swap in a shorter formula without re-running that
   comparison.
-- **Schulze's "Surface" row is not a surface wind.** It interpolates his raw
-  1000 hPa level (underground at this DZ) and 975 hPa to 0 ft, so it reads
-  like the wind a couple of hundred feet up and runs above the 10 m wind
-  this app shows, most at night. See `docs/markschulze-altitude-reference.md`.
+- **Schulze's "Surface" row is not a surface wind.** It is a straight line
+  through his raw pressure levels read at 0 ft: here between his 1000 hPa
+  level (underground at this DZ) and 975 hPa, and at a site with no level
+  below ground, the two lowest extended down. Matched in 72 of 72 hours at
+  four sites on 2026-10-03. So it reads like the wind a couple of hundred
+  feet up and runs above the 10 m wind this app shows, most at night. See
+  `docs/markschulze-altitude-reference.md`, "How the surface row was worked
+  out".
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
   thirteen pressure levels the tool does (`OPEN_METEO_PRESSURE_LEVELS`), and

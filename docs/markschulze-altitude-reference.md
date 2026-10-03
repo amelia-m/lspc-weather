@@ -119,21 +119,24 @@ Every remaining difference has a known cause, none of them the data:
   two samples, the more a rounding choice moves the row between them.
 - **The surface row.** This app's is Open-Meteo's 10 m wind
   (`wind_speed_10m`/`wind_direction_10m`), the height an airport anemometer
-  reads. The tool's `groundDir`/`groundSpd` is not a surface wind: it is its
-  own table's 0 ft row, a straight-line interpolation between the two raw
-  pressure levels either side of the ground. At this DZ those are 1000 hPa,
-  about 500 ft *below* the ground (Open-Meteo extrapolates it underground),
-  and 975 hPa, about 200 ft above. Checked on 2026-10-03 for six hours
-  (00Z to 12Z): interpolating those two levels to 0 ft gave the tool's ground
-  value every time, within its whole-knot rounding (e.g. 02Z: 121° / 5 kt at
-  −518 ft and 119° / 10 kt at +203 ft give 120° / 8.6 kt; the tool showed
-  120° / 9). Open-Meteo's 10 m wind that hour was 123° / 3.9 kt. So the
-  tool's ground row reads like the wind a couple of hundred feet up, and at
-  night, when the air near the surface decouples, it runs well above the
-  10 m wind; over 1,028 runs to 2026-10-02 its median was 8 kt to this
-  app's 6.2. 2° and 1 kt apart in the daytime case here. Neither is wrong;
-  they are different heights, and the observed METAR wind is the one the
-  student ground-wind limits are written against.
+  reads. The tool's `groundDir`/`groundSpd` is not a surface wind. It is its
+  own table's 0 ft row: a straight line through its raw pressure levels,
+  read at the ground. Where a level lies below the ground, the line runs
+  between the nearest level below and the nearest above (interpolation);
+  where none does, it runs through the two lowest levels and is extended
+  down to 0 ft (extrapolation). It never uses the model's 10 m wind. See
+  "How the surface row was worked out" below for the evidence.
+
+  At this DZ the two levels are 1000 hPa, about 500 ft *below* the ground
+  (Open-Meteo extrapolates it underground), and 975 hPa, about 200 ft above.
+  For example, at 02Z on 2026-10-03, 121° / 5 kt at −518 ft and 119° / 10 kt
+  at +203 ft give 120° / 8.6 kt; the tool showed 120° / 9, and Open-Meteo's
+  10 m wind that hour was 123° / 3.9 kt. So the tool's ground row reads like
+  the wind a couple of hundred feet up. At night, when the air near the
+  surface decouples, it runs well above the 10 m wind; over 1,028 runs to
+  2026-10-02 its median was 8 kt to this app's 6.2. Neither is wrong; they
+  are different heights, and the observed METAR wind is the one the student
+  ground-wind limits are written against.
 - **The valid hour**, when the two are not aligned: see "Re-checking this".
 
 - **Which forecast run each request was served.** Not yet explained. The first
@@ -197,6 +200,43 @@ the live samples, in its "Time the tables represent" table. To repeat the
 measurement above, fetch the two for a run of hours and pair them; the
 endpoint serves `hourOffset` up to at least 47.
 
+## How the surface row was worked out
+
+The tool's server computes `groundDir`/`groundSpd`; its code is not
+readable, so the rule above was reverse-engineered from its output. On
+2026-10-03, around 01Z, the API was read for every hour listed below, and
+each hour's raw levels (`altFtRaw`, `directionRaw`, `speedRaw`) were put
+through the candidate rule and compared with the ground value it served.
+The page's own script (`getPos_maptest.js`) loads this same endpoint,
+`winds_openmeteo.php`, so this is what a reader of the page sees.
+
+| Site | Ground | Hours | Levels used | Matched |
+|---|---|---|---|---|
+| This DZ (40.8675, −96.11) | 1,145 ft | 48 (offsets 0 to 47) | 1000 hPa below, 975 hPa above | 48 |
+| Longmont, CO (40.164, −105.163) | 5,039 ft | 12 | the level just below and just above | 12 |
+| Near Houston (29.45, −95.18) | 26 ft | 6 | none below: the two lowest, extended down | 6 |
+| Near Tampa (28.05, −82.40) | 89 ft | 6 | none below: the two lowest, extended down | 6 |
+
+72 hours in all. Direction matched to the degree in every one; speed
+matched within 1 kt. The speed slack is rounding: the API returns raw
+speeds in whole knots, and the tool probably interpolates the unrounded
+values, so the whole-knot inputs reproduce its speed to within a knot (8 of
+the 48 DZ hours were 0.6 to 0.7 kt off; none more).
+
+Two candidates were ruled out on the way. At the sea-level sites, with no
+level below ground, the ground value matched neither Open-Meteo's 10 m nor
+its 80 m wind for the same hour (e.g. Houston 00Z: tool 55° / 6 kt, 10 m
+83° / 5.5 kt, 80 m 82° / 7.1 kt), and the extension of the two lowest
+levels matched all six. An earlier suspicion, recorded in
+`scripts/schulzeCompare.live.ts`, that a km/h figure was being read as
+knots does not fit: over 1,028 runs the median ratio of the tool's ground
+speed to this app's was 1.18, not 1.85.
+
+What this does not show: it is one day's forecasts at four sites, read from
+outside. A different formula that lands within a knot would also fit the
+speeds, though matching every direction exactly makes that unlikely. If
+the tool changes, the check below will show it.
+
 ## Re-checking this
 
 ```
@@ -211,3 +251,8 @@ late in an hour compare against `hourOffset=1`. The gridded values are
 `direction`, `speed` and `temp`, keyed by the `altFt` altitude as a string. Compare `altFt[0]` against
 `groundDir`/`groundSpd`/`groundTemp`, and `altFtRaw` against `groundElev`, as
 above.
+
+To re-check the surface row: take the raw level nearest below 0 ft and the
+nearest above (or, with none below, the two lowest), draw a straight line
+through them in speed and in direction (the shorter way round), and read it
+at 0 ft. It should give `groundDir` exactly and `groundSpd` within 1 kt.

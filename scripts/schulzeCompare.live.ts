@@ -157,8 +157,9 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   }
 
   // The ground rows side by side. His is not a surface wind but his table's
-  // 0 ft row, interpolated between the raw 1000 hPa level (underground here)
-  // and 975 hPa; ours is Open-Meteo's 10 m wind. Checked 2026-10-03, see
+  // 0 ft row, a straight line through the raw levels either side of the
+  // ground (here 1000 hPa, underground, and 975 hPa); ours is Open-Meteo's
+  // 10 m wind. Matched in 72 hours at four sites on 2026-10-03, see
   // docs/markschulze-altitude-reference.md. The km/h figure is kept from
   // when a units mix-up was the suspected cause; it was not one.
   const surface = samples.find((x) => x.isSurface) ?? null;
