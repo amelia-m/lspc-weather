@@ -170,6 +170,35 @@ describe('decodeTaf on the KOFF TAF aviationweather.gov served on 2026-09-24', (
   });
 });
 
+describe('decodeTaf on a KOFF TAF with USAF in-period remarks', () => {
+  // As aviationweather.gov served it on 2026-10-03. `WND 14006KT AFT 0306`
+  // is a remark (the wind after 03/06Z), not the period's wind, and its
+  // 0306 is a day-and-hour, not 306 m of visibility. Before this was read,
+  // period 0 came out 140° and 0.19 SM, and the daily TAF decode comparison
+  // failed against aviationweather's 110° and 6+ (also on Oct 1 and 2).
+  const raw =
+    'TAF KOFF 030200Z 0302/0408 11006KT 9999 SKC QNH3019INS WND 14006KT AFT 0306 BECMG 0315/0316 17010G15KT 9999 FEW250 QNH3009INS BECMG 0323/0324 VRB06KT 9999 FEW100 QNH3011INS TX22/0321Z TN09/0311Z';
+  const d = decodeTaf(raw, utc(10, 3, 2))!;
+
+  it('takes the period\'s wind and visibility from its own groups, not the remark', () => {
+    expect(d.periods[0].wind).toMatchObject({ directionDeg: 110, speedKt: 6, variable: false });
+    expect(d.periods[0].visibilitySm).toBe(6);
+    expect(d.periods[0].visibilityPlus).toBe(true);
+  });
+
+  it('lists the remark undecoded, beside the QNH groups', () => {
+    expect(d.undecoded.slice(0, 4)).toEqual(['QNH3019INS', 'WND', '14006KT', 'AFT']);
+    expect(d.undecoded).toContain('0306');
+  });
+
+  it('leaves the times in a "last amendment" remark undecoded too', () => {
+    const last = decodeTaf('TAF KOFF 030200Z 0302/0408 11006KT 9999 SKC LAST NO AMDS AFT 0303 NEXT 0315', utc(10, 3, 2))!;
+    expect(last.periods[0].visibilitySm).toBe(6);
+    expect(last.periods[0].visibilityPlus).toBe(true);
+    expect(last.undecoded).toEqual(['LAST', 'NO', 'AMDS', 'AFT', '0303', 'NEXT', '0315']);
+  });
+});
+
 describe('periodFlightCategory', () => {
   it('reads a TEMPO after a BECMG against the BECMG conditions, not the base ones', () => {
     // Base: 9999 (6+ SM). BECMG: 4800 m, 2.98 SM. The TEMPO states only a
