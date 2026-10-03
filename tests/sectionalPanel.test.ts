@@ -31,6 +31,11 @@ describe('SectionalPanel', () => {
     expect(html).toContain(`class="sectional-frame" href="${DATA_SOURCES.skyvector.url.replace(/&/g, '&amp;')}"`);
   });
 
+  it('links the live traffic map, saying what it does not show', () => {
+    expect(html).toContain(`href="${DATA_SOURCES.adsbTraffic.url.replace(/&/g, '&amp;')}"`);
+    expect(html).toContain('it is not a traffic service');
+  });
+
   it('offers both zoom steps from the default, each named by the word it shows', () => {
     // WCAG 2.5.3: no aria-label to override the visible "wider" / "closer",
     // and the signs beside them hidden from the accessible name.

@@ -36,7 +36,7 @@ export function SectionalPanel(): JSX.Element {
     <Panel
       title="Sectional chart"
       subtitle={`FAA VFR sectional · ${dz.icao}`}
-      sources={[DATA_SOURCES.faaSectional, DATA_SOURCES.skyvector]}
+      sources={[DATA_SOURCES.faaSectional, DATA_SOURCES.skyvector, DATA_SOURCES.adsbTraffic]}
     >
       {failed ? (
         <p className="muted">
@@ -91,6 +91,16 @@ export function SectionalPanel(): JSX.Element {
               closer <span aria-hidden="true">+</span>
             </button>
           </div>
+          <p className="small">
+            <a href={DATA_SOURCES.adsbTraffic.url} target="_blank" rel="noopener noreferrer">
+              Live air traffic on this chart →
+            </a>{' '}
+            <span className="muted">
+              adsb.lol&rsquo;s map, over the same sectional and centred on the drop zone. It shows
+              only aircraft broadcasting ADS-B (or located by multilateration) within range of its
+              volunteer receivers; it is not a traffic service.
+            </span>
+          </p>
           <p className="muted small">
             <span className="radar-dz-key" aria-hidden="true" /> marks the drop zone, from its
             coordinates. Tap the chart for SkyVector&rsquo;s sectional, which pans and shows the

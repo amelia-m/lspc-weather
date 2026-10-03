@@ -1,10 +1,12 @@
 import type { HourlyPoint } from '../../domain/types';
 import { toSpeed, type SpeedUnit } from '../../domain/units';
 import { SITE } from '../../config/site';
+import { nightIntervals } from '../../domain/sun';
 
 /** Compact, dependency-free SVG chart of the next ~18 h: surface wind (line),
  *  gust (dashed line) on a wind-speed axis, with precip probability as faint
- *  background bars. */
+ *  background bars and the hours between sunset and sunrise at the drop zone
+ *  shaded behind them. */
 export function HourlyChart({
   points,
   unit,
@@ -57,6 +59,16 @@ export function HourlyChart({
   // Label roughly every 3 hours.
   const labelEvery = Math.max(1, Math.round(n / 6));
 
+  // Night at the drop zone, sunset to sunrise: the same times the 14 CFR
+  // 105.19 night flag and the Daylight card use (domain/sun.ts), so the shade
+  // starts where the flag would. A plain fact of the sky, drawn in a neutral
+  // shade with no word on it. The points are hourly, so time maps linearly
+  // onto the same axis the lines use.
+  const t0 = points[0]?.time;
+  const tN = points[n - 1]?.time;
+  const xAt = (t: number): number => padL + ((t - t0) / (tN - t0)) * plotW;
+  const nights = n > 1 ? nightIntervals(SITE.dz.lat, SITE.dz.lon, t0, tN) : [];
+
   return (
     <svg className="hchart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Hourly wind forecast">
       {/* y gridlines + labels (kt) */}
@@ -67,6 +79,18 @@ export function HourlyChart({
             {Math.round(kt)}
           </text>
         </g>
+      ))}
+
+      {/* night, sunset to sunrise (furthest back) */}
+      {nights.map(([a, b]) => (
+        <rect
+          key={a}
+          className="hc-night"
+          x={xAt(a)}
+          y={padT}
+          width={Math.max(0, xAt(b) - xAt(a))}
+          height={plotH}
+        />
       ))}
 
       {/* precip probability bars (background) */}

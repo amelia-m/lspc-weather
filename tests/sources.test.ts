@@ -46,6 +46,16 @@ describe('DATA_SOURCES', () => {
     expect(url.searchParams.get('chart')).toBe('301');
   });
 
+  it('opens the live traffic map over the sectional, centred and marked on the drop zone', () => {
+    const url = new URL(DATA_SOURCES.adsbTraffic.url);
+    expect(url.hostname).toBe('adsb.lol');
+    expect(Number(url.searchParams.get('lat'))).toBe(SITE.dz.lat);
+    expect(Number(url.searchParams.get('lon'))).toBe(SITE.dz.lon);
+    expect(Number(url.searchParams.get('SiteLat'))).toBe(SITE.dz.lat);
+    expect(Number(url.searchParams.get('SiteLon'))).toBe(SITE.dz.lon);
+    expect(url.searchParams.get('baseMap')).toBe('VFR_Sectional');
+  });
+
   it("opens Mark Schulze's Winds Aloft on the drop zone, not on the reader's own position", () => {
     // His page falls back to the browser's geolocation when the query string
     // has no lat and lon; a reader away from the field then saw their own

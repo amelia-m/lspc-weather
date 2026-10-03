@@ -49,15 +49,16 @@ freefall drift and **density altitude** for jump-plane climb performance.
   far the hour shown is from now.
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs, worked from whichever hour the winds card shows.
-- 📈 **Hourly wind** — wind/gust chart with precip-probability bars, over a
-  selectable 18 / 36 / 72 h horizon (18 h by default).
+- 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
+  hours from sunset to sunrise shaded, over a selectable 18 / 36 / 72 h horizon
+  (18 h by default).
 - 📅 **10-day outlook** — daily sky, high/low, max wind/gust, precip chance; tap a
   day for its hourly detail.
 - ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline.
 - 📡 **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
-- 🗺️ **Sectional chart** — FAA's VFR sectional around the drop zone, from FAA's own tile service, with a ring on the DZ and a zoom step; tap it for SkyVector's sectional on the same spot.
+- 🗺️ **Sectional chart** — FAA's VFR sectional around the drop zone, from FAA's own tile service, with a ring on the DZ and a zoom step; tap it for SkyVector's sectional on the same spot, or follow its link to adsb.lol's live air traffic over the same chart.
 - 📝 **TAF** — nearest available TAF, raw text plus a decoded table: one row per period (prevailing, FM, TEMPO, BECMG, PROB) with wind, visibility, sky, weather in words and the FAA flight category (see cross-references below).
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
 - 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sunTimes } from '../src/domain/sun';
+import { nightIntervals, sunTimes } from '../src/domain/sun';
 
 // LSPC / Weeping Water, NE
 const LAT = 40.8675;
@@ -60,5 +60,44 @@ describe('sunTimes', () => {
     for (const at of ['2026-09-29T11:30:00Z', '2026-09-30T04:30:00Z']) {
       expect(Math.abs(sunTimes(LAT, LON, new Date(at)).sunset - Date.parse('2026-09-30T00:09:34.429Z'))).toBeLessThan(1000);
     }
+  });
+});
+
+/* The Hourly wind chart shades these spans, so they must be exactly the
+ * sunset-to-sunrise the night flag uses, clipped to the chart's range. */
+describe('nightIntervals', () => {
+  const lat = 40.8675;
+  const lon = -96.11;
+  const oct3 = sunTimes(lat, lon, new Date('2026-10-03T18:00:00Z'));
+  const oct4 = sunTimes(lat, lon, new Date('2026-10-04T18:00:00Z'));
+  const oct5 = sunTimes(lat, lon, new Date('2026-10-05T18:00:00Z'));
+
+  it('runs from one day\'s sunset to the next day\'s sunrise', () => {
+    const from = Date.parse('2026-10-03T18:00:00Z'); // 1 PM CDT
+    const to = Date.parse('2026-10-04T18:00:00Z');
+    expect(nightIntervals(lat, lon, from, to)).toEqual([[oct3.sunset, oct4.sunrise]]);
+  });
+
+  it('clips a night the range starts or ends inside', () => {
+    const from = Date.parse('2026-10-04T05:00:00Z'); // midnight CDT, mid-night
+    const to = Date.parse('2026-10-05T03:00:00Z'); // 10 PM CDT on the 4th
+    expect(nightIntervals(lat, lon, from, to)).toEqual([
+      [from, oct4.sunrise],
+      [oct4.sunset, to],
+    ]);
+  });
+
+  it('gives one span per night over several days, in order', () => {
+    const from = Date.parse('2026-10-03T18:00:00Z');
+    const to = Date.parse('2026-10-05T18:00:00Z');
+    expect(nightIntervals(lat, lon, from, to)).toEqual([
+      [oct3.sunset, oct4.sunrise],
+      [oct4.sunset, oct5.sunrise],
+    ]);
+  });
+
+  it('is empty for a range inside the day, and for an empty range', () => {
+    expect(nightIntervals(lat, lon, Date.parse('2026-10-03T15:00:00Z'), Date.parse('2026-10-03T20:00:00Z'))).toEqual([]);
+    expect(nightIntervals(lat, lon, 5, 5)).toEqual([]);
   });
 });
