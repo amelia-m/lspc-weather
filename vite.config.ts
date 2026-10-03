@@ -8,7 +8,8 @@ import react from '@vitejs/plugin-react';
 // preamble scripts that this policy would block).
 // - style-src needs 'unsafe-inline' because React style={{...}} attributes
 //   are inline styles.
-// - img-src allows radar.weather.gov for the radar loop image.
+// - img-src allows radar.weather.gov for the radar loop image, and
+//   tiles.arcgis.com for FAA's VFR sectional tiles on the Sectional card.
 // - connect-src covers the live APIs (NWS, Open-Meteo, and the Iowa
 //   Environmental Mesonet for the observation) and 'self', for the parity
 //   summary the #parity page fetches from beside the site.
@@ -16,7 +17,7 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://radar.weather.gov",
+  "img-src 'self' data: https://radar.weather.gov https://tiles.arcgis.com",
   "connect-src 'self' https://api.weather.gov https://api.open-meteo.com https://mesonet.agron.iastate.edu",
   "base-uri 'self'",
   "form-action 'none'",

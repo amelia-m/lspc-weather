@@ -57,6 +57,7 @@ freefall drift and **density altitude** for jump-plane climb performance.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline.
 - 📡 **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
+- 🗺️ **Sectional chart** — FAA's VFR sectional around the drop zone, from FAA's own tile service, with a ring on the DZ and a zoom step; tap it for SkyVector's sectional on the same spot.
 - 📝 **TAF** — nearest available TAF, raw text plus a decoded table: one row per period (prevailing, FM, TEMPO, BECMG, PROB) with wind, visibility, sky, weather in words and the FAA flight category (see cross-references below).
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
 - 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
@@ -76,6 +77,7 @@ freefall drift and **density altitude** for jump-plane climb performance.
 | [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ, the current KPMV observation as the backup to IEM's, and TAF text products |
 | [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels) and the 10-day daily outlook |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
+| [FAA VFR sectional](https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59) | Sectional chart tiles (image embed, no API) |
 
 KPMV (~12 mi from the DZ) is the nearest reporting station and issues METARs;
 it does not issue a TAF. TAFs are fetched through a fallback chain —

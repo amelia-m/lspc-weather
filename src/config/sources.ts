@@ -55,6 +55,13 @@ export const DATA_SOURCES = {
     label: 'Sectional chart · SkyVector',
     url: `https://skyvector.com/?ll=${SITE.dz.lat},${SITE.dz.lon}&chart=301&zoom=2`,
   },
+  /** FAA's VFR sectional as a tile service, published by FAA Aeronautical
+   *  Information Services on ArcGIS (the item page this links; the tiles the
+   *  Sectional card shows come from `FAA_SECTIONAL_TILES`). */
+  faaSectional: {
+    label: 'FAA VFR sectional',
+    url: 'https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59',
+  },
   /** usairnet aviation forecast for KPMV — a page many jumpers use. Presents
    *  the same NWS forecast data; cross-reference only. */
   usairnet: {
@@ -101,3 +108,13 @@ export const DATA_SOURCES = {
     url: 'https://gml.noaa.gov/grad/solcalc/calcdetails.html',
   },
 } satisfies Record<string, DataSource>;
+
+/** FAA's VFR sectional tiles, z/y/x, 256 px JPEG, levels 8 to 12 (the
+ *  MapServer's own description, read 2026-10-03). Loaded as <img>, so no CORS
+ *  is needed; the CSP's img-src names the host. */
+export const FAA_SECTIONAL_TILES = {
+  url: (z: number, y: number, x: number): string =>
+    `https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/${z}/${y}/${x}`,
+  minZoom: 8,
+  maxZoom: 12,
+} as const;
