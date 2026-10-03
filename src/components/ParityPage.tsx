@@ -6,12 +6,14 @@ import type {
   ArrivalLag,
   ArrivalSource,
   GroundBand,
+  GroundDay,
   UsairnetField,
   UsairnetOutages,
   UsairnetTiming,
 } from '../domain/paritySummary';
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { Panel } from './common/Panel';
+import { ParityContext } from './ParityContext';
 
 /**
  * "How different from other sources": what the live comparison logs add up
@@ -95,6 +97,7 @@ export function ParityPage({
           <GlancePanel s={summary} />
           <SchulzePanel s={summary} />
           <UsairnetPanel s={summary} />
+          <ParityContext />
         </>
       )}
 
@@ -319,7 +322,7 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
         apart&rdquo; row measure what a reader comparing both pages at that minute sees; the
         per-altitude tables measure the same hour on both sides.
       </p>
-      <GroundSection bands={w.groundByLocalHour} />
+      <GroundSection bands={w.groundByLocalHour} days={w.groundByLocalDay} />
     </Panel>
   );
 }
@@ -346,7 +349,25 @@ const kt1 = (x: number): string => (Number.isInteger(x) ? String(x) : x.toFixed(
  * "How the surface row was worked out"); the Winds aloft card says Schulze's reads
  * higher most of all at night, and the table is the count behind that.
  */
-function GroundSection({ bands }: { bands: GroundBand[] | undefined }): JSX.Element {
+/** "Oct 2" for the summary's local date "2026-10-02". Built from the parts,
+ *  not parsed as a Date, which would read it as UTC midnight and show the
+ *  day before in Nebraska. */
+const fmtDate = (ymd: string): string => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString('en-US', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+function GroundSection({
+  bands,
+  days,
+}: {
+  bands: GroundBand[] | undefined;
+  days: GroundDay[] | undefined;
+}): JSX.Element {
   const k = (x: number | null): string => (x == null ? '—' : `${kt1(x)} kt`);
   const signed = (x: number | null): string => (x == null ? '—' : `${x > 0 ? '+' : ''}${kt1(x)} kt`);
   return (
@@ -395,6 +416,33 @@ function GroundSection({ bands }: { bands: GroundBand[] | undefined }): JSX.Elem
           Medians over the runs in each block. The last column is the median of each run&rsquo;s
           own difference, so it need not equal the gap between the two columns before it.
         </p>
+      )}
+      {days && days.length > 0 && (
+        <div className="sky-scroll">
+          <table className="aloft-table">
+            <caption className="parity-caption">By local day of the forecast hour</caption>
+            <thead>
+              <tr>
+                <th>day</th>
+                <th>runs</th>
+                <th>this dashboard</th>
+                <th>Schulze&rsquo;s</th>
+                <th>Schulze&rsquo;s minus ours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((d) => (
+                <tr key={d.date}>
+                  <td>{fmtDate(d.date)}</td>
+                  <td>{d.runs}</td>
+                  <td>{k(d.medianOurKt)}</td>
+                  <td>{k(d.medianTheirKt)}</td>
+                  <td>{signed(d.medianGapKt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </>
   );

@@ -144,6 +144,10 @@ three-hour blocks, with the median of each run's own difference
 minute it sampled. It is the count behind the Winds aloft card's note that
 Schulze's row reads higher most of all at night: on the logs to 2026-10-03 the
 median gap was 3 kt from 9 PM to midnight and under 1 kt from 9 AM to 6 PM.
+A second table gives the same by local day (`groundByLocalDay`): over every
+run summarised, Schulze's median went from about 6 kt in late September to 8
+kt by 2026-10-02 while this dashboard's stayed near 6, and one median cannot
+show which days the gap opened on.
 
 For the observation, two tables that are never pooled: runs where both sides
 showed the same observation (a decode comparison), and runs where they
@@ -197,6 +201,22 @@ minutes late. After those fixes, on 2026-10-02's data, no row compared on
 the same report showed a decode difference between this app and usairnet
 beyond the 1 °F rounding of temperature and dew point.
 
+Last, **Context: checks made by hand**: the measurements made once while
+reading the logs, each dated and linked to its write-up, and copied from it
+rather than recomputed, so a repeated check changes the write-up first. How
+the winds gap grows with the hours between the two tables (2026-09-26,
+`docs/markschulze-altitude-reference.md`); which hour each table shows (this
+dashboard the nearest, so at most 30 min from now and 15 on average;
+Schulze's the hour in progress, up to 59 min behind and 30 on average); the
+per-site evidence for Schulze's Surface row (2026-10-03); the sunset this
+dashboard gave before it moved to NOAA's method, against NOAA, astral,
+Open-Meteo and usairnet, and the 56-of-56 USNO check after; and the
+comparison's own misreadings that `FIELD_SINCE_VERSION` now leaves out, with
+the counts logged when each was found. One of those counts is recorded
+only here: clouds agreed on 72 of 120 same-report runs to 2026-09-29, while
+the comparison wrote OVC as "Overcast" against usairnet's "Solid Overcast",
+and on 576 of 576 to 2026-10-02 after.
+
 Medians and percentiles sit beside the averages because one stale-forecast
 run puts a 40° outlier into a row that is otherwise within 2°; an average
 alone would report 6° for a row that has never been 6° off.
@@ -225,6 +245,9 @@ question in `docs/open-questions.md`.
   local day (`fromHour` 0 to 21), each with the runs whose forecast hour fell
   in it, the median of each side's ground row, and the median of Schulze's
   minus ours per run. Absent before 2026-10-03.
+- `schulze.groundByLocalDay[]`: the same by the drop zone's local `date`
+  ("2026-10-02") of the forecast hour, oldest first. Absent before
+  2026-10-03.
 - `usairnet.fieldsSameReport` and `usairnet.fieldsDifferentReport`: the two
   field tables. `spread` is null for text fields, and for runs logged before
   gaps were recorded (2026-09-24). Summaries written before 2026-09-27 carry
