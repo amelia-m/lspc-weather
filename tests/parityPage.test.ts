@@ -268,6 +268,37 @@ describe('ParityPage', () => {
     });
   });
 
+  /* The timeline separates a change to the dashboard (it moved how far the
+   * dashboard is from the other source) from a change to the comparison (it
+   * moved how well that is measured), so an improvement after a comparison
+   * fix cannot be read as the dashboard getting better. */
+  describe('the timeline of changes', () => {
+    const html = render('ready');
+    const timeline = html.slice(html.indexOf('Timeline: what changed'), html.indexOf('Context: checks made by hand'));
+
+    it('sits between the live comparisons and the hand-made checks', () => {
+      expect(html.indexOf('Timeline: what changed')).toBeGreaterThan(html.indexOf('Latest observation vs usairnet'));
+      expect(timeline.length).toBeGreaterThan(0);
+    });
+
+    it('labels every entry as a dashboard change, a comparison change or an event, in date order', () => {
+      const labels = [...timeline.matchAll(/<strong>(\w{3} \d+) · (\w+)\.<\/strong>/g)];
+      expect(labels.length).toBeGreaterThan(5);
+      for (const [, , kind] of labels) expect(['Dashboard', 'Comparison', 'Event']).toContain(kind);
+      const day = (d: string): number => Date.parse(`${d} 2026 12:00 UTC`);
+      const days = labels.map(([, d]) => day(d));
+      expect(days).toEqual([...days].sort((a, b) => a - b));
+    });
+
+    it('gives the before and after of the changes that moved the figures', () => {
+      expect(timeline).toContain('Sep 29 · Dashboard.');
+      expect(timeline).toContain('this dashboard had the older one in 11 of 11');
+      expect(timeline).toContain('this dashboard had the newer one in 786 of 786');
+      expect(timeline).toContain('72 of 120 same-report runs agreeing (to Sep 29) to 576 of 576 (to Oct 2)');
+      expect(timeline).toContain('0 of 723 same-report runs, 2 to 4 minutes apart');
+    });
+  });
+
   /* The checks made by hand, dated, beside the live figures. They are copied
    * from the write-ups, so the test pins that each is present and dated, and
    * that the panel shows whatever state the summary is in. */

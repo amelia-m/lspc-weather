@@ -201,6 +201,16 @@ minutes late. After those fixes, on 2026-10-02's data, no row compared on
 the same report showed a decode difference between this app and usairnet
 beyond the 1 °F rounding of temperature and dew point.
 
+Then a **timeline of what changed and what it did to the figures**
+(`src/components/ParityTimeline.tsx`): each dated change labelled as a change
+to the dashboard (it moved how far the dashboard is from the other source),
+a change to the comparison (it moved how well that is measured), or an
+event such as an outage, with the before and after figures logged at the
+time or dated where they come from a later summary. The label is the point:
+clouds going from 72 of 120 to 576 of 576 agreeing was the comparison
+learning usairnet's wording, not the dashboard decoding the sky better, and
+a reader of the figures alone could not tell the two apart.
+
 Last, **Context: checks made by hand**: the measurements made once while
 reading the logs, each dated and linked to its write-up, and copied from it
 rather than recomputed, so a repeated check changes the write-up first. How
