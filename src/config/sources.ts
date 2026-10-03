@@ -43,6 +43,17 @@ export const DATA_SOURCES = {
     label: 'Winds Aloft · Mark Schulze',
     url: `https://www.markschulze.net/winds/?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}`,
   },
+  /** The VFR sectional chart around the drop zone on SkyVector, the chart a
+   *  pilot plans the jump run on: airspace, the airport and what is near it.
+   *  `ll` centres the map and `chart` picks the chart; 301 is the VFR
+   *  sectional and a lower `zoom` is closer in, as SkyVector links shared
+   *  online read (2026-10-03). skyvector.com was not reachable from where
+   *  this was written, so the zoom is a reading of those links, not a view
+   *  that was opened; centring on the coordinates is what the test pins. */
+  skyvector: {
+    label: 'Sectional chart · SkyVector',
+    url: `https://skyvector.com/?ll=${SITE.dz.lat},${SITE.dz.lon}&chart=301&zoom=2`,
+  },
   /** usairnet aviation forecast for KPMV — a page many jumpers use. Presents
    *  the same NWS forecast data; cross-reference only. */
   usairnet: {
