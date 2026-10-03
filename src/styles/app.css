@@ -633,6 +633,13 @@ a {
 }
 
 /* Parity page: a table's own heading, above it, left-aligned. */
+/* A heading row per group of fields in the #parity observation table. */
+.parity-group th {
+  text-align: left;
+  padding-top: 10px;
+  color: var(--muted);
+  font-weight: 600;
+}
 .parity-caption {
   caption-side: top;
   text-align: left;

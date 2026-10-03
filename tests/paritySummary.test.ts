@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   arrivalLags,
+  groundByLocalHour,
   median,
+  outagesOf,
   parseParityLines,
   percentile,
   summarizeParity,
   timeGapGroups,
+  validHourOf,
   type ParityRecord,
   type SchulzeRecord,
   type UsairnetRecord,
@@ -330,5 +333,94 @@ describe('timeGapGroups', () => {
 
   it('is carried in the summary', () => {
     expect(summarizeParity(recs, Date.parse('2026-09-26T20:00:00Z')).schulze.byTimeGap).toEqual(groups);
+  });
+});
+
+/* The ground rows are bucketed by the local time of the hour they forecast,
+ * not the minute the run sampled: a run at 01:40Z compares the 02Z table,
+ * which is 9 PM CDT, while 01:40Z itself is 8:40 PM. */
+describe('groundByLocalHour', () => {
+  const run = (at: string, appHour: string, ourKt: number, theirKt: number): SchulzeRecord => ({
+    kind: 'schulze',
+    at,
+    appHour,
+    ground: { ourKt, theirKt },
+  });
+
+  it('places each run by its forecast hour, on the UTC day nearest the run', () => {
+    // 23:40Z on the 2nd compares 00Z on the 3rd, not 00Z on the 2nd.
+    expect(validHourOf(run('2026-10-02T23:40:00Z', '00Z', 1, 1))).toBe(Date.parse('2026-10-03T00:00:00Z'));
+    expect(validHourOf(run('2026-10-03T00:10:00Z', '00Z', 1, 1))).toBe(Date.parse('2026-10-03T00:00:00Z'));
+    // No hour logged: the run's own time.
+    expect(validHourOf({ kind: 'schulze', at: '2026-10-03T05:00:00Z' })).toBe(Date.parse('2026-10-03T05:00:00Z'));
+  });
+
+  it('buckets by the drop zone\'s local hour, with medians per block', () => {
+    const bands = groundByLocalHour([
+      // 02Z = 9 PM CDT: the 21-24 block. Sampled at 01:40Z (8:40 PM), which
+      // would land in the 18-21 block if the run time were used.
+      run('2026-10-03T01:40:00Z', '02Z', 4, 10),
+      run('2026-10-03T02:10:00Z', '02Z', 6, 9),
+      // 18Z = 1 PM CDT: the 12-15 block.
+      run('2026-10-03T18:05:00Z', '18Z', 10, 11),
+    ]);
+    expect(bands.map((b) => b.fromHour)).toEqual([0, 3, 6, 9, 12, 15, 18, 21]);
+    expect(bands[7]).toEqual({ fromHour: 21, runs: 2, medianOurKt: 5, medianTheirKt: 9.5, medianGapKt: 4.5 });
+    expect(bands[6].runs).toBe(0);
+    expect(bands[4]).toMatchObject({ fromHour: 12, runs: 1, medianGapKt: 1 });
+  });
+
+  it('skips runs without both ground rows', () => {
+    const bands = groundByLocalHour([
+      { kind: 'schulze', at: '2026-10-03T18:05:00Z', appHour: '18Z', ground: { ourKt: null, theirKt: 8 } },
+    ]);
+    expect(bands.every((b) => b.runs === 0 && b.medianOurKt === null)).toBe(true);
+  });
+});
+
+/* Failures on usairnet's side are kept apart from the dashboard's own, and
+ * the longest unbroken stretch is reported: the 2026-09-30 outage was one
+ * afternoon of consecutive failures, which a count alone does not show. */
+describe('outagesOf', () => {
+  const ok = (at: string): UsairnetRecord => ({ kind: 'usairnet', at, fields: [] });
+  const theirs = (at: string): UsairnetRecord => ({ kind: 'usairnet', at, error: 'usairnet: page did not parse' });
+  const ours = (at: string): UsairnetRecord => ({ kind: 'usairnet', at, error: 'neither observation feed could be read' });
+
+  it('counts each side and finds the longest stretch of usairnet failures', () => {
+    const o = outagesOf([
+      ok('2026-09-30T13:10:00Z'),
+      theirs('2026-09-30T13:12:00Z'),
+      theirs('2026-09-30T13:14:00Z'),
+      theirs('2026-09-30T13:16:00Z'),
+      ok('2026-09-30T13:18:00Z'),
+      theirs('2026-09-30T14:00:00Z'),
+      ours('2026-09-30T15:00:00Z'),
+    ]);
+    expect(o.theirs).toBe(4);
+    expect(o.ours).toBe(1);
+    expect(o.stretches).toBe(2);
+    expect(o.longest).toEqual({ from: '2026-09-30T13:12:00.000Z', to: '2026-09-30T13:16:00.000Z', samples: 3 });
+  });
+
+  it('does not join failures across a gap in the sampling', () => {
+    // An hour between batches: two stretches, not one spanning the hour.
+    const o = outagesOf([theirs('2026-09-30T13:12:00Z'), theirs('2026-09-30T14:12:00Z')]);
+    expect(o.stretches).toBe(2);
+    expect(o.longest?.samples).toBe(1);
+  });
+
+  it('ends a stretch at a readable sample, in time order whatever the input order', () => {
+    // Unsorted, the two failures would sit side by side, 4 min apart, and join.
+    const o = outagesOf([theirs('2026-09-30T13:12:00Z'), theirs('2026-09-30T13:16:00Z'), ok('2026-09-30T13:14:00Z')]);
+    expect(o.stretches).toBe(2);
+  });
+
+  it('reports no stretch when usairnet never failed', () => {
+    expect(outagesOf([ok('2026-09-30T13:10:00Z'), ours('2026-09-30T13:12:00Z')])).toEqual({
+      theirs: 0,
+      ours: 1,
+      stretches: 0,
+      longest: null,
+    });
   });
 });

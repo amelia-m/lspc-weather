@@ -187,7 +187,9 @@ Schulze's Winds Aloft at the same valid hour, row by row, and the dashboard's
 decode of the latest KPMV observation against usairnet's, field by field. It
 reports counts and spreads across runs — average, median, 90th percentile,
 smallest and largest gap; how often any row was more than 10° apart; how often
-the two pages showed different hours — and never a grade. A daily workflow
+the two pages showed different hours; the two ground rows by time of day; the
+observation fields grouped, with the known reasons a field differs; and how
+long usairnet's page has gone unreadable — and never a grade. A daily workflow
 writes its data from the logs. The pipeline and how to read the page are in
 [`docs/source-parity.md`](docs/source-parity.md).
 

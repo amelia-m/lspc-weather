@@ -15,6 +15,7 @@
  * stale-forecast run (docs/open-questions.md, "Which forecast run…") is
  * exactly the kind of outlier a mean would smear across every row.
  */
+import { SITE } from '../config/site';
 
 /** One run of the Schulze comparison. `aligned` is null when no Schulze table
  *  matched the app's hour; `error` set means nothing was compared. */
@@ -163,6 +164,31 @@ export interface ArrivalLag {
 
 export type ArrivalSource = 'rawFile' | 'iem' | 'usairnet' | 'nwsList' | 'nwsLatest';
 
+/** The two ground rows over the runs whose forecast hour fell in one
+ *  three-hour block of the drop zone's local day. */
+export interface GroundBand {
+  /** First local hour of the block: 0, 3, … 21. */
+  fromHour: number;
+  runs: number;
+  medianOurKt: number | null;
+  medianTheirKt: number | null;
+  /** Median of Schulze's minus this dashboard's, per run. */
+  medianGapKt: number | null;
+}
+
+/** Runs where one side could not be read, and the longest unbroken run of
+ *  usairnet failures. */
+export interface UsairnetOutages {
+  /** usairnet's page could not be fetched or did not parse. */
+  theirs: number;
+  /** Neither of the dashboard's feeds could be read. */
+  ours: number;
+  /** Unbroken stretches of usairnet failures: consecutive samples, each
+   *  within MAX_ARRIVAL_BRACKET_MIN of the last. */
+  stretches: number;
+  longest: { from: string; to: string; samples: number } | null;
+}
+
 export interface ParitySummary {
   generatedAt: string;
   /** Earliest and latest run times summarised, ISO; null with no records. */
@@ -186,6 +212,9 @@ export interface ParitySummary {
     };
     rawMismatch: { judged: number; mismatched: number };
     ground: { n: number; medianOurKt: number | null; medianTheirKt: number | null; medianRatio: number | null };
+    /** The ground rows by local time of the forecast hour. Absent before
+     *  2026-10-03. */
+    groundByLocalHour?: GroundBand[];
     /** Absent in summaries written before 2026-09-26. */
     byTimeGap?: TimeGapGroup[];
   };
@@ -213,6 +242,8 @@ export interface ParitySummary {
     /** How long after each report each source first had it (see
      *  arrivalLags). Absent before 2026-09-30. */
     arrival?: ArrivalLag[];
+    /** Absent before 2026-10-03. */
+    outages?: UsairnetOutages;
   };
 }
 
@@ -376,6 +407,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
         medianTheirKt: round1(median(ground.map((r) => r.ground!.theirKt as number))),
         medianRatio: ratios.length ? Math.round((median(ratios) as number) * 100) / 100 : null,
       },
+      groundByLocalHour: groundByLocalHour(ground),
       byTimeGap: timeGapGroups(schulze),
     },
     usairnet: {
@@ -391,6 +423,108 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
         nws: usairReadable.filter((r) => r.ourSource === 'nws').length,
       },
       arrival: arrivalLags(usair),
+      outages: outagesOf(usair),
+    },
+  };
+}
+
+/** The forecast hour a Schulze run compared, as an instant: `appHour`
+ *  ("02Z") on the UTC day that puts it nearest the run's own time, since the
+ *  card shows the hour nearest the clock. The run's time when the hour was
+ *  not logged. */
+export function validHourOf(r: SchulzeRecord): number {
+  const at = Date.parse(r.at);
+  const hh = r.appHour ? Number.parseInt(r.appHour, 10) : Number.NaN;
+  if (!Number.isFinite(hh)) return at;
+  const day = Math.floor(at / DAY_MS) * DAY_MS;
+  const candidates = [day - DAY_MS, day, day + DAY_MS].map((d) => d + hh * 3_600_000);
+  return candidates.reduce((best, c) => (Math.abs(c - at) < Math.abs(best - at) ? c : best));
+}
+
+const DAY_MS = 86_400_000;
+
+const localHour = (ms: number): number =>
+  Number(
+    new Intl.DateTimeFormat('en-US', { timeZone: SITE.timeZone, hour: 'numeric', hourCycle: 'h23' }).format(
+      new Date(ms),
+    ),
+  );
+
+/**
+ * The two ground rows by the local time of the hour they forecast, in
+ * three-hour blocks. The two rows are different heights (this dashboard's
+ * the model's 10 m wind, Schulze's a line through the pressure levels read
+ * at 0 ft, docs/markschulze-altitude-reference.md), and the gap between a
+ * 10 m wind and the wind a couple of hundred feet up is a matter of the time
+ * of day: it opens at night, when the air at the ground goes calm under a
+ * moving layer above. The Winds aloft card says so; this is the count that
+ * shows whether the logs bear it out.
+ */
+export function groundByLocalHour(records: readonly SchulzeRecord[]): GroundBand[] {
+  const bands = Array.from({ length: 8 }, () => ({ ours: [] as number[], theirs: [] as number[], gaps: [] as number[] }));
+  for (const r of records) {
+    const ours = r.ground?.ourKt;
+    const theirs = r.ground?.theirKt;
+    if (ours == null || theirs == null) continue;
+    const t = validHourOf(r);
+    if (!Number.isFinite(t)) continue;
+    const band = bands[Math.floor(localHour(t) / 3)];
+    band.ours.push(ours);
+    band.theirs.push(theirs);
+    band.gaps.push(theirs - ours);
+  }
+  return bands.map((b, i) => ({
+    fromHour: i * 3,
+    runs: b.ours.length,
+    medianOurKt: round1(median(b.ours)),
+    medianTheirKt: round1(median(b.theirs)),
+    medianGapKt: round1(median(b.gaps)),
+  }));
+}
+
+/**
+ * How often each side could not be read, and the longest stretch usairnet's
+ * page stayed unreadable. On 2026-09-30 it failed for 2 h 18 min, which a
+ * bare count of unreadable runs does not show: an afternoon of failures in a
+ * row and the same number scattered over a week are different things to a
+ * reader deciding how far to lean on the page.
+ */
+export function outagesOf(records: readonly UsairnetRecord[]): UsairnetOutages {
+  const theirSide = (r: UsairnetRecord): boolean => r.error?.startsWith('usairnet:') ?? false;
+  const samples = records
+    .map((r) => ({ r, at: Date.parse(r.at) }))
+    .filter((x) => Number.isFinite(x.at))
+    .sort((a, b) => a.at - b.at);
+  const stretches: { from: number; to: number; samples: number }[] = [];
+  let open: { from: number; to: number; samples: number } | null = null;
+  let lastAt = Number.NEGATIVE_INFINITY;
+  for (const { r, at } of samples) {
+    const joined = at - lastAt <= MAX_ARRIVAL_BRACKET_MIN * 60_000;
+    lastAt = at;
+    if (!theirSide(r)) {
+      open = null;
+      continue;
+    }
+    if (open && joined) {
+      open.to = at;
+      open.samples += 1;
+    } else {
+      open = { from: at, to: at, samples: 1 };
+      stretches.push(open);
+    }
+  }
+  const longest = stretches.reduce<(typeof stretches)[number] | null>(
+    (best, x) => (best == null || x.to - x.from > best.to - best.from ? x : best),
+    null,
+  );
+  return {
+    theirs: records.filter(theirSide).length,
+    ours: records.filter((r) => r.error != null && !theirSide(r)).length,
+    stretches: stretches.length,
+    longest: longest && {
+      from: new Date(longest.from).toISOString(),
+      to: new Date(longest.to).toISOString(),
+      samples: longest.samples,
     },
   };
 }
