@@ -45,11 +45,12 @@ export const DATA_SOURCES = {
   },
   /** The VFR sectional chart around the drop zone on SkyVector, the chart a
    *  pilot plans the jump run on: airspace, the airport and what is near it.
-   *  `ll` centres the map and `chart` picks the chart; 301 is the VFR
-   *  sectional and a lower `zoom` is closer in, as SkyVector links shared
-   *  online read (2026-10-03). skyvector.com was not reachable from where
-   *  this was written, so the zoom is a reading of those links, not a view
-   *  that was opened; centring on the coordinates is what the test pins. */
+   *  Read from SkyVector's own script on 2026-10-03: its Link button writes
+   *  `ll` (the centre), `chart` (the chart's protoid) and `zoom` (its scale),
+   *  and zooming in lowers the scale to a minimum of 1, so 2 is one step out
+   *  from the closest view; its chart service names protoid 301 "World VFR"
+   *  (type vfr) at the drop zone's coordinates. The view itself has not been
+   *  seen in a browser: the sandbox's browser cannot load https pages. */
   skyvector: {
     label: 'Sectional chart · SkyVector',
     url: `https://skyvector.com/?ll=${SITE.dz.lat},${SITE.dz.lon}&chart=301&zoom=2`,
