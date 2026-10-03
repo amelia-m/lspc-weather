@@ -302,7 +302,7 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
     speedKt: 10,
     tempC: 0,
   });
-  const markup = (source: 'open-meteo' | 'nws-fd', levels: WindsAloftLevel[]): string =>
+  const markup = (source: 'open-meteo' | 'nws-fd' | undefined, levels: WindsAloftLevel[]): string =>
     renderToStaticMarkup(
       createElement(WindsAloftPanel, {
         levels,
@@ -323,6 +323,12 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
 
   it('is absent on the FD fallback, which has no Surface row', () => {
     const html = markup('nws-fd', [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level));
+    expect(html).not.toContain('Mark Schulze\u2019s Surface row');
+  });
+
+  it('is absent when no winds source has loaded, beside "No winds-aloft data"', () => {
+    const html = markup(undefined, []);
+    expect(html).toContain('No winds-aloft data');
     expect(html).not.toContain('Mark Schulze\u2019s Surface row');
   });
 });
