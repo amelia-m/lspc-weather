@@ -90,7 +90,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     title: 'Night jumps',
     claim:
       'Between sunset and sunrise, 14 CFR 105.19 requires the jumper to display a light visible for at least 3 statute miles, from open canopy until landing. USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements — see SIM 5-3.',
-    where: 'Conditions to note, after sunset',
+    where: 'Conditions to note, between sunset and sunrise',
     sources: [CITATIONS.far10519, CITATIONS.uspaNightJumps],
     citesNote: '105.19 for the light; SIM 5-3 for the USPA sentence',
     found: {

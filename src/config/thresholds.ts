@@ -131,7 +131,8 @@ export const CITATIONS = {
    *  light; (b) says whose it is and when: displayed by the person or object
    *  descending, from a properly functioning open parachute until the surface.
    *  It is the jumper's light, not the aircraft's, and the section says nothing
-   *  about licences — the USPA half of the after-sunset flag cites 5-3. */
+   *  about licences — the USPA half of the night (sunset to sunrise) flag
+   *  cites 5-3. */
   far10519: {
     source: '14 CFR § 105.19',
     ref: 'Parachute operations between sunset and sunrise — the jumper must display a light visible for at least 3 statute miles, from open canopy until reaching the surface',
@@ -212,7 +213,7 @@ export const CITATIONS = {
     note: SIM_READ_NOTE,
   },
   /**
-   * Night jumps, USPA's half of the after-sunset flag.
+   * Night jumps, USPA's half of the night (sunset to sunrise) flag.
    *
    * The flag used to make two claims — the FAA light requirement and a USPA
    * licence requirement — and offer one source, 14 CFR 105.19. 5-3 is the

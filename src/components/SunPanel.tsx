@@ -7,9 +7,9 @@ import { DATA_SOURCES } from '../config/sources';
 /**
  * Sunrise, sunset, and how long is left before it.
  *
- * Sunset is the only instant on this card that a rule turns on: 14 CFR 105.19
- * makes parachute ops after it night ops, and that is where the daylight flag
- * fires. The card used to be framed around "last load" instead, which promised
+ * Sunset and sunrise bound the only period on this card that a rule turns
+ * on: 14 CFR 105.19 makes parachute ops between them night ops, and the
+ * daylight flag fires across that whole period. The card used to be framed around "last load" instead, which promised
  * something it no longer does — the minutes-before-sunset watch (45 min for
  * students, 30 for licensed) was a figure this dashboard picked, and no
  * published source sets one. The time remaining is printed for the reader to
@@ -35,9 +35,13 @@ export function SunPanel({ sun }: { sun: SunTimes | null }): JSX.Element {
           <dd>{fmtTime(sun.sunset)}</dd>
           <dt>To sunset</dt>
           <dd>
-            {minsToSunset != null && minsToSunset > 0
-              ? `${Math.floor(minsToSunset / 60)}h ${minsToSunset % 60}m`
-              : 'after sunset'}
+            {/* Before dawn the day's sunset is many hours off and not the
+                instant that matters: it is still night until sunrise. */}
+            {now < sun.sunrise
+              ? 'before sunrise'
+              : minsToSunset != null && minsToSunset > 0
+                ? `${Math.floor(minsToSunset / 60)}h ${minsToSunset % 60}m`
+                : 'after sunset'}
           </dd>
         </dl>
       )}

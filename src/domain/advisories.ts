@@ -162,14 +162,20 @@ export function evaluateAdvisories(
   // sunset. The "last load" watch that used to precede it (45 min student /
   // 30 licensed) was the app's own — nobody publishes a minutes-before-sunset
   // figure, and the Sun card already shows the time remaining.
+  //
+  // Both ends of the night: `sun` is the local solar day's, which rolls over
+  // at solar midnight (about 1:25 AM CDT here), so from then until dawn it
+  // holds that morning's sunrise and the coming evening's sunset. Checking
+  // only "after sunset" left the hours before sunrise unflagged, though the
+  // reg runs from sunset to sunrise.
   if (sun) {
-    const minsToSunset = (sun.sunset - now) / 60000;
-    if (minsToSunset <= 0) {
+    const beforeSunrise = now < sun.sunrise;
+    if (beforeSunrise || now >= sun.sunset) {
       out.push({
         id: 'daylight',
         level: 'caution',
         metric: 'Daylight',
-        value: 'After sunset',
+        value: beforeSunrise ? 'Before sunrise' : 'After sunset',
         // Two claims from two authorities. The flag carries the FAA one, which
         // is the harder requirement and sets the trigger; the USPA one is
         // stated as the SIM states it — "should", not "requires" — and names
