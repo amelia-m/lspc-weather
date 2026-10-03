@@ -289,3 +289,41 @@ describe('the winds table says where its rows stop', () => {
     });
   });
 });
+
+/* The two tools' Surface rows are different heights: this card's is the
+ * model's 10 m wind, Mark Schulze's a line through the pressure levels read at
+ * 0 ft (docs/markschulze-altitude-reference.md). Readers see his run higher
+ * and need the reason on the card. The FD fallback has no Surface row. */
+describe('the note on why the Surface row differs from Schulze’s', () => {
+  const level = (agl: number): WindsAloftLevel => ({
+    altitudeFtAgl: agl,
+    altitudeFtMsl: 1182 + agl,
+    directionDeg: 270,
+    speedKt: 10,
+    tempC: 0,
+  });
+  const markup = (source: 'open-meteo' | 'nws-fd', levels: WindsAloftLevel[]): string =>
+    renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels,
+        source,
+        validity: { validMs: Date.parse('2026-09-22T04:00:00Z') },
+        unit: 'kt',
+        onUnitChange: () => {},
+      } as never),
+    );
+
+  it('says what each Surface row is on the Open-Meteo path', () => {
+    const html = markup('open-meteo', Array.from({ length: 14 }, (_, i) => level(i * 1000)));
+    expect(html).toContain('model\u2019s wind at 10\u00a0m');
+    expect(html).toContain('Mark Schulze\u2019s Surface row is not a 10\u00a0m');
+    // Words, not a verdict or a figure in a colour.
+    expect(html).not.toMatch(/class="[^"]*(caution|watch|warn)/);
+  });
+
+  it('is absent on the FD fallback, which has no Surface row', () => {
+    const html = markup('nws-fd', [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level));
+    expect(html).not.toContain('Mark Schulze\u2019s Surface row');
+  });
+});
+
