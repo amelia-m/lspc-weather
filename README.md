@@ -24,6 +24,12 @@ freefall drift and **density altitude** for jump-plane climb performance.
 
 ## 🌤️ What it shows
 
+The dashboard has two tabs. **Jumpers** (the plain address) has the wind
+limits, drift and the day's planning. **Pilots** (`#pilots`) has the sectional,
+the TAF, density altitude, winds aloft and briefing links. Conditions now,
+the sky, daylight, radar and the advisories show on both. Which cards each tab
+shows is `src/config/views.ts`.
+
 - ⚠️ **Conditions to note** — the flagged conditions, each with the source it
   relates to: surface wind, the LSPC waiver gust ceiling, visibility, FAA flight
   category, overcast sky, a thunderstorm reported in the METAR, and parachute
@@ -58,6 +64,9 @@ freefall drift and **density altitude** for jump-plane climb performance.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline.
 - 📡 **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
+- 🧭 **Pilot briefing links** (Pilots tab) — FAA NOTAM Search, TFRs, nearby
+  METARs, PIREPs, the GFA, SIGMETs and the Chart Supplement. Links only: this
+  site cannot read NOTAMs or TFRs, and a briefing is the pilot in command's.
 - 🗺️ **Sectional chart** — FAA's VFR sectional around the drop zone, from FAA's own tile service, with a ring on the DZ and a zoom step; tap it for SkyVector's sectional on the same spot, or follow its link to adsb.lol's live air traffic over the same chart.
 - 📝 **TAF** — nearest available TAF, raw text plus a decoded table: one row per period (prevailing, FM, TEMPO, BECMG, PROB) with wind, visibility, sky, weather in words and the FAA flight category (see cross-references below).
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
