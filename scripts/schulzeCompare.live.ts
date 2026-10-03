@@ -156,10 +156,11 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     return;
   }
 
-  // The ground rows side by side, with ours in km/h as well: over four
-  // readings his ground speed has run close to twice ours in knots, which is
-  // what a km/h figure read as knots would give. Logged so the summary can
-  // say whether that holds (docs/markschulze-altitude-reference.md).
+  // The ground rows side by side. His is not a surface wind but his table's
+  // 0 ft row, interpolated between the raw 1000 hPa level (underground here)
+  // and 975 hPa; ours is Open-Meteo's 10 m wind. Checked 2026-10-03, see
+  // docs/markschulze-altitude-reference.md. The km/h figure is kept from
+  // when a units mix-up was the suspected cause; it was not one.
   const surface = samples.find((x) => x.isSurface) ?? null;
   const ourKt = surface ? Math.round(surface.speedKt * 10) / 10 : null;
   out.push(

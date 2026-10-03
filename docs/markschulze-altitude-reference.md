@@ -118,9 +118,22 @@ Every remaining difference has a known cause, none of them the data:
   app's arithmetic gave 221° and the tool's 217°. The bigger the turn between
   two samples, the more a rounding choice moves the row between them.
 - **The surface row.** This app's is Open-Meteo's 10 m wind
-  (`wind_speed_10m`/`wind_direction_10m`); the tool's is the
-  `groundDir`/`groundSpd` its API reports, whose derivation has not been read.
-  2° and 1 kt apart here.
+  (`wind_speed_10m`/`wind_direction_10m`), the height an airport anemometer
+  reads. The tool's `groundDir`/`groundSpd` is not a surface wind: it is its
+  own table's 0 ft row, a straight-line interpolation between the two raw
+  pressure levels either side of the ground. At this DZ those are 1000 hPa,
+  about 500 ft *below* the ground (Open-Meteo extrapolates it underground),
+  and 975 hPa, about 200 ft above. Checked on 2026-10-03 for six hours
+  (00Z to 12Z): interpolating those two levels to 0 ft gave the tool's ground
+  value every time, within its whole-knot rounding (e.g. 02Z: 121° / 5 kt at
+  −518 ft and 119° / 10 kt at +203 ft give 120° / 8.6 kt; the tool showed
+  120° / 9). Open-Meteo's 10 m wind that hour was 123° / 3.9 kt. So the
+  tool's ground row reads like the wind a couple of hundred feet up, and at
+  night, when the air near the surface decouples, it runs well above the
+  10 m wind; over 1,028 runs to 2026-10-02 its median was 8 kt to this
+  app's 6.2. 2° and 1 kt apart in the daytime case here. Neither is wrong;
+  they are different heights, and the observed METAR wind is the one the
+  student ground-wind limits are written against.
 - **The valid hour**, when the two are not aligned: see "Re-checking this".
 
 - **Which forecast run each request was served.** Not yet explained. The first

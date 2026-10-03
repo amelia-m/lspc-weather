@@ -172,22 +172,34 @@ describe('summarizeParity', () => {
     expect(s.usairnet.feeds).toEqual({ iem: 3, nws: 1 });
   });
 
-  it('leaves the rows corrected in record version 2 out of older records, and keeps the rest', () => {
+  it('leaves each corrected row out of records older than its fix, and keeps the rest', () => {
     const fields = [
       { name: 'clouds', same: false },
-      { name: 'wind dir °', same: false },
       { name: 'temperature °F', same: false },
+      { name: 'wind dir °', same: false },
+      { name: 'visibility mi', same: false },
+      { name: 'sunset (min past midnight)', same: false, delta: 2 },
       { name: 'pressure inHg', same: true, delta: 0 },
     ];
     const s = summarizeParity(
       [
         { kind: 'usairnet', at: '2026-09-26T20:00:00Z', sameReport: true, fields },
         { kind: 'usairnet', at: '2026-09-30T20:00:00Z', v: 2, sameReport: true, fields },
+        { kind: 'usairnet', at: '2026-10-03T20:00:00Z', v: 3, sameReport: true, fields },
       ],
       NOW,
     );
     const n = Object.fromEntries((s.usairnet.fieldsSameReport ?? []).map((f) => [f.name, f.n]));
-    expect(n).toEqual({ clouds: 1, 'wind dir °': 1, 'temperature °F': 1, 'pressure inHg': 2 });
+    // Version-2 rows count from v2 records, version-3 rows only from v3, the
+    // rest from every record.
+    expect(n).toEqual({
+      clouds: 2,
+      'temperature °F': 2,
+      'wind dir °': 1,
+      'visibility mi': 1,
+      'sunset (min past midnight)': 1,
+      'pressure inHg': 3,
+    });
   });
 
   it('times each report at each source from the first sample that found it', () => {

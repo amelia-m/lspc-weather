@@ -39,7 +39,9 @@ import {
   ceilingFromTheirClouds,
   cloudsInTheirWords,
   comparableDirection,
+  pageTextNear,
   parseUsairnet,
+  sameDirection,
   type UsairnetObs,
 } from '../src/domain/usairnet';
 
@@ -110,19 +112,29 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   const nwsObsAt = nwsCur ? new Date(nwsCur.observedAt).toISOString() : null;
 
   let theirs: UsairnetObs | null;
+  let theirHtml = '';
   try {
     const res = await fetch(`https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=${station}`, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    theirs = parseUsairnet(await res.text(), station);
+    theirHtml = await res.text();
+    theirs = parseUsairnet(theirHtml, station);
   } catch (e) {
     say([...out, `usairnet could not be read: ${(e as Error).message}`, record({ kind: 'usairnet', at: startedAt, error: `usairnet: ${(e as Error).message}` })]);
     return;
   }
   if (theirs == null) {
-    say([...out, 'usairnet page did not parse (markup changed?); nothing compared.', record({ kind: 'usairnet', at: startedAt, error: 'usairnet: page did not parse' })]);
+    // What the page showed, so an outage can be told from a markup change
+    // later: on 2026-09-30 it failed for 2 h 18 min with nothing kept.
+    const pageText = pageTextNear(theirHtml, station);
+    say([
+      ...out,
+      'usairnet page did not parse (markup changed?); nothing compared.',
+      `page text: ${pageText || '(empty)'}`,
+      record({ kind: 'usairnet', at: startedAt, v: 3, error: 'usairnet: page did not parse', pageText }),
+    ]);
     return;
   }
 
@@ -193,7 +205,7 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   // sides are numbers, so the summary can say how far apart the values were,
   // not only whether they matched. Wind direction is the signed angular
   // difference; text fields (clouds, flight rule) have no gap.
-  const rows: [string, string, string, number | null][] = [];
+  const rows: [string, string, string, number | null, boolean][] = [];
   const angular = (a: number, b: number): number => ((a - b + 540) % 360) - 180;
   const row = (
     name: string,
@@ -205,7 +217,10 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
     const nb = typeof b === 'number' ? b : typeof b === 'string' && b !== '' && !Number.isNaN(Number(b)) ? Number(b) : null;
     const delta =
       kind === 'text' || na == null || nb == null ? null : kind === 'angle' ? angular(na, nb) : Math.round((na - nb) * 100) / 100;
-    rows.push([name, show(a), show(b), delta]);
+    // An angle agrees when it is the same direction: the METAR's 360 is the
+    // page's "0° North".
+    const same = kind === 'angle' ? sameDirection(na, nb) : show(a) === show(b);
+    rows.push([name, show(a), show(b), delta, same]);
   };
   row('temperature °F', ours.tempC == null ? null : Math.round(cToF(ours.tempC)), theirs.tempF);
   row('dew point °F', ours.dewpointC == null ? null : Math.round(cToF(ours.dewpointC)), theirs.dewpointF);
@@ -239,8 +254,7 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   let agree = 0;
   const fields: { name: string; same: boolean; delta?: number }[] = [];
   out.push('field                          dashboard                       usairnet             Δ');
-  for (const [name, a, b, delta] of rows) {
-    const same = a === b;
+  for (const [name, a, b, delta, same] of rows) {
     if (same) agree += 1;
     fields.push(delta == null ? { name, same } : { name, same, delta });
     out.push(`${same ? ' ' : '≠'} ${name.padEnd(28)} ${a.padEnd(31)} ${b.padEnd(20)} ${delta == null ? '' : delta}`);
@@ -263,9 +277,11 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       at: startedAt,
       sameReport,
       // 2: usairnet's page parsed for gusts, present weather and "Solid
-      // Overcast", and a calm wind compared as no direction. The summary
-      // leaves the rows those changed out of older records.
-      v: 2,
+      // Overcast", and a calm wind compared as no direction. 3: fractional
+      // visibility parsed, 360° and 0° compared as one direction, and the
+      // app's sunset by NOAA's method. The summary leaves the rows each
+      // version changed out of older records (FIELD_SINCE_VERSION).
+      v: 3,
       ourObsAt: new Date(ours.observedAt).toISOString(),
       ourSource: chosen.source,
       rawFileObsAt,
