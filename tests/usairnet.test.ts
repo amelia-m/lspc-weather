@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ceilingFromTheirClouds, cloudsInTheirWords, comparableDirection, parseUsairnet } from '../src/domain/usairnet';
+import {
+  ceilingFromTheirClouds,
+  cloudsInTheirWords,
+  comparableDirection,
+  milesFrom,
+  pageTextNear,
+  parseUsairnet,
+  sameDirection,
+} from '../src/domain/usairnet';
 
 /* Station blocks cut from usairnet's live pages on 2026-09-29 (the rest of
  * each ~470 KB page is navigation and maps). Each is the shape a field
@@ -91,3 +99,38 @@ describe('comparableDirection', () => {
     expect(comparableDirection(null, 150)).toBe(150);
   });
 });
+
+describe('visibility as usairnet prints it', () => {
+  it('reads a fraction and a whole number with a fraction (KFXY 1/2, KPRO 1 1/4, 2026-10-03)', () => {
+    expect(parseUsairnet(page('KFXY'), 'KFXY')!.visibilityMi).toBe(0.5);
+    expect(parseUsairnet(page('KPRO'), 'KPRO')!.visibilityMi).toBe(1.25);
+    expect(parseUsairnet(page('KPMV'), 'KPMV')!.visibilityMi).toBe(4);
+  });
+
+  it('reads each form, and nothing else', () => {
+    expect(milesFrom('10')).toBe(10);
+    expect(milesFrom('2.5')).toBe(2.5);
+    expect(milesFrom('2 1/2')).toBe(2.5);
+    expect(milesFrom('3/4')).toBe(0.75);
+    expect(milesFrom('ten')).toBeNull();
+    expect(milesFrom(null)).toBeNull();
+  });
+});
+
+describe('sameDirection', () => {
+  it('counts 360 and 0 as the same north wind, and nothing else as a match', () => {
+    expect(sameDirection(360, 0)).toBe(true);
+    expect(sameDirection(150, 150)).toBe(true);
+    expect(sameDirection(150, 160)).toBe(false);
+    expect(sameDirection(null, null)).toBe(true);
+    expect(sameDirection(360, null)).toBe(false);
+  });
+});
+
+describe('pageTextNear', () => {
+  it('keeps the station block’s text for the log, or the page’s start when the station is absent', () => {
+    expect(pageTextNear(page('KPRO'), 'KPRO', 60)).toMatch(/^\(KPRO\)\|\d+°\|/);
+    expect(pageTextNear(page('KPRO'), 'KPMV', 40)).toMatch(/^\|?Current Conditions at/);
+  });
+});
+

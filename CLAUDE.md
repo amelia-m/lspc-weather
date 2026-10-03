@@ -112,6 +112,18 @@ precisely because they were colour and text rather than flags.
   converts back a tenth off. `mesonet.agron.iastate.edu` is on the sandbox
   allowlist since 2026-09-29, so the IEM path runs from here (the usairnet
   comparison reads both feeds and logs which served).
+- **Sunrise and sunset are NOAA's method, held to NOAA's own script.**
+  `src/domain/sun.ts` ports the functions of NOAA's Solar Calculator
+  (gml.noaa.gov/grad/solcalc/main.js), and its tests compare against that
+  script's output to 5 ms. It replaced a simplified "sunrise equation" that
+  put the DZ's sunset 2 to 3 minutes late, so the 14 CFR 105.19 night flag
+  fired late; usairnet's almanac, Open-Meteo and the astral library all
+  showed it. Do not swap in a shorter formula without re-running that
+  comparison.
+- **Schulze's "Surface" row is not a surface wind.** It interpolates his raw
+  1000 hPa level (underground at this DZ) and 975 hPa to 0 ft, so it reads
+  like the wind a couple of hundred feet up and runs above the 10 m wind
+  this app shows, most at night. See `docs/markschulze-altitude-reference.md`.
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
   thirteen pressure levels the tool does (`OPEN_METEO_PRESSURE_LEVELS`), and
@@ -328,9 +340,12 @@ blocks saved from the live pages (`tests/fixtures/usairnet/`). Its first
 parser, in the script, misread three formats and each showed on `#parity`
 as a disagreement that was the parser's: a gust between the speed and the
 direction, present weather in the heading, and "Solid Overcast" (the FAA's
-word for OVC is plain "Overcast", AC 00-45H Table 3-3). Records carry
-`v: 2` from the fix, and the summary counts those three rows only from
-them. A calm wind is compared as no direction on both sides: NWS's decode
-gives calm 0°, which no card shows.
+word for OVC is plain "Overcast", AC 00-45H Table 3-3). Two more followed
+from the dense samples: fractional visibility ("1 1/4 Miles") and a north
+wind's 360° against the page's "0° North". Records carry a version (`v`),
+and the summary counts each corrected row only from the version that fixed
+it (`FIELD_SINCE_VERSION`). A calm wind is compared as no direction on both
+sides: NWS's decode gives calm 0°, which no card shows. When the page will
+not parse, the record keeps the page's text near the station (`pageText`).
 
 Open items live in `docs/open-questions.md`.

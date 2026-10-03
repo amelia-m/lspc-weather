@@ -429,10 +429,12 @@ function UsairnetPanel({ s }: { s: ParitySummary }): JSX.Element {
           </p>
           {u.arrival && (
             <p className="muted small">
-              The temperature, wind direction and clouds rows count only runs from Sep 30 on.
-              Before then the comparison misread usairnet&rsquo;s page for gusting winds, for
-              rain or fog in its heading, and for every overcast layer, which it writes
-              &ldquo;Solid Overcast&rdquo;.
+              Some rows count only runs since the comparison or the app was corrected. Temperature
+              and clouds count from Sep 30: before then usairnet&rsquo;s page was misread for rain or
+              fog in its heading and for every overcast layer, which it writes &ldquo;Solid
+              Overcast&rdquo;. Wind direction, visibility, sunrise and sunset count from Oct 3: before
+              then gusting winds, fractional visibility and 360&deg; against the page&rsquo;s 0&deg;
+              were misread, and this app&rsquo;s own sunrise and sunset ran up to 3 minutes late.
             </p>
           )}
         </>

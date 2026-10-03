@@ -68,10 +68,12 @@ export interface UsairnetRecord {
   ourSource?: 'iem' | 'nws';
   iemObsAt?: string | null;
   nwsObsAt?: string | null;
-  /** 2 from 2026-09-30: usairnet's page read for gusts, present weather
-   *  and "Solid Overcast", and calm compared as no direction. Absent
-   *  before. See CORRECTED_IN_V2. */
+  /** The comparison's version: 2 from 2026-09-30, 3 from 2026-10-03;
+   *  absent before. See FIELD_SINCE_VERSION. */
   v?: number;
+  /** usairnet's page text near the station, kept when the page did not
+   *  parse (from 2026-10-03). */
+  pageText?: string;
   /** When NOAA's raw METAR file had its latest report taken, a reference
    *  clock (from 2026-09-30). */
   rawFileObsAt?: string | null;
@@ -463,21 +465,33 @@ export function arrivalLags(records: readonly UsairnetRecord[]): ArrivalLag[] {
   });
 }
 
-/** Rows whose comparison was wrong before record version 2, so older
- *  records do not count toward them: usairnet's page was misread for gusting
- *  winds (no direction), for a heading carrying present weather (no
- *  temperature) and for every overcast layer ("Solid Overcast"), and a calm
- *  wind read as 0° against usairnet's none. 23 of the 24 same-report
- *  wind-direction mismatches to 2026-09-29 were the first and last of
- *  those. The records themselves are unchanged. */
-export const CORRECTED_IN_V2: ReadonlySet<string> = new Set(['temperature °F', 'wind dir °', 'clouds']);
+/** Rows whose comparison was wrong in older records, and the record version
+ *  from which each counts; older records are kept but skip these rows.
+ *
+ *  Version 2 (2026-09-30): usairnet's page was misread for a heading
+ *  carrying present weather (no temperature) and every overcast layer
+ *  ("Solid Overcast"), for gusting winds (no direction), and a calm wind
+ *  read as 0° against usairnet's none.
+ *
+ *  Version 3 (2026-10-03): fractional visibility ("1 1/4 Miles") read as
+ *  none (25 same-report runs), a north wind's 360° compared as text against
+ *  the page's "0° North" (48), and the app's own sunrise and sunset, which
+ *  ran up to 2 to 3 minutes late until it moved to NOAA's method. */
+export const FIELD_SINCE_VERSION: Readonly<Record<string, number>> = {
+  'temperature °F': 2,
+  clouds: 2,
+  'wind dir °': 3,
+  'visibility mi': 3,
+  'sunrise (min past midnight)': 3,
+  'sunset (min past midnight)': 3,
+};
 
 /** Per field: runs, agreements and the spread of the numeric gaps. */
 function fieldTable(runs: readonly UsairnetRecord[]): UsairnetField[] {
   const fieldMap = new Map<string, { n: number; agree: number; deltas: number[] }>();
   for (const r of runs) {
     for (const f of r.fields ?? []) {
-      if ((r.v ?? 1) < 2 && CORRECTED_IN_V2.has(f.name)) continue;
+      if ((r.v ?? 1) < (FIELD_SINCE_VERSION[f.name] ?? 1)) continue;
       const c = fieldMap.get(f.name) ?? { n: 0, agree: 0, deltas: [] };
       c.n += 1;
       if (f.same) c.agree += 1;

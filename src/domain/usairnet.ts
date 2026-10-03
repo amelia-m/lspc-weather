@@ -20,6 +20,13 @@
  * - Present weather adds a part to the heading ("68°|Partly Cloudy|Light
  *   Rain|as of"). The first parser allowed one part, so the temperature
  *   read as missing whenever it rained or was foggy.
+ * - Visibility below three miles is a fraction ("1/2 Miles", "1 1/4
+ *   Miles", read on KFXY and KPRO's pages 2026-10-03). The parser read only
+ *   decimals, so every fractional report (25 same-report runs to 2026-10-02,
+ *   all on 2026-09-30's rain and mist) read as no visibility.
+ * - A north wind is 360° in the METAR and "0° North" on the page. Compared
+ *   as text the two never matched (48 runs to 2026-10-02); as an angle they
+ *   are the same direction (sameDirection).
  *
  * The formats below were read from live pages on 2026-09-29: KSWW (gust),
  * KRKS (variable), KAIA (calm), KOMA (overcast), KPMV. Their station blocks
@@ -53,12 +60,9 @@ export interface UsairnetObs {
   sunset: string | null;
 }
 
-/** Strip the page to text and read the block for `station`. The block is
- *  "Current Conditions at|<NAME> - (KPMV)|66°|Clear|as of 8:15 PM CDST|…"
- *  once tags collapse to bars; the next "Current Conditions at" (another
- *  station on the same page) ends it. */
-export function parseUsairnet(html: string, station: string): UsairnetObs | null {
-  const text = html
+/** The page as text: tags become bars, runs of bars collapse to one. */
+function pageText(html: string): string {
+  return html
     .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '')
     .replace(/<[^>]+>/g, '|')
     .replace(/&deg;/g, '°')
@@ -66,6 +70,14 @@ export function parseUsairnet(html: string, station: string): UsairnetObs | null
     .replace(/&amp;/g, '&')
     .replace(/\s*\|\s*(\|\s*)+/g, '|')
     .replace(/[ \t]+/g, ' ');
+}
+
+/** Strip the page to text and read the block for `station`. The block is
+ *  "Current Conditions at|<NAME> - (KPMV)|66°|Clear|as of 8:15 PM CDST|…"
+ *  once tags collapse to bars; the next "Current Conditions at" (another
+ *  station on the same page) ends it. */
+export function parseUsairnet(html: string, station: string): UsairnetObs | null {
+  const text = pageText(html);
   const start = text.indexOf(`(${station})`);
   if (start < 0) return null;
   const rest = text.slice(start);
@@ -92,7 +104,7 @@ export function parseUsairnet(html: string, station: string): UsairnetObs | null
     condition: head ? head[2].split('|').map((s) => s.trim()).join(', ') : null,
     humidityPct: num(/Rel\. Humidity: (\d+)%/),
     dewpointF: num(/Dew Point: (-?\d+)°F/),
-    visibilityMi: num(/Visibility: ([\d.]+) Mile/),
+    visibilityMi: milesFrom(str(/Visibility: ([\d./ ]+?) Miles?/)),
     pressureInHg: num(/Pressure: ([\d.]+) in/),
     flightRule: str(/Flight Rule: (\w+)/),
     windMph: calm ? 0 : wind ? Number(wind[1]) : null,
@@ -104,6 +116,31 @@ export function parseUsairnet(html: string, station: string): UsairnetObs | null
     sunrise: str(/\|Sunrise:\|(\d{1,2}:\d{2} [AP]M)/),
     sunset: str(/\|Sunset:\|(\d{1,2}:\d{2} [AP]M)/),
   };
+}
+
+/** "10", "2.5", "1/2" or "1 1/4" as miles; null for anything else. */
+export function milesFrom(text: string | null): number | null {
+  const m = text?.trim().match(/^(?:(\d+(?:\.\d+)?)|(?:(\d+) )?(\d+)\/(\d+))$/);
+  if (!m) return null;
+  if (m[1] != null) return Number(m[1]);
+  return Number(m[2] ?? 0) + Number(m[3]) / Number(m[4]);
+}
+
+/** Whether two wind directions are the same direction: 360 and 0 are both
+ *  north. Both missing (calm or variable on both sides) also agrees. */
+export function sameDirection(a: number | null, b: number | null): boolean {
+  if (a == null || b == null) return a == null && b == null;
+  return ((((a - b) % 360) + 360) % 360) === 0;
+}
+
+/** The station's block as the page's text, for the log when it will not
+ *  parse: on 2026-09-30 the page failed to parse for 2 h 18 min and nothing
+ *  recorded what it showed. The first `max` characters after the station's
+ *  id, or the start of the page's text when the id is not on it. */
+export function pageTextNear(html: string, station: string, max = 300): string {
+  const text = pageText(html).replace(/\s+/g, ' ');
+  const at = text.indexOf(`(${station})`);
+  return text.slice(Math.max(0, at), Math.max(0, at) + max).trim();
 }
 
 /** Sky cover in usairnet's words. VV has not been seen on the page; its

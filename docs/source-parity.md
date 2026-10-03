@@ -32,8 +32,11 @@ other side there is aviationweather.gov's decoder and a disagreement means the
 app's own parse or derivation is wrong. Its TAF freshness line is informational; its TAF decode comparison is a gate.
 
 The sun almanac rows compare the app's sunrise and sunset at the DZ with
-usairnet's for KPMV, 0.19° east, so a gap of a minute is the geography; on
-2026-09-24 the app read one minute later at sunrise and two at sunset.
+usairnet's for KPMV, 0.19° east, so the DZ's sun runs about 45 seconds
+behind KPMV's and a one-minute gap is the geography. The two-to-four-minute
+sunset gap logged on every run to 2026-10-02 was not: the app's own sunset
+was 2 to 3 minutes late (a simplified sunrise equation that added 78 s to
+solar noon), and it moved to NOAA's method on 2026-10-03.
 
 The winds comparison is made at the **same valid hour** on both sides, since
 this card snaps to the nearest hour and Schulze's page shows the hour in
@@ -143,13 +146,19 @@ interval (two minutes) late and never early; the hour between sampler
 batches and the day between daily runs time nothing
 (`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`).
 
-The temperature, wind direction and clouds rows count only records from
-2026-09-30 (`v: 2`). Before then the comparison misread usairnet's page
-for gusting winds, for present weather in its heading and for every
-overcast layer ("Solid Overcast"), and compared NWS's 0° for a calm wind
-against usairnet's none; 23 of the 24 same-report direction mismatches to
-2026-09-29 were those. The older records are kept; those three rows skip
-them (`CORRECTED_IN_V2`).
+Some rows count only records from the version of the comparison that
+corrected them (`FIELD_SINCE_VERSION`); older records are kept and those
+rows skip them. Temperature and clouds count from 2026-09-30 (`v: 2`):
+before then the comparison misread usairnet's page for present weather in
+its heading and for every overcast layer ("Solid Overcast"). Wind
+direction, visibility, sunrise and sunset count from 2026-10-03 (`v: 3`):
+before then it misread gusting winds (no direction), compared a calm
+wind's 0° from NWS against usairnet's none, read fractional visibility
+("1 1/4 Miles") as none, and compared a north wind's 360° as text against
+the page's "0° North"; and the app's own sunrise and sunset were up to 3
+minutes late. After those fixes, on 2026-10-02's data, no row compared on
+the same report showed a decode difference between this app and usairnet
+beyond the 1 °F rounding of temperature and dew point.
 
 Medians and percentiles sit beside the averages because one stale-forecast
 run puts a 40° outlier into a row that is otherwise within 2°; an average
