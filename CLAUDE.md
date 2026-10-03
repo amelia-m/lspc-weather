@@ -191,10 +191,15 @@ Outbound network access goes through a policy-enforcing egress proxy. With
 eCFR, FAA, FAASafety, usairnet, markschulze.net, `amelia-m.github.io`,
 `mesonet.agron.iastate.edu` (IEM) and `tgftp.nws.noaa.gov` (NOAA's raw
 METAR and TAF files), each with its subdomains, and since 2026-10-03
-`aa.usno.navy.mil` (the US Naval Observatory's sun and moon API). A change
-to it applies to a running session as soon as it is saved. GitHub's artifact downloads
-redirect to Azure blob storage, which is not on it; read artifacts from a
-runner.
+`aa.usno.navy.mil` (the US Naval Observatory's sun and moon API),
+`skyvector.com` (the sectional link in the header), `tiles.arcgis.com`
+(FAA's VFR sectional tile service) and `*.blob.core.windows.net`, where
+GitHub's artifact downloads redirect. The comparison artifacts can now be
+read from here with `curl -sL
+https://api.github.com/repos/amelia-m/lspc-weather/actions/artifacts/<id>/zip`
+(the session's GitHub proxy supplies the credential); `gh api` still refuses
+to follow that redirect. A change to the list applies to a running session as
+soon as it is saved.
 
 - the live NWS and Open-Meteo paths, the TAF fallback chain and the NOAA FD
   winds fallback, by running the app's own fetch and domain code under Node;
