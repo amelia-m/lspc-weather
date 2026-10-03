@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { METAR_STATION_OFFSET, REPO_URL, SITE } from './config/site';
 import { DATA_SOURCES } from './config/sources';
 import {
@@ -16,6 +16,8 @@ import { CeilingSkyPanel } from './components/CeilingSkyPanel';
 import { PrecipPanel } from './components/PrecipPanel';
 import { RadarPanel } from './components/RadarPanel';
 import { SectionalPanel } from './components/SectionalPanel';
+import { PilotLinksPanel } from './components/PilotLinksPanel';
+import { VIEW_CARDS, VIEW_HASH, VIEW_LABEL, type CardId, type View } from './config/views';
 import { HourlyForecastPanel } from './components/HourlyForecastPanel';
 import { DailyForecastPanel } from './components/DailyForecastPanel';
 import { DriftPanel } from './components/DriftPanel';
@@ -94,18 +96,21 @@ function sanitizeOverrides(raw: unknown): Overrides {
   return out;
 }
 
-/** Which secondary page is showing, if any. A hash rather than a router: the
- *  app is a single page served from a GitHub Pages subpath, and `#citations`
- *  or `#parity` needs no server rewrite, no dependency, and survives a reload
- *  and a shared link. */
-function useRoute(): 'citations' | 'parity' | null {
+/** Which page or dashboard tab is showing. A hash rather than a router: the
+ *  app is a single page served from a GitHub Pages subpath, and `#citations`,
+ *  `#parity` or `#pilots` needs no server rewrite, no dependency, and
+ *  survives a reload and a shared link. No hash is the Jumpers tab. */
+function useRoute(): 'citations' | 'parity' | 'pilots' | null {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHashChange = (): void => setHash(window.location.hash);
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
-  return hash === '#citations' ? 'citations' : hash === '#parity' ? 'parity' : null;
+  if (hash === '#citations') return 'citations';
+  if (hash === '#parity') return 'parity';
+  if (hash === VIEW_HASH.pilots) return 'pilots';
+  return null;
 }
 
 /** The parity page with its data: the summary the parity-summary workflow
@@ -210,6 +215,58 @@ export default function App(): JSX.Element {
   // what you want when someone ducks in to check a reference and comes back.
   if (route === 'citations') return <CitationsPage />;
   if (route === 'parity') return <ParityRoute />;
+  const view: View = route === 'pilots' ? 'pilots' : 'jumpers';
+
+  const cards: Record<CardId, JSX.Element> = {
+    metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} />,
+    surfaceWind: (
+      <SurfaceWindPanel
+        current={snapshot.current}
+        thresholds={thresholds}
+        label={profileLabel(profile)}
+        wind500={winds.now500}
+        unit={unit}
+        onUnitChange={setUnit}
+      />
+    ),
+    ceilingSky: <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />,
+    windsAloft: (
+      <WindsAloftPanel
+        levels={winds.levels}
+        source={snapshot.windsAloftSource}
+        validity={winds.validity}
+        hourNav={winds.nav}
+        unit={unit}
+        onUnitChange={setUnit}
+      />
+    ),
+    drift: (
+      <DriftPanel
+        levels={winds.levels}
+        profile={profile}
+        source={snapshot.windsAloftSource}
+        validMs={winds.validity?.validMs ?? null}
+        stepped={winds.nav != null && !winds.nav.following}
+      />
+    ),
+    hourly: <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} onUnitChange={setUnit} />,
+    daily: (
+      <DailyForecastPanel
+        daily={snapshot.daily}
+        source={snapshot.dailySource}
+        hourly={snapshot.hourly}
+        unit={unit}
+        onUnitChange={setUnit}
+      />
+    ),
+    precip: <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />,
+    densityAltitude: <DensityAltitudePanel da={snapshot.densityAltitude} />,
+    sun: <SunPanel sun={snapshot.sun} />,
+    radar: <RadarPanel />,
+    sectional: <SectionalPanel />,
+    taf: <TafPanel taf={snapshot.taf} status={status.taf} />,
+    pilotLinks: <PilotLinksPanel />,
+  };
 
   return (
     <div className="app">
@@ -270,6 +327,22 @@ export default function App(): JSX.Element {
         </div>
       </header>
 
+      {/* Links, not buttons: each tab is an address (#pilots, or none for
+          Jumpers), so the browser's back button, a reload and a shared link
+          all land on the same tab. */}
+      <nav className="view-tabs" aria-label="Dashboard view">
+        {(Object.keys(VIEW_CARDS) as View[]).map((v) => (
+          <a
+            key={v}
+            href={VIEW_HASH[v] || '#'}
+            className={v === view ? 'active' : ''}
+            aria-current={v === view ? 'page' : undefined}
+          >
+            {VIEW_LABEL[v]}
+          </a>
+        ))}
+      </nav>
+
       <p className="disclaimer">
         <strong>
           In development — not endorsed or approved by USPA, LSPC, or any licensed professional.
@@ -296,52 +369,15 @@ export default function App(): JSX.Element {
         hasSourcedWindLimit={thresholds.windLimitCitation !== null}
       />
 
-      {/* Ordered by a jumper's decision flow — now (current/wind/sky/flight
-          category), then skydiver-specific (winds aloft/drift), then planning
-          (hourly/outlook/precip), then secondary (DA/daylight) and reference
-          (radar/sectional/TAF). Order matters most on mobile, where the grid is a single
-          linear column; at wider widths MasonryGrid drops each card into the
-          shortest column, so a later card can sit above an earlier one. */}
-      <MasonryGrid>
-        <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} />
-        <SurfaceWindPanel
-          current={snapshot.current}
-          thresholds={thresholds}
-          label={profileLabel(profile)}
-          wind500={winds.now500}
-          unit={unit}
-          onUnitChange={setUnit}
-        />
-        <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />
-        <WindsAloftPanel
-          levels={winds.levels}
-          source={snapshot.windsAloftSource}
-          validity={winds.validity}
-          hourNav={winds.nav}
-          unit={unit}
-          onUnitChange={setUnit}
-        />
-        <DriftPanel
-          levels={winds.levels}
-          profile={profile}
-          source={snapshot.windsAloftSource}
-          validMs={winds.validity?.validMs ?? null}
-          stepped={winds.nav != null && !winds.nav.following}
-        />
-        <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} onUnitChange={setUnit} />
-        <DailyForecastPanel
-          daily={snapshot.daily}
-          source={snapshot.dailySource}
-          hourly={snapshot.hourly}
-          unit={unit}
-          onUnitChange={setUnit}
-        />
-        <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />
-        <DensityAltitudePanel da={snapshot.densityAltitude} />
-        <SunPanel sun={snapshot.sun} />
-        <RadarPanel />
-        <SectionalPanel />
-        <TafPanel taf={snapshot.taf} status={status.taf} />
+      {/* The cards each tab shows, in its order: src/config/views.ts. Order
+          matters most on mobile, where the grid is a single linear column; at
+          wider widths MasonryGrid drops each card into the shortest column, so
+          a later card can sit above an earlier one. The key includes the view
+          so switching tabs remounts the grid and it packs afresh. */}
+      <MasonryGrid key={view}>
+        {VIEW_CARDS[view].map((id) => (
+          <Fragment key={id}>{cards[id]}</Fragment>
+        ))}
       </MasonryGrid>
 
       <DataFreshness

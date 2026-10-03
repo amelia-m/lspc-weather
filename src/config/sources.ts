@@ -132,3 +132,62 @@ export const FAA_SECTIONAL_TILES = {
   minZoom: 8,
   maxZoom: 12,
 } as const;
+
+/** A link on the Pilots tab's resources card: where a pilot briefs from. */
+export interface PilotLink {
+  label: string;
+  url: string;
+  /** What the page is for, in a line. */
+  note: string;
+}
+
+/** The airports around the drop zone whose METARs a pilot reads beside
+ *  KPMV's: Offutt, Eppley, Millard, Lincoln and Nebraska City. All six
+ *  answered aviationweather.gov's METAR API on 2026-10-03. */
+const NEARBY_METAR_IDS = ['KPMV', 'KOFF', 'KOMA', 'KMLE', 'KLNK', 'KAFK'];
+
+/**
+ * The briefing services, each opened from here on 2026-10-03 unless its note
+ * in this comment says otherwise. NOTAM Search answered the sandbox with an
+ * Akamai "Access Denied" (it refuses scripts), so that page was not seen;
+ * the address is FAA's NOTAM Search. G-AIRMETs are not listed on their own:
+ * aviationweather.gov refused /gairmet, and the GFA carries the same AIRMETs.
+ * 1-800-WX-BRIEF is not listed because it could not be opened from here.
+ */
+export const PILOT_LINKS: readonly PilotLink[] = [
+  {
+    label: 'NOTAM Search (FAA)',
+    url: 'https://notams.aim.faa.gov/notamSearch/',
+    note: 'NOTAMs for KPMV and the airports around the drop zone.',
+  },
+  {
+    label: 'TFRs (FAA)',
+    url: 'https://tfr.faa.gov/',
+    note: 'Temporary flight restrictions, list and map.',
+  },
+  {
+    label: 'Nearby METARs (aviationweather.gov)',
+    url: `https://aviationweather.gov/data/metar/?ids=${NEARBY_METAR_IDS.join(',')}&hours=0`,
+    note: `The latest reports at ${NEARBY_METAR_IDS.join(', ')}.`,
+  },
+  {
+    label: 'PIREPs (aviationweather.gov)',
+    url: `https://aviationweather.gov/data/pirep/?id=${SITE.metarStation.id}&distance=100`,
+    note: `Pilot reports within 100 nm of ${SITE.metarStation.id}.`,
+  },
+  {
+    label: 'Graphical Forecasts for Aviation (aviationweather.gov)',
+    url: 'https://aviationweather.gov/gfa/',
+    note: 'Clouds, icing, turbulence and AIRMETs on a map.',
+  },
+  {
+    label: 'SIGMETs (aviationweather.gov)',
+    url: 'https://aviationweather.gov/sigmet/',
+    note: 'SIGMETs and convective SIGMETs in force.',
+  },
+  {
+    label: 'Chart Supplement (FAA)',
+    url: 'https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dafd/search/',
+    note: `Airport details; search ${SITE.metarStation.id.slice(1)} for Plattsmouth.`,
+  },
+];

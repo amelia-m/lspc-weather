@@ -75,6 +75,41 @@ a {
   color: #04121f;
   font-weight: 600;
 }
+/* Jumpers | Pilots: the dashboard's two tabs, as links (each is an
+   address), styled like the profile toggle so they read as one control. */
+.view-tabs {
+  display: flex;
+  margin: 0 0 12px;
+}
+.view-tabs a {
+  flex: 1;
+  text-align: center;
+  background: var(--panel-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.view-tabs a:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.view-tabs a:last-child {
+  border-radius: 0 8px 8px 0;
+}
+.view-tabs a.active {
+  background: var(--accent);
+  color: #04121f;
+}
+/* The briefing links on the Pilots tab: one per line, its note after it. */
+.pilot-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pilot-links li {
+  margin: 0 0 8px;
+}
 .tier-toggle {
   display: flex;
   flex-wrap: wrap;
