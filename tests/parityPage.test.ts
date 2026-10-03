@@ -292,6 +292,21 @@ describe('ParityPage', () => {
       expect(html).toContain('48 runs to Oct 2');
     });
 
+    it('dates every check and links its write-up', () => {
+      const panel = html.slice(html.indexOf('Context: checks made by hand'));
+      const sections = panel.split('<h4 class="cite-found-head">').slice(1);
+      expect(sections.length).toBe(5);
+      for (const sec of sections) {
+        expect(sec).toMatch(/(Sep|Oct) \d+/);
+        expect(sec).toContain('href="https://github.com/amelia-m/lspc-weather/blob/main/');
+      }
+    });
+
+    it('does not call the unexplained run a misreading', () => {
+      expect(html).toContain('All but one turned out to be the');
+      expect(html).toContain('It is not a known misreading and nothing was fixed');
+    });
+
     it('links each write-up in the repository', () => {
       expect(html).toContain('href="https://github.com/amelia-m/lspc-weather/blob/main/docs/markschulze-altitude-reference.md"');
       expect(html).toContain('href="https://github.com/amelia-m/lspc-weather/blob/main/docs/source-parity.md"');
