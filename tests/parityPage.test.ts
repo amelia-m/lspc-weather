@@ -211,6 +211,12 @@ describe('ParityPage', () => {
       expect(html).toContain('<td>12–3\u00a0AM</td><td>0</td><td>—</td>');
     });
 
+    it('breaks the ground rows down by local day of the forecast hour', () => {
+      // 02Z on Oct 3 is 9 PM on Oct 2 at the drop zone.
+      expect(html).toContain('By local day of the forecast hour');
+      expect(html).toContain('<td>Oct 2</td><td>2</td><td>5 kt</td><td>9 kt</td><td>+4 kt</td>');
+    });
+
     it('groups the fields under headings, the surface wind first, and keeps an unlisted one', () => {
       const same = html.slice(html.indexOf('Same observation on both sides'));
       const wind = same.indexOf('Surface wind</th>');
@@ -254,10 +260,45 @@ describe('ParityPage', () => {
         schulze: { ...summary.schulze, groundByLocalHour: undefined },
         usairnet: { ...summary.usairnet, outages: undefined, unreadable: 2 },
       };
-      const page = render('ready', old);
+      const page = render('ready', { ...old, schulze: { ...old.schulze, groundByLocalDay: undefined } });
       expect(page).toContain('The two Surface rows are different heights');
       expect(page).not.toContain('by the local time of the forecast hour');
+      expect(page).not.toContain('By local day of the forecast hour');
       expect(page).toContain('2 runs could not read one side.');
+    });
+  });
+
+  /* The checks made by hand, dated, beside the live figures. They are copied
+   * from the write-ups, so the test pins that each is present and dated, and
+   * that the panel shows whatever state the summary is in. */
+  describe('the context from checks made by hand', () => {
+    const html = render('ready');
+
+    it('comes after the live comparisons', () => {
+      expect(html.indexOf('Context: checks made by hand')).toBeGreaterThan(
+        html.indexOf('Latest observation vs usairnet'),
+      );
+    });
+
+    it('carries each check, dated', () => {
+      expect(html).toContain('How the winds gap grows with the hours between the tables');
+      expect(html).toContain('Measured on Sep 26 at 16:19Z');
+      expect(html).toContain('<td>6</td><td>676</td><td>47°</td>');
+      expect(html).toContain('Which hour each table shows');
+      expect(html).toContain('How Schulze’s Surface row was worked out');
+      expect(html).toContain('<td>Near Tampa</td><td>89 ft</td><td>6</td>');
+      expect(html).toContain('56 of 56 sunrises and sunsets across 2026 (read Oct 3)');
+      expect(html).toContain('Why older observation runs are left out of some rows');
+      expect(html).toContain('48 runs to Oct 2');
+    });
+
+    it('links each write-up in the repository', () => {
+      expect(html).toContain('href="https://github.com/amelia-m/lspc-weather/blob/main/docs/markschulze-altitude-reference.md"');
+      expect(html).toContain('href="https://github.com/amelia-m/lspc-weather/blob/main/docs/source-parity.md"');
+    });
+
+    it('is not shown without a summary', () => {
+      expect(render('missing')).not.toContain('Context: checks made by hand');
     });
   });
 

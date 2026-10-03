@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   arrivalLags,
+  groundByLocalDay,
   groundByLocalHour,
   median,
   outagesOf,
@@ -422,5 +423,31 @@ describe('outagesOf', () => {
       stretches: 0,
       longest: null,
     });
+  });
+});
+
+/* By local day of the forecast hour: 02Z on Oct 3 is still Oct 2 at the
+ * drop zone (9 PM CDT), so a UTC date would put it on the wrong day. */
+describe('groundByLocalDay', () => {
+  const run = (at: string, appHour: string, ourKt: number | null, theirKt: number): SchulzeRecord => ({
+    kind: 'schulze',
+    at,
+    appHour,
+    ground: { ourKt, theirKt },
+  });
+
+  it('groups by the drop zone\'s local date of the forecast hour, oldest first', () => {
+    const days = groundByLocalDay([
+      run('2026-10-03T18:05:00Z', '18Z', 10, 11),
+      run('2026-10-03T01:40:00Z', '02Z', 4, 10),
+      run('2026-10-03T02:10:00Z', '02Z', 6, 9),
+      run('2026-10-03T19:05:00Z', '19Z', null, 12),
+      // Sampled at 11:40 PM CDT on the 2nd, comparing midnight (05Z): the 3rd.
+      run('2026-10-03T04:40:00Z', '05Z', 8, 8),
+    ]);
+    expect(days).toEqual([
+      { date: '2026-10-02', runs: 2, medianOurKt: 5, medianTheirKt: 9.5, medianGapKt: 4.5 },
+      { date: '2026-10-03', runs: 2, medianOurKt: 9, medianTheirKt: 9.5, medianGapKt: 0.5 },
+    ]);
   });
 });

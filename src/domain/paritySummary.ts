@@ -176,6 +176,17 @@ export interface GroundBand {
   medianGapKt: number | null;
 }
 
+/** The two ground rows over the runs whose forecast hour fell on one local
+ *  day at the drop zone. */
+export interface GroundDay {
+  /** The drop zone's local date, "2026-10-02". */
+  date: string;
+  runs: number;
+  medianOurKt: number | null;
+  medianTheirKt: number | null;
+  medianGapKt: number | null;
+}
+
 /** Runs where one side could not be read, and the longest unbroken run of
  *  usairnet failures. */
 export interface UsairnetOutages {
@@ -215,6 +226,9 @@ export interface ParitySummary {
     /** The ground rows by local time of the forecast hour. Absent before
      *  2026-10-03. */
     groundByLocalHour?: GroundBand[];
+    /** The ground rows by local day of the forecast hour, oldest first.
+     *  Absent before 2026-10-03. */
+    groundByLocalDay?: GroundDay[];
     /** Absent in summaries written before 2026-09-26. */
     byTimeGap?: TimeGapGroup[];
   };
@@ -408,6 +422,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
         medianRatio: ratios.length ? Math.round((median(ratios) as number) * 100) / 100 : null,
       },
       groundByLocalHour: groundByLocalHour(ground),
+      groundByLocalDay: groundByLocalDay(ground),
       byTimeGap: timeGapGroups(schulze),
     },
     usairnet: {
@@ -480,6 +495,46 @@ export function groundByLocalHour(records: readonly SchulzeRecord[]): GroundBand
     medianTheirKt: round1(median(b.theirs)),
     medianGapKt: round1(median(b.gaps)),
   }));
+}
+
+const localDate = (ms: number): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: SITE.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(
+    new Date(ms),
+  );
+
+/**
+ * The two ground rows by the local day of the hour they forecast. Over
+ * every run summarised, the median of Schulze's ground row went from about
+ * 6 kt in the summaries of late September to 8 kt by 2026-10-02 while this
+ * dashboard's stayed near 6: the gap between a 10 m wind and the wind a
+ * couple of hundred feet up moves with the weather, and one median over the
+ * whole span cannot show which days it opened on. A day is placed by the
+ * hour the run compared, like the time-of-day blocks.
+ */
+export function groundByLocalDay(records: readonly SchulzeRecord[]): GroundDay[] {
+  const days = new Map<string, { ours: number[]; theirs: number[]; gaps: number[] }>();
+  for (const r of records) {
+    const ours = r.ground?.ourKt;
+    const theirs = r.ground?.theirKt;
+    if (ours == null || theirs == null) continue;
+    const t = validHourOf(r);
+    if (!Number.isFinite(t)) continue;
+    const key = localDate(t);
+    const day = days.get(key) ?? { ours: [], theirs: [], gaps: [] };
+    day.ours.push(ours);
+    day.theirs.push(theirs);
+    day.gaps.push(theirs - ours);
+    days.set(key, day);
+  }
+  return [...days.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .map(([date, d]) => ({
+      date,
+      runs: d.ours.length,
+      medianOurKt: round1(median(d.ours)),
+      medianTheirKt: round1(median(d.theirs)),
+      medianGapKt: round1(median(d.gaps)),
+    }));
 }
 
 /**
