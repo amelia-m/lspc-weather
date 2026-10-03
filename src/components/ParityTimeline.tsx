@@ -78,7 +78,8 @@ const TIMELINE: Entry[] = [
     date: 'Sep 30',
     kind: 'Event',
     what: 'usairnet’s page could not be read from 13:12 to 15:31Z, 72 samples in a row.',
-    effect: 'Those runs compare nothing; the outage line above counts them.',
+    effect:
+      'Those runs compared nothing. The outage line above counted them in the summaries to Oct 3; it counts only the last 14 days of logs, so it drops them once those logs expire.',
   },
   {
     date: 'Oct 3',
