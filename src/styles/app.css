@@ -829,6 +829,18 @@ a {
   display: block;
   white-space: nowrap;
 }
+/* The Nearby METARs table takes the full grid width where there is more
+   than one column, like the TAF's: six stations' wind, sky and category
+   side by side need the room, and a phone's single column scrolls the
+   table inside the card instead. */
+@media (min-width: 640px) {
+  .grid .panel:has(.nearby-table) {
+    grid-column: 1 / -1;
+  }
+}
+.nearby-table td {
+  vertical-align: top;
+}
 /* Seven columns do not fit one grid cell; the full grid width where there
    is more than one column, as the 10-day table takes. */
 @media (min-width: 640px) {

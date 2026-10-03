@@ -28,16 +28,29 @@ export type CardId =
   | 'radar'
   | 'sectional'
   | 'taf'
-  | 'pilotLinks';
+  | 'pilotLinks'
+  | 'nearbyMetars';
 
 export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
   // Now (conditions, wind, sky), then skydiving (winds aloft, drift), then
   // planning (hourly, outlook, precip), then daylight and radar.
   jumpers: ['metar', 'surfaceWind', 'ceilingSky', 'windsAloft', 'drift', 'hourly', 'daily', 'precip', 'sun', 'radar'],
-  // Now (conditions, sky), then the chart and the forecast for the flight
-  // (sectional, TAF), the climb and the jump run (density altitude, winds
-  // aloft), then daylight, radar and the briefing links.
-  pilots: ['metar', 'ceilingSky', 'sectional', 'taf', 'densityAltitude', 'windsAloft', 'sun', 'radar', 'pilotLinks'],
+  // Now (conditions, sky, the airports around), then the chart and the
+  // forecast for the flight (sectional, TAF), the climb and the jump run
+  // (density altitude, winds aloft), then daylight, radar and the briefing
+  // links.
+  pilots: [
+    'metar',
+    'ceilingSky',
+    'nearbyMetars',
+    'sectional',
+    'taf',
+    'densityAltitude',
+    'windsAloft',
+    'sun',
+    'radar',
+    'pilotLinks',
+  ],
 };
 
 export const VIEW_LABEL: Readonly<Record<View, string>> = {

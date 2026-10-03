@@ -1,4 +1,4 @@
-import { SITE } from './site';
+import { NEARBY_METAR_STATIONS, SITE } from './site';
 
 /** A data source shown in a card's "Data:" footer, linking to where the
  *  numbers actually come from. */
@@ -76,6 +76,12 @@ export const DATA_SOURCES = {
     label: 'Live traffic · adsb.lol',
     url: `https://adsb.lol/?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}&zoom=10&baseMap=VFR_Sectional&SiteLat=${SITE.dz.lat}&SiteLon=${SITE.dz.lon}`,
   },
+  /** The nearby stations' observations, from IEM's Nebraska ASOS network
+   *  (the Nearby METARs card). */
+  iemNebraska: {
+    label: 'IEM observations · Nebraska ASOS',
+    url: 'https://mesonet.agron.iastate.edu/ASOS/current.phtml?network=NE_ASOS',
+  },
   /** usairnet aviation forecast for KPMV — a page many jumpers use. Presents
    *  the same NWS forecast data; cross-reference only. */
   usairnet: {
@@ -141,10 +147,9 @@ export interface PilotLink {
   note: string;
 }
 
-/** The airports around the drop zone whose METARs a pilot reads beside
- *  KPMV's: Offutt, Eppley, Millard, Lincoln and Nebraska City. All six
+/** The stations of the Nearby METARs card (config/site.ts). All six
  *  answered aviationweather.gov's METAR API on 2026-10-03. */
-const NEARBY_METAR_IDS = ['KPMV', 'KOFF', 'KOMA', 'KMLE', 'KLNK', 'KAFK'];
+const NEARBY_METAR_IDS = NEARBY_METAR_STATIONS.map((s) => s.id);
 
 /**
  * The briefing services, each opened from here on 2026-10-03 unless its note

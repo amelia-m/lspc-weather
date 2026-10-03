@@ -8,7 +8,7 @@ import { PILOT_LINKS } from '../src/config/sources';
 describe('the dashboard tabs', () => {
   const ALL: CardId[] = [
     'metar', 'surfaceWind', 'ceilingSky', 'windsAloft', 'drift', 'hourly', 'daily', 'precip',
-    'densityAltitude', 'sun', 'radar', 'sectional', 'taf', 'pilotLinks',
+    'densityAltitude', 'sun', 'radar', 'sectional', 'taf', 'pilotLinks', 'nearbyMetars',
   ];
 
   it('puts every card on at least one tab, and none twice on a tab', () => {
@@ -22,7 +22,7 @@ describe('the dashboard tabs', () => {
       expect(VIEW_CARDS.jumpers).toContain(id);
       expect(VIEW_CARDS.pilots).not.toContain(id);
     }
-    for (const id of ['sectional', 'taf', 'densityAltitude', 'pilotLinks'] as CardId[]) {
+    for (const id of ['sectional', 'taf', 'densityAltitude', 'pilotLinks', 'nearbyMetars'] as CardId[]) {
       expect(VIEW_CARDS.pilots).toContain(id);
       expect(VIEW_CARDS.jumpers).not.toContain(id);
     }
