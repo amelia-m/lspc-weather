@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WeatherSnapshot, WindsAloftLevel, WindsAloftValidity } from '../domain/types';
-import { chooseForecastHour, nearestForecastHour, selectionAfterStep } from '../domain/forecastHour';
+import { chooseForecastHour, selectionAfterStep } from '../domain/forecastHour';
 import type { WindsHourNav } from '../components/WindsAloftPanel';
 import { useNow } from './useNow';
 
@@ -21,23 +21,15 @@ export function useWindsHour(snapshot: WeatherSnapshot): {
   levels: WindsAloftLevel[];
   validity: WindsAloftValidity | null | undefined;
   nav: WindsHourNav | null;
-  /** The 500 ft level at the hour nearest the clock, for the Surface wind
-   *  card. Never the stepped hour: that card is about now. null on the FD
-   *  fallback, whose lowest level is well above 500 ft. */
-  now500: { level: WindsAloftLevel; validMs: number } | null;
 } {
   const now = useNow(60_000);
   const [selectedMs, setSelectedMs] = useState<number | null>(null);
   const hours = snapshot.windsAloftHours;
   const chosen = chooseForecastHour(hours, selectedMs, now);
-  const nearest = nearestForecastHour(hours, now);
-  const level500 = nearest?.levels.find((l) => l.altitudeFtAgl === 500);
-  const now500 = nearest && level500 ? { level: level500, validMs: nearest.validMs } : null;
   if (!hours || !chosen) {
-    return { levels: snapshot.windsAloft, validity: snapshot.windsAloftValidity, nav: null, now500 };
+    return { levels: snapshot.windsAloft, validity: snapshot.windsAloftValidity, nav: null };
   }
   return {
-    now500,
     levels: chosen.levels,
     validity: { validMs: chosen.validMs },
     nav: {

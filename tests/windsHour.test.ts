@@ -3,8 +3,6 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { WindsAloftPanel, type WindsHourNav } from '../src/components/WindsAloftPanel';
 import { DriftPanel } from '../src/components/DriftPanel';
-import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
-import { DEFAULT_THRESHOLDS } from '../src/config/thresholds';
 import type { WindsAloftLevel } from '../src/domain/types';
 
 const levels: WindsAloftLevel[] = [0, 1000, 3000, 5000, 7000, 10000].map((ft) => ({
@@ -100,42 +98,5 @@ describe('Drift card follows the hour', () => {
 
   it('says when that hour was stepped to on the Winds aloft card', () => {
     expect(drift(ahead(), true)).toContain('the hour stepped to on the Winds aloft card.');
-  });
-});
-
-describe('Surface wind card 500 ft line', () => {
-  const card = (profile: 'student' | 'licensed', wind500: Parameters<typeof SurfaceWindPanel>[0]['wind500']) =>
-    renderToStaticMarkup(
-      createElement(SurfaceWindPanel, {
-        current: null,
-        thresholds: DEFAULT_THRESHOLDS[profile],
-        label: profile,
-        wind500,
-        unit: 'kt',
-        onUnitChange: noop,
-      }),
-    );
-  const w500 = { level: { altitudeFtAgl: 500, altitudeFtMsl: 1682, directionDeg: 199, speedKt: 17, tempC: 21 }, validMs: Date.UTC(2026, 8, 27, 21) };
-
-  it('shows the model 500 ft wind, labelled as a forecast for its hour', () => {
-    const html = card('student', w500);
-    expect(html).toMatch(/<p class="wind-500"><span class="muted">500 ft AGL · model forecast for 4:00 PM<\/span><strong>SSW \(199°\) · 17 kt<\/strong><\/p>/);
-    expect(html).toContain('not a measurement, and with no gust figure');
-  });
-
-  it('says the student band is for the ground wind, not this', () => {
-    expect(card('student', w500)).toContain('The band and caution above apply to the observed surface wind only.');
-    expect(card('licensed', w500)).toContain('Nothing on this card compares it to a limit.');
-  });
-
-  it('is absent with no 500 ft level (the FD fallback)', () => {
-    expect(card('student', null)).not.toContain('wind-500');
-  });
-
-  it('carries no warning colour, even at a speed over the student limit', () => {
-    const html = card('student', { ...w500, level: { ...w500.level, speedKt: 30 } });
-    const line = /<p class="wind-500">[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
-    expect(line).toContain('30 kt');
-    expect(line).not.toMatch(/class="[^"]*(caution|watch|warn|band)/);
   });
 });

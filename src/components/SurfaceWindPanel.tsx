@@ -1,6 +1,5 @@
-import type { CurrentConditions, WindsAloftLevel } from '../domain/types';
-import { compass, fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
-import { fmtTime } from './format';
+import type { CurrentConditions } from '../domain/types';
+import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
 import type { Thresholds } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
@@ -30,19 +29,12 @@ export function SurfaceWindPanel({
   current,
   thresholds: t,
   label,
-  wind500,
   unit,
   onUnitChange,
 }: {
   current: CurrentConditions | null;
   thresholds: Thresholds;
   label: string;
-  /** The model's 500 ft AGL wind at the hour nearest the clock: the wind on
-   *  final and in the lower pattern, which the station at 10 m cannot give.
-   *  A forecast beside an observation, so it is labelled as one and nothing
-   *  on the card measures it against a limit. null when the winds source has
-   *  no 500 ft level (the FD fallback) or has not loaded. */
-  wind500?: { level: WindsAloftLevel; validMs: number } | null;
   unit: SpeedUnit;
   /** Page-wide unit setter, handed to the header toggle. Required rather than
    *  optional: this is the most-read card on the page and the one a jumper
@@ -105,27 +97,6 @@ export function SurfaceWindPanel({
               </p>
             </>
           )}
-        </>
-      )}
-      {wind500 && (
-        <>
-          <p className="wind-500">
-            <span className="muted">500 ft AGL · model forecast for {fmtTime(wind500.validMs)}</span>
-            <strong>
-              {compass(wind500.level.directionDeg)} ({wind500.level.directionDeg}°) ·{' '}
-              {fmtSpeed(wind500.level.speedKt, unit)}
-            </strong>
-          </p>
-          {/* Said in so many words because the student band sits right above
-              it: a reader could take the band for a 500 ft limit, and BSR 2-1 H
-              states ground-wind maxima only. */}
-          <p className="muted small">
-            An Open-Meteo forecast interpolated to 500 ft above the field (the same row as the
-            Winds aloft table), not a measurement, and with no gust figure.{' '}
-            {t.windLimitCitation
-              ? 'The band and caution above apply to the observed surface wind only.'
-              : 'Nothing on this card compares it to a limit.'}
-          </p>
         </>
       )}
       {/* Standing note, outside the reading above on purpose: it explains why

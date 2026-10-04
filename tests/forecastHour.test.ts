@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   chooseForecastHour,
-  nearestForecastHour,
   offsetBarPosition,
   offsetFromNow,
   selectionAfterStep,
@@ -110,11 +109,6 @@ describe('the step window', () => {
   it('lets go of a stepped hour the clock has carried outside the window', () => {
     // 14Z was two back at 16:10; at 17:10 it is three back.
     expect(chooseForecastHour(day, t0 + 2 * H, now + H)).toMatchObject({ validMs: t0 + 5 * H, following: true });
-  });
-
-  it('finds the hour nearest the clock for a card that does not step', () => {
-    expect(nearestForecastHour(day, now)?.validMs).toBe(t0 + 4 * H);
-    expect(nearestForecastHour(null, now)).toBeNull();
   });
 });
 

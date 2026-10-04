@@ -44,9 +44,7 @@ shows is `src/config/views.ts`.
   drawn only where a published source sets it — the USPA ground-wind figure for
   Student, the posted club policy for the LSPC waiver tiers — and is labelled
   with that source. The Licensed profile draws no band and says so: nobody
-  publishes a surface-wind limit for licensed jumpers. Under the reading, the
-  model's 500 ft AGL wind for the hour nearest the clock, labelled as a
-  forecast and measured against no limit.
+  publishes a surface-wind limit for licensed jumpers.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   pressure-level model winds, with the
