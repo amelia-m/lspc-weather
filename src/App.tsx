@@ -3,6 +3,12 @@ import { METAR_STATION_OFFSET, REPO_URL, SITE } from './config/site';
 import { DATA_SOURCES } from './config/sources';
 import {
   resolveThresholds,
+  withOverrides,
+  editedLimits,
+  EDITABLE_LIMITS,
+  EDITABLE_LIMIT_KEYS,
+  isEditable,
+  type EditableLimit,
   profileLabel,
   WAIVER_TIERS,
   type Thresholds,
@@ -76,8 +82,9 @@ function toWindProfileId(raw: string | null): WindProfileId {
 /** Sanitize persisted threshold overrides. localStorage is user-writable, so a
  *  corrupt or tampered value (a string where a number belongs, an unknown
  *  profile key) would silently break threshold comparisons. Keep only entries
- *  under valid profile ids whose values are finite numbers for numeric keys
- *  that exist in that profile's base Thresholds; drop everything else. */
+ *  under valid profile ids whose values are finite numbers for the limits
+ *  Settings offers on that profile (`isEditable`); drop everything else. A stored value for any other field would change what a flag fires
+ *  on with no row to see it and no "(edited)" mark anywhere. */
 function sanitizeOverrides(raw: unknown): Overrides {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
   const out: Overrides = {};
@@ -87,6 +94,8 @@ function sanitizeOverrides(raw: unknown): Overrides {
     const base = resolveThresholds(id as WindProfileId);
     const clean: Partial<Thresholds> = {};
     for (const [key, value] of Object.entries(entry as Record<string, unknown>)) {
+      if (!(EDITABLE_LIMIT_KEYS as string[]).includes(key)) continue;
+      if (!isEditable(base, key as EditableLimit)) continue;
       const baseValue = (base as unknown as Record<string, unknown>)[key];
       if (typeof baseValue === 'number' && typeof value === 'number' && Number.isFinite(value)) {
         (clean as Record<string, number>)[key] = value;
@@ -186,7 +195,7 @@ export default function App(): JSX.Element {
   const base = useMemo(() => resolveThresholds(profile), [profile]);
   const profileOverride = overrides[profile];
   const thresholds = useMemo<Thresholds>(
-    () => ({ ...base, ...(profileOverride ?? {}) }),
+    () => withOverrides(base, profileOverride),
     [base, profileOverride],
   );
   const modified = !!profileOverride && Object.keys(profileOverride).length > 0;
@@ -368,6 +377,7 @@ export default function App(): JSX.Element {
            cannot carry surface wind at any speed and says so when it is
            otherwise empty. Same null that gates the flag and the card's band. */
         hasSourcedWindLimit={thresholds.windLimitCitation !== null}
+        editedLimits={editedLimits(thresholds).map((k) => EDITABLE_LIMITS[k].label)}
       />
 
       {/* The cards each tab shows, in its order: src/config/views.ts. Order

@@ -1,6 +1,7 @@
 import type { CurrentConditions } from '../domain/types';
 import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
-import type { Thresholds } from '../config/thresholds';
+import { isEdited, type Thresholds } from '../config/thresholds';
+import { lowerLimitUnchecked, windBandUse } from '../domain/advisories';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
@@ -11,7 +12,9 @@ import { SourceLink } from './common/SourceLink';
  *
  * This is the most-read card on the page, and the band is a marker, not a
  * verdict. Only a published limit is drawn or named: the USPA ground-wind
- * figure for students, the posted club policy for the waiver tiers.
+ * figure for students, the posted club policy for the waiver tiers, or the
+ * reader's own edit of one in Settings, which is marked "(edited)" and never
+ * shown under the source's name alone.
  *
  * Where nobody published one — licensed jumpers — there is no band, and no
  * surface-wind flag fires anywhere in the app at any speed. That makes this
@@ -53,6 +56,8 @@ export function SurfaceWindPanel({
   const pct = (v: number): number => Math.min(100, (v / max) * 100);
   const other: SpeedUnit = unit === 'kt' ? 'mph' : 'kt';
   const caveat = t.windBandCaveat;
+  const windEdited = isEdited(t, 'windCautionKt');
+  const gustEdited = isEdited(t, 'gustCautionKt');
 
   return (
     <Panel
@@ -85,7 +90,8 @@ export function SurfaceWindPanel({
             <div className="wind-fill" style={{ width: `${pct(speed)}%` }} />
             {gust != null && <div className="wind-gust-tick" style={{ left: `${pct(gust)}%` }} />}
           </div>
-          {/* Only a limit a published source sets is drawn or named. There is
+          {/* Only a limit a published source sets (or the reader's marked
+              edit of it) is drawn or named. There is
               no earlier "watch" marker: the one that used to sit a few knots
               under this was the app's own arithmetic, and putting an unsourced
               number on the card beside sourced ones lent it their authority.
@@ -94,11 +100,25 @@ export function SurfaceWindPanel({
             <>
               <p className="wind-legend">
                 Caution ≥ {fmtLimitSpeed(t.windCautionKt, unit)}
+                {windEdited && ' (edited)'}
                 {t.gustCautionKt != null &&
-                  ` · Gust ceiling ${fmtLimitSpeed(t.gustCautionKt, unit)}`}
+                  ` · Gust ceiling ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`}
               </p>
+              {/* An edited figure is the reader's, from Settings, and the
+                  link below does not set it; so when either is edited the
+                  line names the published figures the link does vouch for. */}
               <p className="muted small">
-                Caution{t.gustCautionKt != null ? ' and gust ceiling' : ''}:{' '}
+                {windEdited || gustEdited ? (
+                  <>
+                    Edited in Settings. Published caution{' '}
+                    {fmtLimitSpeed(t.published?.windCautionKt ?? t.windCautionKt, unit)}
+                    {t.published?.gustCautionKt != null &&
+                      `, gust ceiling ${fmtLimitSpeed(t.published.gustCautionKt, unit)}`}
+                    :{' '}
+                  </>
+                ) : (
+                  <>Caution{t.gustCautionKt != null ? ' and gust ceiling' : ''}: </>
+                )}
                 <SourceLink citation={t.windLimitCitation} />
               </p>
             </>
@@ -109,19 +129,15 @@ export function SurfaceWindPanel({
           BSR 2-1 H gives solo students two ground-wind maxima and the band
           acts on one; without this a student on a round reserve reads a card
           with no flag at their own limit. Both figures print in the card's
-          unit from the live thresholds, so a caution edited in Settings is
-          the one named. Readings are whole knots (a METAR's, or NWS's
-          rounded), so the band checks the lower limit too once the caution
-          is at or below the first whole knot over it; the note goes there.
-          Outside the reading: it is about the profile, with or without one. */}
-      {caveat && t.windCautionKt > Math.ceil(caveat.limitKt) && (
+          unit from the live thresholds, and the band's half is the same
+          phrase and the same test the flag uses (windBandUse,
+          lowerLimitUnchecked), so the two cannot disagree. Outside the
+          reading: it is about the profile, with or without one. */}
+      {caveat && lowerLimitUnchecked(t) && (
         <p className="muted small">
           A lower maximum ground wind, {fmtLimitSpeed(caveat.limitKt, unit)}, is published for{' '}
-          {caveat.appliesTo}. The band and flag here use {fmtLimitSpeed(t.windCautionKt, unit)}
-          {t.windCautionKt === caveat.bandKt
-            ? `, the figure for ${caveat.bandAppliesTo}`
-            : ', as edited in Settings'}
-          , so neither checks the lower one. <SourceLink citation={caveat.citation} />
+          {caveat.appliesTo}. {windBandUse(t, unit)}, so neither checks the lower one.{' '}
+          <SourceLink citation={caveat.citation} />
         </p>
       )}
       {/* Standing note, outside the reading above on purpose: it explains why

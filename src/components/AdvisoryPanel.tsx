@@ -22,11 +22,17 @@ const LEVEL_LABEL: Record<Advisory['level'], string> = {
  * gap costs one clause and sends the reader to the card that does print the
  * number. It is not a verdict in the other direction either: an empty list
  * still is not a stop, just a list that cannot cover wind here.
+ *
+ * Edited limits get the same treatment, in either state. A flag fires on the
+ * figure in Settings, so with a limit raised there this list can be empty
+ * while a published one is crossed, and the "(edited)" marks sit on the cards
+ * further down. The list says which it is using.
  */
 export function AdvisoryPanel({
   advisories,
   profile,
   hasSourcedWindLimit,
+  editedLimits = [],
 }: {
   advisories: Advisory[];
   /** Active wind-limit profile, as shown on the header control ("Licensed"). */
@@ -34,6 +40,8 @@ export function AdvisoryPanel({
   /** Whether a published source sets a surface-wind limit for that profile —
    *  i.e. whether a surface-wind flag can appear in this list at all. */
   hasSourcedWindLimit: boolean;
+  /** Names of the limits edited in Settings for this profile, if any. */
+  editedLimits?: string[];
 }): JSX.Element {
   const footer = (
     <>
@@ -64,6 +72,13 @@ export function AdvisoryPanel({
       footer={footer}
     >
       <>
+        {editedLimits.length > 0 && (
+          <p className="advisory-edited muted small">
+            <strong>Edited in Settings:</strong> {editedLimits.join(', ')}. The flags here fire at
+            the edited figures, not the published ones, so a published limit can be crossed with
+            nothing listed. Settings shows the published figure beside each edited one.
+          </p>
+        )}
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}

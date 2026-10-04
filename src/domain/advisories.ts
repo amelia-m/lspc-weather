@@ -1,5 +1,5 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
-import { CITATIONS, type Thresholds } from '../config/thresholds';
+import { CITATIONS, isEdited, type Thresholds } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
 
@@ -49,8 +49,18 @@ export function evaluateAdvisories(
           id: 'surface-wind',
           level: 'caution',
           metric: 'Surface wind',
-          value: formatWind(speedKt, gustKt, unit) + (gustDriven ? ' (gusts exceed limit)' : ''),
-          guidance: thresholds.windGuidance,
+          // Says what the comparison is (at or above), and not "limit": the
+          // Student band is 14 mph rounded down, so a gust can reach it
+          // without exceeding the BSR, and an edited band is the reader's
+          // own. A one-word label asserts as much as a sentence.
+          value:
+            formatWind(speedKt, gustKt, unit) +
+            (gustDriven
+              ? isEdited(thresholds, 'windCautionKt')
+                ? ' (gusts at or above the edited caution)'
+                : ' (gusts at or above the caution)'
+              : ''),
+          guidance: `${thresholds.windGuidance} ${windBandSentence(thresholds, unit)}`.trim(),
           citation: thresholds.windCitation,
           // Waiver tiers: the guidance quotes the club's numbers and then the
           // BSR-excursion rule, which is the SIM's, not the club's.
@@ -76,9 +86,16 @@ export function evaluateAdvisories(
         // figure survives the conversion: the 10–20 and 21+ tiers post 19 and
         // 20 mph, which are the same number once rounded to whole knots. The
         // GUST is a reading and stays whole — the station reports knots.
-        value: `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
+        //
+        // An edited ceiling is not the waiver's, so it is not called one: the
+        // citation would vouch for a number the posted sign does not carry.
+        value: isEdited(thresholds, 'gustCautionKt')
+          ? `gusting ${fmtSpeed(gustKt, unit)}, ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)} (edited in Settings)`
+          : `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
         guidance:
-          'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
+          isEdited(thresholds, 'gustCautionKt') && thresholds.published?.gustCautionKt != null
+            ? `Gusts are at or above the gust ceiling edited in Settings; the LSPC waiver's ceiling for this experience tier is ${fmtLimitSpeed(thresholds.published.gustCautionKt, unit)} (gusts measured over the last 30 min).`
+            : 'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
         citation: thresholds.windCitation,
       });
     }
@@ -96,7 +113,10 @@ export function evaluateAdvisories(
         metric: 'Visibility',
         value: `${round(current.visibilitySm, 1)} SM`,
         guidance:
-          '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.',
+          '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.' +
+          (isEdited(thresholds, 'visibilityCautionSm')
+            ? ` This flag fires below ${round(thresholds.visibilityCautionSm, 1)} SM, as edited in Settings, in place of the ${round(thresholds.published?.visibilityCautionSm ?? 3, 1)} SM row it otherwise uses.`
+            : ''),
         citation: CITATIONS.far10517,
       });
     }
@@ -209,3 +229,35 @@ function severityRank(level: AdvisoryLevel): number {
   return level === 'caution' ? 2 : level === 'watch' ? 1 : 0;
 }
 
+/**
+ * Which figure the surface-wind band and flag use, in the words both the card
+ * and the flag print. Built here rather than written into the profile's
+ * guidance because it is about this app's band, which Settings can move, and
+ * the guidance is about the source, which it cannot. Empty where an unedited
+ * profile names only one figure, so there is nothing to tell apart.
+ */
+export function windBandUse(t: Thresholds, unit: SpeedUnit): string {
+  const figure = fmtLimitSpeed(t.windCautionKt, unit);
+  if (isEdited(t, 'windCautionKt')) {
+    return `The band and flag here use ${figure}, as edited in Settings, not a published figure`;
+  }
+  return t.windBandCaveat ? `The band and flag here use ${figure}, ${t.windBandCaveat.bandIs}` : '';
+}
+
+/** Whether the profile's lower published limit (`windBandCaveat`) goes
+ *  unchecked below the band. Readings are whole knots (a METAR's, or NWS's
+ *  rounded), so once the caution is at or below the first whole knot over
+ *  the lower limit, every reading over that limit flags and it is checked. */
+export function lowerLimitUnchecked(t: Thresholds): boolean {
+  return t.windBandCaveat != null && t.windCautionKt > Math.ceil(t.windBandCaveat.limitKt);
+}
+
+/** The flag's sentence: which figure it uses and, below it, what it leaves
+ *  unchecked. */
+export function windBandSentence(t: Thresholds, unit: SpeedUnit): string {
+  const use = windBandUse(t, unit);
+  if (!use) return '';
+  return lowerLimitUnchecked(t) && t.windBandCaveat
+    ? `${use}, so below the band nothing on this page flags the lower limit for ${t.windBandCaveat.appliesTo}.`
+    : `${use}.`;
+}

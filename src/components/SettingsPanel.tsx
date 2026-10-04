@@ -1,12 +1,5 @@
-import type { Thresholds } from '../config/thresholds';
+import { EDITABLE_LIMITS, EDITABLE_LIMIT_KEYS, isEditable, type Thresholds } from '../config/thresholds';
 import { NumberField } from './common/NumberField';
-
-interface FieldDef {
-  key: keyof Thresholds;
-  label: string;
-  unit: string;
-  step?: number;
-}
 
 /**
  * One row per threshold an advisory actually fires on.
@@ -17,22 +10,7 @@ interface FieldDef {
  * warning went when those flags did — each fired on a number no published
  * source sets, so there was nothing a reader could check them against.
  */
-const FIELDS: FieldDef[] = [
-  { key: 'windCautionKt', label: 'Wind — caution', unit: 'kt' },
-  { key: 'gustCautionKt', label: 'Gust ceiling', unit: 'kt' },
-  { key: 'visibilityCautionSm', label: 'Visibility — caution', unit: 'SM', step: 0.5 },
-];
-
-/** A row is shown only where the profile's base value is a number AND that
- *  number drives something. `windCautionKt` fails the second test on a profile
- *  with no published limit (licensed): no source sets the band there, so the
- *  wind flag does not fire and the value survives only to scale the card's bar.
- *  Offering it as a tunable would imply a flag behind it. */
-function fieldApplies(f: FieldDef, base: Thresholds): boolean {
-  if (typeof base[f.key] !== 'number') return false;
-  if (f.key === 'windCautionKt') return base.windLimitCitation !== null;
-  return true;
-}
+const FIELDS = EDITABLE_LIMIT_KEYS.map((key) => ({ key, ...EDITABLE_LIMITS[key] }));
 
 /** Editable advisory thresholds for the active profile. Overrides are owned by
  *  App and persisted; this is a controlled form. */
@@ -63,7 +41,7 @@ export function SettingsPanel({
           in this browser. Winds/gusts are in knots (1 kt ≈ 1.15 mph).
         </p>
         <div className="settings-grid">
-          {FIELDS.filter((f) => fieldApplies(f, base)).map((f) => {
+          {FIELDS.filter((f) => isEditable(base, f.key)).map((f) => {
             const value = thresholds[f.key] as number;
             const isMod = value !== (base[f.key] as number);
             return (
@@ -73,10 +51,18 @@ export function SettingsPanel({
                 label={
                   <span className="settings-label">
                     {f.label} <span className="settings-unit">({f.unit})</span>
+                    {/* The figure the edit replaced: the advisory list sends a
+                        reader here to find it. */}
+                    {isMod && (
+                      <span className="settings-unit">
+                        {' '}
+                        · published {Math.round((base[f.key] as number) * 10) / 10}
+                      </span>
+                    )}
                   </span>
                 }
                 value={value}
-                step={f.step ?? 1}
+                step={'step' in f ? f.step : 1}
                 min={0}
                 onCommit={(v) => onChange(f.key, v)}
               />

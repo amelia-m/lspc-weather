@@ -6,7 +6,16 @@ import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
 import { MetarPanel } from '../src/components/MetarPanel';
 import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
-import { CITATIONS, DEFAULT_THRESHOLDS, resolveThresholds } from '../src/config/thresholds';
+import { SettingsPanel } from '../src/components/SettingsPanel';
+import {
+  CITATIONS,
+  DEFAULT_THRESHOLDS,
+  EDITABLE_LIMIT_KEYS,
+  editedLimits,
+  isEdited,
+  resolveThresholds,
+  withOverrides,
+} from '../src/config/thresholds';
 import type { Thresholds } from '../src/config/thresholds';
 import type { SpeedUnit } from '../src/domain/units';
 import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
@@ -271,7 +280,7 @@ describe('evaluateAdvisories', () => {
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
     const wind = out.find((a) => a.id === 'surface-wind');
     expect(wind?.level).toBe('caution');
-    expect(wind?.value).toContain('gusts exceed limit');
+    expect(wind?.value).toContain('(gusts at or above the caution)');
   });
 
   it('sustained speed alone still raises the advisory when no gust is reported', () => {
@@ -558,7 +567,7 @@ describe('an empty advisory list is not an all-clear', () => {
     for (const current of [breezy, null]) {
       const kt = note(windPanel(t, 'Student', 'kt', current));
       expect(kt).toContain('A lower maximum ground wind, 8.7 kt, is published for solo students on round reserves.');
-      expect(kt).toContain('The band and flag here use 12 kt, the figure for ram-air canopies, so neither checks the lower one.');
+      expect(kt).toContain('The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so neither checks the lower one.');
       expect(kt).toContain(CITATIONS.uspaStudentWinds.url);
       expect(note(windPanel(t, 'Student', 'mph', current))).toContain('A lower maximum ground wind, 10 mph,');
     }
@@ -568,13 +577,12 @@ describe('an empty advisory list is not an all-clear', () => {
 
   it('names the caution as edited, and goes once the band checks the lower limit', () => {
     const t = DEFAULT_THRESHOLDS.student;
-    expect(windPanel({ ...t, windCautionKt: 10 }, 'Student', 'kt', null)).toContain(
-      'The band and flag here use 10 kt, as edited in Settings, so neither',
-    );
+    const edited = (windCautionKt: number) => windPanel(withOverrides(t, { windCautionKt }), 'Student', 'kt', null);
+    expect(edited(10)).toContain('The band and flag here use 10 kt, as edited in Settings, not a published figure, so neither');
     // Readings are whole knots: 8 kt is 9.2 mph and 9 kt is 10.4 mph, so a
     // 9 kt caution flags every reading over 10 mph and the note must go.
-    expect(windPanel({ ...t, windCautionKt: 9 }, 'Student', 'kt', null)).not.toContain('A lower maximum');
-    expect(windPanel({ ...t, windCautionKt: 9.5 }, 'Student', 'kt', null)).toContain('A lower maximum');
+    expect(edited(9)).not.toContain('A lower maximum');
+    expect(edited(9.5)).toContain('A lower maximum');
   });
 
   it('leaves the round-reserve question to the club on the waiver tiers', () => {
@@ -735,3 +743,157 @@ describe('a live observation whose API decode is empty', () => {
     expect(evaluateAdvisories(snapshot({ current: unreported }), DEFAULT_THRESHOLDS.student, now).some((a) => a.id === 'flight-category')).toBe(false);
   });
 });
+
+/* A limit edited in Settings is the reader's number, not the source's. Shown
+ * under the BSR or the club's sign, it would be a figure nobody published
+ * wearing a citation that does not set it. */
+describe('a limit edited in Settings is not presented as the published one', () => {
+  const windy = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 15, wgst: null });
+  const wind = (t: Thresholds) =>
+    evaluateAdvisories(snapshot({ current: windy }), t, now, 'kt').find((a) => a.id === 'surface-wind');
+
+  it('says which figure the student flag uses, and what it leaves unchecked below the band', () => {
+    const g = wind(withOverrides(DEFAULT_THRESHOLDS.student))?.guidance ?? '';
+    expect(g).toContain('10 mph on round reserves');
+    expect(g).toContain(
+      'The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so below the band nothing on this page flags the lower limit for solo students on round reserves.',
+    );
+  });
+
+  it('says the student flag fires at an edited caution, not at a published figure', () => {
+    const g = wind(withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 14 }))?.guidance ?? '';
+    expect(g).toContain(
+      'The band and flag here use 14 kt, as edited in Settings, not a published figure, so below the band nothing on this page flags the lower limit for solo students on round reserves.',
+    );
+    expect(g).not.toContain('figure for ram-air canopies');
+    // Low enough to flag every whole-knot reading over 10 mph: nothing left
+    // unchecked to name.
+    const low = wind(withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 9 }))?.guidance ?? '';
+    expect(low).toContain('The band and flag here use 9 kt, as edited in Settings, not a published figure.');
+    expect(low).not.toContain('below the band');
+    // The source's own figures stay: they are what the link vouches for.
+    expect(g).toContain('14 mph (~12 kt) on ram-air canopies');
+  });
+
+  it('does the same for a waiver tier', () => {
+    const tier = resolveThresholds('waiver:0-5');
+    expect(wind(withOverrides(tier, { windCautionKt: 14 }))?.guidance).toContain('as edited in Settings');
+    expect(wind(withOverrides(tier, { windCautionKt: 12 }))?.guidance).toContain('as edited in Settings');
+    expect(wind(withOverrides(tier, { windCautionKt: 12 }))?.guidance).toContain('max wind 15 mph');
+    expect(wind(withOverrides(tier, { windCautionKt: tier.windCautionKt }))?.guidance).not.toContain('edited');
+  });
+
+  it('does not call an edited gust ceiling the waiver ceiling', () => {
+    const gusty = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 10, wgst: 20 });
+    const gust = (t: Thresholds) =>
+      evaluateAdvisories(snapshot({ current: gusty }), t, now, 'kt').find((a) => a.id === 'gust-limit');
+    const tier = resolveThresholds('waiver:0-5');
+    const plain = gust(withOverrides(tier));
+    expect(plain?.value).toContain('waiver ceiling');
+    expect(plain?.guidance).not.toContain('edited');
+    const edited = gust(withOverrides(tier, { gustCautionKt: 18 }));
+    expect(edited?.value).toBe('gusting 20 kt, ceiling 18 kt (edited in Settings)');
+    expect(edited?.guidance).toContain("the LSPC waiver's ceiling for this experience tier is 13.9 kt");
+  });
+
+  it('says a visibility flag fires at an edited figure', () => {
+    const hazy = normalizeMetar({ ...METAR_FIXTURE[0], visib: 4 });
+    const vis = (t: Thresholds) =>
+      evaluateAdvisories(snapshot({ current: hazy }), t, now, 'kt').find((a) => a.id === 'visibility');
+    expect(vis(withOverrides(DEFAULT_THRESHOLDS.student))).toBeUndefined();
+    expect(vis(withOverrides(DEFAULT_THRESHOLDS.student, { visibilityCautionSm: 5 }))?.guidance).toContain(
+      'This flag fires below 5 SM, as edited in Settings, in place of the 3 SM row it otherwise uses.',
+    );
+  });
+
+  it('marks an edited figure on the Surface wind card and names the published ones beside the link', () => {
+    const tier = resolveThresholds('waiver:0-5');
+    const plain = windPanel(withOverrides(tier), 'Waiver', 'kt', windy);
+    expect(plain).not.toContain('edited');
+    expect(plain).toContain('Caution and gust ceiling: ');
+    const edited = windPanel(withOverrides(tier, { gustCautionKt: 18 }), 'Waiver', 'kt', windy);
+    expect(edited).toContain('Gust ceiling 18 kt (edited)');
+    expect(edited).not.toContain('Caution ≥ 13 kt (edited)');
+    expect(edited.replace(/<!-- -->/g, '')).toContain('Edited in Settings. Published caution 13 kt, gust ceiling 13.9 kt:');
+  });
+
+  it('does not call an edited caution a limit in the gust-driven label', () => {
+    const gustOnly = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 8, wgst: 11 });
+    const value = (t: Thresholds) =>
+      evaluateAdvisories(snapshot({ current: gustOnly }), t, now, 'kt').find((a) => a.id === 'surface-wind')?.value;
+    expect(value(withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 10 }))).toContain(
+      '(gusts at or above the edited caution)',
+    );
+    expect(value(withOverrides(resolveThresholds('waiver:0-5'), { windCautionKt: 10 }))).not.toContain('limit');
+  });
+
+  it('says on the advisory list which limits are edited, empty or not', () => {
+    const panel = (advisories: ReturnType<typeof evaluateAdvisories>, edited: string[]) =>
+      markup(
+        createElement(AdvisoryPanel, { advisories, profile: 'Student', hasSourcedWindLimit: true, editedLimits: edited }),
+      );
+    // Caution raised to 20 kt in 15 kt: over the BSR's 12, nothing listed.
+    const t = withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 20 });
+    const quiet = evaluateAdvisories(snapshot({ current: windy }), t, now, 'kt').filter((a) => a.id === 'surface-wind');
+    expect(quiet).toHaveLength(0);
+    const empty = panel(quiet, ['Wind — caution']).replace(/<!-- -->/g, '');
+    expect(empty).toContain('Edited in Settings:</strong> Wind — caution.');
+    expect(empty).toContain('a published limit can be crossed with nothing listed');
+    expect(panel(evaluateAdvisories(snapshot(), t, now, 'kt'), ['Wind — caution'])).toContain('Edited in Settings:');
+    expect(panel([], [])).not.toContain('Edited in Settings');
+  });
+
+  it('shows the published figure beside an edited one in Settings, where the list sends the reader', () => {
+    const settings = (t: Thresholds, base: Thresholds) =>
+      markup(
+        createElement(SettingsPanel, { thresholds: t, base, label: 'x', modified: true, onChange: () => {}, onReset: () => {} }),
+      ).replace(/<!-- -->/g, '');
+    const student = DEFAULT_THRESHOLDS.student;
+    const html = settings(withOverrides(student, { windCautionKt: 20 }), student);
+    expect(html).toContain('· published 12');
+    expect(settings(withOverrides(student), student)).not.toContain('published');
+    // A gust ceiling of 13.904 kt shows as 13.9.
+    const tier = resolveThresholds('waiver:0-5');
+    expect(settings(withOverrides(tier, { gustCautionKt: 18 }), tier)).toContain('· published 13.9');
+    // No Wind caution row at all where no source sets one.
+    expect(settings(DEFAULT_THRESHOLDS.licensed, DEFAULT_THRESHOLDS.licensed)).not.toContain('Wind — caution');
+  });
+
+  it('treats an override equal to the published value as unedited', () => {
+    const t = withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 12 });
+    expect(wind(t)?.guidance).toContain('the 14 mph figure for ram-air canopies');
+  });
+});
+
+describe('isEdited', () => {
+  it('counts any change as an edit, even one that flags the same whole-knot readings', () => {
+    const tier = resolveThresholds('waiver:0-5');
+    // 14 against the posted 15 mph (13.03 kt) flags the same readings, but
+    // the card would print 14 under the club's link, which the sign does not say.
+    expect(isEdited(withOverrides(tier, { windCautionKt: 14 }), 'windCautionKt')).toBe(true);
+    expect(isEdited(withOverrides(tier, { windCautionKt: tier.windCautionKt }), 'windCautionKt')).toBe(false);
+  });
+
+  it('ignores a stored value for a limit Settings does not offer on the profile', () => {
+    // Licensed has no published wind limit and no Wind caution row; an old
+    // stored value must not be reported as an edit the flags fire at.
+    const licensed = withOverrides(DEFAULT_THRESHOLDS.licensed, { windCautionKt: 18 });
+    expect(isEdited(licensed, 'windCautionKt')).toBe(false);
+    expect(editedLimits(licensed)).toEqual([]);
+  });
+
+  it('compares visibility too, and finds nothing on a profile with no record of what was published', () => {
+    expect(isEdited(withOverrides(DEFAULT_THRESHOLDS.student, { visibilityCautionSm: 3.25 }), 'visibilityCautionSm')).toBe(true);
+    expect(isEdited({ ...DEFAULT_THRESHOLDS.student, windCautionKt: 5 }, 'windCautionKt')).toBe(false);
+    expect(editedLimits(withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 5, visibilityCautionSm: 4 }))).toEqual([
+      'windCautionKt',
+      'visibilityCautionSm',
+    ]);
+  });
+
+  it('records every editable limit as published', () => {
+    const t = withOverrides(resolveThresholds('waiver:0-5'));
+    expect(Object.keys(t.published ?? {}).sort()).toEqual([...EDITABLE_LIMIT_KEYS].sort());
+  });
+});
+
