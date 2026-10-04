@@ -225,7 +225,6 @@ export default function App(): JSX.Element {
         current={snapshot.current}
         thresholds={thresholds}
         label={profileLabel(profile)}
-        wind500={winds.now500}
         unit={unit}
         onUnitChange={setUnit}
       />

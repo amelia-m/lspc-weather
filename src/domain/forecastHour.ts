@@ -58,14 +58,6 @@ function reach(hours: readonly WindsAloftHour[], now: number, w: StepWindow): [n
   return [Math.max(0, n - w.back), Math.min(hours.length - 1, n + w.forward)];
 }
 
-/** The hour nearest `now`, or null with no hours. */
-export function nearestForecastHour(
-  hours: readonly WindsAloftHour[] | null | undefined,
-  now: number,
-): WindsAloftHour | null {
-  return hours && hours.length > 0 ? hours[nearestIndex(hours, now)] : null;
-}
-
 /** The hour to show: the one the reader stepped to while it is still in the
  *  data and inside the step window, otherwise the hour nearest `now`. A
  *  stepped hour the clock has carried outside the window (two hours back,
