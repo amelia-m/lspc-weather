@@ -32,6 +32,10 @@ describe('the dashboard tabs', () => {
     expect(VIEW_HASH.jumpers).toBe('');
     expect(VIEW_HASH.pilots).toBe('#pilots');
   });
+
+  it('opens the Jumpers tab on the two wind cards, with drift beside the hour it follows', () => {
+    expect(VIEW_CARDS.jumpers.slice(0, 3)).toEqual(['surfaceWind', 'windsAloft', 'drift']);
+  });
 });
 
 describe('the pilot briefing links', () => {

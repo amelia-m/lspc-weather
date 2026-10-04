@@ -39,7 +39,6 @@ shows is `src/config/views.ts`.
   overcast reported, `TS` in the METAR, the sun is down. Where nothing published
   sets a trigger, **no flag fires at all**; there is no "app heuristic" label to
   fall back on. No go/no-go verdict.
-- 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 💨 **Surface wind** — sustained + gust on a scale, kt/mph toggle. A band is
   drawn only where a published source sets it — the USPA ground-wind figure for
   Student, the posted club policy for the LSPC waiver tiers — and is labelled
@@ -54,6 +53,7 @@ shows is `src/config/views.ts`.
   far the hour shown is from now.
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs, worked from whichever hour the winds card shows.
+- 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
   hours from sunset to sunrise shaded, over a selectable 18 / 36 / 72 h horizon
   (18 h by default).
