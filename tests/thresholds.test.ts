@@ -303,9 +303,12 @@ describe('guidance says only what its own citation carries', () => {
    * acts on the first only. Naming the second without saying that left the
    * card advertising a limit nothing checks. */
   it('names the round-reserve limit and says the flag does not use it', () => {
-    const g = resolveThresholds('student').windGuidance;
-    expect(g).toMatch(/10 mph on round reserves/);
-    expect(g).toMatch(/nothing on this page flags it/);
+    const t = resolveThresholds('student');
+    expect(t.windGuidance).toMatch(/10 mph on round reserves/);
+    // Which figure the band uses is built from these, by the card and the
+    // flag (windBandSentence), so an edited caution can be named as such.
+    expect(t.windBandCaveat?.appliesTo).toBe('solo students on round reserves');
+    expect(t.windBandCaveat?.bandIs).toBe('the 14 mph figure for ram-air canopies rounded down to whole knots');
     // And the band really is the ram-air figure, not the lower one.
     expect(resolveThresholds('student').windCautionKt).toBe(12);
   });

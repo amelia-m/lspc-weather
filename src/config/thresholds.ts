@@ -115,7 +115,8 @@ export const CITATIONS = {
    *  1,000 ft / 1 mile. Brown's is at 1,182 ft MSL, so a 10,000 ft AGL exit is
    *  in the 5 SM row and the freefall drops into the 3 SM row on the way down.
    *
-   *  The visibility flag fires at 3 SM, the lower row. The METAR reports
+   *  The visibility flag fires at 3 SM, the lower row, unless the reader edits
+   *  it in Settings, which the flag then says. The METAR reports
    *  surface visibility and the reg's measure is flight visibility at
    *  altitude, so the lower row is the one a surface reading can be held
    *  against without claiming it says more than it does; both rows are
@@ -334,21 +335,76 @@ export interface Thresholds {
    */
   windLimitCitation: Citation | null;
   /** A lower published ground-wind maximum this profile's band does not
-   *  check, for the Surface wind card to name at any speed so silence below
-   *  the band is not read as covering it. The card builds the sentence from
-   *  these and the profile's live `windCautionKt`, which Settings can move:
-   *  at `bandKt` it names the published figure the band is (`bandAppliesTo`),
-   *  otherwise it says the caution was edited, and once the caution is low
-   *  enough that the band checks the lower limit too it says nothing. */
+   *  check, for the Surface wind card to name at any speed (and the surface
+   *  wind flag when it fires) so silence below the band is not read as
+   *  covering it. Both build the sentence from these and the profile's live
+   *  `windCautionKt`, which Settings can move: unedited they name the
+   *  published figure the band is (`bandIs`), edited they say so, and
+   *  once the caution is low enough that the band checks the lower limit too
+   *  the card says nothing. */
   windBandCaveat?: {
     limitKt: number;
     appliesTo: string;
-    bandKt: number;
-    bandAppliesTo: string;
+    /** What the unedited band figure is, after "The band and flag here use
+     *  12 kt, ". */
+    bandIs: string;
     citation: Citation;
   };
   /** Visibility, statute miles (105.17 floor below 10k MSL is 3 SM). */
   visibilityCautionSm: number;
+  /** The profile's own value of each limit Settings can edit, recorded by
+   *  `withOverrides` so everything that cites a limit can tell a figure the
+   *  reader edited from the source's (`isEdited`). An edited number shown
+   *  under a BSR or club-policy link would be a number nobody published
+   *  wearing a citation that does not set it. Absent on a profile straight
+   *  from `resolveThresholds`, where nothing is edited. */
+  published?: Pick<Thresholds, EditableLimit>;
+}
+
+/** The limits the Settings panel can edit, the ones an advisory fires on,
+ *  with the name and unit its row shows. The one list: the Settings rows, the
+ *  overrides App will load back, and `published` are all built from it. */
+export const EDITABLE_LIMITS = {
+  windCautionKt: { label: 'Wind — caution', unit: 'kt' },
+  gustCautionKt: { label: 'Gust ceiling', unit: 'kt' },
+  visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5 },
+} as const satisfies Partial<Record<keyof Thresholds, { label: string; unit: string; step?: number }>>;
+export type EditableLimit = keyof typeof EDITABLE_LIMITS;
+export const EDITABLE_LIMIT_KEYS = Object.keys(EDITABLE_LIMITS) as EditableLimit[];
+
+/** A profile with the reader's Settings edits applied, carrying the profile's
+ *  own values in `published`. */
+export function withOverrides(base: Thresholds, override?: Partial<Thresholds>): Thresholds {
+  const published = Object.fromEntries(EDITABLE_LIMIT_KEYS.map((k) => [k, base[k]]));
+  return { ...base, ...override, published: published as Pick<Thresholds, EditableLimit> };
+}
+
+/** Whether Settings offers this limit on this profile: the profile has a
+ *  number for it AND that number drives something. `windCautionKt` fails the
+ *  second test on a profile with no published limit (licensed): no source
+ *  sets the band there, so the wind flag does not fire and the value
+ *  survives only to scale the card's bar. Offering it as a tunable would
+ *  imply a flag behind it. One rule for the rows, for what App loads back
+ *  from storage, and for what counts as edited, so a value with no row to
+ *  see it can neither be kept nor reported. */
+export function isEditable(t: Thresholds, key: EditableLimit): boolean {
+  if (typeof t[key] !== 'number') return false;
+  if (key === 'windCautionKt') return t.windLimitCitation !== null;
+  return true;
+}
+
+/** Whether the reader edited this limit in Settings away from the profile's
+ *  own value. Exact, not at the precision a card prints: a figure that
+ *  differs from the published one is the reader's, and showing it under the
+ *  source's link unmarked is the failure this exists to stop, even where two
+ *  figures would flag the same whole-knot readings. */
+export function isEdited(t: Thresholds, key: EditableLimit): boolean {
+  return t.published != null && isEditable(t, key) && t[key] !== t.published[key];
+}
+
+/** The limits the reader has edited in Settings, in the panel's order. */
+export function editedLimits(t: Thresholds): EditableLimit[] {
+  return EDITABLE_LIMIT_KEYS.filter((k) => isEdited(t, k));
 }
 
 const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
@@ -374,9 +430,13 @@ const STUDENT: Thresholds = {
   // "silence reads as an all-clear" failure the Licensed profile has a whole
   // standing note about. The app models no canopy type, so the honest move is
   // to keep both sourced figures and say which one the band and flag use.
-  // Modelling canopy type is in docs/open-questions.md.
+  // That sentence is not written here: the flag (windBandSentence) and the
+  // card each build theirs from `windBandCaveat`, because it is about the
+  // app's band, which Settings can move, and this one is about the BSR, which
+  // it cannot. Modelling canopy
+  // type is in docs/open-questions.md.
   windGuidance:
-    'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. The band and flag here use the 14 mph figure — on a round reserve the limit is lower and nothing on this page flags it. An S&TA or Examiner may waive it on site.',
+    'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it on site.',
   windCitation: CITATIONS.uspaStudentWinds,
   // The guidance's last clause — that an S&TA or Examiner may waive it — is
   // 2-2's rule, not 2-1's. 2-1 carries the [S] marker; 2-2 B is what says the
@@ -387,8 +447,7 @@ const STUDENT: Thresholds = {
   windBandCaveat: {
     limitKt: mphToKt(10),
     appliesTo: 'solo students on round reserves',
-    bandKt: STUDENT_WIND_KT,
-    bandAppliesTo: 'ram-air canopies',
+    bandIs: 'the 14 mph figure for ram-air canopies rounded down to whole knots',
     citation: CITATIONS.uspaStudentWinds,
   },
   visibilityCautionSm: 3,
