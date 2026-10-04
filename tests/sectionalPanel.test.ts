@@ -35,12 +35,15 @@ describe('SectionalPanel', () => {
     const footer = html.slice(html.indexOf('panel-sources'));
     expect(footer).toContain('FAA VFR sectional');
     expect(footer).not.toContain('adsb.lol');
+    expect(footer).not.toContain('adsb.fi');
     expect(footer).not.toContain('SkyVector');
   });
 
-  it('links the live traffic map, saying what it does not show', () => {
+  it('links both live traffic maps, saying what they do not show', () => {
     expect(html).toContain(`href="${DATA_SOURCES.adsbTraffic.url.replace(/&/g, '&amp;')}"`);
-    expect(html).toContain('it is not a traffic service');
+    expect(html).toContain(`href="${DATA_SOURCES.adsbFiTraffic.url.replace(/&/g, '&amp;')}"`);
+    expect(html).toContain('neither is a traffic service');
+    expect(html).toContain('an aircraft on neither map may still be there');
   });
 
   it('offers both zoom steps from the default, each named by the word it shows', () => {

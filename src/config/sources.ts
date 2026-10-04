@@ -7,6 +7,20 @@ export interface DataSource {
   url: string;
 }
 
+/** The query both live-traffic links take, in tar1090's terms (the map
+ *  software adsb.lol runs, read from its script on 2026-10-03; adsb.fi's
+ *  globe is reported to run it too but sits behind a bot check, see
+ *  `adsbFiTraffic`): `lat`/`lon`/`zoom` centre the map and
+ *  `baseMap=VFR_Sectional` draws it over FAA's sectional, the same tiles as
+ *  the Sectional card. One string, so the two maps cannot open on different
+ *  spots.
+ *
+ *  No `SiteLat`/`SiteLon`, though they would ring the drop zone: tar1090
+ *  saves them in the visitor's own storage until `?SiteClear`, so one tap
+ *  would leave every later visit to that site, for the visitor's own
+ *  flying, centred and marked on Brown's. `lat`/`lon` are not saved. */
+const TRAFFIC_MAP_QUERY = `lat=${SITE.dz.lat}&lon=${SITE.dz.lon}&zoom=10&baseMap=VFR_Sectional`;
+
 export const DATA_SOURCES = {
   /** Current observation from the Iowa Environmental Mesonet, read first
    *  because it carries each report within minutes (see src/domain/iem.ts).
@@ -63,18 +77,30 @@ export const DATA_SOURCES = {
     url: 'https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59',
   },
   /** Live air traffic around the drop zone on adsb.lol, a community-run
-   *  ADS-B network whose data is open (ODbL). Read from its map's own script
-   *  on 2026-10-03: `lat`/`lon`/`zoom` centre the map, `baseMap=VFR_Sectional`
-   *  draws it over FAA's sectional (the same tiles as the Sectional card),
-   *  and `SiteLat`/`SiteLon` put its site marker on the drop zone. A link and
-   *  not an embedded frame: the map's aircraft feed answers only with a
+   *  ADS-B network whose data is open (ODbL). The query (`TRAFFIC_MAP_QUERY`)
+   *  was read from its map's own script on 2026-10-03. A link and not an
+   *  embedded frame: the map's aircraft feed answers only with a
    *  cookie its own page sets, without SameSite=None, so inside a frame on
    *  this site the browser would not send it and the map would show no
    *  aircraft (checked 2026-10-03: the feed returned 207 and no body without
    *  the cookie, 200 and data with it). */
   adsbTraffic: {
     label: 'Live traffic · adsb.lol',
-    url: `https://adsb.lol/?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}&zoom=10&baseMap=VFR_Sectional&SiteLat=${SITE.dz.lat}&SiteLon=${SITE.dz.lon}`,
+    url: `https://adsb.lol/?${TRAFFIC_MAP_QUERY}`,
+  },
+  /** The same query on adsb.fi's globe, a second volunteer network, for when
+   *  adsb.lol is down. Its page sits behind Cloudflare's bot check, so it
+   *  could not be read from a script and has not been seen opening on the
+   *  sectional: the query is upstream tar1090's (wiedehopf/tar1090 on
+   *  GitHub, html/script.js and html/layers.js, read 2026-10-04, where the
+   *  sectional layer is unconditional), and tar1090 falls back to a street
+   *  map, silently, on a base map its deployment lacks. The card's text says
+   *  only what the link asks for. Not drawn on this card: its aircraft feed
+   *  sends no CORS header for this site (checked 2026-10-04). Whether its
+   *  map would work in a frame was not checkable. */
+  adsbFiTraffic: {
+    label: 'Live traffic · adsb.fi',
+    url: `https://globe.adsb.fi/?${TRAFFIC_MAP_QUERY}`,
   },
   /** The nearby stations' observations, from IEM's Nebraska ASOS network
    *  (the Nearby METARs card). */

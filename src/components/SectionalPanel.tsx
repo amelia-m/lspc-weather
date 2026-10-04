@@ -37,9 +37,9 @@ export function SectionalPanel(): JSX.Element {
       title="Sectional chart"
       subtitle={`FAA VFR sectional · ${dz.icao}`}
       /* The chart's own source only: SkyVector (where a tap goes) and
-         adsb.lol (the traffic link) supply nothing on this card, and the
-         "Data:" footer would name them as if they did. Both are linked in
-         the card's body, where they say what they are. */
+         adsb.lol and adsb.fi (the traffic links) supply nothing on this
+         card, and the "Data:" footer would name them as if they did. All
+         three are linked in the card's body, where they say what they are. */
       sources={[DATA_SOURCES.faaSectional]}
     >
       {failed ? (
@@ -96,13 +96,19 @@ export function SectionalPanel(): JSX.Element {
             </button>
           </div>
           <p className="small">
+            Live air traffic on this chart:{' '}
             <a href={DATA_SOURCES.adsbTraffic.url} target="_blank" rel="noopener noreferrer">
-              Live air traffic on this chart →
+              adsb.lol →
+            </a>{' '}
+            ·{' '}
+            <a href={DATA_SOURCES.adsbFiTraffic.url} target="_blank" rel="noopener noreferrer">
+              adsb.fi →
             </a>{' '}
             <span className="muted">
-              adsb.lol&rsquo;s map, over the same sectional and centred on the drop zone. It shows
-              only aircraft broadcasting ADS-B (or located by multilateration) within range of its
-              volunteer receivers; it is not a traffic service.
+              Two volunteer networks; if one is down, try the other. Each link asks its map to open
+              over the same sectional, centred on the drop zone. They show only aircraft
+              broadcasting ADS-B (or located by multilateration) within range of their receivers,
+              so an aircraft on neither map may still be there; neither is a traffic service.
             </span>
           </p>
           <p className="muted small">
