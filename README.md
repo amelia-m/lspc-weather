@@ -71,7 +71,7 @@ shows is `src/config/views.ts`.
 - 🧭 **Pilot briefing links** (Pilots tab) — FAA NOTAM Search, TFRs, nearby
   METARs, PIREPs, the GFA, SIGMETs and the Chart Supplement. Links only: this
   site cannot read NOTAMs or TFRs, and a briefing is the pilot in command's.
-- 🗺️ **Sectional chart** — FAA's VFR sectional around the drop zone, from FAA's own tile service, with a ring on the DZ and a zoom step; tap it for SkyVector's sectional on the same spot, or follow its link to adsb.lol's live air traffic over the same chart.
+- 🗺️ **Sectional chart** — FAA's VFR sectional around the drop zone, from FAA's own tile service, with a ring on the DZ and a zoom step; tap it for SkyVector's sectional on the same spot, or follow its links to live air traffic over the same chart on adsb.lol or adsb.fi.
 - 📝 **TAF** — nearest available TAF, raw text plus a decoded table: one row per period (prevailing, FM, TEMPO, BECMG, PROB) with wind, visibility, sky, weather in words and the FAA flight category (see cross-references below).
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
 - 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is

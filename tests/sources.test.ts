@@ -46,14 +46,19 @@ describe('DATA_SOURCES', () => {
     expect(url.searchParams.get('chart')).toBe('301');
   });
 
-  it('opens the live traffic map over the sectional, centred and marked on the drop zone', () => {
-    const url = new URL(DATA_SOURCES.adsbTraffic.url);
-    expect(url.hostname).toBe('adsb.lol');
+  it.each([
+    ['adsbTraffic', 'adsb.lol'],
+    ['adsbFiTraffic', 'globe.adsb.fi'],
+  ] as const)('opens %s over the sectional, centred on the drop zone', (key, host) => {
+    const url = new URL(DATA_SOURCES[key].url);
+    expect(url.hostname).toBe(host);
     expect(Number(url.searchParams.get('lat'))).toBe(SITE.dz.lat);
     expect(Number(url.searchParams.get('lon'))).toBe(SITE.dz.lon);
-    expect(Number(url.searchParams.get('SiteLat'))).toBe(SITE.dz.lat);
-    expect(Number(url.searchParams.get('SiteLon'))).toBe(SITE.dz.lon);
     expect(url.searchParams.get('baseMap')).toBe('VFR_Sectional');
+    // tar1090 saves a site position in the visitor's storage, so a link
+    // carrying one would re-centre their own later visits on Brown's.
+    expect(url.searchParams.has('SiteLat')).toBe(false);
+    expect(url.searchParams.has('SiteLon')).toBe(false);
   });
 
   it("opens Mark Schulze's Winds Aloft on the drop zone, not on the reader's own position", () => {
