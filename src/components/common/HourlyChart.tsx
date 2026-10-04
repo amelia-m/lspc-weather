@@ -4,9 +4,9 @@ import { SITE } from '../../config/site';
 import { nightIntervals } from '../../domain/sun';
 
 /** Compact, dependency-free SVG chart of the next ~18 h: surface wind (line),
- *  gust (dashed line) on a wind-speed axis, with precip probability as faint
- *  background bars and the hours between sunset and sunrise at the drop zone
- *  shaded behind them. */
+ *  gust (dashed line) on a wind-speed axis, with precip probability as
+ *  background bars, and the hours between sunset and sunrise at the drop
+ *  zone as a dark band behind everything, gridlines included. */
 export function HourlyChart({
   points,
   unit,
@@ -71,17 +71,10 @@ export function HourlyChart({
 
   return (
     <svg className="hchart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Hourly wind forecast">
-      {/* y gridlines + labels (kt) */}
-      {gridKt.map((kt) => (
-        <g key={kt}>
-          <line className="hc-grid" x1={padL} y1={yOf(kt)} x2={W - padR} y2={yOf(kt)} />
-          <text className="hc-axis" x={padL - 4} y={yOf(kt) + 3} textAnchor="end">
-            {Math.round(kt)}
-          </text>
-        </g>
-      ))}
-
-      {/* night, sunset to sunrise (furthest back) */}
+      {/* night, sunset to sunrise, as a dark band: drawn first so the
+          gridlines, the (translucent) precip bars and the lines all sit on
+          top of it. A grey band read lighter than the day around it on this
+          dark theme; dark reads as night. */}
       {nights.map(([a, b]) => (
         <rect
           key={a}
@@ -91,6 +84,26 @@ export function HourlyChart({
           width={Math.max(0, xAt(b) - xAt(a))}
           height={plotH}
         />
+      ))}
+      {/* A thin line at each sunset and sunrise inside the chart. No fill
+          can get much darker than this dark panel (black is about 1.25:1
+          against it), so the band's own edge is low contrast; the lines
+          mark where night starts and ends. */}
+      {nights
+        .flatMap(([a, b]) => [a, b])
+        .filter((t) => t > t0 && t < tN)
+        .map((t) => (
+          <line key={`edge-${t}`} className="hc-night-edge" x1={xAt(t)} y1={padT} x2={xAt(t)} y2={padT + plotH} />
+        ))}
+
+      {/* y gridlines + labels (kt) */}
+      {gridKt.map((kt) => (
+        <g key={kt}>
+          <line className="hc-grid" x1={padL} y1={yOf(kt)} x2={W - padR} y2={yOf(kt)} />
+          <text className="hc-axis" x={padL - 4} y={yOf(kt) + 3} textAnchor="end">
+            {Math.round(kt)}
+          </text>
+        </g>
       ))}
 
       {/* precip probability bars (background) */}
@@ -128,3 +141,27 @@ const hourLabel = (ms: number): string =>
     .toLocaleTimeString('en-US', { hour: 'numeric', timeZone: SITE.timeZone })
     .replace(' ', '')
     .toLowerCase();
+
+/** Each mark the chart draws, by its swatch class, and its name. */
+const LEGEND: readonly (readonly [string, string])[] = [
+  ['wind', 'wind'],
+  ['gust', 'gust'],
+  ['precip', 'precip chance'],
+  ['night', 'sunset to sunrise'],
+];
+
+/** The chart's key, one copy for every card that shows the chart, so a key
+ *  cannot drift from the marks it names. */
+export function HourlyLegend({ unit }: { unit: SpeedUnit }): JSX.Element {
+  return (
+    <p className="hc-legend">
+      {/* Each swatch and its words wrap as one, so a narrow card never
+          leaves a swatch at the end of one line and its name on the next. */}
+      {LEGEND.map(([key, label]) => (
+        <span key={key} className="hc-legend-item">
+          <span className={`hc-key hc-key-${key}`} /> {key === 'gust' ? `${label} (${unit})` : label}
+        </span>
+      ))}
+    </p>
+  );
+}

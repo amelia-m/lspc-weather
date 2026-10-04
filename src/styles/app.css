@@ -13,6 +13,14 @@
   --stale: #ffb454;
   --error: #ff5d5d;
   --radius: 10px;
+  /* The hourly chart's background marks, each defined once so its legend
+     swatch cannot drift from it. Precip is the accent (#4aa8ff) at 25%,
+     written out rather than color-mix()ed: Safari before 16.2 has no
+     color-mix, and an invalid fill paints the bars solid black. Translucent
+     so the gridlines and the night band show through: a bar's height is its
+     chance, and over the band it reads a little darker, the same height. */
+  --hc-night: rgba(0, 0, 0, 0.5);
+  --hc-precip: rgba(74, 168, 255, 0.25);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -984,13 +992,22 @@ a {
   fill: var(--muted);
   font-size: 8px;
 }
-/* Night on the hourly chart, sunset to sunrise: a neutral shade, not a
-   warning colour; it marks a fact of the sky, and the legend names it. */
+/* Night on the hourly chart, sunset to sunrise: a dark band (--hc-night)
+   with a thin line at each edge. Black is only about 1.25:1 against this
+   panel, so the band's own edge is low contrast; the lines mark where it
+   starts and ends. Solid, so they cannot be taken for the dashed gust line.
+   A neutral shade, not a warning colour; it marks a fact of the sky, and
+   the legend names it. */
 .hc-night {
-  fill: rgba(128, 140, 160, 0.16);
+  fill: var(--hc-night);
+}
+.hc-night-edge {
+  stroke: var(--muted);
+  stroke-width: 1;
+  opacity: 0.6;
 }
 .hc-precip {
-  fill: rgba(74, 168, 255, 0.25);
+  fill: var(--hc-precip);
 }
 .hc-wind {
   stroke: var(--accent);
@@ -1005,8 +1022,18 @@ a {
   font-size: 0.72rem;
   color: var(--muted);
   margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.hc-legend-item {
+  white-space: nowrap;
 }
 .hc-key {
+  /* Keep the swatches in forced-colors (high contrast) mode, where a
+     background is otherwise replaced and the key would vanish beside marks
+     that stay. */
+  forced-color-adjust: none;
   display: inline-block;
   width: 14px;
   height: 3px;
@@ -1017,14 +1044,17 @@ a {
   background: var(--accent);
 }
 .hc-key-gust {
-  background: var(--watch);
+  /* Dashed like the gust line (stroke-dasharray 3 2). */
+  background: repeating-linear-gradient(90deg, var(--watch) 0 3px, transparent 3px 5px);
 }
 .hc-key-precip {
-  background: rgba(74, 168, 255, 0.35);
+  background: var(--hc-precip);
   height: 9px;
 }
 .hc-key-night {
-  background: rgba(128, 140, 160, 0.35);
+  background: var(--hc-night);
+  border-left: 1px solid var(--muted);
+  border-right: 1px solid var(--muted);
   height: 9px;
 }
 

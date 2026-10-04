@@ -5,7 +5,7 @@ import { flightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
-import { HourlyChart } from './common/HourlyChart';
+import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { fmtTime } from './format';
 
@@ -201,12 +201,7 @@ function DayDetail({
       ) : (
         <>
           <HourlyChart points={points} unit={unit} />
-          <p className="hc-legend">
-            <span className="hc-key hc-key-wind" /> wind &nbsp;
-            <span className="hc-key hc-key-gust" /> gust ({unit}) &nbsp;
-            <span className="hc-key hc-key-precip" /> precip&nbsp;chance &nbsp;
-            <span className="hc-key hc-key-night" /> sunset&nbsp;to&nbsp;sunrise
-          </p>
+          <HourlyLegend unit={unit} />
           <div className="daily-scroll">
             <table className="daily-table hourly-detail-table">
               <thead>

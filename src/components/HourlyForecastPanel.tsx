@@ -3,7 +3,7 @@ import type { HourlyPoint } from '../domain/types';
 import type { SpeedUnit } from '../domain/units';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
-import { HourlyChart } from './common/HourlyChart';
+import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 
 /** Selectable forecast horizons (hours). 18 h is the default working window;
  *  the longer options are offered only when the data actually reaches them. */
@@ -66,12 +66,7 @@ export function HourlyForecastPanel({
             </div>
           )}
           <HourlyChart points={points} unit={unit} />
-          <p className="hc-legend">
-            <span className="hc-key hc-key-wind" /> wind &nbsp;
-            <span className="hc-key hc-key-gust" /> gust ({unit}) &nbsp;
-            <span className="hc-key hc-key-precip" /> precip&nbsp;chance &nbsp;
-            <span className="hc-key hc-key-night" /> sunset&nbsp;to&nbsp;sunrise
-          </p>
+          <HourlyLegend unit={unit} />
         </>
       )}
     </Panel>
