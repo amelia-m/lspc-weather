@@ -333,6 +333,20 @@ export interface Thresholds {
    * the card draws no band.
    */
   windLimitCitation: Citation | null;
+  /** A lower published ground-wind maximum this profile's band does not
+   *  check, for the Surface wind card to name at any speed so silence below
+   *  the band is not read as covering it. The card builds the sentence from
+   *  these and the profile's live `windCautionKt`, which Settings can move:
+   *  at `bandKt` it names the published figure the band is (`bandAppliesTo`),
+   *  otherwise it says the caution was edited, and once the caution is low
+   *  enough that the band checks the lower limit too it says nothing. */
+  windBandCaveat?: {
+    limitKt: number;
+    appliesTo: string;
+    bandKt: number;
+    bandAppliesTo: string;
+    citation: Citation;
+  };
   /** Visibility, statute miles (105.17 floor below 10k MSL is 3 SM). */
   visibilityCautionSm: number;
 }
@@ -370,6 +384,13 @@ const STUDENT: Thresholds = {
   // sentence, and this profile makes the same claim.
   windSecondaryCitation: CITATIONS.uspaWaivers,
   windLimitCitation: CITATIONS.uspaStudentWinds,
+  windBandCaveat: {
+    limitKt: mphToKt(10),
+    appliesTo: 'solo students on round reserves',
+    bandKt: STUDENT_WIND_KT,
+    bandAppliesTo: 'ram-air canopies',
+    citation: CITATIONS.uspaStudentWinds,
+  },
   visibilityCautionSm: 3,
 };
 
@@ -442,6 +463,11 @@ function waiverThresholds(tier: WaiverTier): Thresholds {
     // at whole knots and the sign is misquoted. See domain/units.ts.
     windCautionKt: mphToKt(tier.windMph),
     gustCautionKt: mphToKt(tier.gustMph),
+    // Not inherited from STUDENT. The posted policy waives "the wind limits
+    // stated in the BSRs" without naming canopy type, and whether that
+    // reaches the 10 mph round-reserve figure is the club's call, asked in
+    // A5 on the citations page. Stating it on the card would settle it.
+    windBandCaveat: undefined,
     windGuidance:
       `LSPC waivered limit (students, ${tier.label}): max wind ${tier.windMph} mph, gusts under ${tier.gustMph} mph. ` +
       'Any excursion above the USPA BSR requires on-site approval by a USPA instructor; consult the S&TA.',

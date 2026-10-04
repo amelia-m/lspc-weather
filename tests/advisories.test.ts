@@ -547,6 +547,42 @@ describe('an empty advisory list is not an all-clear', () => {
     }
   });
 
+  it('names the round-reserve limit the student band does not check, below the band', () => {
+    // 10 kt is 11.5 mph: over the BSR's 10 mph round-reserve maximum, under
+    // the 12 kt band, so no flag fires. The card is then the only place a
+    // student on a round reserve can learn the band is not their limit.
+    const breezy = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 10, wgst: null });
+    const t = DEFAULT_THRESHOLDS.student;
+    expect(evaluateAdvisories(snapshot({ current: breezy }), t, now, 'kt').some((a) => a.id === 'surface-wind')).toBe(false);
+    const note = (html: string) => /<p class="muted small">A lower maximum[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
+    for (const current of [breezy, null]) {
+      const kt = note(windPanel(t, 'Student', 'kt', current));
+      expect(kt).toContain('A lower maximum ground wind, 8.7 kt, is published for solo students on round reserves.');
+      expect(kt).toContain('The band and flag here use 12 kt, the figure for ram-air canopies, so neither checks the lower one.');
+      expect(kt).toContain(CITATIONS.uspaStudentWinds.url);
+      expect(note(windPanel(t, 'Student', 'mph', current))).toContain('A lower maximum ground wind, 10 mph,');
+    }
+    // The student ground-wind ref, not the licensed one at the same URL.
+    expect(t.windBandCaveat?.citation).toBe(CITATIONS.uspaStudentWinds);
+  });
+
+  it('names the caution as edited, and goes once the band checks the lower limit', () => {
+    const t = DEFAULT_THRESHOLDS.student;
+    expect(windPanel({ ...t, windCautionKt: 10 }, 'Student', 'kt', null)).toContain(
+      'The band and flag here use 10 kt, as edited in Settings, so neither',
+    );
+    // Readings are whole knots: 8 kt is 9.2 mph and 9 kt is 10.4 mph, so a
+    // 9 kt caution flags every reading over 10 mph and the note must go.
+    expect(windPanel({ ...t, windCautionKt: 9 }, 'Student', 'kt', null)).not.toContain('A lower maximum');
+    expect(windPanel({ ...t, windCautionKt: 9.5 }, 'Student', 'kt', null)).toContain('A lower maximum');
+  });
+
+  it('leaves the round-reserve question to the club on the waiver tiers', () => {
+    // Whether the waiver reaches the 10 mph figure is A5's question, not the
+    // card's to settle.
+    expect(windPanel(resolveThresholds('waiver:0-5'), 'Waiver', 'kt', null)).not.toContain('A lower maximum');
+  });
+
   it('does not caption a bandless bar "flag bands"', () => {
     const licensed = windPanel(DEFAULT_THRESHOLDS.licensed, 'Licensed', 'kt', gale);
     expect(licensed).not.toContain('flag bands');

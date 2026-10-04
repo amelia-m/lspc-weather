@@ -20,7 +20,12 @@ import { SourceLink } from './common/SourceLink';
  * breeze and in a 60 kt gale alike. It is the same treatment the winds-aloft
  * and density-altitude cards give guidance whose trigger was removed for being
  * a number nobody published: keep the sourced claim, drop the invented
- * threshold, put the claim where it is always readable.
+ * threshold, put the claim where it is always readable. A profile whose band
+ * leaves a published limit unchecked says so the same way (`windBandCaveat`).
+ *
+ * The card is the observation and its published limit. The model's winds,
+ * 500 ft included, are on the Winds aloft card, which labels them as a
+ * forecast for an hour.
  *
  * Limits print through `fmtLimitSpeed`, not `fmtSpeed`: the waiver's top two
  * tiers post ceilings one mph apart, which collide at whole knots.
@@ -47,6 +52,7 @@ export function SurfaceWindPanel({
   const max = Math.max(t.windCautionKt + 6, t.gustCautionKt ?? 0, gust ?? 0, speed ?? 0);
   const pct = (v: number): number => Math.min(100, (v / max) * 100);
   const other: SpeedUnit = unit === 'kt' ? 'mph' : 'kt';
+  const caveat = t.windBandCaveat;
 
   return (
     <Panel
@@ -98,6 +104,25 @@ export function SurfaceWindPanel({
             </>
           )}
         </>
+      )}
+      {/* Standing note: a lower published limit the band does not check.
+          BSR 2-1 H gives solo students two ground-wind maxima and the band
+          acts on one; without this a student on a round reserve reads a card
+          with no flag at their own limit. Both figures print in the card's
+          unit from the live thresholds, so a caution edited in Settings is
+          the one named. Readings are whole knots (a METAR's, or NWS's
+          rounded), so the band checks the lower limit too once the caution
+          is at or below the first whole knot over it; the note goes there.
+          Outside the reading: it is about the profile, with or without one. */}
+      {caveat && t.windCautionKt > Math.ceil(caveat.limitKt) && (
+        <p className="muted small">
+          A lower maximum ground wind, {fmtLimitSpeed(caveat.limitKt, unit)}, is published for{' '}
+          {caveat.appliesTo}. The band and flag here use {fmtLimitSpeed(t.windCautionKt, unit)}
+          {t.windCautionKt === caveat.bandKt
+            ? `, the figure for ${caveat.bandAppliesTo}`
+            : ', as edited in Settings'}
+          , so neither checks the lower one. <SourceLink citation={caveat.citation} />
+        </p>
       )}
       {/* Standing note, outside the reading above on purpose: it explains why
           this profile has no limit to draw and no flag to raise, which is true

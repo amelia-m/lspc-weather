@@ -145,6 +145,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     },
     asks: [
       'The club’s posted tiers are a standing waiver in the 2-2 sense. Has it been filed as one, and is the posted sign the current version?',
+      'Does the waiver reach the BSR’s 10 mph round-reserve figure, or does that still bind a waivered student on a round reserve? The Student card names that figure as one its band does not check; the waiver-tier cards say nothing about it until this is answered.',
     ],
   },
   {
