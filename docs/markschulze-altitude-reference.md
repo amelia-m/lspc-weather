@@ -139,19 +139,21 @@ Every remaining difference has a known cause, none of them the data:
   ground-wind limits are written against.
 - **The valid hour**, when the two are not aligned: see "Re-checking this".
 
-- **Which forecast run each request was served.** Not yet explained. The first
+- **Which forecast run each request was served.** First seen on the first
   run of `scripts/schulzeCompare.live.ts` on a GitHub runner, 2026-09-23 at
-  18:42Z for the same 19Z hour as the sandbox run at 18:31Z above, printed the
-  app within 4° of the tool below 5,000 ft but 7–12° off from 5,000 to
-  10,000 ft. The app's numbers were identical to the 18:31Z run at every level
-  (274° / 9 kt at 700 hPa); the tool's had changed (261° / 8 kt), and were
-  still those values when read again at 18:46Z. So a newer forecast reached
-  the tool's request and not the app's, in the same two seconds from the same
-  runner. Two candidates, neither checked: Open-Meteo serving a cached response
-  for the app's URL, which is byte-identical from run to run, or the two
-  requests naming different models (the tool's request has not been read).
-  This one is a difference in the data, and it is the one to chase; the
-  parity job's daily table will show how often it happens.
+  18:42Z: for the same 19Z hour the app's numbers were unchanged from a run
+  eleven minutes earlier (274° / 9 kt at 700 hPa) while the tool's had moved
+  to a newer forecast (261° / 8 kt), 7–12° apart from 5,000 to 10,000 ft.
+  Counted by the sampler to 2026-10-05 (its Schulze side every four or five
+  minutes, plus the daily run): on the same hour the two were on different
+  runs in 114 of 1,611 comparisons, mostly between half past and ten to the
+  hour, in stretches of up to about half an hour. Different models were
+  effectively ruled out on 2026-09-24 (one level in one hour matched
+  `best_match`, `gfs_seamless` and `ncep_hrrr_conus` and no other), and
+  nothing in the app's response asks for caching. The cause is still open, since the comparison switches to the
+  tool's next-hour request at the same half past: `docs/open-questions.md`,
+  "Which forecast run…", and the figures in `docs/source-parity.md`, "What
+  the sampler found".
 
 Before 2026-09-23 there was a fifth, and it dwarfed the others: the sampling
 gap described above. It is gone, and the comparison script exists so that its
@@ -195,8 +197,10 @@ the figures as the shape of the effect rather than a constant.
 The two pages are one hour apart in the second half of every hour (this card
 snaps to the nearest hour, Schulze's shows the hour in progress), and on
 13 percent of same-hour samples between 2026-09-24 and 26 one side was on a
-newer model run than the other (5 of 38). The #parity page tracks both from
-the live samples, in its "Time the tables represent" table. To repeat the
+newer model run than the other (5 of 38). The #parity page shows both, in
+its "Time the tables represent" table, mostly from the sampler that ran to
+2026-10-05; the one daily run, at about 13:00Z, adds a same-hour sample a
+day and none from the second half of the hour. To repeat the
 measurement above, fetch the two for a run of hours and pair them; the
 endpoint serves `hourOffset` up to at least 47.
 

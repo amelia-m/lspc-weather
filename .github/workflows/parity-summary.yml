@@ -1,21 +1,25 @@
 name: Parity summary
 
 # Daily, and on demand: gather the @@parity lines every comparison run
-# uploaded (parity-*.jsonl artifacts from schulze-compare.yml and
-# sky-parity.yml, kept fourteen days), combine them into
-# public/parity/summary.json with scripts/paritySummary.ts, and commit the
-# result to main so the #parity page ("How different from other sources")
-# shows it. A push made with the workflow token does not start other
+# uploaded (parity-*.jsonl artifacts from sky-parity.yml, kept fourteen days)
+# and the archived logs of the two-minute sampler that ran to 2026-10-05
+# (data/parity/), combine them into public/parity/summary.json with
+# scripts/paritySummary.ts, and commit the result to main so the #parity page
+# ("How different from other sources") shows it. The archive is what keeps
+# the sampler's figures, the arrival timings among them, once its artifacts
+# expire; the script drops a record seen twice, so the overlap while both
+# exist counts once. A push made with the workflow token does not start other
 # workflows, so this one dispatches the Pages deploy itself when the summary
 # changed. The arithmetic is in src/domain/paritySummary.ts, pure and tested;
 # nothing here grades a source.
 on:
-  schedule:
-    # Every three hours while the high-frequency logging runs, so the #parity
-    # page is at most a few hours behind the comparisons; 12:40 UTC is after
-    # the morning sky-parity run. Drop back to once a day with the temporary
-    # workflow.
-    - cron: '40 0,3,6,9,12,15,18,21 * * *'
+  # When the daily sky-parity run finishes, so its lines are always in:
+  # a fixed time after it would race a late or slow run.
+  # main only: a trial dispatched on a branch must not feed the page.
+  workflow_run:
+    workflows: ['Sky decode parity']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -44,8 +48,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p logs
-          # Artifacts named parity-<run id> (daily run) or parity-<run id>-<hour>
-          # (the sampler), newest first, not yet expired.
+          # Artifacts named parity-<run id> (the daily run; until it expires,
+          # parity-<run id>-<hour> from the sampler too), not yet expired.
           gh api --paginate "repos/${{ github.repository }}/actions/artifacts?per_page=100&name=" \
             --jq '.artifacts[] | select(.name | startswith("parity-")) | select(.expired | not) | "\(.id) \(.name)"' \
             > artifacts.txt || true
@@ -58,6 +62,10 @@ jobs:
               && count=$((count + 1)) || echo "could not fetch $name"
           done < artifacts.txt
           echo "downloaded $count artifacts"
+          for f in data/parity/*.jsonl.gz; do
+            [ -e "$f" ] || continue
+            gunzip -c "$f" > "logs/archive-$(basename "$f" .gz)"
+          done
           ls logs | head -50
       - name: Combine into the summary
         shell: bash

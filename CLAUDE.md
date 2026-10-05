@@ -133,7 +133,10 @@ precisely because they were colour and text rather than flags.
   known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
   thirteen pressure levels the tool does (`OPEN_METEO_PRESSURE_LEVELS`), and
   the same hour agreed within 4° and 1 kt everywhere. What can still differ,
-  and why, is in `docs/markschulze-altitude-reference.md`; run
+  and why, is in `docs/markschulze-altitude-reference.md` (among them, for a
+  while, the two being on different forecast runs for the same hour: 114
+  of 1,611 same-hour comparisons to 2026-10-05, mostly between half past
+  and ten to the hour, cause still open in `docs/open-questions.md`); run
   `scripts/schulzeCompare.live.ts` before touching the interpolation.
 
 ## Citations
@@ -330,21 +333,20 @@ days). `.github/workflows/parity-summary.yml` combines them daily with
 is `src/domain/paritySummary.ts`, pure and tested — commits that file to
 `main` and dispatches the Pages deploy (a push made with the workflow token
 starts no other workflow). The in-app page at `#parity`, "How different from
-other sources", renders it: counts and spreads, never a grade. Until
-2026-10-05 `.github/workflows/schulze-compare.yml` samples the usairnet
-comparison every two minutes and the Schulze one every four, in one job
-started four times a day that loops for five hours (`scripts/sampleLoop.sh`),
-uploading an artifact per hour. Two minutes is what lets the summary time
-when each source first had each report (`arrivalLags`); the first window, to
-2026-09-28, sampled every five and fifteen minutes and timed none. It is a loop and not a cron line per sample
-because GitHub ran the old every-fifteen-minutes schedule under ten percent of
-the time, and moving it off the quarter-hour marks did not help; a running job
-is not throttled. It counts how often the two winds tools are served
-different forecast runs for the same hour, how far apart the two pages are
-when they show different hours, how the observation decodes compare through
-a day, and how many minutes after each report IEM, usairnet, both NWS
-endpoints and NOAA's raw file first had it; it skips itself after that and
-should then be deleted, leaving the daily run to feed the summary.
+other sources", renders it: counts and spreads, never a grade. The
+summary runs when the daily sky-parity run finishes and also reads
+`data/parity/logs-to-2026-10-05.jsonl.gz`, every line of a temporary sampler
+that ran the usairnet comparison every two minutes and the Schulze one every
+four from 2026-09-30 to 2026-10-05 (before that, throttled cron lines from
+2026-09-24 to 26, then the Schulze one every five minutes and the usairnet
+one every fifteen to 28). The archive is what keeps its figures once the artifacts expire,
+above all the arrival timings (`arrivalLags`), which only two-minute samples
+can give; the script drops records seen twice, so the overlap counts once.
+What it found is in `docs/source-parity.md`, "What the sampler found". To
+time something again, the sampler workflow and `scripts/sampleLoop.sh` are
+in the history (removed 2026-10-05): it was a job that looped, not a cron
+line per sample, because GitHub ran an every-fifteen-minutes schedule under
+ten percent of the time and a running job is not throttled.
 
 usairnet's page is read by `src/domain/usairnet.ts`, tested against station
 blocks saved from the live pages (`tests/fixtures/usairnet/`). Its first

@@ -48,55 +48,41 @@ These cannot be settled from the code.
 
 ## Which forecast run the winds-aloft request is served
 
-Seen once, 2026-09-23 18:42Z, first run of `scripts/schulzeCompare.live.ts` on
-a GitHub runner: for the same 19Z hour the app's profile was unchanged from a
-run eleven minutes earlier while Mark Schulze's tool, reading the same
-Open-Meteo, had moved to a newer forecast (700 hPa 274°/9 kt against 261°/8 kt),
-so the two tables were up to 12° apart from 5,000 to 10,000 ft. Details in
-`docs/markschulze-altitude-reference.md`. Two candidate causes, neither checked:
+Narrowed, not settled. Seen first on 2026-09-23: for the same hour the app's
+table and Mark Schulze's tool, both reading Open-Meteo, were on different
+forecast runs. Checked 2026-09-24 at one level in one hour: Schulze's raw
+700 hPa level matched Open-Meteo's `best_match`, `gfs_seamless` and
+`ncep_hrrr_conus` exactly and none of `ecmwf_ifs025`, `gfs_global`,
+`icon_seamless` or `gem_seamless`, so different models are effectively ruled
+out; and the app's response carries no `Cache-Control`, `Age`, `ETag` or
+`Expires` header, so nothing asks for caching, though a cache behind the API
+is not excluded.
 
-- Open-Meteo caching the app's request. The URL is byte-identical from run to
-  run; the tool's PHP builds a different one. Check: read the response headers
-  (`Cache-Control`, `Age`) of the app's exact URL from a runner, and request
-  the same URL twice fifteen minutes apart across a model-run boundary. The
-  sandbox cannot do this today — its shared egress address is over
-  Open-Meteo's daily limit.
-- The two requests naming different models. The tool's `winds_openmeteo.php`
-  request has not been read; if it passes `models=`, the two are not the same
-  forecast even when they agree.
+The sampler to 2026-10-05 counted it (`docs/source-parity.md`, "What the
+sampler found"): different runs in 114 of 1,611 same-hour comparisons, in
+short stretches up to about half an hour, on the same run agreeing to a
+median 0° and 0 kt. But the rate is 2.5% (20 of 788) when the comparison
+reads Schulze's hour in progress and 11.4% (89 of 782) when it reads his
+next hour, which it does after half past because this card snaps to the
+nearest hour; within those, 15% from :30 to :49 and 4.5% from :50. (The
+other 41 comparisons, 5 of them mismatched, are the earliest, logged before
+the minute was.) Against a next-hour cause on its own: the longest stretch,
+28 to 36 minutes on 2026-10-01 from 08:03Z, ran almost wholly in the first
+half of the hour, on the hour-in-progress request. The
+minute of the hour and the `hourOffset=1` request change together, so the
+logs cannot tell a new run reaching Open-Meteo's servers at different
+times from something about the tool's next-hour request (its own caching,
+say). The "different run" flag is also the script's heuristic (two raw
+levels within 150 ft more than 5° or 2 kt apart), not a run identifier.
 
-Checked 2026-09-24 01:28Z, once the sandbox was under the daily limit again:
-
-- **Different models: effectively ruled out.** At 01Z the tool's raw 700 hPa
-  level (260° / 9 kt, at the `best_match` geopotential to the metre) matched
-  Open-Meteo's `best_match`, `gfs_seamless` and `ncep_hrrr_conus` exactly and
-  none of `ecmwf_ifs025` (258/9.9), `gfs_global` (264/10.4), `icon_seamless`
-  (267/11.4) or `gem_seamless` (250/12.1). The two tools read the same model.
-- **HTTP caching: nothing asks for it.** The app's exact request comes back
-  with no `Cache-Control`, `Age`, `ETag` or `Expires` header. A cache behind
-  the API is not excluded, but nothing in the response invites one.
-- **Third candidate, now the likeliest:** Open-Meteo serves from several API
-  servers that ingest a new model run independently, so two requests seconds
-  apart can land on servers in different states. That fits a case that showed
-  once in four comparisons, near a run boundary, better than either of the
-  above. If it holds, the remedy is a sentence on the card: after a new run
-  lands, one tool can be a few minutes behind another.
-
-To count it rather than argue it, `.github/workflows/schulze-compare.yml`
-samples the comparison until 2026-09-28T02:00Z and then skips itself; each
-sample's log carries both raw profiles, the aligned table, and every row of
-what a jumper comparing the two pages at that minute would see (the hours
-differ after :30, since this app snaps to the nearest hour and Schulze's
-shows the hour in progress). From 2026-09-24 to 26 it was a cron line every
-fifteen minutes plus five-minute bursts, which GitHub ran under ten percent of
-the time; from 2026-09-26 it is one job started four times a day that samples
-every five minutes for five hours (`scripts/sampleLoop.sh`). Every sample's
-machine-readable line is combined into the #parity page, "How different from
-other sources" (`docs/source-parity.md`), whose "Time the tables represent"
-table is where to read the answer once the window closes. Read the raw logs
-under Actions, "Live comparisons (temporary)". Delete the workflow, or move its end
-date, once the question is settled — and settle it before the next
-winds-aloft change, since either answer changes card text.
+To separate them: fetch Schulze's `hourOffset=0` and `=1` and the app's
+request for the same hours several times across :30 to :59, recording each
+raw profile, so the next-hour request can be compared with itself and with
+the hour-in-progress one at the same minute. Open-Meteo's responses carry no
+run time; its `generationtime_ms` and the raw values are what there is.
+Until then the Winds aloft card states only what was seen: on the same hour
+the two can show different runs for a while, most often between half past
+and ten to the hour.
 
 ## Live-site smoke test
 

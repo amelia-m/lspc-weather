@@ -70,7 +70,7 @@ const TIMELINE: Entry[] = [
   {
     date: 'Sep 30',
     kind: 'Comparison',
-    what: 'usairnet’s page is read right for gusts, calm, rain or fog in its heading, and “Solid Overcast”; the sampler runs every 2 minutes.',
+    what: 'usairnet’s page is read right for gusts, calm, rain or fog in its heading, and “Solid Overcast”; the sampler moves to every 2 minutes.',
     effect:
       'Clouds went from 72 of 120 same-report runs agreeing (to Sep 29) to 576 of 576 (to Oct 2). The 19 gust and 4 calm wind-direction differences stopped. Two-minute samples are what time each source’s arrivals.',
   },
@@ -79,7 +79,7 @@ const TIMELINE: Entry[] = [
     kind: 'Event',
     what: 'usairnet’s page could not be read from 13:12 to 15:31Z, 72 samples in a row.',
     effect:
-      'Those runs compared nothing. The outage line above counted them in the summaries to Oct 3; it counts only the last 14 days of logs, so it drops them once those logs expire.',
+      'Those runs compared nothing. The outage line above counts them: the sampler’s logs are archived with the site’s code, so they stay in the summary after the 14-day logs expire.',
   },
   {
     date: 'Oct 3',
@@ -101,6 +101,13 @@ const TIMELINE: Entry[] = [
     what: 'How Schulze’s Surface row is computed was worked out (72 of 72 hours at four sites).',
     effect:
       'Nothing on the page moved; the ground row’s gap, a median ratio near 1.2, now has a cause: the two rows are different heights.',
+  },
+  {
+    date: 'Oct 5',
+    kind: 'Comparison',
+    what: 'The two-minute sampler ended. Its logs are archived with the site’s code and stay in the summary; one run a day continues.',
+    effect:
+      'The arrival timings above come only from the sampler and stop growing. Its last count: on the same hour, this card and Schulze’s were on different forecast runs in 114 of 1,611 comparisons, 81 of them between half past and ten to the hour, the longest stretch about half an hour. Why is still open: after half past the comparison also switches to Schulze’s next-hour table.',
   },
 ];
 

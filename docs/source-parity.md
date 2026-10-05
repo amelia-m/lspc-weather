@@ -87,25 +87,69 @@ the change was made to move exactly those numbers.
 
 ## How the logs are gathered
 
-1. `.github/workflows/schulze-compare.yml` is one job, started four times a
-   day, that loops for five hours: the usairnet comparison every two minutes
-   and the Schulze one every four (`scripts/sampleLoop.sh`). It runs until
-   2026-10-05T02:00Z, then skips itself and should be deleted. Its first
-   window (2026-09-24 to 28) sampled every five and fifteen minutes; it was
-   restarted denser so the summary can time each report's arrival at each
-   source (below). It replaced a cron line per sample, which GitHub ran under
-   ten percent of the time.
-   `.github/workflows/sky-parity.yml` runs both scripts once a day for good.
-2. Each run uploads its `@@parity` lines as artifacts named
-   `parity-<run id>` (the daily run) or `parity-<run id>-<hour>` (one per
-   hour of the sampler), kept fourteen days.
-3. `.github/workflows/parity-summary.yml` runs every three hours and on
-   demand: it downloads every unexpired artifact, combines the lines with
-   `scripts/paritySummary.ts`, writes `public/parity/summary.json`, commits it
-   to `main` and dispatches the Pages deploy (a push made with the workflow
-   token starts no other workflow, so it has to). The arithmetic is in
+1. `.github/workflows/sky-parity.yml` runs both comparison scripts once a
+   day. From 2026-09-24 to 2026-10-05 a temporary sampler also ran them.
+   From 2026-09-30 it was one job started four times a day that looped for
+   five hours, the usairnet comparison every two minutes and the Schulze one
+   every four, which is what times each report's arrival at each source
+   (below). Before that it timed none: from 2026-09-24 to 26 it was cron
+   lines, every fifteen minutes plus five-minute bursts, which GitHub ran
+   under ten percent of the time (about 16 samples a day each); from 26 to 28
+   it was the looping job, the Schulze comparison every five minutes and the
+   usairnet one every fifteen. It became a loop because a job already
+   running is not throttled. The workflow and its `scripts/sampleLoop.sh` were removed when
+   the window closed; both are in the history.
+2. Each run uploads its `@@parity` lines as an artifact named
+   `parity-<run id>`, kept fourteen days. Every line logged to the end of the
+   sampler, 4,391 of them, is archived in
+   `data/parity/logs-to-2026-10-05.jsonl.gz`, so its figures outlive the
+   artifacts.
+3. `.github/workflows/parity-summary.yml` runs when the daily sky-parity
+   run finishes, and on demand: it downloads every unexpired artifact,
+   unpacks the archive beside them, combines the lines with
+   `scripts/paritySummary.ts` (which drops a record seen twice, so the overlap
+   counts once), writes `public/parity/summary.json`, commits it to `main`
+   and dispatches the Pages deploy (a push made with the workflow token
+   starts no other workflow, so it has to). The arithmetic is in
    `src/domain/paritySummary.ts`, pure and tested.
 4. The page fetches `parity/summary.json` from beside the site and renders it.
+
+## What the sampler found
+
+Read from every log to its end, 2026-10-05T01:58Z (the summary of that
+morning).
+
+- **Winds aloft, which forecast run.** On the same hour, this card and
+  Schulze's were on different Open-Meteo forecast runs (by the script's
+  test: two raw levels within 150 ft more than 5° or 2 kt apart) in 114 of
+  1,611 comparisons. 81 of the 114 fell between half past and ten to the
+  hour, 20 of the 24 UTC hours had some, and they came in 73 short
+  stretches, the longest about half an hour. On the same run they agreed to
+  a median 0° and 0 kt (largest 12° and 3 kt); on different runs to a
+  median 4° and 1 kt (90th percentile 15° and 3 kt). The cause is not
+  settled: after half past the comparison reads Schulze's next hour
+  (`hourOffset=1`), and the rate is 2.5% on his hour in progress against
+  11.4% on his next hour, so the minute and the request change together;
+  see `docs/open-questions.md`, "Which forecast run…". The Winds aloft card
+  says only what was seen.
+- **When each source had each report**, median minutes after the report's
+  own time: NOAA's raw file 5, IEM 7, usairnet 18, NWS's observation list 24,
+  NWS's `latest` 26. Since the dashboard read IEM first it had the newer
+  report every time the two pages differed, 1,378 of 1,378, by a median 20
+  minutes (one report cycle).
+- **The decode, same report.** Wind gust, direction, visibility, pressure,
+  clouds and ceiling agreed on every report each row counts. Flight rule
+  (1,203 of 1,205) and wind speed (1,204 of 1,205) count from the first log,
+  and their three disagreements, flight rules at 2026-09-26T21:27Z and
+  2026-09-27T07:41Z and a wind speed at 2026-09-27T19:45Z, came before the
+  first parser correction (2026-09-30). Temperature and dew point differ by
+  at most 1 °F, from rounding, on about half of reports, and the humidity
+  derived from them by up to 5 points (on the 1,203 of 1,205 that logged
+  the size of a difference). Sunrise and sunset agree to the
+  minute on 420 of 441, at most 2 minutes apart.
+- **usairnet's page** could not be read on 83 samples in 6 stretches, the
+  longest 13:12 to 15:31Z on 2026-09-30. This dashboard's own feeds failed on
+  none.
 
 ## What the page shows, and what it deliberately does not
 
@@ -176,16 +220,17 @@ NOAA's raw file, IEM, usairnet, NWS's observation list and NWS's `latest`.
 A report is timed at a source only where the sample before had not found it
 and was at most five minutes earlier, so the figure is at most one sampling
 interval (two minutes) late and never early; the hour between sampler
-batches and the day between daily runs time nothing
+batches and the day between daily runs time nothing, so these figures come
+from the sampler's archived logs and stop growing with it
 (`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`).
 
 And **runs that could not read one side**: usairnet's page (unreachable or
 unparsed) apart from this dashboard's own feeds, with the number of unbroken
 stretches of usairnet failures and the longest (`outagesOf`). Failures join
 a stretch only when consecutive samples are at most five minutes apart, so
-the hour between sampler batches never merges two. To 2026-10-03 that was
-74 failures in 3 stretches, the longest 72 samples on 2026-09-30, from 13:12
-to 15:31Z.
+the hour between sampler batches never merges two. To the end of the
+sampler that was 83 failures in 6 stretches, the longest 72 samples on
+2026-09-30, from 13:12 to 15:31Z.
 
 Some rows count only records from the version of the comparison that
 corrected them (`FIELD_SINCE_VERSION`); older records are kept and those

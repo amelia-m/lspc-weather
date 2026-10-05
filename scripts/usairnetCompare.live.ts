@@ -2,9 +2,9 @@
  * Live observation comparison against usairnet's decode of the same METAR.
  *
  * Runs with the other live checks (`npx vitest run --config
- * vitest.live.config.ts`, daily by .github/workflows/sky-parity.yml and every
- * fifteen minutes by .github/workflows/schulze-compare.yml's sampler while that
- * runs)
+ * vitest.live.config.ts`, daily by .github/workflows/sky-parity.yml; every two
+ * minutes by a sampler from 2026-09-30 to 2026-10-05, whose logs are kept in
+ * data/parity/)
  * and by hand from the sandbox with the proxy env (see CLAUDE.md). Never by
  * `npm test`: it needs the network.
  *
