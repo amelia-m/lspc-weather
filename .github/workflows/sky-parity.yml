@@ -30,8 +30,8 @@ jobs:
           set -o pipefail
           npx vitest run --config vitest.live.config.ts 2>&1 | tee parity.log
       # The comparison scripts' @@parity lines feed the #parity page's summary
-      # (parity-summary.yml); the daily run keeps that fed after the temporary
-      # high-frequency workflow ends.
+      # (parity-summary.yml); since the two-minute sampler ended on
+      # 2026-10-05 this daily run is what keeps it fed.
       - name: Keep this run's @@parity lines
         if: always()
         shell: bash

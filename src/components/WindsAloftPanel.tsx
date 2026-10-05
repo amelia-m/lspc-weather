@@ -295,7 +295,9 @@ export function WindsAloftPanel({
             stated valid time (it labels forecasts in Z, e.g. “1600Z”) against the one above
             before assuming the data disagrees: this card follows the hour nearest the clock, that
             tool the hour in progress, so after half past the two are an hour apart until one of
-            them is stepped with its hour buttons. Its
+            them is stepped with its hour buttons. Even on the same hour the two have shown
+            different forecast runs, for up to about half an hour and most often between half past
+            and ten to the hour; if they disagree then, look again later. Its
             altitudes are{' '}
             <strong>AGL, like these</strong>, so the two tables are directly comparable; the “MSL”
             on its page is the ground elevation it looked up, not the scale of its wind table.

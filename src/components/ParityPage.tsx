@@ -535,8 +535,9 @@ const ARRIVAL_SHORT: Record<ArrivalSource, string> = {
 /**
  * How long after each report each source first had it. Only counted where
  * two samples a few minutes apart bracket the report's arrival, which the
- * two-minute sampler provides and the daily run does not; so the table
- * waits for sampled cycles rather than showing a thin one.
+ * two-minute sampler provided (2026-09-30 to 10-05, its logs archived in
+ * data/parity/) and the daily run does not; so the table shows the
+ * sampler's cycles, and is hidden if there are none.
  */
 function ArrivalTable({ lags }: { lags: ArrivalLag[] }): JSX.Element | null {
   if (!lags.some((a) => a.reports > 0)) return null;
@@ -571,8 +572,9 @@ function ArrivalTable({ lags }: { lags: ArrivalLag[] }): JSX.Element | null {
       </div>
       <p className="muted small">
         Minutes from the time a KPMV report was taken to the first sample that found it at each
-        source. Samples are two minutes apart, so each figure is up to two minutes later than the
-        report really arrived, never earlier.
+        source. The samples were two minutes apart, taken by a sampler that ran from Sep 30 to
+        Oct 5, so each figure is up to two minutes later than the report really arrived, never
+        earlier; one run a day adds nothing here.
       </p>
     </>
   );

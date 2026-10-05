@@ -7,6 +7,3 @@ dist-ssr
 coverage
 *.tsbuildinfo
 
-# Left by scripts/sampleLoop.sh when run by hand
-sample.log
-.sample-count
