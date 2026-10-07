@@ -539,8 +539,8 @@ a {
   margin: 0;
 }
 
-/* Winds aloft: the valid time between the hour buttons, and how far it is
-   from now. The shifted outline says the reader has stepped away from the
+/* The winds hour, on the Winds aloft and drift cards (ForecastHourNav): the
+   valid time between the hour buttons, and how far it is from now. The shifted outline says the reader has stepped away from the
    clock; it is the app's interface accent, not a weather colour. */
 .fc-nav {
   display: flex;
@@ -653,8 +653,12 @@ a {
   text-align: center;
   font-size: 0.95rem;
 }
+.fc-follow-row {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+}
 .fc-follow {
-  margin-left: 6px;
   background: none;
   border: none;
   padding: 0;

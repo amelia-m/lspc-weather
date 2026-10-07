@@ -6,9 +6,8 @@ import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS, recommendedDeployFt, type WindProfileId } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { SelectField } from './common/SelectField';
-import { ForecastOffset } from './common/ForecastOffset';
+import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
 import { useNow } from '../hooks/useNow';
-import { fmtTime } from './format';
 
 /** Build an inclusive numeric range [lo, hi] stepping by `step`. */
 const range = (lo: number, hi: number, step: number): number[] =>
@@ -38,17 +37,19 @@ export function DriftPanel({
   profile,
   source,
   validMs,
-  stepped = false,
+  hourNav,
 }: {
   levels: WindsAloftLevel[];
   profile: WindProfileId;
   /** The forecast hour `levels` are for, so the estimate says which winds it
-   *  used. Stepping the Winds aloft card moves this card with it: a drift
-   *  worked from one hour beside a table for another would be two answers to
-   *  one question. */
+   *  used. It is the Winds aloft card's hour, always: a drift worked from one
+   *  hour beside a table for another would be two answers to one question. */
   validMs?: number | null;
-  /** Whether that hour was stepped to rather than followed from the clock. */
-  stepped?: boolean;
+  /** The Winds aloft card's own step buttons, the same object, so stepping
+   *  here moves that table and stepping there moves this estimate. On a phone
+   *  the two cards are a screen apart, and a reader changing the hour for
+   *  the drift should not have to scroll up to do it. */
+  hourNav?: WindsHourNav | null;
   /** Which source produced `levels`. The card credited Open-Meteo whatever it
    *  was actually handed, so on the NOAA FD fallback it named a source the
    *  numbers had not come from. */
@@ -108,11 +109,25 @@ export function DriftPanel({
         <p className="muted">No winds-aloft data.</p>
       ) : (
         <>
+          {/* Only with an hour to name. A source with no valid time has no
+              hour to work from, and the FD fallback's one bulletin is not
+              "selected": the note says what each case is. The offset here is
+              not a live region; the Winds aloft card's announces the step. */}
           {validMs != null && (
-            <p className="muted small">
-              With the winds for {fmtTime(validMs)}, <ForecastOffset validMs={validMs} now={now} compact />
-              {stepped ? ', the hour stepped to on the Winds aloft card.' : '.'}
-            </p>
+            <>
+              <ForecastHourNav
+                validMs={validMs}
+                now={now}
+                hourNav={hourNav}
+                forLabel="for the drift estimate"
+                live={false}
+              />
+              <p className="muted small">
+                {hourNav
+                  ? 'Worked from the forecast hour selected on the Winds aloft card. The buttons here and on that card step the same hour, so changing either moves both.'
+                  : 'Worked from the same forecast hour as the Winds aloft card.'}
+              </p>
+            </>
           )}
           <div className="drift-inputs">
             <SelectField

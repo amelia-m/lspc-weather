@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { WeatherSnapshot, WindsAloftLevel, WindsAloftValidity } from '../domain/types';
 import { chooseForecastHour, selectionAfterStep } from '../domain/forecastHour';
-import type { WindsHourNav } from '../components/WindsAloftPanel';
+import type { WindsHourNav } from '../components/common/ForecastHourNav';
 import { useNow } from './useNow';
 
 /**

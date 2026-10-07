@@ -52,7 +52,9 @@ shows is `src/config/views.ts`.
   two hours back and four ahead, and a bar and a line of text always say how
   far the hour shown is from now.
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
-  deploy, and fall-rate inputs, worked from whichever hour the winds card shows.
+  deploy, and fall-rate inputs, worked from whichever hour the winds card shows,
+  with the same hour readout and −1 h / +1 h buttons: stepping either card
+  moves both.
 - 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
   hours from sunset to sunrise shaded, over a selectable 18 / 36 / 72 h horizon

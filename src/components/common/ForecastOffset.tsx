@@ -23,15 +23,15 @@ const BAR_FORWARD_H = STEP_FORWARD_HOURS + 1;
 export function ForecastOffset({
   validMs,
   now,
-  compact = false,
+  live = true,
 }: {
   validMs: number;
   now: number;
-  /** Words only, for a card that follows another card's choice. */
-  compact?: boolean;
+  /** Whether the words announce their changes to a screen reader. One copy
+   *  per page should: two say every step twice. */
+  live?: boolean;
 }): JSX.Element {
   const off = offsetFromNow(validMs, now);
-  if (compact) return <strong>{off.text}</strong>;
   const { nowPct, markPct, beyond } = offsetBarPosition(off.minutes, BAR_BACK_H * 60, BAR_FORWARD_H * 60);
   const left = Math.min(nowPct, markPct);
   const width = Math.abs(markPct - nowPct);
@@ -52,7 +52,7 @@ export function ForecastOffset({
         </span>
         <span>+{BAR_FORWARD_H} h</span>
       </div>
-      <p className="fc-offset-text" aria-live="polite">
+      <p className="fc-offset-text" aria-live={live ? 'polite' : undefined}>
         <strong>{off.text}</strong>
       </p>
     </div>

@@ -8,8 +8,8 @@ import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
-import { ForecastOffset } from './common/ForecastOffset';
-import { fmtClock, fmtTime } from './format';
+import { ForecastHourNav, fmtZulu, type WindsHourNav } from './common/ForecastHourNav';
+import { fmtTime } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
  *  around 10,000 ft, so the default view stops there and keeps the low levels
@@ -21,39 +21,6 @@ const COLLAPSED_ALTITUDES_FT = new Set([0, 500, 1000, 3000, 5000, 7000, 10000]);
 
 /** "9,000 ft" — the form every altitude on this card takes. */
 const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
-
-/** The hour buttons, when the source has more than one hour to offer. The
- *  NOAA FD fallback is one bulletin and gets none. */
-export interface WindsHourNav {
-  canBack: boolean;
-  canForward: boolean;
-  /** True while the card follows the hour nearest the clock. */
-  following: boolean;
-  onStep: (delta: -1 | 1) => void;
-  /** Back to following the hour nearest the clock. */
-  onFollow: () => void;
-}
-
-/** UTC "1800Z". Mark Schulze's Winds Aloft — the tool jumpers cross-check this
- *  card against — labels its forecast in exactly this form, so printing it
- *  verbatim turns the comparison into a character match instead of arithmetic. */
-function fmtZulu(ms: number): string {
-  const d = new Date(ms);
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${hh}${mm}Z`;
-}
-
-/** Local calendar day at the DZ, for deciding whether a time needs its weekday
- *  spelled out: a late-evening load can be looking at a forecast hour that has
- *  already crossed midnight local. */
-const localDay = (ms: number): string =>
-  new Date(ms).toLocaleDateString('en-CA', { timeZone: SITE.timeZone });
-
-/** Local clock for the valid time — bare time on today, weekday-qualified once
- *  the forecast hour falls on a different local day. */
-const fmtValidLocal = (ms: number, now: number): string =>
-  localDay(ms) === localDay(now) ? fmtTime(ms) : fmtClock(ms);
 
 /** Winds aloft at jump altitudes — the skydiver-specific centerpiece. An arrow
  *  points the direction the wind is blowing TOWARD (drift direction).
@@ -134,40 +101,7 @@ export function WindsAloftPanel({
         <>
           {validMs != null ? (
             <>
-              {/* The valid time between the step buttons, as Mark Schulze's
-                  page lays it out, so the control reads as moving this time. */}
-              <div className={`fc-nav${shifted ? ' fc-shifted' : ''}`}>
-                {hourNav && (
-                  <button
-                    type="button"
-                    className="fc-step"
-                    onClick={() => hourNav.onStep(-1)}
-                    disabled={!hourNav.canBack}
-                    aria-label="Show the forecast one hour earlier"
-                  >
-                    −1 h
-                  </button>
-                )}
-                <p className="wind-readout fc-readout">
-                  <strong>
-                    Valid <span className="nowrap">{fmtValidLocal(validMs, now)} local</span>
-                  </strong>
-                  <strong className="wind-unit">·</strong>
-                  <strong>{fmtZulu(validMs)}</strong>
-                </p>
-                {hourNav && (
-                  <button
-                    type="button"
-                    className="fc-step"
-                    onClick={() => hourNav.onStep(1)}
-                    disabled={!hourNav.canForward}
-                    aria-label="Show the forecast one hour later"
-                  >
-                    +1 h
-                  </button>
-                )}
-              </div>
-              <ForecastOffset validMs={validMs} now={now} />
+              <ForecastHourNav validMs={validMs} now={now} hourNav={hourNav} />
               <p className="muted small">
                 Now {fmtTime(now)}.{' '}
                 {shifted
@@ -175,11 +109,6 @@ export function WindsAloftPanel({
                   : fallback
                     ? 'The FD bulletin is issued every 6 hours, so the nearest one is used.'
                     : 'The model steps hourly, so the table follows the hour nearest the clock and moves on at half past.'}
-                {shifted && hourNav && (
-                  <button type="button" className="fc-follow" onClick={hourNav.onFollow}>
-                    Back to the nearest hour
-                  </button>
-                )}
               </p>
             </>
           ) : (

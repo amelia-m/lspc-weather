@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { WindsAloftPanel, type WindsHourNav } from '../src/components/WindsAloftPanel';
+import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
 import { DriftPanel } from '../src/components/DriftPanel';
+import { ForecastHourNav, type WindsHourNav } from '../src/components/common/ForecastHourNav';
 import type { WindsAloftLevel } from '../src/domain/types';
 
 const levels: WindsAloftLevel[] = [0, 1000, 3000, 5000, 7000, 10000].map((ft) => ({
@@ -88,15 +89,90 @@ describe('Winds aloft hour buttons', () => {
 });
 
 describe('Drift card follows the hour', () => {
-  const drift = (validMs: number | null, stepped: boolean) =>
-    renderToStaticMarkup(createElement(DriftPanel, { levels, profile: 'student', validMs, stepped }));
+  const drift = (validMs: number | null, hourNav: WindsHourNav | null, source?: 'open-meteo' | 'nws-fd') =>
+    renderToStaticMarkup(createElement(DriftPanel, { levels, profile: 'student', validMs, hourNav, source }));
+  // The hour row and the offset bar under it, as rendered, without the
+  // attributes that are meant to differ between the two copies.
+  const hourControl = (html: string) =>
+    (/<div class="fc-nav[^"]*">[\s\S]*?<\/div><div class="fc-offset">[\s\S]*?<\/p><\/div>/.exec(html)?.[0] ?? '')
+      .replace(/ aria-label="[^"]*"/g, '')
+      .replace(/ aria-live="[^"]*"/g, '');
 
-  it('names the winds hour it used and how far that is from now', () => {
-    const html = drift(ahead(), false);
-    expect(html).toMatch(/With the winds for [^,]+, <strong>1 h 45 min ahead of now<\/strong>\./);
+  it('shows the same hour, buttons and offset bar as the Winds aloft card', () => {
+    const validMs = ahead();
+    const n = nav();
+    const control = hourControl(drift(validMs, n));
+    expect(control).toContain('>−1 h</button>');
+    expect(control).toContain('>+1 h</button>');
+    expect(control).toContain('<strong>1 h 45 min ahead of now</strong>');
+    expect(control).toBe(hourControl(winds({ validity: { validMs }, hourNav: n })));
   });
 
-  it('says when that hour was stepped to on the Winds aloft card', () => {
-    expect(drift(ahead(), true)).toContain('the hour stepped to on the Winds aloft card.');
+  it('says the estimate is the Winds aloft card\'s hour, and that the buttons move both', () => {
+    const html = drift(ahead(), nav());
+    expect(html).toContain('Worked from the forecast hour selected on the Winds aloft card.');
+    expect(html).toContain('The buttons here and on that card step the same hour, so changing either moves both.');
+  });
+
+  it('names its buttons apart from the Winds aloft card\'s, and announces nothing twice', () => {
+    const d = drift(ahead(), nav({ following: false }));
+    expect(d).toContain('aria-label="Show the forecast one hour earlier for the drift estimate"');
+    expect(d).toContain('aria-label="Show the forecast one hour later for the drift estimate"');
+    expect(d).toContain('aria-label="Back to the nearest hour for the drift estimate"');
+    expect(d).not.toContain('aria-live');
+    const w = winds({ hourNav: nav({ following: false }) });
+    expect(w).toContain('aria-label="Show the forecast one hour earlier"');
+    expect(w).toContain('aria-live="polite"');
+  });
+
+  it('marks a stepped hour and offers the way back, as the winds card does', () => {
+    expect(drift(ahead(), nav())).not.toContain('Back to the nearest hour');
+    const stepped = drift(ahead(), nav({ following: false }));
+    expect(stepped).toContain('<div class="fc-nav fc-shifted">');
+    expect(stepped).toContain('>Back to the nearest hour</button>');
+  });
+
+  it('shows the hour without buttons on the one-bulletin FD fallback, and does not call it selected', () => {
+    const html = drift(ahead(), null, 'nws-fd');
+    expect(html).not.toContain('fc-step');
+    expect(html).toContain('ahead of now</strong>');
+    expect(html).toContain('Worked from the same forecast hour as the Winds aloft card.');
+    expect(html).not.toContain('hour selected on');
+  });
+
+  it('claims no hour when the source stated none', () => {
+    const html = drift(null, nav());
+    expect(html).not.toContain('fc-nav');
+    expect(html).not.toContain('Worked from');
+  });
+});
+
+describe('the shared hour control', () => {
+  // Called as a function to reach the buttons' handlers: no DOM here, and the
+  // component has no hooks.
+  const buttons = (n: WindsHourNav) => {
+    const tree = ForecastHourNav({ validMs: ahead(), now: Date.now(), hourNav: n });
+    const row = (tree.props.children as JSX.Element[])[0];
+    return (row.props.children as (JSX.Element | null)[]).filter((c): c is JSX.Element => c?.type === 'button');
+  };
+  const click = { currentTarget: { closest: () => null, disabled: false } };
+
+  it('steps the one nav it is given, back and forward', () => {
+    const steps: number[] = [];
+    const [back, forward] = buttons(nav({ onStep: (d) => steps.push(d) }));
+    back.props.onClick(click);
+    forward.props.onClick(click);
+    expect(steps).toEqual([-1, 1]);
+  });
+
+  it('is handed the same nav on both cards', async () => {
+    // The sharing lives in App.tsx, which no test renders (it fetches).
+    // Read it: both cards must take useWindsHour's one nav.
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
+    const app = fs.readFileSync(decodeURIComponent(new URL('../src/App.tsx', import.meta.url).pathname), 'utf8');
+    for (const card of ['WindsAloftPanel', 'DriftPanel']) {
+      const el = new RegExp(`<${card}\\b[\\s\\S]*?/>`).exec(app)?.[0] ?? '';
+      expect(el).toContain('hourNav={winds.nav}');
+    }
   });
 });
