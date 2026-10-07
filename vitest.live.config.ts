@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitest/config';
 
 /** The live checks under scripts/ — network-dependent, run on a schedule by
- *  .github/workflows/sky-parity.yml, never by `npm test`. */
+ *  .github/workflows/sky-parity.yml (all of them) and comparisons.yml (the
+ *  two comparison reports, named by path), never by `npm test`. */
 export default defineConfig({
   test: {
     environment: 'node',

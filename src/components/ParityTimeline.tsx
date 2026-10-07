@@ -105,9 +105,16 @@ const TIMELINE: Entry[] = [
   {
     date: 'Oct 5',
     kind: 'Comparison',
-    what: 'The two-minute sampler ended. Its logs are archived with the site’s code and stay in the summary; one run a day continues.',
+    what: 'The two-minute sampler ended. Its logs are archived with the site’s code and stay in the summary; one run a day continued, always at about 13:00Z.',
     effect:
       'The arrival timings above come only from the sampler and stop growing. Its last count: on the same hour, this card and Schulze’s were on different forecast runs in 114 of 1,611 comparisons, 81 of them between half past and ten to the hour, the longest stretch about half an hour. Why is still open: after half past the comparison also switches to Schulze’s next-hour table.',
+  },
+  {
+    date: 'Oct 7',
+    kind: 'Comparison',
+    what: 'The comparisons run eight times a day, about three hours apart and each scheduled at a different minute of the hour.',
+    effect:
+      'The samples spread over the night and every part of the hour again, the second half included, where the two winds tables show different hours and were most often on different forecast runs. Runs hours apart time almost no arrivals; those figures stay mostly the sampler’s.',
   },
 ];
 

@@ -615,8 +615,9 @@ const ARRIVAL_TIME: Record<ArrivalSource, (r: UsairnetRecord) => string | null |
 /** A report is timed at a source only when the sample before the first one
  *  to find it is this close: the true arrival lies between the two, so the
  *  gap is the timing's uncertainty. The sampler ran every 2 minutes (to
- *  2026-10-05); the hour between its batches, and the day between daily
- *  runs, time nothing. */
+ *  2026-10-05); the hour between its batches, and the hours between the
+ *  scheduled comparison runs since, time nothing unless two runs happen to
+ *  land within the bracket. */
 export const MAX_ARRIVAL_BRACKET_MIN = 5;
 
 /**

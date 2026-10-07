@@ -326,7 +326,11 @@ allowlisted; it needs a Referer and a browser-like User-Agent).
 `scripts/usairnetCompare.live.ts` does the same for the latest KPMV
 observation: the dashboard's decode beside usairnet's, every field the page
 shows, matched by observation time; also a report that never fails, since
-usairnet is a page scrape. Both print one `@@parity {json}` line per run,
+usairnet is a page scrape. `.github/workflows/comparisons.yml` also runs
+both eight times a day, about three hours apart and each scheduled at a
+different minute, so the samples spread over the day and every part of the
+hour (the daily sky-parity run is always about 13:00Z); the summary takes
+only artifacts from runs on `main`. Both print one `@@parity {json}` line per run,
 which every comparison run uploads as a `parity-<run id>` artifact (kept 14
 days). `.github/workflows/parity-summary.yml` combines them daily with
 `scripts/paritySummary.ts` into `public/parity/summary.json` — the arithmetic

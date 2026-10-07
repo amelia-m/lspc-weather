@@ -2,7 +2,9 @@
  * Live winds-aloft comparison against Mark Schulze's Winds Aloft.
  *
  * Runs with the other live checks (`npx vitest run --config
- * vitest.live.config.ts`, daily by .github/workflows/sky-parity.yml) and by
+ * vitest.live.config.ts`, daily by .github/workflows/sky-parity.yml; eight
+ * times a day by .github/workflows/comparisons.yml, which names this file)
+ * and by
  * hand from the sandbox with the proxy env (see CLAUDE.md). Never by
  * `npm test`: it needs the network.
  *
