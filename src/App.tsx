@@ -255,7 +255,7 @@ export default function App(): JSX.Element {
         profile={profile}
         source={snapshot.windsAloftSource}
         validMs={winds.validity?.validMs ?? null}
-        stepped={winds.nav != null && !winds.nav.following}
+        hourNav={winds.nav}
       />
     ),
     hourly: <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} onUnitChange={setUnit} />,
