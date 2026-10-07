@@ -199,8 +199,9 @@ snaps to the nearest hour, Schulze's shows the hour in progress), and on
 13 percent of same-hour samples between 2026-09-24 and 26 one side was on a
 newer model run than the other (5 of 38). The #parity page shows both, in
 its "Time the tables represent" table, mostly from the sampler that ran to
-2026-10-05; the one daily run, at about 13:00Z, adds a same-hour sample a
-day and none from the second half of the hour. To repeat the
+2026-10-05; since then from the comparison runs, eight a day each
+scheduled at a different minute (`.github/workflows/comparisons.yml`),
+four of them in the second half of the hour. To repeat the
 measurement above, fetch the two for a run of hours and pair them; the
 endpoint serves `hourOffset` up to at least 47.
 

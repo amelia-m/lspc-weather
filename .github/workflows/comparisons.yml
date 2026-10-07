@@ -1,0 +1,72 @@
+name: Source comparisons
+
+# The two comparison reports (scripts/schulzeCompare.live.ts: this app's
+# winds-aloft table beside Mark Schulze's; scripts/usairnetCompare.live.ts:
+# this app's decode of the latest KPMV report beside usairnet's), eight times
+# a day. Each run uploads its @@parity lines as an artifact, and the daily
+# summary (parity-summary.yml) folds them into the #parity page. Never fails:
+# both scripts are reports.
+#
+# Eight runs about three hours apart, each scheduled at a different minute:
+# across a day the samples cover the night and the day and every part of
+# the hour, so a difference that depends on either shows. GitHub starts a
+# scheduled run minutes late and sometimes skips one, so the minute each
+# sample was taken is in its record (`at`), not in this list; the spread is
+# what the list buys. The daily sky-parity run, the one
+# other source of these lines, is always at about 13:00Z, and so was every
+# sample after the two-minute sampler ended (2026-10-05). The second half of
+# the hour matters most: it is when this card and Schulze's show different
+# hours, and when the two were most often on different forecast runs
+# (docs/open-questions.md, "Which forecast run...").
+#
+# All off the top of the hour and away from midnight UTC, GitHub's busiest;
+# eight a day is far from the every-fifteen-minutes schedule GitHub ran
+# under ten percent of the time in 2026-09. A run dispatched on a branch
+# uploads too, but the summary takes only main's artifacts.
+on:
+  schedule:
+    - cron: '4 1 * * *'
+    - cron: '11 3 * * *'
+    - cron: '19 6 * * *'
+    - cron: '26 9 * * *'
+    - cron: '34 12 * * *'
+    - cron: '41 15 * * *'
+    - cron: '49 18 * * *'
+    - cron: '56 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comparisons
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Compare with Schulze's tool and usairnet
+        shell: bash
+        run: |
+          npx vitest run --config vitest.live.config.ts \
+            scripts/schulzeCompare.live.ts scripts/usairnetCompare.live.ts 2>&1 | tee parity.log || true
+      - name: Keep this run's @@parity lines
+        if: always()
+        shell: bash
+        run: |
+          if [ -f parity.log ]; then grep -a '@@parity ' parity.log > "parity-${{ github.run_id }}.jsonl" || true; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parity-${{ github.run_id }}
+          path: parity-${{ github.run_id }}.jsonl
+          retention-days: 14
+          if-no-files-found: ignore

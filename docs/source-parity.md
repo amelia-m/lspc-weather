@@ -87,8 +87,15 @@ the change was made to move exactly those numbers.
 
 ## How the logs are gathered
 
-1. `.github/workflows/sky-parity.yml` runs both comparison scripts once a
-   day. From 2026-09-24 to 2026-10-05 a temporary sampler also ran them.
+1. `.github/workflows/comparisons.yml` runs both comparison scripts eight
+   times a day, about three hours apart and each scheduled at a different
+   minute (01:04, 03:11, 06:19, 09:26, 12:34, 15:41, 18:49 and 21:56 UTC),
+   so the samples spread over the day and night and every part of the
+   hour; GitHub starts scheduled runs late and sometimes skips one, so the
+   minute each sample was taken is in its record, not the schedule.
+   `.github/workflows/sky-parity.yml` also runs them once a day, at about
+   13:00Z. Runs hours apart time no arrivals (below), short of two landing
+   within five minutes of each other. From 2026-09-24 to 2026-10-05 a temporary sampler also ran them.
    From 2026-09-30 it was one job started four times a day that looped for
    five hours, the usairnet comparison every two minutes and the Schulze one
    every four, which is what times each report's arrival at each source
@@ -100,12 +107,14 @@ the change was made to move exactly those numbers.
    running is not throttled. The workflow and its `scripts/sampleLoop.sh` were removed when
    the window closed; both are in the history.
 2. Each run uploads its `@@parity` lines as an artifact named
-   `parity-<run id>`, kept fourteen days. Every line logged to the end of the
+   `parity-<run id>`, kept fourteen days; the summary takes only those from
+   runs on `main`. Every line logged to the end of the
    sampler, 4,391 of them, is archived in
    `data/parity/logs-to-2026-10-05.jsonl.gz`, so its figures outlive the
    artifacts.
 3. `.github/workflows/parity-summary.yml` runs when the daily sky-parity
-   run finishes, and on demand: it downloads every unexpired artifact,
+   run finishes, and on demand, so the page takes in a day's comparison
+   runs at once: it downloads every unexpired artifact,
    unpacks the archive beside them, combines the lines with
    `scripts/paritySummary.ts` (which drops a record seen twice, so the overlap
    counts once), writes `public/parity/summary.json`, commits it to `main`
@@ -220,8 +229,10 @@ NOAA's raw file, IEM, usairnet, NWS's observation list and NWS's `latest`.
 A report is timed at a source only where the sample before had not found it
 and was at most five minutes earlier, so the figure is at most one sampling
 interval (two minutes) late and never early; the hour between sampler
-batches and the day between daily runs time nothing, so these figures come
-from the sampler's archived logs and stop growing with it
+batches and the hours between comparison runs time nothing, so these
+figures come from the sampler's archived logs and since then grow only when
+two runs happen to land within five minutes (a late start beside the next
+one, or a run dispatched by hand)
 (`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`).
 
 And **runs that could not read one side**: usairnet's page (unreachable or
