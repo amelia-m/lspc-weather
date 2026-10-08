@@ -11,8 +11,8 @@ describe('tileXY', () => {
     const p = tileXY(SITE.dz.lat, SITE.dz.lon, 11);
     expect(Math.floor(p.x)).toBe(477);
     expect(Math.floor(p.y)).toBe(768);
-    expect(p.x % 1).toBeCloseTo(0.241, 3);
-    expect(p.y % 1).toBeCloseTo(0.846, 3);
+    expect(p.x % 1).toBeCloseTo(0.249, 3);
+    expect(p.y % 1).toBeCloseTo(0.825, 3);
   });
 
   it('puts 0,0 at the middle of the world at every zoom', () => {
@@ -28,9 +28,9 @@ describe('tilesAround', () => {
   it('places the drop zone\'s own tile so the point sits at the centre', () => {
     const tiles = tilesAround(lat, lon, 11, 100, 100);
     const own = tiles.find((t) => t.x === 477 && t.y === 768)!;
-    // The point is 0.241 and 0.846 of the way across and down its tile.
-    expect(own.left).toBeCloseTo(-0.241 * TILE_PX, 0);
-    expect(own.top).toBeCloseTo(-0.846 * TILE_PX, 0);
+    // The point is 0.249 and 0.825 of the way across and down its tile.
+    expect(own.left).toBeCloseTo(-0.249 * TILE_PX, 0);
+    expect(own.top).toBeCloseTo(-0.825 * TILE_PX, 0);
   });
 
   it('covers the whole window and nothing outside it', () => {

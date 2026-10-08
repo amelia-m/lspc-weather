@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SITE } from '../src/config/site';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -138,7 +139,7 @@ describe('the pilot links open on the drop zone where the service allows', () =>
     for (const start of ['Graphical Forecasts', 'SIGMETs']) {
       const u = byLabel(start);
       expect(u.pathname).toBe('/gfa/');
-      expect(u.searchParams.get('center')).toBe('40.8675,-96.11');
+      expect(u.searchParams.get('center')).toBe(`${SITE.dz.lat},${SITE.dz.lon}`);
       expect(Number(u.searchParams.get('zoom'))).toBeGreaterThanOrEqual(7);
     }
     // The public SIGMET map, not the signed-in "SIGMET Preview" at /sigmet/.

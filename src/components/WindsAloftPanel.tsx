@@ -374,10 +374,12 @@ export function WindsAloftPanel({
                 ) : null}
               </p>
             )}
-            {/* His altitudes count from Open-Meteo's terrain at his map pin,
-                which for this club is in the field south-west of the runway,
-                below it (docs/markschulze-altitude-reference.md); this table
-                counts from the published field elevation. Both figures are
+            {/* His altitudes count from Open-Meteo's terrain at the map pin:
+                this dashboard's point when his page is opened from the link,
+                his own list's pin (in the field south-west of the runway,
+                below it; docs/markschulze-altitude-reference.md) when opened
+                from there. This table counts from the published field
+                elevation. Both figures are
                 read, not typed: the field from SITE, his ground off the
                 his-way table this hour carries. */}
             {source === 'open-meteo' && schulzeGroundFtMsl != null && schulzeGroundFtMsl !== SITE.dz.elevationFt && (
@@ -391,10 +393,11 @@ export function WindsAloftPanel({
                   'This one'
                 )}{' '}
                 counts from the field&rsquo;s published elevation, {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft.
-                Mark Schulze&rsquo;s counts from the ground Open-Meteo&rsquo;s terrain gives at his map pin,{' '}
-                {schulzeGroundFtMsl.toLocaleString()}&nbsp;ft at the point the link above opens; the pin for
-                this club sits in the field south-west of the runway, below it, and his own list&rsquo;s pin
-                for the club can sit a little lower still. So a row of his is about{' '}
+                Mark Schulze&rsquo;s counts from the ground Open-Meteo&rsquo;s terrain gives at the map pin,{' '}
+                {schulzeGroundFtMsl.toLocaleString()}&nbsp;ft at this dashboard&rsquo;s point, the landing area,
+                which the link above opens. His own list&rsquo;s pin for the club sits in the field south-west
+                of the runway, below it, so his page opened from that list counts from lower ground still.
+                From this dashboard&rsquo;s point, a row of his is about{' '}
                 {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'}{' '}
                 than the row of the same name here: small next to the other differences.
                 {schulzeView ? ' This view counts from his ground.' : ''}
