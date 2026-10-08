@@ -299,6 +299,14 @@ question in `docs/open-questions.md`.
 - `schulze.byAltitude[].dir` and `.spd`: the spreads above; `mean` is signed
   (dashboard minus Schulze), so its sign says which side ran higher.
 - `schulze.rawMismatch`: how many runs could be judged, and how many disagreed.
+- `schulze.overCauses` (from 2026-10-08): the same-hour runs with a row over
+  10° (`dir`) or 3 kt (`spd`), split by cause, the four adding up to
+  `runsWithRowOver10Deg` / `runsWithRowOver3Kt`: `surfaceOnly` (only the
+  Surface row, which is a different height on each side), `newerRun` (a row
+  from 1,000 ft up, with one side on a newer forecast run), `sameRunAloft`
+  (a row from 1,000 ft up on the same run: no known cause) and
+  `unjudgedAloft`. Over the logs to 2026-10-08: 502 runs over 10° were 431,
+  70, 1 and 0; 389 over 3 kt were 345, 44, 0 and 0.
 - `schulze.byTimeGap[]`: one entry per time group (`same-hour-same-run`,
   `same-hour-different-run`, `one-hour-apart`), with the runs that
   contributed rows and the pooled `dir` and `spd` spreads from 1,000 ft up.
