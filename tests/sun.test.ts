@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nightIntervals, sunTimes } from '../src/domain/sun';
+import { nightIntervals, skyPhase, sunTimes } from '../src/domain/sun';
 
 // LSPC / Weeping Water, NE
 const LAT = 40.8675;
@@ -101,3 +101,41 @@ describe('nightIntervals', () => {
     expect(nightIntervals(lat, lon, 5, 5)).toEqual([]);
   });
 });
+
+describe('skyPhase', () => {
+  const oct3 = sunTimes(LAT, LON, new Date('2026-10-03T18:00:00Z'));
+  const oct4 = sunTimes(LAT, LON, new Date('2026-10-04T18:00:00Z'));
+
+  it('is day from sunrise to sunset, with how far through', () => {
+    const mid = (oct4.sunrise + oct4.sunset) / 2;
+    const p = skyPhase(LAT, LON, mid);
+    expect(p).toMatchObject({ phase: 'day', startMs: oct4.sunrise, endMs: oct4.sunset });
+    expect(p?.fraction).toBeCloseTo(0.5, 6);
+    expect(skyPhase(LAT, LON, oct4.sunrise)?.phase).toBe('day');
+  });
+
+  it('is night from sunset to the next sunrise, across midnight', () => {
+    // 1 AM CDT on Oct 4 (06Z): the night began the evening before.
+    const p = skyPhase(LAT, LON, Date.parse('2026-10-04T06:00:00Z'));
+    expect(p?.phase).toBe('night');
+    expect(p?.startMs).toBe(oct3.sunset);
+    expect(p?.endMs).toBe(oct4.sunrise);
+    // 9 PM CDT on Oct 3 (02Z Oct 4), before midnight: the same night.
+    expect(skyPhase(LAT, LON, Date.parse('2026-10-04T02:00:00Z'))?.startMs).toBe(oct3.sunset);
+  });
+
+  it('is still the same night after solar midnight, before dawn', () => {
+    // 4 AM CDT (09Z): past solar midnight (about 1:25 AM CDT here), so the
+    // clock's own solar day is Oct 4 and the night's sunset is the day
+    // before's. The case the day before in the lookup exists for.
+    const p = skyPhase(LAT, LON, Date.parse('2026-10-04T09:00:00Z'));
+    expect(p).toMatchObject({ phase: 'night', startMs: oct3.sunset, endMs: oct4.sunrise });
+  });
+
+  it('turns to night at sunset itself, as the night flag does', () => {
+    expect(skyPhase(LAT, LON, oct4.sunset)?.phase).toBe('night');
+    expect(skyPhase(LAT, LON, oct4.sunset - 1)?.phase).toBe('day');
+    expect(skyPhase(LAT, LON, oct4.sunset)?.fraction).toBe(0);
+  });
+});
+

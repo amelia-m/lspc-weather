@@ -72,6 +72,48 @@ export function nightIntervals(lat: number, lon: number, fromMs: number, toMs: n
   }
   return out;
 }
+/** Day or night at the point, and how far through it `now` is. */
+export interface SkyPhase {
+  phase: 'day' | 'night';
+  /** The sunrise (day) or sunset (night) this phase began at. */
+  startMs: number;
+  /** The sunset (day) or next sunrise (night) it ends at. */
+  endMs: number;
+  /** 0 at the start, 1 at the end. */
+  fraction: number;
+}
+
+/**
+ * Whether it is day or night at the point, from the same sunrise and sunset
+ * the 14 CFR 105.19 night flag uses, with the phase's bounds: a night runs
+ * from one solar day's sunset to the next day's sunrise, so after midnight
+ * it began the evening before. Day is [sunrise, sunset): at sunset itself it
+ * is night, as the flag has it. Null only if no day around `now` brackets
+ * it, which the three looked at rule out. (Where the sun does not rise or
+ * set, `sunTimes` clamps, and this reads all night or all day.)
+ */
+export function skyPhase(lat: number, lon: number, now: number): SkyPhase | null {
+  const days: SunTimes[] = [];
+  for (const k of [-1, 0, 1]) {
+    const d = sunTimes(lat, lon, new Date(now + k * DAY_MS));
+    if (!days.some((x) => x.sunrise === d.sunrise)) days.push(d);
+  }
+  days.sort((a, b) => a.sunrise - b.sunrise);
+  const at = (phase: SkyPhase['phase'], startMs: number, endMs: number): SkyPhase => ({
+    phase,
+    startMs,
+    endMs,
+    fraction: (now - startMs) / (endMs - startMs),
+  });
+  for (let i = 0; i < days.length; i++) {
+    if (now >= days[i].sunrise && now < days[i].sunset) return at('day', days[i].sunrise, days[i].sunset);
+    if (i + 1 < days.length && now >= days[i].sunset && now < days[i + 1].sunrise) {
+      return at('night', days[i].sunset, days[i + 1].sunrise);
+    }
+  }
+  return null;
+}
+
 const rad = Math.PI / 180;
 const deg = 180 / Math.PI;
 

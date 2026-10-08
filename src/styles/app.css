@@ -20,6 +20,10 @@
      so the gridlines and the night band show through: a bar's height is its
      chance, and over the band it reads a little darker, the same height. */
   --hc-night: rgba(0, 0, 0, 0.5);
+  /* The Daylight card's sun and moon: a pale gold and a pale blue-grey,
+     away from the amber the gust line and stale data use. */
+  --sun: #ffe08a;
+  --moon: #cfd8e3;
   --hc-precip: rgba(74, 168, 255, 0.25);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
@@ -1525,3 +1529,52 @@ a {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.8rem;
 }
+
+/* Daylight card: how far through the day or night (SunArc). */
+.sun-arc svg {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 0 auto;
+}
+.sun-arc-horizon {
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+.sun-arc-track {
+  stroke: var(--border);
+  stroke-width: 2;
+  stroke-dasharray: 3 4;
+}
+.sun-arc-done {
+  stroke-width: 2.5;
+}
+.sun-arc-done.is-day {
+  stroke: var(--sun);
+}
+.sun-arc-done.is-night {
+  stroke: var(--moon);
+}
+.sun-arc-sun circle {
+  fill: var(--sun);
+}
+.sun-arc-sun line {
+  stroke: var(--sun);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+/* The moon's own disc only: the circles inside its mask cut the crescent and
+   must keep their white and black. */
+.sun-arc-moon > circle {
+  fill: var(--moon);
+}
+.sun-arc-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.sun-arc-text {
+  text-align: center;
+  margin: 2px 0 4px;
+}
+
