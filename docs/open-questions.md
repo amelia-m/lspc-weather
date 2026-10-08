@@ -67,8 +67,8 @@ citation's note does.
 Raised 2026-10-08. Open-Meteo's README
 (<https://github.com/open-meteo/open-meteo>) asks: "Do you use Open-Meteo?
 Please open a pull request and add your repository or app to the list!"
-This app reads its forecast, hourly winds and pressure levels from
-Open-Meteo, so it qualifies. Not started: the pull request goes to another
+This app reads its winds aloft (pressure levels, with the 10 m and 2 m
+samples) and the 10-day outlook from Open-Meteo, so it qualifies. Not started: the pull request goes to another
 project's repository under the maintainer's name, so it waits on the
 maintainer deciding to send it. Before writing the entry, read the README's
 list as it then stands for the format it uses.
