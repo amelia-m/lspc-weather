@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DailyPoint, DailySource, HourlyPoint } from '../domain/types';
-import { compass, cToF, round, toSpeed, type SpeedUnit } from '../domain/units';
+import { compass, fmtTemp, round, toSpeed, type SpeedUnit, type TempUnit } from '../domain/units';
 import { flightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
 import { DATA_SOURCES, dailySourceInUse } from '../config/sources';
@@ -36,6 +36,8 @@ export function DailyForecastPanel({
   hourly,
   unit,
   onUnitChange,
+  tempUnit = 'F',
+  onTempUnitChange,
 }: {
   daily: DailyPoint[];
   source: DailySource | null | undefined;
@@ -51,6 +53,10 @@ export function DailyForecastPanel({
    *  interaction, and a unit switch buried in there would move or vanish as
    *  days are opened and closed. */
   onUnitChange: (u: SpeedUnit) => void;
+  /** Page-wide temperature unit and its setter, for the card's °F/°C switch.
+   *  Optional so a test can render the card without them; App passes both. */
+  tempUnit?: TempUnit;
+  onTempUnitChange?: (u: TempUnit) => void;
 }): JSX.Element {
   const fallback = source === 'nws-gridpoint';
   const [selected, setSelected] = useState<string | null>(null);
@@ -83,6 +89,8 @@ export function DailyForecastPanel({
       }
       unit={unit}
       onUnitChange={onUnitChange}
+      tempUnit={tempUnit}
+      onTempUnitChange={onTempUnitChange}
     >
       {daily.length === 0 ? (
         <p className="muted">No daily forecast available.</p>
@@ -94,7 +102,7 @@ export function DailyForecastPanel({
                 <th aria-label="expand" />
                 <th>Day</th>
                 <th>Sky</th>
-                <th>Hi/Lo °F</th>
+                <th>Hi/Lo °{tempUnit}</th>
                 <th>Wind ({unit})</th>
                 <th title="Dominant direction: the day’s speed-weighted mean 10 m wind direction">Dir</th>
                 <th>Rain</th>
@@ -140,7 +148,7 @@ export function DailyForecastPanel({
                         {wx.label}
                       </td>
                     )}
-                    <td>{tempRange(d.tempMaxC, d.tempMinC)}</td>
+                    <td>{tempRange(d.tempMaxC, d.tempMinC, tempUnit)}</td>
                     <td>{windText(d, unit)}</td>
                     <td title={d.windDirDominantDeg != null ? `${d.windDirDominantDeg}°` : undefined}>
                       {d.windDirDominantDeg != null ? compass(d.windDirDominantDeg) : '—'}
@@ -160,6 +168,7 @@ export function DailyForecastPanel({
           points={hourlyByDay.get(selected) ?? []}
           lastCoveredDay={lastCoveredDay}
           unit={unit}
+          tempUnit={tempUnit}
           onClose={() => setSelected(null)}
         />
       )}
@@ -191,12 +200,14 @@ function DayDetail({
   points,
   lastCoveredDay,
   unit,
+  tempUnit,
   onClose,
 }: {
   dayKey: string;
   points: HourlyPoint[];
   lastCoveredDay: string | null;
   unit: SpeedUnit;
+  tempUnit: TempUnit;
   onClose: () => void;
 }): JSX.Element {
   const heading = dayHeading(dayKey);
@@ -245,7 +256,7 @@ function DayDetail({
                       <td>{hourWind(h, unit)}</td>
                       <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
                       <td>{h.visibilitySm != null ? `${round(h.visibilitySm, 1)} SM` : '—'}</td>
-                      <td>{h.tempC != null ? `${round(cToF(h.tempC))}°F` : '—'}</td>
+                      <td>{h.tempC != null ? fmtTemp(h.tempC, tempUnit) : '—'}</td>
                       <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
                       <td>{h.thunderProbPct != null ? `${round(h.thunderProbPct)}%` : '—'}</td>
                     </tr>
@@ -314,8 +325,9 @@ const dayLabel = (ms: number, index: number): string =>
         timeZone: SITE.timeZone,
       });
 
-const tempRange = (maxC: number | null, minC: number | null): string => {
-  const f = (c: number | null): string => (c != null ? `${round(cToF(c))}°` : '—');
+const tempRange = (maxC: number | null, minC: number | null, u: TempUnit): string => {
+  // The unit is in the column heading, so the cells carry the bare degree.
+  const f = (c: number | null): string => (c != null ? fmtTemp(c, u).slice(0, -1) : '—');
   return `${f(maxC)}/${f(minC)}`;
 };
 

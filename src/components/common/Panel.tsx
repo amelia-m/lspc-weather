@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import type { DataSource } from '../../config/sources';
-import type { SpeedUnit } from '../../domain/units';
-import { UnitToggle, UnitToggleScope } from './UnitToggle';
+import type { SpeedUnit, TempUnit } from '../../domain/units';
+import { TempToggle, UnitToggle, UnitToggleScope } from './UnitToggle';
 import { SourceLinks } from './SourceLinks';
 
 export function Panel({
@@ -10,6 +10,8 @@ export function Panel({
   sources,
   unit,
   onUnitChange,
+  tempUnit,
+  onTempUnitChange,
   className,
   action,
   footer,
@@ -25,6 +27,10 @@ export function Panel({
    *  omitted on cards with no speed in them, which leaves the header as-is. */
   unit?: SpeedUnit;
   onUnitChange?: (u: SpeedUnit) => void;
+  /** Current page-wide temperature unit and its setter, the same way: on
+   *  every card that shows a temperature, omitted on the rest. */
+  tempUnit?: TempUnit;
+  onTempUnitChange?: (u: TempUnit) => void;
   /** Extra class on the card, for the few the stylesheet styles by name: the
    *  accent border on `advisory-panel`, the `freshness` card. */
   className?: string;
@@ -42,10 +48,15 @@ export function Panel({
   children: ReactNode;
 }): JSX.Element {
   const headingId = useId();
+  const speedToggle = unit !== undefined && onUnitChange !== undefined;
+  const tempToggle = tempUnit !== undefined && onTempUnitChange !== undefined;
   const unitToggle =
-    unit !== undefined && onUnitChange !== undefined ? (
+    speedToggle || tempToggle ? (
       <UnitToggleScope labelledBy={headingId}>
-        <UnitToggle unit={unit} onChange={onUnitChange} />
+        <div className="unit-toggles">
+          {speedToggle && <UnitToggle unit={unit} onChange={onUnitChange} />}
+          {tempToggle && <TempToggle unit={tempUnit} onChange={onTempUnitChange} />}
+        </div>
       </UnitToggleScope>
     ) : null;
   return (

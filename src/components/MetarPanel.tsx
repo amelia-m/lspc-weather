@@ -1,5 +1,5 @@
 import type { CurrentConditions } from '../domain/types';
-import { compass, fmtSpeed, round, type SpeedUnit } from '../domain/units';
+import { compass, fmtSpeed, fmtTemp, fmtTempDelta, round, type SpeedUnit, type TempUnit } from '../domain/units';
 import { relativeHumidity } from '../domain/humidity';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
@@ -10,9 +10,15 @@ export function MetarPanel({
   current,
   unit,
   onUnitChange,
+  tempUnit = 'F',
+  onTempUnitChange,
 }: {
   current: CurrentConditions | null;
   unit: SpeedUnit;
+  /** Page-wide temperature unit and its setter, for the card's °F/°C switch.
+   *  Optional so a test can render the card without them; App passes both. */
+  tempUnit?: TempUnit;
+  onTempUnitChange?: (u: TempUnit) => void;
   /** Page-wide unit setter, handed to the header toggle. Required, not
    *  optional: the METAR wind is reported in knots and read by jumpers who
    *  think in mph, so a call site that rendered this card without a way to
@@ -29,6 +35,8 @@ export function MetarPanel({
       sources={[DATA_SOURCES.iemObservation, DATA_SOURCES.nwsObservation]}
       unit={unit}
       onUnitChange={onUnitChange}
+      tempUnit={tempUnit}
+      onTempUnitChange={onTempUnitChange}
     >
       {!current ? (
         <p className="muted">No METAR available.</p>
@@ -56,10 +64,10 @@ export function MetarPanel({
             <dd>{describeSky(current)}</dd>
             <dt>Temp / Dew</dt>
             <dd>
-              {fmtC(current.tempC)} / {fmtC(current.dewpointC)}
+              {fmtT(current.tempC, tempUnit)} / {fmtT(current.dewpointC, tempUnit)}
             </dd>
             <dt>Humidity</dt>
-            <dd>{describeHumidity(current)}</dd>
+            <dd>{describeHumidity(current, tempUnit)}</dd>
             <dt>Altimeter</dt>
             <dd>{current.altimeterInHg != null ? `${current.altimeterInHg.toFixed(2)} inHg` : '—'}</dd>
           </dl>
@@ -95,18 +103,19 @@ function describeSky(c: CurrentConditions): string {
     .join(', ');
 }
 
-const fmtC = (c: number | null): string => (c != null ? `${round(c)}°C` : '—');
+const fmtT = (c: number | null, u: TempUnit): string => (c != null ? fmtTemp(c, u) : '—');
 
 /** RH % and the temp–dew point spread, both as measured. No verdict attached. */
-function describeHumidity(c: CurrentConditions): string {
+function describeHumidity(c: CurrentConditions, u: TempUnit): string {
   if (c.tempC == null || c.dewpointC == null) return '—';
   const rh = round(relativeHumidity(c.tempC, c.dewpointC));
-  // Spread in °C to match the Temp / Dew row above (both shown in °C).
-  const spreadC = round(c.tempC - c.dewpointC);
+  // Spread in the page's unit, to match the Temp / Dew row above. A
+  // difference, so 9/5 with no offset (fmtTempDelta).
+  const spread = fmtTempDelta(c.tempC - c.dewpointC, u);
   // No "fog favorable" verdict: that fired at a 3 °C spread, the same number
   // behind the fog flag that was removed for having no published source. The
   // RH and the spread are measurements — they stand on their own, and a reader
   // who knows what a tight spread means does not need the app to decide where
   // "tight" begins.
-  return `${rh}% RH · ${spreadC}°C spread`;
+  return `${rh}% RH · ${spread} spread`;
 }

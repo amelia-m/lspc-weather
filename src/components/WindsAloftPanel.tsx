@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity } from '../domain/types';
-import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
+import { compass, fmtSpeed, fmtTemp, type SpeedUnit, type TempUnit } from '../domain/units';
 import { windsAloftTop } from '../domain/windsAloft';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
 import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
@@ -37,6 +37,8 @@ export function WindsAloftPanel({
   hourNav,
   unit,
   onUnitChange,
+  tempUnit = 'F',
+  onTempUnitChange,
 }: {
   levels: WindsAloftLevel[];
   source: WindsAloftSource | null | undefined;
@@ -50,6 +52,10 @@ export function WindsAloftPanel({
    *  another winds tool, and those tools differ in which unit they print, so
    *  the switch belongs with every rendering of this table. */
   onUnitChange: (u: SpeedUnit) => void;
+  /** Page-wide temperature unit and its setter, for the card's °F/°C switch.
+   *  Optional so a test can render the card without them; App passes both. */
+  tempUnit?: TempUnit;
+  onTempUnitChange?: (u: TempUnit) => void;
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false);
   // Ticks each minute so the "ahead of now" offset stays true between the
@@ -100,6 +106,8 @@ export function WindsAloftPanel({
       }
       unit={unit}
       onUnitChange={onUnitChange}
+      tempUnit={tempUnit}
+      onTempUnitChange={onTempUnitChange}
     >
       {levels.length > 0 && (
         <>
@@ -168,7 +176,7 @@ export function WindsAloftPanel({
                   {compass(l.directionDeg)} ({l.directionDeg}°)
                 </td>
                 <td>{fmtSpeed(l.speedKt, unit)}</td>
-                <td>{l.tempC != null ? `${l.tempC}°C / ${round(cToF(l.tempC))}°F` : '—'}</td>
+                <td>{l.tempC != null ? fmtTemp(l.tempC, tempUnit) : '—'}</td>
                 <td>
                   <span
                     className="aloft-arrow"

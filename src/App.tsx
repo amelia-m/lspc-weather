@@ -37,7 +37,7 @@ import { HourlyForecastPanel } from './components/HourlyForecastPanel';
 import { DailyForecastPanel } from './components/DailyForecastPanel';
 import { DriftPanel } from './components/DriftPanel';
 import { TafPanel } from './components/TafPanel';
-import type { SpeedUnit } from './domain/units';
+import type { SpeedUnit, TempUnit } from './domain/units';
 import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
@@ -62,6 +62,7 @@ const LAST_STUDENT_KEY = 'lspc:lastStudentProfile';
 const LAST_TIER_KEY = 'lspc:lastWaiverTier';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
 const UNIT_KEY = 'lspc:windUnit';
+const TEMP_UNIT_KEY = 'lspc:tempUnit';
 
 type Overrides = Partial<Record<WindProfileId, Partial<Thresholds>>>;
 
@@ -229,6 +230,13 @@ export default function App(): JSX.Element {
   useEffect(() => {
     safeLocalSet(UNIT_KEY, unit);
   }, [unit]);
+  // °F unless a reader chose °C: the outlook, the one card that printed a
+  // single unit for temperature, printed °F.
+  const [tempUnit, setTempUnit] = useState<TempUnit>(() => (safeLocalGet(TEMP_UNIT_KEY) === 'C' ? 'C' : 'F'));
+  useEffect(() => {
+    safeLocalSet(TEMP_UNIT_KEY, tempUnit);
+  }, [tempUnit]);
+  const temp = { tempUnit, onTempUnitChange: setTempUnit };
 
   const base = useMemo(() => resolveThresholds(profile), [profile]);
   const profileOverride = overrides[profile];
@@ -272,7 +280,7 @@ export default function App(): JSX.Element {
   if (route === 'parity') return <ParityRoute />;
 
   const cards: Record<CardId, JSX.Element> = {
-    metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} />,
+    metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} {...temp} />,
     surfaceWind: (
       <SurfaceWindPanel
         current={snapshot.current}
@@ -291,6 +299,7 @@ export default function App(): JSX.Element {
         hourNav={winds.nav}
         unit={unit}
         onUnitChange={setUnit}
+        {...temp}
       />
     ),
     drift: (
@@ -309,10 +318,11 @@ export default function App(): JSX.Element {
         hourly={snapshot.hourly}
         unit={unit}
         onUnitChange={setUnit}
+        {...temp}
       />
     ),
     precip: <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />,
-    densityAltitude: <DensityAltitudePanel da={snapshot.densityAltitude} />,
+    densityAltitude: <DensityAltitudePanel da={snapshot.densityAltitude} {...temp} />,
     sun: <SunPanel sun={snapshot.sun} />,
     radar: <RadarPanel />,
     sectional: <SectionalPanel />,

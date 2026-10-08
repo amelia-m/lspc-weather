@@ -1,5 +1,5 @@
 import { createContext, useContext, useId, type ReactNode } from 'react';
-import type { SpeedUnit } from '../../domain/units';
+import type { SpeedUnit, TempUnit } from '../../domain/units';
 
 /** Id of the heading that names the surface a UnitToggle is rendered into.
  *
@@ -48,13 +48,50 @@ export function UnitToggle({
   unit: SpeedUnit;
   onChange: (u: SpeedUnit) => void;
 }): JSX.Element {
+  return <UnitSwitch value={unit} options={UNITS} what="wind speed unit" onChange={onChange} />;
+}
+
+const TEMP_UNITS: readonly TempUnit[] = ['F', 'C'];
+
+/**
+ * °F/°C switch for the page-wide temperature unit, on every card that shows a
+ * temperature, built like the kt/mph switch: no state of its own, so switching
+ * it on one card switches every card. Inside a card it is named after the
+ * card heading ("Winds aloft temperature unit").
+ */
+export function TempToggle({
+  unit,
+  onChange,
+}: {
+  unit: TempUnit;
+  onChange: (u: TempUnit) => void;
+}): JSX.Element {
+  return <UnitSwitch value={unit} options={TEMP_UNITS} what="temperature unit" format={(u) => `°${u}`} onChange={onChange} />;
+}
+
+/** The segmented control both switches are made of. `what` names it for a
+ *  screen reader: after the card heading inside a UnitToggleScope, on its own
+ *  ("Wind speed unit") outside one. */
+function UnitSwitch<U extends string>({
+  value,
+  options,
+  what,
+  format = (u) => u,
+  onChange,
+}: {
+  value: U;
+  options: readonly U[];
+  what: string;
+  format?: (u: U) => string;
+  onChange: (u: U) => void;
+}): JSX.Element {
   const scopeId = useContext(UnitToggleScopeContext);
   const ownLabelId = useId();
   return (
     <div
       className="unit-toggle"
       role="group"
-      aria-label={scopeId ? undefined : 'Wind speed unit'}
+      aria-label={scopeId ? undefined : what.charAt(0).toUpperCase() + what.slice(1)}
       aria-labelledby={scopeId ? `${scopeId} ${ownLabelId}` : undefined}
     >
       {/* Hidden, but referenced by aria-labelledby above, which reads hidden
@@ -63,17 +100,17 @@ export function UnitToggle({
           them with `button:first-of-type` / `:last-of-type` rather than
           child-position selectors this span would otherwise capture. */}
       <span id={ownLabelId} hidden>
-        wind speed unit
+        {what}
       </span>
-      {UNITS.map((u) => (
+      {options.map((u) => (
         <button
           key={u}
           type="button"
-          className={u === unit ? 'active' : ''}
-          aria-pressed={u === unit}
+          className={u === value ? 'active' : ''}
+          aria-pressed={u === value}
           onClick={() => onChange(u)}
         >
-          {u}
+          {format(u)}
         </button>
       ))}
     </div>
