@@ -69,8 +69,7 @@ describe('isSimSectionUrl', () => {
  *  rather than being guessed at by its path and passing unseen. */
 const onUspa = (url: string): boolean => {
   try {
-    const host = new URL(url).hostname.replace(/\.$/, '');
-    return host === 'uspa.org' || host.endsWith('.uspa.org');
+    return /(^|\.)uspa\.org\.*$/.test(new URL(url).hostname);
   } catch {
     return false;
   }
@@ -83,6 +82,8 @@ describe('onUspa', () => {
       'https://www.uspa.org/Portals/0/files/SIM.pdf',
       'https://www.uspa.org/sim2-1',
       'https://www.uspa.org./sim/2-1',
+      'https://uspa.org/sim/2-1',
+      'https://WWW.USPA.ORG../sim/2-1',
       'https://x@m.uspa.org:443/en/sim/2-1',
     ]) {
       expect(onUspa(url), url).toBe(true);
