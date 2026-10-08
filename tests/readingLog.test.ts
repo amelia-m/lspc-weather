@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { READING_LOG, SIM_EDITION, SIM_LAST_READ, citationsOf, type CitationKey } from '../src/config/readingLog';
-import { CITATIONS, simUrl } from '../src/config/thresholds';
+import { CITATIONS, isSimSectionUrl, simUrl } from '../src/config/thresholds';
 import { CitationsPage } from '../src/components/CitationsPage';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 
@@ -46,10 +46,10 @@ describe('the reading log', () => {
   it('marks every checklist entry that cites or quotes the SIM as having read it', () => {
     // scripts/simText.live.ts checks the quotes of the entries whose reading
     // is SIM_READ; an entry with its own wording would drop out unnoticed.
-    // The SIM index counts too: a citation left there still sends a reader
-    // to the SIM.
+    // A citation left on the SIM's index is not counted: no section was
+    // identified, so there is no part to have read.
     const quoting = new Set(READING_LOG.flatMap((r) => r.quotedIn ?? []));
-    const simEntries = CHECKLIST.filter((e) => quoting.has(e.id) || e.sources.some((s) => /uspa\.org\/sim\b/.test(s.url ?? '')));
+    const simEntries = CHECKLIST.filter((e) => quoting.has(e.id) || e.sources.some((s) => isSimSectionUrl(s.url ?? '')));
     expect(simEntries.length).toBeGreaterThan(0);
     for (const e of simEntries) expect(e.found?.read, e.id).toContain(SIM_READ);
   });
@@ -84,7 +84,7 @@ describe('the reading log', () => {
     }
     // Every citation that links into the SIM is pinned.
     for (const [key, c] of cited) {
-      if ((c as { url: string }).url.includes('uspa.org/sim/')) {
+      if (isSimSectionUrl((c as { url: string }).url)) {
         expect(READING_LOG.find((r) => citationsOf(r).includes(key))?.simPart, key).toBeDefined();
       }
     }
