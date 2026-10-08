@@ -1,5 +1,6 @@
 import { NEARBY_METAR_STATIONS, SITE } from './site';
 import { chartSupplementCycle } from '../domain/chartSupplement';
+import type { WindsAloftSource } from '../domain/types';
 
 /** A data source shown in a card's "Data:" footer, linking to where the
  *  numbers actually come from. */
@@ -49,7 +50,8 @@ export const DATA_SOURCES = {
     label: 'NWS forecast · NOAA',
     url: `https://forecast.weather.gov/MapClick.php?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}`,
   },
-  /** Winds aloft (pressure-level winds) and the 10-day outlook. Its terms
+  /** Winds aloft (pressure-level winds), the drift estimate worked from
+   *  them, and the 10-day outlook's day rows. Its terms
    *  (open-meteo.com/en/licence, read 2026-10-08) put the data under CC BY
    *  4.0: credit, a link to the licence, a note of what was changed, and a
    *  link to Open-Meteo beside wherever its data are shown. Each card that
@@ -255,4 +257,14 @@ export function pilotLinks(now: number): PilotLink[] {
       note: `Plattsmouth (${station}), the nearest public airport; ${SITE.dz.icao} is private-use and has no entry.`,
     },
   ];
+}
+
+/** Who supplied the winds aloft, for the Data lines of the two cards built
+ *  on them (Winds aloft, Drift). Open-Meteo is credited only on its own
+ *  answer: with neither it nor the FD bulletin answering (source null or
+ *  not yet known) the cards show no data and credit nobody. */
+export function windsAloftDataSource(source: WindsAloftSource | null | undefined): DataSource | null {
+  if (source === 'open-meteo') return DATA_SOURCES.openMeteo;
+  if (source === 'nws-fd') return DATA_SOURCES.fdWinds;
+  return null;
 }

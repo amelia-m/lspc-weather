@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { WindsAloftLevel, WindsAloftSource } from '../domain/types';
 import { compass, round } from '../domain/units';
 import { estimateDrift, type DriftLeg } from '../domain/spot';
-import { DATA_SOURCES } from '../config/sources';
+import { windsAloftDataSource } from '../config/sources';
 import { CITATIONS, recommendedDeployFt, type WindProfileId } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { SelectField } from './common/SelectField';
@@ -103,9 +103,7 @@ export function DriftPanel({
     <Panel
       title="Freefall drift / spot"
       subtitle="estimate"
-      sources={
-        source === 'nws-fd' ? [DATA_SOURCES.fdWinds] : source === 'open-meteo' ? [DATA_SOURCES.openMeteo] : []
-      }
+      sources={[windsAloftDataSource(source)].filter((s) => s !== null)}
     >
       {levels.length === 0 ? (
         <p className="muted">No winds-aloft data.</p>

@@ -3,7 +3,7 @@ import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity } from '../d
 import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
 import { windsAloftTop } from '../domain/windsAloft';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
-import { DATA_SOURCES } from '../config/sources';
+import { DATA_SOURCES, windsAloftDataSource } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
@@ -89,15 +89,13 @@ export function WindsAloftPanel({
     <Panel
       title="Winds aloft"
       subtitle={fallback ? 'NOAA FD fallback' : 'freefall drift / spot'}
-      // Open-Meteo is credited only on its own answer: with neither it nor
-      // the FD bulletin answering (source null) there is no data to credit,
-      // and Schulze's tool stays as the place to look instead.
+      // Schulze's tool rides beside Open-Meteo as a cross-reference on the
+      // same data; on the FD bulletin, or with no data, it would read as the
+      // source.
       sources={
-        fallback
-          ? [DATA_SOURCES.fdWinds]
-          : source === 'open-meteo'
-            ? [DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]
-            : [DATA_SOURCES.markschulze]
+        source === 'open-meteo'
+          ? [DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]
+          : [windsAloftDataSource(source)].filter((s) => s !== null)
       }
       unit={unit}
       onUnitChange={onUnitChange}
