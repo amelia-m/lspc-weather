@@ -46,6 +46,22 @@ These cannot be settled from the code.
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
 
+## To do: link the waiver sign's photo under the tier selector
+
+Asked for 2026-10-08. Under the LSPC waiver tier buttons (the
+`tier-toggle` row in `src/App.tsx`, shown on the Jumpers tab once "LSPC
+waiver" is picked), a link straight to the photo of the posted sign,
+`docs/lspc-waivered-wind-limits.jpg`, so a jumper choosing a tier can see
+the sign the tiers were transcribed from.
+
+Today the only way there is the `lspcWaiver` citation, which links to the
+transcription (`docs/lspc-waivered-wind-limits.md` on GitHub) and the photo
+from that. To decide: link the image on GitHub (`${REPO_URL}/blob/main/...`,
+like the citation) or serve a copy from the site under `public/` (opens
+without GitHub, but then two copies to keep the same; a test could compare
+them). Either way the link should say the photo is undated, as the
+citation's note does.
+
 ## Which forecast run the winds-aloft request is served
 
 Narrowed, not settled. Seen first on 2026-09-23: for the same hour the app's
