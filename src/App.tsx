@@ -24,7 +24,15 @@ import { RadarPanel } from './components/RadarPanel';
 import { SectionalPanel } from './components/SectionalPanel';
 import { PilotLinksPanel } from './components/PilotLinksPanel';
 import { NearbyMetarsPanel } from './components/NearbyMetarsPanel';
-import { VIEW_CARDS, VIEW_HASH, VIEW_LABEL, type CardId, type View } from './config/views';
+import {
+  advisoriesFor,
+  VIEW_CARDS,
+  VIEW_HASH,
+  VIEW_LABEL,
+  VIEW_USES_PROFILE,
+  type CardId,
+  type View,
+} from './config/views';
 import { HourlyForecastPanel } from './components/HourlyForecastPanel';
 import { DailyForecastPanel } from './components/DailyForecastPanel';
 import { DriftPanel } from './components/DriftPanel';
@@ -216,7 +224,14 @@ export default function App(): JSX.Element {
       return out;
     });
 
-  const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(thresholds, unit);
+  const view: View = route === 'pilots' ? 'pilots' : 'jumpers';
+  // The Pilots tab has no Settings, so its flags fire on the profile's
+  // published figures, not on edits a reader made for a jumper profile on
+  // the other tab: an edit there would otherwise move the visibility flag a
+  // pilot sees, from a control the pilot cannot see. (The profile itself
+  // only sets the jumper wind flags, which that tab leaves off.)
+  const advisoryThresholds = VIEW_USES_PROFILE[view] ? thresholds : base;
+  const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(advisoryThresholds, unit);
   const winds = useWindsHour(snapshot);
   const provenance = useMemo(() => deriveProvenance(snapshot), [snapshot]);
 
@@ -225,7 +240,6 @@ export default function App(): JSX.Element {
   // what you want when someone ducks in to check a reference and comes back.
   if (route === 'citations') return <CitationsPage />;
   if (route === 'parity') return <ParityRoute />;
-  const view: View = route === 'pilots' ? 'pilots' : 'jumpers';
 
   const cards: Record<CardId, JSX.Element> = {
     metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} />,
@@ -297,10 +311,13 @@ export default function App(): JSX.Element {
             375-px phone that panel is the one on screen at load while the
             nearest card toggle is below the fold — a reader who needs mph to
             check a flag against a limit quoted in mph would have to scroll past
-            the flag to find the switch. Beside it stay the controls with no
+            the flag to find the switch (on the Jumpers tab; the Pilots list
+            carries no wind flag, but the cards there print speeds). Beside it stay the controls with no
             per-card home at all: the wind-limit profile and waiver tier are
-            page-wide policy, not a display preference. */}
+            page-wide policy, not a display preference. They are a jumper's
+            limits, so the Pilots tab shows neither (VIEW_USES_PROFILE). */}
         <div className="toggles">
+          {VIEW_USES_PROFILE[view] && (
           <div className="class-toggle" role="group" aria-label="Wind-limit profile">
             <button className={profile === 'student' ? 'active' : ''} onClick={() => setProfile('student')}>
               Student
@@ -318,7 +335,8 @@ export default function App(): JSX.Element {
               LSPC waiver
             </button>
           </div>
-          {isWaiver && (
+          )}
+          {VIEW_USES_PROFILE[view] && isWaiver && (
             <div className="tier-toggle" role="group" aria-label="Waiver experience tier">
               {WAIVER_TIERS.map((tier) => (
                 <button
@@ -370,14 +388,17 @@ export default function App(): JSX.Element {
       </p>
 
       <AdvisoryPanel
-        advisories={advisories}
+        advisories={advisoriesFor(view, advisories)}
         profile={profileLabel(profile)}
         /* Not "is the wind high" — whether a source published a limit to flag
-           it against. On the licensed profile nobody did, so the list below
+           it against. On the licensed profile nobody did, so the Jumpers list
            cannot carry surface wind at any speed and says so when it is
-           otherwise empty. Same null that gates the flag and the card's band. */
+           otherwise empty; the Pilots list carries no jumper wind flag on
+           any profile and says that instead (forPilots). Same null that
+           gates the flag and the card's band. */
         hasSourcedWindLimit={thresholds.windLimitCitation !== null}
-        editedLimits={editedLimits(thresholds).map((k) => EDITABLE_LIMITS[k].label)}
+        editedLimits={editedLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].label)}
+        forPilots={!VIEW_USES_PROFILE[view]}
       />
 
       {/* The cards each tab shows, in its order: src/config/views.ts. Order
@@ -398,14 +419,16 @@ export default function App(): JSX.Element {
         onRefresh={refresh}
       />
 
-      <SettingsPanel
-        thresholds={thresholds}
-        base={base}
-        label={profileLabel(profile)}
-        modified={modified}
-        onChange={setThreshold}
-        onReset={resetProfile}
-      />
+      {VIEW_USES_PROFILE[view] && (
+        <SettingsPanel
+          thresholds={thresholds}
+          base={base}
+          label={profileLabel(profile)}
+          modified={modified}
+          onChange={setThreshold}
+          onReset={resetProfile}
+        />
+      )}
 
       <footer className="app-foot">
         Data: Iowa Environmental Mesonet, NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.

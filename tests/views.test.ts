@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { VIEW_CARDS, VIEW_HASH, type CardId } from '../src/config/views';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import {
+  advisoriesFor,
+  VIEW_CARDS,
+  VIEW_HASH,
+  VIEW_USES_PROFILE,
+  type CardId,
+} from '../src/config/views';
+import { evaluateAdvisories } from '../src/domain/advisories';
+import { normalizeMetar } from '../src/domain/normalize';
+import { METAR_FIXTURE } from '../src/api/fixtures/metar';
+import { resolveThresholds, withOverrides } from '../src/config/thresholds';
+import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
+import type { WeatherSnapshot } from '../src/domain/types';
 import { PILOT_LINKS } from '../src/config/sources';
 
 /* Every card the dashboard had must still be on a tab: splitting the page
@@ -46,5 +60,73 @@ describe('the pilot briefing links', () => {
       expect(u.hostname).toMatch(/(^|\.)faa\.gov$|^aviationweather\.gov$/);
       expect(l.note.length).toBeGreaterThan(0);
     }
+  });
+});
+
+/* The wind-limit profile picks a jumper's ground-wind limit. On the Pilots
+ * tab it is not offered, and the two flags it drives are left off. Tested in
+ * conditions that trip both, on a waiver tier, which has both. */
+describe('the Pilots tab and the jumper wind limits', () => {
+  const now = Date.parse('2025-06-27T13:30:00Z');
+  const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 25, wgst: 35, visib: 2 });
+  const snapshot: WeatherSnapshot = {
+    current,
+    hourly: [],
+    daily: [],
+    windsAloft: [],
+    sun: null,
+    densityAltitude: null,
+    taf: null,
+  };
+  const all = evaluateAdvisories(snapshot, resolveThresholds('waiver:0-5'), now, 'kt');
+
+  it('offers the profile and Settings on the Jumpers tab only, and fires Pilots flags on published figures', async () => {
+    // The wiring lives in App.tsx, which no test renders (it fetches). Read it.
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
+    const app = fs.readFileSync(decodeURIComponent(new URL('../src/App.tsx', import.meta.url).pathname), 'utf8');
+    expect(VIEW_USES_PROFILE).toEqual({ jumpers: true, pilots: false });
+    expect(app).toMatch(/const advisoryThresholds = VIEW_USES_PROFILE\[view\] \? thresholds : base;/);
+    expect(app).toMatch(/useWeatherData\(advisoryThresholds, unit\)/);
+    expect(app).toMatch(/advisories=\{advisoriesFor\(view, advisories\)\}/);
+    expect(app).toMatch(/forPilots=\{!VIEW_USES_PROFILE\[view\]\}/);
+    expect(app).toMatch(/\{VIEW_USES_PROFILE\[view\] && \(\s*<div className="class-toggle"/);
+    expect(app).toMatch(/\{VIEW_USES_PROFILE\[view\] && isWaiver && \(/);
+    expect(app).toMatch(/\{VIEW_USES_PROFILE\[view\] && \(\s*<SettingsPanel/);
+  });
+
+  it('would fire the Pilots visibility flag even with a Jumpers edit that silences it', () => {
+    // What advisoryThresholds guards against: Student with visibility edited
+    // to 1 SM, in 2 SM.
+    const hazy = { ...snapshot, current: normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 }) };
+    const student = resolveThresholds('student');
+    const edited = withOverrides(student, { visibilityCautionSm: 1 });
+    expect(evaluateAdvisories(hazy, edited, now, 'kt').some((a) => a.id === 'visibility')).toBe(false);
+    expect(evaluateAdvisories(hazy, student, now, 'kt').some((a) => a.id === 'visibility')).toBe(true);
+  });
+
+  it('leaves the jumper wind flags off the Pilots list, and keeps the rest', () => {
+    const ids = all.map((a) => a.id);
+    expect(ids).toEqual(expect.arrayContaining(['surface-wind', 'gust-limit', 'visibility']));
+    expect(advisoriesFor('jumpers', all).map((a) => a.id)).toEqual(ids);
+    const pilots = advisoriesFor('pilots', all).map((a) => a.id);
+    expect(pilots).not.toContain('surface-wind');
+    expect(pilots).not.toContain('gust-limit');
+    expect(pilots).toEqual(ids.filter((id) => id !== 'surface-wind' && id !== 'gust-limit'));
+  });
+
+  it('says on the Pilots list where the jumper wind limits are, empty or not', () => {
+    const panel = (advisories: typeof all, forPilots: boolean, hasSourcedWindLimit = true) =>
+      renderToStaticMarkup(
+        createElement(AdvisoryPanel, { advisories, profile: 'Licensed', hasSourcedWindLimit, forPilots }),
+      );
+    for (const list of [[], advisoriesFor('pilots', all)]) {
+      const html = panel(list, true, false);
+      expect(html).toContain('Jumper wind limits are not flagged here.');
+      // The Licensed profile's own note is a jumper's, not a pilot's.
+      expect(html).not.toContain('never flagged on the Licensed profile');
+    }
+    expect(panel([], true)).toContain('not clearance to fly the load: the pilot in command decides.');
+    expect(panel([], false)).toContain('not clearance to jump');
+    expect(panel(all, false)).not.toContain('Jumper wind limits are not flagged here.');
   });
 });

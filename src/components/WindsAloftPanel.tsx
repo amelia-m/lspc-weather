@@ -8,8 +8,8 @@ import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
-import { ForecastHourNav, fmtZulu, type WindsHourNav } from './common/ForecastHourNav';
-import { fmtTime } from './format';
+import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
+import { fmtTime, fmtZulu } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
  *  around 10,000 ft, so the default view stops there and keeps the low levels

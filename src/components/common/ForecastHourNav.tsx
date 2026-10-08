@@ -1,6 +1,6 @@
 import { SITE } from '../../config/site';
 import { ForecastOffset } from './ForecastOffset';
-import { fmtClock, fmtTime } from '../format';
+import { fmtClock, fmtTime, fmtZulu } from '../format';
 
 /** The hour buttons, when the winds source has more than one hour to offer.
  *  The NOAA FD fallback is one bulletin and gets none. One object, held by
@@ -14,17 +14,6 @@ export interface WindsHourNav {
   onStep: (delta: -1 | 1) => void;
   /** Back to following the hour nearest the clock. */
   onFollow: () => void;
-}
-
-/** UTC "1800Z". Mark Schulze's Winds Aloft — the tool jumpers cross-check the
- *  winds table against — labels its forecast in exactly this form, so printing
- *  it verbatim turns the comparison into a character match instead of
- *  arithmetic. */
-export function fmtZulu(ms: number): string {
-  const d = new Date(ms);
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${hh}${mm}Z`;
 }
 
 /** Local calendar day at the DZ, for deciding whether a time needs its weekday

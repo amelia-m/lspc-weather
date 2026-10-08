@@ -90,12 +90,13 @@ export const DATA_SOURCES = {
   },
   /** The same query on adsb.fi's globe, a second volunteer network, for when
    *  adsb.lol is down. Its page sits behind Cloudflare's bot check, so it
-   *  could not be read from a script and has not been seen opening on the
-   *  sectional: the query is upstream tar1090's (wiedehopf/tar1090 on
-   *  GitHub, html/script.js and html/layers.js, read 2026-10-04, where the
-   *  sectional layer is unconditional), and tar1090 falls back to a street
-   *  map, silently, on a base map its deployment lacks. The card's text says
-   *  only what the link asks for. Not drawn on this card: its aircraft feed
+   *  could not be read from a script: the query is upstream tar1090's
+   *  (wiedehopf/tar1090 on GitHub, html/script.js and html/layers.js, read
+   *  2026-10-04, where the sectional layer is unconditional). Opened in a
+   *  browser by the maintainer on 2026-10-08, it showed the VFR sectional
+   *  centred on the drop zone. tar1090 falls back to a street map, silently,
+   *  on a base map its deployment lacks, so the card's text still says only
+   *  what the link asks for. Not drawn on this card: its aircraft feed
    *  sends no CORS header for this site (checked 2026-10-04). Whether its
    *  map would work in a frame was not checkable. */
   adsbFiTraffic: {

@@ -29,7 +29,11 @@ limits, drift and the day's planning. **Pilots** (`#pilots`) has the nearby airp
 METARs, the sectional, the TAF, density altitude, winds aloft and briefing
 links. Conditions now,
 the sky, daylight, radar and the advisories show on both. Which cards each tab
-shows is `src/config/views.ts`.
+shows is `src/config/views.ts`. The jumper wind-limit profile (Student,
+Licensed, the waiver tiers) and the threshold Settings are on Jumpers only:
+the Pilots advisory list leaves out the two jumper wind flags (surface wind
+against the jumper's limit, the waiver gust ceiling), says so, and fires on
+the published figures rather than Settings edits.
 
 - ⚠️ **Conditions to note** — the flagged conditions, each with the source it
   relates to: surface wind, the LSPC waiver gust ceiling, visibility, FAA flight

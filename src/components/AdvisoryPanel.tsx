@@ -27,12 +27,18 @@ const LEVEL_LABEL: Record<Advisory['level'], string> = {
  * figure in Settings, so with a limit raised there this list can be empty
  * while a published one is crossed, and the "(edited)" marks sit on the cards
  * further down. The list says which it is using.
+ *
+ * On the Pilots tab (`forPilots`) the jumper ground-wind flags are left out
+ * (`advisoriesFor`), and the list says so in either state: without it, a
+ * pilot reading an empty list, or one with only a visibility flag, could take
+ * the wind as having been checked.
  */
 export function AdvisoryPanel({
   advisories,
   profile,
   hasSourcedWindLimit,
   editedLimits = [],
+  forPilots = false,
 }: {
   advisories: Advisory[];
   /** Active wind-limit profile, as shown on the header control ("Licensed"). */
@@ -42,6 +48,9 @@ export function AdvisoryPanel({
   hasSourcedWindLimit: boolean;
   /** Names of the limits edited in Settings for this profile, if any. */
   editedLimits?: string[];
+  /** The Pilots tab's list: no jumper ground-wind flags, and published
+   *  figures only (no Settings on that tab, so no edits to report). */
+  forPilots?: boolean;
 }): JSX.Element {
   const footer = (
     <>
@@ -79,17 +88,25 @@ export function AdvisoryPanel({
             nothing listed. Settings shows the published figure beside each edited one.
           </p>
         )}
+        {forPilots && (
+          <p className="advisory-edited muted small">
+            <strong>Jumper wind limits are not flagged here.</strong> The ground-wind limits for
+            students and the club waiver are on the Jumpers tab; the observed wind is on the Current
+            conditions card.
+          </p>
+        )}
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}
-            {!hasSourcedWindLimit && (
+            {!forPilots && !hasSourcedWindLimit && (
               <>
                 Surface wind is never flagged on the {profile} profile — no published source sets
                 a wind limit for it — so read the speed on the Surface wind card.{' '}
               </>
             )}
-            This is not clearance to jump — confirm winds, clouds, and the spot yourself and with
-            the S&amp;TA.
+            {forPilots
+              ? 'This is not clearance to fly the load: the pilot in command decides.'
+              : 'This is not clearance to jump — confirm winds, clouds, and the spot yourself and with the S&TA.'}
           </p>
         ) : (
           <ul className="advisory-list">
