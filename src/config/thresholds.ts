@@ -58,6 +58,10 @@ const FAA_PAMPHLET_READ_NOTE =
 export const simUrl = (section: string, anchor?: string): string =>
   `https://www.uspa.org/sim/${section}${anchor ? `#${anchor}` : ''}`;
 
+/** A link to a SIM section page (simUrl with a section), as opposed to the
+ *  SIM's index, where a citation whose section is unknown stays. */
+export const isSimSectionUrl = (url: string): boolean => url.startsWith(simUrl(''));
+
 /**
  * Citations — the product, not decoration.
  *

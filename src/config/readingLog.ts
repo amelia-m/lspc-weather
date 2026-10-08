@@ -100,7 +100,7 @@ const sim = (
     how: SIM_HOW,
     simPart: { section: p.section, anchor: p.anchor, until: p.until, sha256: p.sha256, chars: p.chars },
   };
-  if (p.citations) return { ...common, kind: 'cited', citations: p.citations, quotedIn: p.quotedIn };
+  if (p.citations) return { ...common, kind: 'cited', citations: p.citations, ...(p.quotedIn ? { quotedIn: p.quotedIn } : {}) };
   return { ...common, kind: 'quoted', quotedIn: p.quotedIn };
 };
 
