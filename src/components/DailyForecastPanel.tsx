@@ -5,6 +5,7 @@ import { flightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
+import { FallbackSources } from './common/FallbackSources';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { fmtTime } from './format';
@@ -70,13 +71,14 @@ export function DailyForecastPanel({
       subtitle={fallback ? 'NWS ~7-day fallback' : 'daily planning'}
       // The day rows are Open-Meteo's, or the NWS gridpoint's on the
       // fallback; the hourly detail under a day is the NWS gridpoint's on
-      // both. With neither answering (source null) nothing is credited.
-      sources={
-        source === 'open-meteo'
-          ? [DATA_SOURCES.openMeteo, DATA_SOURCES.nwsForecast]
-          : fallback
-            ? [DATA_SOURCES.nwsForecast]
-            : []
+      // both, so on the usual path it rides along.
+      footer={
+        <FallbackSources
+          inUse={source === 'open-meteo' ? 'usual' : fallback ? 'fallback' : null}
+          usual={[DATA_SOURCES.openMeteo]}
+          fallback={[DATA_SOURCES.nwsForecast]}
+          withUsual={[DATA_SOURCES.nwsForecast]}
+        />
       }
       unit={unit}
       onUnitChange={onUnitChange}

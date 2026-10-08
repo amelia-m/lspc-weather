@@ -46,19 +46,40 @@ describe('Open-Meteo in the cards’ Data lines', () => {
     expect(dataLine(daily('open-meteo'))).toContain(`>Open-Meteo</a> (${LICENCE})`);
   });
 
-  it('does not credit Open-Meteo on a fallback, or for data it did not supply', () => {
-    expect(dataLine(winds('nws-fd'))).toContain(`>${DATA_SOURCES.fdWinds.label}</a>`);
-    expect(dataLine(winds('nws-fd'))).not.toContain('Open-Meteo');
-    expect(dataLine(daily('nws-gridpoint'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
-    expect(dataLine(daily('nws-gridpoint'))).not.toContain('Open-Meteo');
-    // Neither source answered: nothing is shown, so nobody is credited,
-    // not even Schulze's cross-reference, which would read as the source.
+  // The line names the usual source whatever answered, but only what is in
+  // use is written as the card's data: everything before "usually".
+  const [credited, usually] = [(l: string) => l.split(' · usually ')[0], (l: string) => l.split(' · usually ')[1] ?? ''];
+
+  it('on a fallback, credits the fallback, says so, and names the usual source after it', () => {
+    for (const [line, fb] of [
+      [dataLine(winds('nws-fd')), DATA_SOURCES.fdWinds],
+      [dataLine(daily('nws-gridpoint')), DATA_SOURCES.nwsForecast],
+    ] as const) {
+      expect(credited(line)).toContain(`>${fb.label}</a>`);
+      expect(credited(line)).toContain('fallback in use');
+      expect(credited(line)).not.toContain('Open-Meteo');
+      expect(usually(line)).toContain(`>Open-Meteo</a> (${LICENCE})`);
+    }
+    // Schulze's cross-reference reads the same Open-Meteo data, so it is not
+    // offered beside the FD bulletin.
+    expect(dataLine(winds('nws-fd'))).not.toContain(DATA_SOURCES.markschulze.label);
+  });
+
+  it('with nothing loaded, says so and credits nobody, but still names the usual source and the fallback', () => {
     const drift = (source: 'open-meteo' | 'nws-fd' | null) =>
       renderToStaticMarkup(createElement(DriftPanel, { levels: [], profile: 'licensed', source } as never));
     expect(dataLine(drift('open-meteo'))).toContain(`>Open-Meteo</a> (${LICENCE})`);
-    for (const html of [winds(null), daily(null), drift(null)]) {
-      expect(html).toContain('<section');
-      expect(dataLine(html)).toBe('');
+    for (const [html, fb] of [
+      [winds(null), DATA_SOURCES.fdWinds],
+      [daily(null), DATA_SOURCES.nwsForecast],
+      [drift(null), DATA_SOURCES.fdWinds],
+    ] as const) {
+      const line = dataLine(html);
+      expect(line).toContain('Data: none loaded · usually ');
+      expect(usually(line)).toContain(`>Open-Meteo</a> (${LICENCE})`);
+      expect(usually(line)).toContain(`>${fb.label}</a></span> as the fallback`);
+      expect(line).not.toContain('fallback in use');
+      expect(line).not.toContain(DATA_SOURCES.markschulze.label);
     }
     // The winds card offers Schulze's tool in its body instead.
     expect(winds(null)).toContain('is another place to look.');
