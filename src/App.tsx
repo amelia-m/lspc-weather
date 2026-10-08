@@ -43,6 +43,7 @@ import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DashboardDisclaimer } from './components/DashboardDisclaimer';
+import { ProfileSelector } from './components/ProfileSelector';
 import { AppFooter } from './components/AppFooter';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -201,7 +202,6 @@ export default function App(): JSX.Element {
     safeLocalSet(UNIT_KEY, unit);
   }, [unit]);
 
-  const isWaiver = profile.startsWith('waiver');
   const base = useMemo(() => resolveThresholds(profile), [profile]);
   const profileOverride = overrides[profile];
   const thresholds = useMemo<Thresholds>(
@@ -319,38 +319,7 @@ export default function App(): JSX.Element {
             page-wide policy, not a display preference. They are a jumper's
             limits, so the Pilots tab shows neither (VIEW_USES_PROFILE). */}
         <div className="toggles">
-          {VIEW_USES_PROFILE[view] && (
-          <div className="class-toggle" role="group" aria-label="Wind-limit profile">
-            <button className={profile === 'student' ? 'active' : ''} onClick={() => setProfile('student')}>
-              Student
-            </button>
-            <button
-              className={profile === 'licensed' ? 'active' : ''}
-              onClick={() => setProfile('licensed')}
-            >
-              Licensed
-            </button>
-            <button
-              className={isWaiver ? 'active' : ''}
-              onClick={() => setProfile(isWaiver ? profile : WAIVER_TIERS[0].id)}
-            >
-              LSPC waiver
-            </button>
-          </div>
-          )}
-          {VIEW_USES_PROFILE[view] && isWaiver && (
-            <div className="tier-toggle" role="group" aria-label="Waiver experience tier">
-              {WAIVER_TIERS.map((tier) => (
-                <button
-                  key={tier.id}
-                  className={tier.id === profile ? 'active' : ''}
-                  onClick={() => setProfile(tier.id)}
-                >
-                  {tier.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {VIEW_USES_PROFILE[view] && <ProfileSelector profile={profile} onChange={setProfile} />}
           {/* Rendered outside a UnitToggleScope, so it names itself "Wind speed
               unit" — there is no card heading up here to borrow. */}
           <UnitToggle unit={unit} onChange={setUnit} />

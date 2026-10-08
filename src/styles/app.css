@@ -87,6 +87,12 @@ a {
   color: #04121f;
   font-weight: 600;
 }
+/* Under Student: USPA BSR or the club waiver. A step smaller than the class
+   toggle above it, so the two read as a choice and a sub-choice. */
+.class-toggle-sub button {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
 /* Jumpers | Pilots: the dashboard's two tabs, as links (each is an
    address), styled like the profile toggle so they read as one control. */
 .view-tabs {
