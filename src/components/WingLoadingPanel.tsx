@@ -128,7 +128,7 @@ export function WingLoadingPanel({
                 "Sizes within it" read as a shortlist, and which canopy a
                 student jumps is the instructor's call. */}
             <dt>Sizes whose PD Student max is at or above this weight</dt>
-            <dd>{fits.length > 0 ? fits.join(', ') : 'none of the sizes offered'}</dd>
+            <dd className="wl-list">{fits.length > 0 ? fits.join(', ') : 'none of the sizes offered'}</dd>
           </dl>
         )}
       </div>
