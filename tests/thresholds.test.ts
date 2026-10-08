@@ -64,9 +64,11 @@ describe('isSimSectionUrl', () => {
 });
 
 describe('USPA SIM citations', () => {
-  // Any link into uspa.org's SIM, whatever its scheme or host form, so a
-  // variant is held to the one shape rather than slipping past it.
-  const sim = entries.filter(([, c]) => /^[a-z]+:\/\/(www\.)?uspa\.org(:\d+)?\/+sim(\/|#|\?|$)/i.test(c.url));
+  // Any uspa.org link (any subdomain, scheme or port) whose path starts
+  // with "sim", so a mistyped SIM link (/sim2-1, /sim.aspx) is held to the
+  // one shape rather than slipping past it. A non-SIM page whose path
+  // happened to start so would fail here loudly, not pass unseen.
+  const sim = entries.filter(([, c]) => /^[a-z]+:\/\/([a-z0-9-]+\.)*uspa\.org(:\d+)?\/+sim/i.test(c.url));
 
   it('covers the SIM citations actually in the map', () => {
     expect(sim.length).toBeGreaterThan(0);
