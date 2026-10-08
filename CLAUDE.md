@@ -185,8 +185,10 @@ SIM only as the "2026 SIM" and its change-document list did not load on
 its text (`simPartText`, `src/domain/simText.ts`, from the part's anchor to
 the next part's, named because some parts hold anchors of their own).
 `scripts/simText.live.ts` takes it again daily and fails when a part's
-words change, or when a SIM quote on `#citations` is in none of the parts
-tied to its entry. Every cited SIM part, and every SIM quote on
+words change or its anchors are gone, when a quote in a SIM-reading
+entry's "source says" lines is in none of the parts tied to that entry
+(lines quoting the CFR or the club document are skipped, and so are the
+questions), or when uspa.org cannot be fetched. Every cited SIM part, and every SIM quote on
 `#citations`, was read again on 2026-10-08. After reading a part again,
 take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move
 `SIM_LAST_READ` only if every part was read that day.
@@ -354,7 +356,7 @@ available for the change that needs one.
 
 `.github/workflows/sky-parity.yml` is not a gate: it runs daily and on
 dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
-`vitest.live.config.ts` so `npm test` stays hermetic. It fails only when the
+`vitest.live.config.ts` so `npm test` stays hermetic. It fails when the
 app's METAR sky parse, its derived flight category, or its TAF group decode
 (`src/domain/taf.ts`, run on aviationweather.gov's own TAF text and compared
 period by period with the `fcsts` decode served beside it) disagrees with
@@ -366,8 +368,8 @@ aviationweather.gov currently has (informational). It also fails, through
 what it should: the Chart Supplement link carries an edition number whose
 scheme is inferred (`src/domain/chartSupplement.ts`), and the first edition
 that would show the inference wrong takes effect 2026-10-29. And it fails,
-through `scripts/simText.live.ts`, when a SIM part a citation links to no
-longer reads as it did on its reading-log date (see "Citations" above).
+through `scripts/simText.live.ts`, on the SIM checks described under
+"Citations" above.
 aviationweather.gov is on the sandbox allowlist since 2026-09-29, so it runs
 from here too.
 `scripts/schulzeCompare.live.ts` runs in the same job and prints this app's
