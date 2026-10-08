@@ -468,9 +468,13 @@ a {
    the default auto column gave the label its full width and broke
    "222 lb (101 kg)" over three lines on a phone. */
 .wl-kv {
-  grid-template-columns: minmax(0, 1fr) auto;
+  /* The label column keeps 6.5em, so a long value (the size list, or "none of
+     the sizes offered") wraps rather than squeezing the labels to a word a
+     line. */
+  grid-template-columns: minmax(6.5em, 1fr) auto;
 }
-.wl-kv dd {
+/* A figure keeps one line; the size list, which can be long, may wrap. */
+.wl-kv dd:not(.wl-list) {
   white-space: nowrap;
 }
 
