@@ -208,14 +208,16 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A12',
     title: 'Student canopy exit weights',
     claim:
-      'Performance Designs’ recommended maximum exit weight for each Navigator size and skill set, compared with an exit weight of body weight plus gear (about 32 lb for a student rig).',
+      'Performance Designs’ maximum exit weight for each Navigator size and category, compared with an exit weight of body weight plus gear (about 32 lb for a student rig); PD gives its Student figures mainly to help instructors choose a student’s canopy.',
     where: 'Exit weight & wing loading card, Jumpers tab',
-    sources: [CITATIONS.pdNavigator],
+    sources: [CITATIONS.pdNavigator, CITATIONS.pdWingLoadingGuide],
+    citesNote: 'the chart for the figures (the maintainer’s transcription; it did not open under an automated check from here); CN-0089 for what they mean',
     found: {
-      read: 'the maintainer’s transcription of PD’s chart (text and a screenshot that agree), 2026-10-08; performancedesigns.com could not be read from here',
+      read: 'the maintainer’s transcription of PD’s chart (text and a screenshot that agree), 2026-10-08; and CN-0089 Rev. 0 as performancedesigns.com served it, 2026-10-08',
       says: [
-        'Navigator Wing Loading Chart, TABLE-0122 Rev.A: for each size (200 to 300 sq ft), a recommended maximum exit weight in pounds and kilograms for Student, Novice, Intermediate, Advanced, Expert and Max. Footnote: “Numbers are the Recommended Maximum Exit Weight in pounds / (KG) for that skillset”.',
+        'Navigator Wing Loading Chart, TABLE-0122 Rev.A: for each size (200 to 300 sq ft), a figure in pounds and kilograms for Student, Novice, Intermediate, Advanced, Expert and Max. Footnote: “Numbers are the Recommended Maximum Exit Weight in pounds / (KG) for that skillset”.',
         'Student column, lb: 200 → 140, 220 → 176, 240 → 216, 260 → 255, 280 → 270, 300 → 290.',
+        'CN-0089: “The weights listed in the sizing charts are the maximum exit weights for each category, not the recommended weights.” On Student: “These jumpers rely on their instructors to choose the appropriate canopy for them, so the sizing information we provide for this category is mainly to help instructors make those decisions.” Max is the “never exceed” limit, and “VLC” means “varies with landing conditions”.',
       ],
     },
     asks: [

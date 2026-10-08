@@ -2,18 +2,21 @@
  * Performance Designs' Navigator wing-loading chart, and what this club flies.
  *
  * Transcribed by the maintainer from PD's "Navigator Wing Loading Chart"
- * (TABLE-0122 Rev.A, linked from performancedesigns.com/navigator) on
- * 2026-10-08, as text and a screenshot that agree. performancedesigns.com
- * could not be read from the environment this was written in, so the figures
- * have not been checked against PD's own copy here; CITATIONS.pdNavigator
- * says so, and the #citations page asks for it.
+ * (TABLE-0122 Rev.A, on performancedesigns.com/navigator) on 2026-10-08, as
+ * text and a screenshot that agree. The page serves the chart from its own
+ * script, folded behind a button, and it did not open under an automated
+ * check from here (2026-10-08), so the figures have not been checked against
+ * PD's copy; CITATIONS.pdNavigator says so, and #citations asks for it.
  *
- * Each figure is PD's "Recommended Maximum Exit Weight in pounds / (KG) for
- * that skillset" (the chart's footnote). The NOVICE column carries no
- * asterisk on the chart while the others do; the footnote's wording covers
- * the starred columns, and the app treats NOVICE the same, which is worth
- * confirming with PD. "MIN EXT WT." reads "VLC" on every row and is not
- * defined on the chart, so it is not used.
+ * The chart's footnote calls each figure the "Recommended Maximum Exit
+ * Weight in pounds / (KG) for that skillset"; PD's "Wing Loading Chart
+ * Interpretation" (CN-0089 Rev. 0, read 2026-10-08) says the weights in its
+ * sizing charts "are the maximum exit weights for each category, not the
+ * recommended weights", so the card calls them maximums. The NOVICE column
+ * carries no asterisk on the chart while the others do; CN-0089 treats every
+ * category alike, and so does the app. "MIN EXT WT." reads "VLC" on every
+ * row, which CN-0089 defines as "varies with landing conditions": no fixed
+ * minimum, so nothing here uses it.
  */
 export const NAVIGATOR_SKILLS = ['student', 'novice', 'intermediate', 'advanced', 'expert', 'max'] as const;
 export type NavigatorSkill = (typeof NAVIGATOR_SKILLS)[number];
@@ -30,7 +33,7 @@ export const NAVIGATOR_SKILL_LABEL: Readonly<Record<NavigatorSkill, string>> = {
 export interface NavigatorSize {
   /** Canopy area, sq ft. */
   areaSqFt: number;
-  /** PD's recommended maximum exit weight per skill set, [lb, kg] as printed. */
+  /** PD's maximum exit weight per skill set, [lb, kg] as printed. */
   maxExit: Readonly<Record<NavigatorSkill, readonly [number, number]>>;
 }
 

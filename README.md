@@ -60,7 +60,7 @@ the published figures rather than Settings edits.
   far the hour shown is from now.
 - ⚖️ **Exit weight & wing loading** — body weight plus gear (32 lb, one student
   rig weighed) over a Navigator 200/220/260/280, against Performance Designs'
-  recommended maximum exit weight for a Student on that size. The chart is the
+  maximum exit weight for a Student on that size. The chart is the
   maintainer's transcription, not yet checked against PD's own copy here, and
   the canopy model and sizes are theirs to confirm (`#citations`, A12).
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,

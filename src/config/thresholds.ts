@@ -300,7 +300,7 @@ export const CITATIONS = {
     note: SIM_REREAD_NOTE,
   },
   /**
-   * Performance Designs' recommended maximum exit weights for the Navigator,
+   * Performance Designs' maximum exit weights for the Navigator,
    * the canopy the maintainer believes the club's student rigs carry. Cited
    * by the exit weight and wing loading card for the figures it compares an
    * exit weight against. Not read here: performancedesigns.com was not
@@ -310,9 +310,19 @@ export const CITATIONS = {
    */
   pdNavigator: {
     source: 'Performance Designs, Navigator Wing Loading Chart (TABLE-0122 Rev.A)',
-    ref: 'Recommended maximum exit weight by canopy size and skill set',
+    ref: 'Maximum exit weight by canopy size and skill set',
     url: 'https://www.performancedesigns.com/navigator',
-    note: 'The chart is on the linked Navigator page. Figures transcribed by the maintainer from PD’s chart on 2026-10-08. performancedesigns.com could not be read from the environment this was written in, so they have not been checked against PD’s own copy: check the chart before relying on them, and confirm with an instructor.',
+    note: 'The chart is on the linked Navigator page, behind its “Navigator Wing Loading Chart” button. Figures transcribed by the maintainer on 2026-10-08; the chart did not open under an automated check from here, so they have not been checked against PD’s copy: check the chart before relying on them, and confirm with an instructor.',
+  },
+  /** PD's two-page guide to reading its sizing charts, read 2026-10-08: what
+   *  the categories mean, that the figures are maximums, that the Student
+   *  figures are "mainly to help instructors make those decisions", and that
+   *  VLC means "varies with landing conditions". */
+  pdWingLoadingGuide: {
+    source: 'Performance Designs, Wing Loading Chart Interpretation (CN-0089 Rev. 0)',
+    ref: 'The chart figures are maximum exit weights per category; Student figures are mainly for instructors choosing a canopy',
+    url: 'https://www.performancedesigns.com/_files/ugd/cc1125_7de40c4be8d1491889bcdb4f1da2af21.pdf',
+    note: 'Read on 2026-10-08 from the linked PDF, as performancedesigns.com served it.',
   },
   lspcWaiver: {
     source: 'LSPC Waivered Wind Limits',

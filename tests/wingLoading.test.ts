@@ -72,7 +72,8 @@ describe('the exit weight & wing loading card', () => {
     expect(html).toContain('<dt>Against it</dt><dd>58 lb under</dd>');
     expect(html).toContain('<dt>Sizes within it</dt><dd>260, 280</dd>');
     expect(html).toContain('the comparison above uses the Student figure only');
-    expect(html).toContain('Which canopy a student jumps is the instructor’s call.');
+    expect(html).toContain(`href="${CITATIONS.pdWingLoadingGuide.url}"`);
+    expect(html).toContain('which canopy a student jumps is the instructor’s call.');
     expect(html).toContain(`href="${CITATIONS.pdNavigator.url}"`);
     // A comparison, not a verdict.
     expect(html).not.toMatch(/\b(safe|unsafe|OK|approved|cleared)\b/);
