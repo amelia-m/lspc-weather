@@ -184,6 +184,25 @@ export const CHECKLIST: ChecklistEntry[] = [
     ],
   },
   {
+    id: 'A11',
+    title: 'Who chooses the spot',
+    claim:
+      'Rough estimate only: the winds are a model forecast, and choosing the exit point is the job of whoever spots the load, not this card’s.',
+    where: 'Freefall drift / spot card, the note under the estimate',
+    sources: [CITATIONS.uspaSpottingWho],
+    found: {
+      read: 'the SIM at uspa.org, 2026-10-08',
+      says: [
+        'SIM 4-7 A, “Why Spotting is Important”: “Choosing the correct exit point and guiding the pilot to it (spotting) helps fulfill each skydiver’s responsibility to land in an appropriate clear area. Jumpers must demonstrate basic spotting abilities prior to obtaining the USPA A license.” It calls those doing it “spotters”.',
+        'SIM 4-7 B: “According to FAR 105.5, the jumper and the pilot are jointly responsible for making sure plane traffic is clear before jumping.” And: “The pilot communicates the final OK for exit either with a light system or verbally.”',
+        'The SIM uses “jumpmaster” in 5-3 (night jumps: “One senior member should be designated as jumpmaster for each pass”) and in a 4-4 briefing checklist (“jumpmaster to pilot” communications), not as who chooses the spot.',
+      ],
+    },
+    asks: [
+      'Who spots the load at this DZ: each group, a designated spotter, an instructor for students? Should the card name that role?',
+    ],
+  },
+  {
     id: 'A8',
     title: 'Flight visibility and clearance from cloud',
     claim:

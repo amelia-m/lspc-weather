@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { estimateDrift } from '../src/domain/spot';
 import { DriftPanel } from '../src/components/DriftPanel';
 import type { WindsAloftLevel } from '../src/domain/types';
+import { CITATIONS } from '../src/config/thresholds';
 import {
   fullProfile,
   REQUESTED_TOP_FT_AGL,
@@ -201,5 +202,20 @@ describe('the drift card says when it assumes the top wind up to exit', () => {
     const html = markup(fullProfile());
     expect(html).not.toContain('No winds above');
     expect(html).not.toContain('up to exit');
+  });
+});
+
+/* The drift card's caveat named a "jumpmaster/pilot" as who makes the spot.
+ * SIM 4-7 A makes it each skydiver's responsibility, done by the spotters on
+ * the load; the SIM's "jumpmaster" is the night-jump and briefing word. */
+describe('the drift card says who chooses the spot, with the SIM behind it', () => {
+  it('names the spotter, links SIM 4-7 A, and no longer says jumpmaster', () => {
+    const html = renderToStaticMarkup(
+      createElement(DriftPanel, { levels: uniformLevels(), profile: 'licensed', source: 'open-meteo' } as never),
+    );
+    expect(html).toContain('choosing the exit point is the job of whoever spots the load');
+    expect(html).toContain(`href="${CITATIONS.uspaSpottingWho.url}"`);
+    expect(CITATIONS.uspaSpottingWho.url).toBe('https://www.uspa.org/sim/4-7#7A');
+    expect(html.toLowerCase()).not.toContain('jumpmaster');
   });
 });

@@ -6,6 +6,7 @@ import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
 import { FallbackSources } from './common/FallbackSources';
 import { CITATIONS, recommendedDeployFt, type WindProfileId } from '../config/thresholds';
 import { Panel } from './common/Panel';
+import { SourceLink } from './common/SourceLink';
 import { SelectField } from './common/SelectField';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
 import { useNow } from '../hooks/useNow';
@@ -231,8 +232,9 @@ export function DriftPanel({
           </p>
           <p className="muted small">
             *Canopy drift assumes you don’t steer (1,000 ft/min descent); you normally fly it out.
-            Rough estimate only — winds are a model forecast and the spot is the jumpmaster/pilot’s
-            call.
+            Rough estimate only: the winds are a model forecast, and choosing the exit point is the
+            job of whoever spots the load, not this card&rsquo;s. Source:{' '}
+            <SourceLink citation={CITATIONS.uspaSpottingWho} />
           </p>
         </>
       )}

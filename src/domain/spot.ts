@@ -10,7 +10,8 @@ import type { WindsAloftLevel } from './types';
  * drift distance and direction.
  *
  * Pure function — no I/O. This is an ESTIMATE for awareness, not a spotting
- * decision; the jumpmaster/pilot makes the call.
+ * decision: choosing the exit point is the spotter's job on the load (USPA
+ * SIM 4-7 A, `CITATIONS.uspaSpottingWho`), with the pilot's final OK.
  */
 
 const KT_TO_FPS = 1.6878099;
