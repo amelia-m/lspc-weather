@@ -413,9 +413,10 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
   const byAltitude = sameHour.byAltitude;
   const over10 = sameHour.over10;
   const over3 = sameHour.over3;
-  // Runs that compared something: a run whose response had no ground logs an
-  // empty table his way, which would count as a run that could never agree.
-  // Those are counted apart (notBuilt), not dropped silently.
+  // Runs that compared something: a run that logged the his-way table with no
+  // rows (it could not be built, or none of its altitudes matched his) would
+  // count as a run that could never agree. Those are counted apart
+  // (notBuilt), not dropped silently.
   const hisWayLogged = readable.filter((r) => r.asSchulze != null);
   const hisWayRuns = hisWayLogged.filter((r) => r.asSchulze!.rows.length > 0);
   const hisWay = spreads(hisWayRuns.map((r) => r.asSchulze!.rows));

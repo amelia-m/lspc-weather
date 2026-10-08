@@ -381,6 +381,7 @@ describe('ParityPage, the "as Schulze" table', () => {
     expect(html).toContain('within 1° and 1 kt, which is rounding, in 1 of 1 runs');
     expect(html).toContain('Direction, as Schulze');
     expect(html).not.toContain('no rows to compare');
+    expect(html).not.toContain('No run has had rows to compare');
     expect(render('ready')).not.toContain('Built as Schulze’s tool builds it');
   });
 
