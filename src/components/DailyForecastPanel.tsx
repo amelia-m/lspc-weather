@@ -95,6 +95,7 @@ export function DailyForecastPanel({
                 <th>Sky</th>
                 <th>Hi/Lo °F</th>
                 <th>Wind ({unit})</th>
+                <th title="Dominant direction: the day’s speed-weighted mean 10 m wind direction">Dir</th>
                 <th>Rain</th>
               </tr>
             </thead>
@@ -140,6 +141,9 @@ export function DailyForecastPanel({
                     )}
                     <td>{tempRange(d.tempMaxC, d.tempMinC)}</td>
                     <td>{windText(d, unit)}</td>
+                    <td title={d.windDirDominantDeg != null ? `${d.windDirDominantDeg}°` : undefined}>
+                      {d.windDirDominantDeg != null ? compass(d.windDirDominantDeg) : '—'}
+                    </td>
                     <td>{d.precipProbMaxPct != null ? `${round(d.precipProbMaxPct)}%` : '—'}</td>
                   </tr>
                 );
@@ -169,8 +173,10 @@ export function DailyForecastPanel({
         </p>
       )}
       <p className="muted small">
-        Model forecast for the DZ (daily maxima; wind/gust are 10 m surface values). Tap a day for
-        its hourly breakdown. Confidence drops fast past a few days — use this for planning which
+        Model forecast for the DZ (daily maxima; wind/gust are 10 m surface values). Dir is the
+        direction the wind blows from, averaged over the day&rsquo;s hours and weighted by speed: not
+        the direction of the maximum, and on a day the wind swings it can be one it seldom blew
+        from. Tap a day for its hourly breakdown. Confidence drops fast past a few days — use this for planning which
         days to watch, and check current conditions before jumping.
       </p>
     </Panel>
