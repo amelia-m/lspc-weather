@@ -257,7 +257,7 @@ describe('HourlyChart limit lines', () => {
     // The Surface wind card's standing note, carried to the chart: the line
     // is the ram-air figure, and a reader on a round reserve has a lower one.
     expect(legend(resolveThresholds('student'))).toContain(
-      'A lower maximum ground wind, 10 mph, is published for solo students on round reserves; the limit line is not it.',
+      'A lower maximum ground wind, 10 mph, is published for solo students on round reserves. The limit line is not it.',
     );
     // A waiver tier has no such caveat (the club's call, A5 on #citations).
     expect(legend(resolveThresholds('waiver:0-5'))).not.toContain('round reserves');
@@ -269,5 +269,15 @@ describe('HourlyChart limit lines', () => {
     const plotTop = Math.min(...[...html.matchAll(/<line class="hc-grid" x1="[\d.]+" y1="([\d.]+)"/g)].map((m) => Number(m[1])));
     const y = Number(/<g class="hc-limit hc-limit-gust"><line x1="[\d.]+" y1="([\d.]+)"/.exec(html)![1]);
     expect(y - 2.5 - 8).toBeGreaterThan(plotTop);
+  });
+
+  it('keeps an edited limit just under the axis top clear of it too', () => {
+    // 19 kt on a 20 kt axis: a fixed one-unit margin would leave the label
+    // over the top gridline, in the sun and moon's margin.
+    const t = withOverrides(resolveThresholds('waiver:0-5'), { gustCautionKt: 19 });
+    const html = renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt', limits: t }));
+    const plotTop = Math.min(...[...html.matchAll(/<line class="hc-grid" x1="[\d.]+" y1="([\d.]+)"/g)].map((m) => Number(m[1])));
+    const y = Number(/<g class="hc-limit hc-limit-gust"><line x1="[\d.]+" y1="([\d.]+)"/.exec(html)![1]);
+    expect(y - 2.5 - 8).toBeGreaterThanOrEqual(plotTop);
   });
 });

@@ -1,7 +1,7 @@
 import type { CurrentConditions } from '../domain/types';
 import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
 import { isEdited, type Thresholds } from '../config/thresholds';
-import { lowerLimitUnchecked, windBandUse } from '../domain/advisories';
+import { lowerLimitPublished, lowerLimitUnchecked, windBandUse } from '../domain/advisories';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
@@ -135,8 +135,7 @@ export function SurfaceWindPanel({
           reading: it is about the profile, with or without one. */}
       {caveat && lowerLimitUnchecked(t) && (
         <p className="muted small">
-          A lower maximum ground wind, {fmtLimitSpeed(caveat.limitKt, unit)}, is published for{' '}
-          {caveat.appliesTo}. {windBandUse(t, unit)}, so neither checks the lower one.{' '}
+          {lowerLimitPublished(t, unit)} {windBandUse(t, unit)}, so neither checks the lower one.{' '}
           <SourceLink citation={caveat.citation} />
         </p>
       )}

@@ -278,6 +278,14 @@ export function lowerLimitUnchecked(t: Thresholds): boolean {
   return t.windBandCaveat != null && t.windCautionKt > Math.ceil(t.windBandCaveat.limitKt);
 }
 
+/** The lower published figure itself, in a sentence: the Surface wind card
+ *  and the hourly chart's legend each say it, and each then says what of
+ *  theirs does not check it. Empty where the profile has none. */
+export function lowerLimitPublished(t: Thresholds, unit: SpeedUnit): string {
+  const c = t.windBandCaveat;
+  return c ? `A lower maximum ground wind, ${fmtLimitSpeed(c.limitKt, unit)}, is published for ${c.appliesTo}.` : '';
+}
+
 /** The flag's sentence: which figure it uses and, below it, what it leaves
  *  unchecked. */
 export function windBandSentence(t: Thresholds, unit: SpeedUnit): string {
