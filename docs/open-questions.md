@@ -62,6 +62,17 @@ without GitHub, but then two copies to keep the same; a test could compare
 them). Either way the link should say the photo is undated, as the
 citation's note does.
 
+## To do, eventually: add this app to Open-Meteo's list of users
+
+Raised 2026-10-08. Open-Meteo's README
+(<https://github.com/open-meteo/open-meteo>) asks: "Do you use Open-Meteo?
+Please open a pull request and add your repository or app to the list!"
+This app reads its forecast, hourly winds and pressure levels from
+Open-Meteo, so it qualifies. Not started: the pull request goes to another
+project's repository under the maintainer's name, so it waits on the
+maintainer deciding to send it. Before writing the entry, read the README's
+list as it then stands for the format it uses.
+
 ## Which forecast run the winds-aloft request is served
 
 Narrowed, not settled. Seen first on 2026-09-23: for the same hour the app's

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { METAR_STATION_OFFSET, REPO_URL, SITE } from './config/site';
+import { REPO_URL, SITE } from './config/site';
 import { DATA_SOURCES } from './config/sources';
 import {
   resolveThresholds,
@@ -42,6 +42,7 @@ import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
+import { DashboardDisclaimer } from './components/DashboardDisclaimer';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
 import { MasonryGrid } from './components/common/MasonryGrid';
@@ -371,21 +372,7 @@ export default function App(): JSX.Element {
         ))}
       </nav>
 
-      <p className="disclaimer">
-        <strong>
-          In development — not endorsed or approved by USPA, LSPC, or any licensed professional.
-        </strong>{' '}
-        Advisory only: this dashboard flags conditions and cites guidance — it does not decide
-        whether it is safe to jump. The citations to the USPA SIM, the CFRs and the FAA began as AI
-        recollections and were read at their sources on 2026-09-22 and 2026-09-23; the club wind
-        tiers are transcribed from a photo of the posted sign.{' '}
-        <strong>None of that is a licensed professional&rsquo;s sign-off</strong> — verify every
-        value against the primary source before relying on it. Always confirm conditions with
-        current official sources, the S&amp;TA, and the pilot in command. Observations are from{' '}
-        {SITE.metarStation.id} (~{Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
-        {METAR_STATION_OFFSET.compass}); forecasts and winds are
-        gridded to the drop zone.
-      </p>
+      <DashboardDisclaimer />
 
       <AdvisoryPanel
         advisories={advisoriesFor(view, advisories)}
