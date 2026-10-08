@@ -63,12 +63,38 @@ describe('isSimSectionUrl', () => {
   });
 });
 
+/** Every link on uspa.org, by its parsed host. Every USPA citation in this
+ *  app is a SIM citation, so any link on the site (a PDF mirror, a mistyped
+ *  path, another subdomain) is held to the SIM shape below and fails there,
+ *  rather than being guessed at by its path and passing unseen. */
+const onUspa = (url: string): boolean => {
+  try {
+    const host = new URL(url).hostname.replace(/\.$/, '');
+    return host === 'uspa.org' || host.endsWith('.uspa.org');
+  } catch {
+    return false;
+  }
+};
+
+describe('onUspa', () => {
+  it('takes every uspa.org link, whatever its path or host form, and nothing else', () => {
+    for (const url of [
+      'https://www.uspa.org/sim/2-1#1H',
+      'https://www.uspa.org/Portals/0/files/SIM.pdf',
+      'https://www.uspa.org/sim2-1',
+      'https://www.uspa.org./sim/2-1',
+      'https://x@m.uspa.org:443/en/sim/2-1',
+    ]) {
+      expect(onUspa(url), url).toBe(true);
+    }
+    for (const url of ['https://notuspa.org/sim/2-1', 'https://www.ecfr.gov/current/title-14', 'not a url']) {
+      expect(onUspa(url), url).toBe(false);
+    }
+  });
+});
+
 describe('USPA SIM citations', () => {
-  // Any uspa.org link (any subdomain, scheme or port) whose path starts
-  // with "sim", so a mistyped SIM link (/sim2-1, /sim.aspx) is held to the
-  // one shape rather than slipping past it. A non-SIM page whose path
-  // happened to start so would fail here loudly, not pass unseen.
-  const sim = entries.filter(([, c]) => /^[a-z]+:\/\/([a-z0-9-]+\.)*uspa\.org(:\d+)?\/+sim/i.test(c.url));
+  const sim = entries.filter(([, c]) => onUspa(c.url));
 
   it('covers the SIM citations actually in the map', () => {
     expect(sim.length).toBeGreaterThan(0);
