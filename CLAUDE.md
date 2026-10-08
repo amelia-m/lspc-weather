@@ -181,13 +181,14 @@ is one file: `src/config/readingLog.ts`, shown as a list at the end of
 date must be the entry's (a test holds both); the SIM notes and the
 checklist's SIM readings take their date from it. uspa.org names its online
 SIM only as the "2026 SIM" and its change-document list did not load on
-2026-10-08, so each cited or quoted SIM part is also pinned by a SHA-256 of its text
-(`simPartText`, `src/domain/simText.ts`, from its anchor to the next lettered
-part, named because some parts hold anchors of their own);
-`scripts/simText.live.ts` takes it
-again daily and fails when a part's words change. Every cited SIM part, and
-every SIM quote on `#citations`, was read again on 2026-10-08. After reading
-a part again, take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move
+2026-10-08, so each cited or quoted SIM part is also pinned by a SHA-256 of
+its text (`simPartText`, `src/domain/simText.ts`, from the part's anchor to
+the next part's, named because some parts hold anchors of their own).
+`scripts/simText.live.ts` takes it again daily and fails when a part's
+words change, or when a SIM quote on `#citations` is in none of the parts
+tied to its entry. Every cited SIM part, and every SIM quote on
+`#citations`, was read again on 2026-10-08. After reading a part again,
+take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move
 `SIM_LAST_READ` only if every part was read that day.
 
 When touching a citation:

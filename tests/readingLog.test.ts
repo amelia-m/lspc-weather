@@ -30,7 +30,8 @@ describe('the reading log', () => {
   it('ties an entry no citation links to to the checklist entries that quote it', () => {
     // A part only quoted on #citations is linked by its own anchor, so it
     // must be a pinned SIM part, and the entries quoting it must exist and
-    // say they read the SIM.
+    // say they read the SIM. Whether the quote is in that part needs the
+    // page: scripts/simText.live.ts checks it daily.
     const uncited = READING_LOG.filter((r) => r.citations.length === 0);
     expect(uncited.length).toBeGreaterThan(0);
     for (const r of uncited) {
@@ -45,8 +46,9 @@ describe('the reading log', () => {
   });
 
   it('holds every dated citation note to its entry’s date', () => {
-    // Skipping only a source nobody has read at the source (the club's
-    // sign, read from a photo): its note dates the transcription instead.
+    // Skipping the sources nobody has read at the source, the club's sign
+    // (read from a photo) and PD's chart (from a transcription): their notes
+    // date the transcription instead.
     for (const r of READING_LOG.filter((e) => e.lastRead != null)) {
       for (const key of r.citations) {
         const note = (CITATIONS as Record<string, { note?: string }>)[key].note ?? '';

@@ -41,6 +41,13 @@ describe('simPartText', () => {
     expect(simPartText(PAGE.replace('14&nbsp;mph', '15&nbsp;mph'), '1H', '1I')).not.toBe(simPartText(PAGE, '1H', '1I'));
   });
 
+  it('reads to the end anchor after the part even when the page also names it higher up', () => {
+    // A contents list above the parts, linking to 1H, must not end 1G
+    // before it starts.
+    const withContents = PAGE.replace('<article>', '<article><nav><a class="anchoroffset" name="1H"></a></nav>');
+    expect(simPartText(withContents, '1G', '1H')).toBe(simPartText(PAGE, '1G', '1H'));
+  });
+
   it('is null when either anchor is missing or the end comes first', () => {
     expect(simPartText(PAGE, '1Z', '1I')).toBeNull();
     expect(simPartText(PAGE, '1H', '1Z')).toBeNull();

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CHECKLIST, type ChecklistEntry } from '../config/citationsChecklist';
 import { REPO_URL } from '../config/site';
 import { READING_LOG, SIM_EDITION, SIM_LAST_READ } from '../config/readingLog';
-import { CITATIONS } from '../config/thresholds';
+import { CITATIONS, simUrl } from '../config/thresholds';
 import {
   CLAIM_VERDICTS,
   CLAIM_VERDICT_LABEL,
@@ -268,16 +268,22 @@ export function CitationsPage(): JSX.Element {
       <ul className="reading-log">
         {READING_LOG.map((r) => {
           // A SIM part only quoted here has no citation; its own anchor is
-          // where the text was read.
+          // where the text was read. An entry with neither is named unlinked.
           const url =
             r.citations.length > 0
               ? CITATIONS[r.citations[0]].url
-              : `https://www.uspa.org/sim/${r.simPart!.section}#${r.simPart!.anchor}`;
+              : r.simPart
+                ? simUrl(r.simPart.section, r.simPart.anchor)
+                : null;
           return (
             <li key={r.section}>
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                {r.section}
-              </a>
+              {url ? (
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                  {r.section}
+                </a>
+              ) : (
+                <span>{r.section}</span>
+              )}
               <span className="reading-log-when">
                 {r.lastRead != null ? `last read ${r.lastRead}` : 'not read at the source'} · {r.edition}
               </span>

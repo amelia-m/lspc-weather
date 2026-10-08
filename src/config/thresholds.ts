@@ -55,7 +55,7 @@ const FAA_PAMPHLET_READ_NOTE =
  *  read from the served page on 2026-09-23; add one only after reading it
  *  there, and never from the part letter alone (the scheme is section digit
  *  plus part letter, and one page skips letters). */
-const simUrl = (section: string, anchor?: string) =>
+export const simUrl = (section: string, anchor?: string): string =>
   `https://www.uspa.org/sim/${section}${anchor ? `#${anchor}` : ''}`;
 
 /**
