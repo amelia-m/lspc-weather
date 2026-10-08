@@ -9,6 +9,10 @@ export const OPEN_METEO_FIXTURE: RawOpenMeteo & { elevation: number } = {
   hourly: {
     time: [isoHour(0), isoHour(1)],
     temperature_2m: [25, 26],
+    cloud_cover: [40, 85],
+    cloud_cover_low: [10, 60],
+    cloud_cover_mid: [30, 40],
+    cloud_cover_high: [5, 20],
     wind_speed_10m: [11, 12],
     wind_direction_10m: [190, 195],
     // The canopy-layer heights (OPEN_METEO_HEIGHT_LEVELS_M), metres above

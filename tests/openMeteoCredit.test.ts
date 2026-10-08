@@ -113,7 +113,8 @@ describe('the Open-Meteo credit', () => {
     const html = renderToStaticMarkup(createElement(AppFooter));
     expect(html).toContain('>Weather data by Open-Meteo.com</a>');
     expect(html).toContain(LICENCE);
-    expect(html).toContain('the winds aloft, the drift estimate and the 10-day outlook’s day rows');
+    expect(html).toContain('the winds aloft, the drift estimate, the 10-day outlook’s day rows and the');
+    expect(html).toContain('second cloud-cover figure on the Ceiling &amp; sky card');
     expect(html).toContain('interpolated from fixed heights and pressure levels to heights above the drop zone');
     expect(html).toContain('weather codes grouped into its own labels');
     expect(html).toContain('unless it is unreachable, when those cards name the fallback that answered, if one did');

@@ -2,6 +2,7 @@ import type {
   CurrentConditions,
   DailyPoint,
   HourlyPoint,
+  OpenMeteoCloudHour,
   SkyCover,
   SkyDecodeCheck,
   SkyLayer,
@@ -704,7 +705,7 @@ export const OPEN_METEO_HEIGHT_LEVELS_M = [80, 120, 180] as const;
  *  normaliser reads, so the request and the reader cannot name different
  *  levels. Pure: a list of strings. */
 export function openMeteoHourlyVariables(): string[] {
-  const vars = ['wind_speed_10m', 'wind_direction_10m', 'temperature_2m'];
+  const vars = ['wind_speed_10m', 'wind_direction_10m', 'temperature_2m', ...OPEN_METEO_CLOUD_VARIABLES];
   for (const h of OPEN_METEO_HEIGHT_LEVELS_M) {
     vars.push(`wind_speed_${h}m`, `wind_direction_${h}m`, `temperature_${h}m`);
   }
@@ -717,6 +718,36 @@ export function openMeteoHourlyVariables(): string[] {
     );
   }
   return vars;
+}
+
+/**
+ * Open-Meteo's cloud cover, asked for with the winds (one request, the same
+ * hours): the total, and the low, mid and high bands, each a percentage of
+ * the sky. A model's cloud fraction, not a base: nothing here says where a
+ * layer starts, so the Ceiling & sky card shows it beside the NWS sky cover
+ * and never as a ceiling. Open-Meteo's documentation (open-meteo.com/en/docs,
+ * read 2026-10-08) gives the total as "an area fraction" and the bands as
+ * "Low level clouds and fog up to 3 km altitude", "Mid level clouds from 3 to
+ * 8 km" and "High level clouds from 8 km", each an instant value.
+ */
+export const OPEN_METEO_CLOUD_VARIABLES = ['cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high'] as const;
+
+/** Every hour of the winds response's cloud cover, in time order. Times are
+ *  the response's own (epoch ms after `coerceOpenMeteoTimes`). Pure. */
+export function normalizeOpenMeteoClouds(data: RawOpenMeteo): OpenMeteoCloudHour[] {
+  const at = (key: string, i: number): number | null => {
+    const v = (data.hourly[key] as (number | null)[] | undefined)?.[i];
+    return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  };
+  return data.hourly.time
+    .map((t, i) => ({
+      time: Date.parse(t),
+      totalPct: at('cloud_cover', i),
+      lowPct: at('cloud_cover_low', i),
+      midPct: at('cloud_cover_mid', i),
+      highPct: at('cloud_cover_high', i),
+    }))
+    .filter((h) => Number.isFinite(h.time));
 }
 
 export const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';

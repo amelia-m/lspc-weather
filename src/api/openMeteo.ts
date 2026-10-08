@@ -3,6 +3,7 @@ import {
   normalizeOpenMeteo,
   normalizeOpenMeteoDaily,
   normalizeOpenMeteoHours,
+  normalizeOpenMeteoClouds,
   coerceOpenMeteoTimes,
   OPEN_METEO_FORECAST_URL,
   openMeteoWindsUrl,
@@ -44,6 +45,7 @@ export async function fetchWindsAloft(
   return {
     levels: interpolateWindsAloft(atNow.samples, fieldElevationFt, targetAltitudesFtAgl),
     validity: { validMs: atNow.validMs },
+    clouds: normalizeOpenMeteoClouds(coerced),
     // Each hour carries two tables from the one response: this app's default
     // (every sample, field datum) and Mark Schulze's method (his levels, his
     // datum, his ground rule), which the card can show instead.

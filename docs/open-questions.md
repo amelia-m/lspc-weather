@@ -73,33 +73,36 @@ switch (`src/components/ProfileSelector.tsx`) would let the default follow
 the licence. Nothing else in the app reads a licence today: no BSR wind
 limit applies to licensed jumpers, so the surface-wind card would not change.
 
-## To do: look into Open-Meteo's cloud cover
+## Open-Meteo's cloud cover: shown, not yet compared
 
-Asked for 2026-10-08. Open-Meteo serves cloud cover as a percentage three
-ways: total, low/mid/high bands (`cloud_cover_low` and so on), and per
-pressure level (`cloud_cover_850hPa` and so on). None of them gives a cloud
-base height, and on the day it was looked at every pressure level read 0%
-with only high cloud forecast, so there was nothing to compare.
+Asked for 2026-10-08, and added the same day at the maintainer's request:
+the Ceiling & sky card shows Open-Meteo's total cloud cover for each hour
+as a thin grey bar and a grey figure beside the NWS sky cover, with the
+low/mid/high bands in each hour's tooltip. It rides on the winds request
+(`OPEN_METEO_CLOUD_VARIABLES`), is left out when Open-Meteo does not
+answer, and is never shown as a ceiling: Open-Meteo serves cloud as a
+share of the sky (total, and bands up to 3 km, 3 to 8 km and above 8 km,
+per open-meteo.com/en/docs, read 2026-10-08), with no base height. It is
+grey whatever the amount, so it asserts no category; the NWS bars keep
+their existing colours.
 
-What the dashboard reads the sky from today:
+What the dashboard reads the sky from:
 
 - **Now:** the KPMV METAR (Plattsmouth, about 12 mi ENE), from IEM first and
   api.weather.gov second, its sky groups parsed from the METAR text
   (`normalizeIemCurrent`, `normalizeNwsObservation`). This is the observed
   report: layer amounts and measured bases.
 - **Forecast hours:** the NWS gridpoint forecast for the drop zone's own grid
-  cell (`skyCover`, a percentage, and its derived ceiling), on the Ceiling &
-  sky card and the hourly detail of the 10-day outlook.
+  cell (`skyCover`, a percentage, and its derived ceiling), and beside it
+  Open-Meteo's cloud cover.
 - **10-day outlook:** Open-Meteo's daily weather code (its own reading of its
   model), or on the fallback the day's mean NWS gridpoint cover.
 
-Questions to settle before adding any of it: what a per-level cloud
-percentage means against an exit altitude and 14 CFR 105.17's cloud
-clearances (it is a model's cloud fraction in a layer, not a base); whether
-it agrees with the METAR often enough to be worth a second sky figure on
-the page; and how it would be shown without reading as a ceiling. A
-comparison logged over a few weeks of real cloud (METAR bases against the
-level where Open-Meteo's cover first rises) would answer the second.
+Still open: whether the two forecasts agree with each other, and with the
+METAR, often enough to be worth both. A comparison logged over a few weeks
+of real cloud (the METAR's layers against each forecast's cover for the same
+hour) would answer it. The per-pressure-level cover (`cloud_cover_850hPa`
+and so on) is not used: on the day it was looked at every level read 0%.
 
 ## May be retired: the Settings — thresholds section
 

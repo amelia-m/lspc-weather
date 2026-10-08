@@ -182,9 +182,22 @@ export interface WindsAloftHour {
  *  Returned by both the Open-Meteo path and the NOAA FD fallback so neither can
  *  hand the UI altitudes without a valid time. The Schulze-method table rides
  *  on `hours` only, which is where the card reads it. */
+/** One hour of Open-Meteo cloud cover, percentages of the sky (total, and
+ *  the low, mid and high bands); null where not served. */
+export interface OpenMeteoCloudHour {
+  time: number;
+  totalPct: number | null;
+  lowPct: number | null;
+  midPct: number | null;
+  highPct: number | null;
+}
+
 export interface WindsAloftForecast {
   levels: WindsAloftLevel[];
   validity: WindsAloftValidity;
+  /** Open-Meteo's cloud cover for the same hours, served in the same
+   *  response. Absent on the NOAA FD fallback. */
+  clouds?: OpenMeteoCloudHour[];
   /** Every hour the source served, ascending, for stepping the card through
    *  them. Absent on the NOAA FD fallback, which is one bulletin. */
   hours?: WindsAloftHour[];
@@ -212,6 +225,9 @@ export interface WeatherSnapshot {
   /** Every forecast hour behind `windsAloft`, for the card's hour buttons.
    *  null on the FD fallback and until the winds load. */
   windsAloftHours?: WindsAloftHour[] | null;
+  /** Open-Meteo's hourly cloud cover, from the winds request; null when
+   *  Open-Meteo did not answer (the FD fallback) or until it loads. */
+  openMeteoClouds?: OpenMeteoCloudHour[] | null;
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
   taf: TafForecast | null;

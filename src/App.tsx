@@ -302,7 +302,9 @@ export default function App(): JSX.Element {
         onUnitChange={setUnit}
       />
     ),
-    ceilingSky: <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} />,
+    ceilingSky: (
+      <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} omClouds={snapshot.openMeteoClouds ?? null} />
+    ),
     windsAloft: (
       <WindsAloftPanel
         levels={winds.levels}
