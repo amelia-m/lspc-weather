@@ -130,9 +130,10 @@ precisely because they were colour and text rather than flags.
   `docs/markschulze-altitude-reference.md`, "How the surface row was worked
   out".
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
-  known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
-  thirteen pressure levels the tool does (`OPEN_METEO_PRESSURE_LEVELS`), and
-  the same hour agreed within 4° and 1 kt everywhere. Since 2026-10-08 the app
+  known.** Both read Open-Meteo; from 2026-09-23 the app sampled the same
+  pressure levels the tool does below 18,000 ft (`OPEN_METEO_PRESSURE_LEVELS`,
+  thirteen of his twenty), and the same hour agreed within 4° and 1 kt
+  everywhere. Since 2026-10-08 the app
   also samples Open-Meteo's 80, 120 and 180 m winds below the lowest pressure
   level (`OPEN_METEO_HEIGHT_LEVELS_M`), the canopy layer, which the tool does
   not. They normally decide the 500 ft row, which his table does not have;
@@ -141,7 +142,7 @@ precisely because they were colour and text rather than flags.
   for this reason (`docs/markschulze-altitude-reference.md`). Also since
   2026-10-08 the default table takes seven pressure levels his does not
   (`OPEN_METEO_EXTRA_PRESSURE_LEVELS`), and the card has an "As Schulze" view
-  that rebuilds the hour his way (`interpolateAsSchulze`: his thirteen levels,
+  that rebuilds the hour his way (`interpolateAsSchulze`: his levels below 18,000 ft,
   his ground as the datum, his Surface rule, which is inferred from his
   output). The comparison logs both tables against his (`asSchulze` beside
   `aligned`), so `#parity` shows that the app reproduces his table and,

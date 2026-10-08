@@ -6,7 +6,6 @@ import {
   coerceOpenMeteoTimes,
   OPEN_METEO_FORECAST_URL,
   openMeteoWindsUrl,
-  type OpenMeteoWindsAtHour,
   type RawOpenMeteo,
   type RawOpenMeteoDaily,
 } from '../domain/normalize';
@@ -42,22 +41,22 @@ export async function fetchWindsAloft(
 
   const coerced = coerceOpenMeteoTimes(data);
   const atNow = normalizeOpenMeteo(coerced, now);
-  // Two tables from one response: this app's default (every sample, field
-  // datum) and Mark Schulze's method (his levels, his datum, his ground rule),
-  // which the card can show instead and the comparison checks against his.
-  const both = (h: OpenMeteoWindsAtHour) => ({
-    levels: interpolateWindsAloft(h.samples, fieldElevationFt, targetAltitudesFtAgl),
-    schulzeLevels:
-      h.schulze.groundFtMsl != null
-        ? interpolateAsSchulze(h.schulze.levels, h.schulze.groundFtMsl, targetAltitudesFtAgl)
-        : [],
-  });
   return {
     levels: interpolateWindsAloft(atNow.samples, fieldElevationFt, targetAltitudesFtAgl),
     validity: { validMs: atNow.validMs },
+    // Each hour carries two tables from the one response: this app's default
+    // (every sample, field datum) and Mark Schulze's method (his levels, his
+    // datum, his ground rule), which the card can show instead.
     hours: normalizeOpenMeteoHours(coerced)
       .filter((h) => h.validMs != null && Number.isFinite(h.validMs))
-      .map((h) => ({ validMs: h.validMs as number, ...both(h) }))
+      .map((h) => ({
+        validMs: h.validMs as number,
+        levels: interpolateWindsAloft(h.samples, fieldElevationFt, targetAltitudesFtAgl),
+        schulzeLevels:
+          h.schulze.groundFtMsl != null
+            ? interpolateAsSchulze(h.schulze.levels, h.schulze.groundFtMsl, targetAltitudesFtAgl)
+            : [],
+      }))
       .filter((h) => h.levels.length > 0),
   };
 }

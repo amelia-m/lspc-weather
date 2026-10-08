@@ -121,7 +121,7 @@ const TIMELINE: Entry[] = [
     kind: 'Dashboard',
     what: 'The winds table takes Open-Meteo’s 80, 120 and 180 m winds near the ground, and seven pressure levels between Schulze’s (875 to 575 hPa). A card switch, “As Schulze”, rebuilds the hour his way.',
     effect:
-      'The table moves from his by design: near the ground mostly (his has no 500 ft row; the 1,000 ft row on high-pressure hours), and by up to a few knots and about 10° where an extra level sits. The same-hour spreads below include that from here. Each run now also logs the table built his way, shown first above, which is the check that the two still agree.',
+      'The table moves from his by design: near the ground mostly (his has no 500 ft row; the 1,000 ft row on high-pressure hours), and by up to a few knots and about 10° where an extra level sits. The same-hour spreads above include that from here. Each run now also logs the table built his way, shown first above, which is the check that the two still agree.',
   },
 ];
 

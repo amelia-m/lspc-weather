@@ -37,7 +37,7 @@ export interface SchulzeRecord {
   /** The same hour's table built as Schulze's tool builds his (his levels,
    *  his ground, his Surface rule; interpolateAsSchulze), against his. Logged
    *  from 2026-10-08, when the card's default table (`aligned`) began taking
-   *  seven more pressure levels than his; this is what shows the app can
+   *  seven pressure levels his does not; this is what shows the app can
    *  still reproduce his. Absent on runs before. */
   asSchulze?: { rows: { ft: number; dDir: number; dSpd: number; dT: number | null }[] } | null;
   /** What a jumper comparing both pages at that minute would see. `rows`
@@ -221,6 +221,10 @@ export interface ParitySummary {
      *  runs that logged it. Absent in summaries written before 2026-10-08. */
     asSchulze?: {
       runs: number;
+      /** Runs that logged the his-way table empty (no ground in the
+       *  response, so it could not be built): left out of `runs` and of
+       *  every spread, and counted here so the gap shows. */
+      notBuilt: number;
       byAltitude: AltitudeSpread[];
       /** Runs where every row was within 1° and 1 kt of his: rounding. */
       runsAllWithin1: number;
@@ -411,7 +415,9 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
   const over3 = sameHour.over3;
   // Runs that compared something: a run whose response had no ground logs an
   // empty table his way, which would count as a run that could never agree.
-  const hisWayRuns = readable.filter((r) => (r.asSchulze?.rows.length ?? 0) > 0);
+  // Those are counted apart (notBuilt), not dropped silently.
+  const hisWayLogged = readable.filter((r) => r.asSchulze != null);
+  const hisWayRuns = hisWayLogged.filter((r) => r.asSchulze!.rows.length > 0);
   const hisWay = spreads(hisWayRuns.map((r) => r.asSchulze!.rows));
 
   const unalignedRuns = readable.filter((r) => r.unaligned != null);
@@ -438,10 +444,11 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
       unreadable: schulze.length - readable.length,
       aligned: aligned.length,
       byAltitude,
-      ...(hisWayRuns.length > 0
+      ...(hisWayLogged.length > 0
         ? {
             asSchulze: {
               runs: hisWayRuns.length,
+              notBuilt: hisWayLogged.length - hisWayRuns.length,
               byAltitude: hisWay.byAltitude,
               runsAllWithin1: hisWay.within1,
               runsWithRowOver10Deg: hisWay.over10,

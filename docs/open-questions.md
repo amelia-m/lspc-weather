@@ -112,6 +112,29 @@ project's repository under the maintainer's name, so it waits on the
 maintainer deciding to send it. Before writing the entry, read the README's
 list as it then stands for the format it uses.
 
+## The DZ's coordinates sit off the landing areas
+
+Raised 2026-10-08 by the maintainer, from Mark Schulze's map. The app's point
+(`SITE.dz`, 40.8675, −96.11) and Schulze's preset for the club (40.8675006,
+−96.11001) are both in the field south-west of the runway, downhill from it.
+Jumpers land north or east of a barbed-wire fence that runs just west of
+the runway's north–south length and just south of its leg along the north.
+The landing areas there are the runway itself, the alfalfa field east of it
+where students are aimed, and the pea gravel near the north-east corner,
+by the buildings, where many experienced jumpers land.
+
+What the point decides: the Open-Meteo request (its ground, 349 m here and
+345 m at Schulze's point a metre east, which the 80/120/180 m winds and the
+below-ground test hang on, and the "As Schulze" datum; the default table is
+measured from the published field elevation, 1,182 ft, either way), the NWS
+gridpoint, the radar pin, the sun times, and the station's distance and
+bearing. None of them is likely to change by more than a rounding at this
+distance, but the pin is the one a reader sees. Moving it needs a point
+for the main landing area that someone at the club confirms, not one read
+off an aerial photo here. For parity with Schulze's page the "As Schulze"
+view would then be measured from a different ground than his preset; either
+say so on the card or keep his preset's ground for that view alone.
+
 ## Which forecast run the winds-aloft request is served
 
 Narrowed, not settled. Seen first on 2026-09-23: for the same hour the app's

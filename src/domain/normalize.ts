@@ -647,7 +647,10 @@ export const OPEN_METEO_PRESSURE_LEVELS = [
 
 /**
  * The pressure levels between those, every 25 hPa from 875 to 575, which
- * Mark Schulze's tool does not sample. Read 2026-10-08 at the DZ, each was
+ * Mark Schulze's tool does not sample. With his they make one every 25 hPa
+ * from 1000 to 575 hPa (about 14,000 ft AGL here), past the table's top row
+ * at 13,000 ft; nothing is added between 550 and 500, which no row reaches.
+ * Read 2026-10-08 at the DZ, each was
  * served with values that are not the average of its neighbours (875 hPa
  * 5.7 kt where the neighbours average 6.6; 800 hPa, which the tool does
  * sample, 11.9 against 13.2), so they are model levels, not filler. Over the
@@ -762,7 +765,7 @@ export interface OpenMeteoWindsAtHour {
   /** Epoch ms of the hourly step actually used; null when the series is empty. */
   validMs: number | null;
   /** The same hour as Mark Schulze's tool samples it, for
-   *  `interpolateAsSchulze`: his thirteen pressure levels only, underground
+   *  `interpolateAsSchulze`: his pressure levels below 18,000 ft only, underground
    *  ones kept, and the ground they are measured from (Open-Meteo's
    *  `elevation`, ft MSL; null when the response gives none). */
   schulze: { levels: RawWindSample[]; groundFtMsl: number | null };
@@ -790,8 +793,9 @@ export function normalizeOpenMeteoHours(data: RawOpenMeteo): OpenMeteoWindsAtHou
 }
 
 /**
- * One hour's samples as Mark Schulze's tool takes them: his thirteen pressure
- * levels (OPEN_METEO_PRESSURE_LEVELS) and nothing else, no 10 m wind, no
+ * One hour's samples as Mark Schulze's tool takes them: his pressure levels
+ * below 18,000 ft (OPEN_METEO_PRESSURE_LEVELS; the tool samples seven more
+ * above, which no row of this table reaches) and nothing else, no 10 m wind, no
  * fixed heights, and the levels below the model's ground KEPT, since his
  * Surface row runs a line through the level below the ground and the one
  * above (docs/markschulze-altitude-reference.md, "How the surface row was
@@ -808,7 +812,8 @@ function schulzeSamplesAtIndex(data: RawOpenMeteo, idx: number): { levels: RawWi
 
 /** The wind at each of `levels` (hPa) for one hour, placed at its
  *  geopotential height. Levels below the model's ground are dropped unless
- *  `keepUnderground` (see samplesAtIndex for why the default drops them). */
+ *  `keepUnderground` (see samplesAtIndex for why the default table drops
+ *  them, and schulzeSamplesAtIndex for why the As Schulze table keeps them). */
 function pressureSamples(
   data: RawOpenMeteo,
   idx: number,
@@ -893,8 +898,11 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
   // published field elevation, because "below ground" is a fact about the
   // model's terrain, not about the airport. They differ by ~37 ft here.
   //
-  // Today this changes nothing on screen: the 10 m sample already outranks
-  // the 1000 hPa level, so no displayed row draws on it. It matters because
+  // In this, the default table, that changes nothing on screen: the 10 m
+  // sample already outranks the 1000 hPa level, so no row draws on it. (The
+  // As Schulze table does draw on it, deliberately: schulzeSamplesAtIndex
+  // keeps underground levels because his Surface row is built through one.)
+  // It matters here because
   // that depends on a DEM lookup landing within 10 m of the field elevation —
   // and because without it, an hour missing `wind_speed_10m` would build the
   // Surface row 70% out of a wind stamped 600 ft underground.

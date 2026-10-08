@@ -380,6 +380,18 @@ describe('ParityPage, the "as Schulze" table', () => {
     expect(html).toContain('Built as Schulze’s tool builds it');
     expect(html).toContain('within 1° and 1 kt, which is rounding, in 1 of 1 runs');
     expect(html).toContain('Direction, as Schulze');
+    expect(html).not.toContain('could not be built');
     expect(render('ready')).not.toContain('Built as Schulze’s tool builds it');
+  });
+
+  it('says how many runs could not build it', () => {
+    const s = summarizeParity(
+      [
+        { kind: 'schulze', at: '2026-10-08T12:00:00Z', asSchulze: { rows: [{ ft: 0, dDir: 0, dSpd: 0, dT: 0 }] } } as ParityRecord,
+        { kind: 'schulze', at: '2026-10-08T13:00:00Z', asSchulze: { rows: [] } } as ParityRecord,
+      ],
+      Date.parse('2026-10-09T00:00:00Z'),
+    );
+    expect(render('ready', s)).toContain('In 1 more runs it could not be built');
   });
 });

@@ -465,9 +465,14 @@ describe('the "as Schulze" table in the summary', () => {
     }) as never;
   const NOW = Date.parse('2026-10-09T00:00:00Z');
 
-  it('is absent until a run logs it, and a run with nothing to compare does not count', () => {
+  it('is absent until a run logs it', () => {
     expect(summarizeParity([run()], NOW).schulze.asSchulze).toBeUndefined();
-    expect(summarizeParity([run([])], NOW).schulze.asSchulze).toBeUndefined();
+  });
+
+  it('counts a run that logged it empty apart, not as a run that disagreed', () => {
+    const s = summarizeParity([run([]), run([{ ft: 0, dDir: 0, dSpd: 0, dT: 0 }])], NOW).schulze.asSchulze;
+    expect(s).toMatchObject({ runs: 1, notBuilt: 1, runsAllWithin1: 1 });
+    expect(s!.byAltitude.map((a) => [a.ft, a.n])).toEqual([[0, 1]]);
   });
 
   it('spreads its rows by altitude, apart from the default table, and counts runs within rounding', () => {
@@ -479,7 +484,7 @@ describe('the "as Schulze" table in the summary', () => {
       ],
       NOW,
     ).schulze;
-    expect(s.asSchulze).toMatchObject({ runs: 2, runsAllWithin1: 1, runsWithRowOver10Deg: 1, runsWithRowOver3Kt: 1 });
+    expect(s.asSchulze).toMatchObject({ runs: 2, notBuilt: 0, runsAllWithin1: 1, runsWithRowOver10Deg: 1, runsWithRowOver3Kt: 1 });
     expect(s.asSchulze!.byAltitude.map((a) => [a.ft, a.n])).toEqual([[0, 2], [1000, 2]]);
     // The default table's spreads are its own.
     expect(s.byAltitude.map((a) => [a.ft, a.n])).toEqual([[1000, 3]]);

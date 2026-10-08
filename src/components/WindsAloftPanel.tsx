@@ -169,8 +169,8 @@ export function WindsAloftPanel({
                 ) : (
                   <>
                     Every level this app samples: the model&rsquo;s 10, 80, 120 and 180&nbsp;m winds, and
-                    pressure levels every 25&nbsp;hPa, seven of them between the ones Mark Schulze&rsquo;s
-                    tool samples. &ldquo;As Schulze&rdquo; shows the table built his way.
+                    pressure levels every 25&nbsp;hPa up through this table&rsquo;s altitudes, seven of them
+                    between the ones Mark Schulze&rsquo;s tool samples. &ldquo;As Schulze&rdquo; shows the table built his way.
                   </>
                 )}
               </p>
@@ -307,9 +307,7 @@ export function WindsAloftPanel({
             Against Mark Schulze&rsquo;s tool: same data
             {schulzeView
               ? ', built his way'
-              : schulzeAvailable
-                ? ', but this table also takes samples his does not (the switch above the table rebuilds it his way)'
-                : ''}
+              : `, but this table also takes samples his does not${schulzeAvailable ? ' (the switch above the table rebuilds it his way)' : ''}`}
             , and after half past his table is the hour before this one.
           </p>
           <details className="aloft-about">
@@ -344,20 +342,23 @@ export function WindsAloftPanel({
                 not there. */}
             {source === 'open-meteo' && (
               <p className="muted small">
-                In the All levels view the <strong>Surface</strong> row is the model&rsquo;s wind at
+                {schulzeView ? 'In the All levels view the' : 'The'} <strong>Surface</strong> row is the model&rsquo;s wind at
                 10&nbsp;m (33&nbsp;ft), the height an airport wind sensor measures, forecast for the hour
                 above; the observed wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
                 wind: it draws a straight line through the model&rsquo;s pressure levels and reads it at
                 the ground, here between a level the model places below the ground and the next one up.
                 So it reads more like the wind a couple of hundred feet up, and
                 often shows more wind than the 10&nbsp;m row, most of all at night, when the air near
-                the ground goes calm while the air above keeps moving. The As Schulze view shows his.
+                the ground goes calm while the air above keeps moving.
+                {schulzeView ? ' This view shows his.' : schulzeAvailable ? ' The As Schulze view shows his.' : ''}
               </p>
             )}
             <p className="muted small">
-              Each level is <strong>linearly interpolated</strong> from the model’s winds: in the All
-              levels view at 10, 80, 120 and 180&nbsp;m above its ground and at pressure surfaces
-              every 25&nbsp;hPa; in the As Schulze view at his pressure surfaces only. A pressure
+              Each level is <strong>linearly interpolated</strong> from the model’s winds:{' '}
+              {schulzeView
+                ? 'in this view at his pressure surfaces only.'
+                : 'at 10, 80, 120 and 180\u00a0m above its ground and at pressure surfaces every 25\u00a0hPa.'}{' '}
+              A pressure
               surface comes with its geopotential height, which we convert to ft MSL and
               interpolate to these AGL altitudes. Direction is interpolated along the shortest
               compass arc. These are a model <strong>forecast</strong> for the DZ, not a measured

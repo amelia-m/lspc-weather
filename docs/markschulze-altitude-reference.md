@@ -90,11 +90,11 @@ API) showed what that cost in the middle of the profile:
 
 The bottom and top agreed; the band between did not, because 850 hPa sat near
 4,000 ft AGL and 700 hPa near 9,300, and the wind backed from 256° to 312°
-between them where the app had no sample. The app now asks for the levels the
-tool itself samples below 18,000 ft — 1000, 975, 950, 925, 900, 850, 800, 750,
+between them where the app had no sample. From then until 2026-10-08 the app
+asked for exactly the levels the tool itself samples below 18,000 ft — 1000, 975, 950, 925, 900, 850, 800, 750,
 700, 650, 600, 550 and 500 hPa, read from its `altFtRaw` that day
 (`OPEN_METEO_PRESSURE_LEVELS` in `src/domain/normalize.ts`) — so the two tables
-are built from the same pressure levels, and the widest gap in the 13,000 ft column is
+were built from the same pressure levels, and the widest gap in the 13,000 ft column is
 about 2,100 ft. Open-Meteo also serves 775 and 725 hPa (checked 2026-09-23);
 they were left out so that the sampling matched the tool's exactly, which is
 what made it a cross-check. (Superseded 2026-10-08: the default table now
@@ -307,8 +307,8 @@ at most 2.6 kt and 11° (at 3,000 ft).
 
 So that the app can still show it reproduces the tool, the Winds aloft card
 has an "As Schulze" view that rebuilds the same hour his way
-(`interpolateAsSchulze` in `src/domain/windsAloft.ts`): his thirteen levels
-only, the levels below ground kept, altitudes measured from his ground
+(`interpolateAsSchulze` in `src/domain/windsAloft.ts`): his levels below
+18,000 ft only, the levels below ground kept, altitudes measured from his ground
 (Open-Meteo's `elevation`) rather than the field, and his Surface row, the
 line through the level below the ground and the one above (or the two lowest,
 extended down). The levels and the ground are read from his API's output; the
@@ -322,3 +322,41 @@ minute earlier was 5° and 2 kt apart at 5,000 and 6,000 ft, the pattern of the
 two being served different forecast runs (still open, above), which the logs
 will now count for both tables.
 
+
+## His raw-data view, his file, and his preset for this DZ (2026-10-08)
+
+The page has two views besides its table: "Raw Winds Aloft Data" (each
+pressure level at its height above ground) and "Show File" (the text export,
+`ftAGL` header and all). Screenshots of both at 02Z on 2026-10-08, and his API
+read at 03Z, settle three things that were inferred or assumed before.
+
+- **The raw levels are Open-Meteo's, unaltered, in knots.** All twenty
+  levels (1000 to 150 hPa) for eight hours (03Z to 00Z, every third hour) were
+  set against Open-Meteo's own pressure-level output at the same point: the
+  height of each was `(geopotential_height − elevation) × 3.28084`, rounded,
+  every time, and all 160 level-hours matched in direction, in speed (whole
+  knots) and in temperature. Open-Meteo works out direction per requested speed
+  unit, so a km/h request and a knots request can differ by 1°; the knots
+  request matched 160 of 160 and km/h 17. His QFE is Open-Meteo's
+  `surface_pressure` for the hour (974.3 hPa at 03Z, both). One earlier read
+  was 1° apart at most levels, against an Open-Meteo request made a few
+  minutes before; read again together, the two agreed, so Open-Meteo's
+  numbers had changed in between.
+- **Between levels, his table is a straight line in height above ground.**
+  The 39 rows of the 02Z file (0 to 38,000 ft) were rebuilt from the raw view's
+  levels with `interpolateAsSchulze`: every direction matched to the degree;
+  two speeds were 1 kt apart (9,000 and 20,000 ft), which is the raw view's
+  whole-knot speeds, not his unrounded ones, being interpolated here. The
+  Surface row (335° / 3 kt / 24 °C) fits the inferred rule, but that hour does
+  not test it: 975 hPa sat 23 ft above his ground, so any rule gives the same.
+- **His preset for this DZ is not quite the app's point.** His page's "Lincoln
+  Sport Parachute Club" link reads its coordinates from `dropzones.geojson`:
+  40.8675006, −96.11001. Open-Meteo puts its ground there at 345 m (1,132 ft,
+  his page's "Elevation"); at the app's 40.8675, −96.11, one metre west, it
+  puts it at 349 m (1,145 ft). Both fall in the same model cell and the winds
+  are identical; only the ground the heights are measured from differs, by
+  13 ft, so a reader comparing the card with his page compares tables 13 ft
+  apart in datum. `scripts/schulzeCompare.live.ts` asks his API for the app's
+  point, so its logs compare like with like and do not see this. Both points
+  are in the field south-west of the runway, below it, not on the landing
+  areas (see `docs/open-questions.md`).
