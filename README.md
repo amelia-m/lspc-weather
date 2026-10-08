@@ -95,7 +95,7 @@ the published figures rather than Settings edits.
 |---|---|
 | [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/) | the current KPMV observation (raw METAR + decoded), read first |
 | [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ, the current KPMV observation as the backup to IEM's, and TAF text products |
-| [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels) and the 10-day daily outlook. Weather data by Open-Meteo.com under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); the dashboard interpolates its pressure-level winds to heights above the drop zone and works the drift estimate from them |
+| [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels) and the 10-day daily outlook. Weather data by Open-Meteo.com under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The dashboard reworks it: winds and temperatures interpolated from pressure levels to heights above the drop zone, a drift estimate worked from those winds, and the outlook's weather codes grouped into its own labels |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 | [FAA VFR sectional](https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59) | Sectional chart tiles (image embed, no API) |
 

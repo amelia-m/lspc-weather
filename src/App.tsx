@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { REPO_URL, SITE } from './config/site';
+import { SITE } from './config/site';
 import { DATA_SOURCES } from './config/sources';
 import {
   resolveThresholds,
@@ -43,6 +43,7 @@ import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { DashboardDisclaimer } from './components/DashboardDisclaimer';
+import { AppFooter } from './components/AppFooter';
 import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
 import { MasonryGrid } from './components/common/MasonryGrid';
@@ -417,29 +418,7 @@ export default function App(): JSX.Element {
         />
       )}
 
-      <footer className="app-foot">
-        Data: Iowa Environmental Mesonet, NWS / NOAA (api.weather.gov), and{' '}
-        <a href={DATA_SOURCES.openMeteo.url} target="_blank" rel="noopener noreferrer">
-          weather data by Open-Meteo.com
-        </a>{' '}
-        under{' '}
-        <a href={DATA_SOURCES.openMeteoLicence.url} target="_blank" rel="noopener noreferrer">
-          {DATA_SOURCES.openMeteoLicence.label}
-        </a>
-        , whose pressure-level winds this dashboard interpolates to heights above the drop zone
-        and works the drift estimate from. Built for fun — fly safe.
-        <br />
-        <a href="#citations">Citations to verify</a> — what this dashboard claims, and what nobody
-        has checked yet.
-        <br />
-        <a href="#parity">How different from other sources</a> — the winds table against Mark
-        Schulze&rsquo;s and the observation against usairnet&rsquo;s, from the comparison logs.
-        <br />
-        <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-          Source on GitHub
-        </a>{' '}
-        — the code, the citations&rsquo; readings, and the open questions.
-      </footer>
+      <AppFooter />
     </div>
   );
 }
