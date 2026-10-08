@@ -36,10 +36,10 @@ const parse = (s: string, max: number): number | null => {
  *
  * The comparison is with PD's Student figure and nothing else: how far above
  * or below it the exit weight is, in pounds, and which of the club's sizes
- * it falls within. The other columns are shown for reference. The exit
- * weight is rounded to whole pounds BEFORE it is compared, so the figure
- * printed, the margin and the size list always agree with each other (PD's
- * figures are whole pounds too). Which canopy a student jumps is the
+ * have a Student figure at or above it. The other columns are shown for
+ * reference. The exit weight is rounded to whole pounds BEFORE it is
+ * compared, so the figure printed, the margin and the size list always agree
+ * with each other (PD's figures are whole pounds too). Which canopy a student jumps is the
  * instructor's call; the card makes none.
  */
 export function WingLoadingPanel({
@@ -103,7 +103,7 @@ export function WingLoadingPanel({
         {prompt != null || exitLb == null || student == null ? (
           <p className="muted small">{prompt}</p>
         ) : (
-          <dl className="kv">
+          <dl className="kv wl-kv">
             <dt>Exit weight</dt>
             <dd>
               {exitLb} lb ({round(exitLb / LB_PER_KG)} kg)
@@ -124,7 +124,10 @@ export function WingLoadingPanel({
                   ? `${-student.marginLb} lb over`
                   : 'at it'}
             </dd>
-            <dt>Sizes within it</dt>
+            {/* Named for the arithmetic it is, not as a list to pick from:
+                "Sizes within it" read as a shortlist, and which canopy a
+                student jumps is the instructor's call. */}
+            <dt>Sizes whose PD Student max is at or above this weight</dt>
             <dd>{fits.length > 0 ? fits.join(', ') : 'none of the sizes offered'}</dd>
           </dl>
         )}

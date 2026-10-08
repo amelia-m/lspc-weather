@@ -463,6 +463,16 @@ a {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* The wing loading card's labels are long ("Sizes whose PD Student max is at
+   or above this weight"): they wrap, and each figure keeps one line, where
+   the default auto column gave the label its full width and broke
+   "222 lb (101 kg)" over three lines on a phone. */
+.wl-kv {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.wl-kv dd {
+  white-space: nowrap;
+}
 
 /* Station identity line under the Current conditions header. No top margin so
    it reads as a continuation of the header rather than a stray first paragraph. */
