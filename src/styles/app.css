@@ -1704,3 +1704,23 @@ a {
   margin: 2px 0 4px;
 }
 
+/* The reading log at the end of #citations: one source per item, its link,
+   when and in which edition it was read, then how. */
+.reading-log {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 16px;
+}
+.reading-log li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.reading-log-when {
+  font-size: 0.85rem;
+}
+.reading-log code {
+  overflow-wrap: anywhere;
+}

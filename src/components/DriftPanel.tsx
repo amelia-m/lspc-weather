@@ -10,6 +10,7 @@ import { SourceLink } from './common/SourceLink';
 import { SelectField } from './common/SelectField';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
 import { useNow } from '../hooks/useNow';
+import { SIM_LAST_READ } from '../config/readingLog';
 
 /** Build an inclusive numeric range [lo, hi] stepping by `step`. */
 const range = (lo: number, hi: number, step: number): number[] =>
@@ -227,7 +228,8 @@ export function DriftPanel({
             <a href={CITATIONS.uspaOpeningAltitude.url} target="_blank" rel="noopener noreferrer">
               USPA SIM §2-1 (BSR)
             </a>
-            ; section text read at uspa.org on 2026-09-22 and again on 2026-10-08 — re-check against the current SIM.
+            ; section text last read at uspa.org on {SIM_LAST_READ} (the{' '}
+            <a href="#citations">citations page</a> lists every reading) — re-check against the current SIM.
           </p>
           <p className="muted small">
             *Canopy drift assumes you don’t steer (1,000 ft/min descent); you normally fly it out.

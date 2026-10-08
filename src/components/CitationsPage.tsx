@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { CHECKLIST, type ChecklistEntry } from '../config/citationsChecklist';
 import { REPO_URL } from '../config/site';
+import { READING_LOG, SIM_EDITION, SIM_LAST_READ } from '../config/readingLog';
+import { CITATIONS } from '../config/thresholds';
 import {
   CLAIM_VERDICTS,
   CLAIM_VERDICT_LABEL,
@@ -122,9 +124,9 @@ export function CitationsPage(): JSX.Element {
       <p className="disclaimer">
         <strong>Each entry below is a claim the dashboard makes, what its source says, and the
         questions a reader is asked to settle.</strong>{' '}
-        The USPA SIM sections were read at uspa.org on 2026-09-22 (2-1 I, 2-2 and 4-7 again on
-        2026-10-08); 14 CFR 105.17 and 105.19, AIM
-        7-1-7 and FAA-P-8740-2 on 2026-09-23. The club&rsquo;s posted wind-limit tiers are a
+        The USPA SIM sections were read at uspa.org (the {SIM_EDITION}) on {SIM_LAST_READ}; 14 CFR
+        105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on 2026-09-23. The table at the end gives
+        each source&rsquo;s last reading. The club&rsquo;s posted wind-limit tiers are a
         transcription of an undated photo of the sign. A reading is each source as served on one
         day, not a licensed professional&rsquo;s sign-off, and knowing a rule is not knowing how
         this DZ applies it. Rule on each claim, answer its questions, and send the answers with the
@@ -252,14 +254,43 @@ export function CitationsPage(): JSX.Element {
 
       <h2 className="cite-heading">How each source was read</h2>
       <p className="muted small cite-intro">
-        The SIM as uspa.org served it on 2026-09-22, and 2-1 I, 2-2 and 4-7 again on 2026-10-08. The two CFR sections through the eCFR API on
-        2026-09-23 — Title 14 as current on 2026-09-21 — which serves the text the linked pages
-        render. AIM 7-1-7 from the HTML edition on faa.gov on 2026-09-23, Change 3, effective
-        2026-07-09. FAA-P-8740-2 from the linked PDF on 2026-09-23: the 2008 AFS-8 edition, eight
-        pages, in a FAASTeam event folder rather than a catalogue — if the link dies, the pamphlet
-        is what to search for. None of that is a check by a person who holds the rating, which is
-        what the answers above are for.
+        Every section a citation on the dashboard links to, when it was last read, in which edition,
+        and how. uspa.org names its online SIM only as the {SIM_EDITION}, and revises it within an
+        edition; its list of change documents did not load when the SIM was last read. So each SIM
+        part also carries a fingerprint of its text as it read that day, and a daily check compares
+        the live page against it: a changed part fails the check, and is read again before its date
+        moves. FAA-P-8740-2 is a copy in a FAASTeam event folder rather than a catalogue entry; if
+        the link dies, the pamphlet is what to search for. None of this is a check by a person who
+        holds the rating, which is what the answers above are for.
       </p>
+      {/* A list, not a table: the "how" of a reading is a sentence, and
+          four columns of sentences ran to two thousand pixels wide. */}
+      <ul className="reading-log">
+        {READING_LOG.map((r) => {
+          const cite = CITATIONS[r.citations[0] as keyof typeof CITATIONS];
+          return (
+            <li key={r.section}>
+              <a href={cite.url} target="_blank" rel="noopener noreferrer">
+                {r.section}
+              </a>
+              <span className="reading-log-when">
+                {r.lastRead != null ? `last read ${r.lastRead}` : 'not read at the source'} · {r.edition}
+              </span>
+              <span className="muted small">
+                {r.how}
+                {r.simPart && (
+                  <>
+                    {' '}
+                    (text fingerprint <code title={r.simPart.sha256}>{r.simPart.sha256.slice(0, 12)}</code>,{' '}
+                    {r.simPart.chars.toLocaleString()} characters)
+                  </>
+                )}
+                .
+              </span>
+            </li>
+          );
+        })}
+      </ul>
 
       <footer className="app-foot">
         <a href="#">← Back to the dashboard</a>
