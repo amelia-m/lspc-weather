@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { HourlyChart, HourlyLegend } from '../src/components/common/HourlyChart';
 import { sunTimes } from '../src/domain/sun';
 import { SITE } from '../src/config/site';
+import { resolveThresholds, withOverrides } from '../src/config/thresholds';
 import type { HourlyPoint } from '../src/domain/types';
 
 /* The night shade must sit exactly between the drop zone's sunset and
@@ -182,5 +183,65 @@ describe('HourlyLegend', () => {
       ['precip', 'precip chance'],
       ['night', 'sunset to sunrise'],
     ]);
+  });
+});
+
+/* A student profile's published limits as reference lines; none for
+ * Licensed, which has no published limit to draw. */
+describe('HourlyChart limit lines', () => {
+  const points = Array.from({ length: 7 }, (_, i) => ({
+    time: Date.parse('2026-10-03T15:00:00Z') + i * 3_600_000,
+    windSpeedKt: 5,
+    windGustKt: 8,
+    precipProbPct: 0,
+  })) as unknown as HourlyPoint[];
+  const chart = (id: Parameters<typeof resolveThresholds>[0], unit: 'kt' | 'mph' = 'mph'): string =>
+    renderToStaticMarkup(createElement(HourlyChart, { points, unit, limits: resolveThresholds(id) }));
+  const legend = (t: ReturnType<typeof resolveThresholds>): string =>
+    renderToStaticMarkup(createElement(HourlyLegend, { unit: 'mph', limits: t, profile: 'P' }));
+
+  it('draws the BSR student maximum and no gust ceiling', () => {
+    const html = chart('student');
+    expect(html).toContain('class="hc-limit hc-limit-wind"');
+    expect(html).toContain('limit 14 mph');
+    expect(html).not.toContain('hc-limit-gust');
+  });
+
+  it('draws a waiver tier’s wind limit and its gust ceiling, as posted', () => {
+    const html = chart('waiver:0-5');
+    expect(html).toContain('limit 15 mph');
+    expect(html).toContain('gust ceiling 16 mph');
+  });
+
+  it('places the line at the limit on the speed axis', () => {
+    const html = chart('student', 'kt');
+    const y = Number(/<g class="hc-limit hc-limit-wind"><line x1="[\d.]+" y1="([\d.]+)"/.exec(html)![1]);
+    // 12 kt on a 0–20 kt axis: the plot runs from y=24 to y=136.
+    expect(y).toBeCloseTo(24 + (1 - 12 / 20) * 112, 3);
+  });
+
+  it('stretches the axis to show a limit above the forecast and the 20 floor', () => {
+    // Only an edit can put one there: the highest posted figure is 20 mph.
+    const t = withOverrides(resolveThresholds('student'), { windCautionKt: 28 });
+    const html = renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt', limits: t }));
+    const y = Number(/<g class="hc-limit hc-limit-wind"><line x1="[\d.]+" y1="([\d.]+)"/.exec(html)![1]);
+    expect(y).toBeGreaterThanOrEqual(24);
+  });
+
+  it('draws nothing on the Licensed profile, or with no profile given', () => {
+    expect(chart('licensed')).not.toContain('hc-limit');
+    expect(renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt' }))).not.toContain('hc-limit');
+  });
+
+  it('names the lines and their source in the legend, or says a figure was edited', () => {
+    const html = legend(resolveThresholds('waiver:0-5'));
+    expect(html).toContain('hc-key-limit-wind');
+    expect(html).toContain('hc-key-limit-gust');
+    expect(html).toContain('Limit lines: P.');
+    expect(html).toContain('LSPC Waivered Wind Limits</a>');
+    const edited = legend(withOverrides(resolveThresholds('waiver:0-5'), { windCautionKt: 15 }));
+    expect(edited).toContain('Edited in Settings');
+    expect(edited).not.toContain('LSPC Waivered Wind Limits</a>');
+    expect(legend(resolveThresholds('licensed'))).not.toContain('Limit lines');
   });
 });

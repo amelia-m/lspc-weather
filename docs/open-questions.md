@@ -101,6 +101,20 @@ the page; and how it would be shown without reading as a ceiling. A
 comparison logged over a few weeks of real cloud (METAR bases against the
 level where Open-Meteo's cover first rises) would answer the second.
 
+## May be retired: the Settings — thresholds section
+
+Raised 2026-10-08 by the maintainer: students do not set their own limits.
+The BSR sets them, or the LSPC waiver raises them to its posted tier, and the
+profile selector already picks the tier. The section is marked "may be
+retired" on the page and works as before until that is decided.
+
+What retiring it would touch: `SettingsPanel`, the overrides App keeps and
+persists (`withOverrides`, `isEdited`, `published`), and every place that
+says a figure was "edited in Settings" (the Surface wind card, the advisory
+list, the hourly chart's limit-line note), each of which would then lose a
+branch. The visibility caution is editable too, for every profile; it would
+go with the rest.
+
 ## To do, eventually: add this app to Open-Meteo's list of users
 
 Raised 2026-10-08. Open-Meteo's README

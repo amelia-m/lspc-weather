@@ -119,6 +119,14 @@ describe('the Open-Meteo credit', () => {
     expect(html).toContain('unless it is unreachable, when those cards name the fallback that answered, if one did');
   });
 
+  it('keeps the sign-off out of the sources line, last in the footer', () => {
+    const html = renderToStaticMarkup(createElement(AppFooter));
+    const data = html.slice(0, html.indexOf('<br/>'));
+    expect(data).toContain('Data: Iowa Environmental Mesonet');
+    expect(data).not.toContain('fly safe');
+    expect(html.trimEnd()).toMatch(/<br\/>Built for fun — fly safe\.<\/footer>$/);
+  });
+
   it('credits the winds and quoted figures on #parity, which has no outlook or drift card', () => {
     // Any summary: the context notes quote Open-Meteo figures even with no
     // winds runs in it.

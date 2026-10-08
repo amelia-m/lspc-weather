@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { HourlyPoint } from '../domain/types';
 import type { SpeedUnit } from '../domain/units';
+import type { Thresholds } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
@@ -15,9 +16,15 @@ export function HourlyForecastPanel({
   hourly,
   unit,
   onUnitChange,
+  limits,
+  profile,
 }: {
   hourly: HourlyPoint[];
   unit: SpeedUnit;
+  /** The jumper profile's limits and its name, for the chart's reference
+   *  lines (HourlyChart). */
+  limits?: Thresholds;
+  profile?: string;
   /** Page-wide unit setter, handed to the header toggle. Required rather than
    *  optional, like the other wind cards: the chart and its gust legend are
    *  labelled in whichever unit is active, so the card should never be able to
@@ -65,8 +72,8 @@ export function HourlyForecastPanel({
               ))}
             </div>
           )}
-          <HourlyChart points={points} unit={unit} />
-          <HourlyLegend unit={unit} />
+          <HourlyChart points={points} unit={unit} limits={limits} />
+          <HourlyLegend unit={unit} limits={limits} profile={profile} />
         </>
       )}
     </Panel>

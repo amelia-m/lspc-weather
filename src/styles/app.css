@@ -1046,6 +1046,34 @@ a {
 .hc-precip {
   fill: var(--hc-precip);
 }
+/* A profile's published limits on the hourly chart, in the Surface wind
+   card's band colours (.band-caution, .band-gust). Dotted, so neither reads
+   as the dashed gust forecast line. */
+.hc-limit line {
+  stroke-width: 1;
+  stroke-dasharray: 1 2;
+}
+.hc-limit-label {
+  font-size: 8px;
+  /* A halo in the panel's colour, painted under the glyphs, so the wind or
+     gust line passing behind a label does not cut through it. */
+  stroke: var(--panel);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.hc-limit-wind line {
+  stroke: var(--caution);
+}
+.hc-limit-label-wind {
+  fill: var(--caution);
+}
+.hc-limit-gust line {
+  stroke: #c879ff;
+}
+.hc-limit-label-gust {
+  fill: #c879ff;
+}
 .hc-wind {
   stroke: var(--accent);
   stroke-width: 2;
@@ -1087,6 +1115,12 @@ a {
 .hc-key-precip {
   background: var(--hc-precip);
   height: 9px;
+}
+.hc-key-limit-wind {
+  background: repeating-linear-gradient(90deg, var(--caution) 0 1px, transparent 1px 3px);
+}
+.hc-key-limit-gust {
+  background: repeating-linear-gradient(90deg, #c879ff 0 1px, transparent 1px 3px);
 }
 .hc-key-night {
   background: var(--hc-night);

@@ -9,6 +9,7 @@ import { FallbackSources } from './common/FallbackSources';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { fmtTime } from './format';
+import type { Thresholds } from '../config/thresholds';
 
 /** 10-day outlook: daily sky, temps, wind/gust maxima, dominant wind direction,
  *  and precip chance.
@@ -38,6 +39,8 @@ export function DailyForecastPanel({
   onUnitChange,
   tempUnit = 'F',
   onTempUnitChange,
+  limits,
+  profile,
 }: {
   daily: DailyPoint[];
   source: DailySource | null | undefined;
@@ -57,6 +60,10 @@ export function DailyForecastPanel({
    *  Optional so a test can render the card without them; App passes both. */
   tempUnit?: TempUnit;
   onTempUnitChange?: (u: TempUnit) => void;
+  /** The jumper profile's limits and its name, for the day chart's
+   *  reference lines (HourlyChart). */
+  limits?: Thresholds;
+  profile?: string;
 }): JSX.Element {
   const fallback = source === 'nws-gridpoint';
   const [selected, setSelected] = useState<string | null>(null);
@@ -170,6 +177,8 @@ export function DailyForecastPanel({
           unit={unit}
           tempUnit={tempUnit}
           onClose={() => setSelected(null)}
+          limits={limits}
+          profile={profile}
         />
       )}
 
@@ -202,6 +211,8 @@ function DayDetail({
   unit,
   tempUnit,
   onClose,
+  limits,
+  profile,
 }: {
   dayKey: string;
   points: HourlyPoint[];
@@ -209,6 +220,8 @@ function DayDetail({
   unit: SpeedUnit;
   tempUnit: TempUnit;
   onClose: () => void;
+  limits?: Thresholds;
+  profile?: string;
 }): JSX.Element {
   const heading = dayHeading(dayKey);
   return (
@@ -230,8 +243,8 @@ function DayDetail({
         </p>
       ) : (
         <>
-          <HourlyChart points={points} unit={unit} />
-          <HourlyLegend unit={unit} />
+          <HourlyChart points={points} unit={unit} limits={limits} />
+          <HourlyLegend unit={unit} limits={limits} profile={profile} />
           <div className="daily-scroll">
             <table className="daily-table hourly-detail-table">
               <thead>

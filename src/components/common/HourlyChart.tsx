@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import type { HourlyPoint } from '../../domain/types';
-import { toSpeed, type SpeedUnit } from '../../domain/units';
+import { fmtLimitSpeed, toSpeed, type SpeedUnit } from '../../domain/units';
+import { isEdited, type Thresholds } from '../../config/thresholds';
+import { SourceLink } from './SourceLink';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
 
@@ -12,9 +14,14 @@ import { nightIntervals, skySpans } from '../../domain/sun';
 export function HourlyChart({
   points,
   unit,
+  limits,
 }: {
   points: HourlyPoint[];
   unit: SpeedUnit;
+  /** The jumper profile's limits, drawn as reference lines where a published
+   *  source sets them (`limitLines`): a student's ground-wind maximum, and a
+   *  waiver tier's gust ceiling. Nothing for Licensed, which has none. */
+  limits?: Thresholds;
 }): JSX.Element {
   const maskId = useId();
   const W = 340;
@@ -33,10 +40,14 @@ export function HourlyChart({
   const gusts = points.map((p) => conv(p.windGustKt));
   const precip = points.map((p) => p.precipProbPct);
 
+  const lines = limitLines(limits);
   const peak = Math.max(
     20,
     ...speeds.filter((v): v is number => v != null),
     ...gusts.filter((v): v is number => v != null),
+    // Room for the limit lines: the posted ones all sit under the 20 floor,
+    // but a figure edited in Settings can be above it.
+    ...lines.map((l) => toSpeed(l.kt, unit)),
   );
   const maxKt = Math.ceil(peak / 5) * 5;
 
@@ -168,9 +179,38 @@ export function HourlyChart({
         ) : null,
       )}
 
+      {/* The profile's published limits, under the forecast lines so those
+          stay readable where they cross. The same colours as the Surface
+          wind card's bands; dotted, so neither is taken for the dashed gust
+          line. */}
+      {lines.map((l) => {
+        const y = yOf(toSpeed(l.kt, unit));
+        return (
+          <g key={l.kind} className={`hc-limit hc-limit-${l.kind}`}>
+            <line x1={padL} y1={y} x2={W - padR} y2={y} />
+          </g>
+        );
+      })}
+
       {/* gust + wind lines */}
       <path className="hc-gust" d={path(gusts)} fill="none" />
       <path className="hc-wind" d={path(speeds)} fill="none" />
+
+      {/* The limits' labels, over the forecast lines with a halo in the
+          panel's colour, so a line crossing one cannot strike it out. At
+          opposite ends: the waiver's wind and gust figures are one or two
+          mph apart and would print over each other. */}
+      {lines.map((l) => (
+        <text
+          key={l.kind}
+          className={`hc-limit-label hc-limit-label-${l.kind}`}
+          x={l.kind === 'wind' ? padL + 2 : W - padR - 2}
+          y={yOf(toSpeed(l.kt, unit)) - 2.5}
+          textAnchor={l.kind === 'wind' ? 'start' : 'end'}
+        >
+          {l.kind === 'wind' ? 'limit' : 'gust ceiling'} {fmtLimitSpeed(l.kt, unit)}
+        </text>
+      ))}
 
       {/* x labels */}
       {points.map((p, i) =>
@@ -182,6 +222,17 @@ export function HourlyChart({
       )}
     </svg>
   );
+}
+
+/** The reference lines a profile gets: its wind limit where a published
+ *  source sets one (`windLimitCitation`, the switch the Surface wind card's
+ *  band and the wind flag use too), and its gust ceiling where it has one. */
+function limitLines(t: Thresholds | undefined): { kind: 'wind' | 'gust'; kt: number }[] {
+  if (!t?.windLimitCitation) return [];
+  return [
+    { kind: 'wind', kt: t.windCautionKt },
+    ...(t.gustCautionKt != null ? [{ kind: 'gust' as const, kt: t.gustCautionKt }] : []),
+  ];
 }
 
 /** Where the sun and moon sit: the middle of the chart's top margin. */
@@ -205,17 +256,44 @@ const LEGEND: readonly (readonly [string, string])[] = [
 ];
 
 /** The chart's key, one copy for every card that shows the chart, so a key
- *  cannot drift from the marks it names. */
-export function HourlyLegend({ unit }: { unit: SpeedUnit }): JSX.Element {
+ *  cannot drift from the marks it names. Given the same `limits` as the
+ *  chart, it names the limit lines too, whose profile they are, and the
+ *  source that sets them, or that a figure was edited in Settings, in which
+ *  case the source does not set it. */
+export function HourlyLegend({
+  unit,
+  limits,
+  profile,
+}: {
+  unit: SpeedUnit;
+  limits?: Thresholds;
+  /** The profile's name as the header selector shows it. */
+  profile?: string;
+}): JSX.Element {
+  const lines = limitLines(limits);
+  const edited = limits != null && (isEdited(limits, 'windCautionKt') || isEdited(limits, 'gustCautionKt'));
   return (
-    <p className="hc-legend">
-      {/* Each swatch and its words wrap as one, so a narrow card never
-          leaves a swatch at the end of one line and its name on the next. */}
-      {LEGEND.map(([key, label]) => (
-        <span key={key} className="hc-legend-item">
-          <span className={`hc-key hc-key-${key}`} /> {key === 'gust' ? `${label} (${unit})` : label}
-        </span>
-      ))}
-    </p>
+    <>
+      <p className="hc-legend">
+        {/* Each swatch and its words wrap as one, so a narrow card never
+            leaves a swatch at the end of one line and its name on the next. */}
+        {LEGEND.map(([key, label]) => (
+          <span key={key} className="hc-legend-item">
+            <span className={`hc-key hc-key-${key}`} /> {key === 'gust' ? `${label} (${unit})` : label}
+          </span>
+        ))}
+        {lines.map((l) => (
+          <span key={l.kind} className="hc-legend-item">
+            <span className={`hc-key hc-key-limit-${l.kind}`} /> {l.kind === 'wind' ? 'wind limit' : 'gust ceiling'}
+          </span>
+        ))}
+      </p>
+      {lines.length > 0 && limits?.windLimitCitation && (
+        <p className="muted small">
+          Limit lines: {profile ?? 'this profile'}.{' '}
+          {edited ? 'Edited in Settings; the published figures are on the Surface wind card.' : <>Source: <SourceLink citation={limits.windLimitCitation} /></>}
+        </p>
+      )}
+    </>
   );
 }
