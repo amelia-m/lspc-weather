@@ -216,8 +216,9 @@ export const CITATIONS = {
   /**
    * Who chooses the spot, for the drift card's caveat. The card said "the
    * spot is the jumpmaster/pilot's call", which is not the SIM's framing:
-   * 4-7 A makes choosing the exit point and guiding the pilot to it part of
-   * "each skydiver's responsibility", done by the "spotters" on the load, and
+   * 4-7 A calls choosing the exit point and guiding the pilot to it
+   * "spotting", which "helps fulfill each skydiver's responsibility to land
+   * in an appropriate clear area", and those doing it "spotters"; and
    * the SIM uses "jumpmaster" only in the night-jump section and a briefing
    * checklist. 4-7 B adds that the pilot gives the final OK for exit; the
    * card claims only what A says, so it links A. Read on 2026-10-08, later
@@ -225,7 +226,7 @@ export const CITATIONS = {
    */
   uspaSpottingWho: {
     source: 'USPA SIM, Section 4-7 (Spotting)',
-    ref: 'SIM 4-7 A, Why Spotting is Important: choosing the exit point and guiding the pilot to it is each skydiver’s responsibility',
+    ref: 'SIM 4-7 A, Why Spotting is Important: choosing the exit point and guiding the pilot to it (spotting) helps fulfill each skydiver’s responsibility to land clear',
     url: simUrl('4-7', '7A'),
     note: 'Section text read in the online SIM at uspa.org on 2026-10-08 and matches this claim. USPA revises the SIM, so re-check against the current one and confirm with the S&TA before relying on it.',
   },

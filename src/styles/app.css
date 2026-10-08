@@ -750,7 +750,7 @@ a {
 .daily-scroll {
   overflow-x: auto;
 }
-/* Five columns don't fit a single grid cell. The card takes the full grid
+/* Six columns don't fit a single grid cell. The card takes the full grid
    width where there is more than one column: a two-column span in a
    three-column grid pinned a third-column hole beside it that nothing after
    it could fill. */
