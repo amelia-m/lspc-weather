@@ -43,9 +43,12 @@ the published figures rather than Settings edits.
   overcast reported, `TS` in the METAR, the sun is down. Where nothing published
   sets a trigger, **no flag fires at all**; there is no "app heuristic" label to
   fall back on. No go/no-go verdict.
-- 💨 **Surface wind** — sustained + gust on a scale, kt/mph toggle. A band is
+- 💨 **Surface wind** — sustained + gust on a scale, kt/mph toggle. The limits
+  follow the profile in the header: Student or Licensed, then for a student
+  USPA BSR or the LSPC waiver, then the waiver's jump-count tier. A band is
   drawn only where a published source sets it — the USPA ground-wind figure for
-  Student, the posted club policy for the LSPC waiver tiers — and is labelled
+  a student on the USPA BSR limits, the posted club policy for a student on an
+  LSPC waiver tier — and is labelled
   with that source. The Licensed profile draws no band and says so: nobody
   publishes a surface-wind limit for licensed jumpers.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern

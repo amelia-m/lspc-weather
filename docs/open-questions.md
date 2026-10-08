@@ -49,8 +49,8 @@ These cannot be settled from the code.
 ## To do: link the waiver sign's photo under the tier selector
 
 Asked for 2026-10-08. Under the LSPC waiver tier buttons (the
-`tier-toggle` row in `src/App.tsx`, shown on the Jumpers tab once "LSPC
-waiver" is picked), a link straight to the photo of the posted sign,
+`tier-toggle` row in `src/components/ProfileSelector.tsx`, shown on the
+Jumpers tab once Student and then "LSPC waiver" are picked), a link straight to the photo of the posted sign,
 `docs/lspc-waivered-wind-limits.jpg`, so a jumper choosing a tier can see
 the sign the tiers were transcribed from.
 
