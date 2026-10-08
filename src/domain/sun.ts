@@ -72,6 +72,29 @@ export function nightIntervals(lat: number, lon: number, fromMs: number, toMs: n
   }
   return out;
 }
+/**
+ * `[fromMs, toMs]` cut into the day and night spans it shows, in time order:
+ * the nights given (as nightIntervals returns them, already clipped to the
+ * range) and the daylight between them. A chart labels each span it can see
+ * from these, so a label sits at the middle of the part of a day or night
+ * that is on the chart, not of the whole day or night.
+ */
+export function skySpans(
+  nights: readonly (readonly [number, number])[],
+  fromMs: number,
+  toMs: number,
+): { kind: 'day' | 'night'; start: number; end: number }[] {
+  const out: { kind: 'day' | 'night'; start: number; end: number }[] = [];
+  let t = fromMs;
+  for (const [a, b] of nights) {
+    if (a > t) out.push({ kind: 'day', start: t, end: a });
+    out.push({ kind: 'night', start: a, end: b });
+    t = b;
+  }
+  if (toMs > t) out.push({ kind: 'day', start: t, end: toMs });
+  return out;
+}
+
 /** Day or night at the point, and how far through it `now` is. */
 export interface SkyPhase {
   phase: 'day' | 'night';
