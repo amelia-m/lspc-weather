@@ -213,55 +213,80 @@ export function WindsAloftPanel({
           all, the surface row among them — the bulletin says nothing about them; see the Surface
           wind card for ground wind.
         </p>
-      ) : (
+      ) : levels.length > 0 ? (
+        /* What a reader needs to read the numbers right stays out, in one
+           line: that they are a forecast, what the Surface row is, and the
+           two things that make Mark Schulze's table look different (its
+           AGL scale and its hour). The why of each, and how the levels are
+           worked out, is folded below so the card leads with the table and
+           the guidance. The fallback note above, and the missing-levels
+           note under the table, are about this report and stay out too. */
         <>
           <p className="muted small">
-            Same Open-Meteo data source as{' '}
-            <a href={DATA_SOURCES.markschulze.url} target="_blank" rel="noopener noreferrer">
-              Mark Schulze’s Winds Aloft
-            </a>
-            , the popular skydiving winds tool — so if its numbers differ from these, check its
-            stated valid time (it labels forecasts in Z, e.g. “1600Z”) against the one above
-            before assuming the data disagrees: this card follows the hour nearest the clock, that
-            tool the hour in progress, so after half past the two are an hour apart until one of
-            them is stepped with its hour buttons. Even on the same hour the two have shown
-            different forecast runs, for up to about half an hour and most often between half past
-            and ten to the hour; if they disagree then, look again later. Its
-            altitudes are{' '}
-            <strong>AGL, like these</strong>, so the two tables are directly comparable; the “MSL”
-            on its page is the ground elevation it looked up, not the scale of its wind table.
+            A model <strong>forecast</strong> for the DZ, not a measurement.
+            {source === 'open-meteo' && (
+              <>
+                {' '}
+                The Surface row is the model&rsquo;s 10&nbsp;m wind; the observed wind is on the
+                Surface wind card.
+              </>
+            )}{' '}
+            Against Mark Schulze&rsquo;s tool: same data, altitudes AGL on both, and after half past
+            its table is the hour before this one.
           </p>
-          {/* Their Surface rows measure different things, and the gap is the
-              one readers notice first: worked out from 72 hours of that tool's
-              output at four sites on 2026-10-03, see
-              docs/markschulze-altitude-reference.md. No figure is quoted for
-              how far apart they run; it changes with the hour and the weather.
-              Gated on Open-Meteo, not on "not the fallback": with no source
-              loaded this branch still renders, beside "No winds-aloft data",
-              and the note would describe a Surface row and an hour that are
-              not there. */}
-          {source === 'open-meteo' && (
+          <details className="aloft-about">
+            <summary className="small">
+              About these numbers: comparing with Mark Schulze&rsquo;s tool,
+              {source === 'open-meteo' ? ' the Surface row,' : ''} how levels are worked out
+            </summary>
             <p className="muted small">
-              The <strong>Surface</strong> row here is the model&rsquo;s wind at 10&nbsp;m (33&nbsp;ft),
-              the height an airport wind sensor measures, forecast for the hour above; the observed
-              wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
-              wind: it draws a straight line through the model&rsquo;s pressure levels and reads it at
-              the ground, here between a level the model places below the ground and the next one up.
-              So it reads more like the wind a couple of hundred feet up, and
-              often shows more wind than this row, most of all at night, when the air near the ground
-              goes calm while the air above keeps moving.
+              Same Open-Meteo data source as{' '}
+              <a href={DATA_SOURCES.markschulze.url} target="_blank" rel="noopener noreferrer">
+                Mark Schulze’s Winds Aloft
+              </a>
+              , the popular skydiving winds tool — so if its numbers differ from these, check its
+              stated valid time (it labels forecasts in Z, e.g. “1600Z”) against the one above
+              before assuming the data disagrees: this card follows the hour nearest the clock, that
+              tool the hour in progress, so after half past the two are an hour apart until one of
+              them is stepped with its hour buttons. Even on the same hour the two have shown
+              different forecast runs, for up to about half an hour and most often between half past
+              and ten to the hour; if they disagree then, look again later. Its
+              altitudes are{' '}
+              <strong>AGL, like these</strong>, so the two tables are directly comparable; the “MSL”
+              on its page is the ground elevation it looked up, not the scale of its wind table.
             </p>
-          )}
-          <p className="muted small">
-            Each level is <strong>linearly interpolated</strong> from the model’s
-            pressure-level winds (Open-Meteo gives wind at fixed pressure surfaces — e.g.
-            925/850/700 hPa — with their geopotential heights, which we convert to ft MSL and
-            interpolate to these AGL altitudes). Direction is interpolated along the shortest
-            compass arc. These are a model <strong>forecast</strong> for the DZ, not a measured
-            sounding, so treat them as guidance.
-          </p>
+            {/* Their Surface rows measure different things, and the gap is the
+                one readers notice first: worked out from 72 hours of that tool's
+                output at four sites on 2026-10-03, see
+                docs/markschulze-altitude-reference.md. No figure is quoted for
+                how far apart they run; it changes with the hour and the weather.
+                Gated on Open-Meteo, not on "not the fallback": with no source
+                loaded this branch still renders, beside "No winds-aloft data",
+                and the note would describe a Surface row and an hour that are
+                not there. */}
+            {source === 'open-meteo' && (
+              <p className="muted small">
+                The <strong>Surface</strong> row here is the model&rsquo;s wind at 10&nbsp;m (33&nbsp;ft),
+                the height an airport wind sensor measures, forecast for the hour above; the observed
+                wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
+                wind: it draws a straight line through the model&rsquo;s pressure levels and reads it at
+                the ground, here between a level the model places below the ground and the next one up.
+                So it reads more like the wind a couple of hundred feet up, and
+                often shows more wind than this row, most of all at night, when the air near the ground
+                goes calm while the air above keeps moving.
+              </p>
+            )}
+            <p className="muted small">
+              Each level is <strong>linearly interpolated</strong> from the model’s
+              pressure-level winds (Open-Meteo gives wind at fixed pressure surfaces — e.g.
+              925/850/700 hPa — with their geopotential heights, which we convert to ft MSL and
+              interpolate to these AGL altitudes). Direction is interpolated along the shortest
+              compass arc. These are a model <strong>forecast</strong> for the DZ, not a measured
+              sounding, so treat them as guidance.
+            </p>
+          </details>
         </>
-      )}
+      ) : null}
     </Panel>
   );
 }

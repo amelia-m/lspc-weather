@@ -1510,6 +1510,11 @@ a {
   margin-top: 8px;
   font-size: 0.85rem;
 }
+.aloft-about summary {
+  cursor: pointer;
+  color: var(--accent);
+  margin: 8px 0 4px;
+}
 .cite-export summary {
   cursor: pointer;
   color: var(--muted);
