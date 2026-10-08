@@ -575,8 +575,10 @@ export function recommendedDeployFt(id: WindProfileId): number {
 
 /** Human label for a profile id, used in the UI. */
 export function profileLabel(id: WindProfileId): string {
-  if (id === 'student') return 'Student';
+  // Named as the header selector names them: a waiver tier is a student
+  // profile, and plain "Student" would not say whose limits are in force.
+  if (id === 'student') return 'Student · USPA BSR';
   if (id === 'licensed') return 'Licensed';
   const tier = WAIVER_TIERS.find((t) => t.id === id);
-  return tier ? `LSPC waiver · ${tier.label}` : 'Student';
+  return tier ? `Student · LSPC waiver · ${tier.label}` : 'Student · USPA BSR';
 }

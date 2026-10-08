@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { WAIVER_TIERS, type WindProfileId } from '../config/thresholds';
 
 /**
@@ -11,52 +10,44 @@ import { WAIVER_TIERS, type WindProfileId } from '../config/thresholds';
  * the BSRs", which BSR 2-1 H sets for solo students only. Offered as a third
  * option beside Student and Licensed it read as a jumper class of its own.
  *
- * Going to Licensed and back returns to the student choice last made, so a
- * jumper on a waiver tier does not have to find it again.
+ * `lastStudent` is the student choice last made, kept and stored by App
+ * beside the profile, so going to Licensed and back (across a tab switch or
+ * a reload) returns to it rather than to the BSR limits: a jumper on a
+ * waiver tier would otherwise be put on different limits without being told.
  */
 export function ProfileSelector({
   profile,
+  lastStudent,
   onChange,
 }: {
   profile: WindProfileId;
+  lastStudent: WindProfileId;
   onChange: (p: WindProfileId) => void;
 }): JSX.Element {
   const licensed = profile === 'licensed';
   const isWaiver = profile.startsWith('waiver');
-  const [lastStudent, setLastStudent] = useState<WindProfileId>(licensed ? 'student' : profile);
-  const pick = (p: WindProfileId): void => {
-    if (p !== 'licensed') setLastStudent(p);
-    onChange(p);
-  };
   const lastTier = lastStudent.startsWith('waiver') ? lastStudent : WAIVER_TIERS[0].id;
+  const button = (label: string, on: boolean, to: WindProfileId) => (
+    <button key={label} className={on ? 'active' : ''} aria-pressed={on} onClick={() => onChange(to)}>
+      {label}
+    </button>
+  );
 
   return (
     <>
       <div className="class-toggle" role="group" aria-label="Jumper class">
-        <button className={!licensed ? 'active' : ''} onClick={() => pick(licensed ? lastStudent : profile)}>
-          Student
-        </button>
-        <button className={licensed ? 'active' : ''} onClick={() => pick('licensed')}>
-          Licensed
-        </button>
+        {button('Student', !licensed, licensed ? lastStudent : profile)}
+        {button('Licensed', licensed, 'licensed')}
       </div>
       {!licensed && (
         <div className="class-toggle class-toggle-sub" role="group" aria-label="Student wind limits">
-          <button className={profile === 'student' ? 'active' : ''} onClick={() => pick('student')}>
-            USPA BSR
-          </button>
-          <button className={isWaiver ? 'active' : ''} onClick={() => pick(isWaiver ? profile : lastTier)}>
-            LSPC waiver
-          </button>
+          {button('USPA BSR', profile === 'student', 'student')}
+          {button('LSPC waiver', isWaiver, isWaiver ? profile : lastTier)}
         </div>
       )}
       {isWaiver && (
         <div className="tier-toggle" role="group" aria-label="Waiver experience tier">
-          {WAIVER_TIERS.map((tier) => (
-            <button key={tier.id} className={tier.id === profile ? 'active' : ''} onClick={() => pick(tier.id)}>
-              {tier.label}
-            </button>
-          ))}
+          {WAIVER_TIERS.map((tier) => button(tier.label, tier.id === profile, tier.id))}
         </div>
       )}
     </>
