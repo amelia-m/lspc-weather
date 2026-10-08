@@ -36,14 +36,15 @@ export type CardId =
   | 'wingLoading';
 
 export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
-  // The two wind cards first, the ones a jumper reads before anything else
-  // (ground wind against the limit, then the winds through the climb and
-  // freefall). Drift directly after Winds aloft: it works from the hour that
+  // The hourly wind chart and the winds aloft first, at the maintainer's
+  // request (2026-10-08): the day's wind and the winds through the climb and
+  // freefall. Drift directly after Winds aloft: it works from the hour that
   // card's buttons step to, and on a phone a card further down would change
-  // off screen. Then the rest of now (conditions, sky), planning (hourly,
-  // outlook, precip), daylight and radar. Last, the exit weight and wing
-  // loading card: not weather, and the same every day.
-  jumpers: ['surfaceWind', 'windsAloft', 'drift', 'metar', 'ceilingSky', 'hourly', 'daily', 'precip', 'sun', 'radar', 'wingLoading'],
+  // off screen. Then the ground wind against the limit, the rest of now
+  // (conditions, sky), planning (outlook, precip), daylight and radar. Last,
+  // the exit weight and wing loading card: not weather, and the same every
+  // day.
+  jumpers: ['hourly', 'windsAloft', 'drift', 'surfaceWind', 'metar', 'ceilingSky', 'daily', 'precip', 'sun', 'radar', 'wingLoading'],
   // Now (conditions, sky, the airports around), then the chart and the
   // forecast for the flight (sectional, TAF), the climb and the jump run
   // (density altitude, winds aloft), then daylight, radar and the briefing

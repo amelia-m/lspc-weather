@@ -47,8 +47,8 @@ describe('the dashboard tabs', () => {
     expect(VIEW_HASH.pilots).toBe('#pilots');
   });
 
-  it('opens the Jumpers tab on the two wind cards, with drift beside the hour it follows', () => {
-    expect(VIEW_CARDS.jumpers.slice(0, 3)).toEqual(['surfaceWind', 'windsAloft', 'drift']);
+  it('opens the Jumpers tab on the hourly wind and winds aloft, with drift beside the hour it follows', () => {
+    expect(VIEW_CARDS.jumpers.slice(0, 4)).toEqual(['hourly', 'windsAloft', 'drift', 'surfaceWind']);
   });
 });
 
