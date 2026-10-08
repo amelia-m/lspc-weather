@@ -155,6 +155,13 @@ a {
 .range-toggle {
   display: flex;
 }
+/* A card showing both a speed and a temperature carries both switches. */
+.unit-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
 .range-toggle {
   margin-bottom: 8px;
 }

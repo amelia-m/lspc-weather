@@ -16,6 +16,21 @@ export const mToSm = (m: number): number => m / M_PER_SM;
 export const hpaToInHg = (hpa: number): number => hpa / HPA_PER_INHG;
 export const cToF = (c: number): number => (c * 9) / 5 + 32;
 
+/** The page-wide temperature unit. One setting for every card, like the
+ *  wind speed unit, rather than each card printing both. */
+export type TempUnit = 'F' | 'C';
+
+/** A temperature in the page's unit, whole degrees: "70°F", "21°C". */
+export const fmtTemp = (c: number, u: TempUnit): string => `${round(u === 'F' ? cToF(c) : c)}°${u}`;
+
+/** A temperature DIFFERENCE in the page's unit (a dew-point spread, an ISA
+ *  deviation): scaled by 9/5 with no 32 offset, since a difference of 5 °C is
+ *  9 °F, not 41. Signed when `signed`. */
+export const fmtTempDelta = (dc: number, u: TempUnit, signed = false): string => {
+  const v = round(u === 'F' ? (dc * 9) / 5 : dc);
+  return `${signed && v >= 0 ? '+' : ''}${v}°${u}`;
+};
+
 /** 16-point compass label for a true heading in degrees.
  *
  *  16 points rather than 8 because a 45°-wide sector is coarse enough to
