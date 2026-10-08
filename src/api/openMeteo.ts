@@ -53,7 +53,7 @@ export async function fetchWindsAloft(
         : [],
   });
   return {
-    ...both(atNow),
+    levels: interpolateWindsAloft(atNow.samples, fieldElevationFt, targetAltitudesFtAgl),
     validity: { validMs: atNow.validMs },
     hours: normalizeOpenMeteoHours(coerced)
       .filter((h) => h.validMs != null && Number.isFinite(h.validMs))

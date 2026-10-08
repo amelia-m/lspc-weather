@@ -621,9 +621,11 @@ export interface RawOpenMeteo {
 }
 
 /**
- * The pressure levels asked of Open-Meteo, lowest first. One list, imported by
- * the fetch that builds the request and by the normaliser that reads it, so
- * the two cannot drift.
+ * Mark Schulze's pressure levels below 18,000 ft, lowest first: the "As
+ * Schulze" table's levels (schulzeSamplesAtIndex). The request and the
+ * default table use OPEN_METEO_ALL_PRESSURE_LEVELS, these plus
+ * OPEN_METEO_EXTRA_PRESSURE_LEVELS, built from this list so the two cannot
+ * drift.
  *
  * It was six levels — 1000, 925, 850, 700, 600, 500 hPa — until 2026-09-23,
  * when a same-hour comparison against Mark Schulze's Winds Aloft (the same
@@ -631,11 +633,12 @@ export interface RawOpenMeteo {
  * 3,000 ft while agreeing within 3° at the surface and from 9,000 ft up. The
  * cause was the gaps: 850 hPa sits near 4,000 ft AGL here and 700 hPa near
  * 9,300, and a wind that backed 56° between them was drawn as a straight
- * line. These are now the levels that tool samples below 18,000 ft, read from
- * its API's `altFtRaw` that day, so the two tables are built from the same
- * pressure levels (below the lowest of them the app also samples the fixed
- * heights in OPEN_METEO_HEIGHT_LEVELS_M, which the tool does not); the widest gap in the 13,000 ft column is about 2,100 ft (650 to
- * 600 hPa). Each was confirmed served with values by api.open-meteo.com on
+ * line. These are the levels that tool samples below 18,000 ft, read from
+ * its API's `altFtRaw` that day (it samples 20 in all, the rest higher). From
+ * 2026-09-23 to 2026-10-08 they were this app's levels too; since then the
+ * default table adds the levels between them, and these build the As Schulze
+ * table. Among them the widest gap in the 13,000 ft column is about 2,100 ft
+ * (650 to 600 hPa). Each was confirmed served with values by api.open-meteo.com on
  * 2026-09-23. docs/markschulze-altitude-reference.md carries the numbers.
  */
 export const OPEN_METEO_PRESSURE_LEVELS = [
@@ -796,20 +799,37 @@ export function normalizeOpenMeteoHours(data: RawOpenMeteo): OpenMeteoWindsAtHou
  * is that figure, and his altitudes are measured from it.
  */
 function schulzeSamplesAtIndex(data: RawOpenMeteo, idx: number): { levels: RawWindSample[]; groundFtMsl: number | null } {
+  const elevM = (data as unknown as { elevation?: number }).elevation;
+  return {
+    levels: pressureSamples(data, idx, OPEN_METEO_PRESSURE_LEVELS, { keepUnderground: true }),
+    groundFtMsl: typeof elevM === 'number' ? mToFt(elevM) : null,
+  };
+}
+
+/** The wind at each of `levels` (hPa) for one hour, placed at its
+ *  geopotential height. Levels below the model's ground are dropped unless
+ *  `keepUnderground` (see samplesAtIndex for why the default drops them). */
+function pressureSamples(
+  data: RawOpenMeteo,
+  idx: number,
+  levels: readonly number[],
+  { keepUnderground }: { keepUnderground: boolean },
+): RawWindSample[] {
   const num = (key: string): number | null => {
     const v = (data.hourly[key] as number[] | undefined)?.[idx];
     return typeof v === 'number' && Number.isFinite(v) ? v : null;
   };
   const elevM = (data as unknown as { elevation?: number }).elevation;
-  const levels: RawWindSample[] = [];
-  for (const p of OPEN_METEO_PRESSURE_LEVELS) {
+  const out: RawWindSample[] = [];
+  for (const p of levels) {
     const spd = num(`wind_speed_${p}hPa`);
     const dir = num(`wind_direction_${p}hPa`);
-    const gph = num(`geopotential_height_${p}hPa`);
+    const gph = num(`geopotential_height_${p}hPa`); // m MSL
     if (spd == null || dir == null || gph == null) continue;
-    levels.push({ heightFtMsl: mToFt(gph), speedKt: spd, directionDeg: dir, tempC: num(`temperature_${p}hPa`) });
+    if (!keepUnderground && elevM != null && gph < elevM) continue;
+    out.push({ heightFtMsl: mToFt(gph), speedKt: spd, directionDeg: dir, tempC: num(`temperature_${p}hPa`) });
   }
-  return { levels, groundFtMsl: typeof elevM === 'number' ? mToFt(elevM) : null };
+  return out;
 }
 
 function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
@@ -855,42 +875,30 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
     }
   }
 
-  for (const p of OPEN_METEO_ALL_PRESSURE_LEVELS) {
-    const spd = num(`wind_speed_${p}hPa`);
-    const dir = num(`wind_direction_${p}hPa`);
-    const gph = num(`geopotential_height_${p}hPa`); // m MSL
-    if (spd == null || dir == null || gph == null) continue;
-    // Drop pressure levels that sit below the model's own terrain.
-    //
-    // A pressure surface can lie underground — at NE69 the 1000 hPa level runs
-    // 85–738 ft MSL against a 1,145 ft model surface, i.e. below ground in every
-    // hour of the 384-hour window. The wind reported there is not model output:
-    // NOAA's Unified Post Processor, which writes these fields, fills
-    // underground levels with "WIND TO BE THE SAME AS THE LOWEST LEVEL ABOVE
-    // GOUND" (sorc/ncep_post.fd/MDL2P.f), and the temperature with a 6.5 K/km
-    // lapse rate. So the value is a real near-surface wind wearing a false
-    // altitude, and the temperature is manufactured outright. Open-Meteo's own
-    // docs say it plainly, on the GEM page: "If geopotential height is below
-    // ground, data should not be used." Evidence, measurements and the sources
-    // that could not be read: docs/subsurface-pressure-levels.md.
-    //
-    // Compared against the model's surface height rather than the DZ's
-    // published field elevation, because "below ground" is a fact about the
-    // model's terrain, not about the airport. They differ by ~37 ft here.
-    //
-    // Today this changes nothing on screen: the 10 m sample already outranks
-    // the 1000 hPa level, so no displayed row draws on it. It matters because
-    // that depends on a DEM lookup landing within 10 m of the field elevation —
-    // and because without it, an hour missing `wind_speed_10m` would build the
-    // Surface row 70% out of a wind stamped 600 ft underground.
-    if (elevM != null && gph < elevM) continue;
-    samples.push({
-      heightFtMsl: mToFt(gph),
-      speedKt: spd,
-      directionDeg: dir,
-      tempC: num(`temperature_${p}hPa`),
-    });
-  }
+  // Drop pressure levels that sit below the model's own terrain.
+  //
+  // A pressure surface can lie underground — at NE69 the 1000 hPa level runs
+  // 85–738 ft MSL against a 1,145 ft model surface, i.e. below ground in every
+  // hour of the 384-hour window. The wind reported there is not model output:
+  // NOAA's Unified Post Processor, which writes these fields, fills
+  // underground levels with "WIND TO BE THE SAME AS THE LOWEST LEVEL ABOVE
+  // GOUND" (sorc/ncep_post.fd/MDL2P.f), and the temperature with a 6.5 K/km
+  // lapse rate. So the value is a real near-surface wind wearing a false
+  // altitude, and the temperature is manufactured outright. Open-Meteo's own
+  // docs say it plainly, on the GEM page: "If geopotential height is below
+  // ground, data should not be used." Evidence, measurements and the sources
+  // that could not be read: docs/subsurface-pressure-levels.md.
+  //
+  // Compared against the model's surface height rather than the DZ's
+  // published field elevation, because "below ground" is a fact about the
+  // model's terrain, not about the airport. They differ by ~37 ft here.
+  //
+  // Today this changes nothing on screen: the 10 m sample already outranks
+  // the 1000 hPa level, so no displayed row draws on it. It matters because
+  // that depends on a DEM lookup landing within 10 m of the field elevation —
+  // and because without it, an hour missing `wind_speed_10m` would build the
+  // Surface row 70% out of a wind stamped 600 ft underground.
+  samples.push(...pressureSamples(data, idx, OPEN_METEO_ALL_PRESSURE_LEVELS, { keepUnderground: false }));
   return samples;
 }
 

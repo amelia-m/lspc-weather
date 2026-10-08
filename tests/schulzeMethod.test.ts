@@ -119,7 +119,8 @@ describe('the Winds aloft card’s two views', () => {
       );
     const all = card('all');
     expect(all).toContain('aria-pressed="true">All levels</button>');
-    expect(all).toContain('seven more than Mark Schulze’s tool uses');
+    expect(all).toContain('seven of them between the ones Mark Schulze’s tool samples');
+    expect(all).toContain('but this table also takes samples his does not');
     expect(all).toContain('The Surface row is the model’s 10 m wind');
     const his = card('schulze');
     expect(his).toContain('aria-pressed="true">As Schulze</button>');

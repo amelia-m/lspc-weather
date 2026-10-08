@@ -409,7 +409,9 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
   const byAltitude = sameHour.byAltitude;
   const over10 = sameHour.over10;
   const over3 = sameHour.over3;
-  const hisWayRuns = readable.filter((r) => r.asSchulze != null);
+  // Runs that compared something: a run whose response had no ground logs an
+  // empty table his way, which would count as a run that could never agree.
+  const hisWayRuns = readable.filter((r) => (r.asSchulze?.rows.length ?? 0) > 0);
   const hisWay = spreads(hisWayRuns.map((r) => r.asSchulze!.rows));
 
   const unalignedRuns = readable.filter((r) => r.unaligned != null);
