@@ -132,6 +132,28 @@ describe('the Winds aloft card’s two views', () => {
     expect(card('all', false)).not.toContain('As Schulze</button>');
   });
 
+  it('says the two tables count from different ground, with figures read from the data', () => {
+    // His ground off the his-way table's 0 ft row; the field from SITE.
+    const html = renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels: [{ altitudeFtAgl: 0, altitudeFtMsl: 1145, directionDeg: 200, speedKt: 9, tempC: 10 }],
+        source: 'open-meteo',
+        validity: { validMs: Date.parse('2026-10-08T03:00:00Z') },
+        unit: 'kt',
+        onUnitChange: () => {},
+        method: 'all',
+        onMethodChange: () => {},
+        schulzeAvailable: true,
+        schulzeGroundFtMsl: 1145,
+      } as never),
+    );
+    expect(html).toContain('published elevation, 1,182');
+    expect(html).toContain('1,145');
+    expect(html).toMatch(/about 37(<!-- -->)?\u00a0ft (<!-- -->)?lower/);
+    // Not where the ground is unknown.
+    expect(card('all', false)).not.toContain('different ground');
+  });
+
   it('describes the default table when "As Schulze" is chosen but this hour has none', () => {
     // A stored "schulze" choice on an hour that has no his-way table: the
     // table on screen is the default one, so the text must be too, and must
@@ -143,6 +165,6 @@ describe('the Winds aloft card’s two views', () => {
     expect(html).not.toContain('the switch above the table');
     expect(html).not.toContain('built his way');
     expect(html).not.toContain('As Schulze view');
-    expect(html).toContain('<strong>Surface</strong> row is the model');
+    expect(html).toContain('Here it is the model’s forecast wind at 10\u00a0m');
   });
 });

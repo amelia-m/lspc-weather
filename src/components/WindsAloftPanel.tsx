@@ -42,6 +42,7 @@ export function WindsAloftPanel({
   method = 'all',
   onMethodChange,
   schulzeAvailable = false,
+  schulzeGroundFtMsl = null,
 }: {
   levels: WindsAloftLevel[];
   source: WindsAloftSource | null | undefined;
@@ -65,6 +66,9 @@ export function WindsAloftPanel({
   onMethodChange?: (m: WindsMethod) => void;
   /** Whether this hour has the Schulze-method table (Open-Meteo only). */
   schulzeAvailable?: boolean;
+  /** The ground Mark Schulze's altitudes count from, ft MSL (useWindsHour);
+   *  null where it is not known. */
+  schulzeGroundFtMsl?: number | null;
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false);
   // The table on screen is his way only when asked for AND this hour has it;
@@ -342,15 +346,58 @@ export function WindsAloftPanel({
                 not there. */}
             {source === 'open-meteo' && (
               <p className="muted small">
-                {schulzeView ? 'In the All levels view the' : 'The'} <strong>Surface</strong> row is the model&rsquo;s wind at
-                10&nbsp;m (33&nbsp;ft), the height an airport wind sensor measures, forecast for the hour
-                above; the observed wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
-                wind: it draws a straight line through the model&rsquo;s pressure levels and reads it at
-                the ground, here between a level the model places below the ground and the next one up.
-                So it reads more like the wind a couple of hundred feet up, and
-                often shows more wind than the 10&nbsp;m row, most of all at night, when the air near
-                the ground goes calm while the air above keeps moving.
-                {schulzeView ? ' This view shows his.' : schulzeAvailable ? ' The As Schulze view shows his.' : ''}
+                The two tables&rsquo; <strong>Surface</strong> rows are different winds.{' '}
+                {schulzeView ? (
+                  <>
+                    In the <em>All levels</em> view it is
+                  </>
+                ) : (
+                  'Here it is'
+                )}{' '}
+                the model&rsquo;s forecast wind at 10&nbsp;m (33&nbsp;ft), the height an airport wind sensor
+                measures; the measured wind is on the Surface wind card. Mark Schulze&rsquo;s{' '}
+                <strong>Surface</strong> row is not a 10&nbsp;m wind. His tool draws a straight line
+                between two of the model&rsquo;s pressure levels (here one the model places below the
+                ground and the next one up) and reads it at ground level. That comes out nearer the wind
+                a couple of hundred feet up, so his row often shows more wind than the 10&nbsp;m one, most
+                of all at night, when the air near the ground goes calm while the air above keeps moving.
+                {schulzeView ? (
+                  <>
+                    {' '}
+                    This view, <em>As Schulze</em>, builds it his way.
+                  </>
+                ) : schulzeAvailable ? (
+                  <>
+                    {' '}
+                    The <em>As Schulze</em> view builds it his way.
+                  </>
+                ) : null}
+              </p>
+            )}
+            {/* His altitudes count from Open-Meteo's terrain at his map pin,
+                which for this club is in the field south-west of the runway,
+                below it (docs/markschulze-altitude-reference.md); this table
+                counts from the published field elevation. Both figures are
+                read, not typed: the field from SITE, his ground off the
+                his-way table this hour carries. */}
+            {source === 'open-meteo' && schulzeGroundFtMsl != null && schulzeGroundFtMsl !== SITE.dz.elevationFt && (
+              <p className="muted small">
+                The two tables also count their altitudes from different ground.{' '}
+                {schulzeView ? (
+                  <>
+                    The <em>All levels</em> view
+                  </>
+                ) : (
+                  'This one'
+                )}{' '}
+                counts from the field&rsquo;s published elevation, {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft.
+                Mark Schulze&rsquo;s counts from the ground Open-Meteo&rsquo;s terrain gives at his map pin,{' '}
+                {schulzeGroundFtMsl.toLocaleString()}&nbsp;ft at the point the link above opens; the pin for
+                this club sits in the field south-west of the runway, below it, and his own list&rsquo;s pin
+                for the club can sit a little lower still. So a row of his is about{' '}
+                {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'}{' '}
+                than the row of the same name here: small next to the other differences.
+                {schulzeView ? ' This view counts from his ground.' : ''}
               </p>
             )}
             <p className="muted small">
