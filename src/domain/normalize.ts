@@ -633,7 +633,8 @@ export interface RawOpenMeteo {
  * 9,300, and a wind that backed 56° between them was drawn as a straight
  * line. These are now the levels that tool samples below 18,000 ft, read from
  * its API's `altFtRaw` that day, so the two tables are built from the same
- * samples; the widest gap in the 13,000 ft column is about 2,100 ft (650 to
+ * pressure levels (below the lowest of them the app also samples the fixed
+ * heights in OPEN_METEO_HEIGHT_LEVELS_M, which the tool does not); the widest gap in the 13,000 ft column is about 2,100 ft (650 to
  * 600 hPa). Each was confirmed served with values by api.open-meteo.com on
  * 2026-09-23. docs/markschulze-altitude-reference.md carries the numbers.
  */
@@ -641,12 +642,34 @@ export const OPEN_METEO_PRESSURE_LEVELS = [
   1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500,
 ] as const;
 
+/**
+ * The fixed heights above the model's ground, in metres, sampled between the
+ * 10 m wind and the lowest pressure level: the canopy layer.
+ *
+ * At NE69 the lowest pressure level above ground is 950 hPa, about 730 ft up
+ * (975 hPa sits within a few metres of the model's surface), so without these
+ * the table drew a straight line from the 10 m wind to 950 hPa through the
+ * whole canopy descent and pattern. Read 2026-10-08 over the next 48 hours,
+ * Open-Meteo's own 80, 120 and 180 m winds differed from that line by a median
+ * of 1 to 3 kt and up to 9 kt. They are the same forecast (Open-Meteo's
+ * `best_match`), not a measurement. Which model levels Open-Meteo builds the
+ * 120 and 180 m values from has not been confirmed; 80 m is a native HRRR and
+ * GFS output. Mark Schulze's tool samples pressure levels only; they decide
+ * this table's 500 ft row, which his does not have, so the comparison with
+ * it is unaffected (docs/markschulze-altitude-reference.md).
+ */
+export const OPEN_METEO_HEIGHT_LEVELS_M = [80, 120, 180] as const;
+
 /** The hourly variables the winds-aloft request asks for: the 10 m wind and
- *  2 m temperature, then wind, height and temperature at every level above.
- *  Built here, beside the list the normaliser reads, so the request and the
- *  reader cannot name different levels. Pure: a list of strings. */
+ *  2 m temperature, the canopy-layer heights, then wind, height and
+ *  temperature at every pressure level. Built here, beside the list the
+ *  normaliser reads, so the request and the reader cannot name different
+ *  levels. Pure: a list of strings. */
 export function openMeteoHourlyVariables(): string[] {
   const vars = ['wind_speed_10m', 'wind_direction_10m', 'temperature_2m'];
+  for (const h of OPEN_METEO_HEIGHT_LEVELS_M) {
+    vars.push(`wind_speed_${h}m`, `wind_direction_${h}m`, `temperature_${h}m`);
+  }
   for (const p of OPEN_METEO_PRESSURE_LEVELS) {
     vars.push(
       `wind_speed_${p}hPa`,
@@ -746,6 +769,17 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
       // the model's surface + 10 m. See RawWindSample.isSurface.
       isSurface: true,
     });
+  }
+
+  // The canopy layer: winds at fixed heights above the model's ground, so
+  // placed on the same datum as the 10 m sample. See OPEN_METEO_HEIGHT_LEVELS_M.
+  if (typeof elevM === 'number') {
+    for (const h of OPEN_METEO_HEIGHT_LEVELS_M) {
+      const spd = num(`wind_speed_${h}m`);
+      const dir = num(`wind_direction_${h}m`);
+      if (spd == null || dir == null) continue;
+      samples.push({ heightFtMsl: mToFt(elevM + h), speedKt: spd, directionDeg: dir, tempC: num(`temperature_${h}m`) });
+    }
   }
 
   for (const p of OPEN_METEO_PRESSURE_LEVELS) {
