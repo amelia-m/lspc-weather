@@ -100,14 +100,15 @@ describe('CitationsPage', () => {
  * command"), but a jumper reading a card or this page should not have to
  * know it. Text a reader sees spells it out. */
 describe('reader-facing text spells out pilot in command', () => {
-  it('has no bare "PIC" in a claim, reading, question or citation note', async () => {
-    const { CHECKLIST } = await import('../src/config/citationsChecklist');
-    const { CITATIONS, resolveThresholds } = await import('../src/config/thresholds');
-    const texts = [
-      ...CHECKLIST.flatMap((e) => [e.claim, e.citesNote ?? '', ...e.asks, ...(e.found?.says ?? [])]),
-      ...Object.values(CITATIONS).flatMap((c) => [c.ref, c.note ?? '']),
-      ...(['student', 'licensed', 'waiver:0-5'] as const).map((p) => resolveThresholds(p).windGuidance),
-    ];
-    for (const t of texts) expect(t, t).not.toMatch(/\bPIC\b/);
+  it('has no bare "PIC" anywhere in the app’s source outside comments', () => {
+    // Every string and JSX text a reader can see is in src/: flag guidance,
+    // card text, citation notes and the checklist. Comments may use the
+    // abbreviation; they are stripped first.
+    const modules = import.meta.glob('../src/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+    expect(Object.keys(modules).length).toBeGreaterThan(20);
+    for (const [path, raw] of Object.entries(modules)) {
+      const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+      expect(code, path).not.toMatch(/\bPIC\b/);
+    }
   });
 });

@@ -723,8 +723,16 @@ describe('a live observation whose API decode is empty', () => {
       (a) => a.id === 'overcast',
     )!.guidance;
     expect(g).toBe(
-      'Overcast (OVC) layer reported, base 2,700 ft above the station. 14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least 500 ft below cloud under 10,000 ft MSL (1,000 ft at or above). Compare the base with the exit altitude.',
+      'Overcast (OVC) layer reported at 2,700 ft above KPMV. 14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least 500 ft below cloud under 10,000 ft MSL, 1,000 ft at or above (the field is at 1,182 ft MSL).',
     );
+    // 105.17 is about any cloud: a lower broken layer is named beside it.
+    const layered = evaluateAdvisories(
+      snapshot({ current: live('KPMV 230355Z AUTO 08003KT 10SM BKN015 OVC035 15/13 A3028 RMK AO2') }),
+      DEFAULT_THRESHOLDS.student,
+      now,
+    ).find((a) => a.id === 'overcast')!;
+    expect(layered.value).toBe('Overcast at 3,500 ft AGL');
+    expect(layered.guidance).toContain('Overcast (OVC) layer reported at 3,500 ft above KPMV; the lowest cloud reported is BKN at 1,500 ft.');
     expect(g).not.toMatch(/solid|no gaps/i);
     const flag = evaluateAdvisories(snapshot({ current: overcast }), DEFAULT_THRESHOLDS.student, now).find(
       (a) => a.id === 'overcast',
@@ -737,6 +745,8 @@ describe('a live observation whose API decode is empty', () => {
       now,
     ).find((a) => a.id === 'overcast');
     expect(blind?.value).toBe('Overcast, base not reported');
+    expect(blind?.guidance).toMatch(/^Overcast \(OVC\) layer reported at KPMV, its base not measured\. 14 CFR/);
+    expect(blind?.guidance).not.toMatch(/[Cc]ompare/);
   });
 
   it('says "OVC 2,700 ft", not "Clear", on the Current conditions card', () => {
