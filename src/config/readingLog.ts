@@ -63,7 +63,7 @@ export interface CitedReading extends Reading {
   kind: 'cited';
   citations: [CitationKey, ...CitationKey[]];
   /** Checklist entries that quote this part without citing it. */
-  quotedIn?: string[];
+  quotedIn?: [string, ...string[]];
   simPart?: SimPart;
 }
 
@@ -89,7 +89,7 @@ const SIM_HOW =
  *  prints them (3-1's parts are named, not lettered). */
 const sim = (
   p: SimPart & { title: string } & (
-      | { citations: [CitationKey, ...CitationKey[]]; quotedIn?: [string, ...string[]] }
+      | Pick<CitedReading, 'citations' | 'quotedIn'>
       | { citations?: undefined; quotedIn: [string, ...string[]] }
     ),
 ): SourceReading => {
