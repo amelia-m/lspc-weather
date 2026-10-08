@@ -820,32 +820,6 @@ export interface RawOpenMeteoDaily {
 }
 
 /**
- * Aggregate an hourly series into one DailyPoint per LOCAL calendar day —
- * the 10-day-outlook fallback when Open-Meteo is unreachable (the NWS
- * gridpoint carries ~7 days of hourlies).
- *
- * `weatherCode` is always null here. A WMO weather-interpretation code is the
- * forecasting service's own reading of its own model: Open-Meteo publishes one
- * per day, the NWS gridpoint publishes none, and this function used to fill the
- * gap by deriving one from mean sky cover and max precip probability. The
- * cutoffs it derived one through (50 % precip chance → rain; 10/30/60 % cover →
- * clear / mostly clear / partly cloudy / overcast) were this app's own. They
- * turned a one-point difference in a model's rain chance into the difference
- * between "Partly cloudy" and "Rain" in the outlook's Sky column — a one-word
- * verdict a jumper picks a day on, with no source behind it to check. A worded
- * judgement asserts as much as a figure in a warning colour, so the derivation
- * is gone rather than relabelled: on this path the outlook prints the day's
- * mean cloud cover from the same hourlies instead, which is a figure the grid
- * actually carries.
- *
- * Re-expressing the cover buckets in the okta FEW/SCT/BKN/OVC boundaries the
- * ceiling card uses (25/50/88 %) would have made the CUT POINTS sourced, but
- * not the claim: those categories describe an observed layer's amount, no
- * source maps one onto a WMO code, and the outlook's words ("Mostly clear",
- * "Partly cloudy") are not the okta words either. A day mean of model total
- * cover is not a METAR cloud amount, so it is printed as the percentage it is.
- */
-/**
  * A day's dominant wind direction: the vector mean of its hourly winds, each
  * weighted by its speed, as the direction the wind blows FROM.
  *
@@ -878,6 +852,32 @@ export function dominantWindDirectionDeg(
   return Math.round(((Math.atan2(x, y) * 180) / Math.PI + 360) % 360);
 }
 
+/**
+ * Aggregate an hourly series into one DailyPoint per LOCAL calendar day —
+ * the 10-day-outlook fallback when Open-Meteo is unreachable (the NWS
+ * gridpoint carries ~7 days of hourlies).
+ *
+ * `weatherCode` is always null here. A WMO weather-interpretation code is the
+ * forecasting service's own reading of its own model: Open-Meteo publishes one
+ * per day, the NWS gridpoint publishes none, and this function used to fill the
+ * gap by deriving one from mean sky cover and max precip probability. The
+ * cutoffs it derived one through (50 % precip chance → rain; 10/30/60 % cover →
+ * clear / mostly clear / partly cloudy / overcast) were this app's own. They
+ * turned a one-point difference in a model's rain chance into the difference
+ * between "Partly cloudy" and "Rain" in the outlook's Sky column — a one-word
+ * verdict a jumper picks a day on, with no source behind it to check. A worded
+ * judgement asserts as much as a figure in a warning colour, so the derivation
+ * is gone rather than relabelled: on this path the outlook prints the day's
+ * mean cloud cover from the same hourlies instead, which is a figure the grid
+ * actually carries.
+ *
+ * Re-expressing the cover buckets in the okta FEW/SCT/BKN/OVC boundaries the
+ * ceiling card uses (25/50/88 %) would have made the CUT POINTS sourced, but
+ * not the claim: those categories describe an observed layer's amount, no
+ * source maps one onto a WMO code, and the outlook's words ("Mostly clear",
+ * "Partly cloudy") are not the okta words either. A day mean of model total
+ * cover is not a METAR cloud amount, so it is printed as the percentage it is.
+ */
 export function aggregateDailyFromHourly(hourly: HourlyPoint[], timeZone: string): DailyPoint[] {
   const dayKey = new Intl.DateTimeFormat('en-CA', {
     timeZone,

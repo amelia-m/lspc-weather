@@ -195,7 +195,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       says: [
         'SIM 4-7 A, “Why Spotting is Important”: “Choosing the correct exit point and guiding the pilot to it (spotting) helps fulfill each skydiver’s responsibility to land in an appropriate clear area. Jumpers must demonstrate basic spotting abilities prior to obtaining the USPA A license.” It calls those doing it “spotters”.',
         'SIM 4-7 B: “According to FAR 105.5, the jumper and the pilot are jointly responsible for making sure plane traffic is clear before jumping.” And: “The pilot communicates the final OK for exit either with a light system or verbally.”',
-        'The SIM uses “jumpmaster” in 5-3 (night jumps: “One senior member should be designated as jumpmaster for each pass”) and in a 4-4 briefing checklist (“jumpmaster to pilot” communications), not as who chooses the spot.',
+        'SIM 5-3, on night jumps: “One senior member should be designated as jumpmaster for each pass and be responsible for accounting for all members of that pass once everyone has landed.”',
       ],
     },
     asks: [

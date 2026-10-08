@@ -34,9 +34,10 @@ export function Panel({
    *  would inherit the subtitle's muted small type, and a control overlaying
    *  the Refresh button is a phone-width defect this app has already had. */
   action?: ReactNode;
-  /** A footer other than the "Data:" source list — the advisory card's "Flag
-   *  values from … guidance sources are linked on each flag" line. Takes the
-   *  same `panel-sources` slot; a card supplies this or `sources`, not both. */
+  /** A footer in place of the plain "Data:" list: the advisory card's "Flag
+   *  values from …" line, and the Data line of a card with a fallback source
+   *  (FallbackSources). Takes the same `panel-sources` slot; a card supplies
+   *  this or `sources`, not both, and `sources` is ignored when this is set. */
   footer?: ReactNode;
   children: ReactNode;
 }): JSX.Element {

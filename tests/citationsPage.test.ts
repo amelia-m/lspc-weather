@@ -17,7 +17,8 @@ describe('CitationsPage', () => {
     expect(html).toContain('Please confirm:');
     expect(html).toContain('Your verdict on the claim:');
     // The four FAA/CFR entries are on the list with their own readings.
-    for (const id of ['A8', 'A9', 'A10']) expect(html).toContain(`${id} ·`);
+    for (const id of ['A8', 'A9', 'A10', 'A11']) expect(html).toContain(`${id} ·`);
+    expect(html).toContain('The source says (read in the SIM at uspa.org, 2026-10-08)');
   });
 
   it('gives every claim a verdict control and every question its own answer and note', () => {
@@ -69,6 +70,7 @@ describe('CitationsPage', () => {
       'uspaWaivers',
       'uspaWeather',
       'uspaSpotting',
+      'uspaSpottingWho',
       'far10517',
       'aimFlightCategory',
       'faaDensityAltitude',

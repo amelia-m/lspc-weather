@@ -3,14 +3,15 @@ import type { DailyPoint, DailySource, HourlyPoint } from '../domain/types';
 import { compass, cToF, round, toSpeed, type SpeedUnit } from '../domain/units';
 import { flightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
-import { DATA_SOURCES } from '../config/sources';
+import { DATA_SOURCES, dailySourceInUse } from '../config/sources';
 import { Panel } from './common/Panel';
 import { FallbackSources } from './common/FallbackSources';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { fmtTime } from './format';
 
-/** 10-day outlook: daily sky, temps, wind/gust maxima, and precip chance.
+/** 10-day outlook: daily sky, temps, wind/gust maxima, dominant wind direction,
+ *  and precip chance.
  *  Tap a day to expand its hourly detail (from the NWS gridpoint forecast,
  *  which reaches ~7 days; days past that show a not-available note). Planning
  *  guidance for which days look jumpable, not a substitute for the morning-of
@@ -74,7 +75,7 @@ export function DailyForecastPanel({
       // both, so on the usual path it rides along.
       footer={
         <FallbackSources
-          inUse={source === 'open-meteo' ? 'usual' : fallback ? 'fallback' : null}
+          inUse={dailySourceInUse(source)}
           usual={[DATA_SOURCES.openMeteo]}
           fallback={[DATA_SOURCES.nwsForecast]}
           withUsual={[DATA_SOURCES.nwsForecast]}
@@ -169,7 +170,8 @@ export function DailyForecastPanel({
           aggregated from the NWS gridpoint forecast (~7 days instead of 10). Sky shows the day’s
           mean cloud cover, not an icon: a weather icon is the forecasting service's own reading of
           its model, this source publishes none, and the cutoffs this app used to derive one from
-          cloud cover and rain chance were its own. Rain chance is in its own column.
+          cloud cover and rain chance were its own. Rain chance is in its own column. The first and
+          last days cover only the hours the grid forecast has, for the maxima and Dir alike.
         </p>
       )}
       <p className="muted small">

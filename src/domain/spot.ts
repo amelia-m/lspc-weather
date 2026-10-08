@@ -11,7 +11,8 @@ import type { WindsAloftLevel } from './types';
  *
  * Pure function — no I/O. This is an ESTIMATE for awareness, not a spotting
  * decision: choosing the exit point is the spotter's job on the load (USPA
- * SIM 4-7 A, `CITATIONS.uspaSpottingWho`), with the pilot's final OK.
+ * SIM 4-7 A, `CITATIONS.uspaSpottingWho`); 4-7 B adds that the pilot gives
+ * the final OK for exit.
  */
 
 const KT_TO_FPS = 1.6878099;

@@ -63,7 +63,7 @@ the published figures rather than Settings edits.
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
   hours from sunset to sunrise shaded, over a selectable 18 / 36 / 72 h horizon
   (18 h by default).
-- 📅 **10-day outlook** — daily sky, high/low, max wind/gust, precip chance; tap a
+- 📅 **10-day outlook** — daily sky, high/low, max wind/gust, dominant wind direction, precip chance; tap a
   day for its hourly detail.
 - ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next

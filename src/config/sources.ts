@@ -1,6 +1,6 @@
 import { NEARBY_METAR_STATIONS, SITE } from './site';
 import { chartSupplementCycle } from '../domain/chartSupplement';
-import type { WindsAloftSource } from '../domain/types';
+import type { DailySource, WindsAloftSource } from '../domain/types';
 
 /** A data source shown in a card's "Data:" footer, linking to where the
  *  numbers actually come from. */
@@ -262,6 +262,11 @@ export function pilotLinks(now: number): PilotLink[] {
 /** Which of a card's sources answered: its usual one, its fallback, or
  *  neither (nothing loaded yet, or both failed). */
 export type SourceInUse = 'usual' | 'fallback' | null;
+
+/** The outlook's day-row source, as its Data line reads it. */
+export function dailySourceInUse(source: DailySource | null | undefined): SourceInUse {
+  return source === 'open-meteo' ? 'usual' : source === 'nws-gridpoint' ? 'fallback' : null;
+}
 
 /** The winds-aloft source, as the Data line of the two cards built on it
  *  (Winds aloft, Drift) reads it. */
