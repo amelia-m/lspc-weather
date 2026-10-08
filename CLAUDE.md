@@ -175,14 +175,16 @@ prefilled GitHub issue or copied text (`src/domain/citationAnswers.ts`, pure).
 The page says nothing about what the app used to claim; a test rejects that
 wording. History lives in the commit log.
 
-When each cited section was last read, in which edition and how, is one
-file: `src/config/readingLog.ts`, shown as a table at the end of
+When each cited or quoted section was last read, in which edition and how,
+is one file: `src/config/readingLog.ts`, shown as a list at the end of
 `#citations`. Every citation has exactly one entry there, and its note's
 date must be the entry's (a test holds both); the SIM notes and the
 checklist's SIM readings take their date from it. uspa.org names its online
 SIM only as the "2026 SIM" and its change-document list did not load on
-2026-10-08, so each cited SIM part is also pinned by a SHA-256 of its text
-(`simPartText`, `src/domain/simText.ts`); `scripts/simText.live.ts` takes it
+2026-10-08, so each cited or quoted SIM part is also pinned by a SHA-256 of its text
+(`simPartText`, `src/domain/simText.ts`, from its anchor to the next lettered
+part, named because some parts hold anchors of their own);
+`scripts/simText.live.ts` takes it
 again daily and fails when a part's words change. Every cited SIM part, and
 every SIM quote on `#citations`, was read again on 2026-10-08. After reading
 a part again, take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move

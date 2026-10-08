@@ -1,97 +1,119 @@
 /**
- * When each source section the dashboard cites was last read, where, in
- * which edition, and how. One entry per section a citation's link lands on;
- * several citations can share one (2-1 H backs both wind-limit claims).
+ * When each source section the dashboard cites or quotes was last read,
+ * where, in which edition, and how. One entry per section: a part a
+ * citation's link lands on (several citations can share one: 2-1 H backs both
+ * wind-limit claims), or a SIM part the #citations page quotes beside it.
  *
  * This is the record the citation notes take their dates from (SIM_READ_NOTE
- * in thresholds.ts), and the table on the #citations page. A test holds every
- * citation to an entry here, and every citation note to its entry's date, so
- * the two cannot drift. Reading a section is not an instructor's sign-off:
- * each entry says what was read, not that a rule was approved.
+ * in thresholds.ts), and the list at the end of the #citations page. A test
+ * holds every citation to an entry here, and every citation note to its
+ * entry's date, so the two cannot drift. Reading a section is not an
+ * instructor's sign-off: each entry says what was read, not that a rule was
+ * approved.
  *
  * The SIM is pinned two ways. `edition` is what uspa.org calls its online
  * SIM on the day ("2026 SIM"); USPA revises it within an edition through
  * change documents, and the page's list of them did not load on 2026-10-08
  * ("Downloads is currently unavailable"), so the edition name alone does not
- * say which text was read. `fingerprint` does: a SHA-256 of the part's text
- * as simPartText reduces it, taken from the page served that day.
- * scripts/simText.live.ts takes it again daily and fails when a part's text
- * has changed, which is the signal to read it again.
+ * say which text was read. `simPart` does: a SHA-256 of the part's text as
+ * simPartText reduces it, taken from the page served that day, for every SIM
+ * part a claim cites or quotes. scripts/simText.live.ts takes it again daily
+ * and fails when a part's text has changed, which is the signal to read it
+ * again.
  */
+import type { CITATIONS } from './thresholds';
 
 /** What uspa.org calls the online SIM, read on its SIM page on 2026-10-08. */
 export const SIM_EDITION = '2026 SIM';
 
-/** The day every cited SIM part below was last read in full and its quotes
- *  on the #citations page checked against it. */
+/** The day every SIM part below was last read in full and every quote of
+ *  it on the #citations page checked against it. */
 export const SIM_LAST_READ = '2026-10-08';
+
+export type CitationKey = keyof typeof CITATIONS;
 
 export interface SourceReading {
   /** e.g. "USPA SIM 2-1 H, Winds". */
   section: string;
   /** Keys of CITATIONS whose link lands on this section; the page links the
-   *  first one's URL, so the address is written once, in thresholds.ts. */
-  citations: string[];
+   *  first one's URL, so the address is written once, in thresholds.ts.
+   *  Empty for a SIM part only quoted on #citations, which links to its own
+   *  anchor. */
+  citations: CitationKey[];
+  /** Checklist entries on #citations that quote this part, where no
+   *  citation links to it. */
+  quotedIn?: string[];
   /** YYYY-MM-DD; null where nobody has read the source itself, only a copy
-   *  of it (the club's sign). */
+   *  of it (the club's sign, PD's chart). */
   lastRead: string | null;
   /** The edition or revision as the publisher states it. */
   edition: string;
   /** How it was read: from where, in what form. */
   how: string;
-  /** For a SIM part: where the text is on the page, and its fingerprint on
-   *  `lastRead` (SHA-256 of simPartText, and its length in characters). */
-  simPart?: { section: string; anchor: string; sha256: string; chars: number };
+  /** For a SIM part: where its text is on the section page (from `anchor` to
+   *  `until`, or to the end of the article when null), and its fingerprint
+   *  on `lastRead`: SHA-256 of simPartText, and its length in characters. */
+  simPart?: { section: string; anchor: string; until: string | null; sha256: string; chars: number };
 }
 
 const SIM_HOW =
-  'the online SIM at uspa.org, the section page as served, the part from its anchor to the next; every quote of it on this page checked against that text';
+  'the online SIM at uspa.org, the section page as served; every quote of it on this page checked against that text';
 
 const sim = (
   section: string,
   anchor: string,
+  until: string | null,
   title: string,
-  citations: string[],
+  citations: CitationKey[],
+  quotedIn: string[] | undefined,
   sha256: string,
   chars: number,
 ): SourceReading => ({
-  section: `USPA SIM ${section} ${anchor.slice(-1)}, ${title}`,
+  section: `USPA SIM ${section} ${title}`,
   citations,
+  ...(quotedIn ? { quotedIn } : {}),
   lastRead: SIM_LAST_READ,
   edition: SIM_EDITION,
   how: SIM_HOW,
-  simPart: { section, anchor, sha256, chars },
+  simPart: { section, anchor, until, sha256, chars },
 });
 
 export const READING_LOG: SourceReading[] = [
-  sim('2-1', '1H', 'Winds', ['uspaStudentWinds', 'uspaLicensedWinds'],
-    '08145bc3ac97f635b5c1d109592c2b2e854a6cea6a40321f8f0ae84723634b1c',
-    146,
-  ),
-  sim('2-1', '1I', 'Minimum Opening Altitudes', ['uspaOpeningAltitude'],
-    'd3d1c75934696b5f27d3d158ddf281545d8b66a0a6c7fdf220f93430a04cbd23',
-    316,
-  ),
-  sim('2-2', '2B', 'Classification of Waivers', ['uspaWaivers'],
-    'f4cf2ddf17418d8c3729625ef8f837ad55c5aab18ae08ac7628dd760b60e1121',
-    511,
-  ),
-  sim('4-5', '5B', 'Hazardous Weather', ['uspaWeather'],
-    'c3c535629eecc959f4b543473138ef8cf2625259bcf62b5219e1db99fb1ca4e4',
-    2071,
-  ),
-  sim('4-7', '7A', 'Why Spotting is Important', ['uspaSpottingWho'],
-    'c45f6d141108b2c16d57aa463ea3c2bb10bd1b8ab0b3c91c495afa0021d573f4',
-    578,
-  ),
-  sim('4-7', '7C', 'Exit Separation on Jump Run', ['uspaSpotting'],
-    '4f208b027cc5f5b58ddf0e3947d5ba031f599649136f86e821391884b2a55daf',
-    1171,
-  ),
-  sim('5-3', '3A', 'Introduction and Definition', ['uspaNightJumps'],
-    '96ddb07f6f0c18a7314913c1cf54d8184712c5643e5faee9bb1a4ebb7be0c3a1',
-    929,
-  ),
+  // The parts a citation links to.
+  sim('2-1', '1H', '1I', 'H, Winds', ['uspaStudentWinds', 'uspaLicensedWinds'], undefined,
+    '08145bc3ac97f635b5c1d109592c2b2e854a6cea6a40321f8f0ae84723634b1c', 146),
+  sim('2-1', '1I', '1J', 'I, Minimum Opening Altitudes', ['uspaOpeningAltitude'], undefined,
+    'd3d1c75934696b5f27d3d158ddf281545d8b66a0a6c7fdf220f93430a04cbd23', 316),
+  sim('2-2', '2B', '2C', 'B, Classification of Waivers', ['uspaWaivers'], undefined,
+    'f4cf2ddf17418d8c3729625ef8f837ad55c5aab18ae08ac7628dd760b60e1121', 511),
+  sim('4-5', '5B', '5C', 'B, Hazardous Weather', ['uspaWeather'], undefined,
+    'c3c535629eecc959f4b543473138ef8cf2625259bcf62b5219e1db99fb1ca4e4', 2071),
+  sim('4-7', '7A', '7B', 'A, Why Spotting is Important', ['uspaSpottingWho'], undefined,
+    'c45f6d141108b2c16d57aa463ea3c2bb10bd1b8ab0b3c91c495afa0021d573f4', 578),
+  sim('4-7', '7C', '7D', 'C, Exit Separation on Jump Run', ['uspaSpotting'], undefined,
+    '4f208b027cc5f5b58ddf0e3947d5ba031f599649136f86e821391884b2a55daf', 1171),
+  sim('5-3', '3A', '3B', 'A, Introduction and Definition', ['uspaNightJumps'], undefined,
+    '96ddb07f6f0c18a7314913c1cf54d8184712c5643e5faee9bb1a4ebb7be0c3a1', 929),
+  // The parts #citations quotes beside them. 2-1 G holds anchors of its own
+  // (1G4, 1G4b, 1G5) and 4-7 B one named SPACE; each part runs to the next
+  // lettered part, which is why the end is named.
+  sim('2-1', '1G', '1H', 'G', [], ['A3'],
+    '81aa9ed6c8b29835cfaec2cd16d91bcb02069e78c72ea9dedb666793cd2bbb5d', 8824),
+  sim('2-2', '2C', '2D', 'C, Procedures for Filing Waivers', [], ['A1', 'A2', 'A5'],
+    '3be7b76ead1c9d2e901641ce1c2042e8e7ad6f909178f7eae2ba16cd39b4dd76', 1764),
+  sim('3-1', 'Blicense', 'Clicense', 'B License', [], ['A3'],
+    'cac041ce461e1482214a25c0710d0efb8deec65c60044e67dcf3baef4c41bec7', 971),
+  sim('4-5', '5A', '5B', 'A, Determining Winds', [], ['A6'],
+    'b393b3b3dc8b0b82c530af91334255eb8a1eb8a858ff32edec0bb07acc440e01', 501),
+  sim('4-5', '5C', null, 'C', [], ['A6'],
+    'b6365d9584d668faf1d108a4a5726a9e5d4ac2aa734564e14841225eda661aaf', 1063),
+  sim('4-7', '7B', '7C', 'B, Priorities', [], ['A11'],
+    '694f57cbd7432dd9f389716c6674f6545ae4a7bb788c3efaeea6f085db996e26', 1976),
+  sim('5-3', '3B', '3C', 'B', [], ['A3'],
+    '289f93bddc21a29949cf5a0ff635ee095630ec0a549b8b00c52f765e7dc19d45', 452),
+  sim('5-3', '3E', '3F', 'E', [], ['A11'],
+    '6650b8ee1f7d9db1d023a771b7db1a7d6ce0d2ae16c59285b34dd273836947f3', 2356),
+  // Everything else.
   {
     section: '14 CFR 105.17, Flight visibility and clearance from cloud requirements',
     citations: ['far10517'],
@@ -123,7 +145,7 @@ export const READING_LOG: SourceReading[] = [
   {
     section: 'Performance Designs, Navigator Wing Loading Chart',
     citations: ['pdNavigator'],
-    lastRead: '2026-10-08',
+    lastRead: null,
     edition: 'TABLE-0122 Rev.A',
     how: 'the maintainer’s transcription of the chart (text and a screenshot that agree); the page draws the chart by script, which did not open under automation',
   },

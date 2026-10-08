@@ -37,12 +37,12 @@ const page = (section: string): Promise<string> => {
 
 describe('cited SIM parts, against the text they were read in', () => {
   for (const r of parts) {
-    const { section, anchor, sha256, chars } = r.simPart!;
+    const { section, anchor, until, sha256, chars } = r.simPart!;
     it(`${r.section} (#${anchor})`, async () => {
-      const text = simPartText(await page(section), anchor);
-      expect(text, `#${anchor} is no longer on uspa.org/sim/${section}`).not.toBeNull();
+      const text = simPartText(await page(section), anchor, until);
+      expect(text, `#${anchor} to ${until ?? 'the end of the article'} is no longer on uspa.org/sim/${section}`).not.toBeNull();
       const now = createHash('sha256').update(text!).digest('hex');
-      if (process.env.PRINT_SIM_FINGERPRINTS) {
+      if (process.env.PRINT_SIM_FINGERPRINTS === '1') {
         process.stdout.write(`@@sim ${section}#${anchor} ${now} ${text!.length}\n`);
         return;
       }

@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { READING_LOG, SIM_LAST_READ } from '../src/config/readingLog';
+import { READING_LOG, SIM_EDITION, SIM_LAST_READ, type CitationKey } from '../src/config/readingLog';
 import { CITATIONS } from '../src/config/thresholds';
 import { CitationsPage } from '../src/components/CitationsPage';
+import { CHECKLIST } from '../src/config/citationsChecklist';
 
-/* The reading log is the record of when each cited section was last read.
- * Every citation must have exactly one entry, its note must carry that
- * entry's date, and every SIM entry must be pinned to the part its
- * citations link to. */
+/* The reading log is the record of when each cited or quoted section was
+ * last read. Every citation must have exactly one entry, its note must carry
+ * that entry's date, and every SIM entry must be pinned to the part its
+ * citations link to, or that #citations quotes. */
 describe('the reading log', () => {
-  const cited = Object.entries(CITATIONS).filter(([, c]) => typeof (c as { url?: unknown }).url === 'string');
+  const cited = (Object.entries(CITATIONS) as [CitationKey, unknown][]).filter(([, c]) => typeof (c as { url?: unknown }).url === 'string');
 
   it('has exactly one entry for every citation, and no entry for a citation that does not exist', () => {
     for (const [key] of cited) {
@@ -20,9 +21,26 @@ describe('the reading log', () => {
   });
 
   it('gives each entry one address: every citation it covers links to the same section', () => {
-    for (const r of READING_LOG) {
+    for (const r of READING_LOG.filter((e) => e.citations.length > 0)) {
       const urls = new Set(r.citations.map((k) => (CITATIONS as Record<string, { url: string }>)[k].url));
       expect(urls.size, r.section).toBe(1);
+    }
+  });
+
+  it('ties an entry no citation links to to the checklist entries that quote it', () => {
+    // A part only quoted on #citations is linked by its own anchor, so it
+    // must be a pinned SIM part, and the entries quoting it must exist and
+    // say they read the SIM.
+    const uncited = READING_LOG.filter((r) => r.citations.length === 0);
+    expect(uncited.length).toBeGreaterThan(0);
+    for (const r of uncited) {
+      expect(r.simPart, r.section).toBeDefined();
+      expect(r.quotedIn?.length, r.section).toBeGreaterThan(0);
+      for (const id of r.quotedIn!) {
+        const entry = CHECKLIST.find((e) => e.id === id);
+        expect(entry, `${r.section}: ${id}`).toBeDefined();
+        expect(entry!.found?.read, `${r.section}: ${id}`).toContain(`online SIM at uspa.org (the ${SIM_EDITION}), ${SIM_LAST_READ}`);
+      }
     }
   });
 
@@ -71,5 +89,7 @@ describe('the reading log on #citations', () => {
     expect(html).toContain('not read at the source');
     expect(html).toContain('USPA SIM 2-1 H, Winds');
     expect(html).toContain('text fingerprint <code');
+    // A part only quoted is linked at its own anchor on uspa.org.
+    expect(html).toContain('href="https://www.uspa.org/sim/3-1#Blicense"');
   });
 });
