@@ -70,3 +70,19 @@ describe('DATA_SOURCES', () => {
     expect(Number(url.searchParams.get('lon'))).toBe(SITE.dz.lon);
   });
 });
+
+/* Open-Meteo's terms (open-meteo.com/en/licence, read 2026-10-08) license its
+ * data under CC BY 4.0: credit, a link to the licence, and what was changed,
+ * with a link to Open-Meteo beside wherever its data are shown. */
+describe('the Open-Meteo attribution', () => {
+  it('links the licence and says what this app changes, in the page footer', async () => {
+    // The footer lives in App.tsx, which no test renders (it fetches). Read it.
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
+    const app = fs.readFileSync(decodeURIComponent(new URL('../src/App.tsx', import.meta.url).pathname), 'utf8');
+    const foot = app.slice(app.indexOf('<footer className="app-foot">'), app.indexOf('</footer>'));
+    expect(DATA_SOURCES.openMeteoLicence.url).toBe('https://creativecommons.org/licenses/by/4.0/');
+    expect(foot).toContain('href={DATA_SOURCES.openMeteo.url}');
+    expect(foot).toContain('href={DATA_SOURCES.openMeteoLicence.url}');
+    expect(foot).toMatch(/interpolates to heights\s+above the drop zone/);
+  });
+});

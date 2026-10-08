@@ -91,8 +91,9 @@ a {
    address), styled like the profile toggle so they read as one control. */
 .view-tabs {
   display: flex;
-  /* The top margin is for the Pilots tab, whose header has no profile
-     toggles: without it the tabs sat against the subtitle. */
+  /* Space from the header on both tabs. Pilots needs it most: its header
+     has no profile toggles, and without it the tabs sat against the
+     subtitle. */
   margin: 12px 0;
 }
 .view-tabs a {

@@ -44,10 +44,20 @@ export const DATA_SOURCES = {
     label: 'NWS forecast · NOAA',
     url: `https://forecast.weather.gov/MapClick.php?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}`,
   },
-  /** Winds aloft (pressure-level winds). */
+  /** Winds aloft (pressure-level winds) and the 10-day outlook. Its terms
+   *  (open-meteo.com/en/licence, read 2026-10-08) put the data under CC BY
+   *  4.0 and ask for a link to it beside wherever its data are shown: each
+   *  card that shows them lists this in its "Data:" footer, and the page
+   *  footer carries the licence link and what this app changes. */
   openMeteo: {
     label: 'Open-Meteo',
     url: 'https://open-meteo.com/',
+  },
+  /** The licence Open-Meteo serves its data under. Not a data source, but
+   *  kept beside the one it licenses. */
+  openMeteoLicence: {
+    label: 'CC BY 4.0',
+    url: 'https://creativecommons.org/licenses/by/4.0/',
   },
   /** Mark Schulze's Winds Aloft — same Open-Meteo source; cross-reference.
    *  The page reads `lat` and `lon` from its query string and asks the
