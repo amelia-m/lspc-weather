@@ -426,10 +426,9 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
   const differMax = differed.map((r) => r.unaligned!.maxDir).filter((x): x is number => x != null);
 
   const judged = readable.filter((r) => r.rawMismatch != null);
-  const ground = readable.filter((r) => r.ground?.ourKt != null && r.ground.theirKt != null);
-  const ratios = ground
-    .filter((r) => (r.ground!.ourKt as number) > 0)
-    .map((r) => (r.ground!.theirKt as number) / (r.ground!.ourKt as number));
+  const groundRuns = readable.filter((r) => groundKt(r) != null);
+  const ground = groundRuns.map((r) => groundKt(r)!);
+  const ratios = ground.filter((g) => g.ours > 0).map((g) => g.theirs / g.ours);
 
   const usair = records.filter((r): r is UsairnetRecord => r.kind === 'usairnet');
   const usairReadable = usair.filter((r) => !r.error && r.fields != null);
@@ -468,12 +467,12 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
       rawMismatch: { judged: judged.length, mismatched: judged.filter((r) => r.rawMismatch).length },
       ground: {
         n: ground.length,
-        medianOurKt: round1(median(ground.map((r) => r.ground!.ourKt as number))),
-        medianTheirKt: round1(median(ground.map((r) => r.ground!.theirKt as number))),
+        medianOurKt: round1(median(ground.map((g) => g.ours))),
+        medianTheirKt: round1(median(ground.map((g) => g.theirs))),
         medianRatio: ratios.length ? Math.round((median(ratios) as number) * 100) / 100 : null,
       },
-      groundByLocalHour: groundByLocalHour(ground),
-      groundByLocalDay: groundByLocalDay(ground),
+      groundByLocalHour: groundByLocalHour(groundRuns),
+      groundByLocalDay: groundByLocalDay(groundRuns),
       byTimeGap: timeGapGroups(schulze),
     },
     usairnet: {
@@ -526,12 +525,27 @@ const localHour = (ms: number): number =>
  * moving layer above. The Winds aloft card says so; this is the count that
  * shows whether the logs bear it out.
  */
+/**
+ * The two ground rows as each page shows them: whole knots. Schulze's API
+ * serves its ground speed in whole knots, and this dashboard's card prints
+ * its Surface row in whole knots too, but the log keeps this dashboard's to
+ * a tenth (`ourKt`). Comparing a tenth with a whole knot set every run up to
+ * half a knot apart before either forecast said anything, so this side is
+ * rounded here, at the summary, which also corrects records logged before
+ * it was; the log keeps the tenth. Null where either side is missing.
+ */
+function groundKt(r: SchulzeRecord): { ours: number; theirs: number } | null {
+  const ours = r.ground?.ourKt;
+  const theirs = r.ground?.theirKt;
+  return ours == null || theirs == null ? null : { ours: Math.round(ours), theirs };
+}
+
 export function groundByLocalHour(records: readonly SchulzeRecord[]): GroundBand[] {
   const bands = Array.from({ length: 8 }, () => ({ ours: [] as number[], theirs: [] as number[], gaps: [] as number[] }));
   for (const r of records) {
-    const ours = r.ground?.ourKt;
-    const theirs = r.ground?.theirKt;
-    if (ours == null || theirs == null) continue;
+    const g = groundKt(r);
+    if (g == null) continue;
+    const { ours, theirs } = g;
     const t = validHourOf(r);
     if (!Number.isFinite(t)) continue;
     const band = bands[Math.floor(localHour(t) / 3)];
@@ -565,9 +579,9 @@ const localDate = (ms: number): string =>
 export function groundByLocalDay(records: readonly SchulzeRecord[]): GroundDay[] {
   const days = new Map<string, { ours: number[]; theirs: number[]; gaps: number[] }>();
   for (const r of records) {
-    const ours = r.ground?.ourKt;
-    const theirs = r.ground?.theirKt;
-    if (ours == null || theirs == null) continue;
+    const g = groundKt(r);
+    if (g == null) continue;
+    const { ours, theirs } = g;
     const t = validHourOf(r);
     if (!Number.isFinite(t)) continue;
     const key = localDate(t);

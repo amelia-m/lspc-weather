@@ -490,3 +490,21 @@ describe('the "as Schulze" table in the summary', () => {
     expect(s.byAltitude.map((a) => [a.ft, a.n])).toEqual([[1000, 3]]);
   });
 });
+
+/* Schulze's ground speed is whole knots, and so is the Surface row on this
+ * dashboard's card; the log keeps this side to a tenth. The summary compares
+ * the two as the pages show them. */
+describe('the ground row compared at whole knots', () => {
+  const run = (at: string, ourKt: number, theirKt: number) =>
+    ({ kind: 'schulze', at, aligned: { rows: [] }, ground: { ourKt, theirKt } }) as never;
+
+  it('rounds this side before taking medians, gaps and ratios', () => {
+    const s = summarizeParity([run('2026-10-03T18:00:00Z', 4.6, 5), run('2026-10-03T18:30:00Z', 4.6, 5)], Date.parse('2026-10-09T00:00:00Z')).schulze;
+    expect(s.ground.medianOurKt).toBe(5);
+    expect(s.ground.medianRatio).toBe(1);
+    const band = s.groundByLocalHour.find((b) => b.runs > 0)!;
+    expect(band.medianOurKt).toBe(5);
+    expect(band.medianGapKt).toBe(0);
+    expect(s.groundByLocalDay[0].medianGapKt).toBe(0);
+  });
+});
