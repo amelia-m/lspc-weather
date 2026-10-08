@@ -56,6 +56,9 @@ import { deriveProvenance } from './domain/sourceProvenance';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 
 const PROFILE_KEY = 'lspc:windProfile';
+/** The student choice last made (BSR or a waiver tier), so Licensed and back
+ *  returns to it; see ProfileSelector. */
+const LAST_STUDENT_KEY = 'lspc:lastStudentProfile';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
 const UNIT_KEY = 'lspc:windUnit';
 
@@ -182,6 +185,17 @@ export default function App(): JSX.Element {
   );
   useEffect(() => {
     safeLocalSet(PROFILE_KEY, profile);
+  }, [profile]);
+  const [lastStudent, setLastStudent] = useState<WindProfileId>(() => {
+    const stored = toWindProfileId(safeLocalGet(LAST_STUDENT_KEY));
+    return stored !== 'licensed' ? stored : 'student';
+  });
+  // Follows the profile whenever it is a student one, however it was set.
+  useEffect(() => {
+    if (profile !== 'licensed') {
+      setLastStudent(profile);
+      safeLocalSet(LAST_STUDENT_KEY, profile);
+    }
   }, [profile]);
 
   const [overrides, setOverrides] = useState<Overrides>(() => {
@@ -319,7 +333,7 @@ export default function App(): JSX.Element {
             page-wide policy, not a display preference. They are a jumper's
             limits, so the Pilots tab shows neither (VIEW_USES_PROFILE). */}
         <div className="toggles">
-          {VIEW_USES_PROFILE[view] && <ProfileSelector profile={profile} onChange={setProfile} />}
+          {VIEW_USES_PROFILE[view] && <ProfileSelector profile={profile} lastStudent={lastStudent} onChange={setProfile} />}
           {/* Rendered outside a UnitToggleScope, so it names itself "Wind speed
               unit" — there is no card heading up here to borrow. */}
           <UnitToggle unit={unit} onChange={setUnit} />

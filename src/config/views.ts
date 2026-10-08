@@ -73,8 +73,8 @@ export const VIEW_HASH: Readonly<Record<View, string>> = {
 };
 
 /**
- * Whether the tab shows the wind-limit profile (Student, Licensed, the waiver
- * tiers) and the threshold settings. The profile picks a jumper's
+ * Whether the tab shows the wind-limit profile (Student or Licensed; for a
+ * student, USPA BSR or the LSPC waiver and its tier) and the threshold settings. The profile picks a jumper's
  * ground-wind limit; the Pilots tab shows no card that reads it, and its
  * two flags in the advisory list are left off that tab
  * (`JUMPER_ONLY_ADVISORIES`). Offering it there would ask a pilot which
