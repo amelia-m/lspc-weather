@@ -33,17 +33,21 @@ export const SIM_LAST_READ = '2026-10-08';
 
 export type CitationKey = keyof typeof CITATIONS;
 
-export interface SourceReading {
+/** Where a SIM part's text is on the section page (from `anchor` to
+ *  `until`, or to the end of the article when null), and its fingerprint on
+ *  the day it was read: SHA-256 of simPartText, and its length in
+ *  characters. */
+export interface SimPart {
+  section: string;
+  anchor: string;
+  until: string | null;
+  sha256: string;
+  chars: number;
+}
+
+interface Reading {
   /** e.g. "USPA SIM 2-1 H, Winds". */
   section: string;
-  /** Keys of CITATIONS whose link lands on this section; the page links the
-   *  first one's URL, so the address is written once, in thresholds.ts.
-   *  Empty for a SIM part only quoted on #citations, which links to its own
-   *  anchor. */
-  citations: CitationKey[];
-  /** Checklist entries on #citations that quote this part, where no
-   *  citation links to it. */
-  quotedIn?: string[];
   /** YYYY-MM-DD; null where nobody has read the source itself, only a copy
    *  of it (the club's sign, PD's chart). */
   lastRead: string | null;
@@ -51,11 +55,25 @@ export interface SourceReading {
   edition: string;
   /** How it was read: from where, in what form. */
   how: string;
-  /** For a SIM part: where its text is on the section page (from `anchor` to
-   *  `until`, or to the end of the article when null), and its fingerprint
-   *  on `lastRead`: SHA-256 of simPartText, and its length in characters. */
-  simPart?: { section: string; anchor: string; until: string | null; sha256: string; chars: number };
 }
+
+/** A section a citation links to. The page links the first citation's URL,
+ *  so the address is written once, in thresholds.ts. */
+export interface CitedReading extends Reading {
+  citations: CitationKey[];
+  quotedIn?: undefined;
+  simPart?: SimPart;
+}
+
+/** A SIM part no citation links to, quoted on #citations by the checklist
+ *  entries named; the page links its own anchor. */
+export interface QuotedReading extends Reading {
+  citations: [];
+  quotedIn: string[];
+  simPart: SimPart;
+}
+
+export type SourceReading = CitedReading | QuotedReading;
 
 const SIM_HOW =
   'the online SIM at uspa.org, the section page as served; every quote of it on this page checked against that text';
@@ -63,24 +81,21 @@ const SIM_HOW =
 /** One SIM part. Named fields, so an anchor and its end cannot trade
  *  places unnoticed; `title` is the part's letter and heading as the page
  *  prints them (3-1's parts are named, not lettered). */
-const sim = (p: {
-  section: string;
-  anchor: string;
-  until: string | null;
-  title: string;
-  citations?: CitationKey[];
-  quotedIn?: string[];
-  sha256: string;
-  chars: number;
-}): SourceReading => ({
-  section: `USPA SIM ${p.section}${/^[A-Z],/.test(p.title) ? ' ' : ', '}${p.title}`,
-  citations: p.citations ?? [],
-  ...(p.quotedIn ? { quotedIn: p.quotedIn } : {}),
-  lastRead: SIM_LAST_READ,
-  edition: SIM_EDITION,
-  how: SIM_HOW,
-  simPart: { section: p.section, anchor: p.anchor, until: p.until, sha256: p.sha256, chars: p.chars },
-});
+const sim = (
+  p: SimPart & { title: string } & (
+      | { citations: CitationKey[]; quotedIn?: undefined }
+      | { citations?: undefined; quotedIn: string[] }
+    ),
+): SourceReading => {
+  const common = {
+    section: `USPA SIM ${p.section}${/^[A-Z],/.test(p.title) ? ' ' : ', '}${p.title}`,
+    lastRead: SIM_LAST_READ,
+    edition: SIM_EDITION,
+    how: SIM_HOW,
+    simPart: { section: p.section, anchor: p.anchor, until: p.until, sha256: p.sha256, chars: p.chars },
+  };
+  return p.quotedIn ? { ...common, citations: [], quotedIn: p.quotedIn } : { ...common, citations: p.citations };
+};
 
 export const READING_LOG: SourceReading[] = [
   // The parts a citation links to.

@@ -26,8 +26,9 @@ export function CeilingSkyPanel({
 }: {
   current: CurrentConditions | null;
   hourly: HourlyPoint[];
-  /** Open-Meteo's hourly cloud cover (`snapshot.openMeteoClouds`); null when
-   *  it did not answer, and the card then shows the NWS forecast alone. */
+  /** Open-Meteo's hourly cloud cover (`snapshot.openMeteoClouds`); null on
+   *  the FD fallback and until it loads, and the card then shows the NWS
+   *  forecast alone. Each figure is matched to an NWS hour by its time. */
   omClouds?: OpenMeteoCloudHour[] | null;
 }): JSX.Element {
   const now = Date.now();

@@ -5,7 +5,9 @@ import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
 /** Where and when the SIM parts quoted below were read: every quote of the
  *  SIM on this page was checked against the online text on that date
  *  (readingLog.ts holds the fingerprints). */
-const SIM_READ = `the online SIM at uspa.org (the ${SIM_EDITION}), ${SIM_LAST_READ}`;
+/** How an entry that read the SIM says so; scripts/simText.live.ts picks
+ *  out the entries whose quotes it checks by this. */
+export const SIM_READ = `the online SIM at uspa.org (the ${SIM_EDITION}), ${SIM_LAST_READ}`;
 
 /**
  * The citations checklist: what the dashboard claims, what each cited source

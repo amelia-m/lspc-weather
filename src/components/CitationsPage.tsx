@@ -268,22 +268,13 @@ export function CitationsPage(): JSX.Element {
       <ul className="reading-log">
         {READING_LOG.map((r) => {
           // A SIM part only quoted here has no citation; its own anchor is
-          // where the text was read. An entry with neither is named unlinked.
-          const url =
-            r.citations.length > 0
-              ? CITATIONS[r.citations[0]].url
-              : r.simPart
-                ? simUrl(r.simPart.section, r.simPart.anchor)
-                : null;
+          // where the text was read.
+          const url = r.quotedIn ? simUrl(r.simPart.section, r.simPart.anchor) : CITATIONS[r.citations[0]].url;
           return (
             <li key={r.section}>
-              {url ? (
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                  {r.section}
-                </a>
-              ) : (
-                <span>{r.section}</span>
-              )}
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                {r.section}
+              </a>
               <span className="reading-log-when">
                 {r.lastRead != null ? `last read ${r.lastRead}` : 'not read at the source'} · {r.edition}
               </span>
