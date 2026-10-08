@@ -1,6 +1,7 @@
 import type { Citation, JumperClass } from '../domain/types';
 import { mphToKt } from '../domain/units';
 import { REPO_URL } from './site';
+import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
 
 /**
  * Advisory thresholds and their citations.
@@ -10,19 +11,16 @@ import { REPO_URL } from './site';
  * the authoritative source so THEY (or the S&TA / instructor / PIC) decide.
  */
 
-/** Note for a citation whose section text was read in the SIM that uspa.org
- *  served on 2026-09-22. It says what was done rather than "verified": the
- *  online SIM is not a printed edition, USPA revises it, and a reader deciding
- *  whether to trust a wind limit deserves the date and the source of the
- *  reading rather than a bare tick. Still not a substitute for an instructor:
- *  reading a rule is not the same as knowing how the DZ applies it. */
-const SIM_READ_NOTE =
-  'Section text read in the online SIM at uspa.org on 2026-09-22 and matches this claim. USPA revises the SIM — re-check against the current one, and confirm with the S&TA before relying on it.';
-
-/** For the SIM sections read again, or first, on 2026-10-08 (2-1 I, 2-2 B and
- *  C, 4-7 A and B), during an audit of every SIM-attributed claim. */
-const SIM_REREAD_NOTE =
-  'Section text read in the online SIM at uspa.org on 2026-10-08 and matches this claim. USPA revises the SIM, so re-check against the current one and confirm with the S&TA before relying on it.';
+/** Note for a citation whose section text was read in the online SIM. It
+ *  says what was done rather than "verified": the online SIM is not a printed
+ *  edition, USPA revises it, and a reader deciding whether to trust a wind
+ *  limit deserves the date and the source of the reading rather than a bare
+ *  tick. Still not a substitute for an instructor: reading a rule is not the
+ *  same as knowing how the DZ applies it. The date and edition come from the
+ *  reading log (readingLog.ts), which holds every cited part to the text it
+ *  was read in (scripts/simText.live.ts); every cited part was read again on
+ *  that date. */
+const SIM_READ_NOTE = `Section text read in the online SIM at uspa.org (the ${SIM_EDITION}) on ${SIM_LAST_READ} and matches this claim. USPA revises the SIM, so re-check against the current one and confirm with the S&TA before relying on it.`;
 
 /** The same shape for the two CFR sections, read on 2026-09-23. They were read
  *  through the eCFR API (api/versioner/v1/full/2026-09-21/title-14.xml — Title
@@ -233,7 +231,7 @@ export const CITATIONS = {
     source: 'USPA SIM, Section 4-7 (Spotting)',
     ref: 'SIM 4-7 A, Why Spotting is Important: choosing the exit point and guiding the pilot to it (spotting) helps fulfill each skydiver’s responsibility to land clear',
     url: simUrl('4-7', '7A'),
-    note: SIM_REREAD_NOTE,
+    note: SIM_READ_NOTE,
   },
   /**
    * Night jumps, USPA's half of the night (sunset to sunrise) flag.
@@ -280,7 +278,7 @@ export const CITATIONS = {
     source: 'USPA SIM, Section 2-2 (Waivers to the BSRs)',
     ref: 'SIM 2-2 B — a BSR marked [S] may be waived by an S&TA or Examiner; the student ground-wind BSR (2-1 H) is so marked. 2-2 C: such a waiver is filed in writing',
     url: simUrl('2-2', '2B'),
-    note: SIM_REREAD_NOTE,
+    note: SIM_READ_NOTE,
   },
   /** BSR minimum container-opening altitudes — same Section 2-1 as the wind
    *  limits. Printed on the drift card; DEFAULT_DEPLOY_FT, the card's default
@@ -297,7 +295,7 @@ export const CITATIONS = {
     source: 'USPA SIM, Section 2-1 (BSR)',
     ref: 'BSR 2-1 I — minimum container opening altitudes: tandem 5,000 ft AGL; students & A 3,000 ft; B 2,500 ft; C/D 2,500 ft, waiverable to no lower than 2,000 ft',
     url: simUrl('2-1', '1I'),
-    note: SIM_REREAD_NOTE,
+    note: SIM_READ_NOTE,
   },
   /**
    * Performance Designs' maximum exit weights for the Navigator,

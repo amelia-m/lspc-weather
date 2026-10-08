@@ -13,12 +13,11 @@ describe('CitationsPage', () => {
   const html = renderToStaticMarkup(createElement(CitationsPage));
 
   it('asks the reader to confirm each claim against a quoted source', () => {
-    expect(html).toContain('The source says (read in the SIM at uspa.org, 2026-09-22)');
+    expect(html).toContain('The source says (read in the online SIM at uspa.org (the 2026 SIM), 2026-10-08)');
     expect(html).toContain('Please confirm:');
     expect(html).toContain('Your verdict on the claim:');
     // The four FAA/CFR entries are on the list with their own readings.
     for (const id of ['A8', 'A9', 'A10', 'A11']) expect(html).toContain(`${id} ·`);
-    expect(html).toContain('The source says (read in the SIM at uspa.org, 2026-10-08)');
   });
 
   it('gives every claim a verdict control and every question its own answer and note', () => {

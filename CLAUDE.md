@@ -162,8 +162,9 @@ precisely because they were colour and text rather than flags.
 
 Every USPA, CFR and FAA reference in this app began as an AI recollection (the
 club's posted tiers are a transcription of an undated photo of the sign, and
-say so). The **USPA SIM** sections were read at uspa.org on 2026-09-22, and the **CFR sections, AIM 7-1-7
-and FAA-P-8740-2** on 2026-09-23, and the claims corrected against them. A
+say so). The **USPA SIM** sections were read at uspa.org on 2026-09-22 (and every cited part again on
+2026-10-08), and the **CFR sections, AIM 7-1-7 and FAA-P-8740-2** on 2026-09-23, and the claims
+corrected against them. A
 reading is not an instructor's sign-off, and the difference is not a detail to
 smooth over. The in-app page at `#citations` (`src/components/CitationsPage.tsx`,
 data in `src/config/citationsChecklist.ts`) records, per claim, what the section
@@ -173,6 +174,19 @@ question, kept in the browser (`src/api/citationAnswers.ts`) and sent as a
 prefilled GitHub issue or copied text (`src/domain/citationAnswers.ts`, pure).
 The page says nothing about what the app used to claim; a test rejects that
 wording. History lives in the commit log.
+
+When each cited section was last read, in which edition and how, is one
+file: `src/config/readingLog.ts`, shown as a table at the end of
+`#citations`. Every citation has exactly one entry there, and its note's
+date must be the entry's (a test holds both); the SIM notes and the
+checklist's SIM readings take their date from it. uspa.org names its online
+SIM only as the "2026 SIM" and its change-document list did not load on
+2026-10-08, so each cited SIM part is also pinned by a SHA-256 of its text
+(`simPartText`, `src/domain/simText.ts`); `scripts/simText.live.ts` takes it
+again daily and fails when a part's words change. Every cited SIM part, and
+every SIM quote on `#citations`, was read again on 2026-10-08. After reading
+a part again, take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move
+`SIM_LAST_READ` only if every part was read that day.
 
 When touching a citation:
 
@@ -348,8 +362,11 @@ aviationweather.gov currently has (informational). It also fails, through
 `scripts/pilotLinks.live.ts`, when a Pilots tab deep link stops opening
 what it should: the Chart Supplement link carries an edition number whose
 scheme is inferred (`src/domain/chartSupplement.ts`), and the first edition
-that would show the inference wrong takes effect 2026-10-29. aviationweather.gov is on
-the sandbox allowlist since 2026-09-29, so it runs from here too.
+that would show the inference wrong takes effect 2026-10-29. And it fails,
+through `scripts/simText.live.ts`, when a SIM part a citation links to no
+longer reads as it did on its reading-log date (see "Citations" above).
+aviationweather.gov is on the sandbox allowlist since 2026-09-29, so it runs
+from here too.
 `scripts/schulzeCompare.live.ts` runs in the same job and prints this app's
 winds-aloft profile beside Mark Schulze's at the same valid hour; it is a
 report and never fails the run. It does run from here (markschulze.net is

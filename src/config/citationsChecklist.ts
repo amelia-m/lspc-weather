@@ -1,5 +1,11 @@
 import type { Citation } from '../domain/types';
 import { CITATIONS } from './thresholds';
+import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
+
+/** Where and when the SIM parts quoted below were read: every quote of the
+ *  SIM on this page was checked against the online text on that date
+ *  (readingLog.ts holds the fingerprints). */
+const SIM_READ = `the online SIM at uspa.org (the ${SIM_EDITION}), ${SIM_LAST_READ}`;
 
 /**
  * The citations checklist: what the dashboard claims, what each cited source
@@ -56,7 +62,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     sources: [CITATIONS.uspaStudentWinds, CITATIONS.uspaWaivers],
     citesNote: 'SIM 2-1 H for the figures; SIM 2-2 for who may waive them and that the waiver is written',
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22 (2-2 again on 2026-10-08)',
+      read: SIM_READ,
       says: [
         'Section 2-1 is the Basic Safety Requirements. 2-1 H, “Winds”: “Maximum ground winds — For all solo students [S] — 14 mph for ram-air canopies, 10 mph for round reserves.”',
         'The [S] marking means the requirement may be waived by an S&TA or Examiner (2-2 B).',
@@ -76,7 +82,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
     sources: [CITATIONS.uspaOpeningAltitude],
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22 (2-1 I again on 2026-10-08)',
+      read: SIM_READ,
       says: [
         'BSR 2-1 I: “Tandem jumps: 5,000 feet AGL [E]; All students and A-license holders: 3,000 feet AGL [E]; B-license holders: 2,500 feet AGL [E]; C- and D-license holders: 2,500 feet AGL [S] (waiverable to no lower than 2,000 feet AGL).” [E] is waiverable by the Executive Committee, [S] by an S&TA or Examiner (2-2 B).',
         '2-2 C describes an S&TA waiving the deployment altitude “from 2,500 feet down to 2,000 feet”, and notes it is the one S&TA waiver that needs no written filing.',
@@ -96,12 +102,12 @@ export const CHECKLIST: ChecklistEntry[] = [
     sources: [CITATIONS.far10519, CITATIONS.uspaNightJumps],
     citesNote: '105.19 for the light; SIM 5-3 for the USPA sentence',
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22, and the eCFR, 2026-09-23',
+      read: `${SIM_READ}; the eCFR (Title 14 current as of 2026-09-21), 2026-09-23`,
       says: [
         '14 CFR 105.19, in full: “(a) No person may conduct a parachute operation, and no pilot in command of an aircraft may allow a person to conduct a parachute operation from an aircraft between sunset and sunrise, unless the person or object descending from the aircraft displays a light that is visible for at least 3 statute miles. (b) The light required by paragraph (a) of this section must be displayed from the time that the person or object is under a properly functioning open parachute until that person or object reaches the surface.” It says nothing about licences.',
         'SIM 5-3 A: “Any jumps made between official sunset and official sunrise are considered night jumps.”',
         'SIM 5-3 B: participants “should meet all the requirements for a USPA B or higher license”. SIM 3-1 lists performing night jumps among the B licence’s privileges.',
-        'BSR 2-1 G: all student jumps take place between official sunrise and official sunset (tandem students, civil twilight).',
+        'BSR 2-1 G: “All student jumps must take place between official sunrise and sunset, except tandem jumps with students may take place between the start of official civil twilight in the morning until the end of official civil twilight in the evening.”',
       ],
     },
     asks: [
@@ -118,7 +124,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     sources: [CITATIONS.uspaLicensedWinds],
     citesNote: 'cited for the absence of a limit',
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22',
+      read: SIM_READ,
       says: [
         'BSR 2-1 H states maximum ground winds “For all solo students”, then: “For licensed skydivers are unlimited.”',
       ],
@@ -138,7 +144,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     sources: [CITATIONS.lspcWaiver, CITATIONS.uspaWaivers],
     citesNote: 'the club policy for the sentence; SIM 2-2 for the waiver rule behind it',
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22 (2-2 again on 2026-10-08), and the club document as transcribed in docs/lspc-waivered-wind-limits.md — an undated photo of the posted sign, in this repository since 2026-07-04',
+      read: `${SIM_READ}; and the club document as transcribed in docs/lspc-waivered-wind-limits.md — an undated photo of the posted sign, in this repository since 2026-07-04`,
       says: [
         'The club document: “All excursion from the wind limits stated in the BSRs shall be approved on site by at least a USPA instructor before sending a student up in wind conditions higher than stated in the BSR. It is recommended that the S&TA be consulted if available.”',
         'SIM 2-2, “Waivers to the Basic Safety Requirements”: each BSR is waiverable only by the full board “except for those BSRs designated as being waiverable by: S&TA or Examiner only [S]”. The student ground-wind BSR (2-1 H) carries [S].',
@@ -157,7 +163,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     where: 'Thunderstorm flag (observed) in Conditions to note',
     sources: [CITATIONS.uspaWeather],
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22',
+      read: SIM_READ,
       says: [
         'SIM 4-5 is “Weather”. Part B, “Hazardous Weather”, covers gust fronts, turbulence from gusty winds and thermals, thunderstorms generating spontaneously on calm hot humid days, and dust devils.',
         'Part A, “Determining Winds”, notes that winds-aloft reports are forecasts and can change at any time. Part C covers density altitude, including its effect on the aircraft — “slower and flatter rate of climb”, longer takeoff distances.',
@@ -175,7 +181,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     where: 'Winds aloft card, standing note under the table, at any wind speed',
     sources: [CITATIONS.uspaSpotting],
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22',
+      read: SIM_READ,
       says: [
         'SIM 4-7 C, “Exit Separation on Jump Run”: “On days with strong upper headwinds, allow more time between groups on the same pass to get sufficient horizontal separation over the ground.”',
         'It also gives distances: at least 1,000 ft of ground separation between solo jumpers, at least 1,500 ft between small groups, more as groups grow; and that slower-falling groups, having longer exposure to upper headwinds, exit before faster-falling groups when jump run is into the wind.',
@@ -193,7 +199,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     where: 'Freefall drift / spot card, the note under the estimate',
     sources: [CITATIONS.uspaSpottingWho],
     found: {
-      read: 'the SIM at uspa.org, 2026-10-08',
+      read: SIM_READ,
       says: [
         'SIM 4-7 A, “Why Spotting is Important”: “Choosing the correct exit point and guiding the pilot to it (spotting) helps fulfill each skydiver’s responsibility to land in an appropriate clear area. Jumpers must demonstrate basic spotting abilities prior to obtaining the USPA A license.” It calls those doing it “spotters”.',
         'SIM 4-7 B: “According to FAR 105.5, the jumper and the pilot are jointly responsible for making sure plane traffic is clear before jumping.” And: “The pilot communicates the final OK for exit either with a light system or verbally.”',
