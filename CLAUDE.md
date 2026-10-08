@@ -210,7 +210,7 @@ eCFR, FAA, FAASafety, usairnet, markschulze.net, `amelia-m.github.io`,
 `mesonet.agron.iastate.edu` (IEM) and `tgftp.nws.noaa.gov` (NOAA's raw
 METAR and TAF files), each with its subdomains, and since 2026-10-03
 `aa.usno.navy.mil` (the US Naval Observatory's sun and moon API),
-`skyvector.com` (the sectional link in the header), `tiles.arcgis.com`
+`skyvector.com` (the Sectional chart card's link), `tiles.arcgis.com`
 (FAA's VFR sectional tile service) and `*.blob.core.windows.net`, where
 GitHub's artifact downloads redirect. Since 2026-10-08 it also has
 `github.com`, the ADS-B networks (`adsb.lol`, `adsb.fi` with `globe.` and
