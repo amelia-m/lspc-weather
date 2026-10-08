@@ -141,10 +141,13 @@ describe('the drift card credits the source the numbers came from', () => {
     expect(markup('open-meteo')).toContain('Open-Meteo');
   });
 
-  it('names the NOAA FD product on the fallback path, not Open-Meteo', () => {
+  it('credits the NOAA FD product on the fallback path, naming Open-Meteo only as the usual source', () => {
     const html = markup('nws-fd');
-    expect(html).toContain('NOAA winds aloft (FD)');
-    expect(html).not.toContain('>Open-Meteo<');
+    const [credited, usually] = html.slice(html.indexOf('panel-sources')).split(' · usually ');
+    expect(credited).toContain('NOAA winds aloft (FD)');
+    expect(credited).toContain('fallback in use');
+    expect(credited).not.toContain('>Open-Meteo<');
+    expect(usually).toContain('>Open-Meteo<');
   });
 });
 

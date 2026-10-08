@@ -3,7 +3,8 @@ import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity } from '../d
 import { compass, cToF, fmtSpeed, round, type SpeedUnit } from '../domain/units';
 import { windsAloftTop } from '../domain/windsAloft';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
-import { DATA_SOURCES, windsAloftDataSource } from '../config/sources';
+import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
+import { FallbackSources } from './common/FallbackSources';
 import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
@@ -89,12 +90,14 @@ export function WindsAloftPanel({
     <Panel
       title="Winds aloft"
       subtitle={fallback ? 'NOAA FD fallback' : 'freefall drift / spot'}
-      // Schulze's tool rides beside Open-Meteo as a cross-reference on the
-      // same data; on the FD bulletin, or with no data, it would read as the
-      // source.
-      sources={[windsAloftDataSource(source), source === 'open-meteo' ? DATA_SOURCES.markschulze : null].filter(
-        (s) => s !== null,
-      )}
+      footer={
+        <FallbackSources
+          inUse={windsAloftSourceInUse(source)}
+          usual={[DATA_SOURCES.openMeteo]}
+          fallback={[DATA_SOURCES.fdWinds]}
+          withUsual={[DATA_SOURCES.markschulze]}
+        />
+      }
       unit={unit}
       onUnitChange={onUnitChange}
     >

@@ -259,12 +259,12 @@ export function pilotLinks(now: number): PilotLink[] {
   ];
 }
 
-/** Who supplied the winds aloft, for the Data lines of the two cards built
- *  on them (Winds aloft, Drift). Open-Meteo is credited only on its own
- *  answer: with neither it nor the FD bulletin answering (source null or
- *  not yet known) the cards show no data and credit nobody. */
-export function windsAloftDataSource(source: WindsAloftSource | null | undefined): DataSource | null {
-  if (source === 'open-meteo') return DATA_SOURCES.openMeteo;
-  if (source === 'nws-fd') return DATA_SOURCES.fdWinds;
-  return null;
+/** Which of a card's sources answered: its usual one, its fallback, or
+ *  neither (nothing loaded yet, or both failed). */
+export type SourceInUse = 'usual' | 'fallback' | null;
+
+/** The winds-aloft source, as the Data line of the two cards built on it
+ *  (Winds aloft, Drift) reads it. */
+export function windsAloftSourceInUse(source: WindsAloftSource | null | undefined): SourceInUse {
+  return source === 'open-meteo' ? 'usual' : source === 'nws-fd' ? 'fallback' : null;
 }
