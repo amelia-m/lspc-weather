@@ -458,8 +458,13 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
 
   const sameHour = spreads(aligned.map((r) => r.aligned!.rows));
   const byAltitude = sameHour.byAltitude;
-  const over10 = sameHour.over10;
-  const over3 = sameHour.over3;
+  // The totals are the sums of their causes, so the split under each count
+  // on #parity always adds up to it.
+  const dirCauses = overCauses(aligned, 'dDir', 10);
+  const spdCauses = overCauses(aligned, 'dSpd', 3);
+  const sum = (c: OverCauses): number => c.surfaceOnly + c.newerRun + c.sameRunAloft + c.unjudgedAloft;
+  const over10 = sum(dirCauses);
+  const over3 = sum(spdCauses);
   // Runs that compared something: a run that logged the his-way table with no
   // rows (it could not be built, or none of its altitudes matched his) would
   // count as a run that could never agree. Those are counted apart
@@ -505,7 +510,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
         : {}),
       runsWithRowOver10Deg: over10,
       runsWithRowOver3Kt: over3,
-      overCauses: { dir: overCauses(aligned, 'dDir', 10), spd: overCauses(aligned, 'dSpd', 3) },
+      overCauses: { dir: dirCauses, spd: spdCauses },
       unaligned: {
         runs: unalignedRuns.length,
         hoursDiffered: differed.length,
