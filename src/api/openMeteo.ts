@@ -6,10 +6,11 @@ import {
   coerceOpenMeteoTimes,
   OPEN_METEO_FORECAST_URL,
   openMeteoWindsUrl,
+  type OpenMeteoWindsAtHour,
   type RawOpenMeteo,
   type RawOpenMeteoDaily,
 } from '../domain/normalize';
-import { interpolateWindsAloft } from '../domain/windsAloft';
+import { interpolateAsSchulze, interpolateWindsAloft } from '../domain/windsAloft';
 import type { DailyPoint, WindsAloftForecast } from '../domain/types';
 import { SITE } from '../config/site';
 import { OPEN_METEO_FIXTURE } from './fixtures/openMeteo';
@@ -40,16 +41,23 @@ export async function fetchWindsAloft(
     : await fetchJson<RawOpenMeteo>(openMeteoWindsUrl(lat, lon), OPEN_METEO_OPTS);
 
   const coerced = coerceOpenMeteoTimes(data);
-  const { samples, validMs } = normalizeOpenMeteo(coerced, now);
+  const atNow = normalizeOpenMeteo(coerced, now);
+  // Two tables from one response: this app's default (every sample, field
+  // datum) and Mark Schulze's method (his levels, his datum, his ground rule),
+  // which the card can show instead and the comparison checks against his.
+  const both = (h: OpenMeteoWindsAtHour) => ({
+    levels: interpolateWindsAloft(h.samples, fieldElevationFt, targetAltitudesFtAgl),
+    schulzeLevels:
+      h.schulze.groundFtMsl != null
+        ? interpolateAsSchulze(h.schulze.levels, h.schulze.groundFtMsl, targetAltitudesFtAgl)
+        : [],
+  });
   return {
-    levels: interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl),
-    validity: { validMs },
+    ...both(atNow),
+    validity: { validMs: atNow.validMs },
     hours: normalizeOpenMeteoHours(coerced)
-      .filter((h): h is { samples: typeof h.samples; validMs: number } => h.validMs != null && Number.isFinite(h.validMs))
-      .map((h) => ({
-        validMs: h.validMs,
-        levels: interpolateWindsAloft(h.samples, fieldElevationFt, targetAltitudesFtAgl),
-      }))
+      .filter((h) => h.validMs != null && Number.isFinite(h.validMs))
+      .map((h) => ({ validMs: h.validMs as number, ...both(h) }))
       .filter((h) => h.levels.length > 0),
   };
 }

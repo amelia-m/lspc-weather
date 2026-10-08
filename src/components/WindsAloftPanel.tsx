@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity } from '../domain/types';
+import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity, WindsMethod } from '../domain/types';
 import { compass, fmtSpeed, fmtTemp, type SpeedUnit, type TempUnit } from '../domain/units';
 import { windsAloftTop } from '../domain/windsAloft';
 import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
@@ -39,6 +39,9 @@ export function WindsAloftPanel({
   onUnitChange,
   tempUnit = 'F',
   onTempUnitChange,
+  method = 'all',
+  onMethodChange,
+  schulzeAvailable = false,
 }: {
   levels: WindsAloftLevel[];
   source: WindsAloftSource | null | undefined;
@@ -56,6 +59,12 @@ export function WindsAloftPanel({
    *  Optional so a test can render the card without them; App passes both. */
   tempUnit?: TempUnit;
   onTempUnitChange?: (u: TempUnit) => void;
+  /** Which table to show: every sample this app takes, or the table as Mark
+   *  Schulze's tool builds it. Page-wide, shared with the drift card. */
+  method?: WindsMethod;
+  onMethodChange?: (m: WindsMethod) => void;
+  /** Whether this hour has the Schulze-method table (Open-Meteo only). */
+  schulzeAvailable?: boolean;
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false);
   // Ticks each minute so the "ahead of now" offset stays true between the
@@ -128,6 +137,39 @@ export function WindsAloftPanel({
               This source stated no forecast valid time, so the hour these winds
               are for cannot be shown.
             </p>
+          )}
+          {schulzeAvailable && onMethodChange && (
+            <>
+              <div className="range-toggle" role="group" aria-label="How the table is built">
+                {(['all', 'schulze'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={m === method ? 'active' : ''}
+                    aria-pressed={m === method}
+                    onClick={() => onMethodChange(m)}
+                  >
+                    {m === 'all' ? 'All levels' : 'As Schulze'}
+                  </button>
+                ))}
+              </div>
+              <p className="muted small">
+                {method === 'schulze' ? (
+                  <>
+                    Built the way Mark Schulze&rsquo;s tool builds its table, to check this one against
+                    it: his thirteen pressure levels only, altitudes above Open-Meteo&rsquo;s ground
+                    rather than the field, and his Surface row, a line through the levels either side
+                    of the ground (a rule inferred from his output, not read from his code).
+                  </>
+                ) : (
+                  <>
+                    Every level this app samples: the model&rsquo;s 10, 80, 120 and 180&nbsp;m winds
+                    and twenty pressure levels, seven more than Mark Schulze&rsquo;s tool uses.
+                    &ldquo;As Schulze&rdquo; shows the table built his way.
+                  </>
+                )}
+              </p>
+            </>
           )}
           {fallback && (validity?.forUseRaw != null || validity?.basedOnMs != null) && (
             <p className="muted small">
@@ -252,13 +294,13 @@ export function WindsAloftPanel({
             {source === 'open-meteo' && (
               <>
                 {' '}
-                The Surface row is the model&rsquo;s 10&nbsp;m wind; the observed wind is on the
-                Surface wind card.
+                {method === 'schulze'
+                  ? 'In this view the Surface row is built his way, not the model’s 10\u00a0m wind; the observed wind is on the Surface wind card.'
+                  : 'The Surface row is the model’s 10\u00a0m wind; the observed wind is on the Surface wind card.'}
               </>
             )}{' '}
-            Against Mark Schulze&rsquo;s tool: same data, altitudes AGL on both, but near the ground
-            this table also uses the model&rsquo;s 80, 120 and 180&nbsp;m winds, which his does not;
-            and after half past his table is the hour before this one.
+            Against Mark Schulze&rsquo;s tool: same data, but this table also takes samples his does
+            not (the switch above the table rebuilds it his way), and after half past his table is the hour before this one.
           </p>
           <details className="aloft-about">
             <summary className="small">
@@ -292,9 +334,9 @@ export function WindsAloftPanel({
                 not there. */}
             {source === 'open-meteo' && (
               <p className="muted small">
-                The <strong>Surface</strong> row here is the model&rsquo;s wind at 10&nbsp;m (33&nbsp;ft),
-                the height an airport wind sensor measures, forecast for the hour above; the observed
-                wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
+                In the All levels view the <strong>Surface</strong> row is the model&rsquo;s wind at
+                10&nbsp;m (33&nbsp;ft), the height an airport wind sensor measures, forecast for the hour
+                above; the observed wind is on the Surface wind card. Mark Schulze&rsquo;s Surface row is not a 10&nbsp;m
                 wind: it draws a straight line through the model&rsquo;s pressure levels and reads it at
                 the ground, here between a level the model places below the ground and the next one up.
                 So it reads more like the wind a couple of hundred feet up, and

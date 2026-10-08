@@ -292,9 +292,29 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
           <TimeGapTable groups={w.byTimeGap} />
         </>
       )}
+      {w.asSchulze && (
+        <>
+          <h4 className="cite-found-head">Built as Schulze&rsquo;s tool builds it</h4>
+          <p className="muted small">
+            Since Oct 8 each run also builds the same hour the way his tool does (his thirteen
+            pressure levels, his ground, his Surface row, which is a rule inferred from his output)
+            and sets it against his table: the check that this dashboard reproduces his. Every row
+            within 1° and 1 kt, which is rounding, in {w.asSchulze.runsAllWithin1} of{' '}
+            {w.asSchulze.runs} runs ({pct(w.asSchulze.runsAllWithin1, w.asSchulze.runs)}); a row
+            over 10° in {w.asSchulze.runsWithRowOver10Deg}, over 3 kt in{' '}
+            {w.asSchulze.runsWithRowOver3Kt}. Runs where the two were served different forecast
+            runs fall outside rounding here too (the open question below).
+          </p>
+          <SpreadTable title="Direction, as Schulze" unit="°" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.dir])} />
+          <SpreadTable title="Speed, as Schulze" unit=" kt" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.spd])} />
+          <h4 className="cite-found-head">This dashboard&rsquo;s table</h4>
+        </>
+      )}
       <p className="muted small">
         Same valid hour on both sides, row by row: how far apart the two tables were, as the
-        average, median, 90th-percentile, smallest and largest absolute difference across runs.{' '}
+        average, median, 90th-percentile, smallest and largest absolute difference across runs.
+        Since Oct 8 the table takes Open-Meteo&rsquo;s 80, 120 and 180&nbsp;m winds and seven
+        pressure levels his does not, so from then these spreads include what those add.{' '}
         {w.unreadable > 0 && `${w.unreadable} runs could not read one side.`}
       </p>
       <SpreadTable title="Direction" unit="°" rows={w.byAltitude.map((r) => [r.ft, r.dir])} />

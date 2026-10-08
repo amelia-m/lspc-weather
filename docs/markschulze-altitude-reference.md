@@ -293,3 +293,30 @@ Schulze's tool samples pressure levels only. What that does to the comparison:
 
 Run live the same day at 02Z, after the change: Surface 4° and 1 kt apart,
 every row from 1,000 ft up within 1° and 1 kt.
+
+## Two tables: this app's default and "As Schulze" (2026-10-08)
+
+From 2026-10-08 the default table also takes seven pressure levels the tool
+does not sample (875, 825, 775, 725, 675, 625 and 575 hPa,
+`OPEN_METEO_EXTRA_PRESSURE_LEVELS`). Read that day, each was served with
+values that are not the average of its neighbours, so they are model levels.
+Over the next 48 hours they moved the default table a median of under 0.5 kt,
+at most 2.6 kt and 11° (at 3,000 ft).
+
+So that the app can still show it reproduces the tool, the Winds aloft card
+has an "As Schulze" view that rebuilds the same hour his way
+(`interpolateAsSchulze` in `src/domain/windsAloft.ts`): his thirteen levels
+only, the levels below ground kept, altitudes measured from his ground
+(Open-Meteo's `elevation`) rather than the field, and his Surface row, the
+line through the level below the ground and the one above (or the two lowest,
+extended down). The levels and the ground are read from his API's output; the
+Surface rule is inferred from it (above). `scripts/schulzeCompare.live.ts`
+logs both tables against his on every run (`aligned`, the default; and
+`asSchulze`), and `#parity` shows them separately.
+
+First live runs, 2026-10-08 near 02:46Z, for 03Z: the "As Schulze" table
+matched his to 0° and 0 kt at every row, the Surface row included. A run a
+minute earlier was 5° and 2 kt apart at 5,000 and 6,000 ft, the pattern of the
+two being served different forecast runs (still open, above), which the logs
+will now count for both tables.
+

@@ -34,6 +34,12 @@ export interface SchulzeRecord {
   /** Minute past the hour the run sampled at, UTC. */
   minute?: number;
   aligned?: { rows: { ft: number; dDir: number; dSpd: number; dT: number | null }[] } | null;
+  /** The same hour's table built as Schulze's tool builds his (his levels,
+   *  his ground, his Surface rule; interpolateAsSchulze), against his. Logged
+   *  from 2026-10-08, when the card's default table (`aligned`) began taking
+   *  seven more pressure levels than his; this is what shows the app can
+   *  still reproduce his. Absent on runs before. */
+  asSchulze?: { rows: { ft: number; dDir: number; dSpd: number; dT: number | null }[] } | null;
   /** What a jumper comparing both pages at that minute would see. `rows`
    *  (every height, when the hours differed) was added on 2026-09-26; older
    *  runs carry only the worst row's direction. */
@@ -211,6 +217,16 @@ export interface ParitySummary {
     /** Runs where a same-hour Schulze table existed. */
     aligned: number;
     byAltitude: AltitudeSpread[];
+    /** The "as Schulze" table against his (SchulzeRecord.asSchulze), from the
+     *  runs that logged it. Absent in summaries written before 2026-10-08. */
+    asSchulze?: {
+      runs: number;
+      byAltitude: AltitudeSpread[];
+      /** Runs where every row was within 1° and 1 kt of his: rounding. */
+      runsAllWithin1: number;
+      runsWithRowOver10Deg: number;
+      runsWithRowOver3Kt: number;
+    };
     /** Runs whose worst row was 10° or 3 kt off — the size of difference a
      *  reader would notice on the card. Counts, not verdicts. */
     runsWithRowOver10Deg: number;
@@ -347,22 +363,22 @@ export function timeGapGroups(records: readonly SchulzeRecord[]): TimeGapGroup[]
   ];
 }
 
-export function summarizeParity(records: readonly ParityRecord[], now: number): ParitySummary {
-  const times = records.map((r) => Date.parse(r.at)).filter((t) => Number.isFinite(t));
-  const from = times.length ? new Date(Math.min(...times)).toISOString() : null;
-  const to = times.length ? new Date(Math.max(...times)).toISOString() : null;
-
-  const schulze = records.filter((r): r is SchulzeRecord => r.kind === 'schulze');
-  const readable = schulze.filter((r) => !r.error);
-  const aligned = readable.filter((r) => r.aligned != null);
-
+/** Per-altitude spreads of a set of runs' rows against Schulze's, and how
+ *  many runs had a row past 10° or 3 kt, or every row within 1° and 1 kt. */
+function spreads(runs: readonly { ft: number; dDir: number; dSpd: number }[][]): {
+  byAltitude: AltitudeSpread[];
+  over10: number;
+  over3: number;
+  within1: number;
+} {
   const byFt = new Map<number, { dir: number[]; spd: number[] }>();
   let over10 = 0;
   let over3 = 0;
-  for (const r of aligned) {
+  let within1 = 0;
+  for (const rows of runs) {
     let worstDir = 0;
     let worstSpd = 0;
-    for (const row of r.aligned!.rows) {
+    for (const row of rows) {
       const cell = byFt.get(row.ft) ?? { dir: [], spd: [] };
       cell.dir.push(row.dDir);
       cell.spd.push(row.dSpd);
@@ -372,15 +388,29 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
     }
     if (worstDir > 10) over10 += 1;
     if (worstSpd > 3) over3 += 1;
+    if (rows.length > 0 && worstDir <= 1 && worstSpd <= 1) within1 += 1;
   }
   const byAltitude: AltitudeSpread[] = [...byFt.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([ft, c]) => ({
-      ft,
-      n: c.dir.length,
-      dir: spreadOf(c.dir) as Spread,
-      spd: spreadOf(c.spd) as Spread,
-    }));
+    .map(([ft, c]) => ({ ft, n: c.dir.length, dir: spreadOf(c.dir) as Spread, spd: spreadOf(c.spd) as Spread }));
+  return { byAltitude, over10, over3, within1 };
+}
+
+export function summarizeParity(records: readonly ParityRecord[], now: number): ParitySummary {
+  const times = records.map((r) => Date.parse(r.at)).filter((t) => Number.isFinite(t));
+  const from = times.length ? new Date(Math.min(...times)).toISOString() : null;
+  const to = times.length ? new Date(Math.max(...times)).toISOString() : null;
+
+  const schulze = records.filter((r): r is SchulzeRecord => r.kind === 'schulze');
+  const readable = schulze.filter((r) => !r.error);
+  const aligned = readable.filter((r) => r.aligned != null);
+
+  const sameHour = spreads(aligned.map((r) => r.aligned!.rows));
+  const byAltitude = sameHour.byAltitude;
+  const over10 = sameHour.over10;
+  const over3 = sameHour.over3;
+  const hisWayRuns = readable.filter((r) => r.asSchulze != null);
+  const hisWay = spreads(hisWayRuns.map((r) => r.asSchulze!.rows));
 
   const unalignedRuns = readable.filter((r) => r.unaligned != null);
   const differed = unalignedRuns.filter((r) => r.unaligned!.hoursDiffer);
@@ -406,6 +436,17 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
       unreadable: schulze.length - readable.length,
       aligned: aligned.length,
       byAltitude,
+      ...(hisWayRuns.length > 0
+        ? {
+            asSchulze: {
+              runs: hisWayRuns.length,
+              byAltitude: hisWay.byAltitude,
+              runsAllWithin1: hisWay.within1,
+              runsWithRowOver10Deg: hisWay.over10,
+              runsWithRowOver3Kt: hisWay.over3,
+            },
+          }
+        : {}),
       runsWithRowOver10Deg: over10,
       runsWithRowOver3Kt: over3,
       unaligned: {

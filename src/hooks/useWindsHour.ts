@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { WeatherSnapshot, WindsAloftLevel, WindsAloftValidity } from '../domain/types';
+import type { WeatherSnapshot, WindsAloftLevel, WindsAloftValidity, WindsMethod } from '../domain/types';
 import { chooseForecastHour, selectionAfterStep } from '../domain/forecastHour';
 import type { WindsHourNav } from '../components/common/ForecastHourNav';
 import { useNow } from './useNow';
@@ -16,21 +16,32 @@ import { useNow } from './useNow';
  *
  * On a source with a single hour (the NOAA FD fallback) there is nothing to
  * step: the snapshot's own levels and validity pass through and `nav` is null.
+ *
+ * `method` picks which of the hour's two tables both cards use: every sample
+ * (the default) or as Mark Schulze's tool builds his. Only the Open-Meteo
+ * hours carry the second; `schulzeAvailable` says whether this one does, and
+ * where it does not, the default table passes through whatever was asked.
  */
-export function useWindsHour(snapshot: WeatherSnapshot): {
+export function useWindsHour(
+  snapshot: WeatherSnapshot,
+  method: WindsMethod = 'all',
+): {
   levels: WindsAloftLevel[];
   validity: WindsAloftValidity | null | undefined;
   nav: WindsHourNav | null;
+  schulzeAvailable: boolean;
 } {
   const now = useNow(60_000);
   const [selectedMs, setSelectedMs] = useState<number | null>(null);
   const hours = snapshot.windsAloftHours;
   const chosen = chooseForecastHour(hours, selectedMs, now);
   if (!hours || !chosen) {
-    return { levels: snapshot.windsAloft, validity: snapshot.windsAloftValidity, nav: null };
+    return { levels: snapshot.windsAloft, validity: snapshot.windsAloftValidity, nav: null, schulzeAvailable: false };
   }
+  const schulzeAvailable = (chosen.schulzeLevels?.length ?? 0) > 0;
   return {
-    levels: chosen.levels,
+    levels: method === 'schulze' && schulzeAvailable ? chosen.schulzeLevels! : chosen.levels,
+    schulzeAvailable,
     validity: { validMs: chosen.validMs },
     nav: {
       canBack: chosen.canBack,

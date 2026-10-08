@@ -643,6 +643,26 @@ export const OPEN_METEO_PRESSURE_LEVELS = [
 ] as const;
 
 /**
+ * The pressure levels between those, every 25 hPa from 875 to 575, which
+ * Mark Schulze's tool does not sample. Read 2026-10-08 at the DZ, each was
+ * served with values that are not the average of its neighbours (875 hPa
+ * 5.7 kt where the neighbours average 6.6; 800 hPa, which the tool does
+ * sample, 11.9 against 13.2), so they are model levels, not filler. Over the
+ * next 48 hours adding them moved the table a median of under 0.5 kt and at
+ * most 2.6 kt and 11° (at 3,000 ft); below 2,000 ft nothing changed, every
+ * level there already being sampled. They are in the default table; the
+ * "as Schulze's tool" table leaves them out, so that the comparison can show
+ * both that this app reproduces his table and what the extra levels change.
+ */
+export const OPEN_METEO_EXTRA_PRESSURE_LEVELS = [875, 825, 775, 725, 675, 625, 575] as const;
+
+/** Every pressure level requested, highest pressure (lowest height) first. */
+export const OPEN_METEO_ALL_PRESSURE_LEVELS: readonly number[] = [
+  ...OPEN_METEO_PRESSURE_LEVELS,
+  ...OPEN_METEO_EXTRA_PRESSURE_LEVELS,
+].sort((a, b) => b - a);
+
+/**
  * The fixed heights above the model's ground, in metres, sampled between the
  * 10 m wind and the lowest pressure levels: the canopy layer.
  *
@@ -682,7 +702,7 @@ export function openMeteoHourlyVariables(): string[] {
   for (const h of OPEN_METEO_HEIGHT_LEVELS_M) {
     vars.push(`wind_speed_${h}m`, `wind_direction_${h}m`, `temperature_${h}m`);
   }
-  for (const p of OPEN_METEO_PRESSURE_LEVELS) {
+  for (const p of OPEN_METEO_ALL_PRESSURE_LEVELS) {
     vars.push(
       `wind_speed_${p}hPa`,
       `wind_direction_${p}hPa`,
@@ -738,15 +758,20 @@ export interface OpenMeteoWindsAtHour {
   samples: RawWindSample[];
   /** Epoch ms of the hourly step actually used; null when the series is empty. */
   validMs: number | null;
+  /** The same hour as Mark Schulze's tool samples it, for
+   *  `interpolateAsSchulze`: his thirteen pressure levels only, underground
+   *  ones kept, and the ground they are measured from (Open-Meteo's
+   *  `elevation`, ft MSL; null when the response gives none). */
+  schulze: { levels: RawWindSample[]; groundFtMsl: number | null };
 }
 
 /** Build wind samples (MSL height + kt) for the hour nearest `now`, and report
  *  which hour that was. Pure: `now` is a parameter, never Date.now(). */
 export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWindsAtHour {
   const times = data.hourly.time.map((t) => Date.parse(t));
-  if (times.length === 0) return { samples: [], validMs: null };
+  if (times.length === 0) return { samples: [], validMs: null, schulze: { levels: [], groundFtMsl: null } };
   const idx = nearestIndex(times, now);
-  return { samples: samplesAtIndex(data, idx), validMs: times[idx] };
+  return { samples: samplesAtIndex(data, idx), validMs: times[idx], schulze: schulzeSamplesAtIndex(data, idx) };
 }
 
 /** Every hour the response carries, in the order served (ascending), each
@@ -754,7 +779,37 @@ export function normalizeOpenMeteo(data: RawOpenMeteo, now: number): OpenMeteoWi
  *  time, as Mark Schulze's page does; one request already holds them all
  *  (forecast_days=2), so stepping costs no fetch. */
 export function normalizeOpenMeteoHours(data: RawOpenMeteo): OpenMeteoWindsAtHour[] {
-  return data.hourly.time.map((t, idx) => ({ samples: samplesAtIndex(data, idx), validMs: Date.parse(t) }));
+  return data.hourly.time.map((t, idx) => ({
+    samples: samplesAtIndex(data, idx),
+    validMs: Date.parse(t),
+    schulze: schulzeSamplesAtIndex(data, idx),
+  }));
+}
+
+/**
+ * One hour's samples as Mark Schulze's tool takes them: his thirteen pressure
+ * levels (OPEN_METEO_PRESSURE_LEVELS) and nothing else, no 10 m wind, no
+ * fixed heights, and the levels below the model's ground KEPT, since his
+ * Surface row runs a line through the level below the ground and the one
+ * above (docs/markschulze-altitude-reference.md, "How the surface row was
+ * worked out"). The ground is Open-Meteo's `elevation`: his `groundElev`
+ * is that figure, and his altitudes are measured from it.
+ */
+function schulzeSamplesAtIndex(data: RawOpenMeteo, idx: number): { levels: RawWindSample[]; groundFtMsl: number | null } {
+  const num = (key: string): number | null => {
+    const v = (data.hourly[key] as number[] | undefined)?.[idx];
+    return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  };
+  const elevM = (data as unknown as { elevation?: number }).elevation;
+  const levels: RawWindSample[] = [];
+  for (const p of OPEN_METEO_PRESSURE_LEVELS) {
+    const spd = num(`wind_speed_${p}hPa`);
+    const dir = num(`wind_direction_${p}hPa`);
+    const gph = num(`geopotential_height_${p}hPa`);
+    if (spd == null || dir == null || gph == null) continue;
+    levels.push({ heightFtMsl: mToFt(gph), speedKt: spd, directionDeg: dir, tempC: num(`temperature_${p}hPa`) });
+  }
+  return { levels, groundFtMsl: typeof elevM === 'number' ? mToFt(elevM) : null };
 }
 
 function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
@@ -800,7 +855,7 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
     }
   }
 
-  for (const p of OPEN_METEO_PRESSURE_LEVELS) {
+  for (const p of OPEN_METEO_ALL_PRESSURE_LEVELS) {
     const spd = num(`wind_speed_${p}hPa`);
     const dir = num(`wind_direction_${p}hPa`);
     const gph = num(`geopotential_height_${p}hPa`); // m MSL
