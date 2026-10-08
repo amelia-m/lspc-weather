@@ -95,3 +95,19 @@ describe('CitationsPage', () => {
     }
   });
 });
+
+/* "PIC" is the CFR's own abbreviation (14 CFR 1.1 defines "pilot in
+ * command"), but a jumper reading a card or this page should not have to
+ * know it. Text a reader sees spells it out. */
+describe('reader-facing text spells out pilot in command', () => {
+  it('has no bare "PIC" in a claim, reading, question or citation note', async () => {
+    const { CHECKLIST } = await import('../src/config/citationsChecklist');
+    const { CITATIONS, resolveThresholds } = await import('../src/config/thresholds');
+    const texts = [
+      ...CHECKLIST.flatMap((e) => [e.claim, e.citesNote ?? '', ...e.asks, ...(e.found?.says ?? [])]),
+      ...Object.values(CITATIONS).flatMap((c) => [c.ref, c.note ?? '']),
+      ...(['student', 'licensed', 'waiver:0-5'] as const).map((p) => resolveThresholds(p).windGuidance),
+    ];
+    for (const t of texts) expect(t, t).not.toMatch(/\bPIC\b/);
+  });
+});

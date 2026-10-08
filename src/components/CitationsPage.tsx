@@ -122,7 +122,7 @@ export function CitationsPage(): JSX.Element {
       <p className="disclaimer">
         <strong>Each entry below is a claim the dashboard makes, what its source says, and the
         questions a reader is asked to settle.</strong>{' '}
-        The USPA SIM sections were read at uspa.org on 2026-09-22 (4-7 A, and 2-2 again, on
+        The USPA SIM sections were read at uspa.org on 2026-09-22 (2-1 I, 2-2 and 4-7 again on
         2026-10-08); 14 CFR 105.17 and 105.19, AIM
         7-1-7 and FAA-P-8740-2 on 2026-09-23. The club&rsquo;s posted wind-limit tiers are a
         transcription of an undated photo of the sign. A reading is each source as served on one
@@ -252,7 +252,7 @@ export function CitationsPage(): JSX.Element {
 
       <h2 className="cite-heading">How each source was read</h2>
       <p className="muted small cite-intro">
-        The SIM as uspa.org served it on 2026-09-22, and 4-7 A on 2026-10-08. The two CFR sections through the eCFR API on
+        The SIM as uspa.org served it on 2026-09-22, and 2-1 I, 2-2 and 4-7 again on 2026-10-08. The two CFR sections through the eCFR API on
         2026-09-23 — Title 14 as current on 2026-09-21 — which serves the text the linked pages
         render. AIM 7-1-7 from the HTML edition on faa.gov on 2026-09-23, Change 3, effective
         2026-07-09. FAA-P-8740-2 from the linked PDF on 2026-09-23: the 2008 AFS-8 edition, eight

@@ -550,7 +550,7 @@ describe('an empty advisory list is not an all-clear', () => {
       const html = windPanel(DEFAULT_THRESHOLDS.licensed, 'Licensed', 'kt', current);
       expect(html).toContain('No published limit for this profile');
       expect(html).toContain('no surface-wind flag appears under');
-      expect(html).toContain('ask the PIC');
+      expect(html).toContain('ask the pilot.');
       // The BSR cited for the ABSENCE of a limit, reachable as a link.
       expect(html).toContain(CITATIONS.uspaLicensedWinds.url);
     }

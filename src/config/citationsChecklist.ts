@@ -53,12 +53,13 @@ export const CHECKLIST: ChecklistEntry[] = [
       'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it, by a written waiver.',
     value: '14 mph, stored as 12 kt — the caution band',
     where: 'Surface wind card, and the Surface wind flag, with Student selected',
-    sources: [CITATIONS.uspaStudentWinds],
+    sources: [CITATIONS.uspaStudentWinds, CITATIONS.uspaWaivers],
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22',
+      read: 'the SIM at uspa.org, 2026-09-22 (2-2 again on 2026-10-08)',
       says: [
         'Section 2-1 is the Basic Safety Requirements. 2-1 H, “Winds”: “Maximum ground winds — For all solo students [S] — 14 mph for ram-air canopies, 10 mph for round reserves.”',
         'The [S] marking means the requirement may be waived by an S&TA or Examiner (2-2 B).',
+        '2-2 C: “Any waiver filed by an S&TA or Examiner except for the deployment altitude exception in 2-1 I.4. will be in writing on the waiver form”, with a copy to the USPA Regional Director and USPA Headquarters.',
       ],
     },
     asks: [
@@ -74,7 +75,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
     sources: [CITATIONS.uspaOpeningAltitude],
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22',
+      read: 'the SIM at uspa.org, 2026-09-22 (2-1 I again on 2026-10-08)',
       says: [
         'BSR 2-1 I: “Tandem jumps: 5,000 feet AGL [E]; All students and A-license holders: 3,000 feet AGL [E]; B-license holders: 2,500 feet AGL [E]; C- and D-license holders: 2,500 feet AGL [S] (waiverable to no lower than 2,000 feet AGL).” [E] is waiverable by the Executive Committee, [S] by an S&TA or Examiner (2-2 B).',
         '2-2 C describes an S&TA waiving the deployment altitude “from 2,500 feet down to 2,000 feet”, and notes it is the one S&TA waiver that needs no written filing.',
@@ -110,7 +111,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A4',
     title: 'No USPA wind limit for licensed jumpers',
     claim:
-      'No USPA ground-wind limit for licensed jumpers — the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA — ask the PIC.',
+      'No USPA ground-wind limit for licensed jumpers — the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
     where:
       'Surface wind card with Licensed selected — a standing note under the reading, at any wind speed. No surface-wind flag fires on this profile at any speed.',
     sources: [CITATIONS.uspaLicensedWinds],
@@ -122,7 +123,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [
-      'The second half — that takeoff limits belong to the aircraft and the PIC rather than to USPA — is cited to the same BSR section, which does not address it. Should it cite nothing and simply point at the PIC?',
+      'The second half — that takeoff limits belong to the aircraft and the pilot in command rather than to USPA — is cited to the same BSR section, which does not address it. Should it cite nothing and simply point at the pilot in command?',
       '“Unlimited” in the BSRs is not the same as “fine”. The card leaves the judgement to the jumper and the S&TA. Does that read correctly to an instructor?',
     ],
   },
@@ -130,17 +131,17 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A5',
     title: 'The BSR-excursion rule behind the club waiver',
     claim:
-      'Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available. Under SIM 2-2, a waiver of a student BSR is filed by an S&TA or Examiner, in writing.',
+      'Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available. Under SIM 2-2, a waiver of the student ground-wind BSR (marked [S]) is filed by an S&TA or Examiner, in writing.',
     where:
       'Surface wind flag, with any LSPC waiver tier selected. The card carries the club-policy link behind that tier’s limit; this sentence reaches the reader only when the flag fires.',
     sources: [CITATIONS.lspcWaiver, CITATIONS.uspaWaivers],
     citesNote: 'the club policy for the sentence; SIM 2-2 for the waiver rule behind it',
     found: {
-      read: 'the SIM at uspa.org, 2026-09-22, and the club document as transcribed in docs/lspc-waivered-wind-limits.md — an undated photo of the posted sign, in this repository since 2026-07-04',
+      read: 'the SIM at uspa.org, 2026-09-22 (2-2 again on 2026-10-08), and the club document as transcribed in docs/lspc-waivered-wind-limits.md — an undated photo of the posted sign, in this repository since 2026-07-04',
       says: [
         'The club document: “All excursion from the wind limits stated in the BSRs shall be approved on site by at least a USPA instructor before sending a student up in wind conditions higher than stated in the BSR. It is recommended that the S&TA be consulted if available.”',
         'SIM 2-2, “Waivers to the Basic Safety Requirements”: each BSR is waiverable only by the full board “except for those BSRs designated as being waiverable by: S&TA or Examiner only [S]”. The student ground-wind BSR (2-1 H) carries [S].',
-        'SIM 2-2 C: an S&TA waiver must be filed in writing on the USPA waiver form, with copies to the Regional Director and USPA Headquarters, and stands until rescinded or the DZ changes hands.',
+        'SIM 2-2 C: an S&TA waiver must be filed in writing on the USPA waiver form, with copies to the Regional Director and USPA Headquarters, and stands until rescinded or the drop zone changes ownership or location.',
       ],
     },
     asks: [
@@ -187,7 +188,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A11',
     title: 'Who chooses the spot',
     claim:
-      'Rough estimate only: the winds are a model forecast, and choosing the exit point is the job of whoever spots the load, not this card’s.',
+      'Rough estimate only: the winds are a model forecast, and choosing the exit point is the spotter’s job, not this card’s.',
     where: 'Freefall drift / spot card, the note under the estimate',
     sources: [CITATIONS.uspaSpottingWho],
     found: {
@@ -199,7 +200,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [
-      'Who spots the load at this DZ: each group, a designated spotter, an instructor for students? Should the card name that role?',
+      'Who spots at this DZ: each group for itself, one spotter for the pass, an instructor for students? SIM 4-7 A covers both a jumper or group and a whole pass. Should the card name the role?',
     ],
   },
   {
@@ -220,19 +221,19 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [
-      'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the PIC.',
+      'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the pilot in command.',
     ],
   },
   {
     id: 'A9',
     title: 'Flight category',
     claim:
-      'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the PIC.',
+      'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the pilot in command.',
     value: 'MVFR is a watch; IFR and LIFR a caution',
     where: 'Flight-category flag in Conditions to note, and the category pill on the Ceiling & sky card.',
     sources: [CITATIONS.aimFlightCategory],
     citesNote:
-      'for the categories only. The second sentence cites nothing: it names no rule number and no figure, and sends the reader to the PIC.',
+      'for the categories only. The second sentence cites nothing: it names no rule number and no figure, and sends the reader to the pilot in command.',
     found: {
       read: 'the AIM on faa.gov (Change 3, effective 2026-07-09), 2026-09-23',
       says: [
@@ -264,7 +265,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     },
     asks: [
       'The card’s headline figure folds humidity in (virtual temperature) whenever a dew point is available, so on a humid day it will not match the dry-air number an ASOS or an E6B gives the pilot. Should the headline be the dry-air figure, with the humidity correction as a separate line?',
-      'The app computes with 120 ft per °C of deviation from standard temperature; the pamphlet’s chart implies less. Which does the PIC expect to see?',
+      'The app computes with 120 ft per °C of deviation from standard temperature; the pamphlet’s chart implies less. Which does the pilot in command expect to see?',
     ],
   },
 ];

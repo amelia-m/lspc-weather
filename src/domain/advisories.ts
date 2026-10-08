@@ -136,7 +136,7 @@ export function evaluateAdvisories(
         // conditions are described here in terms the AIM does cover, and the
         // operating decision is sent to the PIC, who holds it.
         guidance:
-          'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the PIC.',
+          'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the pilot in command.',
         citation: CITATIONS.aimFlightCategory,
       });
     }
