@@ -21,9 +21,9 @@ export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' }): JS
   if (scope === 'winds') {
     return (
       <>
-        {credit}: this dashboard&rsquo;s winds, compared on this page, and any Open-Meteo figure the
-        page quotes. The winds table interpolates its pressure-level winds to heights above the drop
-        zone; its Ground row is the 10 m wind as served.
+        {credit}: this dashboard&rsquo;s winds aloft and any other Open-Meteo figure this page
+        quotes. The dashboard interpolates its pressure-level and 10 m winds to heights above the
+        drop zone, Surface row included.
       </>
     );
   }
