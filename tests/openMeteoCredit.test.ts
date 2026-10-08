@@ -5,6 +5,7 @@ import { AppFooter } from '../src/components/AppFooter';
 import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import { DailyForecastPanel } from '../src/components/DailyForecastPanel';
 import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
+import { DriftPanel } from '../src/components/DriftPanel';
 import { ParityPage } from '../src/components/ParityPage';
 import { summarizeParity } from '../src/domain/paritySummary';
 import { DATA_SOURCES } from '../src/config/sources';
@@ -50,10 +51,15 @@ describe('Open-Meteo in the cards’ Data lines', () => {
     expect(dataLine(winds('nws-fd'))).not.toContain('Open-Meteo');
     expect(dataLine(daily('nws-gridpoint'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
     expect(dataLine(daily('nws-gridpoint'))).not.toContain('Open-Meteo');
-    // Neither source answered: nothing is shown, so nothing is credited.
-    expect(dataLine(winds(null))).toContain(`>${DATA_SOURCES.markschulze.label}</a>`);
-    expect(dataLine(winds(null))).not.toContain('>Open-Meteo<');
-    expect(dataLine(daily(null))).not.toContain('Open-Meteo');
+    // Neither source answered: nothing is shown, so nobody is credited,
+    // not even Schulze's cross-reference, which would read as the source.
+    const drift = (source: 'open-meteo' | 'nws-fd' | null) =>
+      renderToStaticMarkup(createElement(DriftPanel, { levels: [], profile: 'licensed', source } as never));
+    expect(dataLine(drift('open-meteo'))).toContain(`>Open-Meteo</a> (${LICENCE})`);
+    for (const html of [winds(null), daily(null), drift(null)]) {
+      expect(html).toContain('<section');
+      expect(dataLine(html)).toBe('');
+    }
     // The outlook's hourly detail is the NWS gridpoint's on both paths.
     expect(dataLine(daily('open-meteo'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
     // No flag reads a forecast: the observation and the computed sun times.
@@ -86,20 +92,23 @@ describe('the Open-Meteo credit', () => {
     expect(html).toContain('the winds aloft, the drift estimate and the 10-day outlook’s day rows');
     expect(html).toContain('interpolated from pressure levels to heights above the drop zone');
     expect(html).toContain('weather codes grouped into its own labels');
-    expect(html).toContain('unless it is unreachable, when those cards name their fallback');
+    expect(html).toContain('unless it is unreachable, when those cards name the fallback that answered, if one did');
   });
 
-  it('credits only the winds table on #parity, which shows no other Open-Meteo data', () => {
-    const html = parity('ready');
-    expect(html).toContain('>Weather data by Open-Meteo.com</a>');
-    expect(html).toContain(LICENCE);
-    expect(html).toContain('this dashboard’s winds-aloft table');
-    expect(html).not.toContain('those cards');
-    expect(html).not.toContain('10-day');
+  it('credits the winds and quoted figures on #parity, which has no outlook or drift card', () => {
+    // Any summary: the context notes quote Open-Meteo figures even with no
+    // winds runs in it.
+    for (const html of [parity('ready'), parity('ready', usairnetOnly)]) {
+      expect(html).toContain('>Weather data by Open-Meteo.com</a>');
+      expect(html).toContain(LICENCE);
+      expect(html).toContain('this dashboard’s winds, compared on this page');
+      expect(html).toContain('its Ground row is the 10 m wind as served');
+      expect(html).not.toContain('those cards');
+    }
   });
 
-  it('is left off #parity while it shows no winds figures', () => {
-    for (const html of [parity('loading'), parity('missing'), parity('error'), parity('ready', usairnetOnly)]) {
+  it('is left off #parity while it shows no summary', () => {
+    for (const html of [parity('loading'), parity('missing'), parity('error')]) {
       expect(html).not.toContain('Weather data by Open-Meteo.com');
     }
   });

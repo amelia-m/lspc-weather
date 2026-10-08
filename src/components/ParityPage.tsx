@@ -78,9 +78,10 @@ export function ParityPage({
         sources were, not which was right; where a cause is known it is written in{' '}
         <code>docs/markschulze-altitude-reference.md</code> and the open questions.
       </p>
-      {/* The winds figures below are this dashboard's Open-Meteo table, and
-          this page renders instead of the dashboard, footer and all. */}
-      {summary && summary.schulze.runs > 0 && (
+      {/* Any summary carries Open-Meteo figures: the winds comparison, and
+          the context notes quote its sunset and 10 m wind. This page renders
+          instead of the dashboard, footer and all. */}
+      {summary && (
         <p className="muted small">
           <OpenMeteoCredit scope="winds" />
         </p>
