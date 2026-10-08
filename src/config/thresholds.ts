@@ -19,6 +19,11 @@ import { REPO_URL } from './site';
 const SIM_READ_NOTE =
   'Section text read in the online SIM at uspa.org on 2026-09-22 and matches this claim. USPA revises the SIM — re-check against the current one, and confirm with the S&TA before relying on it.';
 
+/** For the SIM sections read again, or first, on 2026-10-08 (2-1 I, 2-2 B and
+ *  C, 4-7 A and B), during an audit of every SIM-attributed claim. */
+const SIM_REREAD_NOTE =
+  'Section text read in the online SIM at uspa.org on 2026-10-08 and matches this claim. USPA revises the SIM, so re-check against the current one and confirm with the S&TA before relying on it.';
+
 /** The same shape for the two CFR sections, read on 2026-09-23. They were read
  *  through the eCFR API (api/versioner/v1/full/2026-09-21/title-14.xml — Title
  *  14 as current on 2026-09-21), which serves the text the linked page renders;
@@ -26,7 +31,7 @@ const SIM_READ_NOTE =
  *  is what was actually read and the note says so. The URL stays on the page a
  *  person would open. */
 const CFR_READ_NOTE =
-  'Section text read through the eCFR (Title 14 current as of 2026-09-21) on 2026-09-23 and matches this claim. The CFR is amended — re-check the linked section, and confirm with the S&TA and the PIC before relying on it.';
+  'Section text read through the eCFR (Title 14 current as of 2026-09-21) on 2026-09-23 and matches this claim. The CFR is amended — re-check the linked section, and confirm with the S&TA and the pilot in command before relying on it.';
 
 /** AIM 7-1-7 as faa.gov served it on 2026-09-23: the HTML edition, Change 3,
  *  effective 2026-07-09. The FAA issues AIM changes on a schedule, so the
@@ -228,7 +233,7 @@ export const CITATIONS = {
     source: 'USPA SIM, Section 4-7 (Spotting)',
     ref: 'SIM 4-7 A, Why Spotting is Important: choosing the exit point and guiding the pilot to it (spotting) helps fulfill each skydiver’s responsibility to land clear',
     url: simUrl('4-7', '7A'),
-    note: 'Section text read in the online SIM at uspa.org on 2026-10-08 and matches this claim. USPA revises the SIM, so re-check against the current one and confirm with the S&TA before relying on it.',
+    note: SIM_REREAD_NOTE,
   },
   /**
    * Night jumps, USPA's half of the night (sunset to sunrise) flag.
@@ -260,24 +265,27 @@ export const CITATIONS = {
     note: SIM_READ_NOTE,
   },
   /**
-   * The rule underneath the club waiver: which BSRs an S&TA may waive.
+   * Which BSRs an S&TA may waive, and how.
    *
-   * The LSPC waiver document says excursions from the BSR wind limits are
-   * "approved on site", and 2-2 is what makes that possible — a BSR marked [S]
-   * is waiverable by an S&TA or Examiner, and the student ground-wind BSR
-   * (2-1 H) carries that marking. The waiver tiers still cite club policy for
-   * their numbers, because the numbers are the club's; this rides alongside as
-   * `windSecondaryCitation`, for the authority the club is exercising.
+   * 2-2 B: a BSR marked [S] is waiverable by an S&TA or Examiner (one marked
+   * [E] only by the Executive Committee, one unmarked only by the full board),
+   * and the student ground-wind BSR (2-1 H) is marked [S]. 2-2 C: such a
+   * waiver is filed in writing on USPA's form, with copies to the Regional
+   * Director and HQ. The club's own rule, an instructor's on-site approval, is
+   * not a 2-2 mechanism; the waiver tiers quote it from the club document and
+   * cite this beside it (`windSecondaryCitation`) for what a 2-2 waiver is.
+   * Re-read on 2026-10-08 for part C.
    */
   uspaWaivers: {
     source: 'USPA SIM, Section 2-2 (Waivers to the BSRs)',
     ref: 'SIM 2-2 B — a BSR marked [S] may be waived by an S&TA or Examiner; the student ground-wind BSR (2-1 H) is so marked. 2-2 C: such a waiver is filed in writing',
     url: simUrl('2-2', '2B'),
-    note: SIM_READ_NOTE,
+    note: SIM_REREAD_NOTE,
   },
   /** BSR minimum container-opening altitudes — same Section 2-1 as the wind
-   *  limits. Drives the drift card's deploy-altitude floor via
-   *  DEFAULT_DEPLOY_FT.
+   *  limits. Printed on the drift card; DEFAULT_DEPLOY_FT, the card's default
+   *  deploy altitude (not a floor: the dropdown goes lower), is its 3,000 ft
+   *  figure, re-read on 2026-10-08.
    *
    *  2-1 I reads: tandem 5,000 ft AGL; all students and A-license 3,000 ft;
    *  B-license 2,500 ft; C- and D-license 2,500 ft [S], waiverable to no lower
@@ -494,7 +502,7 @@ const LICENSED: Thresholds = {
   windCautionKt: LICENSED_BAR_SCALE_KT,
   windGuidance:
     'No USPA ground-wind limit for licensed jumpers — the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. ' +
-    'Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA — ask the PIC.',
+    'Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
   // Cites the BSR for the absence of a limit, not the student limit: a reader
   // who follows the link should land on the section that shows the wind rule is
   // written for students.
@@ -550,7 +558,7 @@ function waiverThresholds(tier: WaiverTier): Thresholds {
     windBandCaveat: undefined,
     windGuidance:
       `LSPC waivered limit (students, ${tier.label}): max wind ${tier.windMph} mph, gusts under ${tier.gustMph} mph. ` +
-      'Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available. Under SIM 2-2, a waiver of a student BSR is filed by an S&TA or Examiner, in writing.',
+      'Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available. Under SIM 2-2, a waiver of the student ground-wind BSR (marked [S]) is filed by an S&TA or Examiner, in writing.',
     windCitation: CITATIONS.lspcWaiver,
     // The tier's numbers are the club's, so the club document is the primary
     // citation. The guidance quotes the club's rule (an instructor approves on

@@ -220,12 +220,12 @@ export function DriftPanel({
             <a href={CITATIONS.uspaOpeningAltitude.url} target="_blank" rel="noopener noreferrer">
               USPA SIM §2-1 (BSR)
             </a>
-            ; section text read at uspa.org on 2026-09-22 — re-check against the current SIM.
+            ; section text read at uspa.org on 2026-09-22 and again on 2026-10-08 — re-check against the current SIM.
           </p>
           <p className="muted small">
             *Canopy drift assumes you don’t steer (1,000 ft/min descent); you normally fly it out.
             Rough estimate only: the winds are a model forecast, and choosing the exit point is the
-            job of whoever spots the load, not this card&rsquo;s. Source:{' '}
+            spotter&rsquo;s job, not this card&rsquo;s. Source:{' '}
             <SourceLink citation={CITATIONS.uspaSpottingWho} />
           </p>
         </>

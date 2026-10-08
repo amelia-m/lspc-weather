@@ -213,7 +213,7 @@ describe('the drift card says who chooses the spot, with the SIM behind it', () 
     const html = renderToStaticMarkup(
       createElement(DriftPanel, { levels: uniformLevels(), source: 'open-meteo' } as never),
     );
-    expect(html).toContain('choosing the exit point is the job of whoever spots the load');
+    expect(html).toContain('choosing the exit point is the spotter’s job, not this card’s');
     expect(html).toContain(`href="${CITATIONS.uspaSpottingWho.url}"`);
     expect(CITATIONS.uspaSpottingWho.url).toBe('https://www.uspa.org/sim/4-7#7A');
     expect(html.toLowerCase()).not.toContain('jumpmaster');

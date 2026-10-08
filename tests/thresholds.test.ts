@@ -205,7 +205,7 @@ describe('wind-limit profiles', () => {
     const t = resolveThresholds('licensed');
     expect(t.windLimitCitation).toBeNull();
     expect(t.windGuidance).toMatch(/pilot in command|PIC/);
-    expect(t.windGuidance).toMatch(/ask the PIC/);
+    expect(t.windGuidance).toMatch(/ask the pilot\./);
     // No number dressed up as a limit: the referral is the whole point.
     expect(t.windGuidance).not.toMatch(/\d+\s*(kt|mph)/);
     expect(t.windCitation).toBe(CITATIONS.uspaLicensedWinds);
@@ -254,7 +254,7 @@ describe('no citation is defined and then left unreachable', () => {
   it('keeps the club’s rule and SIM 2-2’s apart, and says a BSR waiver is written', () => {
     const tier = resolveThresholds('waiver:21+').windGuidance;
     expect(tier).toContain('Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available.');
-    expect(tier).toContain('Under SIM 2-2, a waiver of a student BSR is filed by an S&TA or Examiner, in writing.');
+    expect(tier).toContain('Under SIM 2-2, a waiver of the student ground-wind BSR (marked [S]) is filed by an S&TA or Examiner, in writing.');
     expect(tier).not.toMatch(/requires on-site approval|consult the S&TA\./);
     const student = resolveThresholds('student').windGuidance;
     expect(student).toContain('An S&TA or Examiner may waive it, by a written waiver.');
