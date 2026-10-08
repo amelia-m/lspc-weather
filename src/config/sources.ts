@@ -1,4 +1,5 @@
 import { NEARBY_METAR_STATIONS, SITE } from './site';
+import { chartSupplementCycle } from '../domain/chartSupplement';
 
 /** A data source shown in a card's "Data:" footer, linking to where the
  *  numbers actually come from. */
@@ -187,41 +188,60 @@ const NEARBY_METAR_IDS = NEARBY_METAR_STATIONS.map((s) => s.id);
  * the address is FAA's NOTAM Search. G-AIRMETs are not listed on their own:
  * aviationweather.gov refused /gairmet, and the GFA carries the same AIRMETs.
  * 1-800-WX-BRIEF is not listed because it could not be opened from here.
+ *
+ * Opened on the drop zone where the service allows (2026-10-08):
+ * - The GFA and the SIGMET map take `center=lat,lon&zoom=N`, the form
+ *   aviationweather.gov's own "jump to station" builds (its init script),
+ *   and a Chromium given the live site opened both centred on these
+ *   coordinates at that zoom. Each names its tab (`gairmet`, `sigmet`): the
+ *   GFA otherwise opens on the visitor's last one, so after the SIGMET
+ *   link the GFA link would open on SIGMETs too. The page at
+ *   /sigmet/ is AWC's "SIGMET Preview" for signed-in collaborators (their
+ *   Outreach menu), not the public map, and asked for a login.
+ * - The Chart Supplement's search takes the edition (`cycle`) and an
+ *   identifier. NE69 is a private-use field with no entry (the search
+ *   answers 500), so the link opens Plattsmouth's, the nearest public
+ *   airport, in the current edition (`chartSupplementCycle`, whose
+ *   numbering is an inference that the daily live run checks).
  */
-export const PILOT_LINKS: readonly PilotLink[] = [
-  {
-    label: 'NOTAM Search (FAA)',
-    url: 'https://notams.aim.faa.gov/notamSearch/',
-    note: 'NOTAMs for KPMV and the airports around the drop zone.',
-  },
-  {
-    label: 'TFRs (FAA)',
-    url: 'https://tfr.faa.gov/',
-    note: 'Temporary flight restrictions, list and map.',
-  },
-  {
-    label: 'Nearby METARs (aviationweather.gov)',
-    url: `https://aviationweather.gov/data/metar/?ids=${NEARBY_METAR_IDS.join(',')}&hours=0`,
-    note: `The latest reports at ${NEARBY_METAR_IDS.join(', ')}.`,
-  },
-  {
-    label: 'PIREPs (aviationweather.gov)',
-    url: `https://aviationweather.gov/data/pirep/?id=${SITE.metarStation.id}&distance=100`,
-    note: `Pilot reports within 100 nm of ${SITE.metarStation.id}.`,
-  },
-  {
-    label: 'Graphical Forecasts for Aviation (aviationweather.gov)',
-    url: 'https://aviationweather.gov/gfa/',
-    note: 'Clouds, icing, turbulence and AIRMETs on a map.',
-  },
-  {
-    label: 'SIGMETs (aviationweather.gov)',
-    url: 'https://aviationweather.gov/sigmet/',
-    note: 'SIGMETs and convective SIGMETs in force.',
-  },
-  {
-    label: 'Chart Supplement (FAA)',
-    url: 'https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dafd/search/',
-    note: `Airport details; search ${SITE.metarStation.id.slice(1)} for Plattsmouth.`,
-  },
-];
+export function pilotLinks(now: number): PilotLink[] {
+  const { lat, lon } = SITE.dz;
+  const station = SITE.metarStation.id;
+  return [
+    {
+      label: 'NOTAM Search (FAA)',
+      url: 'https://notams.aim.faa.gov/notamSearch/',
+      note: 'NOTAMs for KPMV and the airports around the drop zone.',
+    },
+    {
+      label: 'TFRs (FAA)',
+      url: 'https://tfr.faa.gov/',
+      note: 'Temporary flight restrictions, list and map.',
+    },
+    {
+      label: 'Nearby METARs (aviationweather.gov)',
+      url: `https://aviationweather.gov/data/metar/?ids=${NEARBY_METAR_IDS.join(',')}&hours=0`,
+      note: `The latest reports at ${NEARBY_METAR_IDS.join(', ')}.`,
+    },
+    {
+      label: 'PIREPs (aviationweather.gov)',
+      url: `https://aviationweather.gov/data/pirep/?id=${SITE.metarStation.id}&distance=100`,
+      note: `Pilot reports within 100 nm of ${SITE.metarStation.id}.`,
+    },
+    {
+      label: 'Graphical Forecasts for Aviation (aviationweather.gov)',
+      url: `https://aviationweather.gov/gfa/?tab=gairmet&center=${lat},${lon}&zoom=8`,
+      note: 'G-AIRMETs (icing, turbulence, low ceilings) on a map centred on the drop zone; its tabs switch to clouds, winds and the rest.',
+    },
+    {
+      label: 'SIGMETs (aviationweather.gov)',
+      url: `https://aviationweather.gov/gfa/?tab=sigmet&center=${lat},${lon}&zoom=7`,
+      note: 'SIGMETs and convective SIGMETs in force, centred on the drop zone.',
+    },
+    {
+      label: 'Chart Supplement (FAA)',
+      url: `https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dafd/search/results/?cycle=${chartSupplementCycle(now).id}&ident=${station}`,
+      note: `Plattsmouth (${station}), the nearest public airport; ${SITE.dz.icao} is private-use and has no entry.`,
+    },
+  ];
+}

@@ -1,4 +1,5 @@
-import { PILOT_LINKS } from '../config/sources';
+import { pilotLinks } from '../config/sources';
+import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
 
 /**
@@ -10,10 +11,13 @@ import { Panel } from './common/Panel';
  * the pilot in command's; nothing here stands in for one.
  */
 export function PilotLinksPanel(): JSX.Element {
+  // Hourly is plenty: only the Chart Supplement edition depends on the date,
+  // and it changes every 56 days.
+  const now = useNow(3_600_000);
   return (
     <Panel title="Pilot briefing links" subtitle="FAA and aviationweather.gov">
       <ul className="pilot-links">
-        {PILOT_LINKS.map((l) => (
+        {pilotLinks(now).map((l) => (
           <li key={l.url}>
             <a href={l.url} target="_blank" rel="noopener noreferrer">
               {l.label}

@@ -14,7 +14,7 @@ import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 import { resolveThresholds, withOverrides } from '../src/config/thresholds';
 import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import type { WeatherSnapshot } from '../src/domain/types';
-import { PILOT_LINKS } from '../src/config/sources';
+import { pilotLinks } from '../src/config/sources';
 
 /* Every card the dashboard had must still be on a tab: splitting the page
  * must not quietly drop one. And the jumper-only and pilot-only cards must
@@ -54,7 +54,7 @@ describe('the dashboard tabs', () => {
 
 describe('the pilot briefing links', () => {
   it('are all https and go to FAA or aviationweather.gov', () => {
-    for (const l of PILOT_LINKS) {
+    for (const l of pilotLinks(Date.parse('2026-10-08T12:00:00Z'))) {
       const u = new URL(l.url);
       expect(u.protocol).toBe('https:');
       expect(u.hostname).toMatch(/(^|\.)faa\.gov$|^aviationweather\.gov$/);
@@ -130,3 +130,30 @@ describe('the Pilots tab and the jumper wind limits', () => {
     expect(panel(all, false)).not.toContain('Jumper wind limits are not flagged here.');
   });
 });
+
+describe('the pilot links open on the drop zone where the service allows', () => {
+  const links = pilotLinks(Date.parse('2026-10-08T12:00:00Z'));
+  const byLabel = (start: string) => new URL(links.find((l) => l.label.startsWith(start))!.url);
+
+  it('centres the GFA and the SIGMET map on the drop zone', () => {
+    for (const start of ['Graphical Forecasts', 'SIGMETs']) {
+      const u = byLabel(start);
+      expect(u.pathname).toBe('/gfa/');
+      expect(u.searchParams.get('center')).toBe('40.8675,-96.11');
+      expect(Number(u.searchParams.get('zoom'))).toBeGreaterThanOrEqual(7);
+    }
+    // The public SIGMET map, not the signed-in "SIGMET Preview" at /sigmet/.
+    expect(byLabel('SIGMETs').searchParams.get('tab')).toBe('sigmet');
+    // Each names its tab, or the GFA reopens on the last one used.
+    expect(byLabel('Graphical Forecasts').searchParams.get('tab')).toBe('gairmet');
+  });
+
+  it('opens Plattsmouth in the current Chart Supplement edition', () => {
+    const u = byLabel('Chart Supplement');
+    expect(u.pathname).toMatch(/\/dafd\/search\/results\/$/);
+    expect(u.searchParams.get('ident')).toBe('KPMV');
+    expect(u.searchParams.get('cycle')).toBe('2609');
+    expect(new URL(pilotLinks(Date.parse('2026-11-01T00:00:00Z')).find((l) => l.label.startsWith('Chart'))!.url).searchParams.get('cycle')).toBe('2611');
+  });
+});
+

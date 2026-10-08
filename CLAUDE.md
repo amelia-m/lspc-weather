@@ -325,7 +325,11 @@ period by period with the `fcsts` decode served beside it) disagrees with
 aviationweather.gov's decoder on today's reports, and opens one issue labelled
 `sky-parity` when it does on `main` (a run dispatched on a branch opens none);
 it also prints whether the TAF the card shows is the issuance
-aviationweather.gov currently has (informational). aviationweather.gov is on
+aviationweather.gov currently has (informational). It also fails, through
+`scripts/pilotLinks.live.ts`, when a Pilots tab deep link stops opening
+what it should: the Chart Supplement link carries an edition number whose
+scheme is inferred (`src/domain/chartSupplement.ts`), and the first edition
+that would show the inference wrong takes effect 2026-10-29. aviationweather.gov is on
 the sandbox allowlist since 2026-09-29, so it runs from here too.
 `scripts/schulzeCompare.live.ts` runs in the same job and prints this app's
 winds-aloft profile beside Mark Schulze's at the same valid hour; it is a
