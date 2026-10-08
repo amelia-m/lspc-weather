@@ -47,6 +47,9 @@ describe('simPartText', () => {
     const nav = (names: string[]): string =>
       PAGE.replace('<article>', `<article><nav>${names.map((n) => `<a class="anchoroffset" name="${n}"></a>`).join('')}</nav>`);
     expect(simPartText(nav(['1G']), '1G', '1H')).toBeNull();
+    // The end named again inside the part, after its start: the first copy
+    // would cut the part short.
+    expect(simPartText(PAGE.replace('<p>All student jumps</p>', '<p>All student jumps</p><a class="anchoroffset" name="1H"></a>'), '1G', '1H')).toBeNull();
     expect(simPartText(nav(['1H']), '1G', '1H')).toBeNull();
     expect(simPartText(nav(['1G', '1H']), '1G', '1H')).toBeNull();
   });

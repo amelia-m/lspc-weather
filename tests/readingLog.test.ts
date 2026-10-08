@@ -27,17 +27,15 @@ describe('the reading log', () => {
     }
   });
 
-  it('ties an entry no citation links to to the checklist entries that quote it', () => {
+  it('ties every quoting entry it names to a checklist entry that read the SIM', () => {
     // A part only quoted on #citations is linked by its own anchor (the
-    // types make it a pinned SIM part); the entries quoting it must exist and
-    // say they read the SIM. Whether the quote is in that part needs the
-    // page: scripts/simText.live.ts checks it daily.
-    const uncited = READING_LOG.filter((r) => r.kind === 'quoted');
-    expect(uncited.length).toBeGreaterThan(0);
-    for (const r of uncited) {
-      expect(r.simPart, r.section).toBeDefined();
-      expect(r.quotedIn?.length, r.section).toBeGreaterThan(0);
-      for (const id of r.quotedIn!) {
+    // types make it a pinned SIM part); a cited part may name entries that
+    // quote it without citing it. Each id named must be an entry that read
+    // the SIM. Whether the quote is in that part needs the page:
+    // scripts/simText.live.ts checks it daily.
+    expect(READING_LOG.some((r) => r.kind === 'quoted')).toBe(true);
+    for (const r of READING_LOG) {
+      for (const id of r.quotedIn ?? []) {
         const entry = CHECKLIST.find((e) => e.id === id);
         expect(entry, `${r.section}: ${id}`).toBeDefined();
         expect(entry!.found?.read, `${r.section}: ${id}`).toContain(SIM_READ);
@@ -48,10 +46,10 @@ describe('the reading log', () => {
   it('marks every checklist entry that cites or quotes the SIM as having read it', () => {
     // scripts/simText.live.ts checks the quotes of the entries whose reading
     // is SIM_READ; an entry with its own wording would drop out unnoticed.
+    // The SIM index counts too: a citation left there still sends a reader
+    // to the SIM.
     const quoting = new Set(READING_LOG.flatMap((r) => r.quotedIn ?? []));
-    const simEntries = CHECKLIST.filter(
-      (e) => quoting.has(e.id) || e.sources.some((s) => s.url?.startsWith(simUrl(''))),
-    );
+    const simEntries = CHECKLIST.filter((e) => quoting.has(e.id) || e.sources.some((s) => /uspa\.org\/sim\b/.test(s.url ?? '')));
     expect(simEntries.length).toBeGreaterThan(0);
     for (const e of simEntries) expect(e.found?.read, e.id).toContain(SIM_READ);
   });

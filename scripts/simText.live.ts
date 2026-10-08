@@ -77,7 +77,9 @@ describe('cited and quoted SIM parts, against the text they were read in', () =>
  * of an entry that read the SIM must be found in one of its parts, as whole
  * words, punctuation and case aside (the page sets the BSR's lists as list
  * items, which the checklist writes with semicolons and dashes). That
- * catches a quote no part backs, and a `quotedIn` naming the wrong entry.
+ * catches a quote no part backs, and a `quotedIn` moved off the entry whose
+ * quote the part backs; an id left in `quotedIn` after its entry stops
+ * quoting the part only ties one more part, and is not caught.
  * Not checked: the claim's own wording, and lines quoting the CFR or the
  * club's document, which A3 and A5 read beside the SIM and are told apart
  * by how the line starts; a SIM quote put on such a line would be skipped. */
