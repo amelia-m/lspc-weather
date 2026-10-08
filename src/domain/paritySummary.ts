@@ -51,6 +51,9 @@ export interface SchulzeRecord {
   /** Whether the two raw profiles disagree at a shared level — the stale-run
    *  signal. null when it could not be judged. */
   rawMismatch?: boolean | null;
+  /** The point both sides were read at, "lat,lon", from 2026-10-08; absent
+   *  on records taken at the earlier point (40.8675,-96.11). */
+  dz?: string;
   /** The two ground rows: ours as Open-Meteo's 10 m wind to a tenth of a
    *  knot (`ourKt`) and, from 2026-10-08, as the card's Surface row shows it,
    *  whole knots (`ourShownKt`); his `groundSpd`, whole knots. The summary

@@ -75,7 +75,8 @@ Measured over the full 384-hour window, the sub-surface share of every displayed
 row was 0.0%.
 
 The ~4% figure quoted before the fix was a property of the **fixture**, which
-sets `elevation: 360`; live returns `349`. That 11-metre difference is what puts
+sets `elevation: 360`; live returns `349` (at the point used until 2026-10-08;
+`355` at the landing area since). That 11-metre difference is what puts
 the 10 m sample above or below the field elevation, and therefore whether the
 sub-surface level contributes at all.
 
@@ -92,7 +93,10 @@ It is worth having for three reasons:
 
 The filter compares geopotential height against the **model's** surface
 (`data.elevation`), not the DZ's published field elevation, because below-ground
-is a fact about the model's terrain. They differ by ~37 ft here and agree today.
+is a fact about the model's terrain. They differed by ~37 ft at the point used
+until 2026-10-08 and agreed then; at the landing area the app has used since,
+Open-Meteo returns 355 m, the field is ~17 ft above the model's ground, and the
+10 m sample stands above the field.
 
 ## What was not established
 

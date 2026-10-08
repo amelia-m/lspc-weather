@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
+import { interpolateAsSchulze, interpolateWindsAloft, tableGroundFtMsl } from '../src/domain/windsAloft';
 import {
   normalizeOpenMeteoHours,
   openMeteoHourlyVariables,
@@ -132,6 +132,37 @@ describe('the Winds aloft card’s two views', () => {
     expect(card('all', false)).not.toContain('As Schulze</button>');
   });
 
+  it('reads a table’s ground off its 0 ft row', () => {
+    const his = interpolateAsSchulze([lvl(-700, 300, 3), lvl(30, 310, 4), lvl(800, 320, 6)], GROUND, [0, 1000]);
+    expect(tableGroundFtMsl(his)).toBe(GROUND);
+    expect(tableGroundFtMsl(his.filter((l) => l.altitudeFtAgl > 0))).toBeNull();
+  });
+
+  const groundCard = (method: 'all' | 'schulze', ground: number): string =>
+    renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels: [{ altitudeFtAgl: 0, altitudeFtMsl: ground, directionDeg: 200, speedKt: 9, tempC: 10 }],
+        source: 'open-meteo',
+        validity: { validMs: Date.parse('2026-10-08T03:00:00Z') },
+        unit: 'kt',
+        onUnitChange: () => {},
+        method,
+        onMethodChange: () => {},
+        schulzeAvailable: true,
+        schulzeGroundFtMsl: ground,
+      } as never),
+    ).replace(/<!-- -->/g, '');
+
+  it('in the As Schulze view, sets his ground against the All levels table, not against itself', () => {
+    const html = groundCard('schulze', 1165);
+    expect(html).toContain('than the row of the same name in the <em>All levels</em> table');
+    expect(html).toContain('which this view counts from');
+  });
+
+  it('says nothing about ground when his is the field’s', () => {
+    expect(groundCard('all', 1182)).not.toContain('different ground');
+  });
+
   it('says the two tables count from different ground, with figures read from the data', () => {
     // His ground off the his-way table's 0 ft row; the field from SITE.
     const html = renderToStaticMarkup(
@@ -149,7 +180,7 @@ describe('the Winds aloft card’s two views', () => {
     );
     expect(html).toContain('published elevation, 1,182');
     expect(html).toContain('1,145');
-    expect(html).toMatch(/about 37(<!-- -->)?\u00a0ft (<!-- -->)?lower/);
+    expect(html).toMatch(/about 37(<!-- -->)?\u00a0ft(<!-- -->)? (<!-- -->)?lower than the row of the same name in (<!-- -->)?the (<!-- -->)?default/);
     // Not where the ground is unknown.
     expect(card('all', false)).not.toContain('different ground');
   });

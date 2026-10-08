@@ -19,8 +19,12 @@ export function PrecipPanel({
   current: CurrentConditions | null;
 }): JSX.Element {
   const now = Date.now();
-  const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
-  const next6 = upcoming.filter((h) => h.time <= now + 6 * 3600_000);
+  const HOUR = 3_600_000;
+  // From the hour in progress: an hour that has ended is not upcoming.
+  const upcoming = hourly.filter((h) => h.time + HOUR > now).slice(0, 12);
+  // The hours that overlap the next six: the one in progress and those that
+  // start before now + 6 h, not one that starts at its end.
+  const next6 = upcoming.filter((h) => h.time < now + 6 * HOUR);
   const maxOf = (pick: (h: HourlyPoint) => number | null): number | null =>
     next6.reduce<number | null>((m, h) => {
       const v = pick(h);
@@ -73,6 +77,12 @@ export function PrecipPanel({
               <div
                 key={h.time}
                 className="sky-col"
+                // Each bar's own hour, whether or not it carries a time
+                // label: in the tooltip for a pointer, and as the bar's name
+                // for a screen reader. On a touch screen an unlabelled bar's
+                // hour is counted from the nearest label.
+                role="img"
+                aria-label={`${fmtTime(h.time)}: ${h.precipProbPct != null ? round(h.precipProbPct) + '% chance of precipitation' : 'no forecast'}`}
                 title={`${fmtTime(h.time)} · ${h.precipProbPct != null ? round(h.precipProbPct) + '%' : '—'}`}
               >
                 <div className="sky-bar-track">
@@ -80,7 +90,7 @@ export function PrecipPanel({
                 </div>
                 <span className="sky-ceil">{h.precipProbPct != null ? `${round(h.precipProbPct)}` : '—'}</span>
                 {/* Every third hour named; the bars between keep their own
-                    hour and figure, on hover and above. */}
+                    figure above, and their hour in the tooltip and name. */}
                 <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
               </div>
             ))}

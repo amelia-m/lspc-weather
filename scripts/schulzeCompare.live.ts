@@ -178,6 +178,12 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     pageHour: m0 ? `${m0.validtime}Z` : null,
     gapHours,
     minute: new Date(now).getUTCMinutes(),
+    // The point both sides were read at, from 2026-10-08, when SITE.dz moved
+    // from the field south-west of the runway (40.8675,-96.11) to the
+    // landing area: the model's ground differs between them, and with it the
+    // Surface row's path and the datum gap. Records without it are the old
+    // point's.
+    dz: `${SITE.dz.lat},${SITE.dz.lon}`,
     unaligned,
   };
   if (ms == null) {

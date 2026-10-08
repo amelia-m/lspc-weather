@@ -1008,6 +1008,8 @@ a {
    time label may run wider than its bar; the two beside it carry none. */
 .precip-timeline {
   gap: 2px;
+  /* Room at each end for a time label wider than its bar. */
+  padding: 0 8px;
 }
 .precip-timeline .sky-col {
   flex: 1 0 16px;
@@ -1016,7 +1018,9 @@ a {
 .precip-timeline .sky-time {
   display: block;
   white-space: nowrap;
-  overflow: visible;
+  /* Wider than the bar, so a label overflows both sides evenly and stays
+     centred under it rather than running off to the right. */
+  margin: 0 -8px;
 }
 .sky-bar.precip-bar {
   background: linear-gradient(180deg, var(--accent), #2f6db5);
