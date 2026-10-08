@@ -197,7 +197,15 @@ METAR and TAF files), each with its subdomains, and since 2026-10-03
 `aa.usno.navy.mil` (the US Naval Observatory's sun and moon API),
 `skyvector.com` (the sectional link in the header), `tiles.arcgis.com`
 (FAA's VFR sectional tile service) and `*.blob.core.windows.net`, where
-GitHub's artifact downloads redirect. The comparison artifacts can now be
+GitHub's artifact downloads redirect. Since 2026-10-08 it also has
+`github.com`, the ADS-B networks (`adsb.lol`, `adsb.fi` with `globe.` and
+`opendata.`, `airplanes.live`, `opensky-network.org`, `api.adsb.one`),
+map tiles (`tile.openstreetmap.org`, `*.tile.openstreetmap.de`,
+`server.arcgisonline.com`, `services.arcgisonline.com`),
+`earthdata.nasa.gov` and `heywhatsthat.com` (the receiver panorama in
+`docs/adsb-receiver.md`). Reachable is not readable: `globe.adsb.fi`,
+`api.adsb.one` and `airplanes.live` answer a script with Cloudflare's 403
+(airplanes.live's API asks for an emailed request first). The comparison artifacts can now be
 read from here with `curl -sL
 https://api.github.com/repos/amelia-m/lspc-weather/actions/artifacts/<id>/zip`
 (the session's GitHub proxy supplies the credential); `gh api` still refuses
