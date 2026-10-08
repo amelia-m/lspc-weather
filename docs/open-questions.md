@@ -123,17 +123,22 @@ The landing areas there are the runway itself, the alfalfa field east of it
 where students are aimed, and the pea gravel near the north-east corner,
 by the buildings, where many experienced jumpers land.
 
-What the point decides: the Open-Meteo request (its ground, 349 m here and
-345 m at Schulze's point a metre east, which the 80/120/180 m winds and the
-below-ground test hang on, and the "As Schulze" datum; the default table is
-measured from the published field elevation, 1,182 ft, either way), the NWS
-gridpoint, the radar pin, the sun times, and the station's distance and
-bearing. None of them is likely to change by more than a rounding at this
-distance, but the pin is the one a reader sees. Moving it needs a point
-for the main landing area that someone at the club confirms, not one read
-off an aerial photo here. For parity with Schulze's page the "As Schulze"
-view would then be measured from a different ground than his preset; either
-say so on the card or keep his preset's ground for that view alone.
+What the point decides: the Open-Meteo request, and with it the model ground
+the 10, 80, 120 and 180 m winds stand on, the below-ground test and the "As
+Schulze" datum (the default table is measured from the published field
+elevation, 1,182 ft, wherever the point is); the NWS gridpoint; the sun
+times and the hourly chart's night shading; the radar pin, the sectional
+tiles and the distances and bearings to stations and radar; and the links
+that carry it (Mark Schulze's page, NWS MapClick, SkyVector, the traffic
+map). Most move by a rounding over a few hundred metres, but Open-Meteo's
+ground does not: it steps 4 m (13 ft) between this point and Schulze's
+preset, under a metre west, so a move can shift those near-ground samples
+and the "As Schulze" datum by tens of feet. That is a reason to choose the
+point deliberately, not one against moving it. Moving it needs a point for
+the main landing area that someone at the club confirms, not one read off
+an aerial photo here. The link to Schulze's page carries the app's point,
+so the "As Schulze" view and the page a reader opens from the card would
+still share a ground; his own preset for the club would not.
 
 ## Which forecast run the winds-aloft request is served
 

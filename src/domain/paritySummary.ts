@@ -221,9 +221,9 @@ export interface ParitySummary {
      *  runs that logged it. Absent in summaries written before 2026-10-08. */
     asSchulze?: {
       runs: number;
-      /** Runs that logged the his-way table empty (no ground in the
-       *  response, so it could not be built): left out of `runs` and of
-       *  every spread, and counted here so the gap shows. */
+      /** Runs that logged the his-way table with no rows to compare (it
+       *  could not be built, or no altitude matched his): left out of
+       *  `runs` and of every spread, and counted here so the gap shows. */
       notBuilt: number;
       byAltitude: AltitudeSpread[];
       /** Runs where every row was within 1° and 1 kt of his: rounding. */

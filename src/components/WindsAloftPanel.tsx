@@ -357,7 +357,7 @@ export function WindsAloftPanel({
               Each level is <strong>linearly interpolated</strong> from the model’s winds:{' '}
               {schulzeView
                 ? 'in this view at his pressure surfaces only.'
-                : 'at 10, 80, 120 and 180\u00a0m above its ground and at pressure surfaces every 25\u00a0hPa.'}{' '}
+                : 'at 10, 80, 120 and 180\u00a0m above its ground and at pressure surfaces every 25\u00a0hPa through this table’s altitudes.'}{' '}
               A pressure
               surface comes with its geopotential height, which we convert to ft MSL and
               interpolate to these AGL altitudes. Direction is interpolated along the shortest

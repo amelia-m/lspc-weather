@@ -351,12 +351,17 @@ read at 03Z, settle three things that were inferred or assumed before.
   not test it: 975 hPa sat 23 ft above his ground, so any rule gives the same.
 - **His preset for this DZ is not quite the app's point.** His page's "Lincoln
   Sport Parachute Club" link reads its coordinates from `dropzones.geojson`:
-  40.8675006, −96.11001. Open-Meteo puts its ground there at 345 m (1,132 ft,
-  his page's "Elevation"); at the app's 40.8675, −96.11, one metre west, it
-  puts it at 349 m (1,145 ft). Both fall in the same model cell and the winds
-  are identical; only the ground the heights are measured from differs, by
-  13 ft, so a reader comparing the card with his page compares tables 13 ft
-  apart in datum. `scripts/schulzeCompare.live.ts` asks his API for the app's
-  point, so its logs compare like with like and do not see this. Both points
-  are in the field south-west of the runway, below it, not on the landing
-  areas (see `docs/open-questions.md`).
+  40.8675006, −96.11001, under a metre west of the app's 40.8675, −96.11.
+  Open-Meteo puts its ground at 345 m (1,132 ft, his page's "Elevation") at
+  his preset and at 349 m (1,145 ft) at the app's point: its terrain steps
+  4 m between the two, likely a cell edge in its elevation model. Both fall
+  in the same forecast cell and the winds are identical; only the ground his
+  heights are measured from differs. The card's link to his page carries the
+  app's point (`DATA_SOURCES.markschulze`), so a reader who follows it sees
+  his table from 1,145 ft, the same ground as the "As Schulze" view; one who
+  picks the club from his own list sees it from 1,132 ft, 13 ft lower. (The
+  default table is measured from the published field elevation, 1,182 ft,
+  as before.) `scripts/schulzeCompare.live.ts` asks his API for the app's
+  point, so its logs compare like with like. Both points are in the field
+  south-west of the runway, below it, not on the landing areas (see
+  `docs/open-questions.md`).

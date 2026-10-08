@@ -648,8 +648,9 @@ export const OPEN_METEO_PRESSURE_LEVELS = [
 /**
  * The pressure levels between those, every 25 hPa from 875 to 575, which
  * Mark Schulze's tool does not sample. With his they make one every 25 hPa
- * from 1000 to 575 hPa (about 14,000 ft AGL here), past the table's top row
- * at 13,000 ft; nothing is added between 550 and 500, which no row reaches.
+ * from 1000 to 575 hPa (about 14,000 ft AGL here on the day they were read,
+ * lower in a cold column), around the table's top row at 13,000 ft; nothing
+ * is added between 550 and 500, above it.
  * Read 2026-10-08 at the DZ, each was
  * served with values that are not the average of its neighbours (875 hPa
  * 5.7 kt where the neighbours average 6.6; 800 hPa, which the tool does
@@ -898,14 +899,13 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
   // published field elevation, because "below ground" is a fact about the
   // model's terrain, not about the airport. They differ by ~37 ft here.
   //
-  // In this, the default table, that changes nothing on screen: the 10 m
-  // sample already outranks the 1000 hPa level, so no row draws on it. (The
-  // As Schulze table does draw on it, deliberately: schulzeSamplesAtIndex
-  // keeps underground levels because his Surface row is built through one.)
-  // It matters here because
-  // that depends on a DEM lookup landing within 10 m of the field elevation —
-  // and because without it, an hour missing `wind_speed_10m` would build the
-  // Surface row 70% out of a wind stamped 600 ft underground.
+  // In this, the default table, that changes nothing on screen today: the
+  // 10 m sample already outranks the 1000 hPa level, so no row draws on it.
+  // It matters because that depends on a DEM lookup landing within 10 m of
+  // the field elevation — and because without it, an hour missing
+  // `wind_speed_10m` would build the Surface row 70% out of a wind stamped
+  // 600 ft underground. (The As Schulze table keeps underground levels on
+  // purpose, in schulzeSamplesAtIndex: his Surface row is built through one.)
   samples.push(...pressureSamples(data, idx, OPEN_METEO_ALL_PRESSURE_LEVELS, { keepUnderground: false }));
   return samples;
 }
