@@ -700,8 +700,9 @@ export const OPEN_METEO_ALL_PRESSURE_LEVELS: readonly number[] = [
 export const OPEN_METEO_HEIGHT_LEVELS_M = [80, 120, 180] as const;
 
 /** The hourly variables the winds-aloft request asks for: the 10 m wind and
- *  2 m temperature, the canopy-layer heights, then wind, height and
- *  temperature at every pressure level. Built here, beside the list the
+ *  2 m temperature, the cloud cover (OPEN_METEO_CLOUD_VARIABLES), the
+ *  canopy-layer heights, then wind, height and temperature at every
+ *  pressure level. Built here, beside the list the
  *  normaliser reads, so the request and the reader cannot name different
  *  levels. Pure: a list of strings. */
 export function openMeteoHourlyVariables(): string[] {
@@ -739,13 +740,16 @@ export function normalizeOpenMeteoClouds(data: RawOpenMeteo): OpenMeteoCloudHour
     const v = (data.hourly[key] as (number | null)[] | undefined)?.[i];
     return typeof v === 'number' && Number.isFinite(v) ? v : null;
   };
+  // The keys the request asked for, in OPEN_METEO_CLOUD_VARIABLES' order, so
+  // the reader cannot name a variable the request did not.
+  const [total, low, mid, high] = OPEN_METEO_CLOUD_VARIABLES;
   return data.hourly.time
     .map((t, i) => ({
       time: Date.parse(t),
-      totalPct: at('cloud_cover', i),
-      lowPct: at('cloud_cover_low', i),
-      midPct: at('cloud_cover_mid', i),
-      highPct: at('cloud_cover_high', i),
+      totalPct: at(total, i),
+      lowPct: at(low, i),
+      midPct: at(mid, i),
+      highPct: at(high, i),
     }))
     .filter((h) => Number.isFinite(h.time));
 }

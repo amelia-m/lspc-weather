@@ -178,10 +178,6 @@ export interface WindsAloftHour {
   schulzeLevels?: WindsAloftLevel[];
 }
 
-/** One fetch of winds aloft: the interpolated levels and the time they are for.
- *  Returned by both the Open-Meteo path and the NOAA FD fallback so neither can
- *  hand the UI altitudes without a valid time. The Schulze-method table rides
- *  on `hours` only, which is where the card reads it. */
 /** One hour of Open-Meteo cloud cover, percentages of the sky (total, and
  *  the low, mid and high bands); null where not served. */
 export interface OpenMeteoCloudHour {
@@ -192,6 +188,10 @@ export interface OpenMeteoCloudHour {
   highPct: number | null;
 }
 
+/** One fetch of winds aloft: the interpolated levels and the time they are for.
+ *  Returned by both the Open-Meteo path and the NOAA FD fallback so neither can
+ *  hand the UI altitudes without a valid time. The Schulze-method table rides
+ *  on `hours` only, which is where the card reads it. */
 export interface WindsAloftForecast {
   levels: WindsAloftLevel[];
   validity: WindsAloftValidity;

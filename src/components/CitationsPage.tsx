@@ -125,7 +125,7 @@ export function CitationsPage(): JSX.Element {
         <strong>Each entry below is a claim the dashboard makes, what its source says, and the
         questions a reader is asked to settle.</strong>{' '}
         The USPA SIM sections were read at uspa.org (the {SIM_EDITION}) on {SIM_LAST_READ}; 14 CFR
-        105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on 2026-09-23. The table at the end gives
+        105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on 2026-09-23. The list at the end gives
         each source&rsquo;s last reading. The club&rsquo;s posted wind-limit tiers are a
         transcription of an undated photo of the sign. A reading is each source as served on one
         day, not a licensed professional&rsquo;s sign-off, and knowing a rule is not knowing how
@@ -254,8 +254,8 @@ export function CitationsPage(): JSX.Element {
 
       <h2 className="cite-heading">How each source was read</h2>
       <p className="muted small cite-intro">
-        Every section a citation on the dashboard links to, when it was last read, in which edition,
-        and how. uspa.org names its online SIM only as the {SIM_EDITION}, and revises it within an
+        Every section a citation on the dashboard links to, and every SIM part this page quotes, when
+        it was last read, in which edition, and how. uspa.org names its online SIM only as the {SIM_EDITION}, and revises it within an
         edition; its list of change documents did not load when the SIM was last read. So each SIM
         part also carries a fingerprint of its text as it read that day, and a daily check compares
         the live page against it: a changed part fails the check, and is read again before its date
@@ -267,10 +267,15 @@ export function CitationsPage(): JSX.Element {
           four columns of sentences ran to two thousand pixels wide. */}
       <ul className="reading-log">
         {READING_LOG.map((r) => {
-          const cite = CITATIONS[r.citations[0] as keyof typeof CITATIONS];
+          // A SIM part only quoted here has no citation; its own anchor is
+          // where the text was read.
+          const url =
+            r.citations.length > 0
+              ? CITATIONS[r.citations[0]].url
+              : `https://www.uspa.org/sim/${r.simPart!.section}#${r.simPart!.anchor}`;
           return (
             <li key={r.section}>
-              <a href={cite.url} target="_blank" rel="noopener noreferrer">
+              <a href={url} target="_blank" rel="noopener noreferrer">
                 {r.section}
               </a>
               <span className="reading-log-when">
