@@ -225,8 +225,10 @@ export interface WeatherSnapshot {
   /** Every forecast hour behind `windsAloft`, for the card's hour buttons.
    *  null on the FD fallback and until the winds load. */
   windsAloftHours?: WindsAloftHour[] | null;
-  /** Open-Meteo's hourly cloud cover, from the winds request; null when
-   *  Open-Meteo did not answer (the FD fallback) or until it loads. */
+  /** Open-Meteo's hourly cloud cover, from the winds request; null on the
+   *  FD fallback and until it loads. When neither winds source answers, the
+   *  last answer is kept, as the winds are, and Data health marks the
+   *  source stale. */
   openMeteoClouds?: OpenMeteoCloudHour[] | null;
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;

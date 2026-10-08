@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { READING_LOG, SIM_EDITION, SIM_LAST_READ, type CitationKey } from '../src/config/readingLog';
-import { CITATIONS } from '../src/config/thresholds';
+import { CITATIONS, simUrl } from '../src/config/thresholds';
 import { CitationsPage } from '../src/components/CitationsPage';
-import { CHECKLIST } from '../src/config/citationsChecklist';
+import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 
 /* The reading log is the record of when each cited or quoted section was
  * last read. Every citation must have exactly one entry, its note must carry
@@ -15,7 +15,7 @@ describe('the reading log', () => {
 
   it('has exactly one entry for every citation, and no entry for a citation that does not exist', () => {
     for (const [key] of cited) {
-      expect(READING_LOG.filter((r) => r.citations.includes(key)), key).toHaveLength(1);
+      expect(READING_LOG.filter((r) => (r.citations as CitationKey[]).includes(key)), key).toHaveLength(1);
     }
     for (const r of READING_LOG) for (const key of r.citations) expect(CITATIONS, r.section).toHaveProperty(key);
   });
@@ -28,8 +28,8 @@ describe('the reading log', () => {
   });
 
   it('ties an entry no citation links to to the checklist entries that quote it', () => {
-    // A part only quoted on #citations is linked by its own anchor, so it
-    // must be a pinned SIM part, and the entries quoting it must exist and
+    // A part only quoted on #citations is linked by its own anchor (the
+    // types make it a pinned SIM part); the entries quoting it must exist and
     // say they read the SIM. Whether the quote is in that part needs the
     // page: scripts/simText.live.ts checks it daily.
     const uncited = READING_LOG.filter((r) => r.citations.length === 0);
@@ -40,7 +40,7 @@ describe('the reading log', () => {
       for (const id of r.quotedIn!) {
         const entry = CHECKLIST.find((e) => e.id === id);
         expect(entry, `${r.section}: ${id}`).toBeDefined();
-        expect(entry!.found?.read, `${r.section}: ${id}`).toContain(`online SIM at uspa.org (the ${SIM_EDITION}), ${SIM_LAST_READ}`);
+        expect(entry!.found?.read, `${r.section}: ${id}`).toContain(SIM_READ);
       }
     }
   });
@@ -70,13 +70,13 @@ describe('the reading log', () => {
       expect(chars).toBeGreaterThan(0);
       expect(r.lastRead).toBe(SIM_LAST_READ);
       for (const key of r.citations) {
-        expect((CITATIONS as Record<string, { url: string }>)[key].url, key).toBe(`https://www.uspa.org/sim/${section}#${anchor}`);
+        expect((CITATIONS as Record<string, { url: string }>)[key].url, key).toBe(simUrl(section, anchor));
       }
     }
     // Every citation that links into the SIM is pinned.
     for (const [key, c] of cited) {
       if ((c as { url: string }).url.includes('uspa.org/sim/')) {
-        expect(READING_LOG.find((r) => r.citations.includes(key))?.simPart, key).toBeDefined();
+        expect(READING_LOG.find((r) => (r.citations as CitationKey[]).includes(key))?.simPart, key).toBeDefined();
       }
     }
   });
@@ -87,7 +87,7 @@ describe('the reading log on #citations', () => {
 
   it('lists every entry with its date, and says where a source was not read itself', () => {
     expect(html.match(/<ul class="reading-log">[\s\S]*?<\/ul>/)![0].match(/<li>/g)).toHaveLength(READING_LOG.length);
-    expect(html).toContain(`last read ${SIM_LAST_READ} · 2026 SIM`);
+    expect(html).toContain(`last read ${SIM_LAST_READ} · ${SIM_EDITION}`);
     expect(html).toContain('not read at the source');
     expect(html).toContain('USPA SIM 2-1 H, Winds');
     expect(html).toContain('text fingerprint <code');
