@@ -94,7 +94,7 @@ describe('Winds aloft explanatory text', () => {
     const about = /<details class="aloft-about">([\s\S]*?)<\/details>/.exec(html)?.[1] ?? '';
     // Closed until opened: no `open` attribute.
     expect(html).toContain('<details class="aloft-about"><summary');
-    for (const note of ['AGL, like these', 'Mark Schulze’s Winds Aloft', 'linearly interpolated', 'model’s wind at 10']) {
+    for (const note of ['AGL, like these', 'Mark Schulze’s Winds Aloft', 'linearly interpolated', 'model’s forecast wind at 10']) {
       expect(about).toContain(note);
     }
     const outside = html.replace(/<details class="aloft-about">[\s\S]*?<\/details>/, '');

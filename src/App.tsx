@@ -316,6 +316,7 @@ export default function App(): JSX.Element {
         method={windsMethod}
         onMethodChange={setWindsMethod}
         schulzeAvailable={winds.schulzeAvailable}
+        schulzeGroundFtMsl={winds.schulzeGroundFtMsl}
       />
     ),
     drift: (

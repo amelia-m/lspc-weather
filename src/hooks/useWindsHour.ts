@@ -30,18 +30,29 @@ export function useWindsHour(
   validity: WindsAloftValidity | null | undefined;
   nav: WindsHourNav | null;
   schulzeAvailable: boolean;
+  /** The ground Mark Schulze's table counts its altitudes from (Open-Meteo's
+   *  terrain at the point), ft MSL, read off the his-way table's 0 ft row;
+   *  null where this hour has no such table. */
+  schulzeGroundFtMsl: number | null;
 } {
   const now = useNow(60_000);
   const [selectedMs, setSelectedMs] = useState<number | null>(null);
   const hours = snapshot.windsAloftHours;
   const chosen = chooseForecastHour(hours, selectedMs, now);
   if (!hours || !chosen) {
-    return { levels: snapshot.windsAloft, validity: snapshot.windsAloftValidity, nav: null, schulzeAvailable: false };
+    return {
+      levels: snapshot.windsAloft,
+      validity: snapshot.windsAloftValidity,
+      nav: null,
+      schulzeAvailable: false,
+      schulzeGroundFtMsl: null,
+    };
   }
   const schulzeAvailable = (chosen.schulzeLevels?.length ?? 0) > 0;
   return {
     levels: method === 'schulze' && schulzeAvailable ? chosen.schulzeLevels! : chosen.levels,
     schulzeAvailable,
+    schulzeGroundFtMsl: chosen.schulzeLevels?.find((l) => l.altitudeFtAgl === 0)?.altitudeFtMsl ?? null,
     validity: { validMs: chosen.validMs },
     nav: {
       canBack: chosen.canBack,
