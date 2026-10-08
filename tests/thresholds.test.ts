@@ -53,10 +53,20 @@ describe('CITATIONS', () => {
   });
 });
 
+describe('isSimSectionUrl', () => {
+  it('takes a link to a SIM section, and not the index or a malformed one', () => {
+    expect(isSimSectionUrl('https://www.uspa.org/sim/2-1#1H')).toBe(true);
+    expect(isSimSectionUrl('https://www.uspa.org/sim/3-1')).toBe(true);
+    for (const url of ['https://www.uspa.org/sim', 'https://www.uspa.org/sim/', 'https://www.uspa.org/sim/2-1x', 'https://uspa.org/sim/2-1']) {
+      expect(isSimSectionUrl(url), url).toBe(false);
+    }
+  });
+});
+
 describe('USPA SIM citations', () => {
   // Any link into uspa.org's SIM, whatever its scheme or host form, so a
   // variant is held to the one shape rather than slipping past it.
-  const sim = entries.filter(([, c]) => /uspa\.org\/sim/i.test(c.url));
+  const sim = entries.filter(([, c]) => /^[a-z]+:\/\/(www\.)?uspa\.org(:\d+)?\/+sim(\/|#|\?|$)/i.test(c.url));
 
   it('covers the SIM citations actually in the map', () => {
     expect(sim.length).toBeGreaterThan(0);

@@ -82,7 +82,8 @@ describe('the reading log', () => {
         expect((CITATIONS as Record<string, { url: string }>)[key].url, key).toBe(simUrl(section, anchor));
       }
     }
-    // Every citation that links into the SIM is pinned.
+    // Every citation that links to a SIM section is pinned (the shape test
+    // in thresholds.test.ts holds every SIM link to the one form).
     for (const [key, c] of cited) {
       if (isSimSectionUrl((c as { url: string }).url)) {
         expect(READING_LOG.find((r) => citationsOf(r).includes(key))?.simPart, key).toBeDefined();
