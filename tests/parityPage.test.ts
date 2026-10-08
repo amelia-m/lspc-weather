@@ -409,14 +409,24 @@ describe('ParityPage, why runs were over', () => {
     const row = (ft: number, dDir: number, dSpd = 0) => ({ ft, dDir, dSpd, dT: 0 });
     const s = summarizeParity(
       [
+        // Direction: two Surface-only runs and one aloft on a newer run.
+        // Speed: one Surface-only run and none aloft. So the two
+        // sentences differ, and each must sit under its own count.
         { kind: 'schulze', at: '2026-10-08T12:00:00Z', aligned: { rows: [row(0, 40, 5), row(1000, 1)] }, rawMismatch: false },
-        { kind: 'schulze', at: '2026-10-08T13:00:00Z', aligned: { rows: [row(0, 1), row(6000, 30, 4)] }, rawMismatch: true },
+        { kind: 'schulze', at: '2026-10-08T12:30:00Z', aligned: { rows: [row(0, 40), row(1000, 1)] }, rawMismatch: false },
+        { kind: 'schulze', at: '2026-10-08T13:00:00Z', aligned: { rows: [row(0, 1), row(6000, 30)] }, rawMismatch: true },
       ] as ParityRecord[],
       Date.parse('2026-10-09T00:00:00Z'),
     );
     const html = render('ready', s).replace(/<!-- -->/g, '');
-    expect(html).toContain('Of those, 1 only on the Surface row');
-    expect(html).toContain('1 with a newer forecast run on one side; 0 on the same run, from 1,000');
+    const dir = html.slice(html.indexOf('Runs with any row over 10° apart'), html.indexOf('Runs with any row over 3 kt apart'));
+    const spd = html.slice(html.indexOf('Runs with any row over 3 kt apart'));
+    expect(dir).toContain('3 of 3');
+    expect(dir).toContain('Of those, 2 only on the Surface row');
+    expect(dir).toContain('1 with a newer forecast run on one side; 0 on the same run, from 1,000');
+    expect(spd).toContain('1 of 3');
+    expect(spd.slice(0, spd.indexOf('</li>'))).toContain('Of those, 1 only on the Surface row');
+    expect(spd.slice(0, spd.indexOf('</li>'))).toContain('0 with a newer forecast run');
     expect(html).not.toContain('could not be judged');
   });
 });

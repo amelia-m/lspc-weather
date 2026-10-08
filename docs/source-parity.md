@@ -305,7 +305,7 @@ question in `docs/open-questions.md`.
   Surface row, which is a different height on each side), `newerRun` (a row
   from 1,000 ft up, with one side on a newer forecast run), `sameRunAloft`
   (a row from 1,000 ft up on the same run: no known cause) and
-  `unjudgedAloft`. Over the logs to 2026-10-08: 502 runs over 10° were 431,
+  `unjudgedAloft`. Over the logs summarised to 2026-10-07 (1,614 same-hour runs): 502 runs over 10° were 431,
   70, 1 and 0; 389 over 3 kt were 345, 44, 0 and 0.
 - `schulze.byTimeGap[]`: one entry per time group (`same-hour-same-run`,
   `same-hour-different-run`, `one-hour-apart`), with the runs that
