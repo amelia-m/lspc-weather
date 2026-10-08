@@ -89,7 +89,7 @@ const SIM_HOW =
  *  prints them (3-1's parts are named, not lettered). */
 const sim = (
   p: SimPart & { title: string } & (
-      | { citations: [CitationKey, ...CitationKey[]]; quotedIn?: string[] }
+      | { citations: [CitationKey, ...CitationKey[]]; quotedIn?: [string, ...string[]] }
       | { citations?: undefined; quotedIn: [string, ...string[]] }
     ),
 ): SourceReading => {
