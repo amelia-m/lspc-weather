@@ -1016,10 +1016,13 @@ a {
   min-width: 0;
 }
 .precip-timeline .sky-time {
-  display: block;
+  /* Centred under its bar even when wider than it: a flex container centres
+     an overflowing item on both sides, where an overflowing line of text
+     start-aligns and runs off to the right. The box reaches 8px past the
+     bar each side, inside the timeline's 8px padding. */
+  display: flex;
+  justify-content: center;
   white-space: nowrap;
-  /* Wider than the bar, so a label overflows both sides evenly and stays
-     centred under it rather than running off to the right. */
   margin: 0 -8px;
 }
 .sky-bar.precip-bar {

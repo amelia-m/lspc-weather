@@ -384,15 +384,29 @@ export function WindsAloftPanel({
                 this hour carries (useWindsHour). */}
             {source === 'open-meteo' && schulzeGroundFtMsl != null && schulzeGroundFtMsl !== SITE.dz.elevationFt && (
               <p className="muted small">
-                The two tables also count their altitudes from different ground. The{' '}
-                {schulzeView ? <em>All levels</em> : 'default'} table counts from the field&rsquo;s published
+                The two tables also count their altitudes from different ground.{' '}
+                {schulzeView ? (
+                  <>
+                    The <em>All levels</em> table
+                  </>
+                ) : (
+                  'This table'
+                )}{' '}
+                counts from the field&rsquo;s published
                 elevation, {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft. Mark Schulze&rsquo;s counts from
                 the ground Open-Meteo&rsquo;s terrain gives at the map pin: {schulzeGroundFtMsl.toLocaleString()}
                 &nbsp;ft at this dashboard&rsquo;s point, which the link above opens
                 {schulzeView ? ', and which this view counts from' : ''}. So a row of his is about{' '}
                 {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft{' '}
-                {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'} than the row of the same name in
-                the {schulzeView ? <em>All levels</em> : 'default'} table. His own list&rsquo;s pin for the club
+                {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'} than the row of the same name in{' '}
+                {schulzeView ? (
+                  <>
+                    the <em>All levels</em> table
+                  </>
+                ) : (
+                  'this one'
+                )}
+                . His own list&rsquo;s pin for the club
                 is elsewhere, in the field south-west of the runway, so his page opened from that list counts
                 from that pin&rsquo;s ground instead.
               </p>
