@@ -41,7 +41,8 @@ export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
   // freefall). Drift directly after Winds aloft: it works from the hour that
   // card's buttons step to, and on a phone a card further down would change
   // off screen. Then the rest of now (conditions, sky), planning (hourly,
-  // outlook, precip), daylight and radar.
+  // outlook, precip), daylight and radar. Last, the exit weight and wing
+  // loading card: not weather, and the same every day.
   jumpers: ['surfaceWind', 'windsAloft', 'drift', 'metar', 'ceilingSky', 'hourly', 'daily', 'precip', 'sun', 'radar', 'wingLoading'],
   // Now (conditions, sky, the airports around), then the chart and the
   // forecast for the flight (sectional, TAF), the climb and the jump run

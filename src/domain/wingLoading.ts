@@ -1,7 +1,8 @@
 import type { NavigatorSize, NavigatorSkill } from '../config/canopies';
 
-/** Pounds per kilogram (exact by definition of the international pound). */
-export const LB_PER_KG = 2.2046226218;
+/** Pounds per kilogram, from the international pound's definition
+ *  (1 lb = 0.45359237 kg exactly). */
+export const LB_PER_KG = 1 / 0.45359237;
 
 /** Exit weight: the jumper and everything they jump with. */
 export const exitWeightLb = (bodyLb: number, gearLb: number): number => bodyLb + gearLb;

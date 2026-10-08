@@ -312,7 +312,7 @@ export const CITATIONS = {
     source: 'Performance Designs, Navigator Wing Loading Chart (TABLE-0122 Rev.A)',
     ref: 'Recommended maximum exit weight by canopy size and skill set',
     url: 'https://www.performancedesigns.com/navigator',
-    note: 'Figures transcribed by the maintainer from PD’s chart on 2026-10-08. performancedesigns.com could not be read from the environment this was written in, so they have not been checked against PD’s own copy: check the chart before relying on them, and confirm with an instructor.',
+    note: 'The chart is on the linked Navigator page. Figures transcribed by the maintainer from PD’s chart on 2026-10-08. performancedesigns.com could not be read from the environment this was written in, so they have not been checked against PD’s own copy: check the chart before relying on them, and confirm with an instructor.',
   },
   lspcWaiver: {
     source: 'LSPC Waivered Wind Limits',

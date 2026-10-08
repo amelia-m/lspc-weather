@@ -71,9 +71,25 @@ describe('the exit weight & wing loading card', () => {
     expect(html).toContain('<dt>PD Student max, 280</dt><dd>270 lb (123 kg)</dd>');
     expect(html).toContain('<dt>Against it</dt><dd>58 lb under</dd>');
     expect(html).toContain('<dt>Sizes within it</dt><dd>260, 280</dd>');
+    expect(html).toContain('the comparison above uses the Student figure only');
     expect(html).toContain('Which canopy a student jumps is the instructor’s call.');
     expect(html).toContain(`href="${CITATIONS.pdNavigator.url}"`);
     // A comparison, not a verdict.
     expect(html).not.toMatch(/\b(safe|unsafe|OK|approved|cleared)\b/);
+  });
+
+  it('rounds the exit weight before comparing, so the figures shown never disagree', () => {
+    // 238.4 + 32 = 270.4: shown as 270, which is PD's 280 Student figure.
+    const html = renderToStaticMarkup(createElement(WingLoadingPanel, { initialBodyLb: 238.4 }));
+    expect(html).toContain('<dt>Exit weight</dt><dd>270 lb (122 kg)</dd>');
+    expect(html).toContain('<dt>Against it</dt><dd>at it</dd>');
+    expect(html).toContain('<dt>Sizes within it</dt><dd>280</dd>');
+  });
+
+  it('says which entry to check rather than asking again for a weight it has', () => {
+    expect(renderToStaticMarkup(createElement(WingLoadingPanel, { initialBodyLb: 5000 }))).toContain(
+      'Check the body weight: a number of pounds above 0 and up to 500.',
+    );
+    expect(renderToStaticMarkup(createElement(WingLoadingPanel, { initialBodyLb: -5 }))).toContain('Check the body weight');
   });
 });

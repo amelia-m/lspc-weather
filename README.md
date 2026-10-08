@@ -58,6 +58,11 @@ the published figures rather than Settings edits.
   follows the forecast hour nearest the clock; −1 h / +1 h buttons step up to
   two hours back and four ahead, and a bar and a line of text always say how
   far the hour shown is from now.
+- ⚖️ **Exit weight & wing loading** — body weight plus gear (32 lb, one student
+  rig weighed) over a Navigator 200/220/260/280, against Performance Designs'
+  recommended maximum exit weight for a Student on that size. The chart is the
+  maintainer's transcription, not yet checked against PD's own copy here, and
+  the canopy model and sizes are theirs to confirm (`#citations`, A12).
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs, worked from whichever hour the winds card shows,
   with the same hour readout and −1 h / +1 h buttons: stepping either card
