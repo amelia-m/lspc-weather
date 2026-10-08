@@ -269,7 +269,7 @@ export function CitationsPage(): JSX.Element {
         {READING_LOG.map((r) => {
           // A SIM part only quoted here has no citation; its own anchor is
           // where the text was read.
-          const url = r.quotedIn ? simUrl(r.simPart.section, r.simPart.anchor) : CITATIONS[r.citations[0]].url;
+          const url = r.kind === 'quoted' ? simUrl(r.simPart.section, r.simPart.anchor) : CITATIONS[r.citations[0]].url;
           return (
             <li key={r.section}>
               <a href={url} target="_blank" rel="noopener noreferrer">

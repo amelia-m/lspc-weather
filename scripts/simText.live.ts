@@ -15,7 +15,7 @@
  */
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { READING_LOG, type CitationKey, type SourceReading } from '../src/config/readingLog';
+import { READING_LOG, citationsOf, type SourceReading } from '../src/config/readingLog';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 import { CITATIONS, simUrl } from '../src/config/thresholds';
 import { simPartText } from '../src/domain/simText';
@@ -87,8 +87,8 @@ const simEntries = CHECKLIST.filter((e) => e.found?.read.includes(SIM_READ));
 
 describe('SIM quotes on #citations, in the parts they are tied to', () => {
   it('finds the entries that read the SIM', () => {
-    // A reworded SIM_READ would otherwise leave this block with nothing to
-    // check, and a green run.
+    // That every entry citing or quoting the SIM says SIM_READ, so none
+    // drops out of this set, is tests/readingLog.test.ts's to hold.
     expect(simEntries.length).toBeGreaterThan(0);
   });
   for (const entry of simEntries) {
@@ -96,15 +96,12 @@ describe('SIM quotes on #citations, in the parts they are tied to', () => {
       const tied = parts.filter(
         (r) =>
           r.quotedIn?.includes(entry.id) ||
-          entry.sources.some((s) => (r.citations as CitationKey[]).some((k) => CITATIONS[k].url === s.url)),
+          entry.sources.some((s) => citationsOf(r).some((k) => CITATIONS[k].url === s.url)),
       );
       expect(tied.length, `${entry.id} is tied to no SIM part in the reading log`).toBeGreaterThan(0);
-      const texts: string[] = [];
-      for (const r of tied) {
-        const text = await partText(r);
-        expect(text, missing(r)).not.toBeNull();
-        texts.push(words(text!));
-      }
+      const found = await Promise.all(tied.map(partText));
+      tied.forEach((r, i) => expect(found[i], missing(r)).not.toBeNull());
+      const texts = found.map((t) => words(t!));
       for (const line of entry.found!.says.filter((l) => !NOT_SIM.test(l))) {
         for (const [, quote] of line.matchAll(/“([^”]+)”/g)) {
           expect(

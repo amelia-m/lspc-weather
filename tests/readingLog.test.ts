@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { READING_LOG, SIM_EDITION, SIM_LAST_READ, type CitationKey } from '../src/config/readingLog';
+import { READING_LOG, SIM_EDITION, SIM_LAST_READ, citationsOf, type CitationKey } from '../src/config/readingLog';
 import { CITATIONS, simUrl } from '../src/config/thresholds';
 import { CitationsPage } from '../src/components/CitationsPage';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
@@ -15,14 +15,14 @@ describe('the reading log', () => {
 
   it('has exactly one entry for every citation, and no entry for a citation that does not exist', () => {
     for (const [key] of cited) {
-      expect(READING_LOG.filter((r) => (r.citations as CitationKey[]).includes(key)), key).toHaveLength(1);
+      expect(READING_LOG.filter((r) => citationsOf(r).includes(key)), key).toHaveLength(1);
     }
-    for (const r of READING_LOG) for (const key of r.citations) expect(CITATIONS, r.section).toHaveProperty(key);
+    for (const r of READING_LOG) for (const key of citationsOf(r)) expect(CITATIONS, r.section).toHaveProperty(key);
   });
 
   it('gives each entry one address: every citation it covers links to the same section', () => {
-    for (const r of READING_LOG.filter((e) => e.citations.length > 0)) {
-      const urls = new Set(r.citations.map((k) => (CITATIONS as Record<string, { url: string }>)[k].url));
+    for (const r of READING_LOG.filter((e) => e.kind === 'cited')) {
+      const urls = new Set(citationsOf(r).map((k) => (CITATIONS as Record<string, { url: string }>)[k].url));
       expect(urls.size, r.section).toBe(1);
     }
   });
@@ -32,7 +32,7 @@ describe('the reading log', () => {
     // types make it a pinned SIM part); the entries quoting it must exist and
     // say they read the SIM. Whether the quote is in that part needs the
     // page: scripts/simText.live.ts checks it daily.
-    const uncited = READING_LOG.filter((r) => r.citations.length === 0);
+    const uncited = READING_LOG.filter((r) => r.kind === 'quoted');
     expect(uncited.length).toBeGreaterThan(0);
     for (const r of uncited) {
       expect(r.simPart, r.section).toBeDefined();
@@ -45,12 +45,23 @@ describe('the reading log', () => {
     }
   });
 
+  it('marks every checklist entry that cites or quotes the SIM as having read it', () => {
+    // scripts/simText.live.ts checks the quotes of the entries whose reading
+    // is SIM_READ; an entry with its own wording would drop out unnoticed.
+    const quoting = new Set(READING_LOG.flatMap((r) => r.quotedIn ?? []));
+    const simEntries = CHECKLIST.filter(
+      (e) => quoting.has(e.id) || e.sources.some((s) => s.url?.startsWith(simUrl(''))),
+    );
+    expect(simEntries.length).toBeGreaterThan(0);
+    for (const e of simEntries) expect(e.found?.read, e.id).toContain(SIM_READ);
+  });
+
   it('holds every dated citation note to its entry’s date', () => {
     // Skipping the sources nobody has read at the source, the club's sign
     // (read from a photo) and PD's chart (from a transcription): their notes
     // date the transcription instead.
     for (const r of READING_LOG.filter((e) => e.lastRead != null)) {
-      for (const key of r.citations) {
+      for (const key of citationsOf(r)) {
         const note = (CITATIONS as Record<string, { note?: string }>)[key].note ?? '';
         const dates = note.match(/\b20\d\d-\d\d-\d\d\b/g) ?? [];
         // A note may also name an edition's date (Title 14 as current on
@@ -69,14 +80,14 @@ describe('the reading log', () => {
       expect(sha256).toMatch(/^[0-9a-f]{64}$/);
       expect(chars).toBeGreaterThan(0);
       expect(r.lastRead).toBe(SIM_LAST_READ);
-      for (const key of r.citations) {
+      for (const key of citationsOf(r)) {
         expect((CITATIONS as Record<string, { url: string }>)[key].url, key).toBe(simUrl(section, anchor));
       }
     }
     // Every citation that links into the SIM is pinned.
     for (const [key, c] of cited) {
       if ((c as { url: string }).url.includes('uspa.org/sim/')) {
-        expect(READING_LOG.find((r) => (r.citations as CitationKey[]).includes(key))?.simPart, key).toBeDefined();
+        expect(READING_LOG.find((r) => citationsOf(r).includes(key))?.simPart, key).toBeDefined();
       }
     }
   });
