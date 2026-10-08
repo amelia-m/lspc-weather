@@ -117,14 +117,15 @@ export function CeilingSkyPanel({
         Bar height = sky cover %. Label = ceiling (thousands ft AGL); “none” = no broken/overcast
         layer, so no ceiling.
       </p>
+      {/* Only what is particular to this card. Confirming conditions with
+          official sources, the S&TA and the PIC is the page's to say, in its
+          banner. */}
       <p className="muted small">
-        Cross-check against the{' '}
+        Same NWS forecast as the{' '}
         <a href={DATA_SOURCES.usairnet.url} target="_blank" rel="noopener noreferrer">
-          usairnet KPMV aviation forecast
-        </a>{' '}
-        — a page many jumpers use. It presents the same NWS forecast data; this card pulls it
-        gridded to the DZ instead of the KPMV station page. This dashboard gathers a lot of sources
-        in one place; it isn&rsquo;t a replacement for the tools you already check.
+          usairnet KPMV page
+        </a>
+        , here for the drop zone&rsquo;s own grid point rather than the station.
       </p>
     </Panel>
   );

@@ -2,8 +2,9 @@ name: Sky decode parity
 
 # Daily, and on demand: compare the app's own METAR sky parse, flight
 # category and TAF group decode against aviationweather.gov's decoder on
-# today's reports, and print what api.weather.gov and usairnet said. Opens
-# (or updates) one issue on failure.
+# today's reports, print what api.weather.gov and usairnet said, and open
+# the Pilots tab's deep links (scripts/pilotLinks.live.ts). Opens (or
+# updates) one issue on failure.
 # Not part of CI: it needs the network, and the PR suite stays hermetic.
 on:
   schedule:
@@ -57,7 +58,7 @@ jobs:
           {
             echo "The daily sky-decode parity check failed on $(date -u +%Y-%m-%d). Run: $RUN_URL"
             echo
-            echo "Either the app's METAR sky parse disagrees with aviationweather.gov's decoder on today's report, or a fetch failed — the log says which."
+            echo "Either the app's METAR sky parse or TAF decode disagrees with aviationweather.gov's decoder on today's report, a Pilots tab link no longer opens what it should (scripts/pilotLinks.live.ts), or a fetch failed. The log says which."
             echo
             echo '```'
             # The log exists only if the check itself ran; a failed checkout or
