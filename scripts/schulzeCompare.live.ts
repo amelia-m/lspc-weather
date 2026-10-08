@@ -73,6 +73,28 @@ const say = (lines: string[]): void => {
  *  (domain/paritySummary.ts parses it). Printed last, after the table. */
 const record = (obj: Record<string, unknown>): string => `@@parity ${JSON.stringify(obj)}`;
 
+/**
+ * One row of this app's table against the same row of his: direction the
+ * short way round, speed in whole knots on both sides, and temperature.
+ * His temperatures are whole °C and this table's a tenth (for the °F
+ * display); how his server rounds has not been read, so neither side is
+ * re-rounded. The difference is kept to a tenth, the finer side's
+ * precision, which also drops the binary noise a tenth minus a whole number
+ * leaves (0.3000000000000007). Whoever summarises dT should allow for half
+ * a degree of rounding on his side.
+ */
+function rowDiff(
+  l: { directionDeg: number; speedKt: number; tempC: number | null },
+  ms: Schulze,
+  k: string,
+): { dDir: number; dSpd: number; dT: number | null } {
+  return {
+    dDir: ((l.directionDeg - ms.direction[k] + 540) % 360) - 180,
+    dSpd: l.speedKt - ms.speed[k],
+    dT: l.tempC != null ? Math.round((l.tempC - ms.temp[k]) * 10) / 10 : null,
+  };
+}
+
 it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same valid hour', async () => {
   const dz = SITE.dz;
   const now = Date.now();
@@ -227,22 +249,14 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   for (const l of levels) {
     const k = String(l.altitudeFtAgl);
     if (!(k in ms.direction)) continue;
-    const dDir = ((l.directionDeg - ms.direction[k] + 540) % 360) - 180;
-    const dSpd = l.speedKt - ms.speed[k];
-    // His table serves whole °C and this one a tenth (for the °F display).
-    // Logged as the difference of the two as served: how his server rounds
-    // has not been read, so rounding here would guess at it. Whoever
-    // summarises dT should allow for half a degree.
-    // To a tenth, the finer side's precision: a tenth minus a whole number
-    // otherwise logs binary noise (0.3000000000000007).
-    const dT = l.tempC != null ? Math.round((l.tempC - ms.temp[k]) * 10) / 10 : null;
+    const { dDir, dSpd, dT } = rowDiff(l, ms, k);
     rows.push({ ft: l.altitudeFtAgl, dDir, dSpd, dT });
     maxDir = Math.max(maxDir, Math.abs(dDir));
     maxSpd = Math.max(maxSpd, Math.abs(dSpd));
     out.push(
       `${k.padStart(6)}   ${`${l.directionDeg}/${l.speedKt}/${l.tempC ?? '-'}`.padEnd(15)} ` +
         `${`${ms.direction[k]}/${ms.speed[k]}/${ms.temp[k]}`.padEnd(19)} ` +
-        `${String(dDir).padStart(4)} ${String(dSpd).padStart(4)}  ${dT == null ? '-' : dT.toFixed(0)}`,
+        `${String(dDir).padStart(4)} ${String(dSpd).padStart(4)}  ${dT == null ? '-' : dT.toFixed(1)}`,
     );
   }
   out.push(`largest difference: ${maxDir}° direction, ${maxSpd} kt speed`);
@@ -250,12 +264,7 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   for (const l of asSchulzeLevels) {
     const k = String(l.altitudeFtAgl);
     if (!(k in ms.direction)) continue;
-    asSchulzeRows.push({
-      ft: l.altitudeFtAgl,
-      dDir: ((l.directionDeg - ms.direction[k] + 540) % 360) - 180,
-      dSpd: l.speedKt - ms.speed[k],
-      dT: l.tempC != null ? Math.round((l.tempC - ms.temp[k]) * 10) / 10 : null,
-    });
+    asSchulzeRows.push({ ft: l.altitudeFtAgl, ...rowDiff(l, ms, k) });
   }
   out.push(
     'built as Schulze (his levels, his ground, his Surface rule): ' +
