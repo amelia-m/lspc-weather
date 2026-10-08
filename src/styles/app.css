@@ -911,6 +911,8 @@ a {
 .ceil-now {
   display: flex;
   justify-content: space-between;
+  /* A label that wraps on a narrow phone keeps clear of its figure. */
+  gap: 8px;
   margin-bottom: 10px;
 }
 .ceil-label {

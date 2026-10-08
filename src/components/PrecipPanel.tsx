@@ -1,18 +1,34 @@
+import { useState } from 'react';
 import type { CurrentConditions, HourlyPoint } from '../domain/types';
+import { hourBlocks } from '../domain/hourBlocks';
 import { round } from '../domain/units';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
+import { SITE } from '../config/site';
 
-/** Hourly precipitation-probability timeline from the NWS gridpoint forecast,
- *  plus a current-weather flag if precip/thunder is in the METAR. */
+/** "10pm", the hourly chart's own short form: a block's two ends fit under
+ *  its bar on a phone, where "10:00 PM–1:00 AM" wrapped to three lines. */
+const shortHour = (ms: number): string =>
+  new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', timeZone: SITE.timeZone }).replace(' ', '').toLowerCase();
+
+/** Hours per block in the collapsed view. */
+const BLOCK_HOURS = 3;
+
+/** Precipitation-probability timeline from the NWS gridpoint forecast, in
+ *  3-hour blocks by default and every hour on request, plus a
+ *  current-weather flag if precip/thunder is in the METAR. */
 export function PrecipPanel({
   hourly,
   current,
+  initialEachHour = false,
 }: {
   hourly: HourlyPoint[];
   current: CurrentConditions | null;
+  /** For a test to render the expanded view; the app starts on blocks. */
+  initialEachHour?: boolean;
 }): JSX.Element {
+  const [eachHour, setEachHour] = useState(initialEachHour);
   const now = Date.now();
   const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
   const next6 = upcoming.filter((h) => h.time <= now + 6 * 3600_000);
@@ -62,28 +78,37 @@ export function PrecipPanel({
       {upcoming.length === 0 ? (
         <p className="muted">No hourly forecast available.</p>
       ) : (
-        <div className="sky-scroll">
-          <div className="sky-timeline">
-            {upcoming.map((h) => (
-              <div
-                key={h.time}
-                className="sky-col"
-                title={`${fmtTime(h.time)} · ${h.precipProbPct != null ? round(h.precipProbPct) + '%' : '—'}`}
-              >
-                <div className="sky-bar-track">
-                  <div
-                    className="sky-bar precip-bar"
-                    style={{ height: `${h.precipProbPct ?? 0}%` }}
-                  />
-                </div>
-                <span className="sky-ceil">{h.precipProbPct != null ? `${round(h.precipProbPct)}` : '—'}</span>
-                <span className="sky-time">{fmtTime(h.time)}</span>
-              </div>
-            ))}
+        <>
+          <div className="sky-scroll">
+            <div className="sky-timeline">
+              {(eachHour
+                ? upcoming.map((h) => ({ start: h.time, hours: 1, max: h.precipProbPct }))
+                : hourBlocks(upcoming, BLOCK_HOURS, (h) => h.precipProbPct)
+              ).map((b) => {
+                const span =
+                  b.hours > 1 ? `${shortHour(b.start)}\u2013${shortHour(b.start + b.hours * 3_600_000)}` : fmtTime(b.start);
+                return (
+                  <div key={b.start} className="sky-col" title={`${span} · ${b.max != null ? round(b.max) + '%' : '—'}`}>
+                    <div className="sky-bar-track">
+                      <div className="sky-bar precip-bar" style={{ height: `${b.max ?? 0}%` }} />
+                    </div>
+                    <span className="sky-ceil">{b.max != null ? `${round(b.max)}` : '—'}</span>
+                    <span className="sky-time">{span}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+          <button type="button" className="aloft-toggle" aria-expanded={eachHour} onClick={() => setEachHour((v) => !v)}>
+            {eachHour ? 'Show 3-hour blocks' : 'Show each hour'}
+          </button>
+        </>
       )}
-      <p className="muted small">Bar height = chance of precipitation (%). Label = same, per hour.</p>
+      <p className="muted small">
+        {eachHour
+          ? 'Bar height = chance of precipitation (%). Label = same, per hour.'
+          : 'Bar height = the highest hourly chance of precipitation (%) in each 3 hours. Label = same.'}
+      </p>
     </Panel>
   );
 }
