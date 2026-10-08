@@ -73,7 +73,8 @@ the published figures rather than Settings edits.
   (18 h by default).
 - 📅 **10-day outlook** — daily sky, high/low, max wind/gust, dominant wind direction, precip chance; tap a
   day for its hourly detail.
-- ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
+- ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline, with
+  Open-Meteo's cloud cover for the same hours beside the NWS figure.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline (narrow
   bars, a time under every third hour).

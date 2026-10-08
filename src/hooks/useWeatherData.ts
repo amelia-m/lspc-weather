@@ -213,13 +213,14 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       });
 
     const windsP = fetchWindsAloft(dz.lat, dz.lon, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL, now)
-      .then(({ levels, validity, hours }) => {
+      .then(({ levels, validity, hours, clouds }) => {
         setSnapshot((prev) => ({
           ...prev,
           windsAloft: levels,
           windsAloftSource: 'open-meteo',
           windsAloftValidity: validity,
           windsAloftHours: hours ?? null,
+          openMeteoClouds: clouds ?? null,
         }));
         logSource('windsAloft', 'success', `Open-Meteo winds aloft ${describeValidity(validity)}`);
         updateSource('windsAloft', okStatus());
@@ -250,6 +251,8 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
               // hours left over from an earlier Open-Meteo answer must not
               // outlive the source that served them.
               windsAloftHours: null,
+              // Nor its cloud cover: the FD bulletin has none.
+              openMeteoClouds: null,
             }));
             logSource(
               'windsAloft',

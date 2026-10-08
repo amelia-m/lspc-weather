@@ -7,10 +7,11 @@ import { SourceLinks } from './common/SourceLinks';
  * 2026-10-08). Each card showing the data links Open-Meteo and the licence
  * in its own "Data:" line; this is the fuller statement.
  *
- * `scope` is what the page it sits on shows. The dashboard footer names the
- * three cards Open-Meteo feeds (Winds aloft, Drift, and the 10-day
- * outlook's day rows) and says they name the fallback that answered, so it
- * does not claim the NOAA FD bulletin or the NWS gridpoint as Open-Meteo's.
+ * `scope` is what the page it sits on shows. The dashboard footer names
+ * what Open-Meteo feeds (Winds aloft, Drift, the 10-day outlook's day rows
+ * and the second cloud-cover figure on Ceiling & sky) and says the cards
+ * name the fallback that answered, so it does not claim the NOAA FD bulletin
+ * or the NWS gridpoint as Open-Meteo's.
  * #parity shows the winds comparison, and its context notes quote other
  * Open-Meteo figures, so it says that.
  */
@@ -29,11 +30,12 @@ export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' }): JS
   }
   return (
     <>
-      {credit}: the winds aloft, the drift estimate and the 10-day outlook&rsquo;s day rows, unless
-      it is unreachable, when those cards name the fallback that answered, if one did. This dashboard reworks it: winds and
+      {credit}: the winds aloft, the drift estimate, the 10-day outlook&rsquo;s day rows and the
+      second cloud-cover figure on the Ceiling &amp; sky card, unless it is unreachable, when those
+      cards name the fallback that answered, if one did, and the cloud-cover figure is left out. This dashboard reworks it: winds and
       temperatures interpolated from fixed heights and pressure levels to heights above the drop zone, a drift
       estimate worked from those winds, and the day rows&rsquo; weather codes grouped into its own
-      labels.
+      labels; the cloud cover is shown as served.
     </>
   );
 }

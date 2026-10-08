@@ -1,4 +1,4 @@
-import type { CurrentConditions, HourlyPoint } from '../domain/types';
+import type { CurrentConditions, HourlyPoint, OpenMeteoCloudHour } from '../domain/types';
 import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { ceilingState, type CeilingState } from '../domain/normalize';
@@ -17,16 +17,25 @@ const CEILING_LABEL: Record<CeilingState, string> = {
 };
 
 /** Current ceiling + an hourly sky-cover / ceiling timeline (mirrors the
- *  usairnet cloud forecast), built from NWS gridpoint data. */
+ *  usairnet cloud forecast), built from NWS gridpoint data, with Open-Meteo's
+ *  cloud cover for the same hours beside it where Open-Meteo answered. */
 export function CeilingSkyPanel({
   current,
   hourly,
+  omClouds = null,
 }: {
   current: CurrentConditions | null;
   hourly: HourlyPoint[];
+  /** Open-Meteo's hourly cloud cover (`snapshot.openMeteoClouds`); null when
+   *  it did not answer, and the card then shows the NWS forecast alone. */
+  omClouds?: OpenMeteoCloudHour[] | null;
 }): JSX.Element {
   const now = Date.now();
   const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
+  // Matched hour for hour by valid time; an hour Open-Meteo did not serve
+  // shows no second bar rather than a borrowed neighbour's.
+  const omAt = new Map((omClouds ?? []).map((c) => [c.time, c]));
+  const showOm = upcoming.some((h) => omAt.get(h.time)?.totalPct != null);
   const category = current ? observedFlightCategory(current) : null;
 
   return (
@@ -37,6 +46,7 @@ export function CeilingSkyPanel({
         DATA_SOURCES.iemObservation,
         DATA_SOURCES.nwsObservation,
         DATA_SOURCES.nwsForecast,
+        ...(showOm ? [DATA_SOURCES.openMeteo] : []),
         DATA_SOURCES.usairnet,
       ]}
     >
@@ -86,6 +96,7 @@ export function CeilingSkyPanel({
           <div className="sky-timeline">
           <div className="sky-col sky-axis-col" aria-hidden="true">
             <span className="sky-pct">&nbsp;</span>
+            {showOm && <span className="sky-pct om-pct">&nbsp;</span>}
             <div className="sky-axis">
               <span>100%</span>
               <span>50%</span>
@@ -94,28 +105,46 @@ export function CeilingSkyPanel({
             <span className="sky-ceil">&nbsp;</span>
             <span className="sky-time">&nbsp;</span>
           </div>
-          {upcoming.map((h) => (
-            <div key={h.time} className="sky-col" title={describeHour(h)}>
+          {upcoming.map((h) => {
+            const om = omAt.get(h.time);
+            return (
+            <div key={h.time} className="sky-col" title={describeHour(h, om)}>
               <span className="sky-pct">{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</span>
+              {showOm && (
+                <span className="sky-pct om-pct">{om?.totalPct != null ? `${round(om.totalPct)}%` : '—'}</span>
+              )}
               <div className="sky-bar-track">
                 <div
                   className="sky-bar"
                   style={{ height: `${h.skyCoverPct ?? 0}%` }}
                   data-cover={coverClass(h.skyCoverPct)}
                 />
+                {/* Neutral, whatever the amount: a second forecast beside
+                    the first, not a category of its own. */}
+                {showOm && <div className="sky-bar om-bar" style={{ height: `${om?.totalPct ?? 0}%` }} />}
               </div>
               <span className="sky-ceil" title={h.ceilingFtAgl != null ? undefined : 'No ceiling (no broken/overcast layer)'}>
                 {h.ceilingFtAgl != null ? `${Math.round(h.ceilingFtAgl / 100) / 10}k` : 'none'}
               </span>
               <span className="sky-time">{fmtTime(h.time)}</span>
             </div>
-          ))}
+            );
+          })}
           </div>
         </div>
       )}
       <p className="muted small">
         Bar height = sky cover %. Label = ceiling (thousands ft AGL); “none” = no broken/overcast
         layer, so no ceiling.
+        {showOm && (
+          <>
+            {' '}
+            Beside each, the thin grey bar and the lower, grey figure are Open-Meteo&rsquo;s cloud
+            cover for the same hour: a second model&rsquo;s share of the sky under cloud, which says
+            nothing about a cloud base. The ceiling labels are the NWS forecast&rsquo;s alone. The two
+            can disagree; both are forecasts.
+          </>
+        )}
       </p>
       {/* Only what is particular to this card. Confirming conditions with
           official sources, the S&TA and the PIC is the page's to say, in its
@@ -131,9 +160,17 @@ export function CeilingSkyPanel({
   );
 }
 
-function describeHour(h: HourlyPoint): string {
+function describeHour(h: HourlyPoint, om?: OpenMeteoCloudHour): string {
   const parts = [fmtTime(h.time)];
-  if (h.skyCoverPct != null) parts.push(`${round(h.skyCoverPct)}% cover`);
+  if (h.skyCoverPct != null) parts.push(`NWS ${round(h.skyCoverPct)}% cover`);
+  if (om?.totalPct != null) {
+    const bands = [
+      om.lowPct != null ? `low ${round(om.lowPct)}%` : null,
+      om.midPct != null ? `mid ${round(om.midPct)}%` : null,
+      om.highPct != null ? `high ${round(om.highPct)}%` : null,
+    ].filter(Boolean);
+    parts.push(`Open-Meteo ${round(om.totalPct)}% cover${bands.length ? ` (${bands.join(', ')})` : ''}`);
+  }
   if (h.ceilingFtAgl != null) parts.push(`ceiling ${h.ceilingFtAgl.toLocaleString()} ft`);
   if (h.precipProbPct != null) parts.push(`${round(h.precipProbPct)}% precip`);
   return parts.join(' · ');

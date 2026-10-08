@@ -1039,6 +1039,19 @@ a {
   white-space: nowrap;
   margin: 0 -8px;
 }
+/* Open-Meteo's cloud cover beside the NWS bar on the Ceiling & sky card:
+   thin and neutral, so it reads as a second forecast, not a category. */
+.sky-bar.om-bar {
+  width: 30%;
+  flex: none;
+  margin-left: 2px;
+  background: var(--muted);
+  opacity: 0.8;
+}
+.sky-pct.om-pct {
+  color: var(--muted);
+  margin-top: -2px;
+}
 .sky-bar.precip-bar {
   background: linear-gradient(180deg, var(--accent), #2f6db5);
 }
