@@ -266,11 +266,6 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
           logSource('windsAloft', 'failure', 'NOAA FD fallback also failed', fdError);
           /* report the original Open-Meteo error below */
         }
-        // The winds keep their last answer, marked stale on their own card.
-        // The cloud cover is shown on the Ceiling & sky card, which carries
-        // no marker for this source, so an earlier run's figures would read
-        // as current there: drop them instead.
-        setSnapshot((prev) => ({ ...prev, openMeteoClouds: null }));
         markStale('windsAloft', e);
       });
 

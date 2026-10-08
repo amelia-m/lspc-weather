@@ -18,18 +18,20 @@
  * scripts/simText.live.ts takes it again from the live page and fails when it
  * differs. That is the pin: uspa.org names its online SIM only as "2026 SIM",
  * and its list of change documents did not load (2026-10-08), so the
- * fingerprint is what records which text was read. Null when either anchor
- * is missing, or `until` comes before `anchor`: the page is no longer the
- * shape the log describes. Pure.
+ * fingerprint is what records which text was read. Null when `anchor` is
+ * missing, or `until` does not follow it: the page is no longer the shape
+ * the log describes. Pure.
  */
 export function simPartText(page: string, anchor: string, until: string | null): string | null {
-  const at = (name: string): number => page.indexOf(`<a class="anchoroffset" name="${name}"`);
+  // The end is looked for after the start, so a page that also names the
+  // end anchor higher up (a contents list, say) still reads the part.
+  const at = (name: string, from = 0): number => page.indexOf(`<a class="anchoroffset" name="${name}"`, from);
   const start = at(anchor);
   if (start === -1) return null;
   let end: number;
   if (until != null) {
-    end = at(until);
-    if (end <= start) return null;
+    end = at(until, start + 1);
+    if (end === -1) return null;
   } else {
     const articleEnd = page.indexOf('</article>', start);
     end = articleEnd > start ? articleEnd : page.length;

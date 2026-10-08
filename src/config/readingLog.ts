@@ -19,7 +19,8 @@
  * simPartText reduces it, taken from the page served that day, for every SIM
  * part a claim cites or quotes. scripts/simText.live.ts takes it again daily
  * and fails when a part's text has changed, which is the signal to read it
- * again.
+ * again, or when a SIM quote on #citations is in none of the parts tied to
+ * its entry (by a source's link, or `quotedIn`).
  */
 import type { CITATIONS } from './thresholds';
 
@@ -59,60 +60,168 @@ export interface SourceReading {
 const SIM_HOW =
   'the online SIM at uspa.org, the section page as served; every quote of it on this page checked against that text';
 
-const sim = (
-  section: string,
-  anchor: string,
-  until: string | null,
-  title: string,
-  citations: CitationKey[],
-  quotedIn: string[] | undefined,
-  sha256: string,
-  chars: number,
-): SourceReading => ({
-  section: `USPA SIM ${section} ${title}`,
-  citations,
-  ...(quotedIn ? { quotedIn } : {}),
+/** One SIM part. Named fields, so an anchor and its end cannot trade
+ *  places unnoticed; `title` is the part's letter and heading as the page
+ *  prints them (3-1's parts are named, not lettered). */
+const sim = (p: {
+  section: string;
+  anchor: string;
+  until: string | null;
+  title: string;
+  citations?: CitationKey[];
+  quotedIn?: string[];
+  sha256: string;
+  chars: number;
+}): SourceReading => ({
+  section: `USPA SIM ${p.section}${/^[A-Z],/.test(p.title) ? ' ' : ', '}${p.title}`,
+  citations: p.citations ?? [],
+  ...(p.quotedIn ? { quotedIn: p.quotedIn } : {}),
   lastRead: SIM_LAST_READ,
   edition: SIM_EDITION,
   how: SIM_HOW,
-  simPart: { section, anchor, until, sha256, chars },
+  simPart: { section: p.section, anchor: p.anchor, until: p.until, sha256: p.sha256, chars: p.chars },
 });
 
 export const READING_LOG: SourceReading[] = [
   // The parts a citation links to.
-  sim('2-1', '1H', '1I', 'H, Winds', ['uspaStudentWinds', 'uspaLicensedWinds'], undefined,
-    '08145bc3ac97f635b5c1d109592c2b2e854a6cea6a40321f8f0ae84723634b1c', 146),
-  sim('2-1', '1I', '1J', 'I, Minimum Opening Altitudes', ['uspaOpeningAltitude'], undefined,
-    'd3d1c75934696b5f27d3d158ddf281545d8b66a0a6c7fdf220f93430a04cbd23', 316),
-  sim('2-2', '2B', '2C', 'B, Classification of Waivers', ['uspaWaivers'], undefined,
-    'f4cf2ddf17418d8c3729625ef8f837ad55c5aab18ae08ac7628dd760b60e1121', 511),
-  sim('4-5', '5B', '5C', 'B, Hazardous Weather', ['uspaWeather'], undefined,
-    'c3c535629eecc959f4b543473138ef8cf2625259bcf62b5219e1db99fb1ca4e4', 2071),
-  sim('4-7', '7A', '7B', 'A, Why Spotting is Important', ['uspaSpottingWho'], undefined,
-    'c45f6d141108b2c16d57aa463ea3c2bb10bd1b8ab0b3c91c495afa0021d573f4', 578),
-  sim('4-7', '7C', '7D', 'C, Exit Separation on Jump Run', ['uspaSpotting'], undefined,
-    '4f208b027cc5f5b58ddf0e3947d5ba031f599649136f86e821391884b2a55daf', 1171),
-  sim('5-3', '3A', '3B', 'A, Introduction and Definition', ['uspaNightJumps'], undefined,
-    '96ddb07f6f0c18a7314913c1cf54d8184712c5643e5faee9bb1a4ebb7be0c3a1', 929),
+  sim({
+    section: '2-1',
+    anchor: '1H',
+    until: '1I',
+    title: 'H, Winds',
+    citations: ['uspaStudentWinds', 'uspaLicensedWinds'],
+    sha256: '08145bc3ac97f635b5c1d109592c2b2e854a6cea6a40321f8f0ae84723634b1c',
+    chars: 146,
+  }),
+  sim({
+    section: '2-1',
+    anchor: '1I',
+    until: '1J',
+    title: 'I, Minimum Opening Altitudes',
+    citations: ['uspaOpeningAltitude'],
+    sha256: 'd3d1c75934696b5f27d3d158ddf281545d8b66a0a6c7fdf220f93430a04cbd23',
+    chars: 316,
+  }),
+  sim({
+    section: '2-2',
+    anchor: '2B',
+    until: '2C',
+    title: 'B, Classification of Waivers',
+    citations: ['uspaWaivers'],
+    sha256: 'f4cf2ddf17418d8c3729625ef8f837ad55c5aab18ae08ac7628dd760b60e1121',
+    chars: 511,
+  }),
+  sim({
+    section: '4-5',
+    anchor: '5B',
+    until: '5C',
+    title: 'B, Hazardous Weather',
+    citations: ['uspaWeather'],
+    sha256: 'c3c535629eecc959f4b543473138ef8cf2625259bcf62b5219e1db99fb1ca4e4',
+    chars: 2071,
+  }),
+  sim({
+    section: '4-7',
+    anchor: '7A',
+    until: '7B',
+    title: 'A, Why Spotting is Important',
+    citations: ['uspaSpottingWho'],
+    sha256: 'c45f6d141108b2c16d57aa463ea3c2bb10bd1b8ab0b3c91c495afa0021d573f4',
+    chars: 578,
+  }),
+  sim({
+    section: '4-7',
+    anchor: '7C',
+    until: '7D',
+    title: 'C, Exit Separation on Jump Run',
+    citations: ['uspaSpotting'],
+    sha256: '4f208b027cc5f5b58ddf0e3947d5ba031f599649136f86e821391884b2a55daf',
+    chars: 1171,
+  }),
+  sim({
+    section: '5-3',
+    anchor: '3A',
+    until: '3B',
+    title: 'A, Introduction and Definition',
+    citations: ['uspaNightJumps'],
+    sha256: '96ddb07f6f0c18a7314913c1cf54d8184712c5643e5faee9bb1a4ebb7be0c3a1',
+    chars: 929,
+  }),
   // The parts #citations quotes beside them. 2-1 G holds anchors of its own
   // (1G4, 1G4b, 1G5) and 4-7 B one named SPACE; each part runs to the next
   // lettered part, which is why the end is named.
-  sim('2-1', '1G', '1H', 'G', [], ['A3'],
-    '81aa9ed6c8b29835cfaec2cd16d91bcb02069e78c72ea9dedb666793cd2bbb5d', 8824),
-  sim('2-2', '2C', '2D', 'C, Procedures for Filing Waivers', [], ['A1', 'A2', 'A5'],
-    '3be7b76ead1c9d2e901641ce1c2042e8e7ad6f909178f7eae2ba16cd39b4dd76', 1764),
-  sim('3-1', 'Blicense', 'Clicense', 'B License', [], ['A3'],
-    'cac041ce461e1482214a25c0710d0efb8deec65c60044e67dcf3baef4c41bec7', 971),
-  sim('4-5', '5A', '5B', 'A, Determining Winds', [], ['A6'],
-    'b393b3b3dc8b0b82c530af91334255eb8a1eb8a858ff32edec0bb07acc440e01', 501),
-  sim('4-5', '5C', null, 'C', [], ['A6'],
-    'b6365d9584d668faf1d108a4a5726a9e5d4ac2aa734564e14841225eda661aaf', 1063),
-  sim('4-7', '7B', '7C', 'B, Priorities', [], ['A11'],
-    '694f57cbd7432dd9f389716c6674f6545ae4a7bb788c3efaeea6f085db996e26', 1976),
-  sim('5-3', '3B', '3C', 'B', [], ['A3'],
-    '289f93bddc21a29949cf5a0ff635ee095630ec0a549b8b00c52f765e7dc19d45', 452),
-  sim('5-3', '3E', '3F', 'E', [], ['A11'],
-    '6650b8ee1f7d9db1d023a771b7db1a7d6ce0d2ae16c59285b34dd273836947f3', 2356),
+  sim({
+    section: '2-1',
+    anchor: '1G',
+    until: '1H',
+    title: 'G, Student Skydivers',
+    quotedIn: ['A3'],
+    sha256: '81aa9ed6c8b29835cfaec2cd16d91bcb02069e78c72ea9dedb666793cd2bbb5d',
+    chars: 8824,
+  }),
+  sim({
+    section: '2-2',
+    anchor: '2C',
+    until: '2D',
+    title: 'C, Procedures for Filing Waivers',
+    quotedIn: ['A1', 'A2', 'A5'],
+    sha256: '3be7b76ead1c9d2e901641ce1c2042e8e7ad6f909178f7eae2ba16cd39b4dd76',
+    chars: 1764,
+  }),
+  sim({
+    section: '3-1',
+    anchor: 'Blicense',
+    until: 'Clicense',
+    title: 'B License',
+    quotedIn: ['A3'],
+    sha256: 'cac041ce461e1482214a25c0710d0efb8deec65c60044e67dcf3baef4c41bec7',
+    chars: 971,
+  }),
+  sim({
+    section: '4-5',
+    anchor: '5A',
+    until: '5B',
+    title: 'A, Determining Winds',
+    quotedIn: ['A6'],
+    sha256: 'b393b3b3dc8b0b82c530af91334255eb8a1eb8a858ff32edec0bb07acc440e01',
+    chars: 501,
+  }),
+  sim({
+    section: '4-5',
+    anchor: '5C',
+    until: null,
+    title: 'C, Density Altitude',
+    quotedIn: ['A6'],
+    sha256: 'b6365d9584d668faf1d108a4a5726a9e5d4ac2aa734564e14841225eda661aaf',
+    chars: 1063,
+  }),
+  sim({
+    section: '4-7',
+    anchor: '7B',
+    until: '7C',
+    title: 'B, Priorities',
+    quotedIn: ['A11'],
+    sha256: '694f57cbd7432dd9f389716c6674f6545ae4a7bb788c3efaeea6f085db996e26',
+    chars: 1976,
+  }),
+  sim({
+    section: '5-3',
+    anchor: '3B',
+    until: '3C',
+    title: 'B, Qualifications',
+    quotedIn: ['A3'],
+    sha256: '289f93bddc21a29949cf5a0ff635ee095630ec0a549b8b00c52f765e7dc19d45',
+    chars: 452,
+  }),
+  sim({
+    section: '5-3',
+    anchor: '3E',
+    until: '3F',
+    title: 'E, Procedures',
+    quotedIn: ['A11'],
+    sha256: '6650b8ee1f7d9db1d023a771b7db1a7d6ce0d2ae16c59285b34dd273836947f3',
+    chars: 2356,
+  }),
   // Everything else.
   {
     section: '14 CFR 105.17, Flight visibility and clearance from cloud requirements',
