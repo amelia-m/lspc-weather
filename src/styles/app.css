@@ -9,7 +9,7 @@
   --caution: #ff5d5d;
   --watch: #ffb454;
   /* The gust ceiling's mark: the Surface wind card's band and the hourly
-     chart's line, label and key. */
+     chart's line and key. */
   --gust-ceiling: #c879ff;
   --info: #4aa8ff;
   --ok: #3fb950;
@@ -1056,26 +1056,11 @@ a {
   stroke-width: 1;
   stroke-dasharray: 1 2;
 }
-.hc-limit-label {
-  font-size: 8px;
-  /* A halo in the panel's colour, painted under the glyphs, so the wind or
-     gust line passing behind a label does not cut through it. */
-  stroke: var(--panel);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-}
 .hc-limit-wind line {
   stroke: var(--caution);
 }
-.hc-limit-label-wind {
-  fill: var(--caution);
-}
 .hc-limit-gust line {
   stroke: var(--gust-ceiling);
-}
-.hc-limit-label-gust {
-  fill: var(--gust-ceiling);
 }
 .hc-wind {
   stroke: var(--accent);
