@@ -4,6 +4,7 @@ import { fmtLimitSpeed } from '../src/domain/units';
 import {
   CITATIONS,
   DEFAULT_DEPLOY_FT,
+  isSimSectionUrl,
   resolveThresholds,
   WAIVER_TIERS,
   type WindProfileId,
@@ -53,7 +54,9 @@ describe('CITATIONS', () => {
 });
 
 describe('USPA SIM citations', () => {
-  const sim = entries.filter(([, c]) => c.url.startsWith('https://www.uspa.org/sim'));
+  // Any link into uspa.org's SIM, whatever its scheme or host form, so a
+  // variant is held to the one shape rather than slipping past it.
+  const sim = entries.filter(([, c]) => /uspa\.org\/sim/i.test(c.url));
 
   it('covers the SIM citations actually in the map', () => {
     expect(sim.length).toBeGreaterThan(0);
@@ -93,7 +96,7 @@ describe('USPA SIM citations', () => {
     // has checked would send a jumper to the wrong rule while looking
     // authoritative — but it has to be visibly deliberate, not an oversight.
     for (const [key, citation] of sim) {
-      if (/\/sim\/\d+-\d+(#[^/]*)?$/.test(citation.url)) continue;
+      if (isSimSectionUrl(citation.url)) continue;
       expect(citation.note, `${key} links to the SIM index without saying why`).toMatch(
         /not been identified/,
       );

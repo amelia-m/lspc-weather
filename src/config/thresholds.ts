@@ -59,8 +59,10 @@ export const simUrl = (section: string, anchor?: string): string =>
   `https://www.uspa.org/sim/${section}${anchor ? `#${anchor}` : ''}`;
 
 /** A link to a SIM section page (simUrl with a section), as opposed to the
- *  SIM's index, where a citation whose section is unknown stays. */
-export const isSimSectionUrl = (url: string): boolean => url.startsWith(simUrl(''));
+ *  SIM's index, where a citation whose section is unknown stays. The
+ *  reading log pins every citation this matches to a part. */
+export const isSimSectionUrl = (url: string): boolean =>
+  url.startsWith(simUrl('')) && /^\d+-\d+(#|$)/.test(url.slice(simUrl('').length));
 
 /**
  * Citations — the product, not decoration.
