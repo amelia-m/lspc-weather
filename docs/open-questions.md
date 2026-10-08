@@ -152,6 +152,17 @@ measured from 1,165 ft, as the "As Schulze" view is; his own list's pin
 for the club is still in the south-west field (1,132 ft on Open-Meteo's
 terrain). Logs before 2026-10-08 were taken at the old point.
 
+## To do: re-run the Surface rows against the measured wind
+
+On 2026-10-08 both forecast Surface rows were set by hand against KPMV's
+measured wind over the 156 hours the logs held (the 10 m row nearer in 104,
+Schulze's in 23, tied in 29; `docs/markschulze-altitude-reference.md`,
+"Which Surface row is nearer the measured wind", which also says how).
+Almost all of those hours were at the old DZ point and in two weeks of early
+October. Worth re-running once the logs hold a few weeks at the landing
+area, and in other seasons, ideally as a script under `scripts/` rather than
+by hand, so the figure on file is not a one-off.
+
 ## Which forecast run the winds-aloft request is served
 
 Narrowed, not settled. Seen first on 2026-09-23: for the same hour the app's

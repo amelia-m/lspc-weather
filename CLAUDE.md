@@ -128,7 +128,11 @@ precisely because they were colour and text rather than flags.
   four sites on 2026-10-03. So it reads like the wind a couple of hundred
   feet up and runs above the 10 m wind this app shows, most at night. See
   `docs/markschulze-altitude-reference.md`, "How the surface row was worked
-  out".
+  out". Set against KPMV's measured wind over 156 logged hours to
+  2026-10-08, the 10 m row was nearer in 104, his in 23, tied in 29; both
+  ran high, his by more, most at night (same doc, "Which Surface row is
+  nearer the measured wind"). That is a point about heights, not a fault in
+  his tool.
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; from 2026-09-23 the app sampled the same
   pressure levels the tool does below 18,000 ft (`OPEN_METEO_PRESSURE_LEVELS`,
