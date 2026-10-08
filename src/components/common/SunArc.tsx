@@ -13,6 +13,14 @@ const dur = (ms: number): string => {
 const CX = 150;
 const CY = 108;
 const R = 88;
+/** How far, along the arc, both lines stop short of the marker on each side.
+ *  The crescent is a disc with a bite out of it, and a line running to its
+ *  centre showed through the bite; the sun's rays are open the same way.
+ *  Just over each marker's radius: the moon's disc is 9, the sun's rays 16. */
+const GAP = { day: 18, night: 11 } as const;
+
+/** The point at angle `a` on the arc (π at the left end, 0 at the right). */
+const at = (a: number): string => `${(CX + R * Math.cos(a)).toFixed(1)} ${(CY - R * Math.sin(a)).toFixed(1)}`;
 
 /**
  * How far through the day or the night it is, as a sun (by day) or a moon
@@ -36,18 +44,27 @@ export function SunArc({ phase, now }: { phase: SkyPhase; now: number }): JSX.El
   const y = CY - R * Math.sin(theta);
   const left = CX - R;
   const right = CX + R;
+  // The elapsed line ends, and the remaining track begins, a gap either side
+  // of the marker; near an end there is no room, and that side is not drawn.
+  const d = GAP[phase.phase] / R;
+  const doneTo = theta + d;
+  const trackFrom = theta - d;
   const since = `${dur(now - phase.startMs)} since ${day ? 'sunrise' : 'sunset'}`;
   const until = `${dur(phase.endMs - now)} to ${day ? 'sunset' : 'sunrise'}`;
   return (
     <div className="sun-arc">
       <svg viewBox="0 0 300 130" role="img" aria-label={`${day ? 'Day' : 'Night'}: ${since}, ${until}.`}>
         <line className="sun-arc-horizon" x1={10} y1={CY} x2={290} y2={CY} />
-        <path className="sun-arc-track" d={`M ${left} ${CY} A ${R} ${R} 0 0 1 ${right} ${CY}`} fill="none" />
-        <path
-          className={`sun-arc-done ${day ? 'is-day' : 'is-night'}`}
-          d={`M ${left} ${CY} A ${R} ${R} 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`}
-          fill="none"
-        />
+        {trackFrom > 0 && (
+          <path className="sun-arc-track" d={`M ${at(trackFrom)} A ${R} ${R} 0 0 1 ${right} ${CY}`} fill="none" />
+        )}
+        {doneTo < Math.PI && (
+          <path
+            className={`sun-arc-done ${day ? 'is-day' : 'is-night'}`}
+            d={`M ${left} ${CY} A ${R} ${R} 0 0 1 ${at(doneTo)}`}
+            fill="none"
+          />
+        )}
         {day ? (
           <g className="sun-arc-sun" transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}>
             {Array.from({ length: 8 }, (_, i) => {
