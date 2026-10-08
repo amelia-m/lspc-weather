@@ -229,7 +229,9 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     if (!(k in ms.direction)) continue;
     const dDir = ((l.directionDeg - ms.direction[k] + 540) % 360) - 180;
     const dSpd = l.speedKt - ms.speed[k];
-    const dT = l.tempC != null ? l.tempC - ms.temp[k] : null;
+    // His table serves whole °C; this table keeps a tenth (for the °F
+    // display), so it is rounded the same way before the two are compared.
+    const dT = l.tempC != null ? Math.round(l.tempC) - ms.temp[k] : null;
     rows.push({ ft: l.altitudeFtAgl, dDir, dSpd, dT });
     maxDir = Math.max(maxDir, Math.abs(dDir));
     maxSpd = Math.max(maxSpd, Math.abs(dSpd));
@@ -248,7 +250,7 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
       ft: l.altitudeFtAgl,
       dDir: ((l.directionDeg - ms.direction[k] + 540) % 360) - 180,
       dSpd: l.speedKt - ms.speed[k],
-      dT: l.tempC != null ? l.tempC - ms.temp[k] : null,
+      dT: l.tempC != null ? Math.round(l.tempC) - ms.temp[k] : null,
     });
   }
   out.push(

@@ -375,14 +375,15 @@ heights; the question is which is nearer the wind a jumper meets on the
 ground. Both were set against KPMV's reported wind (IEM's ASOS archive,
 routine and special reports, mean of those within 30 minutes of the valid
 hour), for every valid hour the comparison logs held both sides of the same
-hour, with each side's median over that hour's runs:
+hour, with each side's median over that hour's runs, this side rounded to
+whole knots as both pages show it (KPMV reports whole knots too):
 
-| hours | n | KPMV median | this app: bias, mean abs error | Schulze: bias, mean abs error | nearer |
+| hours | n | KPMV median | this app: bias, mean abs error | Schulze: bias, mean abs error | nearer (this app, Schulze, tied) |
 |---|---|---|---|---|---|
-| all | 156 | 4.7 kt | +1.5, 2.1 kt | +3.5, 3.7 kt | this app 117, Schulze 38 |
-| night, 7 PM to 7 AM | 75 | 4.0 kt | +1.5, 2.1 kt | +4.4, 4.6 kt | 64, 11 |
-| day, 7 AM to 7 PM | 81 | 5.3 kt | +1.4, 2.1 kt | +2.6, 2.9 kt | 53, 27 |
-| 9 AM to 6 PM | 62 | 6.3 kt | +1.5, 2.2 kt | +2.2, 2.5 kt | 36, 25 |
+| all | 156 | 4.7 kt | +1.5, 2.1 kt | +3.5, 3.7 kt | 104, 23, 29 |
+| night, 7 PM to 7 AM | 75 | 4.0 kt | +1.5, 2.1 kt | +4.4, 4.6 kt | 62, 7, 6 |
+| day, 7 AM to 7 PM | 81 | 5.3 kt | +1.5, 2.1 kt | +2.6, 2.9 kt | 42, 16, 23 |
+| 9 AM to 6 PM | 62 | 6.3 kt | +1.4, 2.2 kt | +2.2, 2.5 kt | 27, 15, 20 |
 
 Both forecasts ran above the measured wind, the 10 m row by about 1.5 kt and
 Schulze's by more, most at night, which fits his row reading like the wind a
