@@ -152,6 +152,14 @@ export function DriftPanel({
               onChange={setFallRate}
             />
           </div>
+          {/* Under the inputs rather than in the BSR note further down: it is
+              about the default the Deploy box opened on, and the profile
+              does not say which licence a jumper holds. */}
+          <p className="muted small">
+            Deploy opens on {fmtFt(DEFAULT_DEPLOY_FT)}, the BSR minimum for students and A-license
+            holders; B, C and D licenses have a lower minimum, 2,500 ft. Source:{' '}
+            <SourceLink citation={CITATIONS.uspaOpeningAltitude} />
+          </p>
 
           <dl className="kv">
             <dt>Freefall drift</dt>

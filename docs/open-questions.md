@@ -62,6 +62,17 @@ without GitHub, but then two copies to keep the same; a test could compare
 them). Either way the link should say the photo is undated, as the
 citation's note does.
 
+## To do, later: a licence setting under Licensed
+
+Asked for 2026-10-08. The Licensed profile covers A, B, C and D licences,
+whose BSR minimum opening altitudes differ (2-1 I: 3,000 ft for students and
+A-license holders, 2,500 ft for B, C and D). The drift card's Deploy box
+therefore opens on 3,000 ft whatever the profile (`DEFAULT_DEPLOY_FT`), with
+a note saying B to D are lower. A licence choice under the Student/Licensed
+switch (`src/components/ProfileSelector.tsx`) would let the default follow
+the licence. Nothing else in the app reads a licence today: no BSR wind
+limit applies to licensed jumpers, so the surface-wind card would not change.
+
 ## To do: look into Open-Meteo's cloud cover
 
 Asked for 2026-10-08. Open-Meteo serves cloud cover as a percentage three

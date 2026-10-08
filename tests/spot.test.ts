@@ -219,3 +219,17 @@ describe('the drift card says who chooses the spot, with the SIM behind it', () 
     expect(html.toLowerCase()).not.toContain('jumpmaster');
   });
 });
+
+/* The Deploy box opens on 3,000 ft on every profile: the Licensed profile
+ * includes A-license holders, whose BSR minimum (2-1 I) is 3,000 ft. */
+describe('the drift card’s deploy default', () => {
+  const html = renderToStaticMarkup(
+    createElement(DriftPanel, { levels: uniformLevels(), source: 'open-meteo' } as never),
+  );
+
+  it('opens Deploy on 3,000 ft and says B to D licences are lower, with the BSR linked', () => {
+    expect(html).toMatch(/<option value="3000" selected="">/);
+    expect(html).toContain('Deploy opens on 3,000 ft, the BSR minimum for students and A-license holders; B, C and D licenses have a lower minimum, 2,500 ft.');
+    expect(html).toContain(`href="${CITATIONS.uspaOpeningAltitude.url}"`);
+  });
+});
