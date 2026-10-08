@@ -648,9 +648,8 @@ export const OPEN_METEO_PRESSURE_LEVELS = [
 /**
  * The pressure levels between those, every 25 hPa from 875 to 575, which
  * Mark Schulze's tool does not sample. With his they make one every 25 hPa
- * from 1000 to 575 hPa (about 14,000 ft AGL here on the day they were read,
- * lower in a cold column), around the table's top row at 13,000 ft; nothing
- * is added between 550 and 500, above it.
+ * from 1000 to 550 hPa (about 15,600 ft AGL here), above the table's top row
+ * at 13,000 ft; nothing is added between 550 and 500, which no row reaches.
  * Read 2026-10-08 at the DZ, each was
  * served with values that are not the average of its neighbours (875 hPa
  * 5.7 kt where the neighbours average 6.6; 800 hPa, which the tool does

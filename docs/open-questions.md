@@ -129,8 +129,8 @@ Schulze" datum (the default table is measured from the published field
 elevation, 1,182 ft, wherever the point is); the NWS gridpoint; the sun
 times and the hourly chart's night shading; the radar pin, the sectional
 tiles and the distances and bearings to stations and radar; and the links
-that carry it (Mark Schulze's page, NWS MapClick, SkyVector, the traffic
-map). Most move by a rounding over a few hundred metres, but Open-Meteo's
+that carry it (Mark Schulze's page, NWS MapClick, SkyVector, both traffic
+maps). Most move by a rounding over a few hundred metres, but Open-Meteo's
 ground does not: it steps 4 m (13 ft) between this point and Schulze's
 preset, under a metre west, so a move can shift those near-ground samples
 and the "As Schulze" datum by tens of feet. That is a reason to choose the
