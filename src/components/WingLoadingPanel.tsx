@@ -27,7 +27,7 @@ const parse = (s: string, max: number): number | null => {
 
 /**
  * Exit weight and wing loading on the club's student canopies, against
- * Performance Designs' published maximums for the Navigator.
+ * Performance Designs' published maximum exit weights for the Navigator.
  *
  * Body weight starts empty and is not stored: a default weight would print a
  * wing loading for nobody, and on a shared computer at the DZ a remembered
@@ -153,11 +153,12 @@ export function WingLoadingPanel({
         </table>
       </div>
       <p className="muted small">
-        PD&rsquo;s recommended maximum exit weight for each skill set on this size; the comparison
-        above uses the Student figure only. Gear is one student rig weighed (about{' '}
-        {STUDENT_RIG_WEIGHT_LB} lb); change it for yours. Body weight is not saved. Which canopy a
-        student jumps is the instructor&rsquo;s call. Source:{' '}
-        <SourceLink citation={CITATIONS.pdNavigator} />
+        PD&rsquo;s maximum exit weight for each category on this size; the comparison above uses
+        the Student figure only. Gear is one student rig weighed (about {STUDENT_RIG_WEIGHT_LB} lb);
+        change it for yours. Body weight is not saved. PD gives its Student figures &ldquo;mainly to
+        help instructors&rdquo; choose a student&rsquo;s canopy: which canopy a student jumps is the
+        instructor&rsquo;s call. Sources: <SourceLink citation={CITATIONS.pdNavigator} />;{' '}
+        <SourceLink citation={CITATIONS.pdWingLoadingGuide} />
       </p>
     </Panel>
   );

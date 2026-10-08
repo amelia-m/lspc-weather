@@ -11,8 +11,8 @@ export const exitWeightLb = (bodyLb: number, gearLb: number): number => bodyLb +
 export const wingLoading = (exitLb: number, areaSqFt: number): number => exitLb / areaSqFt;
 
 /**
- * How an exit weight stands against PD's recommended maximum for one skill
- * set on one size: the figure and the margin, in pounds. A comparison with a
+ * How an exit weight stands against PD's maximum for one category on one
+ * size: the figure and the margin, in pounds. A comparison with a
  * published figure, not a verdict: what a jumper may fly is the instructor's
  * and the S&TA's call.
  */
@@ -25,7 +25,7 @@ export function againstChart(
   return { maxLb, marginLb: maxLb - exitLb };
 }
 
-/** The sizes, of those offered, whose recommended maximum for `skill` is at
+/** The sizes, of those offered, whose maximum for `skill` is at
  *  or above `exitLb`, smallest first. */
 export function sizesWithin(
   exitLb: number,
