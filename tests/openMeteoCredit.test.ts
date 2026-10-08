@@ -29,7 +29,7 @@ describe('Open-Meteo in the cards’ Data lines', () => {
   const winds = (source: 'open-meteo' | 'nws-fd' | null) =>
     renderToStaticMarkup(
       createElement(WindsAloftPanel, {
-        levels: [level],
+        levels: source === null ? [] : [level],
         source,
         validity: { validMs: Date.parse('2026-09-22T04:00:00Z') },
         unit: 'kt',
@@ -60,6 +60,9 @@ describe('Open-Meteo in the cards’ Data lines', () => {
       expect(html).toContain('<section');
       expect(dataLine(html)).toBe('');
     }
+    // The winds card offers Schulze's tool in its body instead.
+    expect(winds(null)).toContain('is another place to look.');
+    expect(winds('nws-fd')).not.toContain('is another place to look.');
     // The outlook's hourly detail is the NWS gridpoint's on both paths.
     expect(dataLine(daily('open-meteo'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
     // No flag reads a forecast: the observation and the computed sun times.
@@ -101,8 +104,8 @@ describe('the Open-Meteo credit', () => {
     for (const html of [parity('ready'), parity('ready', usairnetOnly)]) {
       expect(html).toContain('>Weather data by Open-Meteo.com</a>');
       expect(html).toContain(LICENCE);
-      expect(html).toContain('this dashboard’s winds, compared on this page');
-      expect(html).toContain('its Ground row is the 10 m wind as served');
+      expect(html).toContain('this dashboard’s winds aloft and any other Open-Meteo figure this page');
+      expect(html).toContain('Surface row included');
       expect(html).not.toContain('those cards');
     }
   });

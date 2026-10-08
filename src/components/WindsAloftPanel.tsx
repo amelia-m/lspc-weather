@@ -92,11 +92,9 @@ export function WindsAloftPanel({
       // Schulze's tool rides beside Open-Meteo as a cross-reference on the
       // same data; on the FD bulletin, or with no data, it would read as the
       // source.
-      sources={
-        source === 'open-meteo'
-          ? [DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]
-          : [windsAloftDataSource(source)].filter((s) => s !== null)
-      }
+      sources={[windsAloftDataSource(source), source === 'open-meteo' ? DATA_SOURCES.markschulze : null].filter(
+        (s) => s !== null,
+      )}
       unit={unit}
       onUnitChange={onUnitChange}
     >
@@ -134,7 +132,20 @@ export function WindsAloftPanel({
         </>
       )}
       {levels.length === 0 ? (
-        <p className="muted">No winds-aloft data.</p>
+        <p className="muted">
+          No winds-aloft data.
+          {/* With nothing loaded the Data line credits nobody, so the
+              second place to look is offered here instead. */}
+          {source == null && (
+            <>
+              {' '}
+              <a href={DATA_SOURCES.markschulze.url} target="_blank" rel="noopener noreferrer">
+                Mark Schulze&rsquo;s Winds Aloft
+              </a>{' '}
+              is another place to look.
+            </>
+          )}
+        </p>
       ) : (
         <table className="aloft-table">
           <thead>
