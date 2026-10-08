@@ -1061,6 +1061,8 @@ a {
 }
 .hc-limit-gust line {
   stroke: var(--gust-ceiling);
+  /* Dash-dot, so the two limit lines differ by more than colour. */
+  stroke-dasharray: 4 2 1 2;
 }
 .hc-wind {
   stroke: var(--accent);
@@ -1108,7 +1110,13 @@ a {
   background: repeating-linear-gradient(90deg, var(--caution) 0 1px, transparent 1px 3px);
 }
 .hc-key-limit-gust {
-  background: repeating-linear-gradient(90deg, var(--gust-ceiling) 0 1px, transparent 1px 3px);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--gust-ceiling) 0 4px,
+    transparent 4px 6px,
+    var(--gust-ceiling) 6px 7px,
+    transparent 7px 9px
+  );
 }
 .hc-key-night {
   background: var(--hc-night);

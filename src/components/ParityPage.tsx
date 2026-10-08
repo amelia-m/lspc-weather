@@ -383,7 +383,8 @@ const blockLabel = (from: number): string => {
     : `${twelve(from)}\u00a0${half(from)}\u2013${twelve(to)}\u00a0${half(to)}`;
 };
 
-/** Knots to one decimal, whole numbers bare: the medians are of tenths. */
+/** Knots to one decimal, whole numbers bare: the ground medians are of whole
+ *  knots, so they end in .0 or .5; other figures can carry a tenth. */
 const kt1 = (x: number): string => (Number.isInteger(x) ? String(x) : x.toFixed(1));
 
 /**
