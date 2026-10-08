@@ -133,9 +133,9 @@ describe('the Winds aloft card’s two views', () => {
   });
 
   it('describes the default table when "As Schulze" is chosen but this hour has none', () => {
-    // A stored "schulze" choice on an hour Open-Meteo served without a
-    // ground elevation: the table on screen is the default one, so the
-    // text must be too, and must not point at a switch that is not there.
+    // A stored "schulze" choice on an hour that has no his-way table: the
+    // table on screen is the default one, so the text must be too, and must
+    // not point at a switch that is not there.
     const html = card('schulze', false);
     expect(html).not.toContain('As Schulze</button>');
     expect(html).toContain('The Surface row is the model’s 10\u00a0m wind');

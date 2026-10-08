@@ -298,17 +298,28 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
           <p className="muted small">
             Since Oct 8 each run also builds the same hour the way his tool does (his pressure
             levels below 18,000 ft, his ground, his Surface row, which is a rule inferred from his output)
-            and sets it against his table: the check that this dashboard reproduces his. Every row
-            within 1° and 1 kt, which is rounding, in {w.asSchulze.runsAllWithin1} of{' '}
-            {w.asSchulze.runs} runs ({pct(w.asSchulze.runsAllWithin1, w.asSchulze.runs)}); a row
-            over 10° in {w.asSchulze.runsWithRowOver10Deg}, over 3 kt in{' '}
-            {w.asSchulze.runsWithRowOver3Kt}. Runs where the two were served different forecast
-            runs fall outside rounding here too (the open question below).
-            {w.asSchulze.notBuilt > 0 &&
-              ` In ${w.asSchulze.notBuilt} more runs it could not be built (Open-Meteo gave no ground elevation) and is left out.`}
+            and sets it against his table: the check that this dashboard reproduces his.{' '}
+            {w.asSchulze.runs > 0 ? (
+              <>
+                Every row within 1° and 1 kt, which is rounding, in {w.asSchulze.runsAllWithin1} of{' '}
+                {w.asSchulze.runs} runs ({pct(w.asSchulze.runsAllWithin1, w.asSchulze.runs)}); a row
+                over 10° in {w.asSchulze.runsWithRowOver10Deg}, over 3 kt in{' '}
+                {w.asSchulze.runsWithRowOver3Kt}. Runs where the two were served different forecast
+                runs fall outside rounding here too (the open question below).
+              </>
+            ) : (
+              `No run has had rows to compare yet (${w.asSchulze.notBuilt} logged it empty).`
+            )}
+            {w.asSchulze.runs > 0 &&
+              w.asSchulze.notBuilt > 0 &&
+              ` Another ${w.asSchulze.notBuilt} ${w.asSchulze.notBuilt === 1 ? 'run' : 'runs'} logged it with no rows to compare and ${w.asSchulze.notBuilt === 1 ? 'is' : 'are'} left out.`}
           </p>
-          <SpreadTable title="Direction, as Schulze" unit="°" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.dir])} />
-          <SpreadTable title="Speed, as Schulze" unit=" kt" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.spd])} />
+          {w.asSchulze.runs > 0 && (
+            <>
+              <SpreadTable title="Direction, as Schulze" unit="°" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.dir])} />
+              <SpreadTable title="Speed, as Schulze" unit=" kt" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.spd])} />
+            </>
+          )}
           <h4 className="cite-found-head">This dashboard&rsquo;s table</h4>
         </>
       )}
