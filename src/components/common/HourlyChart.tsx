@@ -1,7 +1,8 @@
 import { useId } from 'react';
 import type { HourlyPoint } from '../../domain/types';
 import { fmtLimitSpeed, toSpeed, type SpeedUnit } from '../../domain/units';
-import { isEdited, type Thresholds } from '../../config/thresholds';
+import { editedLimits, limitLines, type Thresholds } from '../../config/thresholds';
+import { lowerLimitUnchecked } from '../../domain/advisories';
 import { SourceLink } from './SourceLink';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
@@ -19,11 +20,13 @@ export function HourlyChart({
   points: HourlyPoint[];
   unit: SpeedUnit;
   /** The jumper profile's limits, drawn as reference lines where a published
-   *  source sets them (`limitLines`): a student's ground-wind maximum, and a
-   *  waiver tier's gust ceiling. Nothing for Licensed, which has none. */
+   *  source sets them (`limitLines`): the BSR student maximum, or a waiver
+   *  tier's wind limit and gust ceiling. Nothing for Licensed, which has none. */
   limits?: Thresholds;
 }): JSX.Element {
-  const maskId = useId();
+  // Without the colons React puts in an id, so the url(#…) reference needs
+  // no escaping.
+  const maskId = useId().replace(/:/g, '');
   const W = 340;
   const H = 154;
   const padL = 26;
@@ -45,9 +48,11 @@ export function HourlyChart({
     20,
     ...speeds.filter((v): v is number => v != null),
     ...gusts.filter((v): v is number => v != null),
-    // Room for the limit lines: the posted ones all sit under the 20 floor,
-    // but a figure edited in Settings can be above it.
-    ...lines.map((l) => toSpeed(l.kt, unit)),
+    // Room above each limit line for its label, clear of the top gridline
+    // and of the sun and moon in the margin: the 21+ tier's 20 mph gust
+    // ceiling would otherwise sit on the 20 mph top line, and a figure
+    // edited in Settings can be higher still.
+    ...lines.map((l) => toSpeed(l.kt, unit) + 1),
   );
   const maxKt = Math.ceil(peak / 5) * 5;
 
@@ -209,6 +214,9 @@ export function HourlyChart({
           textAnchor={l.kind === 'wind' ? 'start' : 'end'}
         >
           {l.kind === 'wind' ? 'limit' : 'gust ceiling'} {fmtLimitSpeed(l.kt, unit)}
+          {/* A figure the reader edited is not the source's: said on the
+              line itself, so a crop of the chart cannot pass it off. */}
+          {l.edited ? ' (edited)' : ''}
         </text>
       ))}
 
@@ -222,17 +230,6 @@ export function HourlyChart({
       )}
     </svg>
   );
-}
-
-/** The reference lines a profile gets: its wind limit where a published
- *  source sets one (`windLimitCitation`, the switch the Surface wind card's
- *  band and the wind flag use too), and its gust ceiling where it has one. */
-function limitLines(t: Thresholds | undefined): { kind: 'wind' | 'gust'; kt: number }[] {
-  if (!t?.windLimitCitation) return [];
-  return [
-    { kind: 'wind', kt: t.windCautionKt },
-    ...(t.gustCautionKt != null ? [{ kind: 'gust' as const, kt: t.gustCautionKt }] : []),
-  ];
 }
 
 /** Where the sun and moon sit: the middle of the chart's top margin. */
@@ -271,7 +268,8 @@ export function HourlyLegend({
   profile?: string;
 }): JSX.Element {
   const lines = limitLines(limits);
-  const edited = limits != null && (isEdited(limits, 'windCautionKt') || isEdited(limits, 'gustCautionKt'));
+  const edited = limits ? editedLimits(limits).filter((k) => k === 'windCautionKt' || k === 'gustCautionKt') : [];
+  const caveat = limits?.windBandCaveat;
   return (
     <>
       <p className="hc-legend">
@@ -290,8 +288,17 @@ export function HourlyLegend({
       </p>
       {lines.length > 0 && limits?.windLimitCitation && (
         <p className="muted small">
-          Limit lines: {profile ?? 'this profile'}.{' '}
-          {edited ? 'Edited in Settings; the published figures are on the Surface wind card.' : <>Source: <SourceLink citation={limits.windLimitCitation} /></>}
+          Limit lines: {profile ?? 'this profile'}. Source: <SourceLink citation={limits.windLimitCitation} />
+          {edited.length > 0 &&
+            ` The ${edited.map((k) => (k === 'windCautionKt' ? 'wind limit' : 'gust ceiling')).join(' and ')} ${
+              edited.length > 1 ? 'are' : 'is'
+            } edited in Settings, so the source does not set ${edited.length > 1 ? 'them' : 'it'}; the published figures are on the Surface wind card.`}
+          {/* The BSR's second student figure, which no line here marks: the
+              same standing note, and the same test, as the Surface wind
+              card's (lowerLimitUnchecked). */}
+          {caveat &&
+            lowerLimitUnchecked(limits) &&
+            ` A lower maximum ground wind, ${fmtLimitSpeed(caveat.limitKt, unit)}, is published for ${caveat.appliesTo}; the limit line is not it.`}
         </p>
       )}
     </>
