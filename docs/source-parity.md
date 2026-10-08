@@ -15,7 +15,7 @@ Two pages sit beside the dashboard, both reached from its footer:
 
 | comparison | this dashboard's side | the other side | script |
 |---|---|---|---|
-| Winds aloft | the table the Winds aloft card shows, built by the app's own request and normaliser | Mark Schulze's Winds Aloft (markschulze.net), the same Open-Meteo data at the same thirteen pressure levels | `scripts/schulzeCompare.live.ts` |
+| Winds aloft | the table the Winds aloft card shows, built by the app's own request and normaliser | Mark Schulze's Winds Aloft (markschulze.net), the same Open-Meteo data at the same thirteen pressure levels (below about 730 ft the app also samples 80, 120 and 180 m; his table has no 500 ft row, so no compared row depends on them) | `scripts/schulzeCompare.live.ts` |
 | Latest observation | the app's decode of the latest KPMV report (api.weather.gov → `normalizeNwsObservation`) | usairnet's decode of the same report, scraped from its KPMV page | `scripts/usairnetCompare.live.ts` |
 | Sunrise and sunset | the app's computed times at the DZ (`sunTimes`), which the night-jump flag hangs on | usairnet's sun almanac for KPMV, on the same page | `scripts/usairnetCompare.live.ts` |
 | METAR sky groups | the app's parse of the METAR text | aviationweather.gov's decoder | `scripts/skyParity.live.ts` (a gate: fails on disagreement) |

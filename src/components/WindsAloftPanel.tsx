@@ -248,8 +248,9 @@ export function WindsAloftPanel({
                 Surface wind card.
               </>
             )}{' '}
-            Against Mark Schulze&rsquo;s tool: same data, altitudes AGL on both, and after half past
-            its table is the hour before this one.
+            Against Mark Schulze&rsquo;s tool: same data, altitudes AGL on both, but below about 700 ft
+            this table also uses the model&rsquo;s 80, 120 and 180&nbsp;m winds, which his does not;
+            and after half past his table is the hour before this one.
           </p>
           <details className="aloft-about">
             <summary className="small">
@@ -294,10 +295,10 @@ export function WindsAloftPanel({
               </p>
             )}
             <p className="muted small">
-              Each level is <strong>linearly interpolated</strong> from the model’s
-              pressure-level winds (Open-Meteo gives wind at fixed pressure surfaces — e.g.
-              925/850/700 hPa — with their geopotential heights, which we convert to ft MSL and
-              interpolate to these AGL altitudes). Direction is interpolated along the shortest
+              Each level is <strong>linearly interpolated</strong> from the model’s winds: at
+              10, 80, 120 and 180&nbsp;m above its ground, and at fixed pressure surfaces (e.g.
+              925/850/700 hPa) with their geopotential heights, which we convert to ft MSL and
+              interpolate to these AGL altitudes. Direction is interpolated along the shortest
               compass arc. These are a model <strong>forecast</strong> for the DZ, not a measured
               sounding, so treat them as guidance.
             </p>

@@ -132,7 +132,11 @@ precisely because they were colour and text rather than flags.
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; since 2026-09-23 the app samples the same
   thirteen pressure levels the tool does (`OPEN_METEO_PRESSURE_LEVELS`), and
-  the same hour agreed within 4° and 1 kt everywhere. What can still differ,
+  the same hour agreed within 4° and 1 kt everywhere. Since 2026-10-08 the app
+  also samples Open-Meteo's 80, 120 and 180 m winds below the lowest pressure
+  level (`OPEN_METEO_HEIGHT_LEVELS_M`), the canopy layer, which the tool does
+  not. They decide only the 500 ft row, which his table does not have, so the
+  comparison is unaffected (the Surface row moves a fraction of a knot). What can still differ,
   and why, is in `docs/markschulze-altitude-reference.md` (among them, for a
   while, the two being on different forecast runs for the same hour: 114
   of 1,611 same-hour comparisons to 2026-10-05, mostly between half past
