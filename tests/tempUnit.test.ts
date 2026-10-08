@@ -80,4 +80,33 @@ describe('temperatures in the page’s unit', () => {
     expect(c.daily).toContain('Hi/Lo °C');
     expect(c.da).toContain('+10°C');
   });
+
+  it('keeps the precision each figure carries: a tenth on the ISA deviation, °F from the unrounded level', () => {
+    const one = (u: TempUnit, isa: number) =>
+      renderToStaticMarkup(createElement(DensityAltitudePanel, { da: { ...da, isaDeviationC: isa }, tempUnit: u }));
+    expect(one('C', 3.4)).toContain('+3.4°C');
+    expect(one('F', 3.4)).toContain('+6.1°F');
+    // A level at 10.4 °C is 50.7 °F: 51, not the 50 a rounded 10 °C gives.
+    const winds = renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels: [{ ...level, tempC: 10.4 }],
+        source: 'open-meteo',
+        validity: { validMs: Date.parse('2026-09-22T04:00:00Z') },
+        unit: 'kt',
+        onUnitChange: () => {},
+        tempUnit: 'F',
+      } as never),
+    );
+    expect(winds).toContain('<td>51°F</td>');
+  });
+
+  it('gives the spread of the two figures the Temp / Dew row prints', () => {
+    // 20.2 and 15.4 °C print as 68°F / 60°F; the spread line says 8, not 9.
+    const c = normalizeMetar({ ...METAR_FIXTURE[0], temp: 20.2, dewp: 15.4 });
+    const html = renderToStaticMarkup(
+      createElement(MetarPanel, { current: c, unit: 'kt', onUnitChange: () => {}, tempUnit: 'F' }),
+    );
+    expect(html).toContain('68°F / 60°F');
+    expect(html).toContain('8°F spread');
+  });
 });

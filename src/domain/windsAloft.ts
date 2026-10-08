@@ -66,7 +66,9 @@ export function interpolateWindsAloft(
       altitudeFtMsl: Math.round(msl),
       speedKt: Math.round(s.speedKt),
       directionDeg: Math.round(((s.directionDeg % 360) + 360) % 360),
-      tempC: s.tempC != null ? Math.round(s.tempC) : null,
+      // A tenth, not whole degrees: the card converts to °F when asked, and
+      // converting an already-rounded °C could put it a degree off.
+      tempC: s.tempC != null ? Math.round(s.tempC * 10) / 10 : null,
     });
   }
   return out;

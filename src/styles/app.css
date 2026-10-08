@@ -289,8 +289,8 @@ a {
 /* A phone-width card cannot fit "Current conditions" and "KPMV · obs 14:32"
    on one line, let alone the unit toggle after it — let the right-hand
    cluster drop to its own line rather than squeezing the title. Only cards
-   that actually carry a toggle wrap: on the rest (Density altitude, TAF,
-   Settings) the subtitle still belongs beside the title, where it has always
+   that actually carry a toggle wrap: on the rest (TAF, Settings) the
+   subtitle still belongs beside the title, where it has always
    been. Set by Panel from a modifier class rather than by `:has()`, which the
    build's baseline browsers do not all support. */
 .panel-head.has-aside {
@@ -320,7 +320,7 @@ a {
 .panel-head-aside .panel-sub {
   text-align: right;
 }
-.panel-head-aside .unit-toggle {
+.panel-head-aside .unit-toggles {
   flex: none;
 }
 .panel-body {

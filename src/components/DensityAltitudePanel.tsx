@@ -41,7 +41,7 @@ export function DensityAltitudePanel({
             <dt>Pressure altitude</dt>
             <dd>{da.pressureAltitudeFt.toLocaleString()} ft</dd>
             <dt>ISA deviation</dt>
-            <dd>{fmtTempDelta(da.isaDeviationC, tempUnit, true)}</dd>
+            <dd>{fmtTempDelta(da.isaDeviationC, tempUnit, true, 1)}</dd>
           </dl>
           {/* This used to reach the reader as a flag that fired once DA ran
               2,000–4,000 ft above the field — bands nobody published. The claim

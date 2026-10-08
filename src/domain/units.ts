@@ -20,14 +20,18 @@ export const cToF = (c: number): number => (c * 9) / 5 + 32;
  *  wind speed unit, rather than each card printing both. */
 export type TempUnit = 'F' | 'C';
 
+/** A temperature in the page's unit, as a number, unrounded. */
+export const toTemp = (c: number, u: TempUnit): number => (u === 'F' ? cToF(c) : c);
+
 /** A temperature in the page's unit, whole degrees: "70°F", "21°C". */
-export const fmtTemp = (c: number, u: TempUnit): string => `${round(u === 'F' ? cToF(c) : c)}°${u}`;
+export const fmtTemp = (c: number, u: TempUnit): string => `${round(toTemp(c, u))}°${u}`;
 
 /** A temperature DIFFERENCE in the page's unit (a dew-point spread, an ISA
  *  deviation): scaled by 9/5 with no 32 offset, since a difference of 5 °C is
- *  9 °F, not 41. Signed when `signed`. */
-export const fmtTempDelta = (dc: number, u: TempUnit, signed = false): string => {
-  const v = round(u === 'F' ? (dc * 9) / 5 : dc);
+ *  9 °F, not 41. Signed when `signed`; `digits` decimals (the ISA deviation
+ *  keeps its tenth). */
+export const fmtTempDelta = (dc: number, u: TempUnit, signed = false, digits = 0): string => {
+  const v = round(u === 'F' ? (dc * 9) / 5 : dc, digits);
   return `${signed && v >= 0 ? '+' : ''}${v}°${u}`;
 };
 

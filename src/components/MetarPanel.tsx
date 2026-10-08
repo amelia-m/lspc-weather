@@ -1,5 +1,5 @@
 import type { CurrentConditions } from '../domain/types';
-import { compass, fmtSpeed, fmtTemp, fmtTempDelta, round, type SpeedUnit, type TempUnit } from '../domain/units';
+import { compass, fmtSpeed, fmtTemp, round, toTemp, type SpeedUnit, type TempUnit } from '../domain/units';
 import { relativeHumidity } from '../domain/humidity';
 import { Panel } from './common/Panel';
 import { fmtTime } from './format';
@@ -109,9 +109,9 @@ const fmtT = (c: number | null, u: TempUnit): string => (c != null ? fmtTemp(c, 
 function describeHumidity(c: CurrentConditions, u: TempUnit): string {
   if (c.tempC == null || c.dewpointC == null) return '—';
   const rh = round(relativeHumidity(c.tempC, c.dewpointC));
-  // Spread in the page's unit, to match the Temp / Dew row above. A
-  // difference, so 9/5 with no offset (fmtTempDelta).
-  const spread = fmtTempDelta(c.tempC - c.dewpointC, u);
+  // The spread of the two figures the Temp / Dew row above prints, so the
+  // line never disagrees with it: each rounded in the page's unit first.
+  const spread = `${round(toTemp(c.tempC, u)) - round(toTemp(c.dewpointC, u))}°${u}`;
   // No "fog favorable" verdict: that fired at a 3 °C spread, the same number
   // behind the fog flag that was removed for having no published source. The
   // RH and the spread are measurements — they stand on their own, and a reader

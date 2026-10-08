@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DailyPoint, DailySource, HourlyPoint } from '../domain/types';
-import { compass, fmtTemp, round, toSpeed, type SpeedUnit, type TempUnit } from '../domain/units';
+import { compass, fmtTemp, round, toSpeed, toTemp, type SpeedUnit, type TempUnit } from '../domain/units';
 import { flightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
 import { DATA_SOURCES, dailySourceInUse } from '../config/sources';
@@ -327,7 +327,7 @@ const dayLabel = (ms: number, index: number): string =>
 
 const tempRange = (maxC: number | null, minC: number | null, u: TempUnit): string => {
   // The unit is in the column heading, so the cells carry the bare degree.
-  const f = (c: number | null): string => (c != null ? fmtTemp(c, u).slice(0, -1) : '—');
+  const f = (c: number | null): string => (c != null ? `${round(toTemp(c, u))}°` : '—');
   return `${f(maxC)}/${f(minC)}`;
 };
 
