@@ -17,5 +17,6 @@ export const OPEN_METEO_DAILY_FIXTURE: RawOpenMeteoDaily = {
     precipitation_probability_max: [5, 0, 10, 30, 80, 90, 60, 15, 5, 20],
     wind_speed_10m_max: [9, 11, 14, 18, 16, 22, 12, 8, 10, 7],
     wind_gusts_10m_max: [15, 17, 22, 28, 26, 38, 20, 13, 16, 11],
+    wind_direction_10m_dominant: [180, 170, 200, 220, 250, 290, 315, 340, 10, 150],
   },
 };

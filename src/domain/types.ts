@@ -99,6 +99,10 @@ export interface DailyPoint {
   /** Daily maximum 10 m wind speed / gust, knots. */
   windMaxKt: number | null;
   gustMaxKt: number | null;
+  /** The day's dominant 10 m wind direction, degrees true (the direction it
+   *  blows FROM): the speed-weighted vector mean of its hourly winds. See
+   *  `dominantWindDirectionDeg`. A mean, not the direction of the maximum. */
+  windDirDominantDeg: number | null;
   precipProbMaxPct: number | null;
 }
 

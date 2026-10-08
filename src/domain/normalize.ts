@@ -814,6 +814,7 @@ export interface RawOpenMeteoDaily {
     precipitation_probability_max?: (number | null)[];
     wind_speed_10m_max?: (number | null)[];
     wind_gusts_10m_max?: (number | null)[];
+    wind_direction_10m_dominant?: (number | null)[];
   };
   // wind_speed_unit requested as "kn"
 }
@@ -844,6 +845,39 @@ export interface RawOpenMeteoDaily {
  * "Partly cloudy") are not the okta words either. A day mean of model total
  * cover is not a METAR cloud amount, so it is printed as the percentage it is.
  */
+/**
+ * A day's dominant wind direction: the vector mean of its hourly winds, each
+ * weighted by its speed, as the direction the wind blows FROM.
+ *
+ * This is how Open-Meteo's `wind_direction_10m_dominant` is worked out. Its
+ * docs say only "Dominant wind direction"; recomputed from its own hourly
+ * 10 m winds at the DZ it matched on 7 of 7 days to the degree (read
+ * 2026-10-08), where an unweighted mean of the directions was off by up to
+ * 55°. The NWS fallback has no such field, so its outlook is given the same
+ * figure from its hourlies rather than a different statistic under the same
+ * heading.
+ *
+ * A mean of a wind that swings through the day (a front passing) can point
+ * where the wind seldom blew from; the card says so. Null when no hour has
+ * both a speed and a direction, or when they cancel exactly (all calm).
+ */
+export function dominantWindDirectionDeg(
+  hours: { speedKt: number | null; directionDeg: number | null }[],
+): number | null {
+  let x = 0;
+  let y = 0;
+  let any = false;
+  for (const { speedKt, directionDeg } of hours) {
+    if (speedKt == null || directionDeg == null) continue;
+    const r = (directionDeg * Math.PI) / 180;
+    x += speedKt * Math.sin(r);
+    y += speedKt * Math.cos(r);
+    any = true;
+  }
+  if (!any || Math.hypot(x, y) < 1e-9) return null;
+  return Math.round(((Math.atan2(x, y) * 180) / Math.PI + 360) % 360);
+}
+
 export function aggregateDailyFromHourly(hourly: HourlyPoint[], timeZone: string): DailyPoint[] {
   const dayKey = new Intl.DateTimeFormat('en-CA', {
     timeZone,
@@ -877,6 +911,9 @@ export function aggregateDailyFromHourly(hourly: HourlyPoint[], timeZone: string
           tempMinC: min(points.map((p) => p.tempC)),
           windMaxKt: max(points.map((p) => p.windSpeedKt)),
           gustMaxKt: max(points.map((p) => p.windGustKt)),
+          windDirDominantDeg: dominantWindDirectionDeg(
+            points.map((p) => ({ speedKt: p.windSpeedKt, directionDeg: p.windDirectionDeg })),
+          ),
           precipProbMaxPct: pop,
         };
         return { day, hasSky: points.some((p) => p.skyCoverPct != null) };
@@ -917,6 +954,7 @@ export function normalizeOpenMeteoDaily(data: RawOpenMeteoDaily): DailyPoint[] {
         tempMinC: at(d.temperature_2m_min, i),
         windMaxKt: at(d.wind_speed_10m_max, i),
         gustMaxKt: at(d.wind_gusts_10m_max, i),
+        windDirDominantDeg: at(d.wind_direction_10m_dominant, i),
         precipProbMaxPct: at(d.precipitation_probability_max, i),
       };
     })

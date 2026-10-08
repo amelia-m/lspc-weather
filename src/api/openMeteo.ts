@@ -62,7 +62,7 @@ export async function fetchDailyForecast(lat: number, lon: number): Promise<Dail
     : await fetchJson<RawOpenMeteoDaily>(
         `${OPEN_METEO_FORECAST_URL}?latitude=${lat}&longitude=${lon}` +
           `&daily=weather_code,temperature_2m_max,temperature_2m_min,` +
-          `precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max` +
+          `precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant` +
           `&forecast_days=10&wind_speed_unit=kn&timeformat=unixtime` +
           `&timezone=${encodeURIComponent(SITE.timeZone)}`,
         OPEN_METEO_OPTS,
