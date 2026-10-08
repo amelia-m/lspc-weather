@@ -1,3 +1,5 @@
+import type { Advisory } from '../domain/types';
+
 /**
  * Which cards each tab of the dashboard shows, in order.
  *
@@ -6,8 +8,9 @@
  * sectional, the terminal forecast, density altitude for the climb, winds
  * aloft for the jump run, and links to the services a pilot briefs from.
  * Cards both read from (conditions now, sky, winds aloft, daylight, radar)
- * appear on both. The advisories, Data health and the settings sit outside
- * the grid and show on both.
+ * appear on both. The advisories and Data health sit outside the grid and
+ * show on both; the wind-limit profile and the threshold settings are the
+ * Jumpers tab's only (`VIEW_USES_PROFILE`).
  *
  * Order is the reading order on a phone, where the grid is one column; at
  * wider widths MasonryGrid packs cards into the shortest column.
@@ -68,3 +71,29 @@ export const VIEW_HASH: Readonly<Record<View, string>> = {
   jumpers: '',
   pilots: '#pilots',
 };
+
+/**
+ * Whether the tab shows the wind-limit profile (Student, Licensed, the waiver
+ * tiers) and the threshold settings. The profile picks a jumper's
+ * ground-wind limit; the Pilots tab shows no card that reads it, and its
+ * two flags in the advisory list are left off that tab
+ * (`JUMPER_ONLY_ADVISORIES`). Offering it there would ask a pilot which
+ * jumper they are. The settings go with it, and the Pilots list fires on the
+ * published figures, not on edits made on the Jumpers tab (App.tsx).
+ */
+export const VIEW_USES_PROFILE: Readonly<Record<View, boolean>> = {
+  jumpers: true,
+  pilots: false,
+};
+
+/** The advisories that are jumper limits: the ground wind against the
+ *  profile's limit (the BSR's student figure or the club waiver's) and the
+ *  waiver's gust ceiling. Not aircraft limits, so off the Pilots tab, which
+ *  says where they are instead. Visibility (14 CFR 105.17 binds the pilot
+ *  dropping jumpers too), flight category, thunderstorms and night stay. */
+export const JUMPER_ONLY_ADVISORIES: readonly string[] = ['surface-wind', 'gust-limit'];
+
+/** The advisory list as the tab shows it. */
+export function advisoriesFor(view: View, advisories: readonly Advisory[]): Advisory[] {
+  return VIEW_USES_PROFILE[view] ? [...advisories] : advisories.filter((a) => !JUMPER_ONLY_ADVISORIES.includes(a.id));
+}

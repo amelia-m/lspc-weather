@@ -31,3 +31,14 @@ export const fmtAgo = (ms: number | null): string => {
  *  host says which service failed; the full text stays in the source log
  *  and the row's tooltip. */
 export const shortError = (msg: string): string => msg.replace(/https?:\/\/([^/\s?#]+)[^\s;)]*/g, '$1');
+
+/** UTC "1800Z". Mark Schulze's Winds Aloft — the tool jumpers cross-check the
+ *  winds table against — labels its forecast in exactly this form, so printing
+ *  it verbatim turns the comparison into a character match instead of
+ *  arithmetic. */
+export function fmtZulu(ms: number): string {
+  const d = new Date(ms);
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${hh}${mm}Z`;
+}
