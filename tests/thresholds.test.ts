@@ -3,25 +3,17 @@ import type { Citation } from '../src/domain/types';
 import { fmtLimitSpeed } from '../src/domain/units';
 import {
   CITATIONS,
-  recommendedDeployFt,
+  DEFAULT_DEPLOY_FT,
   resolveThresholds,
   WAIVER_TIERS,
   type WindProfileId,
 } from '../src/config/thresholds';
 
-describe('recommendedDeployFt', () => {
-  it('uses the student/A-license BSR minimum (3,000 ft) for students', () => {
-    expect(recommendedDeployFt('student')).toBe(3000);
-  });
-
-  it('uses the licensed (B-license) BSR minimum (2,500 ft) for licensed', () => {
-    expect(recommendedDeployFt('licensed')).toBe(2500);
-  });
-
-  it('treats every waiver tier as student-category (3,000 ft)', () => {
-    for (const tier of WAIVER_TIERS) {
-      expect(recommendedDeployFt(tier.id)).toBe(3000);
-    }
+describe('DEFAULT_DEPLOY_FT', () => {
+  it('is the 3,000 ft BSR minimum for students and A-license holders, which no licence is below (2-1 I)', () => {
+    // The Licensed profile includes A-license holders; 2,500 ft is only the
+    // B, C and D minimum.
+    expect(DEFAULT_DEPLOY_FT).toBe(3000);
   });
 });
 
@@ -253,7 +245,20 @@ describe('no citation is defined and then left unreachable', () => {
     expect(t.windCitation).toBe(CITATIONS.lspcWaiver);
     expect(t.windSecondaryCitation).toBe(CITATIONS.uspaWaivers);
     // The guidance sentence that second citation exists for.
-    expect(t.windGuidance).toMatch(/excursion above the USPA BSR/);
+    expect(t.windGuidance).toMatch(/excursion above the BSR wind limits/);
+  });
+
+  /* SIM 2-2 (read 2026-10-08): only an S&TA or Examiner (or the board) files a
+   * waiver to an [S] BSR (B), in writing on USPA's form (C). The club rule is
+   * an instructor's on-site approval, with the S&TA recommended. */
+  it('keeps the club’s rule and SIM 2-2’s apart, and says a BSR waiver is written', () => {
+    const tier = resolveThresholds('waiver:21+').windGuidance;
+    expect(tier).toContain('Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available.');
+    expect(tier).toContain('Under SIM 2-2, a waiver of a student BSR is filed by an S&TA or Examiner, in writing.');
+    expect(tier).not.toMatch(/requires on-site approval|consult the S&TA\./);
+    const student = resolveThresholds('student').windGuidance;
+    expect(student).toContain('An S&TA or Examiner may waive it, by a written waiver.');
+    expect(student).not.toContain('on site');
   });
 
   it('leaves no citation in the map that nothing references', () => {

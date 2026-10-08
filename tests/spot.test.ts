@@ -135,7 +135,7 @@ describe('the drift card credits the source the numbers came from', () => {
   const levels = uniformLevels();
   const markup = (source?: 'open-meteo' | 'nws-fd'): string =>
     renderToStaticMarkup(
-      createElement(DriftPanel, { levels, profile: 'licensed', source } as never),
+      createElement(DriftPanel, { levels, source } as never),
     );
 
   it('names Open-Meteo on the primary path', () => {
@@ -186,7 +186,7 @@ describe('estimateDrift reports how high the levels reached', () => {
 describe('the drift card says when it assumes the top wind up to exit', () => {
   const markup = (levels: WindsAloftLevel[]): string =>
     renderToStaticMarkup(
-      createElement(DriftPanel, { levels, profile: 'licensed', source: 'open-meteo' } as never),
+      createElement(DriftPanel, { levels, source: 'open-meteo' } as never),
     );
   const short = SHORT_PROFILE_TOP_FT_AGL.toLocaleString();
 
@@ -211,7 +211,7 @@ describe('the drift card says when it assumes the top wind up to exit', () => {
 describe('the drift card says who chooses the spot, with the SIM behind it', () => {
   it('names the spotter, links SIM 4-7 A, and no longer says jumpmaster', () => {
     const html = renderToStaticMarkup(
-      createElement(DriftPanel, { levels: uniformLevels(), profile: 'licensed', source: 'open-meteo' } as never),
+      createElement(DriftPanel, { levels: uniformLevels(), source: 'open-meteo' } as never),
     );
     expect(html).toContain('choosing the exit point is the job of whoever spots the load');
     expect(html).toContain(`href="${CITATIONS.uspaSpottingWho.url}"`);

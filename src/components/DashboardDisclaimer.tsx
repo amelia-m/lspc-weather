@@ -28,7 +28,7 @@ export function DashboardDisclaimer(): JSX.Element {
         <summary>About the sources</summary>
         <p>
           The citations to the USPA SIM, the CFRs and the FAA began as AI recollections and were
-          read at their sources on 2026-09-22 and 2026-09-23; the club wind tiers are transcribed
+          read at their sources on 2026-09-22 and 2026-09-23 (one SIM section on 2026-10-08); the club wind tiers are transcribed
           from an undated photo of the posted sign. The citations page records what each source
           says and what a reading could not settle.
         </p>

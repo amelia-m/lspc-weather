@@ -67,7 +67,7 @@ describe('Open-Meteo in the cards’ Data lines', () => {
 
   it('with nothing loaded, says so and credits nobody, but still names the usual source and the fallback', () => {
     const drift = (source: 'open-meteo' | 'nws-fd' | null) =>
-      renderToStaticMarkup(createElement(DriftPanel, { levels: [], profile: 'licensed', source } as never));
+      renderToStaticMarkup(createElement(DriftPanel, { levels: [], source } as never));
     expect(dataLine(drift('open-meteo'))).toContain(`>Open-Meteo</a> (${LICENCE})`);
     for (const [html, fb] of [
       [winds(null), DATA_SOURCES.fdWinds],
