@@ -32,7 +32,8 @@ export type CardId =
   | 'sectional'
   | 'taf'
   | 'pilotLinks'
-  | 'nearbyMetars';
+  | 'nearbyMetars'
+  | 'wingLoading';
 
 export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
   // The two wind cards first, the ones a jumper reads before anything else
@@ -41,7 +42,7 @@ export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
   // card's buttons step to, and on a phone a card further down would change
   // off screen. Then the rest of now (conditions, sky), planning (hourly,
   // outlook, precip), daylight and radar.
-  jumpers: ['surfaceWind', 'windsAloft', 'drift', 'metar', 'ceilingSky', 'hourly', 'daily', 'precip', 'sun', 'radar'],
+  jumpers: ['surfaceWind', 'windsAloft', 'drift', 'metar', 'ceilingSky', 'hourly', 'daily', 'precip', 'sun', 'radar', 'wingLoading'],
   // Now (conditions, sky, the airports around), then the chart and the
   // forecast for the flight (sectional, TAF), the climb and the jump run
   // (density altitude, winds aloft), then daylight, radar and the briefing

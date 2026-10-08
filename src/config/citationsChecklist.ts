@@ -205,6 +205,26 @@ export const CHECKLIST: ChecklistEntry[] = [
     ],
   },
   {
+    id: 'A12',
+    title: 'Student canopy exit weights',
+    claim:
+      'Performance Designs’ recommended maximum exit weight for each Navigator size and skill set, compared with an exit weight of body weight plus gear (about 32 lb for a student rig).',
+    where: 'Exit weight & wing loading card, Jumpers tab',
+    sources: [CITATIONS.pdNavigator],
+    found: {
+      read: 'the maintainer’s transcription of PD’s chart (text and a screenshot that agree), 2026-10-08; performancedesigns.com could not be read from here',
+      says: [
+        'Navigator Wing Loading Chart, TABLE-0122 Rev.A: for each size (200 to 300 sq ft), a recommended maximum exit weight in pounds and kilograms for Student, Novice, Intermediate, Advanced, Expert and Max. Footnote: “Numbers are the Recommended Maximum Exit Weight in pounds / (KG) for that skillset”.',
+        'Student column, lb: 200 → 140, 220 → 176, 240 → 216, 260 → 255, 280 → 270, 300 → 290.',
+      ],
+    },
+    asks: [
+      'Are the club’s student canopies all Navigators, and in which sizes (the card offers 200, 220, 260 and 280)?',
+      'Is 32 lb, one Navigator 260 rig weighed, close enough for every student rig until a table of rig weights replaces it?',
+      'Does the club hold students to PD’s Student column, or to a figure of its own?',
+    ],
+  },
+  {
     id: 'A8',
     title: 'Flight visibility and clearance from cloud',
     claim:

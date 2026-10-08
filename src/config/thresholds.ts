@@ -299,6 +299,21 @@ export const CITATIONS = {
     url: simUrl('2-1', '1I'),
     note: SIM_REREAD_NOTE,
   },
+  /**
+   * Performance Designs' recommended maximum exit weights for the Navigator,
+   * the canopy the maintainer believes the club's student rigs carry. Cited
+   * by the exit weight and wing loading card for the figures it compares an
+   * exit weight against. Not read here: performancedesigns.com was not
+   * reachable from this environment on 2026-10-08, so the figures are the
+   * maintainer's transcription of the chart (src/config/canopies.ts) and the
+   * note says so.
+   */
+  pdNavigator: {
+    source: 'Performance Designs, Navigator Wing Loading Chart (TABLE-0122 Rev.A)',
+    ref: 'Recommended maximum exit weight by canopy size and skill set',
+    url: 'https://www.performancedesigns.com/navigator',
+    note: 'Figures transcribed by the maintainer from PD’s chart on 2026-10-08. performancedesigns.com could not be read from the environment this was written in, so they have not been checked against PD’s own copy: check the chart before relying on them, and confirm with an instructor.',
+  },
   lspcWaiver: {
     source: 'LSPC Waivered Wind Limits',
     ref: 'Club wind-limit policy (posted at the DZ)',

@@ -42,6 +42,7 @@ import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
+import { WingLoadingPanel } from './components/WingLoadingPanel';
 import { DashboardDisclaimer } from './components/DashboardDisclaimer';
 import { ProfileSelector } from './components/ProfileSelector';
 import { AppFooter } from './components/AppFooter';
@@ -326,6 +327,7 @@ export default function App(): JSX.Element {
     precip: <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />,
     densityAltitude: <DensityAltitudePanel da={snapshot.densityAltitude} {...temp} />,
     sun: <SunPanel sun={snapshot.sun} />,
+    wingLoading: <WingLoadingPanel />,
     radar: <RadarPanel />,
     sectional: <SectionalPanel />,
     taf: <TafPanel taf={snapshot.taf} status={status.taf} />,

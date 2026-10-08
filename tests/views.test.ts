@@ -22,7 +22,7 @@ import { pilotLinks } from '../src/config/sources';
 describe('the dashboard tabs', () => {
   const ALL: CardId[] = [
     'metar', 'surfaceWind', 'ceilingSky', 'windsAloft', 'drift', 'hourly', 'daily', 'precip',
-    'densityAltitude', 'sun', 'radar', 'sectional', 'taf', 'pilotLinks', 'nearbyMetars',
+    'densityAltitude', 'sun', 'radar', 'sectional', 'taf', 'pilotLinks', 'nearbyMetars', 'wingLoading',
   ];
 
   it('puts every card on at least one tab, and none twice on a tab', () => {
