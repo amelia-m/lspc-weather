@@ -77,7 +77,9 @@ export const DATA_SOURCES = {
     url: 'https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59',
   },
   /** Live air traffic around the drop zone on adsb.lol, a community-run
-   *  ADS-B network whose data is open (ODbL). The query (`TRAFFIC_MAP_QUERY`)
+   *  ADS-B network whose data is open (ODbL). Groundwork for a receiver at
+   *  the field, which would cover the jump plane low over it: see
+   *  docs/adsb-receiver.md. The query (`TRAFFIC_MAP_QUERY`)
    *  was read from its map's own script on 2026-10-03. A link and not an
    *  embedded frame: the map's aircraft feed answers only with a
    *  cookie its own page sets, without SameSite=None, so inside a frame on
