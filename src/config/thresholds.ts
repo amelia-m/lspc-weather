@@ -297,7 +297,7 @@ export const CITATIONS = {
     source: 'USPA SIM, Section 2-1 (BSR)',
     ref: 'BSR 2-1 I — minimum container opening altitudes: tandem 5,000 ft AGL; students & A 3,000 ft; B 2,500 ft; C/D 2,500 ft, waiverable to no lower than 2,000 ft',
     url: simUrl('2-1', '1I'),
-    note: SIM_READ_NOTE,
+    note: SIM_REREAD_NOTE,
   },
   lspcWaiver: {
     source: 'LSPC Waivered Wind Limits',

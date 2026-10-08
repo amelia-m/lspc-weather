@@ -157,8 +157,7 @@ export function DriftPanel({
               does not say which licence a jumper holds. */}
           <p className="muted small">
             Deploy opens on {fmtFt(DEFAULT_DEPLOY_FT)}, the BSR minimum for students and A-license
-            holders; B, C and D licenses have a lower minimum, 2,500 ft. Source:{' '}
-            <SourceLink citation={CITATIONS.uspaOpeningAltitude} />
+            holders, which is higher than the B, C and D minimums listed below.
           </p>
 
           <dl className="kv">

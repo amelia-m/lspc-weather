@@ -2,6 +2,7 @@ import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
 import { CITATIONS, isEdited, type Thresholds } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
+import { SITE } from '../config/site';
 
 /**
  * Turn a weather snapshot into a list of ADVISORIES — conditions worth noting,
@@ -145,24 +146,36 @@ export function evaluateAdvisories(
     // A plain observed fact, so it may flag; the sentence claims only what
     // 105.17 says. "Solid overcast" is usairnet's phrase (the FAA's is plain
     // "Overcast"), and 105.17 bars operations into or through cloud, not under
-    // it. Whether this layer is in the way depends on the exit altitude, which
-    // the app does not know, so the flag gives the reported base and 105.17's
-    // clearance below cloud and leaves the comparison to the reader rather than
-    // inventing a cut-off. The base is above the station, KPMV, not the DZ.
-    const ovcBases = current.skyLayers
-      .filter((l) => l.cover === 'OVC')
-      .map((l) => l.baseFtAgl);
+    // it. Whether any cloud is in the way depends on the exit altitude, which
+    // the app does not know, so the flag states what was reported (the
+    // overcast's base, and the lowest cloud when that is lower: 105.17 is
+    // about any cloud, not the overcast alone) and 105.17's rows, with the
+    // field elevation because the rows are MSL and the bases AGL. No
+    // instruction to compare one number: it would point at the wrong layer.
+    const ft = (n: number): string => `${n.toLocaleString('en-US')} ft`;
+    const ovcBases = current.skyLayers.filter((l) => l.cover === 'OVC').map((l) => l.baseFtAgl);
     if (ovcBases.length > 0) {
       const known = ovcBases.filter((b): b is number => b != null);
       const base = known.length > 0 ? Math.min(...known) : null;
+      const lowest = current.skyLayers
+        .filter((l) => ['FEW', 'SCT', 'BKN', 'OVC', 'VV'].includes(l.cover) && l.baseFtAgl != null)
+        .reduce<{ cover: string; baseFtAgl: number } | null>(
+          (lo, l) => (lo == null || l.baseFtAgl! < lo.baseFtAgl ? { cover: l.cover, baseFtAgl: l.baseFtAgl! } : lo),
+          null,
+        );
+      const lower = lowest != null && (base == null || lowest.baseFtAgl < base) ? lowest : null;
       out.push({
         id: 'overcast',
         level: 'watch',
         metric: 'Sky cover',
-        value: base != null ? `Overcast at ${base.toLocaleString('en-US')} ft AGL` : 'Overcast, base not reported',
+        value: base != null ? `Overcast at ${ft(base)} AGL` : 'Overcast, base not reported',
         guidance:
-          `Overcast (OVC) layer reported${base != null ? `, base ${base.toLocaleString('en-US')} ft above the station` : ''}. ` +
-          '14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least 500 ft below cloud under 10,000 ft MSL (1,000 ft at or above). Compare the base with the exit altitude.',
+          (base != null
+            ? `Overcast (OVC) layer reported at ${ft(base)} above ${SITE.metarStation.id}`
+            : `Overcast (OVC) layer reported at ${SITE.metarStation.id}, its base not measured`) +
+          (lower != null ? `; the lowest cloud reported is ${lower.cover} at ${ft(lower.baseFtAgl)}` : '') +
+          '. 14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least ' +
+          `500 ft below cloud under 10,000 ft MSL, 1,000 ft at or above (the field is at ${ft(SITE.dz.elevationFt)} MSL).`,
         citation: CITATIONS.far10517,
       });
     }
