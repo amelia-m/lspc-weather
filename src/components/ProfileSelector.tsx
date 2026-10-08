@@ -10,25 +10,27 @@ import { WAIVER_TIERS, type WindProfileId } from '../config/thresholds';
  * the BSRs", which BSR 2-1 H sets for solo students only. Offered as a third
  * option beside Student and Licensed it read as a jumper class of its own.
  *
- * `lastStudent` is the student choice last made, kept and stored by App
- * beside the profile, so going to Licensed and back (across a tab switch or
- * a reload) returns to it rather than to the BSR limits: a jumper on a
- * waiver tier would otherwise be put on different limits without being told.
+ * `lastStudent` is the student choice last made and `lastTier` the waiver
+ * tier last chosen, both kept and stored by App beside the profile. Going to
+ * Licensed and back returns to the first, and BSR and back to the waiver
+ * returns to the second, across a tab switch or a reload: otherwise a jumper
+ * on a waiver tier would be put on different limits without being told.
  */
 export function ProfileSelector({
   profile,
   lastStudent,
+  lastTier,
   onChange,
 }: {
   profile: WindProfileId;
   lastStudent: WindProfileId;
+  lastTier: WindProfileId;
   onChange: (p: WindProfileId) => void;
 }): JSX.Element {
   const licensed = profile === 'licensed';
   const isWaiver = profile.startsWith('waiver');
-  const lastTier = lastStudent.startsWith('waiver') ? lastStudent : WAIVER_TIERS[0].id;
   const button = (label: string, on: boolean, to: WindProfileId) => (
-    <button key={label} className={on ? 'active' : ''} aria-pressed={on} onClick={() => onChange(to)}>
+    <button key={label} type="button" className={on ? 'active' : ''} aria-pressed={on} onClick={() => onChange(to)}>
       {label}
     </button>
   );
