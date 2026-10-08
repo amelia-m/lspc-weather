@@ -88,6 +88,41 @@ describe('Winds aloft hour buttons', () => {
   });
 });
 
+describe('Winds aloft explanatory text', () => {
+  it('folds the background notes by default, and keeps the table and the guidance out', () => {
+    const html = winds({ hourNav: nav() });
+    const about = /<details class="aloft-about">([\s\S]*?)<\/details>/.exec(html)?.[1] ?? '';
+    // Closed until opened: no `open` attribute.
+    expect(html).toContain('<details class="aloft-about"><summary');
+    for (const note of ['AGL, like these', 'Mark Schulze’s Winds Aloft', 'linearly interpolated', 'model’s wind at 10']) {
+      expect(about).toContain(note);
+    }
+    const outside = html.replace(/<details class="aloft-about">[\s\S]*?<\/details>/, '');
+    // The sourced spotting guidance stands where it is always readable.
+    expect(outside).toContain('Strong upper winds increase freefall drift');
+    expect(outside).toContain('<table class="aloft-table">');
+    expect(outside).toContain('Arrow shows drift direction');
+    // What reading the numbers right needs, unfolded: a forecast, what the
+    // Surface row is, and why Schulze's table can look different.
+    expect(outside).toContain('A model <strong>forecast</strong> for the DZ, not a measurement.');
+    expect(outside).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is on the Surface wind card.');
+    expect(outside).toContain('altitudes AGL on both, and after half past its table is the hour before this one.');
+  });
+
+  it('offers no About section with no table, and no Surface row talk without one', () => {
+    expect(winds({ levels: [], source: undefined, validity: null })).not.toContain('aloft-about');
+    const noSource = winds({ source: undefined, hourNav: nav() });
+    expect(noSource).toContain('About these numbers: comparing with Mark Schulze’s tool, how levels are worked out');
+    expect(noSource).not.toContain('The Surface row is');
+  });
+
+  it('keeps the fallback source note out, since it is about this report', () => {
+    const html = winds({ source: 'nws-fd', hourNav: null });
+    expect(html).not.toContain('aloft-about');
+    expect(html).toContain('<strong>Fallback source:</strong>');
+  });
+});
+
 describe('Drift card follows the hour', () => {
   const drift = (validMs: number | null, hourNav: WindsHourNav | null, source?: 'open-meteo' | 'nws-fd') =>
     renderToStaticMarkup(createElement(DriftPanel, { levels, profile: 'student', validMs, hourNav, source }));

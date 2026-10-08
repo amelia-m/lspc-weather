@@ -293,7 +293,8 @@ describe('the winds table says where its rows stop', () => {
 /* The two tools' Surface rows are different heights: this card's is the
  * model's 10 m wind, Mark Schulze's a line through the pressure levels read at
  * 0 ft (docs/markschulze-altitude-reference.md). Readers see his run higher
- * and need the reason on the card. The FD fallback has no Surface row. */
+ * and need the reason on the card: what each row is shows always, the why in
+ * the card's About section. The FD fallback has no Surface row. */
 describe('the note on why the Surface row differs from Schulze’s', () => {
   const level = (agl: number): WindsAloftLevel => ({
     altitudeFtAgl: agl,
