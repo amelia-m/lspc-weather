@@ -8,8 +8,11 @@ import {
   type RawOpenMeteo,
 } from '../src/domain/normalize';
 import { mToFt } from '../src/domain/units';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
 
-/* The "as Schulze" table: his thirteen pressure levels, his datum (Open-Meteo's
+/* The "as Schulze" table: his pressure levels below 18,000 ft, his datum (Open-Meteo's
  * ground), and his Surface row, inferred from his output and matched 72 of 72
  * hours (docs/markschulze-altitude-reference.md). */
 const GROUND = 1145;
@@ -100,23 +103,21 @@ describe('the two tables from one response', () => {
 });
 
 describe('the Winds aloft card’s two views', () => {
-  it('offers the switch on Open-Meteo, says how each table is built, and never calls his Surface row a 10 m wind', async () => {
-    const { createElement } = await import('react');
-    const { renderToStaticMarkup } = await import('react-dom/server');
-    const { WindsAloftPanel } = await import('../src/components/WindsAloftPanel');
-    const card = (method: 'all' | 'schulze', schulzeAvailable = true) =>
-      renderToStaticMarkup(
-        createElement(WindsAloftPanel, {
-          levels: [{ altitudeFtAgl: 0, altitudeFtMsl: 1145, directionDeg: 200, speedKt: 9, tempC: 10 }],
-          source: 'open-meteo',
-          validity: { validMs: Date.parse('2026-10-08T03:00:00Z') },
-          unit: 'kt',
-          onUnitChange: () => {},
-          method,
-          onMethodChange: () => {},
-          schulzeAvailable,
-        } as never),
-      );
+  const card = (method: 'all' | 'schulze', schulzeAvailable = true) =>
+    renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels: [{ altitudeFtAgl: 0, altitudeFtMsl: 1145, directionDeg: 200, speedKt: 9, tempC: 10 }],
+        source: 'open-meteo',
+        validity: { validMs: Date.parse('2026-10-08T03:00:00Z') },
+        unit: 'kt',
+        onUnitChange: () => {},
+        method,
+        onMethodChange: () => {},
+        schulzeAvailable,
+      } as never),
+    );
+
+  it('offers the switch on Open-Meteo, says how each table is built, and never calls his Surface row a 10 m wind', () => {
     const all = card('all');
     expect(all).toContain('aria-pressed="true">All levels</button>');
     expect(all).toContain('seven of them between the ones Mark Schulze’s tool samples');
@@ -129,5 +130,19 @@ describe('the Winds aloft card’s two views', () => {
     expect(his).not.toContain('The Surface row is the model’s 10 m wind');
     // No switch where the hour has no Schulze table (the FD fallback).
     expect(card('all', false)).not.toContain('As Schulze</button>');
+  });
+
+  it('describes the default table when "As Schulze" is chosen but this hour has none', () => {
+    // A stored "schulze" choice on an hour Open-Meteo served without a
+    // ground elevation: the table on screen is the default one, so the
+    // text must be too, and must not point at a switch that is not there.
+    const html = card('schulze', false);
+    expect(html).not.toContain('As Schulze</button>');
+    expect(html).toContain('The Surface row is the model’s 10\u00a0m wind');
+    expect(html).toContain('but this table also takes samples his does not');
+    expect(html).not.toContain('the switch above the table');
+    expect(html).not.toContain('built his way');
+    expect(html).not.toContain('As Schulze view');
+    expect(html).toContain('<strong>Surface</strong> row is the model');
   });
 });
