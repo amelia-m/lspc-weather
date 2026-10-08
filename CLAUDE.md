@@ -135,8 +135,10 @@ precisely because they were colour and text rather than flags.
   the same hour agreed within 4° and 1 kt everywhere. Since 2026-10-08 the app
   also samples Open-Meteo's 80, 120 and 180 m winds below the lowest pressure
   level (`OPEN_METEO_HEIGHT_LEVELS_M`), the canopy layer, which the tool does
-  not. They decide only the 500 ft row, which his table does not have, so the
-  comparison is unaffected (the Surface row moves a fraction of a knot). What can still differ,
+  not. They normally decide the 500 ft row, which his table does not have;
+  the compared Surface row moves a fraction of a knot, and on high-pressure
+  hours, when 950 hPa is above 1,000 ft, the compared 1,000 ft row can differ
+  for this reason (`docs/markschulze-altitude-reference.md`). What can still differ,
   and why, is in `docs/markschulze-altitude-reference.md` (among them, for a
   while, the two being on different forecast runs for the same hour: 114
   of 1,611 same-hour comparisons to 2026-10-05, mostly between half past

@@ -62,7 +62,7 @@ export function deriveProvenance(
   const prov: Partial<Record<SourceKey, SourceProvenance>> = {};
 
   if (snapshot.windsAloftSource === 'open-meteo') {
-    prov.windsAloft = { detail: 'Open-Meteo pressure levels', fallback: false };
+    prov.windsAloft = { detail: 'Open-Meteo 10–180 m and pressure levels', fallback: false };
   } else if (snapshot.windsAloftSource === 'nws-fd') {
     prov.windsAloft = { detail: `NOAA FD winds · ${SITE.fdWindsStation}`, fallback: true };
   }

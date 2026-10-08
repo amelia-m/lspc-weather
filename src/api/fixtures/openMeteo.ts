@@ -1,7 +1,7 @@
 import type { RawOpenMeteo } from '../../domain/normalize';
 import { isoHour } from './_time';
 
-/** Sample Open-Meteo response (wind_speed_unit=kn) with 10 m wind plus every
+/** Sample Open-Meteo response (wind_speed_unit=kn) with 10 m wind, the canopy-layer heights, plus every
  *  pressure level the app requests and their geopotential heights, for two hours anchored to
  *  the current hour so the "nearest hour" pick lands on real sample winds. */
 export const OPEN_METEO_FIXTURE: RawOpenMeteo & { elevation: number } = {
@@ -11,6 +11,17 @@ export const OPEN_METEO_FIXTURE: RawOpenMeteo & { elevation: number } = {
     temperature_2m: [25, 26],
     wind_speed_10m: [11, 12],
     wind_direction_10m: [190, 195],
+    // The canopy-layer heights (OPEN_METEO_HEIGHT_LEVELS_M), metres above
+    // the model's ground; 975 hPa sits below ground in this fixture.
+    wind_speed_80m: [13, 14],
+    wind_direction_80m: [192, 197],
+    temperature_80m: [24, 25],
+    wind_speed_120m: [15, 16],
+    wind_direction_120m: [194, 199],
+    temperature_120m: [24, 25],
+    wind_speed_180m: [17, 18],
+    wind_direction_180m: [197, 202],
+    temperature_180m: [23, 24],
     wind_speed_1000hPa: [14, 15],
     wind_direction_1000hPa: [195, 200],
     geopotential_height_1000hPa: [110, 112],

@@ -172,8 +172,9 @@ export const DZ_ON_RADAR_IMAGE = radarImageFraction(
 /** Jump-run / drift altitudes (ft AGL) shown in the winds-aloft panel —
  *  surface, 500 ft, then 1,000-ft steps to 13,000 ft (covers C-182 exit
  *  altitudes). The 500 ft row is the landing pattern's altitude, and it is
- *  bracketed by real samples: here the 975 hPa level sits near 250 ft AGL
- *  and 950 hPa near 960 ft, so the row is interpolated, not extrapolated. */
+ *  bracketed by real samples: Open-Meteo's 120 and 180 m winds
+ *  (OPEN_METEO_HEIGHT_LEVELS_M), with 975 hPa among them on some days, so the
+ *  row is interpolated, not extrapolated. */
 export const WINDS_ALOFT_LEVELS_AGL: readonly number[] = [
   0,
   500,

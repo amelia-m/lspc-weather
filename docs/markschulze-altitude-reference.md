@@ -262,24 +262,34 @@ nearest above (or, with none below, the two lowest), draw a straight line
 through them in speed and in direction (the shorter way round), and read it
 at 0 ft. It should give `groundDir` exactly and `groundSpd` within 1 kt.
 
-## Below the lowest pressure level: the canopy-layer heights (2026-10-08)
+## Below the lowest pressure levels: the canopy-layer heights (2026-10-08)
 
 Since 2026-10-08 the app also asks Open-Meteo for its winds at 80, 120 and
 180 m above the model's ground (`OPEN_METEO_HEIGHT_LEVELS_M` in
-`src/domain/normalize.ts`). At NE69 the lowest pressure level above ground is
-950 hPa, about 730 ft up (975 hPa is within a few metres of the model's
-surface), so before this the table drew a straight line from the 10 m wind to
-950 hPa through the canopy layer. Over the 48 hours from 2026-10-08 01Z,
-Open-Meteo's own 80, 120 and 180 m winds differed from that line by a median
-of 2.6, 2.3 and 1.2 kt, and by up to 7.0, 5.4 and 8.6 kt. They are the same
-forecast, not a measurement; 80 m is a native HRRR and GFS output, and which
-model levels Open-Meteo builds 120 and 180 m from has not been confirmed.
+`src/domain/normalize.ts`). Where the lowest pressure levels sit depends on the
+day's pressure: at NE69 over the 92 days to 2026-10-08, 975 hPa ran from below
+ground to about 290 ft up and 950 hPa from about 400 to 1,000 ft, and to
+1,200 ft in the winter highs of Jan–Feb 2026. Before this the table drew a
+straight line from the 10 m wind to the first level above ground through the
+canopy layer. Over the 48 hours from 2026-10-08 01Z, Open-Meteo's own 80, 120
+and 180 m winds differed from that line by a median of 2.6, 2.3 and 1.2 kt,
+and by up to 7.0, 5.4 and 8.6 kt. They are the same forecast, not a
+measurement; 80 m is a native HRRR and GFS output, and which model levels
+Open-Meteo builds 120 and 180 m from has not been confirmed.
 
-Schulze's tool samples pressure levels only, and his table has no 500 ft row,
-so the comparison never covered the one row of this table the new heights
-decide (no run in `data/parity/logs-to-2026-10-05.jsonl.gz` has one). The rows
-it compares are built from the same pressure levels as before, from 1,000 ft
-up. The Surface row moves by a fraction of a knot at most: it lies about 4 ft
-above the 10 m sample here, and is now interpolated toward the 80 m wind
-rather than toward 950 hPa. Run the same day at 02Z, after the change: Surface
-4° and 1 kt apart, every row from 1,000 ft up within 1° and 1 kt.
+Schulze's tool samples pressure levels only. What that does to the comparison:
+
+- The 500 ft row is the one the heights normally decide, and his table has no
+  500 ft row (no run in `data/parity/logs-to-2026-10-05.jsonl.gz` has one).
+- The Surface row is now interpolated from the 10 m sample toward the 80 m
+  wind rather than toward the first pressure level; it sits a few feet above
+  the 10 m sample here, so it moves by a fraction of a knot.
+- On hours when 950 hPa is above 1,000 ft (134 of 1,416 hours in Jan–Feb
+  2026, from Open-Meteo's historical forecast), the 1,000 ft row lies between
+  the 180 m wind and 950 hPa rather than between two pressure levels, and can
+  differ from his for that reason.
+- The run-matching check (`rawMismatch`) pairs his raw levels with this app's
+  pressure levels only, so the new heights cannot trip it.
+
+Run live the same day at 02Z, after the change: Surface 4° and 1 kt apart,
+every row from 1,000 ft up within 1° and 1 kt.

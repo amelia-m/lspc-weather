@@ -71,3 +71,44 @@ describe('the canopy-layer heights', () => {
     expect(at(r as unknown as RawOpenMeteo, 500).speedKt).toBe(15);
   });
 });
+
+/* NE69 as it is: the field 37 ft above Open-Meteo's ground, and on some days
+ * 975 hPa between the 80 and 120 m heights. The heights go on the 10 m
+ * sample's datum (the model's ground), the pressure level at its own
+ * geopotential height, and the profile is read in height order. */
+describe('the canopy-layer heights at the real field offset, with a pressure level among them', () => {
+  const field = mToFt(ELEV_M) + 37;
+  const r = {
+    elevation: ELEV_M,
+    hourly: {
+      time: ['2026-10-08T12:00'],
+      wind_speed_10m: [4],
+      wind_direction_10m: [180],
+      temperature_2m: [10],
+      wind_speed_80m: [10],
+      wind_direction_80m: [190],
+      wind_speed_120m: [20],
+      wind_direction_120m: [210],
+      wind_speed_180m: [24],
+      wind_direction_180m: [220],
+      // 975 hPa 100 m above the model's ground: between 80 and 120 m.
+      wind_speed_975hPa: [16],
+      wind_direction_975hPa: [200],
+      geopotential_height_975hPa: [ELEV_M + 100],
+    },
+  } as unknown as RawOpenMeteo;
+  const samples = normalizeOpenMeteo(r, Date.parse('2026-10-08T12:00Z')).samples;
+  const row = (agl: number) => interpolateWindsAloft(samples, field, [agl])[0];
+
+  it('places the heights on the model ground and reads the profile in height order', () => {
+    // 80 m, 975 hPa (100 m), 120 m: ascending, whatever order they were added.
+    const heights = samples.map((x) => x.heightFtMsl).sort((a, b) => a - b);
+    expect(heights).toEqual([10, 80, 100, 120, 180].map((h) => mToFt(ELEV_M + h)));
+    // 300 ft above the field = 102.7 m above the model's ground: just above
+    // 975 hPa (16 kt) toward 120 m (20 kt), 17 kt. On the 80 m → 120 m line,
+    // as if 975 hPa were missing or misplaced, it would be 16.
+    expect(row(300).speedKt).toBe(17);
+    // 500 ft above the field = 163.7 m: 120 m (20 kt) toward 180 m (24 kt).
+    expect(row(500).speedKt).toBe(23);
+  });
+});
