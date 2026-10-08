@@ -36,6 +36,37 @@ describe('SunArc', () => {
     expect(html).toContain('aria-label="Night: 3h 0m since sunset, 9h 0m to sunrise."');
   });
 
+  /* The elapsed line ran to the marker's centre and showed through the
+   * crescent's bite; both lines now stop a gap short of the marker. Checked
+   * along each drawn arc, not only at its ends, since a line's middle can pass
+   * under the marker too. */
+  it('keeps both lines clear of the marker, by night and by day', () => {
+    const near = (html: string) => {
+      const [mx, my] = html.match(/translate\(([\d.]+) ([\d.]+)\)/)!.slice(1).map(Number);
+      const arcs = [...html.matchAll(/class="sun-arc-(?:track|done)[^"]*" d="M ([\d.]+) ([\d.]+) A 88 88 0 0 1 ([\d.]+) ([\d.]+)"/g)];
+      const angle = (x: number, y: number) => Math.atan2(108 - y, x - 150);
+      let closest = Infinity;
+      for (const m of arcs) {
+        const [x1, y1, x2, y2] = m.slice(1).map(Number);
+        const [a1, a2] = [angle(x1, y1), angle(x2, y2)];
+        for (let i = 0; i <= 200; i++) {
+          const a = a1 + ((a2 - a1) * i) / 200;
+          closest = Math.min(closest, Math.hypot(150 + 88 * Math.cos(a) - mx, 108 - 88 * Math.sin(a) - my));
+        }
+      }
+      return { closest, arcs: arcs.length };
+    };
+    for (const f of [0.25, 0.5, 0.75]) {
+      const night = near(arc({ phase: 'night', startMs: now - HOUR, endMs: now + HOUR, fraction: f }));
+      expect(night.arcs).toBe(2);
+      expect(night.closest).toBeGreaterThan(9); // the moon's disc
+      const day = near(arc({ phase: 'day', startMs: now - HOUR, endMs: now + HOUR, fraction: f }));
+      expect(day.closest).toBeGreaterThan(16); // the sun's rays
+    }
+    // At an end there is no room on that side, and that line is not drawn.
+    expect(near(arc({ phase: 'night', startMs: now, endMs: now + HOUR, fraction: 0 })).arcs).toBe(1);
+  });
+
   it('keeps the marker on the arc if the fraction strays past an end', () => {
     expect(arc({ phase: 'day', startMs: now, endMs: now + HOUR, fraction: 1.2 })).toContain(
       'transform="translate(238.0 108.0)"',
