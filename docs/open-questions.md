@@ -62,6 +62,34 @@ without GitHub, but then two copies to keep the same; a test could compare
 them). Either way the link should say the photo is undated, as the
 citation's note does.
 
+## To do: look into Open-Meteo's cloud cover
+
+Asked for 2026-10-08. Open-Meteo serves cloud cover as a percentage three
+ways: total, low/mid/high bands (`cloud_cover_low` and so on), and per
+pressure level (`cloud_cover_850hPa` and so on). None of them gives a cloud
+base height, and on the day it was looked at every pressure level read 0%
+with only high cloud forecast, so there was nothing to compare.
+
+What the dashboard reads the sky from today:
+
+- **Now:** the KPMV METAR (Plattsmouth, about 12 mi ENE), from IEM first and
+  api.weather.gov second, its sky groups parsed from the METAR text
+  (`normalizeIemCurrent`, `normalizeNwsObservation`). This is the observed
+  report: layer amounts and measured bases.
+- **Forecast hours:** the NWS gridpoint forecast for the drop zone's own grid
+  cell (`skyCover`, a percentage, and its derived ceiling), on the Ceiling &
+  sky card and the hourly detail of the 10-day outlook.
+- **10-day outlook:** Open-Meteo's daily weather code (its own reading of its
+  model), or on the fallback the day's mean NWS gridpoint cover.
+
+Questions to settle before adding any of it: what a per-level cloud
+percentage means against an exit altitude and 14 CFR 105.17's cloud
+clearances (it is a model's cloud fraction in a layer, not a base); whether
+it agrees with the METAR often enough to be worth a second sky figure on
+the page; and how it would be shown without reading as a ceiling. A
+comparison logged over a few weeks of real cloud (METAR bases against the
+level where Open-Meteo's cover first rises) would answer the second.
+
 ## To do, eventually: add this app to Open-Meteo's list of users
 
 Raised 2026-10-08. Open-Meteo's README
