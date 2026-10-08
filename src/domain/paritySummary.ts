@@ -51,8 +51,11 @@ export interface SchulzeRecord {
   /** Whether the two raw profiles disagree at a shared level — the stale-run
    *  signal. null when it could not be judged. */
   rawMismatch?: boolean | null;
-  /** The two ground rows: ours (Open-Meteo 10 m) in kt and km/h, his `groundSpd`. */
-  ground?: { ourKt: number | null; theirKt: number | null };
+  /** The two ground rows: ours as Open-Meteo's 10 m wind to a tenth of a
+   *  knot (`ourKt`) and, from 2026-10-08, as the card's Surface row shows it,
+   *  whole knots (`ourShownKt`); his `groundSpd`, whole knots. The summary
+   *  compares whole knots (`groundKt`). */
+  ground?: { ourKt: number | null; ourShownKt?: number | null; theirKt: number | null };
 }
 
 /** One run of the usairnet comparison. */
@@ -516,6 +519,25 @@ const localHour = (ms: number): number =>
   );
 
 /**
+ * The two ground rows as each page shows them: whole knots. Schulze's API
+ * serves its ground speed in whole knots, and this dashboard's card prints
+ * its Surface row in whole knots too. Comparing anything finer set every run
+ * up to half a knot apart before either forecast said anything.
+ *
+ * Since 2026-10-08 the log carries the card's own Surface row (`ourShownKt`),
+ * which is used as it is. Records before that carry only the 10 m wind to a
+ * tenth (`ourKt`), rounded here; that is a second rounding, and the card's
+ * row is interpolated a few feet above the 10 m sample, so about one old run
+ * in twenty is a knot off what the card showed. Null where either side is
+ * missing.
+ */
+function groundKt(r: SchulzeRecord): { ours: number; theirs: number } | null {
+  const ours = r.ground?.ourShownKt ?? (r.ground?.ourKt != null ? Math.round(r.ground.ourKt) : null);
+  const theirs = r.ground?.theirKt;
+  return ours == null || theirs == null ? null : { ours, theirs };
+}
+
+/**
  * The two ground rows by the local time of the hour they forecast, in
  * three-hour blocks. The two rows are different heights (this dashboard's
  * the model's 10 m wind, Schulze's a line through the pressure levels read
@@ -525,21 +547,6 @@ const localHour = (ms: number): number =>
  * moving layer above. The Winds aloft card says so; this is the count that
  * shows whether the logs bear it out.
  */
-/**
- * The two ground rows as each page shows them: whole knots. Schulze's API
- * serves its ground speed in whole knots, and this dashboard's card prints
- * its Surface row in whole knots too, but the log keeps this dashboard's to
- * a tenth (`ourKt`). Comparing a tenth with a whole knot set every run up to
- * half a knot apart before either forecast said anything, so this side is
- * rounded here, at the summary, which also corrects records logged before
- * it was; the log keeps the tenth. Null where either side is missing.
- */
-function groundKt(r: SchulzeRecord): { ours: number; theirs: number } | null {
-  const ours = r.ground?.ourKt;
-  const theirs = r.ground?.theirKt;
-  return ours == null || theirs == null ? null : { ours: Math.round(ours), theirs };
-}
-
 export function groundByLocalHour(records: readonly SchulzeRecord[]): GroundBand[] {
   const bands = Array.from({ length: 8 }, () => ({ ours: [] as number[], theirs: [] as number[], gaps: [] as number[] }));
   for (const r of records) {

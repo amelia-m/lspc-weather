@@ -498,7 +498,12 @@ describe('the ground row compared at whole knots', () => {
   const run = (at: string, ourKt: number, theirKt: number) =>
     ({ kind: 'schulze', at, aligned: { rows: [] }, ground: { ourKt, theirKt } }) as never;
 
-  it('rounds this side before taking medians, gaps and ratios', () => {
+  it('uses the card’s own Surface row where the record carries it', () => {
+    const r = { kind: 'schulze', at: '2026-10-08T18:00:00Z', aligned: { rows: [] }, ground: { ourKt: 4.5, ourShownKt: 4, theirKt: 6 } } as never;
+    expect(summarizeParity([r], Date.parse('2026-10-09T00:00:00Z')).schulze.ground.medianOurKt).toBe(4);
+  });
+
+  it('rounds the logged 10 m wind on older records, before taking medians, gaps and ratios', () => {
     const s = summarizeParity([run('2026-10-03T18:00:00Z', 4.6, 5), run('2026-10-03T18:30:00Z', 4.6, 5)], Date.parse('2026-10-09T00:00:00Z')).schulze;
     expect(s.ground.medianOurKt).toBe(5);
     expect(s.ground.medianRatio).toBe(1);

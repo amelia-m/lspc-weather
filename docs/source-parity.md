@@ -304,6 +304,11 @@ question in `docs/open-questions.md`.
   contributed rows and the pooled `dir` and `spd` spreads from 1,000 ft up.
   A same-hour run whose raw profiles could not be judged is in neither
   same-hour group. Absent in summaries written before 2026-09-26.
+- `schulze.ground` and the two breakdowns below compare the ground rows in
+  whole knots, as both pages show them (`groundKt`): the card's Surface row
+  where the record carries it (`ourShownKt`, from 2026-10-08), the logged
+  10 m wind rounded where it does not. Summaries written before 2026-10-08
+  compared a tenth on this side with whole knots on his.
 - `schulze.ground.medianRatio`: Schulze's ground speed over ours in knots.
   It runs near 1.2, not the 1.85 a km/h value read as knots would give; the
   difference is the two rows' heights (`docs/markschulze-altitude-reference.md`).

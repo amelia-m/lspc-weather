@@ -111,7 +111,8 @@ retired" on the page and works as before until that is decided.
 What retiring it would touch: `SettingsPanel`, the overrides App keeps and
 persists (`withOverrides`, `isEdited`, `published`), and every place that
 says a figure was "edited in Settings" (the Surface wind card, the advisory
-list, the hourly chart's limit-line note), each of which would then lose a
+list, the hourly chart's limit-line note and the "(edited)" beside each limit
+in its legend), each of which would then lose a
 branch. The visibility caution is editable too, for every profile; it would
 go with the rest.
 
