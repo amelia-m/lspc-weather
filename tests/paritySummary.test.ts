@@ -502,9 +502,9 @@ describe('the ground row compared at whole knots', () => {
     const s = summarizeParity([run('2026-10-03T18:00:00Z', 4.6, 5), run('2026-10-03T18:30:00Z', 4.6, 5)], Date.parse('2026-10-09T00:00:00Z')).schulze;
     expect(s.ground.medianOurKt).toBe(5);
     expect(s.ground.medianRatio).toBe(1);
-    const band = s.groundByLocalHour.find((b) => b.runs > 0)!;
+    const band = s.groundByLocalHour!.find((b) => b.runs > 0)!;
     expect(band.medianOurKt).toBe(5);
     expect(band.medianGapKt).toBe(0);
-    expect(s.groundByLocalDay[0].medianGapKt).toBe(0);
+    expect(s.groundByLocalDay![0].medianGapKt).toBe(0);
   });
 });

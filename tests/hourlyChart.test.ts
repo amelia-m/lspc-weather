@@ -200,17 +200,24 @@ describe('HourlyChart limit lines', () => {
   const legend = (t: ReturnType<typeof resolveThresholds>): string =>
     renderToStaticMarkup(createElement(HourlyLegend, { unit: 'mph', limits: t, profile: 'P' }));
 
-  it('draws the BSR student maximum and no gust ceiling', () => {
+  const text = (html: string): string => html.replace(/<!-- -->/g, '');
+
+  it('draws the BSR student maximum and no gust ceiling, its figure in the legend', () => {
     const html = chart('student');
     expect(html).toContain('class="hc-limit hc-limit-wind"');
-    expect(html).toContain('limit 14 mph');
     expect(html).not.toContain('hc-limit-gust');
+    expect(text(legend(resolveThresholds('student')))).toContain('wind limit 14 mph');
   });
 
-  it('draws a waiver tier’s wind limit and its gust ceiling, as posted', () => {
-    const html = chart('waiver:0-5');
-    expect(html).toContain('limit 15 mph');
-    expect(html).toContain('gust ceiling 16 mph');
+  it('draws a waiver tier’s wind limit and its gust ceiling, the figures as posted in the legend', () => {
+    expect(chart('waiver:0-5')).toContain('hc-limit-gust');
+    const key = text(legend(resolveThresholds('waiver:0-5')));
+    expect(key).toContain('wind limit 15 mph');
+    expect(key).toContain('gust ceiling 16 mph');
+  });
+
+  it('prints no figure on the plot itself', () => {
+    expect(chart('waiver:0-5')).not.toMatch(/<text[^>]*>[^<]*(limit|ceiling)/);
   });
 
   it('places the line at the limit on the speed axis', () => {
@@ -246,11 +253,11 @@ describe('HourlyChart limit lines', () => {
     expect(legend(resolveThresholds('licensed'))).not.toContain('Limit lines');
   });
 
-  it('marks an edited figure on the line itself', () => {
+  it('marks an edited figure beside it in the legend', () => {
     const t = withOverrides(resolveThresholds('waiver:0-5'), { gustCautionKt: 20 });
-    const html = renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt', limits: t })).replace(/<!-- -->/g, '');
-    expect(html).toContain('gust ceiling 20 kt (edited)');
-    expect(html).toMatch(/limit 13 kt<\/text>/);
+    const key = text(renderToStaticMarkup(createElement(HourlyLegend, { unit: 'kt', limits: t, profile: 'P' })));
+    expect(key).toContain('gust ceiling 20 kt (edited)');
+    expect(key).toMatch(/wind limit 13 kt<\/span>/);
   });
 
   it('names the BSR round-reserve figure the student line is not', () => {
@@ -263,21 +270,20 @@ describe('HourlyChart limit lines', () => {
     expect(legend(resolveThresholds('waiver:0-5'))).not.toContain('round reserves');
   });
 
-  it('keeps the top limit line and its label clear of the top gridline', () => {
+  it('keeps the top limit line below the top gridline', () => {
     // The 21+ tier's gust ceiling is 20 mph, the axis floor.
     const html = renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'mph', limits: resolveThresholds('waiver:21+') }));
     const plotTop = Math.min(...[...html.matchAll(/<line class="hc-grid" x1="[\d.]+" y1="([\d.]+)"/g)].map((m) => Number(m[1])));
     const y = Number(/<g class="hc-limit hc-limit-gust"><line x1="[\d.]+" y1="([\d.]+)"/.exec(html)![1]);
-    expect(y - 2.5 - 8).toBeGreaterThan(plotTop);
+    expect(y - plotTop).toBeGreaterThanOrEqual(4);
   });
 
-  it('keeps an edited limit just under the axis top clear of it too', () => {
-    // 19 kt on a 20 kt axis: a fixed one-unit margin would leave the label
-    // over the top gridline, in the sun and moon's margin.
-    const t = withOverrides(resolveThresholds('waiver:0-5'), { gustCautionKt: 19 });
+  it('stretches the axis over an edited limit at the axis top', () => {
+    // 20 kt on what would be a 20 kt axis.
+    const t = withOverrides(resolveThresholds('waiver:0-5'), { gustCautionKt: 20 });
     const html = renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt', limits: t }));
     const plotTop = Math.min(...[...html.matchAll(/<line class="hc-grid" x1="[\d.]+" y1="([\d.]+)"/g)].map((m) => Number(m[1])));
     const y = Number(/<g class="hc-limit hc-limit-gust"><line x1="[\d.]+" y1="([\d.]+)"/.exec(html)![1]);
-    expect(y - 2.5 - 8).toBeGreaterThanOrEqual(plotTop);
+    expect(y - plotTop).toBeGreaterThanOrEqual(4);
   });
 });

@@ -49,14 +49,12 @@ export function HourlyChart({
     ...speeds.filter((v): v is number => v != null),
     ...gusts.filter((v): v is number => v != null),
   );
-  // Room above each limit line for its label, below the top gridline and so
-  // clear of the sun and moon in the margin: the 21+ tier's 20 mph gust
-  // ceiling would otherwise sit on the 20 mph top line, and a figure edited
-  // in Settings can be anywhere. Measured in chart units, since a fixed
-  // speed margin shrinks as the axis grows.
+  // Every limit line clearly below the top gridline, where it would hide:
+  // the 21+ tier's 20 mph gust ceiling (17.4 kt, 19.99… mph converted back)
+  // lands on a 20 mph axis top, and a figure edited in Settings can be
+  // anywhere. Measured in chart units, so it holds on any axis.
   let maxKt = Math.ceil(peak / 5) * 5;
-  const labelTop = (kt: number): number => padT + (1 - toSpeed(kt, unit) / maxKt) * plotH - LIMIT_LABEL_RISE - 8;
-  while (lines.some((l) => labelTop(l.kt) < padT)) maxKt += 5;
+  while (lines.some((l) => (1 - toSpeed(l.kt, unit) / maxKt) * plotH < MIN_LIMIT_GAP)) maxKt += 5;
 
   const n = points.length;
   const xOf = (i: number): number => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
@@ -190,7 +188,8 @@ export function HourlyChart({
           so), under the forecast lines so those
           stay readable where they cross. The same colours as the Surface
           wind card's bands; dotted, so neither is taken for the dashed gust
-          line. */}
+          line. Their figures are in the legend, not on the plot, where a
+          label would sit in the way of the forecast it is read against. */}
       {lines.map((l) => {
         const y = yOf(toSpeed(l.kt, unit));
         return (
@@ -204,25 +203,6 @@ export function HourlyChart({
       <path className="hc-gust" d={path(gusts)} fill="none" />
       <path className="hc-wind" d={path(speeds)} fill="none" />
 
-      {/* The limits' labels, over the forecast lines with a halo in the
-          panel's colour, so a line crossing one cannot strike it out. At
-          opposite ends: the waiver's wind and gust figures are one or two
-          mph apart and would print over each other. */}
-      {lines.map((l) => (
-        <text
-          key={l.kind}
-          className={`hc-limit-label hc-limit-label-${l.kind}`}
-          x={l.kind === 'wind' ? padL + 2 : W - padR - 2}
-          y={yOf(toSpeed(l.kt, unit)) - LIMIT_LABEL_RISE}
-          textAnchor={l.kind === 'wind' ? 'start' : 'end'}
-        >
-          {l.kind === 'wind' ? 'limit' : 'gust ceiling'} {fmtLimitSpeed(l.kt, unit)}
-          {/* A figure the reader edited is not the source's: said on the
-              line itself, so a crop of the chart cannot pass it off. */}
-          {l.edited ? ' (edited)' : ''}
-        </text>
-      ))}
-
       {/* x labels */}
       {points.map((p, i) =>
         i % labelEvery === 0 ? (
@@ -235,9 +215,9 @@ export function HourlyChart({
   );
 }
 
-/** How far a limit's label baseline sits above its line; the label's 8px
- *  glyphs rise above that. */
-const LIMIT_LABEL_RISE = 2.5;
+/** The least gap, in chart units, between a limit line and the top
+ *  gridline: enough to see the dotted line apart from the solid one. */
+const MIN_LIMIT_GAP = 4;
 
 /** Where the sun and moon sit: the middle of the chart's top margin. */
 const ICON_Y = 11;
@@ -288,7 +268,11 @@ export function HourlyLegend({
         ))}
         {lines.map((l) => (
           <span key={l.kind} className="hc-legend-item">
-            <span className={`hc-key hc-key-limit-${l.kind}`} /> {l.kind === 'wind' ? 'wind limit' : 'gust ceiling'}
+            <span className={`hc-key hc-key-limit-${l.kind}`} /> {l.kind === 'wind' ? 'wind limit' : 'gust ceiling'}{' '}
+            {fmtLimitSpeed(l.kt, unit)}
+            {/* A figure the reader edited is not the source's: said beside
+                the figure, not only in the note under it. */}
+            {l.edited ? ' (edited)' : ''}
           </span>
         ))}
       </p>
