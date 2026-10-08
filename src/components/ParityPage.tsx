@@ -420,7 +420,8 @@ function GroundSection({
       <h4 className="cite-found-head">The ground row</h4>
       <p className="muted small">
         The two Surface rows are different heights. This dashboard&rsquo;s is the model&rsquo;s
-        wind at 10&nbsp;m (33&nbsp;ft). Schulze&rsquo;s is a straight line through the model&rsquo;s
+        wind at 10&nbsp;m (33&nbsp;ft), read at the field&rsquo;s elevation and in whole knots as
+        the card shows it. Schulze&rsquo;s is a straight line through the model&rsquo;s
         pressure levels read at 0&nbsp;ft: at this drop zone, between a level the model places below
         the ground and the next one up; where no level is below ground, the two lowest extended
         down. That rule matched Schulze&rsquo;s Surface row in 72 of 72 hours at four sites on Oct 3 (written

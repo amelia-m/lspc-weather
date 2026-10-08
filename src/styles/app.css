@@ -1051,9 +1051,10 @@ a {
 .hc-precip {
   fill: var(--hc-precip);
 }
-/* A profile's published limits on the hourly chart, in the Surface wind
-   card's band colours (.band-caution, .band-gust). Dotted, so neither reads
-   as the dashed gust forecast line. */
+/* A profile's limits on the hourly chart, in the Surface wind card's band
+   colours (.band-caution, .band-gust). The wind limit dotted, the gust
+   ceiling dot-dot: neither has the dashes of the gust forecast line, and
+   the two differ by more than colour. */
 .hc-limit line {
   stroke-width: 1;
   stroke-dasharray: 1 2;
@@ -1063,8 +1064,7 @@ a {
 }
 .hc-limit-gust line {
   stroke: var(--gust-ceiling);
-  /* Dash-dot, so the two limit lines differ by more than colour. */
-  stroke-dasharray: 4 2 1 2;
+  stroke-dasharray: 1 1.5 1 4;
 }
 .hc-wind {
   stroke: var(--accent);
@@ -1114,10 +1114,10 @@ a {
 .hc-key-limit-gust {
   background: repeating-linear-gradient(
     90deg,
-    var(--gust-ceiling) 0 4px,
-    transparent 4px 6px,
-    var(--gust-ceiling) 6px 7px,
-    transparent 7px 9px
+    var(--gust-ceiling) 0 1px,
+    transparent 1px 2.5px,
+    var(--gust-ceiling) 2.5px 3.5px,
+    transparent 3.5px 7.5px
   );
 }
 .hc-key-night {

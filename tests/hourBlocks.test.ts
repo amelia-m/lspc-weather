@@ -23,6 +23,11 @@ describe('hourBlocks', () => {
     expect(hourBlocks(pts([null, 20, null, null, null, null]), 3, (p) => p.v).map((b) => b.max)).toEqual([20, null]);
   });
 
+  it('refuses a block size that is not a whole number of hours', () => {
+    expect(() => hourBlocks(pts([1]), 0, (p) => p.v)).toThrow(RangeError);
+    expect(() => hourBlocks(pts([1]), 1.5, (p) => p.v)).toThrow(RangeError);
+  });
+
   it('gives nothing for no points', () => {
     expect(hourBlocks([], 3, () => 1)).toEqual([]);
   });
