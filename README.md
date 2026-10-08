@@ -75,8 +75,8 @@ the published figures rather than Settings edits.
   day for its hourly detail.
 - ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
-  6 h, forecast rain amount, and a precip-probability timeline in 3-hour blocks
-  (the highest hour in each), with each hour on request.
+  6 h, forecast rain amount, and an hourly precip-probability timeline (narrow
+  bars, a time under every third hour).
 - 📡 **Radar** — KOAX (Omaha) loop with a link to the interactive viewer.
 - 🛬 **Nearby METARs** (Pilots tab) — the latest report at KPMV, Offutt,
   Eppley, Millard, Lincoln and Nebraska City, nearest first: distance and
