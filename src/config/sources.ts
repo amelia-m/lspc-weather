@@ -50,7 +50,7 @@ export const DATA_SOURCES = {
     label: 'NWS forecast · NOAA',
     url: `https://forecast.weather.gov/MapClick.php?lat=${SITE.dz.lat}&lon=${SITE.dz.lon}`,
   },
-  /** Winds aloft (pressure-level winds), the drift estimate worked from
+  /** Winds aloft (10 to 180 m and pressure-level winds), the drift estimate worked from
    *  them, and the 10-day outlook's day rows. Its terms
    *  (open-meteo.com/en/licence, read 2026-10-08) put the data under CC BY
    *  4.0: credit, a link to the licence, a note of what was changed, and a

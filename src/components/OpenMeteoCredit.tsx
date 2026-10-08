@@ -22,7 +22,7 @@ export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' }): JS
     return (
       <>
         {credit}: this dashboard&rsquo;s winds aloft and any other Open-Meteo figure this page
-        quotes. The dashboard interpolates its pressure-level and 10 m winds to heights above the
+        quotes. The dashboard interpolates its 10 to 180&nbsp;m and pressure-level winds to heights above the
         drop zone, Surface row included.
       </>
     );
@@ -31,7 +31,7 @@ export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' }): JS
     <>
       {credit}: the winds aloft, the drift estimate and the 10-day outlook&rsquo;s day rows, unless
       it is unreachable, when those cards name the fallback that answered, if one did. This dashboard reworks it: winds and
-      temperatures interpolated from pressure levels to heights above the drop zone, a drift
+      temperatures interpolated from fixed heights and pressure levels to heights above the drop zone, a drift
       estimate worked from those winds, and the day rows&rsquo; weather codes grouped into its own
       labels.
     </>

@@ -175,7 +175,10 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
 
   // Raw profiles at a shared height: the stale-run signal. Pair each of his
   // raw levels with our nearest raw sample within 150 ft; a pair more than 5°
-  // or 2 kt apart means the two were served different forecasts.
+  // or 2 kt apart means the two were served different forecasts. His raw
+  // levels are pressure levels, so only ours are candidates: a fixed-height
+  // wind (80/120/180 m) or the 10 m wind near one of his would be a
+  // different quantity, and pairing it would read as a mismatch.
   let rawMismatch: boolean | null = null;
   {
     let pairs = 0;
@@ -183,6 +186,7 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     for (const a of ms.altFtRaw) {
       if (a < 0 || a > 14_000) continue;
       const mine = samples
+        .filter((x) => !x.isSurface && x.fixedHeightM == null)
         .map((x) => ({ x, d: Math.abs(x.heightFtMsl - dz.elevationFt - a) }))
         .filter((p) => p.d <= 150)
         .sort((p, q) => p.d - q.d)[0];

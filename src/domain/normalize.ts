@@ -644,19 +644,31 @@ export const OPEN_METEO_PRESSURE_LEVELS = [
 
 /**
  * The fixed heights above the model's ground, in metres, sampled between the
- * 10 m wind and the lowest pressure level: the canopy layer.
+ * 10 m wind and the lowest pressure levels: the canopy layer.
  *
- * At NE69 the lowest pressure level above ground is 950 hPa, about 730 ft up
- * (975 hPa sits within a few metres of the model's surface), so without these
- * the table drew a straight line from the 10 m wind to 950 hPa through the
- * whole canopy descent and pattern. Read 2026-10-08 over the next 48 hours,
- * Open-Meteo's own 80, 120 and 180 m winds differed from that line by a median
- * of 1 to 3 kt and up to 9 kt. They are the same forecast (Open-Meteo's
- * `best_match`), not a measurement. Which model levels Open-Meteo builds the
- * 120 and 180 m values from has not been confirmed; 80 m is a native HRRR and
- * GFS output. Mark Schulze's tool samples pressure levels only; they decide
- * this table's 500 ft row, which his does not have, so the comparison with
- * it is unaffected (docs/markschulze-altitude-reference.md).
+ * Where the lowest pressure levels sit depends on the day's pressure: at NE69
+ * over the 92 days to 2026-10-08, 975 hPa ran from below ground to about
+ * 290 ft up and 950 hPa from about 400 to 1,000 ft (1,200 ft in winter highs).
+ * Without these heights the table drew a straight line from the 10 m wind to
+ * the first level above ground through the canopy descent and pattern. Read
+ * 2026-10-08 over the next 48 hours, Open-Meteo's own 80, 120 and 180 m
+ * winds differed from that line by a median of 1 to 3 kt and up to 9 kt.
+ * They are the same forecast (Open-Meteo's `best_match`), not a measurement.
+ * Which model levels Open-Meteo builds the 120 and 180 m values from has not
+ * been confirmed; 80 m is a native HRRR and GFS output.
+ *
+ * They are placed at Open-Meteo's `elevation` + h, the datum the 10 m sample
+ * already uses. That field is the elevation Open-Meteo downscales to, which
+ * need not equal the model grid's terrain height, while pressure levels are
+ * placed by their own geopotential height; where a pressure level falls among
+ * these heights, a difference between the two would shift them against each
+ * other by that much. Not measured here.
+ *
+ * Mark Schulze's tool samples pressure levels only. These decide this table's
+ * 500 ft row, which his does not have, and move its Surface row by a fraction
+ * of a knot; on hours when 950 hPa is above 1,000 ft they decide the 1,000 ft
+ * row too, which the comparison does cover
+ * (docs/markschulze-altitude-reference.md).
  */
 export const OPEN_METEO_HEIGHT_LEVELS_M = [80, 120, 180] as const;
 
@@ -778,7 +790,13 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
       const spd = num(`wind_speed_${h}m`);
       const dir = num(`wind_direction_${h}m`);
       if (spd == null || dir == null) continue;
-      samples.push({ heightFtMsl: mToFt(elevM + h), speedKt: spd, directionDeg: dir, tempC: num(`temperature_${h}m`) });
+      samples.push({
+        heightFtMsl: mToFt(elevM + h),
+        speedKt: spd,
+        directionDeg: dir,
+        tempC: num(`temperature_${h}m`),
+        fixedHeightM: h,
+      });
     }
   }
 

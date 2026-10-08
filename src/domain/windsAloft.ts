@@ -28,6 +28,11 @@ export interface RawWindSample {
    * the case where it is reached would drop the Surface row entirely.
    */
   isSurface?: boolean;
+  /** Set on Open-Meteo's fixed-height winds (80, 120 and 180 m above its
+   *  ground, OPEN_METEO_HEIGHT_LEVELS_M), so a consumer that wants pressure
+   *  levels only (the Schulze comparison's raw-profile check) can leave them
+   *  out. The interpolation treats every sample alike. */
+  fixedHeightM?: number;
 }
 
 /**

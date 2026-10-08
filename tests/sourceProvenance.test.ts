@@ -22,7 +22,7 @@ describe('deriveProvenance', () => {
       dailySource: 'open-meteo',
       taf: { station: 'KOFF', raw: '', issuedMs: null, validRaw: null },
     });
-    expect(prov.windsAloft).toEqual({ detail: 'Open-Meteo pressure levels', fallback: false });
+    expect(prov.windsAloft).toEqual({ detail: 'Open-Meteo 10–180 m and pressure levels', fallback: false });
     expect(prov.daily).toEqual({ detail: 'Open-Meteo (10-day)', fallback: false });
     expect(prov.taf).toEqual({ detail: 'KOFF', fallback: false });
   });

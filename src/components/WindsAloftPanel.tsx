@@ -248,7 +248,7 @@ export function WindsAloftPanel({
                 Surface wind card.
               </>
             )}{' '}
-            Against Mark Schulze&rsquo;s tool: same data, altitudes AGL on both, but below about 700 ft
+            Against Mark Schulze&rsquo;s tool: same data, altitudes AGL on both, but near the ground
             this table also uses the model&rsquo;s 80, 120 and 180&nbsp;m winds, which his does not;
             and after half past his table is the hour before this one.
           </p>

@@ -114,7 +114,7 @@ describe('the Open-Meteo credit', () => {
     expect(html).toContain('>Weather data by Open-Meteo.com</a>');
     expect(html).toContain(LICENCE);
     expect(html).toContain('the winds aloft, the drift estimate and the 10-day outlook’s day rows');
-    expect(html).toContain('interpolated from pressure levels to heights above the drop zone');
+    expect(html).toContain('interpolated from fixed heights and pressure levels to heights above the drop zone');
     expect(html).toContain('weather codes grouped into its own labels');
     expect(html).toContain('unless it is unreachable, when those cards name the fallback that answered, if one did');
   });

@@ -140,8 +140,8 @@ export interface TafForecast {
   validRaw: string | null;
 }
 
-/** Where the winds-aloft levels came from: the pressure-level model
- *  (Open-Meteo) or the NOAA FD text-product fallback. */
+/** Where the winds-aloft levels came from: Open-Meteo (its 10 to 180 m
+ *  winds and pressure levels) or the NOAA FD text-product fallback. */
 export type WindsAloftSource = 'open-meteo' | 'nws-fd';
 
 /**
