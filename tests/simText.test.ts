@@ -46,6 +46,7 @@ describe('simPartText', () => {
     // part, and the nav's few words must not pass for it.
     const nav = (names: string[]): string =>
       PAGE.replace('<article>', `<article><nav>${names.map((n) => `<a class="anchoroffset" name="${n}"></a>`).join('')}</nav>`);
+    expect(simPartText(nav(['1G']), '1G', '1H')).toBeNull();
     expect(simPartText(nav(['1H']), '1G', '1H')).toBeNull();
     expect(simPartText(nav(['1G', '1H']), '1G', '1H')).toBeNull();
   });

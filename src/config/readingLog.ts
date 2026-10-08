@@ -57,23 +57,29 @@ interface Reading {
   how: string;
 }
 
-/** A section a citation links to. The page links the first citation's URL,
- *  so the address is written once, in thresholds.ts. */
+/** A section one or more citations link to. The page links the first
+ *  citation's URL, so the address is written once, in thresholds.ts. */
 export interface CitedReading extends Reading {
-  citations: CitationKey[];
-  quotedIn?: undefined;
+  kind: 'cited';
+  citations: [CitationKey, ...CitationKey[]];
+  /** Checklist entries that quote this part without citing it. */
+  quotedIn?: string[];
   simPart?: SimPart;
 }
 
 /** A SIM part no citation links to, quoted on #citations by the checklist
  *  entries named; the page links its own anchor. */
 export interface QuotedReading extends Reading {
-  citations: [];
-  quotedIn: string[];
+  kind: 'quoted';
+  quotedIn: [string, ...string[]];
   simPart: SimPart;
 }
 
 export type SourceReading = CitedReading | QuotedReading;
+
+/** The citations whose link lands on a reading; none for a part only
+ *  quoted. */
+export const citationsOf = (r: SourceReading): readonly CitationKey[] => (r.kind === 'cited' ? r.citations : []);
 
 const SIM_HOW =
   'the online SIM at uspa.org, the section page as served; every quote of it on this page checked against that text';
@@ -83,8 +89,8 @@ const SIM_HOW =
  *  prints them (3-1's parts are named, not lettered). */
 const sim = (
   p: SimPart & { title: string } & (
-      | { citations: CitationKey[]; quotedIn?: undefined }
-      | { citations?: undefined; quotedIn: string[] }
+      | { citations: [CitationKey, ...CitationKey[]]; quotedIn?: string[] }
+      | { citations?: undefined; quotedIn: [string, ...string[]] }
     ),
 ): SourceReading => {
   const common = {
@@ -94,7 +100,8 @@ const sim = (
     how: SIM_HOW,
     simPart: { section: p.section, anchor: p.anchor, until: p.until, sha256: p.sha256, chars: p.chars },
   };
-  return p.quotedIn ? { ...common, citations: [], quotedIn: p.quotedIn } : { ...common, citations: p.citations };
+  if (p.citations) return { ...common, kind: 'cited', citations: p.citations, ...(p.quotedIn ? { quotedIn: p.quotedIn } : {}) };
+  return { ...common, kind: 'quoted', quotedIn: p.quotedIn };
 };
 
 export const READING_LOG: SourceReading[] = [
@@ -239,6 +246,7 @@ export const READING_LOG: SourceReading[] = [
   }),
   // Everything else.
   {
+    kind: 'cited',
     section: '14 CFR 105.17, Flight visibility and clearance from cloud requirements',
     citations: ['far10517'],
     lastRead: '2026-09-23',
@@ -246,6 +254,7 @@ export const READING_LOG: SourceReading[] = [
     how: 'the eCFR API (api/versioner/v1/full/2026-09-21/title-14.xml); the linked page answers a script with a bot check',
   },
   {
+    kind: 'cited',
     section: '14 CFR 105.19, Parachute operations between sunset and sunrise',
     citations: ['far10519'],
     lastRead: '2026-09-23',
@@ -253,6 +262,7 @@ export const READING_LOG: SourceReading[] = [
     how: 'the eCFR API, as for 105.17',
   },
   {
+    kind: 'cited',
     section: 'FAA AIM 7-1-7, Categorical Outlooks',
     citations: ['aimFlightCategory'],
     lastRead: '2026-09-23',
@@ -260,6 +270,7 @@ export const READING_LOG: SourceReading[] = [
     how: 'the HTML AIM on faa.gov',
   },
   {
+    kind: 'cited',
     section: 'FAA-P-8740-2, Density Altitude',
     citations: ['faaDensityAltitude'],
     lastRead: '2026-09-23',
@@ -267,6 +278,7 @@ export const READING_LOG: SourceReading[] = [
     how: 'the linked PDF (8 pages)',
   },
   {
+    kind: 'cited',
     section: 'Performance Designs, Navigator Wing Loading Chart',
     citations: ['pdNavigator'],
     lastRead: null,
@@ -274,6 +286,7 @@ export const READING_LOG: SourceReading[] = [
     how: 'the maintainer’s transcription of the chart (text and a screenshot that agree); the page draws the chart by script, which did not open under automation',
   },
   {
+    kind: 'cited',
     section: 'Performance Designs, Wing Loading Chart Interpretation',
     citations: ['pdWingLoadingGuide'],
     lastRead: '2026-10-08',
@@ -281,6 +294,7 @@ export const READING_LOG: SourceReading[] = [
     how: 'the PDF as performancedesigns.com served it',
   },
   {
+    kind: 'cited',
     section: 'LSPC Waivered Wind Limits',
     citations: ['lspcWaiver'],
     lastRead: null,
