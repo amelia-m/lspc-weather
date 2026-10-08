@@ -70,7 +70,7 @@ export function SettingsPanel({
           })}
         </div>
         <button className="refresh-btn" onClick={onReset} disabled={!modified}>
-          Reset {label} to defaults
+          Reset to defaults ({label})
         </button>
       </div>
     </details>

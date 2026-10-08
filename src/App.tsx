@@ -59,6 +59,7 @@ const PROFILE_KEY = 'lspc:windProfile';
 /** The student choice last made (BSR or a waiver tier), so Licensed and back
  *  returns to it; see ProfileSelector. */
 const LAST_STUDENT_KEY = 'lspc:lastStudentProfile';
+const LAST_TIER_KEY = 'lspc:lastWaiverTier';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
 const UNIT_KEY = 'lspc:windUnit';
 
@@ -186,17 +187,30 @@ export default function App(): JSX.Element {
   useEffect(() => {
     safeLocalSet(PROFILE_KEY, profile);
   }, [profile]);
+  // The student choice and the waiver tier last made, so Licensed and back,
+  // or BSR and back to the waiver, returns to them (ProfileSelector). The
+  // profile itself is the truth when it is a student one.
   const [lastStudent, setLastStudent] = useState<WindProfileId>(() => {
+    if (profile !== 'licensed') return profile;
     const stored = toWindProfileId(safeLocalGet(LAST_STUDENT_KEY));
     return stored !== 'licensed' ? stored : 'student';
   });
-  // Follows the profile whenever it is a student one, however it was set.
-  useEffect(() => {
-    if (profile !== 'licensed') {
-      setLastStudent(profile);
-      safeLocalSet(LAST_STUDENT_KEY, profile);
+  const [lastTier, setLastTier] = useState<WindProfileId>(() => {
+    if (profile.startsWith('waiver')) return profile;
+    const stored = toWindProfileId(safeLocalGet(LAST_TIER_KEY));
+    return stored.startsWith('waiver') ? stored : WAIVER_TIERS[0].id;
+  });
+  const chooseProfile = (p: WindProfileId): void => {
+    setProfile(p);
+    if (p !== 'licensed') {
+      setLastStudent(p);
+      safeLocalSet(LAST_STUDENT_KEY, p);
     }
-  }, [profile]);
+    if (p.startsWith('waiver')) {
+      setLastTier(p);
+      safeLocalSet(LAST_TIER_KEY, p);
+    }
+  };
 
   const [overrides, setOverrides] = useState<Overrides>(() => {
     try {
@@ -333,7 +347,7 @@ export default function App(): JSX.Element {
             page-wide policy, not a display preference. They are a jumper's
             limits, so the Pilots tab shows neither (VIEW_USES_PROFILE). */}
         <div className="toggles">
-          {VIEW_USES_PROFILE[view] && <ProfileSelector profile={profile} lastStudent={lastStudent} onChange={setProfile} />}
+          {VIEW_USES_PROFILE[view] && <ProfileSelector profile={profile} lastStudent={lastStudent} lastTier={lastTier} onChange={chooseProfile} />}
           {/* Rendered outside a UnitToggleScope, so it names itself "Wind speed
               unit" — there is no card heading up here to borrow. */}
           <UnitToggle unit={unit} onChange={setUnit} />
