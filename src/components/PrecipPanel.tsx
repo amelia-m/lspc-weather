@@ -4,13 +4,7 @@ import { hourBlocks } from '../domain/hourBlocks';
 import { round } from '../domain/units';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
-import { fmtTime } from './format';
-import { SITE } from '../config/site';
-
-/** "10pm", the hourly chart's own short form: a block's two ends fit under
- *  its bar on a phone, where "10:00 PM–1:00 AM" wrapped to three lines. */
-const shortHour = (ms: number): string =>
-  new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', timeZone: SITE.timeZone }).replace(' ', '').toLowerCase();
+import { fmtShortHour, fmtTime } from './format';
 
 /** Hours per block in the collapsed view. */
 const BLOCK_HOURS = 3;
@@ -31,7 +25,9 @@ export function PrecipPanel({
   const [eachHour, setEachHour] = useState(initialEachHour);
   const now = Date.now();
   const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
-  const next6 = upcoming.filter((h) => h.time <= now + 6 * 3600_000);
+  // The first six hours shown: exactly the first two 3-hour blocks, so the
+  // figures above the bars and the bars themselves cover the same hours.
+  const next6 = upcoming.slice(0, 6);
   const maxOf = (pick: (h: HourlyPoint) => number | null): number | null =>
     next6.reduce<number | null>((m, h) => {
       const v = pick(h);
@@ -81,12 +77,10 @@ export function PrecipPanel({
         <>
           <div className="sky-scroll">
             <div className="sky-timeline">
-              {(eachHour
-                ? upcoming.map((h) => ({ start: h.time, hours: 1, max: h.precipProbPct }))
-                : hourBlocks(upcoming, BLOCK_HOURS, (h) => h.precipProbPct)
-              ).map((b) => {
-                const span =
-                  b.hours > 1 ? `${shortHour(b.start)}\u2013${shortHour(b.start + b.hours * 3_600_000)}` : fmtTime(b.start);
+              {hourBlocks(upcoming, eachHour ? 1 : BLOCK_HOURS, (h) => h.precipProbPct).map((b) => {
+                const span = eachHour
+                  ? fmtTime(b.start)
+                  : `${fmtShortHour(b.start)}\u2013${fmtShortHour(b.start + b.hours * 3_600_000)}`;
                 return (
                   <div key={b.start} className="sky-col" title={`${span} · ${b.max != null ? round(b.max) + '%' : '—'}`}>
                     <div className="sky-bar-track">
@@ -107,7 +101,7 @@ export function PrecipPanel({
       <p className="muted small">
         {eachHour
           ? 'Bar height = chance of precipitation (%). Label = same, per hour.'
-          : 'Bar height = the highest hourly chance of precipitation (%) in each 3 hours. Label = same.'}
+          : 'Bar height = the highest hourly chance of precipitation (%) in each block of up to 3 hours. Label = same. The chance of precipitation at some time in a block can be higher than any one hour’s.'}
       </p>
     </Panel>
   );

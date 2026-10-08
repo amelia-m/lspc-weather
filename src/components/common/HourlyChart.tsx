@@ -4,6 +4,7 @@ import { fmtLimitSpeed, toSpeed, type SpeedUnit } from '../../domain/units';
 import { limitLines, type Thresholds } from '../../config/thresholds';
 import { lowerLimitPublished, lowerLimitUnchecked } from '../../domain/advisories';
 import { SourceLink } from './SourceLink';
+import { fmtShortHour } from '../format';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
 
@@ -207,7 +208,7 @@ export function HourlyChart({
       {points.map((p, i) =>
         i % labelEvery === 0 ? (
           <text key={p.time} className="hc-axis" x={xOf(i)} y={H - 6} textAnchor="middle">
-            {hourLabel(p.time)}
+            {fmtShortHour(p.time)}
           </text>
         ) : null,
       )}
@@ -225,11 +226,6 @@ const ICON_Y = 11;
  *  little over the sun's 17-unit width, so two glyphs never touch. */
 const MIN_ICON_SPAN_PX = 20;
 
-const hourLabel = (ms: number): string =>
-  new Date(ms)
-    .toLocaleTimeString('en-US', { hour: 'numeric', timeZone: SITE.timeZone })
-    .replace(' ', '')
-    .toLowerCase();
 
 /** Each mark the chart draws, by its swatch class, and its name. */
 const LEGEND: readonly (readonly [string, string])[] = [

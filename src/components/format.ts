@@ -1,5 +1,10 @@
 import { SITE } from '../config/site';
 
+/** "10pm": the hour alone, as the hourly chart's axis and the precip
+ *  card's blocks print it, where "10:00 PM" would wrap on a phone. */
+export const fmtShortHour = (ms: number): string =>
+  new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', timeZone: SITE.timeZone }).replace(' ', '').toLowerCase();
+
 export const fmtTime = (ms: number): string =>
   new Date(ms).toLocaleTimeString('en-US', {
     hour: 'numeric',

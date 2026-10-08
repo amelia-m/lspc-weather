@@ -15,8 +15,22 @@ describe('PrecipPanel blocks', () => {
   it('shows four 3-hour blocks by default, each at its highest hour', () => {
     const html = renderToStaticMarkup(createElement(PrecipPanel, { hourly, current: null }));
     expect(labels(html)).toEqual(['60', '5', '0', '30']);
-    expect(html).toContain('the highest hourly chance of precipitation (%) in each 3 hours');
+    expect(html).toContain('the highest hourly chance of precipitation (%) in each block of up to 3 hours');
+    expect(html).toContain('can be higher than any one hour’s');
     expect(html).toContain('aria-expanded="false">Show each hour</button>');
+  });
+
+  it('takes the 6-hour figure over the first two blocks, the hours those bars show', () => {
+    // 60% in hour 2, 30% in hour 11: the summary sees the first, not the second.
+    const html = renderToStaticMarkup(createElement(PrecipPanel, { hourly, current: null }));
+    expect(html).toMatch(/Precip · max next 6 h<\/span><span class="ceil-value">60%/);
+    // Starting on the hour in progress, as the card does: the 7th hour
+    // begins within six hours of now, but it is the third block's.
+    const thisHour = Math.floor(Date.now() / 3_600_000) * 3_600_000;
+    const late = chances.map((_, i) => ({ time: thisHour + i * 3_600_000, precipProbPct: i === 6 ? 70 : 0 })) as unknown as HourlyPoint[];
+    expect(renderToStaticMarkup(createElement(PrecipPanel, { hourly: late, current: null }))).toMatch(
+      /Precip · max next 6 h<\/span><span class="ceil-value">0%/,
+    );
   });
 
   it('shows every hour when expanded', () => {

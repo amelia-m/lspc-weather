@@ -233,7 +233,9 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     // Logged as the difference of the two as served: how his server rounds
     // has not been read, so rounding here would guess at it. Whoever
     // summarises dT should allow for half a degree.
-    const dT = l.tempC != null ? l.tempC - ms.temp[k] : null;
+    // To a tenth, the finer side's precision: a tenth minus a whole number
+    // otherwise logs binary noise (0.3000000000000007).
+    const dT = l.tempC != null ? Math.round((l.tempC - ms.temp[k]) * 10) / 10 : null;
     rows.push({ ft: l.altitudeFtAgl, dDir, dSpd, dT });
     maxDir = Math.max(maxDir, Math.abs(dDir));
     maxSpd = Math.max(maxSpd, Math.abs(dSpd));
@@ -252,7 +254,7 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
       ft: l.altitudeFtAgl,
       dDir: ((l.directionDeg - ms.direction[k] + 540) % 360) - 180,
       dSpd: l.speedKt - ms.speed[k],
-      dT: l.tempC != null ? l.tempC - ms.temp[k] : null,
+      dT: l.tempC != null ? Math.round((l.tempC - ms.temp[k]) * 10) / 10 : null,
     });
   }
   out.push(

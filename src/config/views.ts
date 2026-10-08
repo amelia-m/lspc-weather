@@ -3,7 +3,8 @@ import type { Advisory } from '../domain/types';
 /**
  * Which cards each tab of the dashboard shows, in order.
  *
- * Jumpers opens on the two wind cards, then drift, conditions now and the
+ * Jumpers opens on the hourly wind chart and the winds aloft, then drift,
+ * the ground wind against the limit, conditions now and the rest of the
  * day's planning. Pilots gathers what the jump pilot plans the load on: the
  * sectional, the terminal forecast, density altitude for the climb, winds
  * aloft for the jump run, and links to the services a pilot briefs from.
