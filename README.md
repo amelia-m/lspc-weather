@@ -14,7 +14,7 @@ freefall drift and **density altitude** for jump-plane climb performance.
 > **Advisory only.** This dashboard *flags conditions and cites guidance* — it
 > does **not** decide whether it's safe to jump. Every USPA, CFR and FAA
 > citation here began as an AI recollection. Each has since been read at its
-> source — the **USPA SIM** at uspa.org on 2026-09-22, the **CFR sections, AIM
+> source — the **USPA SIM** at uspa.org on 2026-09-22 (4-7 A on 2026-10-08), the **CFR sections, AIM
 > 7-1-7 and FAA-P-8740-2** on 2026-09-23 — and the claims corrected against
 > them. The club's wind-limit tiers are different in kind: a transcription of an
 > undated photo of the posted sign, not a document anyone opened. Neither is a

@@ -125,7 +125,7 @@ describe('Winds aloft explanatory text', () => {
 
 describe('Drift card follows the hour', () => {
   const drift = (validMs: number | null, hourNav: WindsHourNav | null, source?: 'open-meteo' | 'nws-fd') =>
-    renderToStaticMarkup(createElement(DriftPanel, { levels, profile: 'student', validMs, hourNav, source }));
+    renderToStaticMarkup(createElement(DriftPanel, { levels, validMs, hourNav, source }));
   // The hour row and the offset bar under it, as rendered, without the
   // attributes that are meant to differ between the two copies.
   const hourControl = (html: string) =>

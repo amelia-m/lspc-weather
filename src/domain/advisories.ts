@@ -141,7 +141,11 @@ export function evaluateAdvisories(
       });
     }
 
-    // --- Overcast (no gaps to jump through) ---
+    // --- Overcast layer reported ---
+    // A plain observed fact, so it may flag; the sentence claims only what
+    // 105.17 says. "Solid overcast" is usairnet's phrase (the FAA's is plain
+    // "Overcast"), and 105.17 bars operations into or through cloud, not
+    // under it: an overcast above exit altitude is reported here too.
     if (current.skyLayers.some((l) => l.cover === 'OVC')) {
       out.push({
         id: 'overcast',
@@ -149,7 +153,7 @@ export function evaluateAdvisories(
         metric: 'Sky cover',
         value: 'Overcast (OVC)',
         guidance:
-          'Solid overcast leaves no gaps — jumps may not be made into or through clouds (14 CFR 105.17).',
+          'Overcast (OVC) layer reported. 14 CFR 105.17 bars parachute operations into or through a cloud and sets minimum distances from cloud.',
         citation: CITATIONS.far10517,
       });
     }

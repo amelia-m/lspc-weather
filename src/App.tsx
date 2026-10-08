@@ -296,7 +296,6 @@ export default function App(): JSX.Element {
     drift: (
       <DriftPanel
         levels={winds.levels}
-        profile={profile}
         source={snapshot.windsAloftSource}
         validMs={winds.validity?.validMs ?? null}
         hourNav={winds.nav}

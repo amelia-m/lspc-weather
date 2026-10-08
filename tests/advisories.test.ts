@@ -716,6 +716,18 @@ describe('a live observation whose API decode is empty', () => {
     expect(out.find((a) => a.id === 'flight-category')?.value).toContain('MVFR');
   });
 
+  it('says only what 14 CFR 105.17 says about an overcast, in the FAA’s word for it', () => {
+    // 105.17 bars operations into or through a cloud, not under one; and
+    // "Solid Overcast" is usairnet's phrase, the FAA's is plain "Overcast".
+    const g = evaluateAdvisories(snapshot({ current: overcast }), DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'overcast',
+    )!.guidance;
+    expect(g).toBe(
+      'Overcast (OVC) layer reported. 14 CFR 105.17 bars parachute operations into or through a cloud and sets minimum distances from cloud.',
+    );
+    expect(g).not.toMatch(/solid|no gaps/i);
+  });
+
   it('says "OVC 2,700 ft", not "Clear", on the Current conditions card', () => {
     const html = markup(createElement(MetarPanel, { current: overcast, unit: 'kt', onUnitChange: () => {} }));
     expect(html).toContain('OVC 2,700 ft');

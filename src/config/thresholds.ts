@@ -271,13 +271,13 @@ export const CITATIONS = {
    */
   uspaWaivers: {
     source: 'USPA SIM, Section 2-2 (Waivers to the BSRs)',
-    ref: 'SIM 2-2 B — a BSR marked [S] may be waived by an S&TA or Examiner; the student ground-wind BSR (2-1 H) is so marked',
+    ref: 'SIM 2-2 B — a BSR marked [S] may be waived by an S&TA or Examiner; the student ground-wind BSR (2-1 H) is so marked. 2-2 C: such a waiver is filed in writing',
     url: simUrl('2-2', '2B'),
     note: SIM_READ_NOTE,
   },
   /** BSR minimum container-opening altitudes — same Section 2-1 as the wind
    *  limits. Drives the drift card's deploy-altitude floor via
-   *  recommendedDeployFt().
+   *  DEFAULT_DEPLOY_FT.
    *
    *  2-1 I reads: tandem 5,000 ft AGL; all students and A-license 3,000 ft;
    *  B-license 2,500 ft; C- and D-license 2,500 ft [S], waiverable to no lower
@@ -335,9 +335,9 @@ export interface Thresholds {
   windCitation: Citation;
   /** A second authority for `windGuidance`, where the sentence makes a claim
    *  the first does not carry. The waiver tiers are the case: their numbers are
-   *  the club's, but "any excursion above the BSR needs on-site approval" is
-   *  the SIM 2-2 [S] mechanism, and a reader following one link should not have
-   *  to take the other on trust. */
+   *  the club's, but the sentence also says what a SIM 2-2 waiver is (filed by
+   *  an S&TA or Examiner, in writing), and a reader following one link should
+   *  not have to take the other on trust. */
   windSecondaryCitation?: Citation;
   /**
    * Source of the CAUTION band as a NUMBER, which is a different claim from
@@ -453,11 +453,15 @@ const STUDENT: Thresholds = {
   // it cannot. Modelling canopy
   // type is in docs/open-questions.md.
   windGuidance:
-    'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it on site.',
+    'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it, by a written waiver.',
   windCitation: CITATIONS.uspaStudentWinds,
   // The guidance's last clause — that an S&TA or Examiner may waive it — is
   // 2-2's rule, not 2-1's. 2-1 carries the [S] marker; 2-2 B is what says the
-  // marker means S&TA or Examiner. The waiver tiers cite it for the same
+  // marker means S&TA or Examiner, and 2-2 C that such a waiver is filed in
+  // writing on USPA's form, with copies to the Regional Director and HQ, and
+  // stands until rescinded. It read "may waive it on site", which made it
+  // sound like a call on the day; 2-2 C's one exception to the written form
+  // is the C/D deployment-altitude waiver, not this one. The waiver tiers cite it for the same
   // sentence, and this profile makes the same claim.
   windSecondaryCitation: CITATIONS.uspaWaivers,
   windLimitCitation: CITATIONS.uspaStudentWinds,
@@ -546,12 +550,15 @@ function waiverThresholds(tier: WaiverTier): Thresholds {
     windBandCaveat: undefined,
     windGuidance:
       `LSPC waivered limit (students, ${tier.label}): max wind ${tier.windMph} mph, gusts under ${tier.gustMph} mph. ` +
-      'Any excursion above the USPA BSR requires on-site approval by a USPA instructor; consult the S&TA.',
+      'Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available. Under SIM 2-2, a waiver of a student BSR is filed by an S&TA or Examiner, in writing.',
     windCitation: CITATIONS.lspcWaiver,
     // The tier's numbers are the club's, so the club document is the primary
-    // citation. The second sentence of the guidance is not the club's rule but
-    // the SIM one that permits it — 2-2 classifies the student wind BSR [S],
-    // waiverable by an S&TA or Examiner.
+    // citation. The guidance quotes the club's rule (an instructor approves on
+    // site; the S&TA is recommended, not required) and then says what SIM 2-2
+    // makes a waiver: filed by an S&TA or Examiner, in writing. It used to fold
+    // the two together as "requires on-site approval by a USPA instructor;
+    // consult the S&TA", which cited 2-2 for a mechanism 2-2 does not set and
+    // turned the club's recommendation into an order.
     windSecondaryCitation: CITATIONS.uspaWaivers,
     windLimitCitation: CITATIONS.lspcWaiver,
   };
@@ -564,14 +571,15 @@ export function resolveThresholds(id: WindProfileId): Thresholds {
   return tier ? waiverThresholds(tier) : STUDENT;
 }
 
-/** Default deploy altitude (ft AGL) for a wind-limit profile — the USPA BSR
- *  minimum container-opening altitude for that jumper class: students &
- *  A-license 3,000 ft, licensed (B-license floor) 2,500 ft. Waiver tiers are
- *  all student-category, so they take the student floor. These are minimums,
- *  not targets; the drift card reminds jumpers to deploy above them. */
-export function recommendedDeployFt(id: WindProfileId): number {
-  return id === 'licensed' ? 2500 : 3000;
-}
+/** Default deploy altitude (ft AGL) on the drift card: 3,000 ft whatever the
+ *  profile. BSR 2-1 I sets 3,000 ft for "All students and A-license
+ *  holders" and 2,500 ft for B, C and D. The Licensed profile covers A-license
+ *  holders too, and this app does not know which licence a jumper holds, so a
+ *  2,500 ft default put an A-license jumper below their minimum; 3,000 ft is
+ *  the one default no licence is below. A B/C/D jumper picks 2,500 ft from
+ *  the Deploy dropdown. These are minimums, not targets; the drift card
+ *  reminds jumpers to deploy above them. */
+export const DEFAULT_DEPLOY_FT = 3000;
 
 /** Human label for a profile id, used in the UI. */
 export function profileLabel(id: WindProfileId): string {

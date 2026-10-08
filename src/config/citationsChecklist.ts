@@ -50,7 +50,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A1',
     title: 'Student ground-wind limit',
     claim:
-      'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it on site.',
+      'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it, by a written waiver.',
     value: '14 mph, stored as 12 kt — the caution band',
     where: 'Surface wind card, and the Surface wind flag, with Student selected',
     sources: [CITATIONS.uspaStudentWinds],
@@ -81,7 +81,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [
-      'The Deploy default for “licensed” is 2,500 ft, which is both the B and the C/D figure. Does the default read sensibly?',
+      'The Deploy default is 3,000 ft on every profile: the Licensed profile includes A-license holders, whose minimum is 3,000 ft, and the app does not know a jumper’s licence. Does that default read sensibly, or should the profile ask for the licence?',
       'Is the tandem figure set by the SIM, by the manufacturer, or both? It is printed as a BSR minimum.',
     ],
   },
@@ -130,7 +130,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A5',
     title: 'The BSR-excursion rule behind the club waiver',
     claim:
-      'Any excursion above the USPA BSR requires on-site approval by a USPA instructor; consult the S&TA.',
+      'Club policy: an excursion above the BSR wind limits is to be approved on site by at least a USPA instructor, with the S&TA consulted if available. Under SIM 2-2, a waiver of a student BSR is filed by an S&TA or Examiner, in writing.',
     where:
       'Surface wind flag, with any LSPC waiver tier selected. The card carries the club-policy link behind that tier’s limit; this sentence reaches the reader only when the flag fires.',
     sources: [CITATIONS.lspcWaiver, CITATIONS.uspaWaivers],
@@ -209,7 +209,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.',
     value: 'Flag fires below 3 SM',
     where:
-      'Visibility flag in Conditions to note; the overcast flag (“jumps may not be made into or through clouds”); and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
+      'Visibility flag in Conditions to note; the overcast flag (“14 CFR 105.17 bars parachute operations into or through a cloud”); and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
     sources: [CITATIONS.far10517],
     found: {
       read: 'the eCFR (Title 14 current as of 2026-09-21), 2026-09-23',
