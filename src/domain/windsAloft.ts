@@ -218,6 +218,12 @@ export const windSampleFromMps = (
  * fit as well; the comparison logs would show it. Only the ground row is extended;
  * any other row outside his levels is left out, as interpolateWindsAloft does.
  */
+/** The ground a table counts its altitudes from, ft MSL: its 0 ft row's
+ *  MSL altitude. Null where the table has no 0 ft row. */
+export function tableGroundFtMsl(levels: readonly WindsAloftLevel[]): number | null {
+  return levels.find((l) => l.altitudeFtAgl === 0)?.altitudeFtMsl ?? null;
+}
+
 export function interpolateAsSchulze(
   levels: RawWindSample[],
   groundFtMsl: number,

@@ -273,7 +273,8 @@ below the model's terrain are dropped in `normalizeOpenMeteo`. Evidence, the
 measurements behind it, and — importantly — the sources that could *not* be read
 are in [`subsurface-pressure-levels.md`](subsurface-pressure-levels.md). The share this
 entry used to quote (~4%, rising to ~15%) was a property of the **fixture**,
-which sets `elevation: 360`; live Open-Meteo returns 349, which put the 10 m
+which sets `elevation: 360`; live Open-Meteo returned 349 at the point used
+until 2026-10-08 (355 at the landing area since), which put the 10 m
 sample below the field elevation and the sub-surface share at 0% in all 384
 hours. The fix is worth having anyway — see the commit and the comment in
 `normalizeOpenMeteo` — because which side of that 10-metre line the DEM lands

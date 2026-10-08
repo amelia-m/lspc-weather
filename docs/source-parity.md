@@ -304,6 +304,12 @@ question in `docs/open-questions.md`.
   contributed rows and the pooled `dir` and `spd` spreads from 1,000 ft up.
   A same-hour run whose raw profiles could not be judged is in neither
   same-hour group. Absent in summaries written before 2026-09-26.
+- Schulze records carry `dz`, the point both sides were read at, from
+  2026-10-08, when `SITE.dz` moved from the field south-west of the runway
+  (40.8675, −96.11; records without `dz`) to the landing area by the pea
+  gravel. The summary pools both; Open-Meteo's ground is 1,145 ft at the
+  first and 1,165 ft at the second, which moves the Surface row's source
+  and the datum gap between the two tables.
 - `schulze.ground` and the two breakdowns below compare the ground rows in
   whole knots, as both pages show them (`groundKt`): the card's Surface row
   where the record carries it (`ourShownKt`, from 2026-10-08), the logged

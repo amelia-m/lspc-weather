@@ -32,7 +32,7 @@ const GAP_GROWTH: [hours: number, pairs: number, dirAvg: string, dir90: string, 
 /** The same document, "How the surface row was worked out": 2026-10-03,
  *  around 01Z. */
 const GROUND_SITES: [site: string, ground: string, hours: number, levels: string][] = [
-  ['This drop zone', '1,145 ft', 48, '1000 hPa (below ground) and 975 hPa'],
+  ['This drop zone (the point used until Oct 8)', '1,145 ft', 48, '1000 hPa (below ground) and 975 hPa'],
   ['Longmont, CO', '5,039 ft', 12, 'the levels either side of the ground'],
   ['Near Houston', '26 ft', 6, 'the two lowest, extended down'],
   ['Near Tampa', '89 ft', 6, 'the two lowest, extended down'],

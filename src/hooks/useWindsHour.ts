@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { WeatherSnapshot, WindsAloftLevel, WindsAloftValidity, WindsMethod } from '../domain/types';
 import { chooseForecastHour, selectionAfterStep } from '../domain/forecastHour';
+import { tableGroundFtMsl } from '../domain/windsAloft';
 import type { WindsHourNav } from '../components/common/ForecastHourNav';
 import { useNow } from './useNow';
 
@@ -52,7 +53,7 @@ export function useWindsHour(
   return {
     levels: method === 'schulze' && schulzeAvailable ? chosen.schulzeLevels! : chosen.levels,
     schulzeAvailable,
-    schulzeGroundFtMsl: chosen.schulzeLevels?.find((l) => l.altitudeFtAgl === 0)?.altitudeFtMsl ?? null,
+    schulzeGroundFtMsl: chosen.schulzeLevels ? tableGroundFtMsl(chosen.schulzeLevels) : null,
     validity: { validMs: chosen.validMs },
     nav: {
       canBack: chosen.canBack,

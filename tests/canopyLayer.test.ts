@@ -72,7 +72,9 @@ describe('the canopy-layer heights', () => {
   });
 });
 
-/* NE69 as it is: the field 37 ft above Open-Meteo's ground, and on some days
+/* NE69 at the point used until 2026-10-08: the field 37 ft above Open-Meteo's
+ * ground (at the landing area since, 17 ft above it, with the 10 m sample
+ * standing over the field; that path is isSurface's), and on some days
  * 975 hPa between the 80 and 120 m heights. The heights go on the 10 m
  * sample's datum (the model's ground), the pressure level at its own
  * geopotential height, and the profile is read in height order. */

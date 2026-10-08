@@ -378,29 +378,23 @@ export function WindsAloftPanel({
                 this dashboard's point when his page is opened from the link,
                 his own list's pin (in the field south-west of the runway,
                 below it; docs/markschulze-altitude-reference.md) when opened
-                from there. This table counts from the published field
-                elevation. Both figures are
-                read, not typed: the field from SITE, his ground off the
-                his-way table this hour carries. */}
+                from there. The default table counts from the published field
+                elevation. The two figures and their difference are read, not
+                typed: the field from SITE, his ground off the his-way table
+                this hour carries (useWindsHour). */}
             {source === 'open-meteo' && schulzeGroundFtMsl != null && schulzeGroundFtMsl !== SITE.dz.elevationFt && (
               <p className="muted small">
-                The two tables also count their altitudes from different ground.{' '}
-                {schulzeView ? (
-                  <>
-                    The <em>All levels</em> view
-                  </>
-                ) : (
-                  'This one'
-                )}{' '}
-                counts from the field&rsquo;s published elevation, {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft.
-                Mark Schulze&rsquo;s counts from the ground Open-Meteo&rsquo;s terrain gives at the map pin,{' '}
-                {schulzeGroundFtMsl.toLocaleString()}&nbsp;ft at this dashboard&rsquo;s point, the landing area,
-                which the link above opens. His own list&rsquo;s pin for the club sits in the field south-west
-                of the runway, below it, so his page opened from that list counts from lower ground still.
-                From this dashboard&rsquo;s point, a row of his is about{' '}
-                {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'}{' '}
-                than the row of the same name here: small next to the other differences.
-                {schulzeView ? ' This view counts from his ground.' : ''}
+                The two tables also count their altitudes from different ground. The{' '}
+                {schulzeView ? <em>All levels</em> : 'default'} table counts from the field&rsquo;s published
+                elevation, {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft. Mark Schulze&rsquo;s counts from
+                the ground Open-Meteo&rsquo;s terrain gives at the map pin: {schulzeGroundFtMsl.toLocaleString()}
+                &nbsp;ft at this dashboard&rsquo;s point, which the link above opens
+                {schulzeView ? ', and which this view counts from' : ''}. So a row of his is about{' '}
+                {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft{' '}
+                {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'} than the row of the same name in
+                the {schulzeView ? <em>All levels</em> : 'default'} table. His own list&rsquo;s pin for the club
+                is elsewhere, in the field south-west of the runway, so his page opened from that list counts
+                from that pin&rsquo;s ground instead.
               </p>
             )}
             <p className="muted small">
