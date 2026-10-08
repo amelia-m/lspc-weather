@@ -30,7 +30,7 @@ import {
   openMeteoWindsUrl,
   type RawOpenMeteo,
 } from '../src/domain/normalize';
-import { interpolateWindsAloft } from '../src/domain/windsAloft';
+import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
 
 interface Schulze {
   validtime: string;
@@ -89,8 +89,13 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     say([...out, `Open-Meteo could not be read: ${(e as Error).message}`, record({ kind: 'schulze', at: new Date(now).toISOString(), error: `open-meteo: ${(e as Error).message}` })]);
     return;
   }
-  const { samples, validMs } = normalizeOpenMeteo(coerceOpenMeteoTimes(raw), now);
+  const { samples, validMs, schulze: hisWay } = normalizeOpenMeteo(coerceOpenMeteoTimes(raw), now);
   const levels = interpolateWindsAloft(samples, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL);
+  // The card's other table: the same hour built as Schulze's tool builds his.
+  // Logged beside the default so the summary can show both that this app
+  // reproduces his table and what its extra samples change.
+  const asSchulzeLevels =
+    hisWay.groundFtMsl != null ? interpolateAsSchulze(hisWay.levels, hisWay.groundFtMsl, WINDS_ALOFT_LEVELS_AGL) : [];
   if (validMs == null || levels.length === 0) {
     say([...out, 'Open-Meteo answered with no usable hour.', record({ kind: 'schulze', at: new Date(now).toISOString(), error: 'open-meteo: no usable hour' })]);
     return;
@@ -235,6 +240,29 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     );
   }
   out.push(`largest difference: ${maxDir}° direction, ${maxSpd} kt speed`);
-  out.push(record({ ...base, aligned: { rows }, rawMismatch, ground: { ourKt, theirKt: ms.groundSpd } }));
+  const asSchulzeRows: { ft: number; dDir: number; dSpd: number; dT: number | null }[] = [];
+  for (const l of asSchulzeLevels) {
+    const k = String(l.altitudeFtAgl);
+    if (!(k in ms.direction)) continue;
+    asSchulzeRows.push({
+      ft: l.altitudeFtAgl,
+      dDir: ((l.directionDeg - ms.direction[k] + 540) % 360) - 180,
+      dSpd: l.speedKt - ms.speed[k],
+      dT: l.tempC != null ? l.tempC - ms.temp[k] : null,
+    });
+  }
+  out.push(
+    'built as Schulze (his levels, his ground, his Surface rule): ' +
+      asSchulzeRows.map((r) => `${r.ft}: ${r.dDir}°/${r.dSpd} kt`).join('  '),
+  );
+  out.push(
+    record({
+      ...base,
+      aligned: { rows },
+      asSchulze: { rows: asSchulzeRows },
+      rawMismatch,
+      ground: { ourKt, theirKt: ms.groundSpd },
+    }),
+  );
   say(out);
 });

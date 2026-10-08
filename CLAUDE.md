@@ -138,7 +138,15 @@ precisely because they were colour and text rather than flags.
   not. They normally decide the 500 ft row, which his table does not have;
   the compared Surface row moves a fraction of a knot, and on high-pressure
   hours, when 950 hPa is above 1,000 ft, the compared 1,000 ft row can differ
-  for this reason (`docs/markschulze-altitude-reference.md`). What can still differ,
+  for this reason (`docs/markschulze-altitude-reference.md`). Also since
+  2026-10-08 the default table takes seven pressure levels his does not
+  (`OPEN_METEO_EXTRA_PRESSURE_LEVELS`), and the card has an "As Schulze" view
+  that rebuilds the hour his way (`interpolateAsSchulze`: his thirteen levels,
+  his ground as the datum, his Surface rule, which is inferred from his
+  output). The comparison logs both tables against his (`asSchulze` beside
+  `aligned`), so `#parity` shows that the app reproduces his table and,
+  separately, how far the default table moves from it. Keep the "As Schulze"
+  view his method exactly; improvements go in the default. What can still differ,
   and why, is in `docs/markschulze-altitude-reference.md` (among them, for a
   while, the two being on different forecast runs for the same hour: 114
   of 1,611 same-hour comparisons to 2026-10-05, mostly between half past

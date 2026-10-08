@@ -606,7 +606,7 @@ describe('normalizeOpenMeteo hour selection', () => {
 
   it('reports a null valid time for an empty series', () => {
     const empty = normalizeOpenMeteo({ hourly: { time: [] } }, Date.now());
-    expect(empty).toEqual({ samples: [], validMs: null });
+    expect(empty).toEqual({ samples: [], validMs: null, schulze: { levels: [], groundFtMsl: null } });
   });
 
   it('gives every hour of the series, each with its own samples, for the card to step through', () => {

@@ -361,3 +361,25 @@ describe('ParityPage', () => {
     expect(render('missing')).not.toContain('aloft-table');
   });
 });
+
+describe('ParityPage, the "as Schulze" table', () => {
+  it('shows how often the app reproduces his table, once runs have logged it', () => {
+    const withHisWay = summarizeParity(
+      [
+        ...records,
+        {
+          kind: 'schulze',
+          at: '2026-10-08T12:00:00Z',
+          aligned: { rows: [{ ft: 1000, dDir: 3, dSpd: 1, dT: 0 }] },
+          asSchulze: { rows: [{ ft: 0, dDir: 0, dSpd: 0, dT: 0 }, { ft: 1000, dDir: 0, dSpd: 0, dT: 0 }] },
+        } as ParityRecord,
+      ],
+      Date.parse('2026-10-09T00:00:00Z'),
+    );
+    const html = render('ready', withHisWay);
+    expect(html).toContain('Built as Schulze’s tool builds it');
+    expect(html).toContain('within 1° and 1 kt, which is rounding, in 1 of 1 runs');
+    expect(html).toContain('Direction, as Schulze');
+    expect(render('ready')).not.toContain('Built as Schulze’s tool builds it');
+  });
+});

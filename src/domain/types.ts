@@ -168,14 +168,23 @@ export interface WindsAloftValidity {
 /** One fetch of winds aloft: the interpolated levels and the time they are for.
  *  Returned by both the Open-Meteo path and the NOAA FD fallback so neither can
  *  hand the UI altitudes without a valid time. */
+/** How the Open-Meteo winds table is built: from every sample this app takes
+ *  (`all`, the default), or as Mark Schulze's tool builds his (`schulze`). */
+export type WindsMethod = 'all' | 'schulze';
+
 /** The levels for one forecast hour. */
 export interface WindsAloftHour {
   validMs: number;
   levels: WindsAloftLevel[];
+  /** The same hour as Mark Schulze's tool builds it (interpolateAsSchulze);
+   *  absent on the NOAA FD fallback. */
+  schulzeLevels?: WindsAloftLevel[];
 }
 
 export interface WindsAloftForecast {
   levels: WindsAloftLevel[];
+  /** See WindsAloftHour.schulzeLevels. */
+  schulzeLevels?: WindsAloftLevel[];
   validity: WindsAloftValidity;
   /** Every hour the source served, ascending, for stepping the card through
    *  them. Absent on the NOAA FD fallback, which is one bulletin. */

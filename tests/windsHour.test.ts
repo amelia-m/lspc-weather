@@ -106,7 +106,7 @@ describe('Winds aloft explanatory text', () => {
     // Surface row is, and why Schulze's table can look different.
     expect(outside).toContain('A model <strong>forecast</strong> for the DZ, not a measurement.');
     expect(outside).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is on the Surface wind card.');
-    expect(outside).toContain('altitudes AGL on both, but near the ground this table also uses the model’s 80, 120 and 180\u00a0m winds, which his does not; and after half past his table is the hour before this one.');
+    expect(outside).toContain('Against Mark Schulze’s tool: same data, but this table also takes samples his does not (the switch above the table rebuilds it his way), and after half past his table is the hour before this one.');
   });
 
   it('offers no About section with no table, and no Surface row talk without one', () => {
@@ -145,7 +145,7 @@ describe('Drift card follows the hour', () => {
 
   it('says the estimate is the Winds aloft card\'s hour, and that the buttons move both', () => {
     const html = drift(ahead(), nav());
-    expect(html).toContain('Worked from the forecast hour selected on the Winds aloft card.');
+    expect(html).toContain('Worked from the forecast hour selected on the Winds aloft card, and the table shown there (all levels, or as Schulze).');
     expect(html).toContain('The buttons here and on that card step the same hour, so changing either moves both.');
   });
 

@@ -124,7 +124,7 @@ export function DriftPanel({
               />
               <p className="muted small">
                 {hourNav
-                  ? 'Worked from the forecast hour selected on the Winds aloft card. The buttons here and on that card step the same hour, so changing either moves both.'
+                  ? 'Worked from the forecast hour selected on the Winds aloft card, and the table shown there (all levels, or as Schulze). The buttons here and on that card step the same hour, so changing either moves both.'
                   : 'Worked from the same forecast hour as the Winds aloft card.'}
               </p>
             </>

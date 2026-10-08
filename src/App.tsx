@@ -38,6 +38,7 @@ import { DailyForecastPanel } from './components/DailyForecastPanel';
 import { DriftPanel } from './components/DriftPanel';
 import { TafPanel } from './components/TafPanel';
 import type { SpeedUnit, TempUnit } from './domain/units';
+import type { WindsMethod } from './domain/types';
 import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
@@ -64,6 +65,7 @@ const LAST_TIER_KEY = 'lspc:lastWaiverTier';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
 const UNIT_KEY = 'lspc:windUnit';
 const TEMP_UNIT_KEY = 'lspc:tempUnit';
+const WINDS_METHOD_KEY = 'lspc:windsMethod';
 
 type Overrides = Partial<Record<WindProfileId, Partial<Thresholds>>>;
 
@@ -273,7 +275,15 @@ export default function App(): JSX.Element {
   // only sets the jumper wind flags, which that tab leaves off.)
   const advisoryThresholds = VIEW_USES_PROFILE[view] ? thresholds : base;
   const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(advisoryThresholds, unit);
-  const winds = useWindsHour(snapshot);
+  // Every level by default; "as Schulze" rebuilds the table his way so a
+  // reader can check one against the other (WindsAloftPanel).
+  const [windsMethod, setWindsMethod] = useState<WindsMethod>(() =>
+    safeLocalGet(WINDS_METHOD_KEY) === 'schulze' ? 'schulze' : 'all',
+  );
+  useEffect(() => {
+    safeLocalSet(WINDS_METHOD_KEY, windsMethod);
+  }, [windsMethod]);
+  const winds = useWindsHour(snapshot, windsMethod);
   const provenance = useMemo(() => deriveProvenance(snapshot), [snapshot]);
 
   // Every hook above runs in both views, so switching routes cannot change hook
@@ -303,6 +313,9 @@ export default function App(): JSX.Element {
         unit={unit}
         onUnitChange={setUnit}
         {...temp}
+        method={windsMethod}
+        onMethodChange={setWindsMethod}
+        schulzeAvailable={winds.schulzeAvailable}
       />
     ),
     drift: (

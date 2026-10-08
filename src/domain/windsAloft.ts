@@ -196,3 +196,49 @@ export const windSampleFromMps = (
   speedKt: mpsToKt(speedMps),
   directionDeg,
 });
+
+/**
+ * The winds-aloft table as Mark Schulze's Winds Aloft builds it, for the
+ * card's "as Schulze's tool" view and the comparison with it.
+ *
+ * His rows are measured from the model's ground (`groundFtMsl`, Open-Meteo's
+ * `elevation`), not the field's published elevation, and are straight lines
+ * through his pressure levels: each row between the level just below and the
+ * level just above it. His Surface row (0 ft) is the same line read at the
+ * ground, through a level below the ground where there is one; where there is
+ * none, through the two lowest levels extended down. The levels and the
+ * ground were read from his API's output; the Surface-row rule is INFERRED
+ * from it (his server code is not readable) and matched his ground value in
+ * 72 of 72 hours at four sites, direction to the degree and speed within a
+ * knot (docs/markschulze-altitude-reference.md). A different formula could
+ * fit as well; the comparison logs would show it. Only the ground row is extended;
+ * any other row outside his levels is left out, as interpolateWindsAloft does.
+ */
+export function interpolateAsSchulze(
+  levels: RawWindSample[],
+  groundFtMsl: number,
+  targetAltitudesFtAgl: readonly number[],
+): WindsAloftLevel[] {
+  const sorted = [...levels].sort((a, b) => a.heightFtMsl - b.heightFtMsl);
+  if (sorted.length < 2) return [];
+  const out: WindsAloftLevel[] = [];
+  for (const agl of targetAltitudesFtAgl) {
+    const msl = groundFtMsl + agl;
+    const above = sorted.findIndex((s) => s.heightFtMsl >= msl);
+    if (above === -1) continue;
+    if (above === 0 && msl < sorted[0].heightFtMsl && agl !== 0) continue;
+    const [lo, hi] = above === 0 ? [sorted[0], sorted[1]] : [sorted[above - 1], sorted[above]];
+    const span = hi.heightFtMsl - lo.heightFtMsl;
+    const t = span === 0 ? 0 : (msl - lo.heightFtMsl) / span;
+    const tempC = lo.tempC != null && hi.tempC != null ? lo.tempC + t * (hi.tempC - lo.tempC) : null;
+    out.push({
+      altitudeFtAgl: agl,
+      altitudeFtMsl: Math.round(msl),
+      speedKt: Math.round(Math.max(0, lo.speedKt + t * (hi.speedKt - lo.speedKt))),
+      directionDeg: Math.round(((interpAngle(lo.directionDeg, hi.directionDeg, t) % 360) + 360) % 360),
+      tempC: tempC != null ? Math.round(tempC * 10) / 10 : null,
+    });
+  }
+  return out;
+}
+

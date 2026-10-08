@@ -36,6 +36,8 @@ const DEFAULT_WINDOW: StepWindow = { back: STEP_BACK_HOURS, forward: STEP_FORWAR
 export interface ChosenHour {
   validMs: number;
   levels: WindsAloftLevel[];
+  /** The hour's table as Mark Schulze's tool builds it, where it has one. */
+  schulzeLevels?: WindsAloftLevel[];
   /** True when the card is following the hour nearest the clock, false when
    *  the reader has stepped to a particular hour. */
   following: boolean;
@@ -77,6 +79,7 @@ export function chooseForecastHour(
   return {
     validMs: hours[i].validMs,
     levels: hours[i].levels,
+    schulzeLevels: hours[i].schulzeLevels,
     following: picked < 0,
     canBack: i > lo,
     canForward: i < hi,
