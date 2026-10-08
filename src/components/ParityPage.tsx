@@ -80,9 +80,9 @@ export function ParityPage({
       </p>
       {/* The winds figures below are this dashboard's Open-Meteo table, and
           this page renders instead of the dashboard, footer and all. */}
-      {state === 'ready' && (
+      {summary && summary.schulze.runs > 0 && (
         <p className="muted small">
-          <OpenMeteoCredit />
+          <OpenMeteoCredit scope="winds" />
         </p>
       )}
 

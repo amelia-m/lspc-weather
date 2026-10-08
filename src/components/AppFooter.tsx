@@ -6,7 +6,7 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
 export function AppFooter(): JSX.Element {
   return (
     <footer className="app-foot">
-      Data: Iowa Environmental Mesonet and NWS / NOAA (api.weather.gov). <OpenMeteoCredit /> Built
+      Data: Iowa Environmental Mesonet and NWS / NOAA (api.weather.gov). <OpenMeteoCredit scope="dashboard" /> Built
       for fun — fly safe.
       <br />
       <a href="#citations">Citations to verify</a> — what this dashboard claims, and what nobody

@@ -70,8 +70,14 @@ export function DailyForecastPanel({
       subtitle={fallback ? 'NWS ~7-day fallback' : 'daily planning'}
       // The day rows are Open-Meteo's, or the NWS gridpoint's on the
       // fallback; the hourly detail under a day is the NWS gridpoint's on
-      // both.
-      sources={fallback ? [DATA_SOURCES.nwsForecast] : [DATA_SOURCES.openMeteo, DATA_SOURCES.nwsForecast]}
+      // both. With neither answering (source null) nothing is credited.
+      sources={
+        source === 'open-meteo'
+          ? [DATA_SOURCES.openMeteo, DATA_SOURCES.nwsForecast]
+          : fallback
+            ? [DATA_SOURCES.nwsForecast]
+            : []
+      }
       unit={unit}
       onUnitChange={onUnitChange}
     >

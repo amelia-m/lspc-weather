@@ -15,11 +15,17 @@ import { DATA_SOURCES } from '../src/config/sources';
  * the converse: a Data line that credits Open-Meteo for data it did not
  * supply is a source claim the reader cannot check. */
 const LICENCE = `<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>`;
-const dataLine = (html: string) => html.slice(html.indexOf('<footer class="panel-sources">'));
+// The card's Data line, or '' when it has none. A missing footer is not an
+// error (a card with nothing to credit has none), but it must not leave a
+// slice of the card behind for a not.toContain to pass on vacuously.
+const dataLine = (html: string) => {
+  const i = html.indexOf('<footer class="panel-sources">');
+  return i < 0 ? '' : html.slice(i);
+};
 
 describe('Open-Meteo in the cards’ Data lines', () => {
   const level = { altitudeFtAgl: 3000, altitudeFtMsl: 4182, directionDeg: 270, speedKt: 10, tempC: 0 };
-  const winds = (source: 'open-meteo' | 'nws-fd') =>
+  const winds = (source: 'open-meteo' | 'nws-fd' | null) =>
     renderToStaticMarkup(
       createElement(WindsAloftPanel, {
         levels: [level],
@@ -29,7 +35,7 @@ describe('Open-Meteo in the cards’ Data lines', () => {
         onUnitChange: () => {},
       } as never),
     );
-  const daily = (source: 'open-meteo' | 'nws-gridpoint') =>
+  const daily = (source: 'open-meteo' | 'nws-gridpoint' | null) =>
     renderToStaticMarkup(
       createElement(DailyForecastPanel, { daily: [], source, hourly: [], unit: 'kt', onUnitChange: () => {} }),
     );
@@ -40,8 +46,14 @@ describe('Open-Meteo in the cards’ Data lines', () => {
   });
 
   it('does not credit Open-Meteo on a fallback, or for data it did not supply', () => {
+    expect(dataLine(winds('nws-fd'))).toContain(`>${DATA_SOURCES.fdWinds.label}</a>`);
     expect(dataLine(winds('nws-fd'))).not.toContain('Open-Meteo');
+    expect(dataLine(daily('nws-gridpoint'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
     expect(dataLine(daily('nws-gridpoint'))).not.toContain('Open-Meteo');
+    // Neither source answered: nothing is shown, so nothing is credited.
+    expect(dataLine(winds(null))).toContain(`>${DATA_SOURCES.markschulze.label}</a>`);
+    expect(dataLine(winds(null))).not.toContain('>Open-Meteo<');
+    expect(dataLine(daily(null))).not.toContain('Open-Meteo');
     // The outlook's hourly detail is the NWS gridpoint's on both paths.
     expect(dataLine(daily('open-meteo'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
     // No flag reads a forecast: the observation and the computed sun times.
@@ -55,24 +67,40 @@ describe('Open-Meteo in the cards’ Data lines', () => {
 });
 
 describe('the Open-Meteo credit', () => {
-  const summary = summarizeParity(
+  const at = Date.parse('2026-09-25T12:00:00Z');
+  const withWinds = summarizeParity(
     [{ kind: 'schulze', at: '2026-09-24T01:00:00Z', aligned: { rows: [{ ft: 1000, dDir: 1, dSpd: 0, dT: 0 }] } }] as never,
-    Date.parse('2026-09-25T12:00:00Z'),
+    at,
   );
-  const parity = (state: 'ready' | 'loading') =>
+  const usairnetOnly = summarizeParity(
+    [{ kind: 'usairnet', at: '2026-09-24T01:00:05Z', v: 2, sameReport: true, fields: [{ name: 'clouds', same: true }] }] as never,
+    at,
+  );
+  const parity = (state: 'ready' | 'loading' | 'missing' | 'error', summary = withWinds) =>
     renderToStaticMarkup(createElement(ParityPage, { summary: state === 'ready' ? summary : null, state }));
 
-  it('credits Open-Meteo, links the licence, and says what is changed, on the page footer and #parity', () => {
-    for (const html of [renderToStaticMarkup(createElement(AppFooter)), parity('ready')]) {
-      expect(html).toContain('>Weather data by Open-Meteo.com</a>');
-      expect(html).toContain(LICENCE);
-      expect(html).toContain('interpolated from pressure levels to heights above the drop zone');
-      expect(html).toContain('weather codes grouped into its own labels');
-      expect(html).toContain('unless it is unreachable, when those cards name their fallback');
-    }
+  it('credits Open-Meteo, links the licence, and says what is changed, on the page footer', () => {
+    const html = renderToStaticMarkup(createElement(AppFooter));
+    expect(html).toContain('>Weather data by Open-Meteo.com</a>');
+    expect(html).toContain(LICENCE);
+    expect(html).toContain('the winds aloft, the drift estimate and the 10-day outlook’s day rows');
+    expect(html).toContain('interpolated from pressure levels to heights above the drop zone');
+    expect(html).toContain('weather codes grouped into its own labels');
+    expect(html).toContain('unless it is unreachable, when those cards name their fallback');
   });
 
-  it('is left off #parity while it shows no figures', () => {
-    expect(parity('loading')).not.toContain('Weather data by Open-Meteo.com');
+  it('credits only the winds table on #parity, which shows no other Open-Meteo data', () => {
+    const html = parity('ready');
+    expect(html).toContain('>Weather data by Open-Meteo.com</a>');
+    expect(html).toContain(LICENCE);
+    expect(html).toContain('this dashboard’s winds-aloft table');
+    expect(html).not.toContain('those cards');
+    expect(html).not.toContain('10-day');
+  });
+
+  it('is left off #parity while it shows no winds figures', () => {
+    for (const html of [parity('loading'), parity('missing'), parity('error'), parity('ready', usairnetOnly)]) {
+      expect(html).not.toContain('Weather data by Open-Meteo.com');
+    }
   });
 });

@@ -89,10 +89,15 @@ export function WindsAloftPanel({
     <Panel
       title="Winds aloft"
       subtitle={fallback ? 'NOAA FD fallback' : 'freefall drift / spot'}
+      // Open-Meteo is credited only on its own answer: with neither it nor
+      // the FD bulletin answering (source null) there is no data to credit,
+      // and Schulze's tool stays as the place to look instead.
       sources={
         fallback
           ? [DATA_SOURCES.fdWinds]
-          : [DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]
+          : source === 'open-meteo'
+            ? [DATA_SOURCES.openMeteo, DATA_SOURCES.markschulze]
+            : [DATA_SOURCES.markschulze]
       }
       unit={unit}
       onUnitChange={onUnitChange}
