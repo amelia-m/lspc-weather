@@ -5,6 +5,7 @@ import {
   groundByLocalHour,
   median,
   outagesOf,
+  overCauses,
   parseParityLines,
   percentile,
   summarizeParity,
@@ -511,5 +512,33 @@ describe('the ground row compared at whole knots', () => {
     expect(band.medianOurKt).toBe(5);
     expect(band.medianGapKt).toBe(0);
     expect(s.groundByLocalDay![0].medianGapKt).toBe(0);
+  });
+});
+
+/* The runs over 10° or 3 kt, split by what put them there, so a reader can
+ * see how few are an unexplained disagreement aloft. */
+describe('overCauses', () => {
+  const row = (ft: number, dDir: number, dSpd = 0) => ({ ft, dDir, dSpd, dT: 0 });
+  const run = (rows: ReturnType<typeof row>[], rawMismatch: boolean | null) =>
+    ({ kind: 'schulze', at: '2026-10-08T12:00:00Z', aligned: { rows }, rawMismatch }) as never;
+
+  it('puts each run over the limit in exactly one cause', () => {
+    const runs = [
+      run([row(0, 40), row(1000, 2)], false), // the Surface row only
+      run([row(0, 40), row(1000, 2)], true), // the Surface row only, even on a newer run
+      run([row(0, 1), row(5000, 30)], true), // aloft, newer run
+      run([row(0, 1), row(9000, 12)], false), // aloft, same run
+      run([row(0, 20), row(9000, 12)], null), // aloft, unjudged
+      run([row(0, 10), row(9000, 10)], false), // not over: 10 is not past 10
+    ];
+    expect(overCauses(runs, 'dDir', 10)).toEqual({ surfaceOnly: 2, newerRun: 1, sameRunAloft: 1, unjudgedAloft: 1 });
+  });
+
+  it('splits speed the same way, and lands in the summary', () => {
+    const runs = [run([row(0, 0, -5), row(1000, 0, 1)], false), run([row(0, 0, 0), row(3000, 0, 4)], true)];
+    expect(overCauses(runs, 'dSpd', 3)).toEqual({ surfaceOnly: 1, newerRun: 1, sameRunAloft: 0, unjudgedAloft: 0 });
+    const s = summarizeParity(runs, Date.parse('2026-10-09T00:00:00Z')).schulze;
+    expect(s.overCauses!.spd).toEqual({ surfaceOnly: 1, newerRun: 1, sameRunAloft: 0, unjudgedAloft: 0 });
+    expect(s.runsWithRowOver3Kt).toBe(2);
   });
 });

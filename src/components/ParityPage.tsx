@@ -1,4 +1,5 @@
 import type {
+  OverCauses,
   ParitySummary,
   Spread,
   TimeGapGroup,
@@ -339,10 +340,12 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
         <li>
           <strong>Runs with any row over 10° apart:</strong> {w.runsWithRowOver10Deg} of {w.aligned} (
           {pct(w.runsWithRowOver10Deg, w.aligned)}).
+          {w.overCauses && <OverCauseText c={w.overCauses.dir} />}
         </li>
         <li>
           <strong>Runs with any row over 3 kt apart:</strong> {w.runsWithRowOver3Kt} of {w.aligned} (
           {pct(w.runsWithRowOver3Kt, w.aligned)}).
+          {w.overCauses && <OverCauseText c={w.overCauses.spd} />}
         </li>
         <li>
           <strong>Raw profiles disagreed</strong> (a newer forecast on one side):{' '}
@@ -382,6 +385,21 @@ const blockLabel = (from: number): string => {
     ? `${twelve(from)}\u2013${twelve(to)}\u00a0${half(to)}`
     : `${twelve(from)}\u00a0${half(from)}\u2013${twelve(to)}\u00a0${half(to)}`;
 };
+
+/** Why the runs over a threshold were over, in one sentence: the Surface
+ *  row alone (the two rows are different heights), a newer forecast run on
+ *  one side, the same run, or unjudged. Counts, never a grade. */
+function OverCauseText({ c }: { c: OverCauses }): JSX.Element {
+  return (
+    <>
+      {' '}
+      Of those, {c.surfaceOnly} only on the Surface row, which is a different height on each side
+      (the ground row, below); {c.newerRun} with a newer forecast run on one side; {c.sameRunAloft}{' '}
+      on the same run, from 1,000&nbsp;ft up
+      {c.unjudgedAloft > 0 ? `; ${c.unjudgedAloft} from 1,000\u00a0ft up that could not be judged` : ''}.
+    </>
+  );
+}
 
 /** Knots to one decimal, whole numbers bare: the ground medians are of whole
  *  knots, so they end in .0 or .5; other figures can carry a tenth. */

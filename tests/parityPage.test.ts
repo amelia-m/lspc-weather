@@ -403,3 +403,20 @@ describe('ParityPage, the "as Schulze" table', () => {
     expect(html).not.toContain('Direction, as Schulze');
   });
 });
+
+describe('ParityPage, why runs were over', () => {
+  it('splits the over-10° and over-3 kt counts by cause', () => {
+    const row = (ft: number, dDir: number, dSpd = 0) => ({ ft, dDir, dSpd, dT: 0 });
+    const s = summarizeParity(
+      [
+        { kind: 'schulze', at: '2026-10-08T12:00:00Z', aligned: { rows: [row(0, 40, 5), row(1000, 1)] }, rawMismatch: false },
+        { kind: 'schulze', at: '2026-10-08T13:00:00Z', aligned: { rows: [row(0, 1), row(6000, 30, 4)] }, rawMismatch: true },
+      ] as ParityRecord[],
+      Date.parse('2026-10-09T00:00:00Z'),
+    );
+    const html = render('ready', s).replace(/<!-- -->/g, '');
+    expect(html).toContain('Of those, 1 only on the Surface row');
+    expect(html).toContain('1 with a newer forecast run on one side; 0 on the same run, from 1,000');
+    expect(html).not.toContain('could not be judged');
+  });
+});

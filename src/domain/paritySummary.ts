@@ -241,6 +241,9 @@ export interface ParitySummary {
      *  reader would notice on the card. Counts, not verdicts. */
     runsWithRowOver10Deg: number;
     runsWithRowOver3Kt: number;
+    /** Why those runs were over: `overCauses`. Absent in summaries written
+     *  before 2026-10-08. */
+    overCauses?: { dir: OverCauses; spd: OverCauses };
     unaligned: {
       runs: number;
       hoursDiffered: number;
@@ -406,6 +409,44 @@ function spreads(runs: readonly { ft: number; dDir: number; dSpd: number }[][]):
   return { byAltitude, over10, over3, within1 };
 }
 
+/** The runs with a row past a threshold, split by what put them there. The
+ *  four add up to the runs over. */
+export interface OverCauses {
+  /** Only the Surface row was over: the two Surface rows are different
+   *  heights (this dashboard's the 10 m wind, Schulze's a line through the
+   *  pressure levels read at the ground), so this is expected, not a
+   *  disagreement about the same wind. */
+  surfaceOnly: number;
+  /** A row from 1,000 ft up was over, and the raw profiles showed one side
+   *  on a newer forecast run (`rawMismatch`). */
+  newerRun: number;
+  /** A row from 1,000 ft up was over with both sides on the same run: the
+   *  case with no known cause. */
+  sameRunAloft: number;
+  /** A row from 1,000 ft up was over, and the run could not be judged. */
+  unjudgedAloft: number;
+}
+
+/** Split the same-hour runs with any row past `limit` (absolute, in the
+ *  row's unit) by cause. Pure. */
+export function overCauses(
+  runs: readonly SchulzeRecord[],
+  key: 'dDir' | 'dSpd',
+  limit: number,
+): OverCauses {
+  const out: OverCauses = { surfaceOnly: 0, newerRun: 0, sameRunAloft: 0, unjudgedAloft: 0 };
+  for (const r of runs) {
+    const rows = r.aligned?.rows ?? [];
+    const over = rows.filter((row) => Math.abs(row[key]) > limit);
+    if (over.length === 0) continue;
+    if (over.every((row) => row.ft === 0)) out.surfaceOnly += 1;
+    else if (r.rawMismatch === true) out.newerRun += 1;
+    else if (r.rawMismatch === false) out.sameRunAloft += 1;
+    else out.unjudgedAloft += 1;
+  }
+  return out;
+}
+
 export function summarizeParity(records: readonly ParityRecord[], now: number): ParitySummary {
   const times = records.map((r) => Date.parse(r.at)).filter((t) => Number.isFinite(t));
   const from = times.length ? new Date(Math.min(...times)).toISOString() : null;
@@ -464,6 +505,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
         : {}),
       runsWithRowOver10Deg: over10,
       runsWithRowOver3Kt: over3,
+      overCauses: { dir: overCauses(aligned, 'dDir', 10), spd: overCauses(aligned, 'dSpd', 3) },
       unaligned: {
         runs: unalignedRuns.length,
         hoursDiffered: differed.length,
