@@ -13,6 +13,7 @@ import type {
 } from '../domain/paritySummary';
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { Panel } from './common/Panel';
+import { OpenMeteoCredit } from './OpenMeteoCredit';
 import { ParityContext } from './ParityContext';
 import { ParityTimeline } from './ParityTimeline';
 
@@ -76,6 +77,11 @@ export function ParityPage({
         The figures below are counts and spreads across those runs. They say how far apart the
         sources were, not which was right; where a cause is known it is written in{' '}
         <code>docs/markschulze-altitude-reference.md</code> and the open questions.
+      </p>
+      {/* The winds figures below are this dashboard's Open-Meteo table, and
+          this page renders instead of the dashboard, footer and all. */}
+      <p className="muted small">
+        <OpenMeteoCredit />
       </p>
 
       {state === 'loading' && <p className="muted small">Loading the latest summary…</p>}

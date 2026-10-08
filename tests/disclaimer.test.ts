@@ -16,7 +16,8 @@ describe('the dashboard banner', () => {
     expect(shown).toContain('it does not decide whether it is safe to jump');
     // A reading is not a sign-off, and CLAUDE.md says the difference is not a
     // detail to smooth over: it stays in view.
-    expect(shown).toContain('not a licensed professional’s sign-off: check one against its source');
+    expect(shown).toContain('not a licensed professional’s sign-off: verify each against its source');
+    expect(shown).toContain('href="#citations"');
     expect(shown).toContain('the S&amp;TA, and the pilot in command');
   });
 
@@ -28,6 +29,5 @@ describe('the dashboard banner', () => {
       expect(more).toContain(detail);
       expect(shown).not.toContain(detail);
     }
-    expect(more).toContain('href="#citations"');
   });
 });

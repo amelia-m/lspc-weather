@@ -1,5 +1,6 @@
 import type { Advisory } from '../domain/types';
 import { Panel } from './common/Panel';
+import { SourceLinks } from './common/SourceLinks';
 import { SourceLink } from './common/SourceLink';
 import { DATA_SOURCES } from '../config/sources';
 
@@ -55,21 +56,14 @@ export function AdvisoryPanel({
   const footer = (
     <>
       Flag values from:{' '}
-      {[
-        DATA_SOURCES.iemObservation,
-        DATA_SOURCES.nwsObservation,
-        DATA_SOURCES.nwsForecast,
-        DATA_SOURCES.openMeteo,
-      ].map(
-        (s, i) => (
-          <span key={s.url}>
-            {i > 0 && ' · '}
-            <a href={s.url} target="_blank" rel="noopener noreferrer">
-              {s.label}
-            </a>
-          </span>
-        ),
-      )}
+      <SourceLinks
+        sources={[
+          DATA_SOURCES.iemObservation,
+          DATA_SOURCES.nwsObservation,
+          DATA_SOURCES.nwsForecast,
+          DATA_SOURCES.openMeteo,
+        ]}
+      />
       . Guidance sources are linked on each flag above.
     </>
   );

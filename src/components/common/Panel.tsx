@@ -2,6 +2,7 @@ import { useId, type ReactNode } from 'react';
 import type { DataSource } from '../../config/sources';
 import type { SpeedUnit } from '../../domain/units';
 import { UnitToggle, UnitToggleScope } from './UnitToggle';
+import { SourceLinks } from './SourceLinks';
 
 export function Panel({
   title,
@@ -75,15 +76,7 @@ export function Panel({
         sources &&
         sources.length > 0 && (
           <footer className="panel-sources">
-            Data:{' '}
-            {sources.map((s, i) => (
-              <span key={s.url}>
-                {i > 0 && ' · '}
-                <a href={s.url} target="_blank" rel="noopener noreferrer">
-                  {s.label}
-                </a>
-              </span>
-            ))}
+            Data: <SourceLinks sources={sources} />
           </footer>
         )
       )}
