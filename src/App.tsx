@@ -418,7 +418,16 @@ export default function App(): JSX.Element {
       )}
 
       <footer className="app-foot">
-        Data: Iowa Environmental Mesonet, NWS / NOAA (api.weather.gov), Open-Meteo. Built for fun — fly safe.
+        Data: Iowa Environmental Mesonet, NWS / NOAA (api.weather.gov), and{' '}
+        <a href={DATA_SOURCES.openMeteo.url} target="_blank" rel="noopener noreferrer">
+          weather data by Open-Meteo.com
+        </a>{' '}
+        under{' '}
+        <a href={DATA_SOURCES.openMeteoLicence.url} target="_blank" rel="noopener noreferrer">
+          {DATA_SOURCES.openMeteoLicence.label}
+        </a>
+        , whose pressure-level winds this dashboard interpolates to heights above the drop zone
+        and works the drift estimate from. Built for fun — fly safe.
         <br />
         <a href="#citations">Citations to verify</a> — what this dashboard claims, and what nobody
         has checked yet.
