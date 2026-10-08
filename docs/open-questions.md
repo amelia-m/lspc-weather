@@ -244,6 +244,16 @@ reserve. If nobody does, the second option is honest and the first is dead
 weight — but that is a fact about the DZ, not about the BSRs, and nothing in
 this repository establishes it.
 
+A lead, 2026-10-08: the maintainer believes most of the club's student rigs
+carry an Aerodyne Smart reserve
+(<https://www.flyaerodyne.com/reserve-canopy-smart.html>). The Smart is a
+ram-air reserve, by its maker's description as commonly known, not by a
+reading: the page was not opened, because `www.flyaerodyne.com` is not on the
+sandbox's allowlist. If an instructor confirms it for every student rig, no
+student here jumps a round reserve, which is the fact the second option
+waits on. "Most" is not "every": a rig with a round reserve would still need
+the 10 mph figure.
+
 ## Winds aloft
 
 The sub-surface question that sat here is settled and fixed: pressure levels
