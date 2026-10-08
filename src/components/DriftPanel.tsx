@@ -103,7 +103,9 @@ export function DriftPanel({
     <Panel
       title="Freefall drift / spot"
       subtitle="estimate"
-      sources={[source === 'nws-fd' ? DATA_SOURCES.fdWinds : DATA_SOURCES.openMeteo]}
+      sources={
+        source === 'nws-fd' ? [DATA_SOURCES.fdWinds] : source === 'open-meteo' ? [DATA_SOURCES.openMeteo] : []
+      }
     >
       {levels.length === 0 ? (
         <p className="muted">No winds-aloft data.</p>
