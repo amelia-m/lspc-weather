@@ -457,6 +457,20 @@ export function editedLimits(t: Thresholds): EditableLimit[] {
   return EDITABLE_LIMIT_KEYS.filter((k) => isEdited(t, k));
 }
 
+/** The reference lines a chart draws for a profile: its wind limit where a
+ *  published source sets one (`windLimitCitation`, the same switch the
+ *  Surface wind card's band and the wind flag use), and its gust ceiling
+ *  where it has one, each marked when the figure was edited in Settings. */
+export function limitLines(t: Thresholds | undefined): { kind: 'wind' | 'gust'; kt: number; edited: boolean }[] {
+  if (!t?.windLimitCitation) return [];
+  return [
+    { kind: 'wind', kt: t.windCautionKt, edited: isEdited(t, 'windCautionKt') },
+    ...(t.gustCautionKt != null
+      ? [{ kind: 'gust' as const, kt: t.gustCautionKt, edited: isEdited(t, 'gustCautionKt') }]
+      : []),
+  ];
+}
+
 const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
 
 /** Licensed profile: nobody publishes a surface-wind limit for licensed

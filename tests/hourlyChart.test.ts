@@ -239,9 +239,35 @@ describe('HourlyChart limit lines', () => {
     expect(html).toContain('hc-key-limit-gust');
     expect(html).toContain('Limit lines: P.');
     expect(html).toContain('LSPC Waivered Wind Limits</a>');
-    const edited = legend(withOverrides(resolveThresholds('waiver:0-5'), { windCautionKt: 15 }));
-    expect(edited).toContain('Edited in Settings');
-    expect(edited).not.toContain('LSPC Waivered Wind Limits</a>');
+    // An edit names the line it touched; the unedited one keeps its source.
+    const edited = legend(withOverrides(resolveThresholds('waiver:0-5'), { gustCautionKt: 20 }));
+    expect(edited).toContain('The gust ceiling is edited in Settings, so the source does not set it');
+    expect(edited).toContain('LSPC Waivered Wind Limits</a>');
     expect(legend(resolveThresholds('licensed'))).not.toContain('Limit lines');
+  });
+
+  it('marks an edited figure on the line itself', () => {
+    const t = withOverrides(resolveThresholds('waiver:0-5'), { gustCautionKt: 20 });
+    const html = renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt', limits: t })).replace(/<!-- -->/g, '');
+    expect(html).toContain('gust ceiling 20 kt (edited)');
+    expect(html).toMatch(/limit 13 kt<\/text>/);
+  });
+
+  it('names the BSR round-reserve figure the student line is not', () => {
+    // The Surface wind card's standing note, carried to the chart: the line
+    // is the ram-air figure, and a reader on a round reserve has a lower one.
+    expect(legend(resolveThresholds('student'))).toContain(
+      'A lower maximum ground wind, 10 mph, is published for solo students on round reserves; the limit line is not it.',
+    );
+    // A waiver tier has no such caveat (the club's call, A5 on #citations).
+    expect(legend(resolveThresholds('waiver:0-5'))).not.toContain('round reserves');
+  });
+
+  it('keeps the top limit line and its label clear of the top gridline', () => {
+    // The 21+ tier's gust ceiling is 20 mph, the axis floor.
+    const html = renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'mph', limits: resolveThresholds('waiver:21+') }));
+    const plotTop = Math.min(...[...html.matchAll(/<line class="hc-grid" x1="[\d.]+" y1="([\d.]+)"/g)].map((m) => Number(m[1])));
+    const y = Number(/<g class="hc-limit hc-limit-gust"><line x1="[\d.]+" y1="([\d.]+)"/.exec(html)![1]);
+    expect(y - 2.5 - 8).toBeGreaterThan(plotTop);
   });
 });

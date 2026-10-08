@@ -8,6 +8,9 @@
   --accent: #4aa8ff;
   --caution: #ff5d5d;
   --watch: #ffb454;
+  /* The gust ceiling's mark: the Surface wind card's band and the hourly
+     chart's line, label and key. */
+  --gust-ceiling: #c879ff;
   --info: #4aa8ff;
   --ok: #3fb950;
   --stale: #ffb454;
@@ -554,7 +557,7 @@ a {
   background: var(--caution);
 }
 .band-gust {
-  background: #c879ff;
+  background: var(--gust-ceiling);
 }
 .wind-gust-tick {
   position: absolute;
@@ -1069,10 +1072,10 @@ a {
   fill: var(--caution);
 }
 .hc-limit-gust line {
-  stroke: #c879ff;
+  stroke: var(--gust-ceiling);
 }
 .hc-limit-label-gust {
-  fill: #c879ff;
+  fill: var(--gust-ceiling);
 }
 .hc-wind {
   stroke: var(--accent);
@@ -1120,7 +1123,7 @@ a {
   background: repeating-linear-gradient(90deg, var(--caution) 0 1px, transparent 1px 3px);
 }
 .hc-key-limit-gust {
-  background: repeating-linear-gradient(90deg, #c879ff 0 1px, transparent 1px 3px);
+  background: repeating-linear-gradient(90deg, var(--gust-ceiling) 0 1px, transparent 1px 3px);
 }
 .hc-key-night {
   background: var(--hc-night);
@@ -1169,6 +1172,11 @@ a {
 }
 .settings-unit {
   opacity: 0.7;
+}
+.settings-retire {
+  font-weight: normal;
+  font-size: 0.8em;
+  color: var(--muted);
 }
 .settings-field input {
   background: var(--panel-2);
