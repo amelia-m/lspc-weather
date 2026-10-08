@@ -144,16 +144,25 @@ export function evaluateAdvisories(
     // --- Overcast layer reported ---
     // A plain observed fact, so it may flag; the sentence claims only what
     // 105.17 says. "Solid overcast" is usairnet's phrase (the FAA's is plain
-    // "Overcast"), and 105.17 bars operations into or through cloud, not
-    // under it: an overcast above exit altitude is reported here too.
-    if (current.skyLayers.some((l) => l.cover === 'OVC')) {
+    // "Overcast"), and 105.17 bars operations into or through cloud, not under
+    // it. Whether this layer is in the way depends on the exit altitude, which
+    // the app does not know, so the flag gives the reported base and 105.17's
+    // clearance below cloud and leaves the comparison to the reader rather than
+    // inventing a cut-off. The base is above the station, KPMV, not the DZ.
+    const ovcBases = current.skyLayers
+      .filter((l) => l.cover === 'OVC')
+      .map((l) => l.baseFtAgl);
+    if (ovcBases.length > 0) {
+      const known = ovcBases.filter((b): b is number => b != null);
+      const base = known.length > 0 ? Math.min(...known) : null;
       out.push({
         id: 'overcast',
         level: 'watch',
         metric: 'Sky cover',
-        value: 'Overcast (OVC)',
+        value: base != null ? `Overcast at ${base.toLocaleString('en-US')} ft AGL` : 'Overcast, base not reported',
         guidance:
-          'Overcast (OVC) layer reported. 14 CFR 105.17 bars parachute operations into or through a cloud and sets minimum distances from cloud.',
+          `Overcast (OVC) layer reported${base != null ? `, base ${base.toLocaleString('en-US')} ft above the station` : ''}. ` +
+          '14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least 500 ft below cloud under 10,000 ft MSL (1,000 ft at or above). Compare the base with the exit altitude.',
         citation: CITATIONS.far10517,
       });
     }

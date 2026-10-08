@@ -210,7 +210,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.',
     value: 'Flag fires below 3 SM',
     where:
-      'Visibility flag in Conditions to note; the overcast flag (“14 CFR 105.17 bars parachute operations into or through a cloud”); and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
+      'Visibility flag in Conditions to note; the overcast flag (“14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least 500 ft below cloud under 10,000 ft MSL (1,000 ft at or above)”); and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
     sources: [CITATIONS.far10517],
     found: {
       read: 'the eCFR (Title 14 current as of 2026-09-21), 2026-09-23',

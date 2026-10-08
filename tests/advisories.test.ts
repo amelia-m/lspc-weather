@@ -723,9 +723,20 @@ describe('a live observation whose API decode is empty', () => {
       (a) => a.id === 'overcast',
     )!.guidance;
     expect(g).toBe(
-      'Overcast (OVC) layer reported. 14 CFR 105.17 bars parachute operations into or through a cloud and sets minimum distances from cloud.',
+      'Overcast (OVC) layer reported, base 2,700 ft above the station. 14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least 500 ft below cloud under 10,000 ft MSL (1,000 ft at or above). Compare the base with the exit altitude.',
     );
     expect(g).not.toMatch(/solid|no gaps/i);
+    const flag = evaluateAdvisories(snapshot({ current: overcast }), DEFAULT_THRESHOLDS.student, now).find(
+      (a) => a.id === 'overcast',
+    )!;
+    expect(flag.value).toBe('Overcast at 2,700 ft AGL');
+    // An overcast with no measured height still flags, and says so.
+    const blind = evaluateAdvisories(
+      snapshot({ current: live('KPMV 230355Z AUTO 08003KT 10SM OVC/// 15/13 A3028 RMK AO2') }),
+      DEFAULT_THRESHOLDS.student,
+      now,
+    ).find((a) => a.id === 'overcast');
+    expect(blind?.value).toBe('Overcast, base not reported');
   });
 
   it('says "OVC 2,700 ft", not "Clear", on the Current conditions card', () => {
