@@ -180,7 +180,7 @@ describe('the Winds aloft card’s two views', () => {
     );
     expect(html).toContain('published elevation, 1,182');
     expect(html).toContain('1,145');
-    expect(html).toMatch(/about 37(<!-- -->)?\u00a0ft(<!-- -->)? (<!-- -->)?lower than the row of the same name in (<!-- -->)?the (<!-- -->)?default/);
+    expect(html).toMatch(/about 37(<!-- -->)?\u00a0ft(<!-- -->)? (<!-- -->)?lower than the row of the same name in (<!-- -->)?this one\./);
     // Not where the ground is unknown.
     expect(card('all', false)).not.toContain('different ground');
   });
