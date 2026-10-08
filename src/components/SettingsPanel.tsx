@@ -32,10 +32,19 @@ export function SettingsPanel({
   return (
     <details className="panel settings">
       <summary className="panel-head">
-        <h2>Settings — thresholds {modified && <span className="settings-dot">• edited</span>}</h2>
+        <h2>
+          Settings — thresholds <span className="settings-unit">(may be retired)</span>{' '}
+          {modified && <span className="settings-dot">• edited</span>}
+        </h2>
         <span className="panel-sub">{label} profile</span>
       </summary>
       <div className="panel-body">
+        {/* Raised by the maintainer, 2026-10-08; docs/open-questions.md. */}
+        <p className="muted small">
+          This section may be retired. A student does not set their own limits: the BSR sets
+          them, or the LSPC waiver raises them to its posted tier, which the profile selector
+          already picks.
+        </p>
         <p className="muted small">
           Tune the values that trigger each advisory for the <strong>{label}</strong> profile. Saved
           in this browser. Winds/gusts are in knots (1 kt ≈ 1.15 mph).

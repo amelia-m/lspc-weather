@@ -326,7 +326,15 @@ export default function App(): JSX.Element {
         hourNav={winds.nav}
       />
     ),
-    hourly: <HourlyForecastPanel hourly={snapshot.hourly} unit={unit} onUnitChange={setUnit} />,
+    hourly: (
+      <HourlyForecastPanel
+        hourly={snapshot.hourly}
+        unit={unit}
+        onUnitChange={setUnit}
+        limits={thresholds}
+        profile={profileLabel(profile)}
+      />
+    ),
     daily: (
       <DailyForecastPanel
         daily={snapshot.daily}
@@ -335,6 +343,8 @@ export default function App(): JSX.Element {
         unit={unit}
         onUnitChange={setUnit}
         {...temp}
+        limits={thresholds}
+        profile={profileLabel(profile)}
       />
     ),
     precip: <PrecipPanel hourly={snapshot.hourly} current={snapshot.current} />,
