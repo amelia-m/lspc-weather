@@ -1,12 +1,14 @@
+import { useId } from 'react';
 import type { HourlyPoint } from '../../domain/types';
 import { toSpeed, type SpeedUnit } from '../../domain/units';
 import { SITE } from '../../config/site';
-import { nightIntervals } from '../../domain/sun';
+import { nightIntervals, skySpans } from '../../domain/sun';
 
 /** Compact, dependency-free SVG chart of the next ~18 h: surface wind (line),
  *  gust (dashed line) on a wind-speed axis, with precip probability as
  *  background bars, and the hours between sunset and sunrise at the drop
- *  zone as a dark band behind everything, gridlines included. */
+ *  zone as a dark band behind everything, gridlines included. A sun or a
+ *  moon above the plot names each day and night span it can see. */
 export function HourlyChart({
   points,
   unit,
@@ -14,11 +16,14 @@ export function HourlyChart({
   points: HourlyPoint[];
   unit: SpeedUnit;
 }): JSX.Element {
+  const maskId = useId();
   const W = 340;
-  const H = 140;
+  const H = 154;
   const padL = 26;
   const padR = 8;
-  const padT = 10;
+  // The top margin holds the sun and moon (ICON_Y), so no line or bar is
+  // ever drawn through one: the plot starts below them.
+  const padT = 24;
   const padB = 18;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
@@ -68,6 +73,18 @@ export function HourlyChart({
   const tN = points[n - 1]?.time;
   const xAt = (t: number): number => padL + ((t - t0) / (tN - t0)) * plotW;
   const nights = n > 1 ? nightIntervals(SITE.dz.lat, SITE.dz.lon, t0, tN) : [];
+  // A sun over each stretch of daylight on the chart and a moon over each
+  // night, at the middle of the part that is shown, so a night that runs off
+  // the right edge is still labelled over its visible part. A span too
+  // narrow to hold the glyph without crowding the next one gets none; the
+  // band and its edge lines still mark it.
+  const icons =
+    n > 1
+      ? skySpans(nights, t0, tN)
+          .map((s) => ({ kind: s.kind, x0: xAt(s.start), x1: xAt(s.end) }))
+          .filter((s) => s.x1 - s.x0 >= MIN_ICON_SPAN_PX)
+          .map((s) => ({ kind: s.kind, x: (s.x0 + s.x1) / 2 }))
+      : [];
 
   return (
     <svg className="hchart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Hourly wind forecast">
@@ -95,6 +112,37 @@ export function HourlyChart({
         .map((t) => (
           <line key={`edge-${t}`} className="hc-night-edge" x1={xAt(t)} y1={padT} x2={xAt(t)} y2={padT + plotH} />
         ))}
+
+      {/* Day and night, named above the plot. They mark the spans the band
+          and its lines already draw; they are not the sun's or the moon's
+          place in the sky, and the crescent is not the moon's phase. */}
+      {icons.some((i) => i.kind === 'night') && (
+        <defs>
+          <mask id={maskId}>
+            <circle r={6} fill="white" />
+            <circle cx={3} cy={-2} r={5} fill="black" />
+          </mask>
+        </defs>
+      )}
+      {icons.map((i) =>
+        i.kind === 'day' ? (
+          <g key={`sun-${i.x}`} className="hc-sun" transform={`translate(${i.x.toFixed(1)} ${ICON_Y})`}>
+            <title>daylight, sunrise to sunset</title>
+            {Array.from({ length: 8 }, (_, k) => {
+              const a = (k * Math.PI) / 4;
+              return (
+                <line key={k} x1={6.5 * Math.cos(a)} y1={6.5 * Math.sin(a)} x2={8.5 * Math.cos(a)} y2={8.5 * Math.sin(a)} />
+              );
+            })}
+            <circle r={4} />
+          </g>
+        ) : (
+          <g key={`moon-${i.x}`} className="hc-moon" transform={`translate(${i.x.toFixed(1)} ${ICON_Y})`}>
+            <title>night, sunset to sunrise</title>
+            <circle r={5.5} mask={`url(#${maskId})`} />
+          </g>
+        ),
+      )}
 
       {/* y gridlines + labels (kt) */}
       {gridKt.map((kt) => (
@@ -135,6 +183,12 @@ export function HourlyChart({
     </svg>
   );
 }
+
+/** Where the sun and moon sit: the middle of the chart's top margin. */
+const ICON_Y = 11;
+/** The narrowest day or night span, in chart units, that gets a glyph: a
+ *  little over the sun's 17-unit width, so two glyphs never touch. */
+const MIN_ICON_SPAN_PX = 20;
 
 const hourLabel = (ms: number): string =>
   new Date(ms)

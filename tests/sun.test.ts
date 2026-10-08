@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nightIntervals, skyPhase, sunTimes } from '../src/domain/sun';
+import { nightIntervals, skyPhase, skySpans, sunTimes } from '../src/domain/sun';
 
 // LSPC / Weeping Water, NE
 const LAT = 40.8675;
@@ -139,3 +139,27 @@ describe('skyPhase', () => {
   });
 });
 
+
+/* The chart puts a sun or a moon over each span it shows, so the spans must
+ * cover the range exactly, in order, days in the gaps between nights. */
+describe('skySpans', () => {
+  it('fills the days around the nights and covers the range end to end', () => {
+    expect(skySpans([[30, 50]], 0, 100)).toEqual([
+      { kind: 'day', start: 0, end: 30 },
+      { kind: 'night', start: 30, end: 50 },
+      { kind: 'day', start: 50, end: 100 },
+    ]);
+  });
+
+  it('gives no day before a night the range starts in, or after one it ends in', () => {
+    expect(skySpans([[0, 20], [80, 100]], 0, 100)).toEqual([
+      { kind: 'night', start: 0, end: 20 },
+      { kind: 'day', start: 20, end: 80 },
+      { kind: 'night', start: 80, end: 100 },
+    ]);
+  });
+
+  it('is one day when there is no night in the range', () => {
+    expect(skySpans([], 0, 100)).toEqual([{ kind: 'day', start: 0, end: 100 }]);
+  });
+});

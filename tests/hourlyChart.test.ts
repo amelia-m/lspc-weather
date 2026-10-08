@@ -59,6 +59,70 @@ describe('HourlyChart night shading', () => {
   });
 });
 
+/* A sun over each day span the chart shows and a moon over each night, at
+ * the middle of the visible part, in the margin above the plot. */
+describe('HourlyChart sun and moon', () => {
+  const hours = (fromIso: string, n: number): HourlyPoint[] =>
+    Array.from({ length: n }, (_, i) => ({
+      time: Date.parse(fromIso) + i * 3_600_000,
+      windSpeedKt: 8,
+      windGustKt: 12,
+      precipProbPct: 0,
+    })) as unknown as HourlyPoint[];
+  const icons = (points: HourlyPoint[]): { kind: string; x: number; y: number }[] =>
+    [
+      ...renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt' })).matchAll(
+        /<g class="hc-(sun|moon)" transform="translate\(([\d.]+) ([\d.]+)\)"/g,
+      ),
+    ].map((m) => ({ kind: m[1], x: Number(m[2]), y: Number(m[3]) }));
+  const xAt = (points: HourlyPoint[], t: number): number =>
+    26 + ((t - points[0].time) / (points[points.length - 1].time - points[0].time)) * 306;
+
+  it('centres a moon on the night and a sun on each day either side', () => {
+    // 1 PM CDT on Oct 3 to 1 PM CDT on Oct 4.
+    const points = hours('2026-10-03T18:00:00Z', 25);
+    const sunset = sunTimes(SITE.dz.lat, SITE.dz.lon, new Date('2026-10-03T18:00:00Z')).sunset;
+    const sunrise = sunTimes(SITE.dz.lat, SITE.dz.lon, new Date('2026-10-04T18:00:00Z')).sunrise;
+    const got = icons(points);
+    expect(got.map((i) => i.kind)).toEqual(['sun', 'moon', 'sun']);
+    expect(got[0].x).toBeCloseTo((xAt(points, points[0].time) + xAt(points, sunset)) / 2, 0);
+    expect(got[1].x).toBeCloseTo((xAt(points, sunset) + xAt(points, sunrise)) / 2, 0);
+    expect(got[2].x).toBeCloseTo((xAt(points, sunrise) + xAt(points, points[24].time)) / 2, 0);
+  });
+
+  it('sits above the plot, where no line or bar reaches', () => {
+    const html = renderToStaticMarkup(createElement(HourlyChart, { points: hours('2026-10-03T18:00:00Z', 25), unit: 'kt' }));
+    // The top gridline is the plot's top edge; the max-speed line can reach it.
+    const plotTop = Math.min(...[...html.matchAll(/<line class="hc-grid" x1="[\d.]+" y1="([\d.]+)"/g)].map((m) => Number(m[1])));
+    for (const i of icons(hours('2026-10-03T18:00:00Z', 25))) {
+      // The sun's rays reach 8.5 from its centre, the moon 5.5.
+      expect(i.y + 8.5).toBeLessThan(plotTop);
+    }
+  });
+
+  it('labels the visible part of a night that runs off the edge', () => {
+    // 8 PM CDT to 2 AM CDT: night throughout, so one moon in the middle.
+    const points = hours('2026-10-04T01:00:00Z', 7);
+    const got = icons(points);
+    expect(got.map((i) => i.kind)).toEqual(['moon']);
+    expect(got[0].x).toBeCloseTo(26 + 306 / 2, 0);
+  });
+
+  it('leaves a span too narrow for a glyph unlabelled', () => {
+    // Six hours ending ten minutes after sunset: those ten minutes of night
+    // are about 8.5 units wide, too narrow for a moon; the day gets its sun.
+    const sunset = sunTimes(SITE.dz.lat, SITE.dz.lon, new Date('2026-10-03T18:00:00Z')).sunset;
+    const from = sunset - 6 * 3_600_000 + 10 * 60_000;
+    const points = Array.from({ length: 7 }, (_, i) => ({
+      time: from + i * 3_600_000,
+      windSpeedKt: 8,
+      windGustKt: 12,
+      precipProbPct: 0,
+    })) as unknown as HourlyPoint[];
+    expect(icons(points).map((i) => i.kind)).toEqual(['sun']);
+  });
+});
+
 /* The stylesheet's night shade must be darker than the panel it sits on:
  * a grey band once read lighter than the day around it. A Node render does
  * not apply CSS, so this reads the token itself. */

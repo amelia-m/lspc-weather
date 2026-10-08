@@ -1030,6 +1030,19 @@ a {
   stroke-width: 1;
   opacity: 0.6;
 }
+/* The sun and moon over the hourly chart's day and night spans, in the
+   Daylight card's colours. Labels for the spans, nothing more. */
+.hc-sun circle {
+  fill: var(--sun);
+}
+.hc-sun line {
+  stroke: var(--sun);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.hc-moon > circle {
+  fill: var(--moon);
+}
 .hc-precip {
   fill: var(--hc-precip);
 }
