@@ -116,6 +116,13 @@ const TIMELINE: Entry[] = [
     effect:
       'The samples spread over the night and every part of the hour again, the second half included, where the two winds tables show different hours and were most often on different forecast runs. Runs hours apart time almost no arrivals; those figures stay mostly the sampler’s.',
   },
+  {
+    date: 'Oct 8',
+    kind: 'Dashboard',
+    what: 'The winds table takes Open-Meteo’s 80, 120 and 180 m winds near the ground, and seven pressure levels between Schulze’s (875 to 575 hPa). A card switch, “As Schulze”, rebuilds the hour his way.',
+    effect:
+      'The table moves from his by design: near the ground mostly (his has no 500 ft row; the 1,000 ft row on high-pressure hours), and by up to a few knots and about 10° where an extra level sits. The same-hour spreads below include that from here. Each run now also logs the table built his way, shown first above, which is the check that the two still agree.',
+  },
 ];
 
 export function ParityTimeline(): JSX.Element {

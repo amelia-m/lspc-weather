@@ -465,8 +465,9 @@ describe('the "as Schulze" table in the summary', () => {
     }) as never;
   const NOW = Date.parse('2026-10-09T00:00:00Z');
 
-  it('is absent until a run logs it', () => {
+  it('is absent until a run logs it, and a run with nothing to compare does not count', () => {
     expect(summarizeParity([run()], NOW).schulze.asSchulze).toBeUndefined();
+    expect(summarizeParity([run([])], NOW).schulze.asSchulze).toBeUndefined();
   });
 
   it('spreads its rows by altitude, apart from the default table, and counts runs within rounding', () => {

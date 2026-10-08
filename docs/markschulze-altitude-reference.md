@@ -96,8 +96,10 @@ tool itself samples below 18,000 ft — 1000, 975, 950, 925, 900, 850, 800, 750,
 (`OPEN_METEO_PRESSURE_LEVELS` in `src/domain/normalize.ts`) — so the two tables
 are built from the same pressure levels, and the widest gap in the 13,000 ft column is
 about 2,100 ft. Open-Meteo also serves 775 and 725 hPa (checked 2026-09-23);
-they were left out so that the sampling matches the tool's exactly, which is
-what makes it a cross-check. `scripts/schulzeCompare.live.ts` prints the two
+they were left out so that the sampling matched the tool's exactly, which is
+what made it a cross-check. (Superseded 2026-10-08: the default table now
+takes them and five more, and the cross-check is the "As Schulze" table; see
+"Two tables" below.) `scripts/schulzeCompare.live.ts` prints the two
 profiles side by side at the same valid hour. Run after the change, the same
 day at 19Z:
 
