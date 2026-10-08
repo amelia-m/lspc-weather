@@ -127,33 +127,30 @@ project's repository under the maintainer's name, so it waits on the
 maintainer deciding to send it. Before writing the entry, read the README's
 list as it then stands for the format it uses.
 
-## The DZ's coordinates sit off the landing areas
+## Settled: the DZ's coordinates now sit on the landing area
 
-Raised 2026-10-08 by the maintainer, from Mark Schulze's map. The app's point
-(`SITE.dz`, 40.8675, −96.11) and Schulze's preset for the club (40.8675006,
-−96.11001) are both in the field south-west of the runway, downhill from it.
-Jumpers land north or east of a barbed-wire fence that runs just west of
-the runway's north–south length and just south of its leg along the north.
-The landing areas there are the runway itself, the alfalfa field east of it
-where students are aimed, and the pea gravel near the north-east corner,
-by the buildings, where many experienced jumpers land.
+Raised 2026-10-08 by the maintainer, from Mark Schulze's map: the app's
+point (40.8675, −96.11) and Schulze's preset for the club (40.8675006,
+−96.11001) were both in the field south-west of the runway, downhill from
+it. Jumpers land north or east of a barbed-wire fence that runs just west
+of the runway's north–south length and just south of its leg along the
+north: on the runway, the alfalfa field east of it where students are
+aimed, and the pea gravel near the north-east corner, by the buildings,
+where many experienced jumpers land.
 
-What the point decides: the Open-Meteo request, and with it the model ground
-the 10, 80, 120 and 180 m winds stand on, the below-ground test and the "As
-Schulze" datum (the default table is measured from the published field
-elevation, 1,182 ft, wherever the point is); the NWS gridpoint; the sun
-times and the hourly chart's night shading; the radar pin, the sectional
-tiles and the distances and bearings to stations and radar; and the links
-that carry it (Mark Schulze's page, NWS MapClick, SkyVector, both traffic
-maps). Most move by a rounding over a few hundred metres, but Open-Meteo's
-ground does not: it steps 4 m (13 ft) between this point and Schulze's
-preset, under a metre west, so a move can shift those near-ground samples
-and the "As Schulze" datum by tens of feet. That is a reason to choose the
-point deliberately, not one against moving it. Moving it needs a point for
-the main landing area that someone at the club confirms, not one read off
-an aerial photo here. The link to Schulze's page carries the app's point,
-so the "As Schulze" view and the page a reader opens from the card would
-still share a ground; his own preset for the club would not.
+The same day the maintainer gave the middle of the landing area by the
+pea gravel, 40°52'13.0"N 96°06'30.5"W, and `SITE.dz` moved there
+(40.8703, −96.1085: four decimals, because api.weather.gov's points
+endpoint refuses more). Checked that day: it is in the same Open-Meteo
+forecast cell and the same NWS gridpoint (OAX 77,42), so no forecast
+changes; Open-Meteo's ground there is 355 m (1,165 ft) against 349 m at
+the old point, so the model's 10 m wind now stands above the field's
+published 1,182 ft and the Surface row is that wind itself
+(`isSurface`, `src/domain/types.ts`); KPMV is 61° rather than 60° from it.
+The link to Schulze's page carries the new point, so it shows his table
+measured from 1,165 ft, as the "As Schulze" view is; his own list's pin
+for the club is still in the south-west field (1,132 ft on Open-Meteo's
+terrain). Logs before 2026-10-08 were taken at the old point.
 
 ## Which forecast run the winds-aloft request is served
 

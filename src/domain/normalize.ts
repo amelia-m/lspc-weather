@@ -883,7 +883,8 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
   // Drop pressure levels that sit below the model's own terrain.
   //
   // A pressure surface can lie underground — at NE69 the 1000 hPa level runs
-  // 85–738 ft MSL against a 1,145 ft model surface, i.e. below ground in every
+  // 85–738 ft MSL against a 1,145 ft model surface (at the point used until
+  // 2026-10-08; 1,165 ft at the landing area since), i.e. below ground in every
   // hour of the 384-hour window. The wind reported there is not model output:
   // NOAA's Unified Post Processor, which writes these fields, fills
   // underground levels with "WIND TO BE THE SAME AS THE LOWEST LEVEL ABOVE
@@ -896,7 +897,8 @@ function samplesAtIndex(data: RawOpenMeteo, idx: number): RawWindSample[] {
   //
   // Compared against the model's surface height rather than the DZ's
   // published field elevation, because "below ground" is a fact about the
-  // model's terrain, not about the airport. They differ by ~37 ft here.
+  // model's terrain, not about the airport. They differ by ~17 ft at the
+  // landing area (1,165 against 1,182 ft), and by 37 ft at the old point.
   //
   // In this, the default table, that changes nothing on screen today: the
   // 10 m sample already outranks the 1000 hPa level, so no row draws on it.

@@ -22,10 +22,14 @@ export interface RawWindSample {
    * is that lowest sample — but the flag only does anything when the requested
    * altitude falls beneath it, i.e. when the DZ's published field elevation is
    * below the model's surface height plus 10 m. Whether it is depends on a DEM
-   * lookup: at NE69 the model surface is 1,145 ft and the field 1,182 ft, so
-   * today the Surface row comes from the interpolation loop and this flag is
-   * not reached. A DEM refresh could move it either way, and without the flag
-   * the case where it is reached would drop the Surface row entirely.
+   * lookup. At the point used until 2026-10-08 the model surface was 1,145 ft
+   * against the field's 1,182, so the 10 m sample stood at 1,178 ft, under
+   * the field, and the Surface row came from the interpolation loop. At the
+   * landing area by the pea gravel, SITE.dz since, it is 1,165 ft: the 10 m
+   * sample stands at about 1,198 ft, above the field, and the Surface row is
+   * the 10 m wind through this flag (checked live that day). A DEM refresh
+   * could move it either way, and without the flag that case would drop the
+   * Surface row entirely.
    */
   isSurface?: boolean;
   /** Set on Open-Meteo's fixed-height winds (80, 120 and 180 m above its

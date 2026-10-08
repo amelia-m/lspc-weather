@@ -138,7 +138,7 @@ sanity-check the dashboard against sources you already trust:
   the dashboard's forecast grid is centered on the DZ itself (only the METAR
   observation comes from KPMV).
 - **Winds aloft ↔ [Mark Schulze's Winds
-  Aloft](https://www.markschulze.net/winds/?lat=40.8675&lon=-96.11)** — the popular
+  Aloft](https://www.markschulze.net/winds/?lat=40.8703&lon=-96.1085)** — the popular
   skydiving winds tool; same Open-Meteo model source. After half past the two
   show different hours until one is stepped.
 - **TAF ↔ [AWC TAF

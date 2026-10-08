@@ -44,7 +44,9 @@ describe('METAR_STATION_OFFSET', () => {
     expect(METAR_STATION_OFFSET.distanceMi).toBeGreaterThan(11);
     expect(METAR_STATION_OFFSET.distanceMi).toBeLessThan(12);
     expect(METAR_STATION_OFFSET.compass).toBe('ENE');
-    expect(Math.round(METAR_STATION_OFFSET.bearingDeg)).toBe(60);
+    // 60° from the old point in the south-west field; 61° from the landing
+    // area by the pea gravel, where SITE.dz has been since 2026-10-08.
+    expect(Math.round(METAR_STATION_OFFSET.bearingDeg)).toBe(61);
   });
 
   it('agrees with offsetFromDz called directly', () => {

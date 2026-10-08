@@ -362,9 +362,12 @@ read at 03Z, settle three things that were inferred or assumed before.
   picks the club from his own list sees it from 1,132 ft, 13 ft lower. (The
   default table is measured from the published field elevation, 1,182 ft,
   as before.) `scripts/schulzeCompare.live.ts` asks his API for the app's
-  point, so its logs compare like with like. Both points are in the field
-  south-west of the runway, below it, not on the landing areas (see
-  `docs/open-questions.md`).
+  point, so its logs compare like with like. Both points were in the field
+  south-west of the runway, below it, not on the landing areas. Later the
+  same day the app's point moved to the landing area by the pea gravel
+  (40.8703, −96.1085), where Open-Meteo's ground is 1,165 ft; the
+  comparison and the card's link follow it, his own list's pin does not
+  (`docs/open-questions.md`).
 
 ## Which Surface row is nearer the measured wind (2026-10-08)
 

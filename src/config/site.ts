@@ -66,8 +66,13 @@ export const SITE: SiteConfig = {
   dz: {
     name: "Lincoln Sport Parachute Club (Brown's Airport)",
     icao: 'NE69',
-    lat: 40.8675,
-    lon: -96.11,
+    // The middle of the main landing area by the pea gravel, given by the
+    // maintainer on 2026-10-08 (40°52'13.0"N 96°06'30.5"W). Until then the
+    // point sat in the field south-west of the runway, downhill of it, where
+    // Mark Schulze's own pin for the club still is. Four decimals (about
+    // 10 m), because api.weather.gov's points endpoint refuses more.
+    lat: 40.8703,
+    lon: -96.1085,
     elevationFt: 1182,
   },
   metarStation: {
