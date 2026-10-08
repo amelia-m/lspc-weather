@@ -230,8 +230,10 @@ export default function App(): JSX.Element {
   useEffect(() => {
     safeLocalSet(UNIT_KEY, unit);
   }, [unit]);
-  // °F unless a reader chose °C: the outlook, the one card that printed a
-  // single unit for temperature, printed °F.
+  // °F unless a reader chose °C. Before this setting the cards disagreed
+  // (Current conditions and density altitude printed °C, the outlook °F,
+  // winds aloft both), so either default changes some card; °F is the unit
+  // most jumpers here read a temperature in.
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => (safeLocalGet(TEMP_UNIT_KEY) === 'C' ? 'C' : 'F'));
   useEffect(() => {
     safeLocalSet(TEMP_UNIT_KEY, tempUnit);

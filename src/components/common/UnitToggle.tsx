@@ -9,8 +9,8 @@ import type { SpeedUnit, TempUnit } from '../../domain/units';
 const UnitToggleScopeContext = createContext<string | null>(null);
 
 /** Name the enclosed toggles after `labelledBy` (the id of a visible heading).
- *  Panel wraps its header toggle in this; a toggle rendered outside a scope
- *  falls back to the standalone "Wind speed unit" label. */
+ *  Panel wraps its header toggles in this; a toggle rendered outside a scope
+ *  falls back to its standalone label ("Wind speed unit", "Temperature unit"). */
 export function UnitToggleScope({
   labelledBy,
   children,

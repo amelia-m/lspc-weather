@@ -10,14 +10,14 @@ Legend: ✅ have · ⚠️ partial · ❌ missing · ⏭️ intentionally skippe
 | usairnet row | Dashboard status |
 |---|---|
 | Sky / Cloud coverage % | ✅ Ceiling & sky card + per-day hourly detail |
-| Temp (°F) | ✅ hourly detail, daily hi/lo |
+| Temp (°F) | ✅ hourly detail, daily hi/lo, in the page-wide °F/°C unit |
 | Wind direction / avg speed / max gust | ✅ surface, winds aloft, hourly |
 | Cloud base @ 60% / ceiling | ✅ ceiling (lowest BKN/OVC) |
 | Chance of precip % | ✅ precip card + hourly |
 | Visibility | ✅ current METAR, plus a Vis column in the 10-day card's hourly detail |
 | Flight Rule (VFR / MVFR / IFR / LIFR) | ✅ Ceiling & sky pill, hourly Flight column, and a flag below VFR (AIM 7-1-7) |
 | Dew point + temp/dew-point spread | ⚠️ current METAR only, no forecast — spread shown as a measurement, no verdict |
-| Relative humidity | ✅ current METAR card (`RH % · °C spread`) |
+| Relative humidity | ✅ current METAR card (`RH % · spread`, in the page-wide °F/°C unit) |
 | Precip amount (QPF, inches) | ✅ NWS gridpoint `quantitativePrecipitation`, on the Precip & storms card |
 | Chance of thunder % | ✅ NWS gridpoint `probabilityOfThunder` (Precip & storms card, hourly Storm column) |
 | Probability precip is rain % | ⏭️ skip — low value for summer jumping |

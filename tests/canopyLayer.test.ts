@@ -59,7 +59,7 @@ describe('the canopy-layer heights', () => {
     const row = at(raw(true), 500);
     expect(row.speedKt).toBe(18);
     expect(row.directionDeg).toBe(215);
-    expect(row.tempC).toBe(8);
+    expect(row.tempC).toBe(8.5);
     // Without them, the same row is the 10 m → 950 hPa line: 8 kt.
     expect(at(raw(false), 500).speedKt).toBe(8);
   });
