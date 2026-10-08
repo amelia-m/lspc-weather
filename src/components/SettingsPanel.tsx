@@ -43,7 +43,7 @@ export function SettingsPanel({
         <p className="muted small">
           This section may be retired. A student does not set their own wind limits: the BSR
           sets them, or the LSPC waiver raises them to its posted tier, which the profile
-          selector already picks. The visibility figure is 14 CFR 105.17&rsquo;s.
+          selector already picks. The visibility row, unedited, is 14 CFR 105.17&rsquo;s figure.
         </p>
         <p className="muted small">
           Tune the values that trigger each advisory for the <strong>{label}</strong> profile. Saved

@@ -386,8 +386,9 @@ export interface Thresholds {
   windLimitCitation: Citation | null;
   /** A lower published ground-wind maximum this profile's band does not
    *  check, for the Surface wind card to name at any speed (and the surface
-   *  wind flag when it fires) so silence below the band is not read as
-   *  covering it. Both build the sentence from these and the profile's live
+   *  wind flag when it fires, and the hourly chart's legend under its limit
+   *  line) so silence below the band is not read as covering it. Each builds
+   *  its sentence from these and the profile's live
    *  `windCautionKt`, which Settings can move: unedited they name the
    *  published figure the band is (`bandIs`), edited they say so, and
    *  once the caution is low enough that the band checks the lower limit too
@@ -494,8 +495,9 @@ const STUDENT: Thresholds = {
   // "silence reads as an all-clear" failure the Licensed profile has a whole
   // standing note about. The app models no canopy type, so the honest move is
   // to keep both sourced figures and say which one the band and flag use.
-  // That sentence is not written here: the flag (windBandSentence) and the
-  // card each build theirs from `windBandCaveat`, because it is about the
+  // That sentence is not written here: the flag (windBandSentence), the
+  // card and the hourly chart's legend each build theirs from
+  // `windBandCaveat`, because it is about the
   // app's band, which Settings can move, and this one is about the BSR, which
   // it cannot. Modelling canopy
   // type is in docs/open-questions.md.
