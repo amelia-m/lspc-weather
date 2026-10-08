@@ -7,8 +7,9 @@ export interface DataSource {
   label: string;
   url: string;
   /** The licence the data are served under, where it asks for a link to
-   *  itself beside the data. Rendered after the source wherever it is
-   *  linked (SourceLinks). */
+   *  itself beside the data. Rendered after the source in each card's
+   *  "Data:" line (SourceLinks). The Data health card's links are to the
+   *  services, beside a status rather than their data, and carry none. */
   licence?: { label: string; url: string };
 }
 

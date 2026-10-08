@@ -80,9 +80,11 @@ export function ParityPage({
       </p>
       {/* The winds figures below are this dashboard's Open-Meteo table, and
           this page renders instead of the dashboard, footer and all. */}
-      <p className="muted small">
-        <OpenMeteoCredit />
-      </p>
+      {state === 'ready' && (
+        <p className="muted small">
+          <OpenMeteoCredit />
+        </p>
+      )}
 
       {state === 'loading' && <p className="muted small">Loading the latest summary…</p>}
       {state === 'missing' && (

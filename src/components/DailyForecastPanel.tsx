@@ -68,7 +68,10 @@ export function DailyForecastPanel({
     <Panel
       title="10-day outlook"
       subtitle={fallback ? 'NWS ~7-day fallback' : 'daily planning'}
-      sources={[fallback ? DATA_SOURCES.nwsForecast : DATA_SOURCES.openMeteo]}
+      // The day rows are Open-Meteo's, or the NWS gridpoint's on the
+      // fallback; the hourly detail under a day is the NWS gridpoint's on
+      // both.
+      sources={fallback ? [DATA_SOURCES.nwsForecast] : [DATA_SOURCES.openMeteo, DATA_SOURCES.nwsForecast]}
       unit={unit}
       onUnitChange={onUnitChange}
     >
