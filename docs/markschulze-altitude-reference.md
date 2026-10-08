@@ -395,3 +395,30 @@ the DZ on different ground, a METAR's wind is a two-minute mean, and the hours
 are those the comparison happened to log (most of them from the dense sampler,
 2026-09-30 to 10-05), so it is a sample of two weeks of early autumn, not a
 season. The Surface wind card reads the observation, not either forecast.
+
+What the result does and does not say:
+
+- This app's Surface row is not a figure it works out. It is Open-Meteo's
+  own forecast of the wind at 10 m (33 ft), read as served and rounded to
+  whole knots (since 2026-10-08 taken straight through `isSurface`; before
+  that, at the old point, interpolated a few feet from it). 10 m is the
+  height an airport wind sensor stands at, KPMV's included, so part of why
+  it lands nearer is that it forecasts the same height that is measured.
+- Schulze's Surface row is not wrong for being further off. It answers a
+  different question: a straight line through the pressure levels read at
+  the ground, which comes out nearer the wind a couple of hundred feet up.
+  The gap is widest at night (62 hours to 7), when the air at the ground
+  goes calm under moving air above, and narrowest in the jumping hours
+  (27 to 15, with 20 ties).
+- Both ran above the measured wind on average, the 10 m row by about 1.5 kt.
+- Most of the 156 hours were logged at the point used until 2026-10-08, in
+  the field south-west of the runway; none at the landing area yet.
+
+To repeat it: take every Schulze record with `aligned` and `ground`, place
+each on its valid hour (the run time rounded to the hour, checked against
+`appHour`), take each side's median over that hour's runs (`ourShownKt`
+where the record has it, else `ourKt` rounded; his `theirKt`), and set both
+against the mean of KPMV's reports within 30 minutes of the hour from IEM's
+archive (`mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=PMV&data=sknt`,
+report types 3 and 4). It was run by hand from the scratchpad, not from a
+script in this repository.

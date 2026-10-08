@@ -299,6 +299,10 @@ question in `docs/open-questions.md`.
 - `schulze.byAltitude[].dir` and `.spd`: the spreads above; `mean` is signed
   (dashboard minus Schulze), so its sign says which side ran higher.
 - `schulze.rawMismatch`: how many runs could be judged, and how many disagreed.
+- The two Surface rows against KPMV's measured wind (156 hours to
+  2026-10-08; the 10 m row nearer in 104, his in 23, tied in 29) are in
+  `docs/markschulze-altitude-reference.md`, "Which Surface row is nearer the
+  measured wind". It is not part of the summary: it was run by hand.
 - `schulze.overCauses` (from 2026-10-08): the same-hour runs with a row over
   10° (`dir`) or 3 kt (`spd`), split by cause, the four adding up to
   `runsWithRowOver10Deg` / `runsWithRowOver3Kt`: `surfaceOnly` (only the
@@ -306,7 +310,13 @@ question in `docs/open-questions.md`.
   from 1,000 ft up, with one side on a newer forecast run), `sameRunAloft`
   (a row from 1,000 ft up on the same run: no known cause) and
   `unjudgedAloft`. Over the logs summarised to 2026-10-07 (1,614 same-hour runs): 502 runs over 10° were 431,
-  70, 1 and 0; 389 over 3 kt were 345, 44, 0 and 0.
+  70, 1 and 0; 389 over 3 kt were 345, 44, 0 and 0. The
+  largest single differences on the page (178° on the Surface row, 172° at
+  6,000 ft, 158° at 11,000 ft) were all on runs with one side on a newer
+  forecast run, and the 178° was between a 0.6 kt and a 2 kt wind, near calm,
+  where a direction means little. The one same-run run over 10° from
+  1,000 ft up was 12° at 9,000 ft (2026-10-01 14:39Z); the logs carry no
+  speeds aloft to say whether that wind was light.
 - `schulze.byTimeGap[]`: one entry per time group (`same-hour-same-run`,
   `same-hour-different-run`, `one-hour-apart`), with the runs that
   contributed rows and the pooled `dir` and `spd` spreads from 1,000 ft up.
