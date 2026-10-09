@@ -643,6 +643,11 @@ export const LICENSES: readonly License[] = ['A', 'B', 'C', 'D'];
  *  never opened below their own minimum. */
 export const DEFAULT_LICENSE: License = 'A';
 
+/** Validate a stored license; anything unknown is DEFAULT_LICENSE. */
+export function toLicense(raw: string | null): License {
+  return LICENSES.includes(raw as License) ? (raw as License) : DEFAULT_LICENSE;
+}
+
 /** The BSR 2-1 I minimum container-opening altitude (ft AGL) for a student
  *  (`null`) or a license holder, and whom it binds, worded for the drift
  *  card. 2-1 I reads "All students and A-license holders: 3,000 feet AGL",

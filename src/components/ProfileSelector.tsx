@@ -57,9 +57,14 @@ export function ProfileSelector({
         {button('Student', !licensed, licensed ? lastStudent : profile)}
         {button('Licensed', licensed, 'licensed')}
       </div>
+      {/* Named on screen as well as to a screen reader: four bare letters
+          under Licensed would not say what they choose. */}
       {licensed && (
-        <div className="class-toggle class-toggle-sub" role="group" aria-label="USPA license">
-          {LICENSES.map((l) => choice(l, l === license, () => onLicenseChange(l)))}
+        <div className="license-row">
+          <span className="license-label" aria-hidden="true">USPA license</span>
+          <div className="class-toggle class-toggle-sub" role="group" aria-label="USPA license">
+            {LICENSES.map((l) => choice(l, l === license, () => onLicenseChange(l)))}
+          </div>
         </div>
       )}
       {!licensed && (

@@ -94,8 +94,9 @@ a {
   color: #04121f;
   font-weight: 600;
 }
-/* Under Student: USPA BSR or the club waiver. A step smaller than the class
-   toggle above it, so the two read as a choice and a sub-choice. */
+/* Under Student, USPA BSR or the club waiver; under Licensed, the USPA
+   license. A step smaller than the class toggle above it, so the two read as
+   a choice and a sub-choice. */
 .class-toggle-sub button {
   padding: 4px 10px;
   font-size: 0.85rem;
@@ -137,6 +138,15 @@ a {
 }
 .pilot-links li {
   margin: 0 0 8px;
+}
+.license-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.license-label {
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 .tier-toggle {
   display: flex;

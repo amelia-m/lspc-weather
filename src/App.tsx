@@ -10,8 +10,7 @@ import {
   type EditableLimit,
   profileLabel,
   WAIVER_TIERS,
-  DEFAULT_LICENSE,
-  LICENSES,
+  toLicense,
   type License,
   type Thresholds,
   type WindProfileId,
@@ -220,12 +219,10 @@ export default function App(): JSX.Element {
     }
   };
 
-  // Kept while a student profile is chosen, so Licensed and back returns to
-  // it. Anything unknown in storage falls back to DEFAULT_LICENSE.
-  const [license, setLicense] = useState<License>(() => {
-    const stored = safeLocalGet(LICENSE_KEY);
-    return LICENSES.includes(stored as License) ? (stored as License) : DEFAULT_LICENSE;
-  });
+  // Stored on every change and never cleared by a student profile, which
+  // simply does not pass it on (the drift card's `license` below), so
+  // Licensed and back returns to it.
+  const [license, setLicense] = useState<License>(() => toLicense(safeLocalGet(LICENSE_KEY)));
   useEffect(() => {
     safeLocalSet(LICENSE_KEY, license);
   }, [license]);

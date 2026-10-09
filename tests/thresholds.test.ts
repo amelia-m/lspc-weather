@@ -6,6 +6,7 @@ import {
   DEFAULT_LICENSE,
   LICENSES,
   openingMinimum,
+  toLicense,
   isSimSectionUrl,
   resolveThresholds,
   WAIVER_TIERS,
@@ -19,6 +20,11 @@ describe('openingMinimum', () => {
     expect(openingMinimum('B')).toEqual({ ft: 2500, who: 'B-license holders' });
     expect(openingMinimum('C')).toEqual({ ft: 2500, who: 'C-license holders' });
     expect(openingMinimum('D')).toEqual({ ft: 2500, who: 'D-license holders' });
+  });
+
+  it('reads a stored license, and anything unknown as the default', () => {
+    for (const l of LICENSES) expect(toLicense(l)).toBe(l);
+    for (const raw of [null, '', 'a', 'E', 'licensed']) expect(toLicense(raw)).toBe(DEFAULT_LICENSE);
   });
 
   it('assumes, before a jumper picks, the license whose minimum no other license is above', () => {

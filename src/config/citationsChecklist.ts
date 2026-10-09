@@ -90,7 +90,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [
-      'The Deploy default is 3,000 ft on every profile: the Licensed profile includes A-license holders, whose minimum is 3,000 ft, and the app does not know a jumper’s licence. Does that default read sensibly, or should the profile ask for the licence?',
+      'The Deploy box opens on the minimum itself: 3,000 ft for a student, and under Licensed the minimum for the license chosen in the header (A, so 3,000 ft, until one is picked). The card says to deploy above the minimum, not at it. Is the minimum the right default, or should it open higher?',
       'Is the tandem figure set by the SIM, by the manufacturer, or both? It is printed as a BSR minimum.',
     ],
   },
