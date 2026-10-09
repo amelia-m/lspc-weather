@@ -18,7 +18,7 @@
  * Pure: records in, conditions out.
  */
 import type { CurrentConditions, ObservationSource, SkyLayer } from './types';
-import { altimeterFromRaw, compareSkyDecodes, parseSkyGroups, toSkyCover } from './normalize';
+import { altimeterFromRaw, compareSkyDecodes, parseSkyGroups, tempsFromRaw, toSkyCover } from './normalize';
 import { round } from './units';
 
 /** The fields of IEM's `api/1/currents.json` record this app reads, as the
@@ -54,29 +54,6 @@ export interface RawIemCurrents {
 }
 
 const fToC = (f: number): number => round(((f - 32) * 5) / 9, 1);
-
-/**
- * Temperature and dew point from the METAR text: the remarks' T group
- * (T02500173: 25.0 °C, 17.3 °C) when present, which is what NWS reports and
- * what this app has always shown, else the body group (25/17, M for minus).
- * IEM's own dew point is whole °F, which converts back a tenth or more off.
- */
-export function tempsFromRaw(raw: string): { tempC: number | null; dewpointC: number | null } | null {
-  const t = /\bT([01])(\d{3})(?:([01])(\d{3}))?\b/.exec(raw.split(' RMK ')[1] ?? '');
-  if (t) {
-    const val = (sign: string, digits: string): number => (sign === '1' ? -1 : 1) * (Number(digits) / 10);
-    return {
-      tempC: val(t[1], t[2]),
-      dewpointC: t[3] != null ? val(t[3], t[4]) : null,
-    };
-  }
-  const body = /\s(M?\d{2})\/(M?\d{2})?\s/.exec(` ${raw.split(' RMK ')[0]} `);
-  if (body) {
-    const val = (s: string): number => (s.startsWith('M') ? -Number(s.slice(1)) : Number(s));
-    return { tempC: val(body[1]), dewpointC: body[2] ? val(body[2]) : null };
-  }
-  return null;
-}
 
 /** An IEM current record as the conditions every card reads. null when the
  *  record has no valid time, which is the one field nothing can stand in for. */
