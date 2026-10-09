@@ -216,6 +216,34 @@ Until then the Winds aloft card states only what was seen: on the same hour
 the two can show different runs for a while, most often between half past
 and ten to the hour.
 
+A lead from the surface-wind sample of 2026-10-09
+(`docs/surface-wind-sources.md`), not yet tested against the winds-aloft
+request: Open-Meteo's metadata API (`/data/<model>/static/meta.json`) does
+give each model's last run and when it became available, and that evening
+HRRR's hourly domain (`ncep_hrrr_conus`) became available at 00:48Z and
+01:52Z, the window where the mismatches cluster. For about twelve minutes
+after a new 15-minute run arrived, successive requests got the new run or
+the old one in turn, and Open-Meteo's model-updates page says its redundant
+servers can differ "while the data is being copied" and to "wait 10
+minutes after the availability time" (read 2026-10-09). Two requests a
+moment apart landing on different servers would look exactly like this.
+Logging that metadata beside each Schulze comparison would test it.
+
+## Surface wind: which forecast source
+
+Open since 2026-10-09. Whether Open-Meteo's `minutely_15` or `current` 10 m
+wind is a better forecast of KPMV's measured wind than the NWS gridpoint hour
+or Open-Meteo's hourly value. One two-hour sample (41 runs, 7 METAR reports,
+all 5 to 6 kt) settled how the sources are built and how often they change,
+and could not settle accuracy: see `docs/surface-wind-sources.md`. It needs
+weeks of reports across windy, gusty and calm conditions, from a sampler
+(`scripts/surfaceWindCompare.live.ts`, in no workflow yet) or from archived
+forecasts paired with IEM's archived METARs. Also seen there and not acted
+on: the NWS gridpoint is served from caches that keep a copy up to an hour,
+and the app's fetch does not bypass them; and Open-Meteo's hourly gust at the
+DZ is the last quarter hour's maximum, not the hour's its docs describe.
+Nothing on the dashboard changed.
+
 ## Live-site smoke test
 
 Run against live data on 2026-09-22 (first time the app had ever been exercised
