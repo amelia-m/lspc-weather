@@ -1080,6 +1080,11 @@ a.sim-term {
   fill: var(--muted);
   font-size: 8px;
 }
+/* Day names read above the hour labels, which are the finer scale. */
+.hc-day {
+  fill: var(--text);
+  font-weight: 600;
+}
 /* Night on the hourly chart, sunset to sunrise: a dark band (--hc-night)
    with a thin line at each edge. Black is only about 1.25:1 against this
    panel, so the band's own edge is low contrast; the lines mark where it

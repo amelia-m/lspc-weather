@@ -32,15 +32,38 @@ export function HourlyChart({
   // no escaping.
   const maskId = useId().replace(/:/g, '');
   const W = 340;
-  const H = 154;
   const padL = 26;
   const padR = 8;
+  const plotW = W - padL - padR;
+  const n = points.length;
+  const xOf = (i: number): number => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
+
+  // Each day named at local noon (the middle of its daylight, between the
+  // night bands), not so near an edge that the name is cut off. Up to three
+  // days this is a second row under about six clock-hour labels; beyond
+  // that it is the only row, since a label every n/6 hours would land on a
+  // different hour each day with no date to tell the days apart.
+  const dayLabels = points.flatMap((p, i) =>
+    localHour(p.time) === 12 && xOf(i) > padL + EDGE_LABEL_PX && xOf(i) < W - padR - EDGE_LABEL_PX
+      ? [{ i, text: fmtWeekday(p.time) }]
+      : [],
+  );
+  const labelEvery = Math.max(1, Math.round(n / 6));
+  const hourLabels =
+    n > DAY_LABELS_AFTER_H
+      ? []
+      : points.flatMap((p, i) => (i % labelEvery === 0 ? [{ i, text: fmtShortHour(p.time) }] : []));
+  // The chart grows by a row when it carries both, so the plot keeps its
+  // height whichever range is shown.
+  const twoRows = hourLabels.length > 0 && dayLabels.length > 0;
+  const H = 154 + (twoRows ? DAY_ROW : 0);
   // The top margin holds the sun and moon (ICON_Y), so no line or bar is
   // ever drawn through one: the plot starts below them.
   const padT = 24;
-  const padB = 18;
-  const plotW = W - padL - padR;
+  const padB = 18 + (twoRows ? DAY_ROW : 0);
   const plotH = H - padT - padB;
+  const hourY = padT + plotH + 12;
+  const dayY = H - 6;
 
   const conv = (v: number | null): number | null => (v == null ? null : toSpeed(v, unit));
   const speeds = points.map((p) => conv(p.windSpeedKt));
@@ -60,8 +83,6 @@ export function HourlyChart({
   let maxKt = Math.ceil(peak / 5) * 5;
   while (lines.some((l) => (1 - toSpeed(l.kt, unit) / maxKt) * plotH < MIN_LIMIT_GAP)) maxKt += 5;
 
-  const n = points.length;
-  const xOf = (i: number): number => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
   const yOf = (kt: number): number => padT + (1 - kt / maxKt) * plotH;
 
   const path = (vals: (number | null)[]): string => {
@@ -84,21 +105,6 @@ export function HourlyChart({
   // never overlap into darker strips.
   const step = n > 1 ? plotW / n : plotW;
   const barW = n > 1 ? Math.max(1, step - Math.min(2, step / 4)) : plotW;
-
-  // Up to three days, about six clock-hour labels. Beyond that a label every
-  // n/6 hours would land on a different hour each day with no date to tell
-  // the days apart, so each day is named instead, at local noon (the middle
-  // of its daylight, between the night bands), and not so near an edge that
-  // the name is cut off.
-  const labelEvery = Math.max(1, Math.round(n / 6));
-  const xLabels: { i: number; text: string }[] =
-    n > DAY_LABELS_AFTER_H
-      ? points.flatMap((p, i) =>
-          localHour(p.time) === 12 && xOf(i) > padL + EDGE_LABEL_PX && xOf(i) < W - padR - EDGE_LABEL_PX
-            ? [{ i, text: fmtWeekday(p.time) }]
-            : [],
-        )
-      : points.flatMap((p, i) => (i % labelEvery === 0 ? [{ i, text: fmtShortHour(p.time) }] : []));
 
   // Night at the drop zone, sunset to sunrise: the same times the 14 CFR
   // 105.19 night flag and the Daylight card use (domain/sun.ts), so the shade
@@ -224,8 +230,13 @@ export function HourlyChart({
       <path className="hc-wind" d={path(speeds)} fill="none" />
 
       {/* x labels */}
-      {xLabels.map(({ i, text }) => (
-        <text key={points[i].time} className="hc-axis" x={xOf(i)} y={H - 6} textAnchor="middle">
+      {hourLabels.map(({ i, text }) => (
+        <text key={points[i].time} className="hc-axis" x={xOf(i)} y={hourY} textAnchor="middle">
+          {text}
+        </text>
+      ))}
+      {dayLabels.map(({ i, text }) => (
+        <text key={`day-${points[i].time}`} className="hc-axis hc-day" x={xOf(i)} y={dayY} textAnchor="middle">
           {text}
         </text>
       ))}
@@ -237,8 +248,10 @@ export function HourlyChart({
  *  gridline: enough to see the dotted line apart from the solid one. */
 const MIN_LIMIT_GAP = 4;
 
-/** Longer than this many hours, the axis names days rather than hours. */
+/** Longer than this many hours, the axis names days and not hours. */
 const DAY_LABELS_AFTER_H = 72;
+/** The height, in chart units, of the row of day names under the hours. */
+const DAY_ROW = 11;
 /** How near either end of the plot a day name may sit, in chart units:
  *  about half a three-letter name's width. */
 const EDGE_LABEL_PX = 10;
