@@ -10,9 +10,11 @@ export const fmtShortHour = (ms: number): string =>
 export const fmtWeekday = (ms: number): string =>
   new Date(ms).toLocaleDateString('en-US', { weekday: 'short', timeZone: SITE.timeZone });
 
-/** The hour of the day at the drop zone, 0 to 23. */
-export const localHour = (ms: number): number =>
-  Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: SITE.timeZone }).format(ms));
+const HOUR_23 = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: SITE.timeZone });
+
+/** The hour of the day at the drop zone, 0 to 23. One formatter for every
+ *  call: the chart asks once per point. */
+export const localHour = (ms: number): number => Number(HOUR_23.format(ms));
 
 export const fmtTime = (ms: number): string =>
   new Date(ms).toLocaleTimeString('en-US', {

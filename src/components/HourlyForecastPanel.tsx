@@ -6,10 +6,11 @@ import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 
-/** Selectable forecast horizons. 18 h is the default working window; the
- *  longer options are offered only when the data actually reaches them. The
- *  NWS gridpoint served 168 h for the drop zone on 2026-10-09, wind, gust and
- *  precip chance all the way, so 7 days is the longest it can fill. */
+/** Selectable forecast horizons. 18 h is the default working window; each
+ *  longer option is offered once the data runs past the one before it, so
+ *  it always shows something new, though not always its full length. The
+ *  NWS gridpoint's wind for the drop zone ran 166 h ahead on 2026-10-09, so
+ *  7 days is about the longest it can fill. */
 const HORIZONS = [
   { hours: 18, label: '18h' },
   { hours: 36, label: '36h' },

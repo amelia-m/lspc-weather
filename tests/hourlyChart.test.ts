@@ -313,6 +313,10 @@ describe('HourlyChart axis over several days', () => {
   it('leaves out a day whose noon falls at the very edge of the plot', () => {
     // Starting at noon CDT Fri: Friday's noon is the first point, at the edge.
     expect(axis(hours('2026-10-09T17:00:00Z', 120))[0]).toBe('Sat');
+    // Ending at noon CDT Wed (1 PM CDT Fri plus 119 h, the 120th point):
+    // Wednesday's noon is the last point, at the right edge.
+    const toWed = axis(hours('2026-10-09T18:00:00Z', 120));
+    expect(toWed[toWed.length - 1]).toBe('Tue');
   });
 
   it('keeps clock hours up to three days', () => {

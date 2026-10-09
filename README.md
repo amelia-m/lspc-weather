@@ -70,8 +70,8 @@ the published figures rather than Settings edits.
 - 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
   hours from sunset to sunrise shaded, over a selectable 18 h, 36 h, 72 h, 5 d
-  or 7 d horizon (18 h by default; each longer one appears when the NWS
-  forecast reaches it, and past 72 h the axis names days).
+  or 7 d horizon (18 h by default; each longer one appears once the NWS
+  forecast runs past the one before it, and past 72 h the axis names days).
 - 📅 **10-day outlook** — daily sky, high/low, max wind/gust, dominant wind direction, precip chance; tap a
   day for its hourly detail.
 - ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline, with

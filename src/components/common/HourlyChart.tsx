@@ -10,7 +10,8 @@ import { fmtShortHour, fmtWeekday, localHour } from '../format';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
 
-/** Compact, dependency-free SVG chart of the next ~18 h: surface wind (line),
+/** Compact, dependency-free SVG chart of the hours given (18 h to 7 days):
+ *  surface wind (line),
  *  gust (dashed line) on a wind-speed axis, with precip probability as
  *  background bars, and the hours between sunset and sunrise at the drop
  *  zone as a dark band behind everything, gridlines included. A sun or a
@@ -78,7 +79,11 @@ export function HourlyChart({
   };
 
   const gridKt = [0, maxKt / 2, maxKt];
-  const barW = n > 1 ? Math.max(2, plotW / n - 2) : plotW;
+  // A 2-unit gap between bars where there is room; over a week (about 1.8
+  // units an hour) a quarter of the step, so neighbouring translucent bars
+  // never overlap into darker strips.
+  const step = n > 1 ? plotW / n : plotW;
+  const barW = n > 1 ? Math.max(1, step - Math.min(2, step / 4)) : plotW;
 
   // Up to three days, about six clock-hour labels. Beyond that a label every
   // n/6 hours would land on a different hour each day with no date to tell
