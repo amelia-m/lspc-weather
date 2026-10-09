@@ -1,23 +1,24 @@
 import type { DensityAltitudeResult } from './types';
+import { HPA_PER_INHG, hpaToInHg } from './units';
 
 /**
- * Density altitude by the National Weather Service's own formulas: those
- * behind its Density Altitude calculator (weather.gov/epz,
- * wxcalc_densityaltitude) and its Pressure Altitude calculator
- * (wxcalc_pressurealtitude), read 2026-10-09 from the pages' scripts and
- * the formula sheets they link (densityAltitude.pdf, pressureAltitude.pdf).
+ * Density altitude by the National Weather Service's own formulas, those
+ * behind three of its WFO El Paso calculators (weather.gov/epz, wxcalc_*),
+ * read 2026-10-09 from the pages' scripts and the formula sheets they link:
  *
- *   pressure altitude PA = elevation + (29.92 − altimeter) × 1000
- *   station pressure  P  = 1013.25 × (1 − PA / 145366.45)^(1 / 0.190284) hPa
+ *   station pressure  P  = altimeter × ((288 − 0.0065 × h_m) / 288)^5.2561
+ *   pressure altitude PA = (1 − (P_hPa / 1013.25)^0.190284) × 145366.45
  *   density altitude  DA = 145366 × (1 − (17.326 × P_inHg / T_R)^0.235)
  *
- * with T_R the temperature in degrees Rankine. The first line is the
- * pilot's rule and the figure the card prints; the second is the Pressure
- * Altitude calculator's formula run backwards, the pressure the standard
- * atmosphere has at that altitude; the third is the Density Altitude
- * calculator's. So the headline follows from the two figures printed under
- * it, pressure altitude and temperature, as an E6B's does, and the card
- * prints the station pressure for a reader to put into the NWS calculator.
+ * with h_m the field elevation in metres and T_R the temperature in degrees
+ * Rankine. The altimeter setting is reduced to the field's pressure, the
+ * pressure altitude is the standard atmosphere's altitude for that pressure
+ * (what an altimeter set to 29.92 reads), and the density altitude is the
+ * standard atmosphere's altitude for the air's density. The pilot's rule,
+ * elevation + (29.92 − altimeter) × 1,000, approximates the second line and
+ * runs tens of feet off it away from 29.92; the card prints the exact one,
+ * so the headline follows from the rows printed under it (pressure
+ * altitude, or the station pressure, and the temperature), as an E6B's does.
  *
  * Two figures come out, because the two documents a reader would check the
  * card against disagree about humidity:
@@ -30,11 +31,11 @@ import type { DensityAltitudeResult } from './types';
  *    efficiency", and advises adding 10 percent to takeoff distance when it
  *    is high instead.
  *  - `humidDensityAltitudeFt`: T is the virtual temperature, as the NWS
- *    calculator computes it from the dew point (moist air is less dense, so
- *    it behaves like warmer dry air); the calculator has no dry mode. Null
- *    without a dew point. The vapour pressure is the calculator's own
- *    formula, so this is the figure its page gives for the card's station
- *    pressure, temperature and dew point.
+ *    Density Altitude calculator computes it from the dew point (moist air
+ *    is less dense, so it behaves like warmer dry air); the calculator has
+ *    no dry mode. Null without a dew point. The vapour pressure is the
+ *    calculator's own formula, so this is the figure its page gives for the
+ *    card's station pressure, temperature and dew point.
  *
  * This replaced `PA + 120 × (T − ISA)` with the virtual temperature in T. The
  * 120 ft per °C is in neither document (the pamphlet's chart works out to
@@ -46,8 +47,7 @@ import type { DensityAltitudeResult } from './types';
  *
  * The ISA deviation is from the standard temperature at the pressure
  * altitude, 15 − 1.98 °C per 1,000 ft, the temperature density altitude is
- * measured against, so the rows under the headline are the inputs it came
- * from.
+ * measured against.
  *
  * Pure function: no I/O.
  */
@@ -59,15 +59,13 @@ export function densityAltitude(params: {
 }): DensityAltitudeResult {
   const { elevationFt, altimeterInHg, oatC, dewpointC } = params;
 
-  const pressureAltitudeFt = elevationFt + (29.92 - altimeterInHg) * 1000;
+  const stationInHg = altimeterInHg * ((288 - 0.0065 * elevationFt * 0.3048) / 288) ** 5.2561;
+  const stationHpa = stationInHg * HPA_PER_INHG;
+  const pressureAltitudeFt = (1 - (stationHpa / 1013.25) ** 0.190284) * 145366.45;
   const isaTempC = 15 - 1.98 * (pressureAltitudeFt / 1000);
-
-  // The calculator converts inches to millibars with 33.8639; the same
-  // factor back.
-  const stationHpa = 1013.25 * (1 - pressureAltitudeFt / 145366.45) ** (1 / 0.190284);
-  const stationInHg = stationHpa / 33.8639;
   const tK = oatC + 273.15;
-  const fromKelvin = (kelvin: number): number => 145366 * (1 - ((17.326 * stationInHg) / (kelvin * 1.8)) ** 0.235);
+  const fromKelvin = (kelvin: number): number =>
+    145366 * (1 - ((17.326 * hpaToInHg(stationHpa)) / (kelvin * 1.8)) ** 0.235);
 
   let humidDensityAltitudeFt: number | null = null;
   if (dewpointC != null) {
@@ -83,5 +81,7 @@ export function densityAltitude(params: {
     stationPressureInHg: Math.round(stationInHg * 100) / 100,
     isaDeviationC: Math.round((oatC - isaTempC) * 10) / 10,
     fieldElevationFt: elevationFt,
+    oatC,
+    dewpointC: dewpointC ?? null,
   };
 }

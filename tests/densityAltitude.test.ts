@@ -6,12 +6,9 @@ import { DensityAltitudePanel } from '../src/components/DensityAltitudePanel';
 import { CITATIONS } from '../src/config/thresholds';
 
 /* The NWS calculators' own functions, as their pages' scripts have them
- * (weather.gov/epz/wxcalc_densityaltitude and wxcalc_pressurealtitude, read
- * 2026-10-09), with only the parseFloat calls dropped. The Density Altitude
- * page takes a station pressure; the card derives it from its pressure
- * altitude, so the test finds the pressure at which the Pressure Altitude
- * page's `altpress` gives that altitude, by bisection, rather than by the
- * closed form the code uses. */
+ * (weather.gov/epz/wxcalc_densityaltitude, wxcalc_stationpressure and
+ * wxcalc_pressurealtitude, read 2026-10-09), with only the parseFloat calls
+ * and the page's unit handling dropped. */
 const nws = {
   convertKtoR: (kel: number) => (kel - 273.15) * 1.8 + 32 + 459.67,
   vaporPressure: (cDewpoint: number) => 6.11 * Math.pow(10, (7.5 * cDewpoint) / (237.3 + cDewpoint)),
@@ -26,9 +23,12 @@ const nws = {
   },
   altpress: (mb: number) => (1 - Math.pow(mb / 1013.25, 0.190284)) * 145366.45,
   convertinHGtomb: (inHG: number) => 33.8639 * inHG,
+  // wxcalc_stationpressure's decideConvert, with Mheight = 0.3048 × feet.
+  stnpressure: (INpressure: number, Mheight: number) => INpressure * Math.pow((288 - 0.0065 * Mheight) / 288, 5.2561),
 };
 
-/** The station pressure, in inHg, at which `altpress` gives `paFt`. */
+/** The station pressure, in inHg, at which `altpress` gives `paFt`: the
+ *  pressure a reader would recover from the card's pressure-altitude row. */
 const stationPressureFor = (paFt: number): number => {
   let lo = 500;
   let hi = 1100;
@@ -52,8 +52,9 @@ describe('densityAltitude, by the NWS calculator’s method', () => {
       [-10, -15, 30.5],
     ]) {
       const r = densityAltitude({ elevationFt: FIELD, altimeterInHg, oatC, dewpointC });
-      const p = stationPressureFor(FIELD + (29.92 - altimeterInHg) * 1000);
+      const p = nws.stnpressure(altimeterInHg, 0.3048 * FIELD);
       expect(r.stationPressureInHg).toBe(Math.round(p * 100) / 100);
+      expect(r.pressureAltitudeFt).toBe(Math.round(nws.altpress(nws.convertinHGtomb(p))));
       expect(r.densityAltitudeFt).toBe(Math.round(nws.densityAltitude(p, oatC + 273.15)));
       expect(r.humidDensityAltitudeFt).toBe(
         Math.round(nws.densityAltitude(p, nws.virtualTemperature(oatC + 273.15, p, dewpointC))),
@@ -66,7 +67,7 @@ describe('densityAltitude, by the NWS calculator’s method', () => {
     // rounded constants put a standard day about 20 ft high, at sea level
     // too, which is the calculator's figure and well inside an E6B's scale.
     const r = densityAltitude({ elevationFt: FIELD, altimeterInHg: 29.92, oatC: 12.66 });
-    expect(r.pressureAltitudeFt).toBe(FIELD);
+    expect(Math.abs(r.pressureAltitudeFt - FIELD)).toBeLessThanOrEqual(5);
     expect(Math.abs(r.densityAltitudeFt - FIELD)).toBeLessThanOrEqual(25);
     expect(Math.abs(r.isaDeviationC)).toBeLessThanOrEqual(0.1);
     expect(Math.abs(densityAltitude({ elevationFt: 0, altimeterInHg: 29.92, oatC: 15 }).densityAltitudeFt)).toBeLessThanOrEqual(25);
@@ -84,27 +85,32 @@ describe('densityAltitude, by the NWS calculator’s method', () => {
 
   /* The headline used to be PA + 120 × (T − ISA) with the virtual
    * temperature for T: 4,297 ft on this day, against the calculator's dry
-   * 3,726 and humid 4,115. */
+   * 3,728 and humid 4,117. */
   it('no longer reads the old formula’s figure on a hot, humid day', () => {
     const r = densityAltitude({ elevationFt: FIELD, altimeterInHg: 29.92, oatC: 35, dewpointC: 24 });
-    expect(r.densityAltitudeFt).toBe(3726);
-    expect(r.humidDensityAltitudeFt).toBe(4115);
+    expect(r.densityAltitudeFt).toBe(3728);
+    expect(r.humidDensityAltitudeFt).toBe(4117);
   });
 
-  it('takes pressure altitude by the pilot’s rule, and the ISA deviation at that altitude', () => {
-    const r = densityAltitude({ elevationFt: 1000, altimeterInHg: 29.42, oatC: 15 });
-    expect(r.pressureAltitudeFt).toBe(1500); // 1000 + (29.92 − 29.42) × 1000
-    expect(r.isaDeviationC).toBe(3); // 15 − (15 − 1.98 × 1.5)
+  /* Away from 29.92 the pilot's 1,000 ft per inch rule drifts from the
+   * standard atmosphere's altitude; the card prints the latter, which is
+   * what the density altitude is worked from. */
+  it('takes pressure altitude from the station pressure, and the ISA deviation at that altitude', () => {
+    const r = densityAltitude({ elevationFt: FIELD, altimeterInHg: 30.5, oatC: 15 });
+    const rule = FIELD + (29.92 - 30.5) * 1000; // 602
+    expect(Math.abs(r.pressureAltitudeFt - rule)).toBeGreaterThan(20);
+    expect(r.isaDeviationC).toBe(Math.round((15 - (15 - 1.98 * (r.pressureAltitudeFt / 1000))) * 10) / 10);
   });
 
-  /* The headline follows from the pressure altitude and temperature the card
-   * prints, as an E6B's does: two reports with one pressure altitude and one
-   * temperature give one density altitude whatever field they are from. */
-  it('depends on the pressure altitude and temperature alone', () => {
-    const a = densityAltitude({ elevationFt: 1182, altimeterInHg: 29.92, oatC: 30 });
-    const b = densityAltitude({ elevationFt: 682, altimeterInHg: 29.42, oatC: 30 });
-    expect(b.pressureAltitudeFt).toBe(a.pressureAltitudeFt);
-    expect(b.densityAltitudeFt).toBe(a.densityAltitudeFt);
+  /* The headline follows from the rows printed under it, as an E6B's does:
+   * the pressure the card's pressure altitude stands for, and the
+   * temperature, give the headline in the NWS calculator's formula. */
+  it('follows from the printed pressure altitude and temperature', () => {
+    for (const [altimeterInHg, oatC] of [[29.92, 30], [30.5, -10], [29.4, 35]]) {
+      const r = densityAltitude({ elevationFt: FIELD, altimeterInHg, oatC });
+      const fromRows = nws.densityAltitude(stationPressureFor(r.pressureAltitudeFt), r.oatC + 273.15);
+      expect(Math.abs(r.densityAltitudeFt - fromRows)).toBeLessThanOrEqual(2);
+    }
   });
 });
 
@@ -118,9 +124,16 @@ describe('the density-altitude card', () => {
 
   it('heads with the dry figure and gives the humid one its own named row', () => {
     const html = render(24);
-    expect(html).toContain('<span class="da-big">3,726</span>');
-    expect(html).toContain('<dt>With humidity</dt><dd>4,115 ft</dd>');
+    expect(html).toContain('<span class="da-big">3,728</span>');
+    expect(html).toContain('<dt>With humidity</dt><dd>4,117 ft</dd>');
+  });
+
+  it('prints the station pressure, temperature and dew point it was worked from, to the report’s tenth', () => {
+    const html = render(24.1, 35.3);
     expect(html).toContain('<dt>Station pressure</dt><dd>28.66 inHg</dd>');
+    expect(html).toContain('<dt>Temperature</dt><dd>95.5°F</dd>');
+    expect(html).toContain('<dt>Dew point</dt><dd>75.4°F</dd>');
+    expect(render(null)).toContain('<dt>Dew point</dt><dd>not reported</dd>');
   });
 
   it('says when the report has no dew point instead of leaving the row out', () => {
@@ -129,7 +142,7 @@ describe('the density-altitude card', () => {
 
   it('prints a density altitude below the field with its own sign', () => {
     const html = render(-15, -10, 30.5);
-    expect(html).toContain('<dt>Above field</dt><dd>-3,539 ft</dd>');
+    expect(html).toContain('<dt>Above field</dt><dd>-3,472 ft</dd>');
     expect(html).not.toContain('+-');
   });
 

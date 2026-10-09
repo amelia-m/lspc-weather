@@ -241,7 +241,10 @@ export function normalizeNwsObservation(
     tempC: p.temperature?.value ?? null,
     dewpointC: p.dewpoint?.value ?? null,
     // Prefer the altimeter setting parsed from the raw METAR; fall back to
-    // station pressure (Pa → inHg) only if the raw text lacks an A/Q group.
+    // the API's barometricPressure (Pa → inHg) only if the raw text lacks an
+    // A/Q group. Despite its name it carries the altimeter setting, not the
+    // station pressure: KPMV's A2993 came back as 101360 Pa, 29.93 inHg,
+    // read 2026-10-09, where the station pressure at 1,204 ft is near 28.6.
     altimeterInHg:
       altimeterFromRaw(raw) ??
       (p.barometricPressure?.value != null ? round2(p.barometricPressure.value / 3386.389) : null),

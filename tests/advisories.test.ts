@@ -382,6 +382,8 @@ describe('flags whose trigger no published source sets', () => {
         fieldElevationFt: 1200,
         humidDensityAltitudeFt: null,
         stationPressureInHg: 28.62,
+        oatC: 30,
+        dewpointC: null,
       },
       // 20 minutes of daylight left: inside both old "last load" watches
       // (45 min student, 30 licensed), but the sun is still up, so 105.19 —

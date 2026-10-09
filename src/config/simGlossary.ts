@@ -38,10 +38,12 @@
  *    to sunrise. A link from the flag would put a figure in front of the
  *    reader that nothing on the page acts on.
  *  - DENSITY ALTITUDE. The glossary describes the pilot's method, from
- *    pressure altitude and temperature, which is the card's headline; but
- *    the card's prose also covers its "With humidity" row, which that
- *    method leaves out, and its note quotes the FAA's definition beside its
- *    citation, which is what a reader checking the figure wants.
+ *    pressure altitude and temperature, which is the card's headline. The
+ *    card's note already quotes the FAA's definition beside its citation,
+ *    which is what a reader checking the figure wants; a glossary link
+ *    beside it would put a second definition next to the first, and the
+ *    note goes on to the "With humidity" row, which that method leaves
+ *    out.
  *  - MSL and WING LOADING: the cards use them only in figures, labels, a
  *    title and an input prompt.
  *  - SIM, which every SIM link already opens, and terms the app uses only in

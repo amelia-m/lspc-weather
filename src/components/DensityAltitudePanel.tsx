@@ -1,5 +1,5 @@
 import type { DensityAltitudeResult } from '../domain/types';
-import { fmtTempDelta, type TempUnit } from '../domain/units';
+import { fmtTempDelta, toTemp, type TempUnit } from '../domain/units';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { CITATIONS } from '../config/thresholds';
@@ -8,6 +8,11 @@ import { DATA_SOURCES } from '../config/sources';
 /** A difference with its sign. "Above field" goes negative on a cold,
  *  high-pressure day, which a bare "+" printed as "+-361". */
 const fmtSigned = (ft: number): string => `${ft >= 0 ? '+' : ''}${ft.toLocaleString()}`;
+
+/** To the tenth the METAR's T group carries, unlike the whole degrees the
+ *  other cards print: a reader re-working the figure in the NWS calculator
+ *  needs the inputs it was worked from, and half a degree moves it ~30 ft. */
+const fmtTempTenth = (c: number, u: TempUnit): string => `${toTemp(c, u).toFixed(1)}°${u}`;
 
 export function DensityAltitudePanel({
   da,
@@ -51,8 +56,12 @@ export function DensityAltitudePanel({
             <dd>{da.pressureAltitudeFt.toLocaleString()} ft</dd>
             <dt>Station pressure</dt>
             <dd>{da.stationPressureInHg.toFixed(2)} inHg</dd>
+            <dt>Temperature</dt>
+            <dd>{fmtTempTenth(da.oatC, tempUnit)}</dd>
             <dt>ISA deviation</dt>
             <dd>{fmtTempDelta(da.isaDeviationC, tempUnit, true, 1)}</dd>
+            <dt>Dew point</dt>
+            <dd>{da.dewpointC == null ? 'not reported' : fmtTempTenth(da.dewpointC, tempUnit)}</dd>
             <dt>With humidity</dt>
             <dd>
               {da.humidDensityAltitudeFt == null
@@ -75,11 +84,12 @@ export function DensityAltitudePanel({
             <SourceLink citation={CITATIONS.faaDensityAltitude} />
           </p>
           <p className="muted small">
-            Both figures are worked with the National Weather Service calculator’s formulas, from
-            the station pressure the standard atmosphere has at the pressure altitude above. Given
-            that station pressure, the temperature and the dew point, the calculator gives the
-            humidity row to within a few feet; the headline is its formula with the thermometer
-            reading in place of the virtual temperature. Source:{' '}
+            Both figures are worked with the National Weather Service calculators’ formulas: the
+            altimeter setting reduced to the station pressure at the field, the pressure altitude
+            from it, then the density altitude. Given the station pressure, temperature and dew point
+            above, the NWS calculator gives the humidity row to within about ten feet (the rows are
+            rounded); the headline is its formula with the temperature in place of the virtual
+            temperature. Source:{' '}
             <SourceLink citation={CITATIONS.nwsDensityAltitude} />
           </p>
         </>
