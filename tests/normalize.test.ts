@@ -11,6 +11,7 @@ import {
   ceilingState,
   compareSkyDecodes,
   normalizeNwsObservation,
+  tempsFromRaw,
   parseSkyGroups,
   normalizeOpenMeteo,
   normalizeOpenMeteoHours,
@@ -167,14 +168,23 @@ describe('normalizeNwsObservation', () => {
   });
 });
 
-/* The sky is read from the METAR text, and the API's decoded cloudLayers only
- * when the text has no sky group. On 2026-09-23 api.weather.gov served seven
- * consecutive KPMV observations with cloudLayers: [] while rawMessage read
- * OVC027–OVC035; the dashboard showed "Clear" and VFR under a 2,700 ft
- * overcast. The first case below is that report, verbatim. */
 /* The temperatures come from the METAR text first, as the sky and the
  * altimeter do. On 2026-10-09 one of 500 nearby records (KOFF, 01:55Z the
  * day before) had a null decoded temperature while its text read T01540118. */
+describe('tempsFromRaw', () => {
+  it('reads below-zero tenths from the T group', () => {
+    expect(tempsFromRaw('KPMV 011255Z AUTO 00000KT 10SM CLR M05/M11 A3012 RMK AO2 T10501106')).toEqual({ tempC: -5, dewpointC: -10.6 });
+  });
+
+  it('falls back to the body group, M for minus', () => {
+    expect(tempsFromRaw('KPMV 011255Z AUTO 00000KT 10SM CLR M05/M11 A3012')).toEqual({ tempC: -5, dewpointC: -11 });
+  });
+
+  it('is null with neither', () => {
+    expect(tempsFromRaw('')).toBeNull();
+  });
+});
+
 describe('normalizeNwsObservation temperatures', () => {
   const withTemps = (rawMessage: string, tempC: number | null, dewpointC: number | null) =>
     normalizeNwsObservation(
@@ -201,6 +211,18 @@ describe('normalizeNwsObservation temperatures', () => {
     expect(c.dewpointC).toBe(19.4);
   });
 
+  it('prefers the decode’s tenths to the body group’s whole degrees when there is no T group', () => {
+    const c = withTemps('KOFF 080155Z AUTO 00000KT 10SM CLR 15/12 A3001 RMK AO2', 15.4, 11.8);
+    expect(c.tempC).toBe(15.4);
+    expect(c.dewpointC).toBe(11.8);
+  });
+
+  it('falls back to the body group when neither the T group nor the decode has them', () => {
+    const c = withTemps('KOFF 080155Z AUTO 00000KT 10SM CLR M05/M11 A3001 RMK AO2', null, null);
+    expect(c.tempC).toBe(-5);
+    expect(c.dewpointC).toBe(-11);
+  });
+
   it('uses the decode when the record has no text', () => {
     const c = withTemps('', 21.1, 12.2);
     expect(c.tempC).toBe(21.1);
@@ -208,6 +230,11 @@ describe('normalizeNwsObservation temperatures', () => {
   });
 });
 
+/* The sky is read from the METAR text, and the API's decoded cloudLayers only
+ * when the text has no sky group. On 2026-09-23 api.weather.gov served seven
+ * consecutive KPMV observations with cloudLayers: [] while rawMessage read
+ * OVC027–OVC035; the dashboard showed "Clear" and VFR under a 2,700 ft
+ * overcast. The first case below is that report, verbatim. */
 describe('normalizeNwsObservation sky', () => {
   const withRaw = (rawMessage: string, cloudLayers: RawNwsObservation['properties']['cloudLayers']) =>
     normalizeNwsObservation(
