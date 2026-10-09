@@ -1,7 +1,9 @@
 # LSPC Waivered Wind Limits
 
 Transcribed from the policy posted at the Lincoln Sport Parachute Club
-(photo: [`lspc-waivered-wind-limits.jpg`](./lspc-waivered-wind-limits.jpg)).
+(photo: [`lspc-waivered-wind-limits.jpg`](./lspc-waivered-wind-limits.jpg); the
+dashboard links a crop of it to the framed sign, `public/lspc-waiver-sign.jpg`,
+under the waiver tier buttons).
 
 > **All winds are measured in MPH and all gusts measured in the last 30 minutes.**
 

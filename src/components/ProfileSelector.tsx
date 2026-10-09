@@ -1,5 +1,11 @@
 import { WAIVER_TIERS, type WindProfileId } from '../config/thresholds';
 
+/** The posted sign the waiver tiers were transcribed from, served with the
+ *  site: a crop of docs/lspc-waivered-wind-limits.jpg (the photo as taken,
+ *  kept there as the record) to the framed sign, 1,400 px wide. Undated,
+ *  like the photo. */
+export const WAIVER_SIGN_PHOTO = `${import.meta.env.BASE_URL}lspc-waiver-sign.jpg`;
+
 /**
  * The wind-limit profile, chosen the way the limits are organised: first
  * Student or Licensed, then for a student whether the USPA BSR limits apply
@@ -48,9 +54,16 @@ export function ProfileSelector({
         </div>
       )}
       {isWaiver && (
-        <div className="tier-toggle" role="group" aria-label="Waiver experience tier">
-          {WAIVER_TIERS.map((tier) => button(tier.label, tier.id === profile, tier.id))}
-        </div>
+        <>
+          <div className="tier-toggle" role="group" aria-label="Waiver experience tier">
+            {WAIVER_TIERS.map((tier) => button(tier.label, tier.id === profile, tier.id))}
+          </div>
+          {/* The sign itself, a tap away from the tiers read off it, so a
+              jumper can check the transcription. Undated, so it says so. */}
+          <a className="tier-sign" href={WAIVER_SIGN_PHOTO} target="_blank" rel="noopener noreferrer">
+            Photo of the posted sign (undated)
+          </a>
+        </>
       )}
     </>
   );
