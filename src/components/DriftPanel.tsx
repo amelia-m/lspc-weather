@@ -63,10 +63,11 @@ export function DriftPanel({
 }): JSX.Element {
   const now = useNow(60_000);
   const [exitFt, setExit] = useState(10000);
-  // The deploy altitude the jumper picked, or null to open on the BSR
-  // minimum for the profile and license. Null until a pick, so a license
-  // switch moves a default nobody has touched and never a deploy altitude
-  // the jumper chose.
+  // The deploy altitude the jumper changed it to, or null to open on the BSR
+  // minimum for the profile and license. Null until a change, so a license
+  // switch moves a default nobody has touched and never one the jumper
+  // changed. (Picking the value already shown is no change, so that one
+  // still follows the license.)
   const opening = openingMinimum(license);
   const [chosenDeploy, setDeploy] = useState<number | null>(null);
   const [fallRate, setFallRate] = useState(120);
@@ -79,10 +80,8 @@ export function DriftPanel({
   // keep the wanted one rather than force a value.
   const deployOptions = DEPLOY_OPTIONS.filter((a) => a < exitFt);
   const wantedDeploy = chosenDeploy ?? opening.ft;
-  const deployFt =
-    wantedDeploy < exitFt || deployOptions.length === 0
-      ? wantedDeploy
-      : deployOptions[deployOptions.length - 1];
+  const deployHeldUnderExit = wantedDeploy >= exitFt && deployOptions.length > 0;
+  const deployFt = deployHeldUnderExit ? deployOptions[deployOptions.length - 1] : wantedDeploy;
 
   const drift = useMemo(
     () =>
@@ -162,6 +161,10 @@ export function DriftPanel({
           <p className="muted small">
             Deploy opens on {fmtFt(opening.ft)}, the BSR minimum for {opening.who}, listed below.
             {license !== null && ' The license is the one chosen under Licensed at the top of the page.'}
+            {/* The Deploy box would otherwise show a figure other than the
+                one this note names, with nothing saying why. */}
+            {deployHeldUnderExit &&
+              ` With the exit at ${fmtFt(exitFt)}, Deploy shows ${fmtFt(deployFt)}, the highest option below the exit.`}
           </p>
 
           <dl className="kv">

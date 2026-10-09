@@ -106,6 +106,20 @@ describe('the license choice under Licensed', () => {
   it('chooses a license and leaves the profile alone', () => {
     expect(press('licensed', 'student', 'C')).toEqual({ license: 'C' });
   });
+
+  it('names the choice on screen, not only to a screen reader', () => {
+    expect(render('licensed')).toContain('<span class="license-label" aria-hidden="true">USPA license</span>');
+  });
+
+  /* A license stored from an earlier Licensed visit must not reach the drift
+   * card on a student profile: a B, C or D license would open Deploy on
+   * 2,500 ft, under the 3,000 ft student minimum. */
+  it('reaches the drift card only on the Licensed profile', async () => {
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
+    const app = fs.readFileSync(decodeURIComponent(new URL('../src/App.tsx', import.meta.url).pathname), 'utf8');
+    const drift = app.slice(app.indexOf('<DriftPanel'), app.indexOf('/>', app.indexOf('<DriftPanel')));
+    expect(drift).toContain("license={profile === 'licensed' ? license : null}");
+  });
 });
 
 describe('what the selector’s buttons choose', () => {
