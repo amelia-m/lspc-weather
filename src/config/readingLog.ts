@@ -14,7 +14,8 @@
  * The SIM is pinned two ways. `edition` is what uspa.org calls its online
  * SIM on the day ("2026 SIM"); USPA revises it within an edition through
  * change documents, and the page's list of them did not load on 2026-10-08
- * ("Downloads is currently unavailable"), so the edition name alone does not
+ * ("Downloads is currently unavailable", in a browser too on 2026-10-09),
+ * so the edition name alone does not
  * say which text was read. `simPart` does: a SHA-256 of the part's text as
  * simPartText reduces it, taken from the page served that day, for every SIM
  * part a claim cites or quotes. scripts/simText.live.ts takes it again daily
@@ -24,8 +25,13 @@
  */
 import type { CITATIONS } from './thresholds';
 
-/** What uspa.org calls the online SIM, read on its SIM page on 2026-10-08. */
-export const SIM_EDITION = '2026 SIM';
+/** The edition year uspa.org's SIM page names in its heading ("2026
+ *  Skydiver's Information Manual", read 2026-10-08). The daily SIM check
+ *  (scripts/simText.live.ts) fails when the heading names another year. */
+export const SIM_EDITION_YEAR = 2026;
+
+/** What uspa.org calls the online SIM. */
+export const SIM_EDITION = `${SIM_EDITION_YEAR} SIM`;
 
 /** The day every SIM part below was last read in full and every quote of
  *  it on the #citations page checked against it. */

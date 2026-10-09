@@ -188,7 +188,10 @@ the next part's, named because some parts hold anchors of their own).
 words change or its anchors are gone, when a quote in a SIM-reading
 entry's "source says" lines is in none of the parts tied to that entry
 (lines quoting the CFR or the club document are skipped, and so are the
-questions), or when uspa.org cannot be fetched. Every cited SIM part, and every SIM quote on
+questions), when uspa.org cannot be fetched, or when the SIM page's
+heading names an edition other than `SIM_EDITION_YEAR` (`simEditionYear`):
+a new edition means reading every part again, whether or not its words
+changed. Every cited SIM part, and every SIM quote on
 `#citations`, was read again on 2026-10-08. After reading a part again,
 take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move
 `SIM_LAST_READ` only if every part was read that day.
