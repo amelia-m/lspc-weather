@@ -5,7 +5,7 @@ import { limitLines, type Thresholds } from '../../config/thresholds';
 import { lowerLimitPublished, lowerLimitUnchecked } from '../../domain/advisories';
 import { SourceLink } from './SourceLink';
 import { SimTermSegments } from './SimTerm';
-import { GLOSSARY_KEYS, splitGlossaryTerms } from '../../config/simGlossary';
+import { linkableTerms, splitGlossaryTerms } from '../../config/simGlossary';
 import { fmtShortHour } from '../format';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
@@ -288,7 +288,10 @@ export function HourlyLegend({
             <>
               {' '}
               <SimTermSegments
-                segments={splitGlossaryTerms(`${lowerLimitPublished(limits, unit)} The limit line is not it.`, GLOSSARY_KEYS)}
+                segments={splitGlossaryTerms(
+                  `${lowerLimitPublished(limits, unit)} The limit line is not it.`,
+                  linkableTerms([limits.windLimitCitation]),
+                )}
               />
             </>
           )}

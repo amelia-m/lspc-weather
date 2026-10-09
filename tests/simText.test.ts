@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { simPartText } from '../src/domain/simText';
+import { glossaryHeadings, isGlossaryEntry, simPartText } from '../src/domain/simText';
 
 /* A section page in the shape uspa.org serves: each part opens with an
  * anchoroffset, some parts hold anchors of their own, the article closes
@@ -58,5 +58,89 @@ describe('simPartText', () => {
     expect(simPartText(PAGE, '1Z', '1I')).toBeNull();
     expect(simPartText(PAGE, '1H', '1Z')).toBeNull();
     expect(simPartText(PAGE, '1I', '1H')).toBeNull();
+  });
+});
+
+/* The glossary in the shapes uspa.org served on 2026-10-09: one anchor per
+ * letter heading, a range anchor beside one (A-E) and another closing the
+ * last paragraph before a letter (U-Z), an anchor named RRS on an R entry,
+ * the Q anchor on R's heading, the V anchor on W's and X and Y on Z's, a name
+ * split across two bold runs, one entry with no <span> wrapper, and AGL in
+ * definitions as well as as an entry. No C or K heading: a letter need not
+ * be followed by the next one. */
+const GLOSSARY = `<h1><strong>Glossary</strong></h1>
+<h4><a class="anchoroffset" name="A-E"></a><a class="anchoroffset" name="A"></a><span>A</span></h4>
+<p><span><b><span style="text-transform:uppercase">AGL </span></b> Above ground level. Refers to altitude, e.g., 5,000 feet AGL.</span></p>
+<p><span><b><span style="text-transform:uppercase">AIR </span></b>Acronym for &ldquo;altitude aware, in control, and relaxed.&rdquo;</span></p>
+<p><span><b><span style="text-transform:uppercase">ALTIMETER </span></b> A device that measures height above the surface (AGL).</span></p>
+<h4><a class="anchoroffset" name="B"></a><span>B</span></h4>
+<p><span><b><span style="text-transform:uppercase">BASIC SAFETY REQUIREMENTS (BSR</span></b><b>s<span style="text-transform:uppercase">), USPA </span></b>Minimum standards published by USPA.</span></p>
+<h4><a class="anchoroffset" name="J"></a><span>J</span></h4>
+<p><b>JUMP RUN</b>The flight of the aircraft prior to exit.</p>
+<h4><a class="anchoroffset" name="Q"></a><a class="anchoroffset" name="R"></a><span>R</span></h4>
+<p><span><b><span>RAM-AIR PARACHUTE </span></b>A parachute with a canopy.</span></p>
+<p><span><a class="anchoroffset" name="RRS"></a><b><span>RATING-RENEWAL SEMINAR, USPA </span></b>A continuing program.</span></p>
+<p><span><b><span>RESERVE PARACHUTE </span></b>An approved parachute.</span></p>
+<h4><a class="anchoroffset" name="S"></a><span>S</span></h4>
+<p><span><b><span>SAFETY and TRAINING ADVISOR (S&amp;TA), USPA </span></b>A local person.</span></p>
+<p><b><span style="text-transform:uppercase">SPOTTING </span></b>Selecting the correct ground reference point.<a class="anchoroffset" name="U-Z"></a>&nbsp;</p>
+<h4><a class="anchoroffset" name="U"></a><span>U</span></h4>
+<p><span><b><span>UPWIND </span></b>The direction from which the wind is blowing.</span></p>
+<h4><a class="anchoroffset" name="W"></a><a class="anchoroffset" name="V"></a><span>W</span></h4>
+<p><span><b><span>WAIVER </span></b>1. Exception to the BSRs.</span></p>
+<p><span><b><span>WING LOADING </span></b>The jumper&rsquo;s exit weight divided by the area.</span></p>
+<h4><a class="anchoroffset" name="X"></a><a class="anchoroffset" name="Y"></a><a class="anchoroffset" name="Z"></a><span>Z</span></h4>
+<p><span><b><span>ZOO DIVE </span></b>A skydive that becomes chaotic.</span></p>`;
+
+describe('glossaryHeadings', () => {
+  it('reads the entry names under a letter, and only the names', () => {
+    expect(glossaryHeadings(GLOSSARY, 'A')).toEqual(['AGL', 'AIR', 'ALTIMETER']);
+    expect(glossaryHeadings(GLOSSARY, 'S')).toEqual(['SAFETY and TRAINING ADVISOR (S&TA), USPA', 'SPOTTING']);
+  });
+
+  it('ends a letter at the next heading, not at the next anchor', () => {
+    // RRS is an anchor inside R; the entries after it are still R's.
+    expect(glossaryHeadings(GLOSSARY, 'R')).toEqual(['RAM-AIR PARACHUTE', 'RATING-RENEWAL SEMINAR, USPA', 'RESERVE PARACHUTE']);
+    // W's heading also carries V, which sits right after it; U-Z closes
+    // SPOTTING's paragraph, and S runs past it.
+    expect(glossaryHeadings(GLOSSARY, 'W')).toEqual(['WAIVER', 'WING LOADING']);
+    expect(glossaryHeadings(GLOSSARY, 'S')).toEqual(['SAFETY and TRAINING ADVISOR (S&TA), USPA', 'SPOTTING']);
+    expect(glossaryHeadings(GLOSSARY, 'U')).toEqual(['UPWIND']);
+  });
+
+  it('ends a letter at the next heading, not at the next letter of the alphabet', () => {
+    // No K heading follows J here.
+    expect(glossaryHeadings(GLOSSARY, 'J')).toEqual(['JUMP RUN']);
+  });
+
+  it('turns tags into spaces, so a name split across bold runs shows the split', () => {
+    expect(glossaryHeadings(GLOSSARY, 'B')).toEqual(['BASIC SAFETY REQUIREMENTS (BSR s ), USPA']);
+  });
+
+  it('reads a letter with no heading of its own as the letter whose heading carries its anchor', () => {
+    expect(glossaryHeadings(GLOSSARY, 'Q')).toEqual(glossaryHeadings(GLOSSARY, 'R'));
+    expect(glossaryHeadings(GLOSSARY, 'V')).toEqual(glossaryHeadings(GLOSSARY, 'W'));
+  });
+
+  it('is null when the letter’s anchor is missing or named twice', () => {
+    expect(glossaryHeadings(GLOSSARY, 'K')).toBeNull();
+    expect(glossaryHeadings(GLOSSARY + '<a class="anchoroffset" name="A"></a>', 'A')).toBeNull();
+  });
+});
+
+describe('isGlossaryEntry', () => {
+  it('finds a whole entry name under its letter, however the page splits it', () => {
+    expect(isGlossaryEntry(GLOSSARY, 'A', 'AGL')).toBe(true);
+    expect(isGlossaryEntry(GLOSSARY, 'B', 'BASIC SAFETY REQUIREMENTS (BSRs), USPA')).toBe(true);
+    expect(isGlossaryEntry(GLOSSARY, 'S', 'SAFETY and TRAINING ADVISOR (S&TA), USPA')).toBe(true);
+    expect(isGlossaryEntry(GLOSSARY, 'J', 'JUMP RUN')).toBe(true);
+  });
+
+  it('does not take a word in a definition, or part of a name, for an entry', () => {
+    expect(isGlossaryEntry(GLOSSARY, 'W', 'BSRs')).toBe(false);
+    expect(isGlossaryEntry(GLOSSARY, 'W', 'exit weight')).toBe(false);
+    expect(isGlossaryEntry(GLOSSARY, 'S', 'SAFETY')).toBe(false);
+    // Under another letter, an entry is not found.
+    expect(isGlossaryEntry(GLOSSARY, 'B', 'AGL')).toBe(false);
   });
 });

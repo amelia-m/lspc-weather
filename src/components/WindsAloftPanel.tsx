@@ -336,7 +336,7 @@ export function WindsAloftPanel({
               <strong>
                 <SimTerm term="agl">AGL</SimTerm>, like these
               </strong>
-              , so the two tables are directly comparable; the “<SimTerm term="msl">MSL</SimTerm>”
+              , so the two tables are directly comparable; the “MSL”
               on its page is the ground elevation it looked up, not the scale of its wind table.
             </p>
             {/* Their Surface rows measure different things, and the gap is the

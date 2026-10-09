@@ -196,14 +196,22 @@ take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move
 Words in the cards' prose that the SIM glossary defines link to it
 (`SimTerm`, data in `src/config/simGlossary.ts`, read in the online SIM at
 uspa.org on 2026-10-09): each term at most once per card, never in a label,
-readout or existing link. The glossary has anchors per letter heading only
-(`…/sim/glossary#S`), so a link lands on the letter; do not invent a per-term
-fragment. They are links, not citations, so they are in neither `CITATIONS`
-nor the reading log. Linking a word asserts its definition applies:
+caption, input prompt, readout, the unit of a sourced figure, or an existing
+link. The glossary has anchors per letter heading only (`…/sim/glossary#S`;
+K, Q, V, X and Y have no heading of their own), so a link lands on the
+letter; do not invent a per-term fragment. They are links to a definition,
+not citations: they are in neither `CITATIONS` nor the reading log, they are
+styled apart from citation links, and a term stays plain in a flag or note
+that already cites the document it names (`linkableTerms`: no "BSR" link
+beside a SIM 2-1 or 2-2 link), since a reader clicking it to check the
+figure wants the citation. Linking a word asserts its definition applies:
 "waiver" stays unlinked because whether the club's posted waiver is a SIM 2-2
-waiver is open on `#citations`, and "night jump" because the glossary's
-one-hour figure is not the night flag's trigger. `scripts/simText.live.ts`
-also checks daily that each linked entry is still under its letter.
+waiver is open on `#citations`; "night jump" because the glossary's one-hour
+figure is not the night flag's trigger; "density altitude" because the
+glossary gives the pilot's method from pressure altitude and temperature,
+and the card's figure is humidity-corrected. `scripts/simText.live.ts` also
+checks daily that each linked term is still an entry heading under its
+letter (`glossaryHeadings`, `src/domain/simText.ts`).
 
 When touching a citation:
 

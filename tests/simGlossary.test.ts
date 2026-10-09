@@ -6,6 +6,9 @@ import {
   SIM_GLOSSARY,
   glossaryUrl,
   splitGlossaryTerms,
+  SIM_GLOSSARY_READ,
+  citesTerm,
+  linkableTerms,
   splitGlossaryTermsAcross,
   type GlossaryKey,
 } from '../src/config/simGlossary';
@@ -36,10 +39,10 @@ describe('the SIM glossary entries', () => {
     for (const key of GLOSSARY_KEYS) {
       const { term, letter } = SIM_GLOSSARY[key];
       expect(letter, key).toMatch(/^[A-Z]$/);
-      // Filed under its own first letter. V, X and Y share another letter's
-      // heading on the page (W, Z), so none of them is a place to land.
+      // Filed under its own first letter. K, Q, V, X and Y share another
+      // letter's heading on the page (L, R, W, Z), so none is a place to land.
       expect(term[0], key).toBe(letter);
-      expect(['V', 'X', 'Y'], key).not.toContain(letter);
+      expect(['K', 'Q', 'V', 'X', 'Y'], key).not.toContain(letter);
       expect(glossaryUrl(key), key).toBe(`https://www.uspa.org/sim/glossary#${letter}`);
       // Not a SIM section, and not a citation: the reading log and the
       // section-shape test are for those.
@@ -53,13 +56,13 @@ describe('splitGlossaryTerms', () => {
   const linked = (segs: { text: string; term?: GlossaryKey }[]) => segs.filter((s) => s.term).map((s) => [s.term, s.text]);
 
   it('marks the first use of each term asked for, and gives back the text it was handed', () => {
-    const text = 'The BSR sets it; the BSRs say so; ask the S&TA. Density altitude, and density altitude.';
+    const text = 'The BSR sets it; the BSRs say so; ask the S&TA. Jump run, and jump run.';
     const segs = splitGlossaryTerms(text, GLOSSARY_KEYS);
     expect(segs.map((s) => s.text).join('')).toBe(text);
     expect(linked(segs)).toEqual([
       ['bsr', 'BSR'],
       ['sta', 'S&TA'],
-      ['densityAltitude', 'Density altitude'],
+      ['jumpRun', 'Jump run'],
     ]);
   });
 
@@ -68,13 +71,17 @@ describe('splitGlossaryTerms', () => {
     expect(linked(splitGlossaryTerms('AGLX, BSRS, s&ta', GLOSSARY_KEYS))).toEqual([]);
   });
 
-  it('across several strings, marks each term once, at its first use', () => {
-    const [a, b] = splitGlossaryTermsAcross(['Ask the S&TA.', 'The S&TA and the BSR.'], GLOSSARY_KEYS);
+  it('across several strings, marks each term once, at its first use, and leaves a string’s skipped terms for a later one', () => {
+    const [a, b, c] = splitGlossaryTermsAcross(
+      [{ text: 'Ask the S&TA; the BSR.', skip: ['bsr'] }, { text: 'The S&TA and the BSR.' }, { text: 'The BSR.' }],
+      GLOSSARY_KEYS,
+    );
     expect(linked(a)).toEqual([['sta', 'S&TA']]);
     expect(linked(b)).toEqual([['bsr', 'BSR']]);
+    expect(linked(c)).toEqual([]);
   });
 
-  it('where two matches overlap, keeps the one taken first and tries the other’s next use', () => {
+  it('where two matches overlap, keeps the one taken first and still finds the other’s first use inside the overlapped span', () => {
     // No two real entries overlap, so two made-up patterns stand in.
     const patterns = { ...SIM_GLOSSARY, jumpRun: { pattern: /jump run/ }, exitPoint: { pattern: /(run and )?exit point/ } };
     const text = 'plan jump run and exit point; then the exit point';
@@ -84,15 +91,18 @@ describe('splitGlossaryTerms', () => {
       ['jumpRun', 'jump run'],
       ['exitPoint', 'exit point'],
     ]);
-    expect(segs[segs.length - 1]).toEqual({ text: 'exit point', term: 'exitPoint' });
+    // The first "exit point", inside the span the overlapping match covered,
+    // not the second.
+    expect(segs.map((x) => x.text)).toEqual(['plan ', 'jump run', ' and ', 'exit point', '; then the exit point']);
   });
 });
 
 /** Every glossary link in the markup, as the keys it links. */
 const linkedTerms = (html: string): GlossaryKey[] => {
   const out: GlossaryKey[] = [];
-  for (const m of html.matchAll(/<a class="sim-term" href="([^"]*)"[^>]*title="USPA SIM glossary, under [A-Z]: ([^"]*)">/g)) {
-    const name = m[2].replace(/&amp;/g, '&');
+  for (const m of html.matchAll(/<a class="sim-term" href="([^"]*)"[^>]*title="USPA SIM glossary definition \(letter [A-Z]; glossary read ([^)]*)\): ([^"]*)">/g)) {
+    expect(m[2]).toBe(SIM_GLOSSARY_READ);
+    const name = m[3].replace(/&amp;/g, '&');
     const key = GLOSSARY_KEYS.find((k) => SIM_GLOSSARY[k].term === name);
     expect(key, name).toBeDefined();
     expect(m[1]).toBe(glossaryUrl(key!));
@@ -161,9 +171,12 @@ const CARDS: [string, () => string, GlossaryKey[]][] = [
   [
     'Conditions to note, two flags naming the same terms',
     () => r(createElement(AdvisoryPanel, { advisories: flags, profile: 'Student', hasSourcedWindLimit: true })),
-    ['bsr', 'soloStudent', 'sta'],
+    // The wind flag cites SIM 2-1 and 2-2, so its "BSR" stays plain; the
+    // second flag cites neither, so the term's first link is there.
+    ['soloStudent', 'sta', 'bsr'],
   ],
-  ['Surface wind, Licensed', () => surface('licensed'), ['bsr', 'soloStudent', 'sta']],
+  // The guidance note cites SIM 2-1, so its "BSR" stays plain.
+  ['Surface wind, Licensed', () => surface('licensed'), ['soloStudent', 'sta']],
   ['Surface wind, Student', () => surface('student'), ['soloStudent']],
   [
     'the hourly chart key, Student',
@@ -173,7 +186,9 @@ const CARDS: [string, () => string, GlossaryKey[]][] = [
   [
     'Freefall drift',
     () => r(createElement(DriftPanel, { levels, source: 'open-meteo' } as never)),
-    ['bsr', 'agl', 'sta', 'exitPoint'],
+    // "the BSR minimum" names the source of a figure the card cites, and
+    // "3,000 ft AGL" is that figure: both plain.
+    ['sta', 'exitPoint'],
   ],
   [
     'Density altitude',
@@ -183,9 +198,11 @@ const CARDS: [string, () => string, GlossaryKey[]][] = [
           da: densityAltitude({ elevationFt: 1182, altimeterInHg: 29.92, oatC: 25, dewpointC: 15 }),
         }),
       ),
-    ['densityAltitude'],
+    // The glossary's definition is a method the card's figure does not follow.
+    [],
   ],
-  ['Ceiling & sky, MVFR', () => r(createElement(CeilingSkyPanel, { current: mvfr, hourly: [] })), ['msl', 'agl']],
+  // AGL and MSL appear there only in a caption and in 105.17's figures.
+  ['Ceiling & sky, MVFR', () => r(createElement(CeilingSkyPanel, { current: mvfr, hourly: [] })), []],
   [
     'Winds aloft',
     () =>
@@ -198,9 +215,10 @@ const CARDS: [string, () => string, GlossaryKey[]][] = [
           onUnitChange: noop,
         }),
       ),
-    ['jumpRun', 'agl', 'msl'],
+    // Not the quoted “MSL”: that is the label on Schulze's page.
+    ['jumpRun', 'agl'],
   ],
-  ['Exit weight & wing loading', () => r(createElement(WingLoadingPanel)), ['exitWeight', 'wingLoading']],
+  ['Exit weight & wing loading', () => r(createElement(WingLoadingPanel)), ['exitWeight']],
   [
     'Settings',
     () =>
@@ -227,12 +245,39 @@ describe('glossary links on the cards', () => {
     expect(linkDepth(render())).toBe(1);
   });
 
-  it('leaves a term that is already a link’s text alone', () => {
-    // Both name the BSR inside an existing link: the drift card's SIM 2-1
-    // link, and the citation link on the student wind flag.
-    const drift = CARDS.find(([n]) => n === 'Freefall drift')![1]();
-    expect(drift).toMatch(/rel="noopener noreferrer">USPA SIM §2-1 \(BSR\)<\/a>/);
-    const advisory = CARDS.find(([n]) => n.startsWith('Conditions to note, two'))![1]();
-    expect(advisory).toContain(`>${CITATIONS.uspaStudentWinds.source}</a>`);
+  it('links no term in a flag or note that cites the document the term names', () => {
+    // A block that links SIM 2-1 or 2-2 (the BSRs, and waivers to them)
+    // carries no glossary link for BSR. Checked on the cards where such a
+    // block names the BSR: the student wind flag and the Licensed guidance.
+    const blocks = (html: string) => html.match(/<li\b[\s\S]*?<\/li>|<p\b[\s\S]*?<\/p>/g) ?? [];
+    let checked = 0;
+    for (const [, render] of CARDS) {
+      for (const block of blocks(render())) {
+        if (!/uspa\.org\/sim\/2-[12]\b/.test(block)) continue;
+        expect(block).not.toContain(glossaryUrl('bsr'));
+        if (/\bBSR\b/.test(block.replace(/<a\b[\s\S]*?<\/a>/g, ''))) checked++;
+      }
+    }
+    expect(checked).toBeGreaterThanOrEqual(2);
+  });
+
+  it('puts the wing loading card’s link in its standing note, not the input prompt', () => {
+    const html = r(createElement(WingLoadingPanel));
+    const note = /<p class="muted small">PD’s maximum[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
+    expect(linkedTerms(note)).toEqual(['exitWeight']);
+    expect(html).toContain('<p class="muted small">Enter a body weight to work out exit weight and wing loading.</p>');
+  });
+});
+
+describe('citesTerm', () => {
+  it('takes a citation of SIM 2-1 or 2-2, at any part, as citing the BSRs, and nothing else', () => {
+    for (const c of [CITATIONS.uspaStudentWinds, CITATIONS.uspaLicensedWinds, CITATIONS.uspaOpeningAltitude, CITATIONS.uspaWaivers]) {
+      expect(citesTerm('bsr', [c]), c.url).toBe(true);
+    }
+    for (const c of [CITATIONS.uspaWeather, CITATIONS.uspaSpotting, CITATIONS.far10517, CITATIONS.lspcWaiver, undefined]) {
+      expect(citesTerm('bsr', [c]), c?.url).toBe(false);
+    }
+    // Only the BSRs name a cited document.
+    expect(linkableTerms([CITATIONS.uspaStudentWinds, CITATIONS.uspaWaivers])).toEqual(GLOSSARY_KEYS.filter((k) => k !== 'bsr'));
   });
 });

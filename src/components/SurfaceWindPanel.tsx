@@ -6,7 +6,7 @@ import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTermSegments } from './common/SimTerm';
-import { GLOSSARY_KEYS, splitGlossaryTermsAcross } from '../config/simGlossary';
+import { linkableTerms, splitGlossaryTerms } from '../config/simGlossary';
 
 /**
  * Surface wind, against whatever limit a source has actually published for the
@@ -60,17 +60,18 @@ export function SurfaceWindPanel({
   const caveat = t.windBandCaveat;
   const windEdited = isEdited(t, 'windCautionKt');
   const gustEdited = isEdited(t, 'gustCautionKt');
-  // The two standing notes' sentences, which come from the thresholds as
-  // plain strings; a glossary term in them is linked at its first use on
-  // the card.
+  // The two standing notes come from the thresholds as plain strings, and
+  // at most one of them shows (the caveat needs a published limit, the
+  // guidance note its absence). A glossary term in either is linked unless
+  // the note's own citation is the document the term names.
   const showCaveat = caveat != null && lowerLimitUnchecked(t);
-  const [caveatText, guidanceText] = splitGlossaryTermsAcross(
-    [
-      showCaveat ? `${lowerLimitPublished(t, unit)} ${windBandUse(t, unit)}, so neither checks the lower one.` : '',
-      !t.windLimitCitation ? t.windGuidance : '',
-    ],
-    GLOSSARY_KEYS,
-  );
+  const caveatText = showCaveat
+    ? splitGlossaryTerms(
+        `${lowerLimitPublished(t, unit)} ${windBandUse(t, unit)}, so neither checks the lower one.`,
+        linkableTerms([caveat.citation]),
+      )
+    : [];
+  const guidanceText = splitGlossaryTerms(t.windGuidance, linkableTerms([t.windCitation]));
 
   return (
     <Panel

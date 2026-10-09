@@ -4,7 +4,7 @@ import { SourceLinks } from './common/SourceLinks';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm, SimTermSegments } from './common/SimTerm';
 import { DATA_SOURCES } from '../config/sources';
-import { GLOSSARY_KEYS, splitGlossaryTermsAcross } from '../config/simGlossary';
+import { GLOSSARY_KEYS, citesTerm, splitGlossaryTermsAcross } from '../config/simGlossary';
 
 const LEVEL_LABEL: Record<Advisory['level'], string> = {
   caution: 'Caution',
@@ -69,9 +69,14 @@ export function AdvisoryPanel({
     </>
   );
   // Each flag's guidance is a plain string from the domain; a glossary term
-  // in it is linked at its first use in the list, not once per flag.
+  // in it is linked at its first use in the list, not once per flag, and
+  // never in a flag that already cites the document the term names (the
+  // student wind flag's "BSR" sits beside its SIM 2-1 link).
   const guidance = splitGlossaryTermsAcross(
-    advisories.map((a) => a.guidance),
+    advisories.map((a) => ({
+      text: a.guidance,
+      skip: GLOSSARY_KEYS.filter((k) => citesTerm(k, [a.citation, a.secondaryCitation])),
+    })),
     GLOSSARY_KEYS,
   );
   return (
