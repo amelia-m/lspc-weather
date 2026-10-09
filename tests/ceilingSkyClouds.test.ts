@@ -50,8 +50,8 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
   it('puts each hour’s Open-Meteo figure under the NWS one, matched by time, and credits it', () => {
     const html = card(om);
     const figures = [...html.matchAll(/<span class="sky-pct om-pct">([^<]*)<\/span>/g)].map((m) => m[1]);
-    // The axis column's blank first, then one per hour.
-    expect(figures).toEqual([' ', '40%', '—', '85%']);
+    // The axis column's unit first, then one per hour.
+    expect(figures).toEqual(['%', '40', '—', '85']);
     expect(html.match(/class="sky-bar om-bar"/g)).toHaveLength(3);
     expect(html).toContain('Open-Meteo’s cloud');
     expect(html).toContain('says nothing about a cloud base');
@@ -71,5 +71,48 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
 
   it('never paints the Open-Meteo bar by amount', () => {
     expect(card(om)).not.toMatch(/om-bar"[^>]*data-cover/);
+  });
+});
+
+/* The NWS bars show an amount, not a category: one colour from clear to
+ * overcast (the few/scattered/broken/overcast colours read as a verdict and
+ * carried no key). Twelve hours fit the card with a time under every third,
+ * and Open-Meteo's bar sits in an outlined track so a near-clear hour still
+ * shows. */
+describe('the Ceiling & sky timeline', () => {
+  const t0 = Math.ceil(Date.now() / 3_600_000) * 3_600_000;
+  const covers = [0, 10, 30, 60, 95, 100, 20, 40, 70, 90, 5, 50];
+  const hourly = covers.map((pct, i) => ({
+    time: t0 + i * 3_600_000,
+    skyCoverPct: pct,
+    ceilingFtAgl: pct >= 50 ? 4500 : null,
+    precipProbPct: 0,
+  })) as unknown as HourlyPoint[];
+  const om: OpenMeteoCloudHour[] = hourly.map((h) => ({ time: h.time, totalPct: 2, lowPct: 1, midPct: 1, highPct: 0 }));
+  const html = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds: om }));
+
+  it('draws every NWS bar alike, whatever the cover', () => {
+    // Overcast and clear hours carry the same markup apart from their height.
+    expect(html).not.toContain('data-cover');
+    const bars = [...html.matchAll(/<div class="sky-bar" style="height:([\d.]+)%"><\/div>/g)].map((m) => Number(m[1]));
+    expect(bars).toEqual(covers);
+  });
+
+  it('puts each Open-Meteo bar in a track of its own, even at 2%', () => {
+    expect(html.match(/<div class="om-track"><div class="sky-bar om-bar" style="height:2%"><\/div><\/div>/g)).toHaveLength(12);
+  });
+
+  it('labels every third hour and leaves the rest blank', () => {
+    const times = [...html.matchAll(/<span class="sky-time">([^<]*)<\/span>/g)].map((m) => m[1]);
+    // The axis column's blank first, then twelve hours.
+    expect(times).toHaveLength(13);
+    const hours = times.slice(1);
+    hours.forEach((t, i) => (i % 3 === 0 ? expect(t).toMatch(/^\d{1,2}(am|pm)$/) : expect(t).toBe(' ')));
+  });
+
+  it('marks an hour with no ceiling with a dash', () => {
+    const ceil = [...html.matchAll(/<span class="sky-ceil"[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]).slice(1);
+    expect(ceil[0]).toBe('–');
+    expect(ceil[3]).toBe('4.5');
   });
 });

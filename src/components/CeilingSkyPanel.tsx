@@ -7,7 +7,11 @@ import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
-import { fmtTime } from './format';
+import { fmtShortHour, fmtTime } from './format';
+
+/** A time under every third hour, as on the Precip card: twelve labels do
+ *  not fit a phone-width card, and every hour's tooltip names its time. */
+const LABEL_EVERY = 3;
 
 /** What the Ceiling line says when no ceiling height could be computed. */
 const CEILING_LABEL: Record<CeilingState, string> = {
@@ -94,40 +98,47 @@ export function CeilingSkyPanel({
         <p className="muted">No hourly forecast available.</p>
       ) : (
         <div className="sky-scroll">
-          <div className="sky-timeline">
+          <div className="sky-timeline ceiling-timeline">
+          {/* The units, once for each row, so a figure in a column a
+              phone makes 17 px wide is only its digits. */}
           <div className="sky-col sky-axis-col" aria-hidden="true">
-            <span className="sky-pct">&nbsp;</span>
-            {showOm && <span className="sky-pct om-pct">&nbsp;</span>}
+            <span className="sky-pct">%</span>
+            {showOm && <span className="sky-pct om-pct">%</span>}
             <div className="sky-axis">
               <span>100%</span>
               <span>50%</span>
               <span>0%</span>
             </div>
-            <span className="sky-ceil">&nbsp;</span>
+            <span className="sky-ceil">k ft</span>
             <span className="sky-time">&nbsp;</span>
           </div>
-          {upcoming.map((h) => {
+          {upcoming.map((h, i) => {
             const om = omAt.get(h.time);
             return (
             <div key={h.time} className="sky-col" title={describeHour(h, om)}>
-              <span className="sky-pct">{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</span>
+              <span className="sky-pct">{h.skyCoverPct != null ? round(h.skyCoverPct) : '—'}</span>
               {showOm && (
-                <span className="sky-pct om-pct">{om?.totalPct != null ? `${round(om.totalPct)}%` : '—'}</span>
+                <span className="sky-pct om-pct">{om?.totalPct != null ? round(om.totalPct) : '—'}</span>
               )}
               <div className="sky-bar-track">
-                <div
-                  className="sky-bar"
-                  style={{ height: `${h.skyCoverPct ?? 0}%` }}
-                  data-cover={coverClass(h.skyCoverPct)}
-                />
-                {/* Neutral, whatever the amount: a second forecast beside
-                    the first, not a category of its own. */}
-                {showOm && <div className="sky-bar om-bar" style={{ height: `${om?.totalPct ?? 0}%` }} />}
+                {/* One colour whatever the amount: the bar shows how much
+                    sky is covered and asserts no category. Which hours have
+                    a ceiling the label under it says. */}
+                <div className="sky-bar" style={{ height: `${h.skyCoverPct ?? 0}%` }} />
+                {/* Open-Meteo's in an outlined track of its own, so an
+                    almost clear hour still shows as a column with little in
+                    it rather than as nothing. Neutral, whatever the amount:
+                    a second forecast beside the first. */}
+                {showOm && (
+                  <div className="om-track">
+                    <div className="sky-bar om-bar" style={{ height: `${om?.totalPct ?? 0}%` }} />
+                  </div>
+                )}
               </div>
               <span className="sky-ceil" title={h.ceilingFtAgl != null ? undefined : 'No ceiling (no broken/overcast layer)'}>
-                {h.ceilingFtAgl != null ? `${Math.round(h.ceilingFtAgl / 100) / 10}k` : 'none'}
+                {h.ceilingFtAgl != null ? Math.round(h.ceilingFtAgl / 100) / 10 : '–'}
               </span>
-              <span className="sky-time">{fmtTime(h.time)}</span>
+              <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
             </div>
             );
           })}
@@ -135,12 +146,12 @@ export function CeilingSkyPanel({
         </div>
       )}
       <p className="muted small">
-        Bar height = sky cover %. Label = ceiling (thousands ft AGL); “none” = no broken/overcast
-        layer, so no ceiling.
+        Bar height and the figure above it = sky cover %. Label under it = ceiling in thousands of
+        ft AGL; “–” = no broken/overcast layer, so no ceiling. A time under every {LABEL_EVERY} hours.
         {showOm && (
           <>
             {' '}
-            Beside each, the thin grey bar and the lower, grey figure are Open-Meteo&rsquo;s cloud
+            Beside each, the narrow outlined grey bar and the lower, grey figure are Open-Meteo&rsquo;s cloud
             cover for the same hour: a second model&rsquo;s share of the sky under cloud, which says
             nothing about a cloud base. The ceiling labels are the NWS forecast&rsquo;s alone. The two
             can disagree; both are forecasts.
@@ -175,12 +186,4 @@ function describeHour(h: HourlyPoint, om?: OpenMeteoCloudHour): string {
   if (h.ceilingFtAgl != null) parts.push(`ceiling ${h.ceilingFtAgl.toLocaleString()} ft`);
   if (h.precipProbPct != null) parts.push(`${round(h.precipProbPct)}% precip`);
   return parts.join(' · ');
-}
-
-function coverClass(pct: number | null): string {
-  if (pct == null) return 'unknown';
-  if (pct < 25) return 'few';
-  if (pct < 50) return 'sct';
-  if (pct < 88) return 'bkn';
-  return 'ovc';
 }
