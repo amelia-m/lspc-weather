@@ -137,6 +137,11 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
                   ...prev,
                   current,
                   currentOtherObservedAt: otherObservedAt,
+                  // From this report or not at all, never kept from an
+                  // earlier one: the card prints the temperature it was
+                  // worked from, which beside the METAR card's newer report
+                  // would come from a different one, with nothing to say so.
+                  // Without the inputs the card says what it needs.
                   densityAltitude: densityAltitudeOf(current, dz.elevationFt),
                 },
           );
