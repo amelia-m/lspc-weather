@@ -2,10 +2,15 @@
  * Live surface-wind comparison: KPMV's METAR beside four forecasts of the
  * 10 m wind at the drop zone, with every time each source gives about itself.
  *
- * Not in any workflow. Run by hand from the sandbox with the proxy env (see
- * CLAUDE.md), once per sample, e.g. in a shell loop every few minutes:
+ * Opt-in: it is skipped unless SURFACE_WIND_SAMPLE=1. The live config
+ * (vitest.live.config.ts) takes every scripts/*.live.ts, and the daily
+ * sky-parity job runs that config with no path, so without the switch this
+ * would run there too; it belongs to no workflow. Run it by hand from the
+ * sandbox with the proxy env (see CLAUDE.md), once per sample, e.g. in a
+ * shell loop every few minutes:
  *
- *   NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt \
+ *   SURFACE_WIND_SAMPLE=1 NODE_USE_ENV_PROXY=1 \
+ *     NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt \
  *     npx vitest run --config vitest.live.config.ts scripts/surfaceWindCompare.live.ts
  *
  * and the `@@parity` lines collected into a file, which
@@ -27,19 +32,19 @@
  * requests that its model-updates page says are not counted toward limits.
  * A run every few minutes is well inside the free tier; do not loop faster.
  */
-import { it } from 'vitest';
+import { describe, it } from 'vitest';
 import { SITE } from '../src/config/site';
 import { normalizeGridpoint, normalizeNwsObservation, type RawGridpoint, type RawNwsObservation } from '../src/domain/normalize';
 import { chooseObservation, normalizeIemCurrent, type RawIemCurrents } from '../src/domain/iem';
 import {
+  compareWindResponses,
   maxAgeSeconds,
-  maxWindDiff,
   metarWindGroup,
   openMeteoCurrent,
   openMeteoRunMeta,
   openMeteoSeries,
-  sameWindSeries,
   SURFACE_WIND_RECORD_VERSION,
+  type HrrrDiff,
   type OpenMeteoRunMeta,
   type RawOpenMeteoWind,
   type SurfaceWindRecord,
@@ -62,19 +67,35 @@ const say = (lines: string[]): void => {
 
 const msg = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
-/** One GET, tried three times when the connection itself fails: from the
- *  sandbox on 2026-10-09 the proxy now and then dropped a TLS handshake to
- *  api.open-meteo.com (curl's SSL_ERROR_SYSCALL) or timed out connecting,
- *  which says nothing about the source. An HTTP error status is the
- *  source's answer and is not retried. */
+/** The run's time budget. Every fetch, retries and body included, must end
+ *  by `deadline`, so a slow or silent source is logged as that source's
+ *  `…Error` and the run still prints its record, well inside vitest's
+ *  60 s test timeout (vitest.live.config.ts). The NWS forecast is two
+ *  requests in a row (points, then the grid), so each try gets at most
+ *  PER_TRY_MS and never more than what is left. */
+const RUN_BUDGET_MS = 40_000;
+const PER_TRY_MS = 12_000;
+let deadline = 0;
+
+/** One GET, tried again while time is left when the connection itself
+ *  fails: from the sandbox on 2026-10-09 the proxy now and then dropped a
+ *  TLS handshake to api.open-meteo.com (curl's SSL_ERROR_SYSCALL) or timed
+ *  out connecting, which says nothing about the source. An HTTP error
+ *  status is the source's answer and is not retried. The signal also bounds
+ *  reading the body, which the caller does with the same Response. */
 async function get(url: string, accept = 'application/json'): Promise<Response> {
-  let lastErr: unknown = null;
+  let lastErr: unknown = new Error('no time left in the run');
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 2_000));
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1_000));
+    const left = deadline - Date.now();
+    if (left < 1_000) break;
     let res: Response;
-    try {
-      res = await fetch(url, { headers: { 'User-Agent': UA, Accept: accept }, signal: AbortSignal.timeout(25_000) });
-    } catch (e) {
+      try {
+        res = await fetch(url, {
+          headers: { 'User-Agent': UA, Accept: accept },
+          signal: AbortSignal.timeout(Math.min(PER_TRY_MS, left)),
+        });
+      } catch (e) {
       lastErr = e;
       continue;
     }
@@ -83,6 +104,19 @@ async function get(url: string, accept = 'application/json'): Promise<Response> 
   }
   const cause = lastErr instanceof Error && lastErr.cause ? ` (${msg(lastErr.cause)})` : '';
   throw new Error(`${new URL(url).host}: ${msg(lastErr)}${cause}`);
+}
+
+/** A second bound beside get's: rejects a second after the deadline,
+ *  whatever the task is still doing, so the run always reaches its record. */
+function bounded<T>(p: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error('ran past the run’s time budget')),
+      Math.max(0, deadline - Date.now()) + 1_000,
+    );
+  });
+  return Promise.race([p, late]).finally(() => clearTimeout(timer));
 }
 const r1 = (v: number | null): number | null => (v == null ? null : Math.round(v * 10) / 10);
 
@@ -101,177 +135,186 @@ function omUrl(model?: string): string {
   );
 }
 
-it('logs every source’s surface wind at the drop zone, with each source’s own times', async () => {
-  const at = new Date().toISOString();
-  const atMs = Date.parse(at);
-  const rec: SurfaceWindRecord = {
-    kind: 'surfacewind',
-    v: SURFACE_WIND_RECORD_VERSION,
-    at,
-    dz: `${dz.lat},${dz.lon}`,
-  };
-
-  const [metarR, nwsR, omR, omHrrrR, ...metaR] = await Promise.allSettled([
-    // The METAR as the dashboard picks it: IEM and NWS, the newer report.
-    // Fetched here rather than through src/api, which reads import.meta.env
-    // and so does not load under the live config (usairnetCompare does the
-    // same).
-    (async () => {
-      const [iem, nws] = await Promise.allSettled([
-        (async () => {
-          const res = await get(
-            `https://mesonet.agron.iastate.edu/api/1/currents.json?station=${station.iemId}&network=${station.iemNetwork}`,
-          );
-          const row = ((await res.json()) as RawIemCurrents).data?.find((x) => x.station === station.iemId);
-          return row ? normalizeIemCurrent(row, station.id) : null;
-        })(),
-        (async () => {
-          const res = await get(`https://api.weather.gov/stations/${station.id}/observations/latest`, 'application/geo+json');
-          return normalizeNwsObservation((await res.json()) as RawNwsObservation, station.id);
-        })(),
-      ]);
-      const iemCur = iem.status === 'fulfilled' ? iem.value : null;
-      const nwsCur = nws.status === 'fulfilled' ? nws.value : null;
-      const chosen = chooseObservation(iemCur, nwsCur);
-      if (!chosen) {
-        throw new Error(
-          `iem: ${iem.status === 'rejected' ? msg(iem.reason) : 'no report'}; nws: ${nws.status === 'rejected' ? msg(nws.reason) : 'no report'}`,
-        );
-      }
-      const c = chosen.current;
-      return {
-        source: chosen.source,
-        obsAt: new Date(c.observedAt).toISOString(),
-        wind: {
-          t: new Date(c.observedAt).toISOString(),
-          dir: c.wind.directionDeg,
-          spd: c.wind.speedKt,
-          gust: c.wind.gustKt,
-        },
-        group: metarWindGroup(c.raw),
-        iemObsAt: iemCur ? new Date(iemCur.observedAt).toISOString() : null,
-        nwsObsAt: nwsCur ? new Date(nwsCur.observedAt).toISOString() : null,
-      };
-    })(),
-    // The NWS gridpoint, as fetchHourly reads it, and the hourly product's
-    // timestamps beside it.
-    (async () => {
-      const point = (await (await get(`https://api.weather.gov/points/${dz.lat},${dz.lon}`, 'application/geo+json')).json()) as {
-        properties: { forecastGridData: string; forecastHourly: string };
-      };
-      const [grid, hourly] = await Promise.allSettled([
-        get(point.properties.forecastGridData, 'application/geo+json'),
-        get(point.properties.forecastHourly, 'application/geo+json'),
-      ]);
-      if (grid.status === 'rejected') throw grid.reason;
-      const res = grid.value;
-      const fetchedAt = new Date().toISOString();
-      const raw = (await res.json()) as RawGridpoint & { properties: { updateTime?: string } };
-      let hourlyUpdateTime: string | null = null;
-      let hourlyGeneratedAt: string | null = null;
-      if (hourly.status === 'fulfilled') {
-        const p = ((await hourly.value.json()) as { properties?: { updateTime?: string; generatedAt?: string } }).properties;
-        hourlyUpdateTime = p?.updateTime ?? null;
-        hourlyGeneratedAt = p?.generatedAt ?? null;
-      }
-      const hourStart = Math.floor(atMs / HOUR) * HOUR;
-      const hours: WindAt[] = normalizeGridpoint(raw)
-        .filter((h) => h.time >= hourStart - 2 * HOUR && h.time <= hourStart + 2 * HOUR)
-        .map((h) => ({ t: new Date(h.time).toISOString(), dir: h.windDirectionDeg, spd: r1(h.windSpeedKt), gust: r1(h.windGustKt) }));
-      return {
-        fetchedAt,
-        updateTime: raw.properties.updateTime ?? null,
-        lastModified: res.headers.get('last-modified'),
-        expires: res.headers.get('expires'),
-        maxAgeS: maxAgeSeconds(res.headers.get('cache-control')),
-        hourlyUpdateTime,
-        hourlyGeneratedAt,
-        hours,
-      };
-    })(),
-    (async () => {
-      const res = await get(omUrl());
-      return { res, fetchedAt: new Date().toISOString(), raw: (await res.json()) as RawOpenMeteoWind };
-    })(),
-    (async () => (await (await get(omUrl('ncep_hrrr_conus'))).json()) as RawOpenMeteoWind)(),
-    ...OM_DOMAINS.map(async (d) =>
-      openMeteoRunMeta(
-        (await (await get(`https://api.open-meteo.com/data/${d}/static/meta.json`)).json()) as Parameters<typeof openMeteoRunMeta>[0],
-      ),
-    ),
-  ]);
-
-  if (metarR.status === 'fulfilled') rec.metar = metarR.value;
-  else rec.metarError = msg(metarR.reason);
-  if (nwsR.status === 'fulfilled') rec.nws = nwsR.value;
-  else rec.nwsError = msg(nwsR.reason);
-  if (omR.status === 'fulfilled') {
-    const { raw, res, fetchedAt } = omR.value;
-    const current = openMeteoCurrent(raw);
-    const hourly = openMeteoSeries(raw.hourly);
-    const m15 = openMeteoSeries(raw.minutely_15);
-    let sameAsHrrr: boolean | null = null;
-    let hrrrMaxDiff: { dir: number; spd: number; gust: number } | undefined;
-    if (omHrrrR.status === 'rejected') rec.omHrrrError = msg(omHrrrR.reason);
-    if (omHrrrR.status === 'fulfilled') {
-      const h = omHrrrR.value;
-      const hc = openMeteoCurrent(h);
-      const pairs: [WindAt[], WindAt[]][] = [
-        [current ? [current] : [], hc ? [hc] : []],
-        [hourly, openMeteoSeries(h.hourly)],
-        [m15, openMeteoSeries(h.minutely_15)],
-      ];
-      sameAsHrrr = pairs.every(([a, b]) => sameWindSeries(a, b));
-      if (!sameAsHrrr) {
-        const d = pairs.map(([a, b]) => maxWindDiff(a, b));
-        hrrrMaxDiff = {
-          dir: Math.max(...d.map((x) => x.dir)),
-          spd: Math.max(...d.map((x) => x.spd)),
-          gust: Math.max(...d.map((x) => x.gust)),
-        };
-      }
-    }
-    rec.om = {
-      fetchedAt,
-      generationMs: raw.generationtime_ms ?? null,
-      gridLat: raw.latitude ?? null,
-      gridLon: raw.longitude ?? null,
-      elevationM: raw.elevation ?? null,
-      current,
-      hourly,
-      m15,
-      lastModified: res.headers.get('last-modified'),
-      cacheControl: res.headers.get('cache-control'),
-      sameAsHrrr,
-      ...(hrrrMaxDiff ? { hrrrMaxDiff } : {}),
+describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (opt-in: SURFACE_WIND_SAMPLE=1)', () => {
+  it('logs every source’s surface wind at the drop zone, with each source’s own times', { timeout: 60_000 }, async () => {
+    const at = new Date().toISOString();
+    const atMs = Date.parse(at);
+    deadline = atMs + RUN_BUDGET_MS;
+    const rec: SurfaceWindRecord = {
+      kind: 'surfacewind',
+      v: SURFACE_WIND_RECORD_VERSION,
+      at,
+      dz: `${dz.lat},${dz.lon}`,
     };
-  } else {
-    rec.omError = msg(omR.reason);
-  }
-  const omMeta: Record<string, OpenMeteoRunMeta | null> = {};
-  OM_DOMAINS.forEach((d, i) => {
-    const m = metaR[i];
-    omMeta[d] = m.status === 'fulfilled' ? (m.value as OpenMeteoRunMeta) : null;
-    if (m.status === 'rejected') (rec.omMetaErrors ??= {})[d] = msg(m.reason);
-  });
-  rec.omMeta = omMeta;
 
-  // A short human-readable table, then the record.
-  const fmt = (w: WindAt | null | undefined): string =>
-    w == null ? '—' : `${w.dir ?? 'VRB/calm'}° ${w.spd ?? '?'} kt${w.gust != null ? ` G${w.gust}` : ''} @${w.t.slice(11, 16)}Z`;
-  const hourNear = rec.om?.hourly.reduce<WindAt | null>(
-    (b, w) => (b == null || Math.abs(Date.parse(w.t) - atMs) < Math.abs(Date.parse(b.t) - atMs) ? w : b),
-    null,
-  );
-  const nwsHour = rec.nws?.hours.find((h) => Date.parse(h.t) === Math.floor(atMs / HOUR) * HOUR);
-  say([
-    '',
-    `=== surface wind at ${dz.lat},${dz.lon}, run ${at.slice(0, 19)}Z ===`,
-    `METAR ${station.id} (${rec.metar?.source ?? '—'}): ${rec.metar ? `${rec.metar.group ?? '?'} ${fmt(rec.metar.wind)}` : rec.metarError}`,
-    `NWS gridpoint hour: ${rec.nws ? fmt(nwsHour) : rec.nwsError}  updateTime ${rec.nws?.updateTime ?? '—'}  hourly product updateTime ${rec.nws?.hourlyUpdateTime ?? '—'}`,
-    `Open-Meteo hourly (nearest): ${rec.om ? fmt(hourNear) : rec.omError}`,
-    `Open-Meteo current: ${rec.om ? fmt(rec.om.current) : rec.omError}  same as HRRR: ${rec.om?.sameAsHrrr ?? '—'}`,
-    ...OM_DOMAINS.map((d) => `  ${d}: init ${omMeta[d]?.init ?? '—'} avail ${omMeta[d]?.avail ?? '—'}`),
-    `@@parity ${JSON.stringify(rec)}`,
-  ]);
+    const [metarR, nwsR, omR, omHrrrR, ...metaR] = await Promise.allSettled([
+      // The METAR as the dashboard picks it: IEM and NWS, the newer report.
+      // Fetched here rather than through src/api, which reads import.meta.env
+      // and so does not load under the live config (usairnetCompare does the
+      // same).
+      bounded((async () => {
+        const [iem, nws] = await Promise.allSettled([
+          (async () => {
+            const res = await get(
+              `https://mesonet.agron.iastate.edu/api/1/currents.json?station=${station.iemId}&network=${station.iemNetwork}`,
+            );
+            const row = ((await res.json()) as RawIemCurrents).data?.find((x) => x.station === station.iemId);
+            return row ? normalizeIemCurrent(row, station.id) : null;
+          })(),
+          (async () => {
+            const res = await get(`https://api.weather.gov/stations/${station.id}/observations/latest`, 'application/geo+json');
+            return normalizeNwsObservation((await res.json()) as RawNwsObservation, station.id);
+          })(),
+        ]);
+        const iemCur = iem.status === 'fulfilled' ? iem.value : null;
+        const nwsCur = nws.status === 'fulfilled' ? nws.value : null;
+        const chosen = chooseObservation(iemCur, nwsCur);
+        if (!chosen) {
+          throw new Error(
+            `iem: ${iem.status === 'rejected' ? msg(iem.reason) : 'no report'}; nws: ${nws.status === 'rejected' ? msg(nws.reason) : 'no report'}`,
+          );
+        }
+        const c = chosen.current;
+        return {
+          source: chosen.source,
+          obsAt: new Date(c.observedAt).toISOString(),
+          wind: {
+            t: new Date(c.observedAt).toISOString(),
+            dir: c.wind.directionDeg,
+            spd: c.wind.speedKt,
+            gust: c.wind.gustKt,
+          },
+          group: metarWindGroup(c.raw),
+          iemObsAt: iemCur ? new Date(iemCur.observedAt).toISOString() : null,
+          nwsObsAt: nwsCur ? new Date(nwsCur.observedAt).toISOString() : null,
+        };
+      })()),
+      // The NWS gridpoint, as fetchHourly reads it, and the hourly product's
+      // timestamps beside it.
+      bounded((async () => {
+        const point = (await (await get(`https://api.weather.gov/points/${dz.lat},${dz.lon}`, 'application/geo+json')).json()) as {
+          properties: { forecastGridData: string; forecastHourly: string };
+        };
+        const [grid, hourly] = await Promise.allSettled([
+          get(point.properties.forecastGridData, 'application/geo+json'),
+          get(point.properties.forecastHourly, 'application/geo+json'),
+        ]);
+        if (grid.status === 'rejected') throw grid.reason;
+        const res = grid.value;
+        const fetchedAt = new Date().toISOString();
+        const raw = (await res.json()) as RawGridpoint & { properties: { updateTime?: string } };
+        let hourlyUpdateTime: string | null = null;
+        let hourlyGeneratedAt: string | null = null;
+        if (hourly.status === 'fulfilled') {
+          const p = ((await hourly.value.json()) as { properties?: { updateTime?: string; generatedAt?: string } }).properties;
+          hourlyUpdateTime = p?.updateTime ?? null;
+          hourlyGeneratedAt = p?.generatedAt ?? null;
+        }
+        const hourStart = Math.floor(atMs / HOUR) * HOUR;
+        const hours: WindAt[] = normalizeGridpoint(raw)
+          .filter((h) => h.time >= hourStart - 2 * HOUR && h.time <= hourStart + 2 * HOUR)
+          .map((h) => ({ t: new Date(h.time).toISOString(), dir: h.windDirectionDeg, spd: r1(h.windSpeedKt), gust: r1(h.windGustKt) }));
+        return {
+          fetchedAt,
+          updateTime: raw.properties.updateTime ?? null,
+          lastModified: res.headers.get('last-modified'),
+          expires: res.headers.get('expires'),
+          maxAgeS: maxAgeSeconds(res.headers.get('cache-control')),
+          hourlyUpdateTime,
+          hourlyGeneratedAt,
+          hours,
+        };
+      })()),
+      bounded((async () => {
+        const res = await get(omUrl());
+        return { res, fetchedAt: new Date().toISOString(), raw: (await res.json()) as RawOpenMeteoWind };
+      })()),
+      bounded((async () => (await (await get(omUrl('ncep_hrrr_conus'))).json()) as RawOpenMeteoWind)()),
+      ...OM_DOMAINS.map((d) =>
+        bounded(
+          (async () =>
+            openMeteoRunMeta(
+              (await (await get(`https://api.open-meteo.com/data/${d}/static/meta.json`)).json()) as Parameters<
+                typeof openMeteoRunMeta
+              >[0],
+            ))(),
+        ),
+      ),
+    ]);
+
+    if (metarR.status === 'fulfilled') rec.metar = metarR.value;
+    else rec.metarError = msg(metarR.reason);
+    if (nwsR.status === 'fulfilled') rec.nws = nwsR.value;
+    else rec.nwsError = msg(nwsR.reason);
+    // Open-Meteo's response is read here rather than in its task, beside the
+    // HRRR one it is compared with; a response in an unexpected shape is
+    // logged as omError like a failed request, so the record still prints.
+    if (omHrrrR.status === 'rejected') rec.omHrrrError = msg(omHrrrR.reason);
+    if (omR.status === 'fulfilled') {
+      try {
+        const { raw, res, fetchedAt } = omR.value;
+        const current = openMeteoCurrent(raw);
+        const hourly = openMeteoSeries(raw.hourly);
+        const m15 = openMeteoSeries(raw.minutely_15);
+        let sameAsHrrr: boolean | null = null;
+        let hrrrMaxDiff: HrrrDiff | undefined;
+        if (omHrrrR.status === 'fulfilled') {
+          const h = omHrrrR.value;
+          const hc = openMeteoCurrent(h);
+          const cmp = compareWindResponses([
+            [current ? [current] : [], hc ? [hc] : []],
+            [hourly, openMeteoSeries(h.hourly)],
+            [m15, openMeteoSeries(h.minutely_15)],
+          ]);
+          sameAsHrrr = cmp.same;
+          hrrrMaxDiff = cmp.diff;
+        }
+        rec.om = {
+          fetchedAt,
+          generationMs: raw.generationtime_ms ?? null,
+          gridLat: raw.latitude ?? null,
+          gridLon: raw.longitude ?? null,
+          elevationM: raw.elevation ?? null,
+          current,
+          hourly,
+          m15,
+          lastModified: res.headers.get('last-modified'),
+          cacheControl: res.headers.get('cache-control'),
+          sameAsHrrr,
+          ...(hrrrMaxDiff ? { hrrrMaxDiff } : {}),
+        };
+      } catch (e) {
+        delete rec.om;
+        rec.omError = `unreadable response: ${msg(e)}`;
+      }
+    } else {
+      rec.omError = msg(omR.reason);
+    }
+    const omMeta: Record<string, OpenMeteoRunMeta | null> = {};
+    OM_DOMAINS.forEach((d, i) => {
+      const m = metaR[i];
+      omMeta[d] = m.status === 'fulfilled' ? m.value : null;
+      if (m.status === 'rejected') (rec.omMetaErrors ??= {})[d] = msg(m.reason);
+    });
+    rec.omMeta = omMeta;
+
+    // A short human-readable table, then the record.
+    const fmt = (w: WindAt | null | undefined): string =>
+      w == null ? '—' : `${w.dir ?? 'VRB/calm'}° ${w.spd ?? '?'} kt${w.gust != null ? ` G${w.gust}` : ''} @${w.t.slice(11, 16)}Z`;
+    const hourNear = rec.om?.hourly.reduce<WindAt | null>(
+      (b, w) => (b == null || Math.abs(Date.parse(w.t) - atMs) < Math.abs(Date.parse(b.t) - atMs) ? w : b),
+      null,
+    );
+    const nwsHour = rec.nws?.hours.find((h) => Date.parse(h.t) === Math.floor(atMs / HOUR) * HOUR);
+    say([
+      '',
+      `=== surface wind at ${dz.lat},${dz.lon}, run ${at.slice(0, 19)}Z ===`,
+      `METAR ${station.id} (${rec.metar?.source ?? '—'}): ${rec.metar ? `${rec.metar.group ?? '?'} ${fmt(rec.metar.wind)}` : rec.metarError}`,
+      `NWS gridpoint hour: ${rec.nws ? fmt(nwsHour) : rec.nwsError}  updateTime ${rec.nws?.updateTime ?? '—'}  hourly product updateTime ${rec.nws?.hourlyUpdateTime ?? '—'}`,
+      `Open-Meteo hourly (nearest): ${rec.om ? fmt(hourNear) : rec.omError}`,
+      `Open-Meteo current: ${rec.om ? fmt(rec.om.current) : rec.omError}  same as HRRR: ${rec.om?.sameAsHrrr ?? '—'}`,
+      ...OM_DOMAINS.map((d) => `  ${d}: init ${omMeta[d]?.init ?? '—'} avail ${omMeta[d]?.avail ?? '—'}`),
+      `@@parity ${JSON.stringify(rec)}`,
+    ]);
+  });
 });

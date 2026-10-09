@@ -114,8 +114,11 @@ export interface SurfaceWindRecord {
      *  here. null when that request failed. */
     sameAsHrrr: boolean | null;
     /** When not the same, the largest gaps between the two over all three
-     *  series (maxWindDiff). Absent when the same or not compared. */
-    hrrrMaxDiff?: { dir: number; spd: number; gust: number };
+     *  series (maxWindDiff), and `shapeDiffers` when the two did not carry
+     *  the same valid times (from 2026-10-09 03:00Z; before, a difference in
+     *  shape alone would have logged 0/0/0, which no run in the first sample
+     *  did). Absent when the same or not compared. */
+    hrrrMaxDiff?: HrrrDiff;
   };
   omError?: string;
   /** Why the `models=ncep_hrrr_conus` request failed, when it did. */
@@ -124,6 +127,13 @@ export interface SurfaceWindRecord {
    *  a domain whose metadata could not be read, and the reason here. */
   omMeta?: Record<string, OpenMeteoRunMeta | null>;
   omMetaErrors?: Record<string, string>;
+}
+
+export interface HrrrDiff {
+  dir: number;
+  spd: number;
+  gust: number;
+  shapeDiffers?: boolean;
 }
 
 /** Open-Meteo's forecast response, the fields read here, with
@@ -300,32 +310,46 @@ export interface Cadence {
    *  differed, in any of direction, speed or gust. */
   shownChanges: number;
   shownPairs: number;
-  /** Minutes between successive changes of the "now" value: the median and
-   *  the range. Measured from run times, so each is only as sharp as the
-   *  gap between runs. */
-  shownIntervalMin: { median: number | null; min: number | null; max: number | null };
+  /** The same, leaving out a change that is only a one-degree direction
+   *  flap on the same valid time (dirOnlyByOne): on 2026-10-09 Open-Meteo's
+   *  servers answered alike requests that way, so counting those would read
+   *  as a source updated every few minutes when it was not. */
+  shownChangesNet: number;
+  /** Minutes between successive changes of the "now" value, every change
+   *  and net of the flaps: the median and the range. Measured from run
+   *  times, so each is only as sharp as the gap between runs. */
+  shownIntervalMin: Interval;
+  shownIntervalNetMin: Interval;
   /** Forecasts only: runs at which a value for a valid time already seen in
-   *  the previous run had changed, that is, the source was revised. The
-   *  run time of each, ISO. */
+   *  the previous run had changed. The run time of each, ISO. Includes
+   *  runs whose only changes were flaps; `revisionsNet` leaves those out. */
   revisions: string[];
+  revisionsNet: string[];
   /** Valid times compared across consecutive runs, and how many of those
    *  comparisons found a different value. */
   revisionPairs: number;
   revisionChanges: number;
-  /** Of those changes, how many went back to a value an earlier run had
-   *  already served for the same valid time: an answer from a server that
-   *  had not yet taken the newer run, not a newer forecast. Open-Meteo's
-   *  model-updates page says it runs "multiple redundant API servers" and
-   *  that there "may be slight differences between them while the data is
-   *  being copied" (read 2026-10-09). */
-  revisionReverts: number;
-  /** Of those changes, how many moved the direction by exactly one degree
-   *  and nothing else. On 2026-10-09 Open-Meteo answered the same request
-   *  with every direction one degree apart and every speed and gust the
-   *  same, alternating from one request to the next, with no new run in
-   *  its metadata: a difference between its servers, not a forecast
-   *  revision. Counted apart so it is not read as one. */
-  revisionDirOnlyByOne: number;
+  /** The changes, sorted into three kinds that partition them (they sum to
+   *  `revisionChanges`), each change in the first kind that fits:
+   *    dirByOne  the direction moved by exactly one degree and nothing else.
+   *              On 2026-10-09 Open-Meteo answered alike requests with every
+   *              direction one degree apart and every speed and gust the
+   *              same, alternating from one request to the next, with no new
+   *              run in its metadata: a difference between its servers.
+   *    revert    back to a value an earlier run had already served for the
+   *              same valid time: an answer from a server that had not yet
+   *              taken the newer run. Open-Meteo's model-updates page says it
+   *              runs "multiple redundant API servers" and that there "may be
+   *              slight differences between them while the data is being
+   *              copied" (read 2026-10-09).
+   *    other     anything else: a value not served before, a revision. */
+  revisionKinds: { dirByOne: number; revert: number; other: number };
+}
+
+export interface Interval {
+  median: number | null;
+  min: number | null;
+  max: number | null;
 }
 
 /** How old each source's information was when fetched, minutes. */
@@ -342,7 +366,9 @@ export interface Staleness {
 /** One forecast source against the METAR, every distinct report once. */
 export interface VsMetar {
   source: ForecastSource;
-  /** Reports with a forecast value for their time. */
+  /** Distinct METAR reports in the records, and how many of them this
+   *  source had a forecast value for (vsMetarOf says which run is read). */
+  reports: number;
   n: number;
   /** Forecast minus observed, kt. */
   spd: Spread | null;
@@ -381,14 +407,18 @@ export interface SurfaceWindSummary {
    *  series is the 15-minute one read on the hour. */
   hourlyIsM15: { same: number; of: number };
   /** Open-Meteo's docs give the hourly gust as "a maximum of the preceding
-   *  hour" (read 2026-10-09). Hour steps whose whole preceding hour of
-   *  15-minute steps was in the same run (the step itself and the three
-   *  before), and how many of those had an hourly gust equal to the largest
-   *  of the four 15-minute gusts, below it, or above it. */
-  hourlyGustVsHourMax: { steps: number; equal: number; below: number; above: number };
+   *  hour" (read 2026-10-09). Distinct valid hours for which some run had
+   *  the whole preceding hour of 15-minute steps in the same response (the
+   *  step itself and the three before), each read from the LATEST such run,
+   *  and how many of those had an hourly gust equal to the largest of the
+   *  four 15-minute gusts, below it (and by how much at most, kt), or
+   *  above it. */
+  hourlyGustVsHourMax: { hours: number; equal: number; below: number; above: number; maxBelowKt: number };
   /** Runs where Open-Meteo's default model returned HRRR's numbers, and for
-   *  the runs where it did not, the largest gaps (hrrrMaxDiff). */
-  defaultIsHrrr: { same: number; of: number; diffs: { at: string; dir: number; spd: number; gust: number }[] };
+   *  the runs where it did not, the largest gaps (hrrrMaxDiff, with
+   *  `shapeDiffers` when the two responses did not carry the same valid
+   *  times, in which case the gaps cover only the times both had). */
+  defaultIsHrrr: { same: number; of: number; diffs: ({ at: string } & HrrrDiff)[] };
   /** Distinct run init times seen per model domain, in order, with the first
    *  run time each was seen at. */
   modelRuns: Record<string, { init: string; avail: string | null; firstSeenAt: string }[]>;
@@ -426,6 +456,29 @@ export function maxWindDiff(a: readonly WindAt[], b: readonly WindAt[]): { dir: 
   return { dir, spd, gust, matched };
 }
 
+/** Two responses compared series by series (current, hourly, 15-minute):
+ *  the same only when every series is (sameWindSeries); otherwise the
+ *  largest gaps over the valid times both carry, and `shapeDiffers` when
+ *  any pair of series did not carry the same valid times, so a gap of
+ *  0/0/0 is never logged as if it explained the difference. */
+export function compareWindResponses(pairs: readonly (readonly [readonly WindAt[], readonly WindAt[]])[]): {
+  same: boolean;
+  diff?: HrrrDiff;
+} {
+  if (pairs.every(([a, b]) => sameWindSeries(a, b))) return { same: true };
+  const d = pairs.map(([a, b]) => maxWindDiff(a, b));
+  const shapeDiffers = pairs.some(([a, b]) => a.length !== b.length || a.some((x, i) => x.t !== b[i].t));
+  return {
+    same: false,
+    diff: {
+      dir: Math.max(...d.map((x) => x.dir)),
+      spd: Math.max(...d.map((x) => x.spd)),
+      gust: Math.max(...d.map((x) => x.gust)),
+      ...(shapeDiffers ? { shapeDiffers: true } : {}),
+    },
+  };
+}
+
 const minutes = (ms: number): number => Math.round((ms / 60_000) * 10) / 10;
 
 function medianOf(xs: readonly number[]): number | null {
@@ -435,27 +488,40 @@ function medianOf(xs: readonly number[]): number | null {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
+/** A one-degree flap: the same valid time, nothing but the direction
+ *  changed, by exactly one degree. */
+const isFlap = (a: WindAt, b: WindAt): boolean => a.t === b.t && dirOnlyByOne(a, b);
+
+function intervalOf(times: readonly number[]): Interval {
+  const gaps = times.slice(1).map((t, i) => minutes(t - times[i]));
+  return {
+    median: medianOf(gaps),
+    min: gaps.length ? Math.min(...gaps) : null,
+    max: gaps.length ? Math.max(...gaps) : null,
+  };
+}
+
 function cadenceOf(records: readonly SurfaceWindRecord[], source: SourceName): Cadence {
   const withValue = records.filter((r) => shownAt(r, source) != null);
-  let shownChanges = 0;
   const changeTimes: number[] = [];
+  const netChangeTimes: number[] = [];
   for (let i = 1; i < withValue.length; i++) {
-    if (!sameWind(shownAt(withValue[i - 1], source), shownAt(withValue[i], source))) {
-      shownChanges += 1;
-      changeTimes.push(Date.parse(withValue[i].at));
-    }
+    const a = shownAt(withValue[i - 1], source) as WindAt;
+    const b = shownAt(withValue[i], source) as WindAt;
+    if (sameWind(a, b)) continue;
+    changeTimes.push(Date.parse(withValue[i].at));
+    if (!isFlap(a, b)) netChangeTimes.push(Date.parse(withValue[i].at));
   }
-  const gaps = changeTimes.slice(1).map((t, i) => minutes(t - changeTimes[i]));
 
   // Revisions: the same valid time, read in two consecutive runs, with a
   // different value. The METAR has no revisions (a report is a report), and
   // `current` carries one valid time per run, so it is compared with the
   // previous run's `current` only when both name the same interval.
   const revisions: string[] = [];
+  const revisionsNet: string[] = [];
   let revisionPairs = 0;
   let revisionChanges = 0;
-  let revisionReverts = 0;
-  let revisionDirOnlyByOne = 0;
+  const revisionKinds = { dirByOne: 0, revert: 0, other: 0 };
   if (source !== 'metar') {
     const valued = records.filter((r) => (source === 'omCurrent' ? r.om?.current : source === 'nws' ? r.nws : r.om));
     // Every value served so far for each valid time, to tell a revert from
@@ -473,36 +539,40 @@ function cadenceOf(records: readonly SurfaceWindRecord[], source: SourceName): C
       const prev = forecastValues(valued[i - 1], source);
       const next = forecastValues(valued[i], source);
       let changed = false;
+      let changedNet = false;
       for (const [t, w] of next) {
         const p = prev.get(t);
         if (!p) continue;
         revisionPairs += 1;
-        if (!sameWind(p, w)) {
-          revisionChanges += 1;
-          changed = true;
-          if ((history.get(t) ?? []).some((x) => sameWind(x, w))) revisionReverts += 1;
-          if (dirOnlyByOne(p, w)) revisionDirOnlyByOne += 1;
+        if (sameWind(p, w)) continue;
+        revisionChanges += 1;
+        changed = true;
+        if (dirOnlyByOne(p, w)) {
+          revisionKinds.dirByOne += 1;
+          continue;
         }
+        changedNet = true;
+        if ((history.get(t) ?? []).some((x) => sameWind(x, w))) revisionKinds.revert += 1;
+        else revisionKinds.other += 1;
       }
       if (changed) revisions.push(valued[i].at);
+      if (changedNet) revisionsNet.push(valued[i].at);
       remember(valued[i]);
     }
   }
   return {
     source,
     runs: withValue.length,
-    shownChanges,
+    shownChanges: changeTimes.length,
     shownPairs: Math.max(0, withValue.length - 1),
-    shownIntervalMin: {
-      median: medianOf(gaps),
-      min: gaps.length ? Math.min(...gaps) : null,
-      max: gaps.length ? Math.max(...gaps) : null,
-    },
+    shownChangesNet: netChangeTimes.length,
+    shownIntervalMin: intervalOf(changeTimes),
+    shownIntervalNetMin: intervalOf(netChangeTimes),
     revisions,
+    revisionsNet,
     revisionPairs,
     revisionChanges,
-    revisionReverts,
-    revisionDirOnlyByOne,
+    revisionKinds,
   };
 }
 
@@ -534,9 +604,18 @@ function stalenessOf(records: readonly SurfaceWindRecord[], source: SourceName):
       // values changed when a new 15-minute run arrived, not when
       // `ncep_hrrr_conus` (the hourly domain) did, which was an hour behind
       // (docs/surface-wind-sources.md). That domain's runs are still logged.
+      //
+      // INFERRED, not measured: this assumes the forecast came from the run
+      // the metadata named, and the same sample showed it need not (for about
+      // twelve minutes after a run arrived, requests got the new run or the
+      // old one in turn, and the metadata itself differed between servers).
+      // Only runs that returned a forecast count: a run whose forecast
+      // request failed has metadata but nothing it describes.
       const domain = 'ncep_hrrr_conus_15min';
-      basis = `run time minus ${domain}'s last_run_availability_time`;
-      from = r.omMeta?.[domain]?.avail;
+      basis =
+        `INFERRED: run time minus ${domain}'s last_run_availability_time, ` +
+        'assuming the forecast came from that run (servers can lag it)';
+      from = r.om ? r.omMeta?.[domain]?.avail : null;
     }
     const t = from ? Date.parse(from) : NaN;
     if (Number.isFinite(t) && Number.isFinite(at)) ages.push(minutes(at - t));
@@ -553,18 +632,26 @@ function stalenessOf(records: readonly SurfaceWindRecord[], source: SourceName):
 
 /**
  * Each distinct METAR report against each forecast's value for its
- * observation time, read from the FIRST run that saw the report: what the
- * forecasts said while the report was the newest one, which is the moment a
- * reader would set them side by side.
+ * observation time, read from the first run that both had the report as its
+ * newest and returned that source's forecast: what the forecast said while
+ * the report was the newest one, the moment a reader would set them side by
+ * side. Per source, so a run whose Open-Meteo request failed does not drop
+ * the report for NWS, and a later run fills in for the source that failed.
+ * A report no run had a forecast for is left out for that source (`n`
+ * against `reports`).
  *
  * `current` has one valid time per run, so for it the report is paired with
  * the first run whose `current` interval contains the observation time, if
- * any run's does.
+ * any run's does, whichever report that run had.
  */
 function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource): VsMetar {
-  const firstByReport = new Map<string, SurfaceWindRecord>();
+  const hasForecast = (r: SurfaceWindRecord): boolean => (source === 'nws' ? r.nws != null : r.om != null);
+  const firstByReport = new Map<string, SurfaceWindRecord | null>();
   for (const r of records) {
-    if (r.metar && !firstByReport.has(r.metar.obsAt)) firstByReport.set(r.metar.obsAt, r);
+    if (!r.metar) continue;
+    const seen = firstByReport.get(r.metar.obsAt);
+    if (seen) continue;
+    firstByReport.set(r.metar.obsAt, hasForecast(r) || source === 'omCurrent' ? r : null);
   }
   const spd: number[] = [];
   const dir: number[] = [];
@@ -574,6 +661,7 @@ function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource
   let gustBoth = 0;
   let gustOnlyForecast = 0;
   for (const [obsAt, first] of firstByReport) {
+    if (!first) continue;
     const obs = first.metar?.wind;
     if (!obs) continue;
     const ms = Date.parse(obsAt);
@@ -608,6 +696,7 @@ function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource
   }
   return {
     source,
+    reports: firstByReport.size,
     n,
     spd: spreadOf(spd),
     dir: spreadOf(dir),
@@ -634,7 +723,7 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
   let hrrrOf = 0;
   let hourlySame = 0;
   let hourlyOf = 0;
-  const gustVsMax = { steps: 0, equal: 0, below: 0, above: 0 };
+  const gustByHour = new Map<string, { hourly: number; max: number }>();
   const hrrrDiffs: SurfaceWindSummary['defaultIsHrrr']['diffs'] = [];
   const modelRuns: SurfaceWindSummary['modelRuns'] = {};
   const nwsUpdates: SurfaceWindSummary['nwsUpdates'] = [];
@@ -659,11 +748,10 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
       const end = Date.parse(h.t);
       const quarter = [0, 1, 2, 3].map((k) => m15ByT.get(iso(end - k * STEP15_MS))?.gust);
       if (h.gust == null || quarter.some((g) => g == null)) continue;
-      const max = Math.max(...(quarter as number[]));
-      gustVsMax.steps += 1;
-      if (h.gust === max) gustVsMax.equal += 1;
-      else if (h.gust < max) gustVsMax.below += 1;
-      else gustVsMax.above += 1;
+      // Records run in time order, so a later run's reading of the same
+      // valid hour replaces an earlier one: each hour counts once, as the
+      // latest run served it.
+      gustByHour.set(h.t, { hourly: h.gust, max: Math.max(...(quarter as number[])) });
     }
     if (r.om?.sameAsHrrr != null) {
       hrrrOf += 1;
@@ -675,6 +763,16 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
       const runs = (modelRuns[domain] ??= []);
       if (!runs.some((x) => x.init === meta.init)) runs.push({ init: meta.init, avail: meta.avail, firstSeenAt: r.at });
     }
+  }
+
+  const gustVsMax = { hours: 0, equal: 0, below: 0, above: 0, maxBelowKt: 0 };
+  for (const { hourly, max } of gustByHour.values()) {
+    gustVsMax.hours += 1;
+    if (hourly === max) gustVsMax.equal += 1;
+    else if (hourly < max) {
+      gustVsMax.below += 1;
+      gustVsMax.maxBelowKt = Math.max(gustVsMax.maxBelowKt, Math.round((max - hourly) * 10) / 10);
+    } else gustVsMax.above += 1;
   }
 
   return {

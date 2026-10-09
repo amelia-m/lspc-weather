@@ -22,7 +22,7 @@ Two pages sit beside the dashboard, both reached from its footer:
 | Flight category | the app's derived VFR/MVFR/IFR/LIFR | aviationweather.gov's `fltCat` for the same report | `scripts/skyParity.live.ts` (a gate, when both give a category) |
 | TAF shown | the TAF text the card shows, from the NWS text-products feed, first station in the chain with a product | the current TAF aviationweather.gov has for that station | `scripts/skyParity.live.ts` (informational: says whether the card's issuance is the current one) |
 | TAF decode | `decodeTaf` run on aviationweather.gov's own TAF text for every station in the chain: change type, period times, wind, visibility, weather, cloud layers per period | the `fcsts` decode aviationweather.gov returns beside that text | `scripts/skyParity.live.ts` (gate: any difference fails the run) |
-| Surface wind sources | KPMV's METAR as the dashboard picks it | the NWS gridpoint hour and Open-Meteo's hourly, 15-minute and `current` 10 m wind at the DZ, with each source's own update and run times | `scripts/surfaceWindCompare.live.ts` (by hand only, in no workflow; see [surface-wind-sources.md](surface-wind-sources.md)) |
+| Surface wind sources | KPMV's METAR as the dashboard picks it | the NWS gridpoint hour and Open-Meteo's hourly, 15-minute and `current` 10 m wind at the DZ, with each source's own update and run times | `scripts/surfaceWindCompare.live.ts` (by hand only, in no workflow, and skipped unless `SURFACE_WIND_SAMPLE=1`, since the daily job runs the whole live config; see [surface-wind-sources.md](surface-wind-sources.md)) |
 
 The Schulze and usairnet scripts print a human-readable table and one
 machine-readable line, `@@parity {json}`, per run. Neither ever fails a run:
@@ -163,7 +163,8 @@ morning).
 
 ## Surface wind: four forecasts against the METAR
 
-A separate comparison, run by hand from the sandbox and in no workflow:
+A separate comparison, run by hand from the sandbox and in no workflow (it is
+skipped unless `SURFACE_WIND_SAMPLE=1`):
 `scripts/surfaceWindCompare.live.ts` logs KPMV's METAR beside the NWS
 gridpoint hour and Open-Meteo's hourly, 15-minute (`minutely_15`) and
 `current` 10 m wind at the DZ, with every update or run time each source
@@ -174,9 +175,12 @@ In short, measured that evening: the three Open-Meteo forms are one HRRR
 15-minute step on the hour, gust included, and `current` is the step at the
 start of the quarter hour in progress); new runs arrived hourly, 78 to 90
 minutes after initialisation; for about twelve minutes after one arrived,
-Open-Meteo's servers answered with the new run or the old one in turn, and
-at all times they differed by 1° of direction; the NWS gridpoint was updated
-once in two hours and is served from caches that keep a copy up to an hour.
+Open-Meteo's servers answered with the new run or the old one in turn; and
+now and then they differed by one degree of direction and nothing else (at
+15 of 36 consecutive pairs of runs, and between the two requests of one run
+at 16 of 37), which is no forecast change; net of those, a fixed valid time
+was revised at 5 of 41 runs. The NWS gridpoint was updated once in two hours
+and is served from caches that keep a copy up to an hour.
 Against seven KPMV reports, all 5 to 6 kt, every forecast was within about
 2 kt; too few, and too light, to say which is nearer.
 

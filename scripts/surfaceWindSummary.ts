@@ -27,25 +27,38 @@ out.push(`current = 15-minute step at its time: ${s.currentIsM15.same} of ${s.cu
 out.push(`hourly = 15-minute step at the same hour: ${s.hourlyIsM15.same} of ${s.hourlyIsM15.of}`);
 {
   const g = s.hourlyGustVsHourMax;
-  out.push(`hourly gust vs the preceding hour's 15-minute maximum: ${g.equal} equal, ${g.below} below, ${g.above} above, of ${g.steps}`);
-}
-out.push(`default model = HRRR: ${s.defaultIsHrrr.same} of ${s.defaultIsHrrr.of}`);
-for (const d of s.defaultIsHrrr.diffs) out.push(`  differed at ${d.at}: up to ${d.dir}°, ${d.spd} kt, gust ${d.gust} kt`);
-out.push('', 'Cadence');
-for (const c of s.cadence) {
   out.push(
-    `  ${c.source.padEnd(10)} shown value changed ${c.shownChanges}/${c.shownPairs} run pairs; ` +
-      `interval min median ${c.shownIntervalMin.median ?? '—'} (${c.shownIntervalMin.min ?? '—'}–${c.shownIntervalMin.max ?? '—'}); ` +
-      `revisions ${c.revisionChanges}/${c.revisionPairs} valid-time pairs, ${c.revisionReverts} reverts, ${c.revisionDirOnlyByOne} direction-only ±1°, at ${c.revisions.length} runs`,
+    `hourly gust vs the preceding hour's 15-minute maximum, distinct valid hours (latest run): ` +
+      `${g.equal} equal, ${g.below} below (by up to ${g.maxBelowKt} kt), ${g.above} above, of ${g.hours}`,
   );
 }
-out.push('', 'Staleness (minutes)');
+out.push(`default model = HRRR: ${s.defaultIsHrrr.same} of ${s.defaultIsHrrr.of}`);
+for (const d of s.defaultIsHrrr.diffs) {
+  out.push(`  differed at ${d.at}: up to ${d.dir}°, ${d.spd} kt, gust ${d.gust} kt${d.shapeDiffers ? '; the two carried different valid times' : ''}`);
+}
+const iv = (x: { median: number | null; min: number | null; max: number | null }): string =>
+  `median ${x.median ?? '—'} (${x.min ?? '—'}–${x.max ?? '—'})`;
+out.push('', 'Cadence ("net": leaving out one-degree direction flaps on the same valid time)');
+for (const c of s.cadence) {
+  out.push(
+    `  ${c.source.padEnd(10)} shown value changed ${c.shownChanges}/${c.shownPairs} run pairs, net ${c.shownChangesNet}; ` +
+      `minutes between changes ${iv(c.shownIntervalMin)}, net ${iv(c.shownIntervalNetMin)}`,
+  );
+  if (c.source !== 'metar') {
+    const k = c.revisionKinds;
+    out.push(
+      `  ${''.padEnd(10)} revisions ${c.revisionChanges}/${c.revisionPairs} valid-time pairs = ` +
+        `${k.dirByOne} one-degree flaps + ${k.revert} reverts + ${k.other} other; at ${c.revisions.length} runs, net ${c.revisionsNet.length}`,
+    );
+  }
+}
+out.push('', 'Staleness (minutes; Open-Meteo hourly and 15-minute ages are INFERRED, see basis)');
 for (const st of s.staleness) {
   out.push(`  ${st.source.padEnd(10)} median ${st.medianMin ?? '—'} (${st.minMin ?? '—'}–${st.maxMin ?? '—'}), n ${st.n}: ${st.basis}`);
 }
 out.push('', 'Against the METAR (forecast minus observed)');
 for (const v of s.vsMetar) {
-  out.push(`  ${v.source} (n ${v.n})`);
+  out.push(`  ${v.source} (${v.n} of ${v.reports} reports)`);
   out.push(`    speed kt   ${sp(v.spd)}`);
   out.push(`    dir °      ${sp(v.dir)}`);
   out.push(`    gust kt    ${sp(v.gust)}; METAR gusts ${v.metarGusts}, with a forecast gust ${v.forecastGustWhenMetarGust}; forecast gust with no METAR gust ${v.forecastGustWhenMetarNone}`);

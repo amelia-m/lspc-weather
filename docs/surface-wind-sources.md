@@ -15,6 +15,25 @@ prints one `@@parity` line of kind `surfacewind`; the arithmetic over many
 runs is `src/domain/surfaceWindSources.ts`, pure and tested, and
 `npx tsx scripts/surfaceWindSummary.ts <log>` prints it.
 
+The script is opt-in and in no workflow. `vitest.live.config.ts` takes every
+`scripts/*.live.ts`, and the daily sky-parity job runs that config with no
+path, so the script is skipped unless `SURFACE_WIND_SAMPLE=1` is set (shown
+on 2026-10-09: the whole live config without it ran 5 files and skipped this
+one). One sample, from the sandbox:
+
+```
+SURFACE_WIND_SAMPLE=1 NODE_USE_ENV_PROXY=1 \
+  NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt \
+  npx vitest run --config vitest.live.config.ts scripts/surfaceWindCompare.live.ts
+```
+
+Every fetch in a run, retries and body included, ends within a 40-second
+budget, so a source that hangs is logged as that source's error and the run
+still prints its line inside vitest's 60-second limit (shown with a local
+server that never answered in place of Open-Meteo: the run ended in 39 s
+with `omError` set; the version before the budget timed out at 60 s and
+printed nothing).
+
 | name | what | read at | how a moment is read |
 |---|---|---|---|
 | `metar` | KPMV's latest report, IEM and api.weather.gov, the newer one (`chooseObservation`, as the dashboard picks it) | KPMV, about 11.5 mi ENE of the DZ | the report as fetched |
@@ -31,13 +50,19 @@ observation time (and each feed's); the gridpoint's `updateTime`, its
 metadata API, the last run's initialisation and availability time for HRRR's
 hourly (`ncep_hrrr_conus`) and 15-minute (`ncep_hrrr_conus_15min`) output.
 Each run also asks Open-Meteo the same question with `models=ncep_hrrr_conus`
-and records whether the numbers were identical (`sameAsHrrr`).
+and records whether the numbers were identical (`sameAsHrrr`), and if not,
+the largest gap and whether the two carried different valid times
+(`shapeDiffers`, logged from after this sample).
 
-The comparison with the METAR takes each distinct report once, from the first
-run that saw it, and reads each forecast at the report's observation time by
-the rule in the table. `current` has one valid time per run, so a report is
-paired with the first run whose `current` interval contains its observation
-time, when any does. Directions are compared only when the METAR gave one (not
+The comparison with the METAR takes each distinct report once and, for each
+source separately, reads the first run that had the report as its newest and
+returned that source's forecast; the forecast is read at the report's
+observation time by the rule in the table. So a run whose Open-Meteo request
+failed does not drop the report for Open-Meteo when a later run in the same
+20 minutes succeeded, and does not change which run NWS is read from. In this
+sample every source had all seven reports. `current` has one valid time per
+run, so a report is paired with the first run whose `current` interval
+contains its observation time, when any does. Directions are compared only when the METAR gave one (not
 calm, not VRB); gusts only when both sides had one. The forecasts are for the
 DZ and the METAR is 11.5 mi away, so every difference below includes that
 distance.
@@ -70,9 +95,40 @@ front, which is when the figure matters.
 |---|---|---|---|
 | METAR | at each new report, 20 min apart; the wind group changed at 3 of the 6 new reports | a new report (the 01:55Z one never reached IEM; NWS served it at 02:17Z) | 17.8 min (5.8 to 39.6) after the observation |
 | NWS gridpoint | once in two hours at the origin, not at all on the path the app reads | a forecaster or blend update: `updateTime` 00:35:28Z until the hourly product showed 02:36:41Z | 68.3 min (8.3 to 129.1) since `updateTime` |
-| Open-Meteo hourly | at each new HRRR run, about hourly | the 15-minute domain's run (see below) | 25 min (2 to 63) since that run was available |
-| Open-Meteo `minutely_15` | the same runs as the hourly, plus a new step each quarter hour | same | same |
+| Open-Meteo hourly | at each new HRRR run, about hourly | the 15-minute domain's run (see below) | inferred: 25.9 min (2.6 to 62.8) since that run was available |
+| Open-Meteo `minutely_15` | the same runs as the hourly, plus a new step each quarter hour | same | inferred, same |
 | Open-Meteo `current` | each quarter hour, and at each run | same | 7.8 min (1.8 to 14.6) since the start of its quarter hour |
+
+The Open-Meteo hourly and 15-minute ages are inferred, not measured: each
+takes the run time minus the availability time the metadata API gave for the
+15-minute domain's latest run, and so assumes the forecast came from that
+run. The sample itself shows it need not have (servers serving the old run
+after the new one was available, below), and the metadata differed between
+servers too. Counted only at the 34 runs that returned both a forecast and
+that metadata.
+
+How often each value changed between consecutive runs, and the same count
+net of one-degree direction flaps on the same valid time (see "Open-Meteo's
+servers do not all answer alike" below), which say nothing about the
+forecast:
+
+| | "now" value changed (of run pairs) | net of flaps | minutes between net changes, median (range) | a fixed valid time revised, at how many runs | net of flaps |
+|---|---|---|---|---|---|
+| METAR | 3 of 40 | 3 | 39.4 (15 to 63.8) | | |
+| NWS hour | 1 of 40 (the clock hour turning) | 1 | | 0 | 0 |
+| Open-Meteo hourly | 20 of 36 | 7 | 3 (3 to 57.8) | 18 | 5 |
+| Open-Meteo `minutely_15` | 18 of 36 | 12 | 9 (3 to 15.8) | 18 | 5 |
+| Open-Meteo `current` | 19 of 36 | 12 | 12 (3 to 15.8) | 11 | 4 |
+
+Net of flaps, the forecasts for a fixed valid time changed at five runs:
+four within twelve minutes as the 00Z run arrived (01:16Z, 01:22Z, 01:25Z,
+01:28Z: new, new, old, new) and one at 02:29Z for the 01Z run. The "now"
+value otherwise changed as the clock moved it to another step: every quarter
+hour for `minutely_15` and `current`, every hour (at half past) for the
+hourly value. The changes in the 15-minute series, every valid time over
+every run pair, split into three kinds that sum to the total: of 172, 124
+one-degree flaps, 19 returns to a value an earlier run had served, and 29
+values not served before.
 
 **Measured, Open-Meteo:**
 
@@ -81,7 +137,9 @@ front, which is when the figure matters.
   the other 19, 16 differed by at most 1° of direction with every speed and
   gust the same, 2 (01:16Z and 01:25Z, while a new run was arriving) by up
   to 10°, 1 kt and 2.4 kt of gust, and 1 (00:58Z) was logged before the size
-  of the gap was recorded. A probe at about 00:40Z with `gfs_seamless` gave
+  of the gap was recorded. Whether the two carried the same valid times was
+  not logged in this sample; none of the 18 recorded gaps was 0/0/0, the
+  mark a difference of shape alone would have left. A probe at about 00:40Z with `gfs_seamless` gave
   the same numbers as the default; `ncep_nbm_conus` and `gfs_global` did
   not.
 - **The hourly 10 m wind is the 15-minute series read on the hour.** At 37 of
@@ -92,17 +150,19 @@ front, which is when the figure matters.
   available at 01:52:24Z, the 15-minute domain's at 01:17:49Z), yet the
   hourly values took the 00Z run at 01:16 to 01:22Z, and the 01Z run at
   02:29Z with the hourly domain still on 00Z.
-- **The hourly gust is not the hour's maximum here.** Open-Meteo's hourly
-  table gives `wind_gusts_10m` as "Gusts at 10 meters above ground as a
-  maximum of the preceding hour" (read 2026-10-09). Of 93 hour steps whose
-  four 15-minute steps were all in the same response, the hourly gust
-  equalled the largest of the four at 67 and was below it at 26 (by up to
-  2.5 kt: 10.3 against 12.8 for 00Z in the 01:22Z run), never above. It
-  always equalled the 15-minute step at the hour, whose gust the 15-minute
-  table gives as the "Preceding 15 min max". So at this DZ the hourly gust
-  covers the last quarter of the hour, not the hour. The app does not
-  request the hourly gust; the 10-day outlook's daily gust maximum is built
-  by Open-Meteo from its hourly values and was not checked.
+- **The hourly gust was not always the hour's maximum here.** Open-Meteo's
+  hourly table gives `wind_gusts_10m` as "Gusts at 10 meters above ground as
+  a maximum of the preceding hour" (read 2026-10-09). Four distinct valid
+  hours (00Z to 03Z) had all four of their 15-minute steps in some response;
+  read from the latest such run, the hourly gust equalled the largest of the
+  four at three and was below it at one: 00Z, 10.3 kt against 12.8 kt at
+  23:15Z, in the 01:28Z run. In every response (37 of 37) it equalled the
+  15-minute step at the hour, whose gust the 15-minute table gives as the
+  "Preceding 15 min max". So at this DZ the hourly gust behaved as the last
+  quarter hour's maximum, not the hour's; one hour of four shows the
+  difference, and a longer sample would say how often it matters. The app
+  does not request the hourly gust; the 10-day outlook's daily gust maximum
+  is built by Open-Meteo from its hourly values and was not checked.
 - **`current` is the `minutely_15` step at the start of the quarter hour in
   progress**, at 37 of 37 runs: at 00:43Z it was the 00:30Z step. So it is
   between 0 and 15 minutes old by construction, and read at a moment it is
@@ -112,11 +172,13 @@ front, which is when the figure matters.
   and the hourly domain's 0Z run 112 minutes after. So whatever the app
   fetches is a forecast from a run initialised one and a half to two and a
   half hours earlier.
-- **Open-Meteo's servers do not all answer alike.** Every direction in a
-  response, in every series, alternated by exactly 1° from one request to the
-  next with nothing else changing: 124 of the 172 changes counted in the
-  `minutely_15` series were that, and 121 went back to a value already
-  served. For about twelve minutes after the 00Z run arrived, requests got
+- **Open-Meteo's servers do not all answer alike.** Now and then a response
+  came back with every direction one degree from the last response's and
+  every speed and gust the same, and the next one would go back: at 15 of 36
+  consecutive pairs of runs the 15-minute series moved that way, with no new
+  run in the metadata. The two requests of one run (the default model and
+  `models=ncep_hrrr_conus`, a moment apart) differed by exactly that at 16 of
+  37 runs. For about twelve minutes after the 00Z run arrived, requests got
   the new run or the old one in turn: at 01:16Z the new speeds and directions
   with the old gusts, at 01:22Z the new run, at 01:25Z the old run again, at
   01:28Z the new one. The 01Z run arrived at 02:29Z with no such return seen.
@@ -136,7 +198,9 @@ front, which is when the figure matters.
 - The gridpoint's `updateTime` was 00:35:28Z at every one of the 41 runs, and
   its wind values never changed. The `/forecast/hourly` product for the same
   grid showed a newer `updateTime`, 02:36:41Z, at the last run (02:44:33Z),
-  while the gridpoint at the same moment still served 00:35:28Z.
+  while the gridpoint at the same moment still served 00:35:28Z. A single run
+  at 03:03Z, after the sample and not in the log, got 00:35:28Z from both
+  again.
 - The gridpoint is served through caches. Its `Cache-Control` `max-age` ran
   down between runs (3600, 3420, 3240, 3060 s) and the `Expires` header
   jumped between several values at once (01:43:46Z, 01:55:47Z), so successive
@@ -153,7 +217,9 @@ sandbox cannot check).
 
 ## Against the METAR
 
-Each report once, from the first run that saw it; forecast minus observed.
+Each report once, per source from the first run that had it as the newest
+report and returned that source's forecast (all seven, for every source);
+forecast minus observed.
 Seven reports, so the 90th percentile is the largest gap but one.
 
 | | NWS hour | OM hourly | OM 15-min | OM current |
@@ -235,11 +301,13 @@ beside the observed wind would see a figure the station did not report.
 
 ## What a longer sample needs
 
-The structural findings above (one HRRR dataset behind all three Open-Meteo
-forms, hourly runs 78 to 90 minutes after initialisation, server
-disagreement after a run arrives, the hourly gust being a 15-minute one, the
-NWS caches) were each seen more than once and would likely hold, though each
-is from one evening at one point. Which forecast is nearer KPMV's wind would need:
+Some structural findings above were seen at every run or every arrival (one
+HRRR dataset behind all three Open-Meteo forms, 37 of 37; new runs 78 to 90
+minutes after initialisation, three of three; the one-degree flaps; the NWS
+caches) and would likely hold. Others rest on one case: old and new runs
+served in turn after an arrival (the 00Z run; the 01Z run showed none), and
+the hourly gust below the hour's 15-minute maximum (one hour of four). All
+are from one evening at one point. Which forecast is nearer KPMV's wind would need:
 
 - many more reports: the comparison gains one pair per KPMV report, three an
   hour at best, so a week of continuous sampling gives about 500;
