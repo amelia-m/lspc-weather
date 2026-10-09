@@ -131,7 +131,7 @@ describe('normalizeNwsObservation', () => {
     expect(c.altimeterInHg).toBe(29.96); // from A2996 in rawMessage
   });
 
-  it('falls back to station pressure when the raw text lacks an A/Q group', () => {
+  it('falls back to the API’s barometricPressure, which carries the altimeter setting, when the raw text lacks an A/Q group', () => {
     const noRaw = {
       properties: { ...OBSERVATION_FIXTURE.properties, rawMessage: 'KPMV 271300Z AUTO' },
     };
@@ -172,6 +172,42 @@ describe('normalizeNwsObservation', () => {
  * consecutive KPMV observations with cloudLayers: [] while rawMessage read
  * OVC027–OVC035; the dashboard showed "Clear" and VFR under a 2,700 ft
  * overcast. The first case below is that report, verbatim. */
+/* The temperatures come from the METAR text first, as the sky and the
+ * altimeter do. On 2026-10-09 one of 500 nearby records (KOFF, 01:55Z the
+ * day before) had a null decoded temperature while its text read T01540118. */
+describe('normalizeNwsObservation temperatures', () => {
+  const withTemps = (rawMessage: string, tempC: number | null, dewpointC: number | null) =>
+    normalizeNwsObservation(
+      {
+        properties: {
+          ...OBSERVATION_FIXTURE.properties,
+          rawMessage,
+          temperature: { value: tempC, unitCode: 'wmoUnit:degC' },
+          dewpoint: { value: dewpointC, unitCode: 'wmoUnit:degC' },
+        },
+      },
+      'KPMV',
+    );
+
+  it('reads them from the T group when the decode is missing', () => {
+    const c = withTemps('KOFF 080155Z AUTO 00000KT 10SM CLR 15/12 A3001 RMK AO2 SLP165 T01540118 $', null, null);
+    expect(c.tempC).toBe(15.4);
+    expect(c.dewpointC).toBe(11.8);
+  });
+
+  it('prefers the text over the decode when both are present', () => {
+    const c = withTemps('KPMV 271300Z AUTO 19012G22KT 10SM BKN020 28/19 A2996 RMK AO2 T02830194', 20, 10);
+    expect(c.tempC).toBe(28.3);
+    expect(c.dewpointC).toBe(19.4);
+  });
+
+  it('uses the decode when the record has no text', () => {
+    const c = withTemps('', 21.1, 12.2);
+    expect(c.tempC).toBe(21.1);
+    expect(c.dewpointC).toBe(12.2);
+  });
+});
+
 describe('normalizeNwsObservation sky', () => {
   const withRaw = (rawMessage: string, cloudLayers: RawNwsObservation['properties']['cloudLayers']) =>
     normalizeNwsObservation(

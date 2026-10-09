@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { chooseObservation, normalizeIemCurrent, supersedes, tempsFromRaw, type RawIemCurrent } from '../src/domain/iem';
+import { chooseObservation, normalizeIemCurrent, supersedes, type RawIemCurrent } from '../src/domain/iem';
+import { tempsFromRaw } from '../src/domain/normalize';
 import type { CurrentConditions } from '../src/domain/types';
 
 /** IEM's current record for KPMV as a GitHub runner fetched it at 20:45Z on

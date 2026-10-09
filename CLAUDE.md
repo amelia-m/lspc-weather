@@ -108,8 +108,10 @@ precisely because they were colour and text rather than flags.
   aviationweather.gov and NOAA's raw files are as quick but send no CORS
   header, so a browser cannot read them. NWS is kept because IEM is a
   university service with no uptime promise; a tie goes to IEM. Temperatures
-  come from the METAR's T group, not IEM's `dwpf`, which is whole °F and
-  converts back a tenth off. `mesonet.agron.iastate.edu` is on the sandbox
+  come from the METAR's T group on both feeds (`tempsFromRaw`), not IEM's
+  `dwpf`, which is whole °F and converts back a tenth off, nor NWS's decode,
+  which can be null while the text has the figure (one of 500 nearby records
+  read 2026-10-09). `mesonet.agron.iastate.edu` is on the sandbox
   allowlist since 2026-09-29, so the IEM path runs from here (the usairnet
   comparison reads both feeds and logs which served).
 - **Sunrise and sunset are NOAA's method, held to NOAA's own script.**
