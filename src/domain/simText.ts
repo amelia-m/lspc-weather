@@ -206,24 +206,27 @@ export function refusalDetail(body: string, header: (name: string) => string | n
  * A failed request as one line naming it, for a live check's error and the
  * issue the workflow opens from its last 60 log lines. Node's fetch reports
  * every network failure as "TypeError: fetch failed" and keeps what happened
- * (DNS, TLS, a reset) in a chain of causes; the line carries the first
- * string `code` along that chain ("ENOTFOUND", "UND_ERR_ABORTED"), else the
- * deepest non-empty message, else nothing. The walk stops after ten links,
- * so a chain that points back at itself cannot hang the run.
+ * (DNS, TLS, a reset) in a chain of causes; the line carries the innermost
+ * string `code` along that chain ("ECONNREFUSED", "UND_ERR_ABORTED"), else
+ * the innermost non-empty message, else nothing. The walk stops at a link it
+ * has seen and after ten, so a chain pointing back at itself cannot hang the
+ * run, and it reads a non-Error cause (null, a plain object) without
+ * stringifying it.
  */
 export function failureLine(label: string, what: string, err?: unknown): string {
   if (err === undefined) return `${label}: ${what}`;
-  const head = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  const head = err instanceof Error ? `${err.name}: ${err.message}` : typeof err === 'string' ? err : 'non-Error thrown';
+  const causeOf = (e: unknown): unknown =>
+    e != null && typeof e === 'object' ? (e as { cause?: unknown }).cause : undefined;
+  const seen = new Set<unknown>([err]);
   let code: string | null = null;
   let message: string | null = null;
-  const causeOf = (e: unknown): unknown => (e instanceof Error ? (e as { cause?: unknown }).cause : undefined);
-  let link: unknown = causeOf(err);
-  for (let depth = 0; link !== undefined && depth < 10; depth++) {
-    const c = (link as { code?: unknown }).code;
-    if (code == null && typeof c === 'string' && c !== '') code = c;
-    const m = link instanceof Error ? link.message : String(link);
+  for (let link = causeOf(err); link != null && !seen.has(link) && seen.size <= 10; link = causeOf(link)) {
+    seen.add(link);
+    const c = typeof link === 'object' ? (link as { code?: unknown }).code : undefined;
+    if (typeof c === 'string' && c !== '') code = c;
+    const m = link instanceof Error ? link.message : typeof link === 'string' ? link : '';
     if (m !== '') message = m;
-    link = causeOf(link);
   }
   const why = code ?? message;
   return `${label}: ${what}: ${head}${why ? ` (${why})` : ''}`;
