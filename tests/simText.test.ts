@@ -28,6 +28,12 @@ describe('simPartText', () => {
     expect(simPartText(PAGE, '1G', '1H')).toBe('G. Daylight All student jumps between official sunrise and sunset.');
   });
 
+  it('is null for a last part whose module does not close, rather than read to the page end', () => {
+    expect(simPartText(PAGE.replace('<!-- End_Module_1122 -->', ''), '1I', null)).toBeNull();
+    // Another module's end is not this one's.
+    expect(simPartText(PAGE.replace('<!-- End_Module_1122 -->', '<!-- End_Module_9999 -->'), '1I', null)).toBeNull();
+  });
+
   it('ends the last part at the end of the content module, not the page', () => {
     expect(simPartText(PAGE, '1I', null)).toBe('I. Minimum Opening Altitudes 3,000 feet AGL');
   });
@@ -68,7 +74,7 @@ describe('simPartText', () => {
  * split across two bold runs, one entry with no <span> wrapper, and AGL in
  * definitions as well as as an entry. No C or K heading: a letter need not
  * be followed by the next one. */
-const GLOSSARY = `<h1><strong>Glossary</strong></h1>
+const GLOSSARY_BODY = `<h1><strong>Glossary</strong></h1>
 <h4><a class="anchoroffset" name="A-E"></a><a class="anchoroffset" name="A"></a><span>A</span></h4>
 <p><span><b><span style="text-transform:uppercase">AGL </span></b> Above ground level. Refers to altitude, e.g., 5,000 feet AGL.</span></p>
 <p><span><b><span style="text-transform:uppercase">AIR </span></b>Acronym for &ldquo;altitude aware, in control, and relaxed.&rdquo;</span></p>
@@ -91,6 +97,9 @@ const GLOSSARY = `<h1><strong>Glossary</strong></h1>
 <p><span><b><span>WING LOADING </span></b>The jumper&rsquo;s exit weight divided by the area.</span></p>
 <h4><a class="anchoroffset" name="X"></a><a class="anchoroffset" name="Y"></a><a class="anchoroffset" name="Z"></a><span>Z</span></h4>
 <p><span><b><span>ZOO DIVE </span></b>A skydive that becomes chaotic.</span></p>`;
+/* Wrapped as the page wraps it: the glossary is module 1175, and another
+ * module (1110, a script on the live page) follows it. */
+const GLOSSARY = `<!-- Start_Module_1175 --><div>${GLOSSARY_BODY}</div><!-- End_Module_1175 --><!-- Start_Module_1110 --><div><p><b>NOT AN ENTRY </b>another module.</p></div><!-- End_Module_1110 -->`;
 
 describe('glossaryHeadings', () => {
   it('reads the entry names under a letter, and only the names', () => {
@@ -125,12 +134,17 @@ describe('glossaryHeadings', () => {
   it('ends the last letter at the end of the content module, not in the footer', () => {
     // A bold-led paragraph after the module (the shape a footer address
     // block would take) must not be read as a Z entry.
-    const withFooter = `${GLOSSARY}</div><!-- End_Module_1175 --></div><footer><p><b>USPA </b>5401 Southpoint Centre Blvd.</p></footer>`;
-    expect(glossaryHeadings(withFooter, 'Z')).toEqual(['ZOO DIVE']);
+    // The module after the glossary holds a bold-led paragraph (the shape a
+    // footer address block would take); it is not a Z entry.
+    expect(glossaryHeadings(GLOSSARY, 'Z')).toEqual(['ZOO DIVE']);
   });
 
-  it('is null for the last letter when the page has no module end, rather than read to the page end', () => {
-    expect(glossaryHeadings(GLOSSARY, 'Z')).toBeNull();
+  it('is null for every letter when its module does not close, rather than read on', () => {
+    // Its own end gone: another module's end must not be taken for it.
+    const unclosed = GLOSSARY.replace('<!-- End_Module_1175 -->', '');
+    expect(glossaryHeadings(unclosed, 'Z')).toBeNull();
+    expect(glossaryHeadings(unclosed, 'A')).toBeNull();
+    expect(glossaryHeadings(GLOSSARY_BODY, 'A')).toBeNull();
   });
 
   it('is null when the letter’s anchor is missing or named twice', () => {

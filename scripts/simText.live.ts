@@ -165,7 +165,7 @@ describe('SIM glossary entries the cards link, under the letter each link lands 
     it(`${term} (#${letter})`, async () => {
       const glossary = await page('glossary');
       const names = glossaryHeadings(glossary, letter);
-      expect(names, `#${letter} is no longer on uspa.org/sim/glossary, or is there twice`).not.toBeNull();
+      expect(names, `#${letter} is no longer on uspa.org/sim/glossary, is there twice, or no longer sits in a content module that closes (<!-- Start_Module_N --> ... <!-- End_Module_N -->)`).not.toBeNull();
       expect(
         isGlossaryEntry(glossary, letter, term),
         `${term} is no longer an entry under ${letter} in the SIM glossary; its entries there: ${names!.join(' | ')}`,
