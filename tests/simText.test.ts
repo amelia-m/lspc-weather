@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { glossaryHeadings, isGlossaryEntry, simEditionYear, simPartText } from '../src/domain/simText';
 
 /* A section page in the shape uspa.org serves: each part opens with an
- * anchoroffset, some parts hold anchors of their own, the article closes
- * the last part. */
-const PAGE = `<html><body><article>
+ * anchoroffset, some parts hold anchors of their own, and the content
+ * module's closing comment ends the last part (there is no <article>). */
+const PAGE = `<html><body><div id="dnn_ctr1122_ContentPane"><!-- Start_Module_1122 -->
 <a class="anchoroffset" name="1"></a><h2>2-1 Basic Safety Requirements</h2>
 <a class="anchoroffset" name="1G"></a><h3>G. Daylight</h3><p>All student jumps</p>
 <a class="anchoroffset" name="1G4"></a><p>between official sunrise and sunset.</p>
@@ -13,7 +13,7 @@ const PAGE = `<html><body><article>
 <script>var x = "not text";</script><style>.a{}</style>
 <p>For licensed skydivers are unlimited &#8212; S&amp;TA&rsquo;s note &#99999999;</p>
 <a class="anchoroffset" name="1I"></a><h3>I. Minimum Opening Altitudes</h3><p>3,000 feet AGL</p>
-</article><footer>Copyright</footer></body></html>`;
+</div><!-- End_Module_1122 --></div><footer><p>Copyright</p></footer></body></html>`;
 
 describe('simPartText', () => {
   it('takes a part from its anchor to the one named as its end, as words only', () => {
@@ -28,7 +28,7 @@ describe('simPartText', () => {
     expect(simPartText(PAGE, '1G', '1H')).toBe('G. Daylight All student jumps between official sunrise and sunset.');
   });
 
-  it('ends the last part at the end of the article, not the page', () => {
+  it('ends the last part at the end of the content module, not the page', () => {
     expect(simPartText(PAGE, '1I', null)).toBe('I. Minimum Opening Altitudes 3,000 feet AGL');
   });
 
@@ -45,7 +45,7 @@ describe('simPartText', () => {
     // A contents list above the parts: either copy could be taken for the
     // part, and the nav's few words must not pass for it.
     const nav = (names: string[]): string =>
-      PAGE.replace('<article>', `<article><nav>${names.map((n) => `<a class="anchoroffset" name="${n}"></a>`).join('')}</nav>`);
+      PAGE.replace('<!-- Start_Module_1122 -->', `<!-- Start_Module_1122 --><nav>${names.map((n) => `<a class="anchoroffset" name="${n}"></a>`).join('')}</nav>`);
     expect(simPartText(nav(['1G']), '1G', '1H')).toBeNull();
     // The end named again inside the part, after its start: the first copy
     // would cut the part short.
@@ -122,9 +122,15 @@ describe('glossaryHeadings', () => {
     expect(glossaryHeadings(GLOSSARY, 'V')).toEqual(glossaryHeadings(GLOSSARY, 'W'));
   });
 
-  it('ends the last letter at the end of the article, not in the footer', () => {
-    const withFooter = `<article>${GLOSSARY}</article><footer><p><b>USPA </b>5401 Southpoint Centre Blvd.</p></footer>`;
+  it('ends the last letter at the end of the content module, not in the footer', () => {
+    // A bold-led paragraph after the module (the shape a footer address
+    // block would take) must not be read as a Z entry.
+    const withFooter = `${GLOSSARY}</div><!-- End_Module_1175 --></div><footer><p><b>USPA </b>5401 Southpoint Centre Blvd.</p></footer>`;
     expect(glossaryHeadings(withFooter, 'Z')).toEqual(['ZOO DIVE']);
+  });
+
+  it('is null for the last letter when the page has no module end, rather than read to the page end', () => {
+    expect(glossaryHeadings(GLOSSARY, 'Z')).toBeNull();
   });
 
   it('is null when the letter’s anchor is missing or named twice', () => {

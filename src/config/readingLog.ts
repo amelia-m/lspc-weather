@@ -40,7 +40,7 @@ export const SIM_LAST_READ = '2026-10-08';
 export type CitationKey = keyof typeof CITATIONS;
 
 /** Where a SIM part's text is on the section page (from `anchor` to
- *  `until`, or to the end of the article when null), and its fingerprint on
+ *  `until`, or to the end of the page's content module when null), and its fingerprint on
  *  the day it was read: SHA-256 of simPartText, and its length in
  *  characters. */
 export interface SimPart {

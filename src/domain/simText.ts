@@ -7,7 +7,7 @@
  * read with curl on 2026-09-23). It also puts anchors inside some parts (2-1 G
  * holds 1G4, 1G4b and 1G5; 4-7 has one named SPACE between B and C), so a part
  * does not end at the next anchor of any kind: the caller names the anchor it
- * ends at (`until`), or null for the end of the article. Between the two,
+ * ends at (`until`), or null for the end of the page's content module. Between the two,
  * scripts and styles are dropped, tags become spaces, character references are
  * decoded and whitespace (a non-breaking space included) is collapsed, so
  * markup changes that leave the words alone (a class name, a wrapper) do not
@@ -37,8 +37,12 @@ export function simPartText(page: string, anchor: string, until: string | null):
     end = at(until);
     if (end <= start) return null;
   } else {
-    const articleEnd = page.indexOf('</article>', start);
-    end = articleEnd > start ? articleEnd : page.length;
+    // The page has no <article>: its content sits in a DotNetNuke module
+    // closed by an "End_Module" comment (`<!-- End_Module_1122 -->` on 4-5,
+    // read 2026-10-09). Without one the page is not the shape the log
+    // describes, and the site's footer would be read as the part.
+    end = moduleEnd(page, start);
+    if (end === -1) return null;
   }
   const text = decodeEntities(
     page
@@ -74,11 +78,13 @@ export function glossaryHeadings(page: string, letter: string): string[] | null 
   const tag = `<a class="anchoroffset" name="${letter}"`;
   const start = page.indexOf(tag);
   if (start === -1 || start !== page.lastIndexOf(tag)) return null;
-  // The next heading, or the end of the article for the last letter, so the
-  // page's footer is never read as entries.
-  const rest = page.slice(start + tag.length);
-  const stop = rest.search(/<h4\b|<\/article>/i);
-  const section = page.slice(start, stop === -1 ? page.length : start + tag.length + stop);
+  // The next heading, or for the last letter the end of the content module
+  // (as for simPartText), so what follows the glossary on the page is
+  // never read as entries. Null without either: the page has changed shape.
+  const heading = page.slice(start + tag.length).search(/<h4\b/i);
+  const ends = [heading === -1 ? -1 : start + tag.length + heading, moduleEnd(page, start)].filter((i) => i !== -1);
+  if (ends.length === 0) return null;
+  const section = page.slice(start, Math.min(...ends));
   const names: string[] = [];
   for (const [, body] of section.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)) {
     // Any wrapping <span>s and empty anchors (RRS opens its paragraph),
@@ -97,6 +103,13 @@ export function glossaryHeadings(page: string, letter: string): string[] | null 
 export function isGlossaryEntry(page: string, letter: string, term: string): boolean {
   const squash = (s: string): string => s.toLowerCase().replace(/[^a-z0-9&]+/g, '');
   return (glossaryHeadings(page, letter) ?? []).some((n) => squash(n) === squash(term));
+}
+
+/** Where the content module holding `from` closes: the next
+ *  "<!-- End_Module_N -->" comment after it, or -1. */
+function moduleEnd(page: string, from: number): number {
+  const i = page.slice(from).search(/<!--\s*End_Module_\d+\s*-->/i);
+  return i === -1 ? -1 : from + i;
 }
 
 /**
