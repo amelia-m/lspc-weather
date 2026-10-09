@@ -255,17 +255,27 @@ describe('failureLine', () => {
     expect(failureLine('uspa.org/sim', 'HTTP 403')).toBe('uspa.org/sim: HTTP 403');
   });
 
-  it('carries the first string code along the chain', () => {
+  it('carries the innermost string code along the chain', () => {
     // As Node's fetch reported a refused connection through the sandbox's
-    // proxy on 2026-10-09: two "fetch failed" links, then the code.
-    const err = chain(new TypeError('fetch failed'), new TypeError('fetch failed'), coded('Request was cancelled.', 'UND_ERR_ABORTED'));
+    // proxy on 2026-10-09: two "fetch failed" links, then the code. An outer
+    // link's code is a wrapper's; the inner one says what happened.
+    const err = chain(
+      new TypeError('fetch failed'),
+      coded('Request was cancelled.', 'UND_ERR_ABORTED'),
+      coded('connect ECONNREFUSED 104.18.1.1:443', 'ECONNREFUSED'),
+    );
     expect(failureLine('uspa.org/sim', 'request failed', err)).toBe(
-      'uspa.org/sim: request failed: TypeError: fetch failed (UND_ERR_ABORTED)',
+      'uspa.org/sim: request failed: TypeError: fetch failed (ECONNREFUSED)',
     );
   });
 
-  it('falls back to the deepest non-empty message, skipping a numeric code and an empty one', () => {
-    const err = chain(new TypeError('fetch failed'), coded('getaddrinfo ENOTFOUND www.uspa.org', 0), new Error(''));
+  it('falls back to the innermost non-empty message, skipping a numeric code and an empty message', () => {
+    const err = chain(
+      new TypeError('fetch failed'),
+      new Error('outer wrapper'),
+      coded('getaddrinfo ENOTFOUND www.uspa.org', 0),
+      new Error(''),
+    );
     expect(failureLine('x', 'request failed', err)).toBe('x: request failed: TypeError: fetch failed (getaddrinfo ENOTFOUND www.uspa.org)');
   });
 
@@ -273,9 +283,15 @@ describe('failureLine', () => {
     expect(failureLine('x', 'request failed', new Error('boom'))).toBe('x: request failed: Error: boom');
   });
 
-  it('stops on a chain that points back at itself', () => {
+  it('stops on a chain that points back at itself, adding nothing', () => {
     const err = new Error('loop');
     Object.assign(err, { cause: err });
-    expect(failureLine('x', 'request failed', err)).toBe('x: request failed: Error: loop (loop)');
+    expect(failureLine('x', 'request failed', err)).toBe('x: request failed: Error: loop');
+  });
+
+  it('reads a null cause, a plain object and one with no prototype without throwing', () => {
+    expect(failureLine('x', 'y', Object.assign(new Error('a'), { cause: null }))).toBe('x: y: Error: a');
+    expect(failureLine('x', 'y', Object.assign(new Error('a'), { cause: Object.create(null) }))).toBe('x: y: Error: a');
+    expect(failureLine('x', 'y', Object.assign(new Error('a'), { cause: { code: 'ECONNRESET' } }))).toBe('x: y: Error: a (ECONNRESET)');
   });
 });
