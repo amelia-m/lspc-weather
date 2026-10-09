@@ -175,7 +175,8 @@ values not served before.
 - **Open-Meteo's servers do not all answer alike.** Now and then a response
   came back with every direction one degree from the last response's and
   every speed and gust the same, and the next one would go back: at 15 of 36
-  consecutive pairs of runs the 15-minute series moved that way, with no new
+  pairs of successive runs that returned a forecast (three span a run whose
+  request failed) the 15-minute series moved that way, with no new
   run in the metadata. The two requests of one run (the default model and
   `models=ncep_hrrr_conus`, a moment apart) differed by exactly that at 16 of
   37 runs. For about twelve minutes after the 00Z run arrived, requests got
