@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { estimateDrift } from '../src/domain/spot';
 import { DriftPanel } from '../src/components/DriftPanel';
 import type { WindsAloftLevel } from '../src/domain/types';
-import { CITATIONS } from '../src/config/thresholds';
+import { CITATIONS, type License } from '../src/config/thresholds';
 import {
   fullProfile,
   REQUESTED_TOP_FT_AGL,
@@ -221,18 +221,42 @@ describe('the drift card says who chooses the spot, with the SIM behind it', () 
   });
 });
 
-/* The Deploy box opens on 3,000 ft on every profile: the Licensed profile
- * includes A-license holders, whose BSR minimum (2-1 I) is 3,000 ft. */
+/* The Deploy box opens on the BSR 2-1 I minimum for the profile and the
+ * license chosen under Licensed: 3,000 ft for students and A-license
+ * holders, 2,500 ft for B, C and D. */
 describe('the drift card’s deploy default', () => {
-  const html = renderToStaticMarkup(
-    createElement(DriftPanel, { levels: uniformLevels(), source: 'open-meteo' } as never),
-  );
+  const markup = (license?: License | null): string =>
+    renderToStaticMarkup(
+      createElement(DriftPanel, { levels: uniformLevels(), source: 'open-meteo', license } as never),
+    );
+  const licenseLine = 'The license is the one chosen under Licensed at the top of the page.';
 
-  it('opens Deploy on 3,000 ft and says the A-license minimum is higher than B to D', () => {
+  it('opens Deploy on 3,000 ft for a student, and names students', () => {
+    const html = markup(null);
     expect(html).toMatch(/<option value="3000" selected="">/);
-    expect(html).toContain('Deploy opens on 3,000 ft, the BSR minimum for students and A-license holders, which is higher than the B, C and D minimums listed below.');
+    expect(html).toContain('Deploy opens on 3,000 ft, the BSR minimum for students, listed below.');
+    expect(html).not.toContain(licenseLine);
     // "Listed below": the BSR paragraph, with its link.
     expect(html).toContain('B-license 2,500 ft');
     expect(html).toContain(`href="${CITATIONS.uspaOpeningAltitude.url}"`);
   });
+
+  it('treats a card handed no license as a student', () => {
+    expect(markup()).toContain('the BSR minimum for students, listed below.');
+  });
+
+  it('opens Deploy on 3,000 ft for an A license', () => {
+    const html = markup('A');
+    expect(html).toMatch(/<option value="3000" selected="">/);
+    expect(html).toContain(`Deploy opens on 3,000 ft, the BSR minimum for A-license holders, listed below. ${licenseLine}`);
+  });
+
+  it('opens Deploy on 2,500 ft for B, C and D, naming the license', () => {
+    for (const l of ['B', 'C', 'D'] as const) {
+      const html = markup(l);
+      expect(html).toMatch(/<option value="2500" selected="">/);
+      expect(html).toContain(`Deploy opens on 2,500 ft, the BSR minimum for ${l}-license holders, listed below.`);
+    }
+  });
 });
+

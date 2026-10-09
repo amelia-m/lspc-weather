@@ -10,6 +10,9 @@ import {
   type EditableLimit,
   profileLabel,
   WAIVER_TIERS,
+  DEFAULT_LICENSE,
+  LICENSES,
+  type License,
   type Thresholds,
   type WindProfileId,
 } from './config/thresholds';
@@ -61,6 +64,8 @@ const PROFILE_KEY = 'lspc:windProfile';
  *  returns to it; see ProfileSelector. */
 const LAST_STUDENT_KEY = 'lspc:lastStudentProfile';
 const LAST_TIER_KEY = 'lspc:lastWaiverTier';
+/** The license chosen under Licensed; see ProfileSelector. */
+const LICENSE_KEY = 'lspc:license';
 const OVERRIDES_KEY = 'lspc:thresholdOverrides';
 const UNIT_KEY = 'lspc:windUnit';
 const TEMP_UNIT_KEY = 'lspc:tempUnit';
@@ -215,6 +220,16 @@ export default function App(): JSX.Element {
     }
   };
 
+  // Kept while a student profile is chosen, so Licensed and back returns to
+  // it. Anything unknown in storage falls back to DEFAULT_LICENSE.
+  const [license, setLicense] = useState<License>(() => {
+    const stored = safeLocalGet(LICENSE_KEY);
+    return LICENSES.includes(stored as License) ? (stored as License) : DEFAULT_LICENSE;
+  });
+  useEffect(() => {
+    safeLocalSet(LICENSE_KEY, license);
+  }, [license]);
+
   const [overrides, setOverrides] = useState<Overrides>(() => {
     try {
       return sanitizeOverrides(JSON.parse(safeLocalGet(OVERRIDES_KEY) ?? '{}'));
@@ -326,6 +341,7 @@ export default function App(): JSX.Element {
         source={snapshot.windsAloftSource}
         validMs={winds.validity?.validMs ?? null}
         hourNav={winds.nav}
+        license={profile === 'licensed' ? license : null}
       />
     ),
     hourly: (
@@ -382,7 +398,16 @@ export default function App(): JSX.Element {
             page-wide policy, not a display preference. They are a jumper's
             limits, so the Pilots tab shows neither (VIEW_USES_PROFILE). */}
         <div className="toggles">
-          {VIEW_USES_PROFILE[view] && <ProfileSelector profile={profile} lastStudent={lastStudent} lastTier={lastTier} onChange={chooseProfile} />}
+          {VIEW_USES_PROFILE[view] && (
+            <ProfileSelector
+              profile={profile}
+              lastStudent={lastStudent}
+              lastTier={lastTier}
+              onChange={chooseProfile}
+              license={license}
+              onLicenseChange={setLicense}
+            />
+          )}
           {/* Rendered outside a UnitToggleScope, so it names itself "Wind speed
               unit" — there is no card heading up here to borrow. */}
           <UnitToggle unit={unit} onChange={setUnit} />

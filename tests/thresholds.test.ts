@@ -3,18 +3,27 @@ import type { Citation } from '../src/domain/types';
 import { fmtLimitSpeed } from '../src/domain/units';
 import {
   CITATIONS,
-  DEFAULT_DEPLOY_FT,
+  DEFAULT_LICENSE,
+  LICENSES,
+  openingMinimum,
   isSimSectionUrl,
   resolveThresholds,
   WAIVER_TIERS,
   type WindProfileId,
 } from '../src/config/thresholds';
 
-describe('DEFAULT_DEPLOY_FT', () => {
-  it('is the 3,000 ft BSR minimum for students and A-license holders, which no licence is below (2-1 I)', () => {
-    // The Licensed profile includes A-license holders; 2,500 ft is only the
-    // B, C and D minimum.
-    expect(DEFAULT_DEPLOY_FT).toBe(3000);
+describe('openingMinimum', () => {
+  it('is the BSR 2-1 I minimum: 3,000 ft for students and A, 2,500 ft for B, C and D', () => {
+    expect(openingMinimum(null)).toEqual({ ft: 3000, who: 'students' });
+    expect(openingMinimum('A')).toEqual({ ft: 3000, who: 'A-license holders' });
+    expect(openingMinimum('B')).toEqual({ ft: 2500, who: 'B-license holders' });
+    expect(openingMinimum('C')).toEqual({ ft: 2500, who: 'C-license holders' });
+    expect(openingMinimum('D')).toEqual({ ft: 2500, who: 'D-license holders' });
+  });
+
+  it('assumes, before a jumper picks, the license whose minimum no other license is above', () => {
+    const highest = Math.max(...LICENSES.map((l) => openingMinimum(l).ft));
+    expect(openingMinimum(DEFAULT_LICENSE).ft).toBe(highest);
   });
 });
 

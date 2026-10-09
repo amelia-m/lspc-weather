@@ -293,9 +293,9 @@ export const CITATIONS = {
     note: SIM_READ_NOTE,
   },
   /** BSR minimum container-opening altitudes — same Section 2-1 as the wind
-   *  limits. Printed on the drift card; DEFAULT_DEPLOY_FT, the card's default
-   *  deploy altitude (not a floor: the dropdown goes lower), is its 3,000 ft
-   *  figure, re-read on 2026-10-08.
+   *  limits. Printed on the drift card; `openingMinimum`, the card's default
+   *  deploy altitude (not a floor: the dropdown goes lower), holds its
+   *  student and license figures, re-read on 2026-10-08.
    *
    *  2-1 I reads: tandem 5,000 ft AGL; all students and A-license 3,000 ft;
    *  B-license 2,500 ft; C- and D-license 2,500 ft [S], waiverable to no lower
@@ -630,15 +630,31 @@ export function resolveThresholds(id: WindProfileId): Thresholds {
   return tier ? waiverThresholds(tier) : STUDENT;
 }
 
-/** Default deploy altitude (ft AGL) on the drift card: 3,000 ft whatever the
- *  profile. BSR 2-1 I sets 3,000 ft for "All students and A-license
- *  holders" and 2,500 ft for B, C and D. The Licensed profile covers A-license
- *  holders too, and this app does not know which licence a jumper holds, so a
- *  2,500 ft default put an A-license jumper below their minimum; 3,000 ft is
- *  the one default no licence is below. A B/C/D jumper picks 2,500 ft from
- *  the Deploy dropdown. These are minimums, not targets; the drift card
- *  reminds jumpers to deploy above them. */
-export const DEFAULT_DEPLOY_FT = 3000;
+/** A USPA license, asked for under the Licensed profile. Nothing that sets
+ *  a flag reads it: BSR 2-1 H sets no ground-wind limit for any license, so
+ *  the wind limits are the profile's alone. It moves one default, the drift
+ *  card's Deploy box (`openingMinimum`), because 2-1 I sets a different
+ *  minimum for A than for B, C and D. */
+export type License = 'A' | 'B' | 'C' | 'D';
+export const LICENSES: readonly License[] = ['A', 'B', 'C', 'D'];
+
+/** The license the Licensed profile assumes until a jumper picks one: A,
+ *  whose 3,000 ft minimum is the higher, so a jumper who never picks is
+ *  never opened below their own minimum. */
+export const DEFAULT_LICENSE: License = 'A';
+
+/** The BSR 2-1 I minimum container-opening altitude (ft AGL) for a student
+ *  (`null`) or a license holder, and whom it binds, worded for the drift
+ *  card. 2-1 I reads "All students and A-license holders: 3,000 feet AGL",
+ *  "B-license holders: 2,500 feet AGL", "C- and D-license holders: 2,500
+ *  feet AGL [S] (waiverable to no lower than 2,000 feet AGL)". The card's
+ *  Deploy box opens on this figure; the dropdown goes lower, and the card
+ *  says these are minimums, not targets. Tandem's 5,000 ft is not here: no
+ *  profile is a tandem. */
+export function openingMinimum(license: License | null): { ft: number; who: string } {
+  if (license === null) return { ft: 3000, who: 'students' };
+  return { ft: license === 'A' ? 3000 : 2500, who: `${license}-license holders` };
+}
 
 /** Human label for a profile id, used in the UI. */
 export function profileLabel(id: WindProfileId): string {

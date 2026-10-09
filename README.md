@@ -30,7 +30,7 @@ METARs, the sectional, the TAF, density altitude, winds aloft and briefing
 links. Conditions now,
 the sky, daylight, radar and the advisories show on both. Which cards each tab
 shows is `src/config/views.ts`. The jumper wind-limit profile (Student,
-Licensed, the waiver tiers) and the threshold Settings are on Jumpers only:
+Licensed and its license, the waiver tiers) and the threshold Settings are on Jumpers only:
 the Pilots advisory list leaves out the two jumper wind flags (surface wind
 against the jumper's limit, the waiver gust ceiling), says so, and fires on
 the published figures rather than Settings edits.
@@ -66,7 +66,9 @@ the published figures rather than Settings edits.
 - 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
   deploy, and fall-rate inputs, worked from whichever hour the winds card shows,
   with the same hour readout and −1 h / +1 h buttons: stepping either card
-  moves both.
+  moves both. Deploy opens on the BSR minimum opening altitude for the
+  profile: 3,000 ft for a student, and under Licensed for the license chosen
+  in the header (3,000 ft for A, 2,500 ft for B, C and D).
 - 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
   hours from sunset to sunrise shaded, over a selectable 18 h, 36 h, 72 h, 5 d
