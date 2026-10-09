@@ -298,4 +298,23 @@ export const CHECKLIST: ChecklistEntry[] = [
       'The note quotes the pamphlet’s advice for high humidity (add 10 percent to takeoff distance) at any humidity, since the pamphlet sets no level for “high”. Is that the right way to carry it?',
     ],
   },
+  {
+    id: 'A13',
+    title: 'Density altitude arithmetic',
+    claim:
+      'Both figures are worked with the National Weather Service calculator’s formulas, from the station pressure the standard atmosphere has at the pressure altitude above.',
+    where: 'Density altitude card: the headline, the With humidity row and the Station pressure row.',
+    sources: [CITATIONS.nwsDensityAltitude],
+    found: {
+      read: 'the NWS Density Altitude and Pressure Altitude calculator pages (weather.gov/epz) and the formula sheets they link, 2026-10-09',
+      says: [
+        'The Density Altitude page asks for an air temperature, a station pressure and a dew point, and computes the vapour pressure as e = 6.11 × 10^(7.5 × Td / (237.3 + Td)), the virtual temperature as Tv = T / (1 − (e / P_mb) × (1 − 0.622)), and the density altitude as 145366 × (1 − (17.326 × P_inHg / Tv)^0.235), with Tv in degrees Rankine.',
+        'It has no input for leaving the dew point out.',
+        'The Pressure Altitude page computes (1 − (P_mb / 1013.25)^0.190284) × 145366.45 feet from a station pressure.',
+      ],
+    },
+    asks: [
+      'The card takes pressure altitude by the 1,000 ft per inch rule from KPMV’s altimeter setting and derives the station pressure from it, rather than reducing the altimeter setting to the field’s elevation. Is that the figure the pilot in command would start from?',
+    ],
+  },
 ];

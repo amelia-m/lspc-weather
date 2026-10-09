@@ -123,6 +123,9 @@ export interface DensityAltitudeResult {
    *  NWS calculator computes it; null when the report has no dew point. */
   humidDensityAltitudeFt: number | null;
   pressureAltitudeFt: number;
+  /** The standard atmosphere's pressure at `pressureAltitudeFt`, to two
+   *  decimals: what the NWS calculator asks for. */
+  stationPressureInHg: number;
   isaDeviationC: number;
   fieldElevationFt: number;
 }

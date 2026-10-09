@@ -285,11 +285,11 @@ export const READING_LOG: SourceReading[] = [
   },
   {
     kind: 'cited',
-    section: 'NWS Density Altitude calculator (WFO El Paso wxcalc)',
+    section: 'NWS Density Altitude and Pressure Altitude calculators (WFO El Paso wxcalc)',
     citations: ['nwsDensityAltitude'],
     lastRead: '2026-10-09',
-    edition: 'the page as served (dated January 2025 in its metadata), with its formula sheets',
-    how: 'the page’s script (virtualTemperature, vaporPressure, densityAltitude) and the PDFs densityAltitude.pdf and stationPressure.pdf it links to',
+    edition: 'the pages as served, with the formula sheet each links',
+    how: 'the Density Altitude page’s script (virtualTemperature, vaporPressure, densityAltitude) and the densityAltitude.pdf it links; the Pressure Altitude page’s script (altpress) and the pressureAltitude.pdf it links',
   },
   {
     kind: 'cited',
