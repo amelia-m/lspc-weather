@@ -19,8 +19,9 @@
  * differs. That is the pin: uspa.org names its online SIM only as "2026 SIM",
  * and its list of change documents did not load (2026-10-08), so the
  * fingerprint is what records which text was read. Null when either anchor
- * is missing or named twice, or `until` comes before `anchor`: the page is
- * no longer the shape the log describes. Pure.
+ * is missing or named twice, `until` comes before `anchor`, or (with
+ * `until` null) the anchor sits in no module that closes: the page is no
+ * longer the shape the log describes. Pure.
  */
 export function simPartText(page: string, anchor: string, until: string | null): string | null {
   // An anchor the page names twice (a contents list added above the parts,
@@ -62,7 +63,8 @@ export function simPartText(page: string, anchor: string, until: string | null):
  * The glossary has one anchor per letter heading
  * (`<h4><a class="anchoroffset" name="S"></a><span>S</span></h4>`, read
  * 2026-10-09) and none per term. A letter's entries run from its anchor to
- * the next `<h4>` in the document, not to the next anchor: some anchors sit
+ * the next `<h4>` in the document, or to the end of the content module if
+ * that comes first (the last letter), not to the next anchor: some anchors sit
  * inside a letter (one named RRS on an R entry, so R does not end there;
  * and the range anchors F-J, K-O, P-T and U-Z close the previous letter's
  * last paragraph, F-J a second time on F's heading), and some headings carry two or three (K's anchor is on L's
@@ -72,19 +74,21 @@ export function simPartText(page: string, anchor: string, until: string | null):
  * heading it shares. Only a paragraph's opening bold
  * run counts as an entry name, so a term that appears inside another
  * entry's definition ("5,000 feet AGL" under AIR) is not taken for an
- * entry. Null when the anchor is missing or named twice. Pure.
+ * entry. Null when the anchor is missing or named twice, or sits in no
+ * module that closes (the page has changed its wrapper). Pure.
  */
 export function glossaryHeadings(page: string, letter: string): string[] | null {
   const tag = `<a class="anchoroffset" name="${letter}"`;
   const start = page.indexOf(tag);
   if (start === -1 || start !== page.lastIndexOf(tag)) return null;
-  // The next heading, or for the last letter the end of the content module
-  // (as for simPartText), so what follows the glossary on the page is
-  // never read as entries. Null without either: the page has changed shape.
-  const heading = page.slice(start + tag.length).search(/<h4\b/i);
-  const ends = [heading === -1 ? -1 : start + tag.length + heading, moduleEnd(page, start)].filter((i) => i !== -1);
-  if (ends.length === 0) return null;
-  const section = page.slice(start, Math.min(...ends));
+  // The next heading, or the end of the content module if that comes first
+  // (the last letter), so what follows the glossary on the page is never
+  // read as entries. Null for every letter, not only the last, when the
+  // module does not close: one signal that the page changed its wrapper.
+  const end = moduleEnd(page, start);
+  if (end === -1) return null;
+  const heading = page.slice(start + tag.length, end).search(/<h4\b/i);
+  const section = page.slice(start, heading === -1 ? end : start + tag.length + heading);
   const names: string[] = [];
   for (const [, body] of section.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)) {
     // Any wrapping <span>s and empty anchors (RRS opens its paragraph),
@@ -105,10 +109,15 @@ export function isGlossaryEntry(page: string, letter: string, term: string): boo
   return (glossaryHeadings(page, letter) ?? []).some((n) => squash(n) === squash(term));
 }
 
-/** Where the content module holding `from` closes: the next
- *  "<!-- End_Module_N -->" comment after it, or -1. */
+/** Where the content module holding `from` closes: the "<!-- End_Module_N
+ *  -->" comment whose N is that of the last "<!-- Start_Module_N -->"
+ *  before `from`, so another module's end is never taken for it. -1 when
+ *  `from` is in no module, or its module does not close after `from`. */
 function moduleEnd(page: string, from: number): number {
-  const i = page.slice(from).search(/<!--\s*End_Module_\d+\s*-->/i);
+  const starts = [...page.slice(0, from).matchAll(/<!--\s*Start_Module_(\d+)\s*-->/gi)];
+  const id = starts[starts.length - 1]?.[1];
+  if (id == null) return -1;
+  const i = page.slice(from).search(new RegExp(`<!--\\s*End_Module_${id}\\s*-->`, 'i'));
   return i === -1 ? -1 : from + i;
 }
 
