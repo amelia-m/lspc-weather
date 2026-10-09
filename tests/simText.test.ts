@@ -166,6 +166,20 @@ describe('simEditionYear', () => {
     expect(simEditionYear(LANDING.replace('<h1>2026 ', '<h1><span>2026</span> '))).toBe(2026);
   });
 
+  it('takes the edition from the h1 only, not a year in another heading', () => {
+    // An h2 naming another year (a translation, a preview of the next
+    // edition) must not move the edition the page states.
+    // Placed above the h1, so a reader taking the first matching heading
+    // of any level would return it.
+    const preview = LANDING.replace('<div class="content">', '<h2>2027 Skydiver&#39;s Information Manual preview</h2><div class="content">');
+    expect(simEditionYear(preview)).toBe(2026);
+  });
+
+  it('reads a title with words added around it, or no apostrophe', () => {
+    expect(simEditionYear(LANDING.replace('Information Manual</h1>', 'Information Manual (SIM)</h1>'))).toBe(2026);
+    expect(simEditionYear(LANDING.replace('<h1>2026 Skydiver&#39;s', '<h1>USPA 2026 Skydivers'))).toBe(2026);
+  });
+
   it('is null when no heading names an edition, rather than a year from elsewhere', () => {
     // "2026 SIM Translations" is an h2; the year must come from the h1.
     expect(simEditionYear(LANDING.replace(/<h1>2026[^<]*<\/h1>/, '<h1>Skydiver&#39;s Information Manual</h1>'))).toBeNull();
