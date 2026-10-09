@@ -428,6 +428,14 @@ time something again, the sampler workflow and `scripts/sampleLoop.sh` are
 in the history (removed 2026-10-05): it was a job that looped, not a cron
 line per sample, because GitHub ran an every-fifteen-minutes schedule under
 ten percent of the time and a running job is not throttled.
+`.github/workflows/surface-wind-sample.yml` is that pattern again, temporary:
+it runs `scripts/surfaceWindCompare.live.ts` every five minutes
+(`scripts/surfaceWindLoop.sh`) until 2026-10-30T02:00Z, uploads
+`surfacewind-*` artifacts kept 30 days that the parity summary never reads,
+and changes nothing on the dashboard. When the window ends, archive the
+records under `data/parity/`, summarise them with
+`scripts/surfaceWindSummary.ts` into `docs/surface-wind-sources.md`, and
+delete the workflow.
 
 usairnet's page is read by `src/domain/usairnet.ts`, tested against station
 blocks saved from the live pages (`tests/fixtures/usairnet/`). Its first

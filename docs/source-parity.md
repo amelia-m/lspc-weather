@@ -22,7 +22,7 @@ Two pages sit beside the dashboard, both reached from its footer:
 | Flight category | the app's derived VFR/MVFR/IFR/LIFR | aviationweather.gov's `fltCat` for the same report | `scripts/skyParity.live.ts` (a gate, when both give a category) |
 | TAF shown | the TAF text the card shows, from the NWS text-products feed, first station in the chain with a product | the current TAF aviationweather.gov has for that station | `scripts/skyParity.live.ts` (informational: says whether the card's issuance is the current one) |
 | TAF decode | `decodeTaf` run on aviationweather.gov's own TAF text for every station in the chain: change type, period times, wind, visibility, weather, cloud layers per period | the `fcsts` decode aviationweather.gov returns beside that text | `scripts/skyParity.live.ts` (gate: any difference fails the run) |
-| Surface wind sources | KPMV's METAR as the dashboard picks it | the NWS gridpoint hour and Open-Meteo's hourly, 15-minute and `current` 10 m wind at the DZ, with each source's own update and run times | `scripts/surfaceWindCompare.live.ts` (by hand only, in no workflow, and skipped unless `SURFACE_WIND_SAMPLE=1`, since the daily job runs the whole live config; see [surface-wind-sources.md](surface-wind-sources.md)) |
+| Surface wind sources | KPMV's METAR as the dashboard picks it | the NWS gridpoint hour and Open-Meteo's hourly, 15-minute and `current` 10 m wind at the DZ, with each source's own update and run times | `scripts/surfaceWindCompare.live.ts` (skipped unless `SURFACE_WIND_SAMPLE=1`, since the daily job runs the whole live config; run every five minutes to 2026-10-30 by `surface-wind-sample.yml`; see [surface-wind-sources.md](surface-wind-sources.md)) |
 
 The Schulze and usairnet scripts print a human-readable table and one
 machine-readable line, `@@parity {json}`, per run. Neither ever fails a run:
@@ -163,8 +163,9 @@ morning).
 
 ## Surface wind: four forecasts against the METAR
 
-A separate comparison, run by hand from the sandbox and in no workflow (it is
-skipped unless `SURFACE_WIND_SAMPLE=1`):
+A separate comparison, skipped unless `SURFACE_WIND_SAMPLE=1` and run every
+five minutes to 2026-10-30 by `.github/workflows/surface-wind-sample.yml`
+(first by hand from the sandbox, for the two hours below):
 `scripts/surfaceWindCompare.live.ts` logs KPMV's METAR beside the NWS
 gridpoint hour and Open-Meteo's hourly, 15-minute (`minutely_15`) and
 `current` 10 m wind at the DZ, with every update or run time each source

@@ -236,10 +236,10 @@ wind is a better forecast of KPMV's measured wind than the NWS gridpoint hour
 or Open-Meteo's hourly value. One two-hour sample (41 runs, 7 METAR reports,
 all 5 to 6 kt) settled how the sources are built and how often they change,
 and could not settle accuracy: see `docs/surface-wind-sources.md`. It needs
-weeks of reports across windy, gusty and calm conditions, from a sampler
-(`scripts/surfaceWindCompare.live.ts`, in no workflow yet and skipped unless
-`SURFACE_WIND_SAMPLE=1`) or from archived forecasts paired with IEM's
-archived METARs. Also seen there and not acted on: the NWS gridpoint is
+weeks of reports across windy, gusty and calm conditions. A sampler
+(`.github/workflows/surface-wind-sample.yml`, every five minutes) runs to
+2026-10-30T02:00Z for that; its records then need archiving and summarising
+(`docs/surface-wind-sources.md`, "The longer sample, running"). Also seen there and not acted on: the NWS gridpoint is
 served from caches that keep a copy up to an hour, and the app's fetch does
 not bypass them; and Open-Meteo's hourly gust at the DZ always equalled the
 15-minute step on the hour, so it behaved as the last quarter hour's maximum

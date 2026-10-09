@@ -5,9 +5,10 @@
  * Opt-in: it is skipped unless SURFACE_WIND_SAMPLE=1. The live config
  * (vitest.live.config.ts) takes every scripts/*.live.ts, and the daily
  * sky-parity job runs that config with no path, so without the switch this
- * would run there too; it belongs to no workflow. Run it by hand from the
- * sandbox with the proxy env (see CLAUDE.md), once per sample, e.g. in a
- * shell loop every few minutes:
+ * would run there too. Its own workflow,
+ * .github/workflows/surface-wind-sample.yml, sets the switch and runs it
+ * every five minutes through scripts/surfaceWindLoop.sh until 2026-10-30.
+ * By hand from the sandbox, with the proxy env (see CLAUDE.md):
  *
  *   SURFACE_WIND_SAMPLE=1 NODE_USE_ENV_PROXY=1 \
  *     NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt \

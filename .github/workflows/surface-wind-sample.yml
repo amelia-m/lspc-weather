@@ -1,0 +1,121 @@
+name: Surface-wind sample (temporary)
+
+# Until 2026-10-30T02:00Z, then self-skipping: every five minutes, record
+# KPMV's METAR, the NWS hourly forecast, and Open-Meteo's hourly, 15-minute
+# and current 10 m wind for the drop zone (scripts/surfaceWindCompare.live.ts,
+# run through scripts/surfaceWindLoop.sh). The question is which forecast
+# sits nearer the measured wind, and how often each updates; two hours on
+# 2026-10-09 could not rank them (docs/surface-wind-sources.md). Three weeks
+# gives roughly 1,000 METAR pairs across windy, gusty, frontal and calm days.
+#
+# Measurement only: nothing here changes what the dashboard shows. The
+# records are uploaded as surfacewind-* artifacts, which the #parity summary
+# (parity-summary.yml, parity-* artifacts only) never reads, and kept 30 days
+# so none expire before the window ends; they are then archived under
+# data/parity/ and summarised with scripts/surfaceWindSummary.ts. Never
+# fails: the script records a source it cannot read.
+#
+# One job that loops, started four times a day, because GitHub throttles a
+# cron line per sample and does not throttle a running job (the 2026-09-30
+# sampler, in the history, found this). Each start samples for five hours in
+# five one-hour slices, uploading after each, so a late or cancelled job
+# still keeps what it gathered. Four starts cover twenty hours a day, at
+# different minutes of the hour from the other workflows.
+#
+# Delete this file once the window has ended and the records are archived.
+on:
+  schedule:
+    - cron: '41 1,7,13,19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A start that fires while the previous one is still sampling waits for it.
+concurrency:
+  group: surface-wind-sampler
+  cancel-in-progress: false
+
+env:
+  WINDOW_END: '2026-10-30T02:00:00Z'
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    # Five one-hour slices plus setup and uploads; GitHub's ceiling is 360.
+    timeout-minutes: 330
+    steps:
+      - name: Stop after the sampling window
+        id: window
+        shell: bash
+        run: |
+          if [ "$(date -u +%s)" -ge "$(date -u -d "$WINDOW_END" +%s)" ]; then
+            echo "past the window (ends $WINDOW_END); nothing to do"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.window.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.window.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.window.outputs.run == 'true'
+
+      - name: Sample, hour 1
+        if: steps.window.outputs.run == 'true'
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-1.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: surfacewind-${{ github.run_id }}-1
+          path: surfacewind-${{ github.run_id }}-1.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Sample, hour 2
+        if: steps.window.outputs.run == 'true'
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-2.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: surfacewind-${{ github.run_id }}-2
+          path: surfacewind-${{ github.run_id }}-2.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Sample, hour 3
+        if: steps.window.outputs.run == 'true'
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-3.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: surfacewind-${{ github.run_id }}-3
+          path: surfacewind-${{ github.run_id }}-3.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Sample, hour 4
+        if: steps.window.outputs.run == 'true'
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-4.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: surfacewind-${{ github.run_id }}-4
+          path: surfacewind-${{ github.run_id }}-4.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Sample, hour 5
+        if: steps.window.outputs.run == 'true'
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-5.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: surfacewind-${{ github.run_id }}-5
+          path: surfacewind-${{ github.run_id }}-5.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
