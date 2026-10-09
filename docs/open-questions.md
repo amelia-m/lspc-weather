@@ -16,17 +16,7 @@ These cannot be settled from the code.
    #citations page). Whether a surface reading should be held to the 5 SM row
    is a call for the S&TA and the PIC, not for this code.
 
-2. **Density altitude: the card's number is not the pamphlet's.** FAA-P-8740-2
-   (read 2026-09-23) supports the card's claim — reduced rate of climb, longer
-   takeoff — but states no 120 ft/°C coefficient (its rule-of-thumb chart
-   implies roughly 100–115) and explicitly leaves humidity *out* of the
-   density-altitude computation, treating it as an engine-power effect. The
-   card folds humidity in via virtual temperature, so on a humid day its
-   headline figure will not match the one the PIC computes from ASOS or an
-   E6B. Decide whether the dry-air figure should be the headline with the
-   humidity correction as a separate line. A10 on the #citations page.
-
-3. **The claims still need an instructor, not another reading.** Every USPA,
+2. **The claims still need an instructor, not another reading.** Every USPA,
    CFR and FAA citation has now been read at its source — the SIM at uspa.org
    on 2026-09-22; 14 CFR 105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on
    2026-09-23 — and the claims corrected against them, so the section numbers
@@ -41,7 +31,7 @@ These cannot be settled from the code.
    prefilled GitHub issue or as copied text. The next step is an instructor or
    S&TA working through it.
 
-4. **The app's own thresholds, for an instructor's judgement rather than a
+3. **The app's own thresholds, for an instructor's judgement rather than a
    lookup.** Part B of the citations page — currently one entry, the 25 kt
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.

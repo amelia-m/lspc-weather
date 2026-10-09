@@ -285,6 +285,14 @@ export const READING_LOG: SourceReading[] = [
   },
   {
     kind: 'cited',
+    section: 'NWS Density Altitude calculator (WFO El Paso wxcalc)',
+    citations: ['nwsDensityAltitude'],
+    lastRead: '2026-10-09',
+    edition: 'the page as served (dated January 2025 in its metadata), with its formula sheets',
+    how: 'the page’s script (virtualTemperature, vaporPressure, densityAltitude) and the PDFs densityAltitude.pdf and stationPressure.pdf it links to',
+  },
+  {
+    kind: 'cited',
     section: 'Performance Designs, Navigator Wing Loading Chart',
     citations: ['pdNavigator'],
     lastRead: null,

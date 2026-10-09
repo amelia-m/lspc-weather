@@ -55,7 +55,7 @@ Resolved:
   `quantitativePrecipitation`, shown alongside the chance-of-precip %.
 - **Humidity + temp/dew-point spread** — *implemented as measurements.* RH and
   the spread print on the current-conditions card, and RH feeds the
-  humidity-corrected density altitude. The original framing of this item — a
+  density-altitude card's humidity row. The original framing of this item — a
   tightening spread as a morning-fog early warning — was **deliberately not
   built**: it needs a number at which the spread becomes "tight", and nobody
   publishes one. The app's own 3 °C fog flag, and the "fog/low-cloud favorable"

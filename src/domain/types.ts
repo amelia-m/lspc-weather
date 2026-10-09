@@ -117,13 +117,14 @@ export interface WindsAloftLevel {
 }
 
 export interface DensityAltitudeResult {
+  /** Dry: from the thermometer reading, FAA-P-8740-2's density altitude. */
   densityAltitudeFt: number;
+  /** With the dew point folded in through the virtual temperature, as the
+   *  NWS calculator computes it; null when the report has no dew point. */
+  humidDensityAltitudeFt: number | null;
   pressureAltitudeFt: number;
   isaDeviationC: number;
   fieldElevationFt: number;
-  /** True when a dew point was available and the moisture (virtual-temp)
-   *  correction was applied — moist air is less dense, raising DA. */
-  humidityCorrected: boolean;
 }
 
 export interface SunTimes {
