@@ -57,7 +57,9 @@ const partText = (r: SourceReading): Promise<string | null> => {
   return partTexts.get(r)!;
 };
 const missing = (r: SourceReading): string =>
-  `#${r.simPart!.anchor} to ${r.simPart!.until ?? 'the end of the content module'} is no longer on uspa.org/sim/${r.simPart!.section}`;
+  r.simPart!.until == null
+    ? `#${r.simPart!.anchor} is no longer on uspa.org/sim/${r.simPart!.section}, is there twice, or no longer sits in a content module that closes (<!-- Start_Module_N --> ... <!-- End_Module_N -->)`
+    : `#${r.simPart!.anchor} to #${r.simPart!.until} is no longer on uspa.org/sim/${r.simPart!.section}, in that order and once each`;
 
 describe('the SIM edition uspa.org names', () => {
   it(`is still the ${SIM_EDITION_YEAR} SIM`, async () => {

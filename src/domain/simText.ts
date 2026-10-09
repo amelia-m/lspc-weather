@@ -38,10 +38,11 @@ export function simPartText(page: string, anchor: string, until: string | null):
     end = at(until);
     if (end <= start) return null;
   } else {
-    // The page has no <article>: its content sits in a DotNetNuke module
-    // closed by an "End_Module" comment (`<!-- End_Module_1122 -->` on 4-5,
-    // read 2026-10-09). Without one the page is not the shape the log
-    // describes, and the site's footer would be read as the part.
+    // The page has no <article>: its content sits in a DotNetNuke module,
+    // opened and closed by numbered comments (`<!-- Start_Module_1122 -->`
+    // ... `<!-- End_Module_1122 -->` on 4-5, read 2026-10-09). Without that
+    // pair around the anchor the page is not the shape the log describes,
+    // and what follows the part would be read as the part.
     end = moduleEnd(page, start);
     if (end === -1) return null;
   }
