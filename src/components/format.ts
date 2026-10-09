@@ -5,6 +5,15 @@ import { SITE } from '../config/site';
 export const fmtShortHour = (ms: number): string =>
   new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', timeZone: SITE.timeZone }).replace(' ', '').toLowerCase();
 
+/** "Fri": the weekday alone, at the drop zone, for the hourly chart's axis
+ *  when it spans days. */
+export const fmtWeekday = (ms: number): string =>
+  new Date(ms).toLocaleDateString('en-US', { weekday: 'short', timeZone: SITE.timeZone });
+
+/** The hour of the day at the drop zone, 0 to 23. */
+export const localHour = (ms: number): number =>
+  Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: SITE.timeZone }).format(ms));
+
 export const fmtTime = (ms: number): string =>
   new Date(ms).toLocaleTimeString('en-US', {
     hour: 'numeric',

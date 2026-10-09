@@ -6,9 +6,17 @@ import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 
-/** Selectable forecast horizons (hours). 18 h is the default working window;
- *  the longer options are offered only when the data actually reaches them. */
-const HORIZONS = [18, 36, 72] as const;
+/** Selectable forecast horizons. 18 h is the default working window; the
+ *  longer options are offered only when the data actually reaches them. The
+ *  NWS gridpoint served 168 h for the drop zone on 2026-10-09, wind, gust and
+ *  precip chance all the way, so 7 days is the longest it can fill. */
+const HORIZONS = [
+  { hours: 18, label: '18h' },
+  { hours: 36, label: '36h' },
+  { hours: 72, label: '72h' },
+  { hours: 120, label: '5d' },
+  { hours: 168, label: '7d' },
+] as const;
 
 /** Richer hourly chart: surface wind + gust with precip probability bars, over
  *  a selectable horizon (default ~18 h), from the NWS gridpoint forecast. */
@@ -30,20 +38,20 @@ export function HourlyForecastPanel({
    *  labelled in whichever unit is active, so the card should never be able to
    *  show speeds a reader cannot re-express.
    *
-   *  It deliberately goes to the header and not next to the 18/36/72 h control
+   *  It deliberately goes to the header and not next to the 18 h to 7 d control
    *  below, which changes how far out the chart looks rather than how it reads
    *  — two pill groups side by side would invite one to be taken for the
    *  other. */
   onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
-  const [hours, setHours] = useState<number>(HORIZONS[0]);
+  const [hours, setHours] = useState<number>(HORIZONS[0].hours);
   const now = Date.now();
   const future = hourly.filter((h) => h.time >= now - 3600_000);
   // Offer a longer horizon only when the data extends past the previous option
   // (otherwise the longer window would show nothing new). The default is always
   // available.
-  const options: number[] = HORIZONS.filter((_, i) => i === 0 || future.length > HORIZONS[i - 1]);
-  const effectiveHours = options.includes(hours) ? hours : HORIZONS[0];
+  const options = HORIZONS.filter((_, i) => i === 0 || future.length > HORIZONS[i - 1].hours);
+  const effectiveHours = options.some((o) => o.hours === hours) ? hours : HORIZONS[0].hours;
   const points = future.slice(0, effectiveHours);
   const hasWind = points.some((p) => p.windSpeedKt != null);
 
@@ -61,13 +69,15 @@ export function HourlyForecastPanel({
         <>
           {options.length > 1 && (
             <div className="range-toggle" role="group" aria-label="Forecast horizon">
-              {options.map((h) => (
+              {options.map((o) => (
                 <button
-                  key={h}
-                  className={h === effectiveHours ? 'active' : ''}
-                  onClick={() => setHours(h)}
+                  key={o.hours}
+                  type="button"
+                  className={o.hours === effectiveHours ? 'active' : ''}
+                  aria-pressed={o.hours === effectiveHours}
+                  onClick={() => setHours(o.hours)}
                 >
-                  {h}h
+                  {o.label}
                 </button>
               ))}
             </div>
