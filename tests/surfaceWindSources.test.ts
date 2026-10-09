@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  compareWindResponses,
   maxAgeSeconds,
   maxWindDiff,
   metarWindGroup,
@@ -127,6 +128,23 @@ describe('reading Open-Meteo and NWS responses', () => {
     expect(metarWindGroup('')).toBeNull();
   });
 
+  it('compareWindResponses: the same, a gap, or a difference of shape that no gap explains', () => {
+    const a = [w('00:00', 147, 5.3, 11.7), w('00:15', 136, 5.6, 12.2)];
+    expect(compareWindResponses([[a, a]])).toEqual({ same: true });
+    expect(compareWindResponses([[a, [w('00:00', 148, 5.3, 11.7), w('00:15', 136, 5.6, 12.2)]]])).toEqual({
+      same: false,
+      diff: { dir: 1, spd: 0, gust: 0 },
+    });
+    // One step fewer, the rest identical: 0/0/0 alone would read as no
+    // difference at all.
+    expect(compareWindResponses([[a, a], [a, a.slice(0, 1)]])).toEqual({
+      same: false,
+      diff: { dir: 0, spd: 0, gust: 0, shapeDiffers: true },
+    });
+    // Same length, different times.
+    expect(compareWindResponses([[a, [a[0], { ...a[1], t: '2026-10-09T00:30:00.000Z' }]]]).diff?.shapeDiffers).toBe(true);
+  });
+
   it('maxWindDiff: the largest gap at shared valid times, direction across north', () => {
     const a = [w('00:00', 359, 5.3, 11.7), w('00:15', 136, 5.6, 12.2), w('00:30', 130, 5.1, null)];
     const b = [w('00:00', 2, 5.3, 11.7), w('00:15', 136, 5.9, 12.0), w('00:45', 0, 30, 40)];
@@ -212,7 +230,7 @@ describe('summarizeSurfaceWind', () => {
     const s = summarizeSurfaceWind([
       run('00:00', { om: om({ hourly: [w('01:00', 115, 5.7), w('02:00', 130, 6.2)] }) }),
       // A newer run: both hours change.
-      run('00:03', { om: om({ hourly: [w('01:00', 114, 5.7), w('02:00', 129, 6.2)] }) }),
+      run('00:03', { om: om({ hourly: [w('01:00', 114, 6.0), w('02:00', 129, 6.5)] }) }),
       // Another server, still on the older run: both go back.
       run('00:06', { om: om({ hourly: [w('01:00', 115, 5.7), w('02:00', 130, 6.2)] }) }),
       // Unchanged, plus an hour the previous run did not have, which is not
@@ -222,19 +240,42 @@ describe('summarizeSurfaceWind', () => {
     const c = s.cadence.find((x) => x.source === 'omHourly');
     expect(c?.revisionPairs).toBe(6);
     expect(c?.revisionChanges).toBe(4);
-    expect(c?.revisionReverts).toBe(2);
+    expect(c?.revisionKinds).toEqual({ dirByOne: 0, revert: 2, other: 2 });
     expect(c?.revisions).toEqual(['2026-10-09T00:03:00.000Z', '2026-10-09T00:06:00.000Z']);
   });
 
-  it('counts a change of exactly one degree in direction alone apart, as Open-Meteo’s servers differed on 2026-10-09', () => {
+  it('sorts revisions into one-degree flaps, reverts and others, which partition them', () => {
     const s = summarizeSurfaceWind([
       run('00:43', { om: om({ m15: [w('00:30', 130, 5.1, 11.9), w('00:45', 360, 5.2, 10.7), w('01:00', 115, 5.7, 10.3)] }) }),
-      // 130 → 131 and 360 → 1 are one degree with nothing else changed;
-      // 115 → 116 with a new speed is a revision of another kind.
+      // 130 → 131 and 360 → 1 are one degree with nothing else changed, as
+      // Open-Meteo's servers differed on 2026-10-09; 115 → 116 with a new
+      // speed is another kind.
       run('00:46', { om: om({ m15: [w('00:30', 131, 5.1, 11.9), w('00:45', 1, 5.2, 10.7), w('01:00', 116, 6.0, 10.3)] }) }),
+      // 131 → 130 is a flap AND a return to a value served before: it
+      // counts once, as a flap, the first kind that fits.
+      run('00:49', { om: om({ m15: [w('00:30', 130, 5.1, 11.9), w('00:45', 1, 5.2, 10.7), w('01:00', 116, 6.0, 10.3)] }) }),
     ]);
     const c = s.cadence.find((x) => x.source === 'om15');
-    expect(c).toMatchObject({ revisionChanges: 3, revisionDirOnlyByOne: 2 });
+    expect(c?.revisionChanges).toBe(4);
+    expect(c?.revisionKinds).toEqual({ dirByOne: 3, revert: 0, other: 1 });
+    // The 00:49 run changed nothing but a flap.
+    expect(c?.revisions).toEqual(['2026-10-09T00:46:00.000Z', '2026-10-09T00:49:00.000Z']);
+    expect(c?.revisionsNet).toEqual(['2026-10-09T00:46:00.000Z']);
+  });
+
+  it('the shown value net of one-degree flaps: a flap on the same valid time is left out, a new step is not', () => {
+    const s = summarizeSurfaceWind([
+      run('00:31', { om: om({ current: { ...w('00:30', 131, 5.1), intervalS: 900 } }) }),
+      run('00:34', { om: om({ current: { ...w('00:30', 130, 5.1), intervalS: 900 } }) }),
+      run('00:37', { om: om({ current: { ...w('00:30', 131, 5.1), intervalS: 900 } }) }),
+      // A new quarter hour one degree from the last: a change of step, kept.
+      run('00:46', { om: om({ current: { ...w('00:45', 130, 5.1), intervalS: 900 } }) }),
+      run('00:49', { om: om({ current: { ...w('00:45', 128, 5.6), intervalS: 900 } }) }),
+    ]);
+    const c = s.cadence.find((x) => x.source === 'omCurrent');
+    expect(c).toMatchObject({ shownChanges: 4, shownChangesNet: 2 });
+    expect(c?.shownIntervalMin).toEqual({ median: 3, min: 3, max: 9 });
+    expect(c?.shownIntervalNetMin).toEqual({ median: 3, min: 3, max: 3 });
   });
 
   it('`current` is compared across runs only when both name the same interval', () => {
@@ -264,6 +305,19 @@ describe('summarizeSurfaceWind', () => {
     // Both Open-Meteo series from the 15-minute domain, which is what the
     // hourly values were seen to follow; the hourly domain (23:51) is not used.
     expect(age).toEqual({ metar: 8, nws: 7.5, omHourly: 12, om15: 12, omCurrent: 13 });
+    expect(s.staleness.find((x) => x.source === 'om15')?.basis).toMatch(/^INFERRED/);
+  });
+
+  it('staleness: a run whose forecast request failed is not counted for Open-Meteo, though its metadata was read', () => {
+    const meta = {
+      ncep_hrrr_conus_15min: { init: '2026-10-08T23:00:00.000Z', modified: null, avail: '2026-10-09T00:31:00.000Z', stepS: 900 },
+    };
+    const s = summarizeSurfaceWind([
+      run('00:43', { om: om({}), omMeta: meta }),
+      run('01:31', { omError: 'connect timeout', omMeta: meta }),
+    ]);
+    const om15 = s.staleness.find((x) => x.source === 'om15');
+    expect(om15).toMatchObject({ n: 1, medianMin: 12, maxMin: 12 });
   });
 
   it('against the METAR: each report once, from the first run that saw it, read by each source’s rule', () => {
@@ -292,6 +346,29 @@ describe('summarizeSurfaceWind', () => {
     // 15-minute: 00:30, 131° 5.1 kt.
     expect(by.om15).toMatchObject({ n: 1, spd: { mean: 0.1 }, dir: { mean: 11 } });
     expect(by.nws.forecastGustWhenMetarNone).toBe(1);
+  });
+
+  it('against the METAR: per source, the first run with that source’s forecast while the report was newest', () => {
+    const s = summarizeSurfaceWind([
+      // Open-Meteo failed on the first run that saw the 00:35 report…
+      run('00:43', { metar: metar('00:35', 120, 5), nws: nws([w('00:00', 140, 6, 10)]), omError: 'connect timeout' }),
+      // …so the next run with that report as its newest fills in for it,
+      // while NWS stays on the first run's forecast.
+      run('00:46', {
+        metar: metar('00:35', 120, 5),
+        nws: nws([w('00:00', 0, 30, 40)]),
+        om: om({ m15: [w('00:30', 131, 5.1, 11.9)] }),
+      }),
+      // A new report: an Open-Meteo forecast here is not read for 00:35.
+      run('00:58', { metar: metar('00:55', 120, 6), omError: 'connect timeout' }),
+      run('01:01', { metar: metar('00:55', 120, 6), omError: 'connect timeout' }),
+      run('01:04', { metar: metar('01:15', 120, 6), om: om({ m15: [w('00:30', 0, 30, 40), w('01:00', 0, 30, 40)] }) }),
+    ]);
+    const by = Object.fromEntries(s.vsMetar.map((v) => [v.source, v]));
+    expect(by.nws).toMatchObject({ n: 1, spd: { mean: 1 } });
+    // 00:35 paired from the 00:46 run; 00:55 had no run with a forecast; the
+    // 01:15 report's run had one but no step within 7.5 minutes.
+    expect(by.om15).toMatchObject({ reports: 3, n: 1, spd: { mean: 0.1 }, dir: { mean: 11 } });
   });
 
   it('against the METAR: direction left out when the METAR has none (calm or variable); gusts compared only when both have one', () => {
@@ -372,30 +449,38 @@ describe('summarizeSurfaceWind', () => {
     expect(s.hourlyIsM15).toEqual({ same: 1, of: 2 });
   });
 
+  // One response as served on 2026-10-09: the 01Z hourly gust is the 01:00
+  // step's (10.3), below the hour's largest, which is the earliest of its
+  // four steps (12.2 at 00:15). 02Z equals its hour's largest. 00Z lacks the
+  // three steps before it: not counted.
+  const gustHourly = [w('00:00', 148, 5.3, 11.7), w('01:00', 115, 5.7, 10.3), w('02:00', 130, 6.2, 13.6)];
+  const gustM15 = [
+    w('00:00', 148, 5.3, 11.7),
+    w('00:15', 137, 5.6, 12.2),
+    w('00:30', 131, 5.1, 9.5),
+    w('00:45', 122, 5.2, 9.3),
+    w('01:00', 115, 5.7, 10.3),
+    w('01:15', 117, 5.7, 10.7),
+    w('01:30', 122, 5.7, 11.7),
+    w('01:45', 122, 6.1, 12.8),
+    w('02:00', 130, 6.2, 13.6),
+  ];
+
   it('sets each hourly gust against the largest 15-minute gust of the hour before it', () => {
+    const s = summarizeSurfaceWind([run('01:10', { om: om({ hourly: gustHourly, m15: gustM15 }) })]);
+    expect(s.hourlyGustVsHourMax).toEqual({ hours: 2, equal: 1, below: 1, above: 0, maxBelowKt: 1.9 });
+  });
+
+  it('counts each valid hour once, as the latest run served it, however many runs carried it', () => {
+    const later = gustHourly.map((h) => (h.t.endsWith('01:00:00.000Z') ? { ...h, gust: 12.2 } : h));
     const s = summarizeSurfaceWind([
-      run('01:10', {
-        om: om({
-          // The 01Z hourly gust is the 01:00 step's (10.3), below the hour's
-          // largest, which is the earliest of its four steps (12.2 at 00:15).
-          // 02Z equals its hour's largest. 00Z lacks the three steps before
-          // it: not counted.
-          hourly: [w('00:00', 148, 5.3, 11.7), w('01:00', 115, 5.7, 10.3), w('02:00', 130, 6.2, 13.6)],
-          m15: [
-            w('00:00', 148, 5.3, 11.7),
-            w('00:15', 137, 5.6, 12.2),
-            w('00:30', 131, 5.1, 9.5),
-            w('00:45', 122, 5.2, 9.3),
-            w('01:00', 115, 5.7, 10.3),
-            w('01:15', 117, 5.7, 10.7),
-            w('01:30', 122, 5.7, 11.7),
-            w('01:45', 122, 6.1, 12.8),
-            w('02:00', 130, 6.2, 13.6),
-          ],
-        }),
-      }),
+      run('01:10', { om: om({ hourly: gustHourly, m15: gustM15 }) }),
+      run('01:13', { om: om({ hourly: gustHourly, m15: gustM15 }) }),
+      // The latest run's 01Z gust equals the hour's largest: that is the
+      // reading counted.
+      run('01:16', { om: om({ hourly: later, m15: gustM15 }) }),
     ]);
-    expect(s.hourlyGustVsHourMax).toEqual({ steps: 2, equal: 1, below: 1, above: 0 });
+    expect(s.hourlyGustVsHourMax).toEqual({ hours: 2, equal: 2, below: 0, above: 0, maxBelowKt: 0 });
   });
 
   it('lists each NWS gridpoint updateTime once, with the first run that saw it', () => {
