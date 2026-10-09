@@ -97,9 +97,10 @@ describe('densityAltitude, by the NWS calculator’s method', () => {
    * what the density altitude is worked from. */
   it('takes pressure altitude from the station pressure, and the ISA deviation at that altitude', () => {
     const r = densityAltitude({ elevationFt: FIELD, altimeterInHg: 30.5, oatC: 15 });
-    const rule = FIELD + (29.92 - 30.5) * 1000; // 602
-    expect(Math.abs(r.pressureAltitudeFt - rule)).toBeGreaterThan(20);
-    expect(r.isaDeviationC).toBe(Math.round((15 - (15 - 1.98 * (r.pressureAltitudeFt / 1000))) * 10) / 10);
+    // The NWS pages give 656 ft; the 1,000 ft per inch rule, 602.
+    expect(Math.round(nws.altpress(nws.convertinHGtomb(nws.stnpressure(30.5, 0.3048 * FIELD))))).toBe(656);
+    expect(r.pressureAltitudeFt).toBe(656);
+    expect(r.isaDeviationC).toBe(1.3); // 15 − (15 − 1.98 × 0.656)
   });
 
   /* The headline follows from the rows printed under it, as an E6B's does:
@@ -128,16 +129,21 @@ describe('the density-altitude card', () => {
     expect(html).toContain('<dt>With humidity</dt><dd>4,117 ft</dd>');
   });
 
-  it('prints the station pressure, temperature and dew point it was worked from, to the report’s tenth', () => {
+  it('prints the station pressure, temperature and dew point it was worked from, to a tenth', () => {
     const html = render(24.1, 35.3);
     expect(html).toContain('<dt>Station pressure</dt><dd>28.66 inHg</dd>');
     expect(html).toContain('<dt>Temperature</dt><dd>95.5°F</dd>');
     expect(html).toContain('<dt>Dew point</dt><dd>75.4°F</dd>');
-    expect(render(null)).toContain('<dt>Dew point</dt><dd>not reported</dd>');
   });
 
-  it('says when the report has no dew point instead of leaving the row out', () => {
-    expect(render(null)).toContain('<dt>With humidity</dt><dd>no dew point in the report</dd>');
+  it('says when the report has no dew point instead of leaving the rows out', () => {
+    const html = render(null);
+    expect(html).toContain('<dt>Dew point</dt><dd>not reported</dd>');
+    expect(html).toContain('<dt>With humidity</dt><dd>–</dd>');
+  });
+
+  it('prints a tenth just below zero as 0.0, not -0.0', () => {
+    expect(render(-17.8)).toContain('<dt>Dew point</dt><dd>0.0°F</dd>');
   });
 
   it('prints a density altitude below the field with its own sign', () => {

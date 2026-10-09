@@ -23,8 +23,11 @@ export type TempUnit = 'F' | 'C';
 /** A temperature in the page's unit, as a number, unrounded. */
 export const toTemp = (c: number, u: TempUnit): number => (u === 'F' ? cToF(c) : c);
 
-/** A temperature in the page's unit, whole degrees: "70°F", "21°C". */
-export const fmtTemp = (c: number, u: TempUnit): string => `${round(toTemp(c, u))}°${u}`;
+/** A temperature in the page's unit, whole degrees unless `digits` says
+ *  otherwise: "70°F", "21°C", "95.0°F". Rounded before it is printed, so a
+ *  value just under zero reads "0.0", not "-0.0". */
+export const fmtTemp = (c: number, u: TempUnit, digits = 0): string =>
+  `${round(toTemp(c, u), digits).toFixed(digits)}°${u}`;
 
 /** A temperature DIFFERENCE in the page's unit (a dew-point spread, an ISA
  *  deviation): scaled by 9/5 with no 32 offset, since a difference of 5 °C is

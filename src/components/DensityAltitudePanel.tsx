@@ -1,5 +1,5 @@
 import type { DensityAltitudeResult } from '../domain/types';
-import { fmtTempDelta, toTemp, type TempUnit } from '../domain/units';
+import { fmtTemp, fmtTempDelta, type TempUnit } from '../domain/units';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { CITATIONS } from '../config/thresholds';
@@ -9,10 +9,6 @@ import { DATA_SOURCES } from '../config/sources';
  *  high-pressure day, which a bare "+" printed as "+-361". */
 const fmtSigned = (ft: number): string => `${ft >= 0 ? '+' : ''}${ft.toLocaleString()}`;
 
-/** To the tenth the METAR's T group carries, unlike the whole degrees the
- *  other cards print: a reader re-working the figure in the NWS calculator
- *  needs the inputs it was worked from, and half a degree moves it ~30 ft. */
-const fmtTempTenth = (c: number, u: TempUnit): string => `${toTemp(c, u).toFixed(1)}°${u}`;
 
 export function DensityAltitudePanel({
   da,
@@ -56,17 +52,19 @@ export function DensityAltitudePanel({
             <dd>{da.pressureAltitudeFt.toLocaleString()} ft</dd>
             <dt>Station pressure</dt>
             <dd>{da.stationPressureInHg.toFixed(2)} inHg</dd>
+            {/* To a tenth, unlike the whole degrees the other cards print:
+                these are the values the figures were worked from, which a
+                reader re-working them in the NWS calculator needs, and half
+                a degree moves the result about 30 ft. */}
             <dt>Temperature</dt>
-            <dd>{fmtTempTenth(da.oatC, tempUnit)}</dd>
+            <dd>{fmtTemp(da.oatC, tempUnit, 1)}</dd>
             <dt>ISA deviation</dt>
             <dd>{fmtTempDelta(da.isaDeviationC, tempUnit, true, 1)}</dd>
             <dt>Dew point</dt>
-            <dd>{da.dewpointC == null ? 'not reported' : fmtTempTenth(da.dewpointC, tempUnit)}</dd>
+            <dd>{da.dewpointC == null ? 'not reported' : fmtTemp(da.dewpointC, tempUnit, 1)}</dd>
             <dt>With humidity</dt>
             <dd>
-              {da.humidDensityAltitudeFt == null
-                ? 'no dew point in the report'
-                : `${da.humidDensityAltitudeFt.toLocaleString()} ft`}
+              {da.humidDensityAltitudeFt == null ? '–' : `${da.humidDensityAltitudeFt.toLocaleString()} ft`}
             </dd>
           </dl>
           {/* This used to reach the reader as a flag that fired once DA ran

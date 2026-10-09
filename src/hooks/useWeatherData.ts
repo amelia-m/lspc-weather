@@ -137,6 +137,10 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
                   ...prev,
                   current,
                   currentOtherObservedAt: otherObservedAt,
+                  // From this report or not at all: the card prints the
+                  // temperature it was worked from, which beside the METAR
+                  // card's newer one would contradict it with nothing to say
+                  // why. Without the inputs the card says what it needs.
                   densityAltitude:
                     current.altimeterInHg != null && current.tempC != null
                       ? densityAltitude({
@@ -145,7 +149,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
                           oatC: current.tempC,
                           dewpointC: current.dewpointC,
                         })
-                      : prev.densityAltitude,
+                      : null,
                 },
           );
           const feed = describeObservationFeed(current.source ?? 'nws', current.observedAt, otherObservedAt);
