@@ -189,11 +189,13 @@ function decodeEntities(s: string): string {
  * response carried none of the three.
  */
 export function refusalDetail(body: string, header: (name: string) => string | null): string {
-  const title = /<title[^>]*>([^<]*)<\/title>/i.exec(body)?.[1].trim();
+  const title = decodeEntities(/<title[^>]*>([^<]*)<\/title>/i.exec(body)?.[1] ?? '').trim();
+  const mitigated = header('cf-mitigated');
+  const ray = header('cf-ray');
   const bits = [
     title ? `title "${title}"` : null,
-    header('cf-mitigated') ? `cf-mitigated: ${header('cf-mitigated')}` : null,
-    header('cf-ray') ? `cf-ray ${header('cf-ray')}` : null,
+    mitigated ? `cf-mitigated: ${mitigated}` : null,
+    ray ? `cf-ray ${ray}` : null,
   ].filter((b): b is string => b != null);
   return bits.length > 0 ? ` (${bits.join(', ')})` : '';
 }

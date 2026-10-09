@@ -231,6 +231,10 @@ describe('refusalDetail', () => {
     );
   });
 
+  it('decodes entities in the title', () => {
+    expect(refusalDetail('<title>Just a moment&#8230;</title>', headers({}))).toBe(' (title "Just a moment…")');
+  });
+
   it('adds nothing when the response carries none of the three', () => {
     expect(refusalDetail('Forbidden', headers({}))).toBe('');
   });
