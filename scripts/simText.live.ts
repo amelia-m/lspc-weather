@@ -10,6 +10,10 @@
  * reading against the new text before the log's date can move. Run daily by
  * .github/workflows/sky-parity.yml with the other live checks.
  *
+ * It also reads the edition year from the SIM landing page's heading and
+ * fails when it is not SIM_EDITION_YEAR: a new edition means every part
+ * above is to be read again in it, whether or not its words changed.
+ *
  * PRINT_SIM_FINGERPRINTS=1 prints the current fingerprints instead of
  * comparing, for taking them when a part is read again.
  *
@@ -18,10 +22,10 @@
  */
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { READING_LOG, citationsOf, type SourceReading } from '../src/config/readingLog';
+import { READING_LOG, SIM_EDITION_YEAR, citationsOf, type SourceReading } from '../src/config/readingLog';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 import { CITATIONS, simUrl } from '../src/config/thresholds';
-import { glossaryHeadings, isGlossaryEntry, simPartText } from '../src/domain/simText';
+import { glossaryHeadings, isGlossaryEntry, simEditionYear, simPartText } from '../src/domain/simText';
 import { GLOSSARY_KEYS, SIM_GLOSSARY } from '../src/config/simGlossary';
 
 const parts = READING_LOG.filter((r) => r.simPart != null);
@@ -54,6 +58,27 @@ const partText = (r: SourceReading): Promise<string | null> => {
 };
 const missing = (r: SourceReading): string =>
   `#${r.simPart!.anchor} to ${r.simPart!.until ?? 'the end of the article'} is no longer on uspa.org/sim/${r.simPart!.section}`;
+
+describe('the SIM edition uspa.org names', () => {
+  it(`is still the ${SIM_EDITION_YEAR} SIM`, async () => {
+    const r = await fetch('https://www.uspa.org/sim', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
+      signal: AbortSignal.timeout(30_000),
+    });
+    expect(r.ok, `uspa.org/sim: HTTP ${r.status}`).toBe(true);
+    const landing = await r.text();
+    const year = simEditionYear(landing);
+    // Informational: whether the change-document list loaded, which would
+    // name the revision within the edition.
+    const downloads = /Downloads is currently unavailable/i.test(landing) ? 'unavailable' : 'served';
+    process.stdout.write(`SIM edition on uspa.org: ${year ?? 'not found'}; change-document list ${downloads}\n`);
+    expect(year, 'the SIM page no longer has a heading naming the edition: look at https://www.uspa.org/sim').not.toBeNull();
+    expect(
+      year,
+      `uspa.org now names the ${year} SIM: read every cited and quoted part in it, check the claims, take new fingerprints (PRINT_SIM_FINGERPRINTS=1), then move SIM_EDITION_YEAR and SIM_LAST_READ in src/config/readingLog.ts`,
+    ).toBe(SIM_EDITION_YEAR);
+  });
+});
 
 describe('cited and quoted SIM parts, against the text they were read in', () => {
   for (const r of parts) {

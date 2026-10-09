@@ -96,6 +96,25 @@ export function isGlossaryEntry(page: string, letter: string, term: string): boo
   return (glossaryHeadings(page, letter) ?? []).some((n) => squash(n) === squash(term));
 }
 
+/**
+ * The edition year uspa.org's SIM landing page names in its heading, which
+ * read "<h1>2026 Skydiver&#39;s Information Manual</h1>" on 2026-10-09. The
+ * heading is the one place the page states the edition; the list of change
+ * documents below it would say which revision, but it served "Error:
+ * Downloads is currently unavailable" to a script on 2026-10-08 and to a
+ * browser on 2026-10-09. Null when no heading reads "<year> Skydiver's
+ * Information Manual": the page has changed shape, which is itself a reason
+ * to look. Pure.
+ */
+export function simEditionYear(page: string): number | null {
+  for (const [, inner] of page.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)) {
+    const text = decodeEntities(inner.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+    const m = /^(\d{4}) Skydiver['’]s Information Manual$/i.exec(text);
+    if (m) return Number(m[1]);
+  }
+  return null;
+}
+
 const NAMED: Record<string, string> = {
   amp: '&',
   lt: '<',

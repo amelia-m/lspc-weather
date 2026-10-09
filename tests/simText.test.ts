@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { glossaryHeadings, isGlossaryEntry, simPartText } from '../src/domain/simText';
+import { glossaryHeadings, isGlossaryEntry, simEditionYear, simPartText } from '../src/domain/simText';
 
 /* A section page in the shape uspa.org serves: each part opens with an
  * anchoroffset, some parts hold anchors of their own, the article closes
@@ -142,5 +142,33 @@ describe('isGlossaryEntry', () => {
     expect(isGlossaryEntry(GLOSSARY, 'S', 'SAFETY')).toBe(false);
     // Under another letter, an entry is not found.
     expect(isGlossaryEntry(GLOSSARY, 'B', 'AGL')).toBe(false);
+  });
+});
+
+describe('simEditionYear', () => {
+  // The heading as uspa.org served it on 2026-10-09, inside the page's
+  // other markup.
+  const LANDING = `<html><body><h1 class="logo">USPA</h1>
+<div class="content"><h1>2026 Skydiver&#39;s Information Manual</h1>
+<p>The USPA Skydiver&rsquo;s Information Manual (SIM) is the foundational textbook</p>
+<h2>2026 SIM Translations</h2></div></body></html>`;
+
+  it('reads the year from the heading, past other headings', () => {
+    expect(simEditionYear(LANDING)).toBe(2026);
+  });
+
+  it('follows the heading when USPA publishes a new edition', () => {
+    expect(simEditionYear(LANDING.replace('<h1>2026 ', '<h1>2027 '))).toBe(2027);
+  });
+
+  it('reads a curly apostrophe or markup inside the heading the same', () => {
+    expect(simEditionYear(LANDING.replace('Skydiver&#39;s', 'Skydiver&rsquo;s'))).toBe(2026);
+    expect(simEditionYear(LANDING.replace('<h1>2026 ', '<h1><span>2026</span> '))).toBe(2026);
+  });
+
+  it('is null when no heading names an edition, rather than a year from elsewhere', () => {
+    // "2026 SIM Translations" is an h2; the year must come from the h1.
+    expect(simEditionYear(LANDING.replace(/<h1>2026[^<]*<\/h1>/, '<h1>Skydiver&#39;s Information Manual</h1>'))).toBeNull();
+    expect(simEditionYear('<html></html>')).toBeNull();
   });
 });

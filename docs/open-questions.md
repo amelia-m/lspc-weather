@@ -46,6 +46,18 @@ These cannot be settled from the code.
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
 
+## To do: record the SIM change document once uspa.org lists them
+
+The SIM page (https://www.uspa.org/sim) heads its list of change documents
+"Available Change Documents", which would name the revision within the
+2026 edition. The list served "Error: Downloads is currently unavailable"
+to a script on 2026-10-08 and in a browser on 2026-10-09, so the reading
+log pins the text by fingerprint instead (`src/config/readingLog.ts`). The
+daily SIM check prints whether the list loaded ("change-document list
+served" in the sky-parity log). When it does, read the newest change
+document and record its name and date beside `SIM_EDITION` in the reading
+log.
+
 ## To do: link the waiver sign's photo under the tier selector
 
 Asked for 2026-10-08. Under the LSPC waiver tier buttons (the
