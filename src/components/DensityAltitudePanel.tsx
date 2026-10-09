@@ -9,7 +9,6 @@ import { DATA_SOURCES } from '../config/sources';
  *  high-pressure day, which a bare "+" printed as "+-361". */
 const fmtSigned = (ft: number): string => `${ft >= 0 ? '+' : ''}${ft.toLocaleString()}`;
 
-
 export function DensityAltitudePanel({
   da,
   tempUnit = 'F',
@@ -55,7 +54,7 @@ export function DensityAltitudePanel({
             {/* To a tenth, unlike the whole degrees the other cards print:
                 these are the values the figures were worked from, which a
                 reader re-working them in the NWS calculator needs, and half
-                a degree moves the result about 30 ft. */}
+                a degree moves the result about 30 ft in °F, 55 ft in °C. */}
             <dt>Temperature</dt>
             <dd>{fmtTemp(da.oatC, tempUnit, 1)}</dd>
             <dt>ISA deviation</dt>
@@ -64,7 +63,7 @@ export function DensityAltitudePanel({
             <dd>{da.dewpointC == null ? 'not reported' : fmtTemp(da.dewpointC, tempUnit, 1)}</dd>
             <dt>With humidity</dt>
             <dd>
-              {da.humidDensityAltitudeFt == null ? '–' : `${da.humidDensityAltitudeFt.toLocaleString()} ft`}
+              {da.humidDensityAltitudeFt == null ? '—' : `${da.humidDensityAltitudeFt.toLocaleString()} ft`}
             </dd>
           </dl>
           {/* This used to reach the reader as a flag that fired once DA ran

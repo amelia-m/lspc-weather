@@ -35,7 +35,7 @@ export const fmtTemp = (c: number, u: TempUnit, digits = 0): string =>
  *  keeps its tenth). */
 export const fmtTempDelta = (dc: number, u: TempUnit, signed = false, digits = 0): string => {
   const v = round(u === 'F' ? (dc * 9) / 5 : dc, digits);
-  return `${signed && v >= 0 ? '+' : ''}${v}°${u}`;
+  return `${signed && v >= 0 ? '+' : ''}${v.toFixed(digits)}°${u}`;
 };
 
 /** 16-point compass label for a true heading in degrees.

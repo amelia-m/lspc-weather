@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { densityAltitude } from '../src/domain/densityAltitude';
+import { densityAltitude, densityAltitudeOf } from '../src/domain/densityAltitude';
 import { DensityAltitudePanel } from '../src/components/DensityAltitudePanel';
 import { CITATIONS } from '../src/config/thresholds';
 
@@ -115,6 +115,17 @@ describe('densityAltitude, by the NWS calculator’s method', () => {
   });
 });
 
+/* The card is worked from the latest report or shows nothing. A result kept
+ * from an earlier report printed that report's temperature beside the METAR
+ * card's newer one. */
+describe('densityAltitudeOf', () => {
+  it('works the latest report, and gives nothing when it lacks the altimeter setting or temperature', () => {
+    expect(densityAltitudeOf({ altimeterInHg: 29.92, tempC: 35, dewpointC: 24 }, FIELD)?.densityAltitudeFt).toBe(3728);
+    expect(densityAltitudeOf({ altimeterInHg: null, tempC: 35, dewpointC: 24 }, FIELD)).toBeNull();
+    expect(densityAltitudeOf({ altimeterInHg: 29.92, tempC: null, dewpointC: null }, FIELD)).toBeNull();
+  });
+});
+
 describe('the density-altitude card', () => {
   const render = (dewpointC: number | null, oatC = 35, altimeterInHg = 29.92) =>
     renderToStaticMarkup(
@@ -139,11 +150,22 @@ describe('the density-altitude card', () => {
   it('says when the report has no dew point instead of leaving the rows out', () => {
     const html = render(null);
     expect(html).toContain('<dt>Dew point</dt><dd>not reported</dd>');
-    expect(html).toContain('<dt>With humidity</dt><dd>–</dd>');
+    expect(html).toContain('<dt>With humidity</dt><dd>—</dd>');
   });
 
   it('prints a tenth just below zero as 0.0, not -0.0', () => {
     expect(render(-17.8)).toContain('<dt>Dew point</dt><dd>0.0°F</dd>');
+  });
+
+  it('keeps the ISA deviation’s tenth when it is a whole number', () => {
+    const html = renderToStaticMarkup(
+      createElement(DensityAltitudePanel, {
+        da: { ...densityAltitude({ elevationFt: FIELD, altimeterInHg: 29.92, oatC: 15 }), isaDeviationC: 1 },
+        tempUnit: 'C',
+      }),
+    );
+    expect(html).toContain('<dt>Temperature</dt><dd>15.0°C</dd>');
+    expect(html).toContain('<dt>ISA deviation</dt><dd>+1.0°C</dd>');
   });
 
   it('prints a density altitude below the field with its own sign', () => {

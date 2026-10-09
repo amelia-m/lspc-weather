@@ -1,4 +1,4 @@
-import type { DensityAltitudeResult } from './types';
+import type { CurrentConditions, DensityAltitudeResult } from './types';
 import { FT_PER_M, HPA_PER_INHG } from './units';
 
 /**
@@ -85,4 +85,23 @@ export function densityAltitude(params: {
     oatC,
     dewpointC: dewpointC ?? null,
   };
+}
+
+/** The card's figures for one report, or null when the report has no
+ *  altimeter setting or temperature. From that report or not at all: the
+ *  card prints the temperature it was worked from, so a result kept from an
+ *  earlier report would sit beside the METAR card's newer report worked
+ *  from a different one, with nothing to say so. Without the inputs the
+ *  card says what it needs. */
+export function densityAltitudeOf(
+  current: Pick<CurrentConditions, 'altimeterInHg' | 'tempC' | 'dewpointC'>,
+  elevationFt: number,
+): DensityAltitudeResult | null {
+  if (current.altimeterInHg == null || current.tempC == null) return null;
+  return densityAltitude({
+    elevationFt,
+    altimeterInHg: current.altimeterInHg,
+    oatC: current.tempC,
+    dewpointC: current.dewpointC,
+  });
 }

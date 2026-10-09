@@ -72,13 +72,13 @@ describe('temperatures in the page’s unit', () => {
     expect(f.metar).toContain('9°F spread');
     expect(f.winds).toContain('<td>50°F</td>');
     expect(f.daily).toContain('Hi/Lo °F');
-    expect(f.da).toContain('+18°F');
+    expect(f.da).toContain('+18.0°F');
     const c = cards('C');
     expect(c.metar).toContain('20°C / 15°C');
     expect(c.metar).toContain('5°C spread');
     expect(c.winds).toContain('<td>10°C</td>');
     expect(c.daily).toContain('Hi/Lo °C');
-    expect(c.da).toContain('+10°C');
+    expect(c.da).toContain('+10.0°C');
   });
 
   it('keeps the precision each figure carries: a tenth on the ISA deviation, °F from the unrounded level', () => {
