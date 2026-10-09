@@ -56,7 +56,11 @@ const FAA_PAMPHLET_READ_NOTE =
  *  there, and never from the part letter alone (the scheme is section digit
  *  plus part letter, and one page skips letters). */
 export const simUrl = (section: string, anchor?: string): string =>
-  `https://www.uspa.org/sim/${section}${anchor ? `#${anchor}` : ''}`;
+  `${SIM_INDEX_URL}/${section}${anchor ? `#${anchor}` : ''}`;
+
+/** The SIM's landing page: its contents, the edition's name, and where a
+ *  citation whose section is unknown stays. */
+export const SIM_INDEX_URL = 'https://www.uspa.org/sim';
 
 const SIM_PREFIX = simUrl('');
 

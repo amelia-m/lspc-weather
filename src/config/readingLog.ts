@@ -26,7 +26,7 @@
 import type { CITATIONS } from './thresholds';
 
 /** The edition year uspa.org's SIM page names in its heading ("2026
- *  Skydiver's Information Manual", read 2026-10-08). The daily SIM check
+ *  Skydiver's Information Manual", read 2026-10-08 and 2026-10-09). The daily SIM check
  *  (scripts/simText.live.ts) fails when the heading names another year. */
 export const SIM_EDITION_YEAR = 2026;
 

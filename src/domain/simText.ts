@@ -102,14 +102,17 @@ export function isGlossaryEntry(page: string, letter: string, term: string): boo
  * heading is the one place the page states the edition; the list of change
  * documents below it would say which revision, but it served "Error:
  * Downloads is currently unavailable" to a script on 2026-10-08 and to a
- * browser on 2026-10-09. Null when no heading reads "<year> Skydiver's
+ * browser on 2026-10-09. Null when no h1 names "<year> Skydiver's
  * Information Manual": the page has changed shape, which is itself a reason
- * to look. Pure.
+ * to look. Only an h1 counts: the page's other headings ("2026 SIM
+ * Translations") name editions of other documents. Pure.
  */
 export function simEditionYear(page: string): number | null {
   for (const [, inner] of page.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)) {
     const text = decodeEntities(inner.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
-    const m = /^(\d{4}) Skydiver['’]s Information Manual$/i.exec(text);
+    // Not anchored, so a word added around the title ("USPA", "(SIM)") or
+    // a dropped apostrophe does not read as a missing edition.
+    const m = /\b(\d{4}) Skydiver['’]?s Information Manual\b/i.exec(text);
     if (m) return Number(m[1]);
   }
   return null;

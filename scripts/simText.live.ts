@@ -24,7 +24,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { READING_LOG, SIM_EDITION_YEAR, citationsOf, type SourceReading } from '../src/config/readingLog';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
-import { CITATIONS, simUrl } from '../src/config/thresholds';
+import { CITATIONS, SIM_INDEX_URL, simUrl } from '../src/config/thresholds';
 import { glossaryHeadings, isGlossaryEntry, simEditionYear, simPartText } from '../src/domain/simText';
 import { GLOSSARY_KEYS, SIM_GLOSSARY } from '../src/config/simGlossary';
 
@@ -61,17 +61,23 @@ const missing = (r: SourceReading): string =>
 
 describe('the SIM edition uspa.org names', () => {
   it(`is still the ${SIM_EDITION_YEAR} SIM`, async () => {
-    const r = await fetch('https://www.uspa.org/sim', {
+    const r = await fetch(SIM_INDEX_URL, {
       headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
       signal: AbortSignal.timeout(30_000),
     });
     expect(r.ok, `uspa.org/sim: HTTP ${r.status}`).toBe(true);
     const landing = await r.text();
     const year = simEditionYear(landing);
-    // Informational: whether the change-document list loaded, which would
-    // name the revision within the edition.
-    const downloads = /Downloads is currently unavailable/i.test(landing) ? 'unavailable' : 'served';
+    // Informational: whether the change-document list showed its error.
+    // Its absence is not proof the list loaded (it could be reworded, or
+    // drawn by script), so that case says to look rather than "served".
+    const downloads = /Downloads is currently unavailable/i.test(landing)
+      ? 'showed "Downloads is currently unavailable"'
+      : `showed no error: look at ${SIM_INDEX_URL} for the newest change document`;
     process.stdout.write(`SIM edition on uspa.org: ${year ?? 'not found'}; change-document list ${downloads}\n`);
+    // Taking fingerprints for a new edition is the step before moving the
+    // year, so print mode reports the edition and does not fail on it.
+    if (process.env.PRINT_SIM_FINGERPRINTS === '1') return;
     expect(year, 'the SIM page no longer has a heading naming the edition: look at https://www.uspa.org/sim').not.toBeNull();
     expect(
       year,
