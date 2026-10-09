@@ -328,12 +328,14 @@ without a live sampler. Neither was tried here.
 
 `.github/workflows/surface-wind-sample.yml` runs the script every five
 minutes through `scripts/surfaceWindLoop.sh`, in five-hour batches started
-four times a day, from the workflow's merge to 2026-10-30T02:00Z (three
-weeks, about 1,000 METAR pairs). Its records are uploaded as
-`surfacewind-<run id>-<hour>` artifacts and kept 30 days, apart from the
-`#parity` summary's `parity-*` ones. Once the window ends, archive them
-under `data/parity/`, summarise them with `scripts/surfaceWindSummary.ts`,
-write the result up here, and delete the workflow.
+every five hours and queued end to end, so the samples cover the whole day
+and drift through every hour of it, from the workflow's merge to
+2026-10-30T02:00Z (three weeks, about 1,000 METAR pairs). Its records are
+uploaded as `surfacewind-<run id>-<attempt>-<hour>` artifacts and kept 30
+days, apart from the `#parity` summary's `parity-*` ones. Once the window
+ends, archive them under `data/parity/`, summarise them with
+`scripts/surfaceWindSummary.ts`, write the result up here, and delete the
+workflow.
 
 ## Status
 

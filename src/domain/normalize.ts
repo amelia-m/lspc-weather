@@ -495,9 +495,13 @@ export interface RawGridpoint {
 }
 
 /** Expand NWS gridpoint properties into a contiguous hourly series. Generation
- *  stops at the last hour any property carries data (NWS gridpoint reaches
- *  ~7 days), so callers get the real horizon without a tail of all-null hours. */
-export function normalizeGridpoint(gp: RawGridpoint, maxHours = 168): HourlyPoint[] {
+ *  stops at the last hour any property carries data, so callers get the real
+ *  horizon without a tail of all-null hours. The series starts at the
+ *  gridpoint's first validTime, which is hours in the past (6.6 h on
+ *  2026-10-09, when the DZ's ran 177 h in all), so the default bound sits
+ *  above a week: a 168 h cap counted from there cut the chart's 7-day view
+ *  short by hours NWS did serve. */
+export function normalizeGridpoint(gp: RawGridpoint, maxHours = 192): HourlyPoint[] {
   const p = gp.properties;
   const sky = expand(p.skyCover);
   const ceil = expand(p.ceilingHeight, (v, uom) => convertLength(v, uom)); // → ft

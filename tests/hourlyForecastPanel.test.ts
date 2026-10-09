@@ -5,11 +5,13 @@ import { HourlyForecastPanel } from '../src/components/HourlyForecastPanel';
 import type { HourlyPoint } from '../src/domain/types';
 
 /* The horizon buttons: each longer one only when the forecast reaches past
- * the one before it, so a button never shows nothing new. The NWS gridpoint
- * served 168 hours for the drop zone on 2026-10-09, which fills all five. */
+ * the one before it, so a button never shows nothing new. The NWS gridpoint's
+ * wind for the drop zone ran 166 hours ahead on 2026-10-09. */
 describe('HourlyForecastPanel horizons', () => {
   const ahead = (n: number): HourlyPoint[] => {
-    const start = Math.floor(Date.now() / 3_600_000) * 3_600_000;
+    // From the next hour, so the panel's own clock reading, taken a moment
+    // later, cannot cross an hour and drop the first point.
+    const start = Math.floor(Date.now() / 3_600_000) * 3_600_000 + 3_600_000;
     return Array.from({ length: n }, (_, i) => ({
       time: start + i * 3_600_000,
       windSpeedKt: 8,

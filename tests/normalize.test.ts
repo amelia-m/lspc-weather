@@ -371,6 +371,22 @@ describe('normalizeGridpoint', () => {
     };
     expect(normalizeGridpoint(grid, 24)).toHaveLength(24);
   });
+
+  it('keeps a gridpoint that starts hours back and runs past a week, as the DZ\'s did', () => {
+    // On 2026-10-09 the series began 6.6 h before the fetch and ran 177 h;
+    // a 168 h bound from its start cut the chart's 7-day view short.
+    const start = Date.parse('2026-10-08T21:00:00Z');
+    const iso = (h: number): string => new Date(start + h * 3600_000).toISOString();
+    const grid = {
+      properties: {
+        temperature: {
+          uom: 'wmoUnit:degC',
+          values: Array.from({ length: 177 }, (_, h) => ({ validTime: `${iso(h)}/PT1H`, value: 15 })),
+        },
+      },
+    };
+    expect(normalizeGridpoint(grid)).toHaveLength(177);
+  });
 });
 
 describe('normalizeOpenMeteoDaily', () => {

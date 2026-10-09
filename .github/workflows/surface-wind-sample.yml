@@ -19,19 +19,28 @@ name: Surface-wind sample (temporary)
 # cron line per sample and does not throttle a running job (the 2026-09-30
 # sampler, in the history, found this). Each start samples for five hours in
 # five one-hour slices, uploading after each, so a late or cancelled job
-# still keeps what it gathered. Four starts cover twenty hours a day, at
-# different minutes of the hour from the other workflows.
+# still keeps what it gathered, and a slice or upload that fails does not
+# stop the ones after it. Starts every five hours, queued end to end, cover
+# the whole day.
 #
 # Delete this file once the window has ended and the records are archived.
 on:
   schedule:
-    - cron: '41 1,7,13,19 * * *'
+    # Every five hours (00:41, 05:41, 10:41, 15:41, 20:41Z), each start
+    # sampling for about five: with the queue below, a start that fires while
+    # one is running waits and follows it, so the samples run end to end
+    # and drift through every hour of the day instead of leaving the same
+    # gaps daily (a fixed four-a-day schedule never sampled 13:45 to 14:41
+    # CDT, the gusty afternoon).
+    - cron: '41 */5 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# A start that fires while the previous one is still sampling waits for it.
+# A start that fires while the previous one is still sampling waits for it
+# (GitHub keeps one waiting start; a newer one replaces it, which loses no
+# sampling time since either would follow the running one).
 concurrency:
   group: surface-wind-sampler
   cancel-in-progress: false
@@ -66,56 +75,66 @@ jobs:
         if: steps.window.outputs.run == 'true'
 
       - name: Sample, hour 1
-        if: steps.window.outputs.run == 'true'
-        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-1.jsonl" "$WINDOW_END"
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-1.jsonl" "$WINDOW_END"
       - uses: actions/upload-artifact@v4
         if: always() && steps.window.outputs.run == 'true'
         with:
-          name: surfacewind-${{ github.run_id }}-1
-          path: surfacewind-${{ github.run_id }}-1.jsonl
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-1
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-1.jsonl
           retention-days: 30
           if-no-files-found: ignore
+        continue-on-error: true
 
       - name: Sample, hour 2
-        if: steps.window.outputs.run == 'true'
-        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-2.jsonl" "$WINDOW_END"
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-2.jsonl" "$WINDOW_END"
       - uses: actions/upload-artifact@v4
         if: always() && steps.window.outputs.run == 'true'
         with:
-          name: surfacewind-${{ github.run_id }}-2
-          path: surfacewind-${{ github.run_id }}-2.jsonl
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-2
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-2.jsonl
           retention-days: 30
           if-no-files-found: ignore
+        continue-on-error: true
 
       - name: Sample, hour 3
-        if: steps.window.outputs.run == 'true'
-        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-3.jsonl" "$WINDOW_END"
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-3.jsonl" "$WINDOW_END"
       - uses: actions/upload-artifact@v4
         if: always() && steps.window.outputs.run == 'true'
         with:
-          name: surfacewind-${{ github.run_id }}-3
-          path: surfacewind-${{ github.run_id }}-3.jsonl
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-3
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-3.jsonl
           retention-days: 30
           if-no-files-found: ignore
+        continue-on-error: true
 
       - name: Sample, hour 4
-        if: steps.window.outputs.run == 'true'
-        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-4.jsonl" "$WINDOW_END"
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-4.jsonl" "$WINDOW_END"
       - uses: actions/upload-artifact@v4
         if: always() && steps.window.outputs.run == 'true'
         with:
-          name: surfacewind-${{ github.run_id }}-4
-          path: surfacewind-${{ github.run_id }}-4.jsonl
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-4
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-4.jsonl
           retention-days: 30
           if-no-files-found: ignore
+        continue-on-error: true
 
       - name: Sample, hour 5
-        if: steps.window.outputs.run == 'true'
-        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-5.jsonl" "$WINDOW_END"
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-5.jsonl" "$WINDOW_END"
       - uses: actions/upload-artifact@v4
         if: always() && steps.window.outputs.run == 'true'
         with:
-          name: surfacewind-${{ github.run_id }}-5
-          path: surfacewind-${{ github.run_id }}-5.jsonl
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-5
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-5.jsonl
           retention-days: 30
           if-no-files-found: ignore
+        continue-on-error: true
