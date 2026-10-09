@@ -1,6 +1,7 @@
 /** Humidity helpers — pure and unit-tested. Relative humidity is printed on the
- *  current-conditions card, and the saturation vapor pressure feeds the
- *  humidity-corrected density altitude (virtual temperature).
+ *  current-conditions card. (The density-altitude card's humidity figure
+ *  uses the NWS calculator's own vapour-pressure formula instead; see
+ *  densityAltitude.ts.)
  *
  *  There is deliberately no dew-point-spread helper here. A tight spread is a
  *  real fog and low-ceiling signal, but the only thing that ever consumed one

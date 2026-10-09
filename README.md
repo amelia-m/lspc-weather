@@ -94,8 +94,10 @@ the published figures rather than Settings edits.
 - 📝 **TAF** — nearest available TAF, raw text plus a decoded table: one row per period (prevailing, FM, TEMPO, BECMG, PROB) with wind, visibility, sky, weather in words and the FAA flight category (see cross-references below).
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
   The headline is the dry figure, FAA-P-8740-2's "pressure altitude corrected
-  for nonstandard temperature"; a row under it gives the figure with the dew
-  point folded in. Both by the NWS Density Altitude calculator's formulas.
+  for nonstandard temperature variations"; a row under it gives the figure
+  with the dew point folded in. Both by the NWS calculators' formulas, from
+  the pressure altitude and temperature the card prints, with the station
+  pressure printed for a reader to put into the NWS calculator.
 - 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
   countdown, because no published source sets a minutes-before-sunset figure.

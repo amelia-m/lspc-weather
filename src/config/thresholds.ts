@@ -186,13 +186,14 @@ export const CITATIONS = {
   /** The National Weather Service's Density Altitude calculator, whose
    *  formulas the card computes both figures with (src/domain/
    *  densityAltitude.ts): the headline with the thermometer reading, the
-   *  line under it with the calculator's virtual temperature, which folds
-   *  the dew point in. */
+   *  humidity row with the calculator's virtual temperature, which folds
+   *  the dew point in. The station pressure comes from the same office's
+   *  Pressure Altitude calculator, named in the note. */
   nwsDensityAltitude: {
     source: 'NWS Density Altitude calculator',
     ref: 'National Weather Service, WFO El Paso, wxcalc: density altitude from station pressure, temperature and dew point (virtual temperature)',
     url: 'https://www.weather.gov/epz/wxcalc_densityaltitude',
-    note: 'Read on 2026-10-09: the calculator page’s script and its formula sheets for density altitude and station pressure (weather.gov/media/epz/wxcalc/densityAltitude.pdf, stationPressure.pdf).',
+    note: 'Read on 2026-10-09: the calculator page’s script and the formula sheet it links (weather.gov/media/epz/wxcalc/densityAltitude.pdf), and the NWS Pressure Altitude calculator’s script and sheet (wxcalc_pressurealtitude, pressureAltitude.pdf), whose formula, run backwards, gives the station pressure.',
   },
   /**
    * General weather awareness — the thunderstorm flag's claim.

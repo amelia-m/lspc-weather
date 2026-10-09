@@ -24,7 +24,7 @@ describe('temperatures in the page’s unit', () => {
 
   const current = normalizeMetar({ ...METAR_FIXTURE[0], temp: 20, dewp: 15 });
   const level = { altitudeFtAgl: 3000, altitudeFtMsl: 4182, directionDeg: 270, speedKt: 10, tempC: 10 };
-  const da = { densityAltitudeFt: 3000, fieldElevationFt: 1182, pressureAltitudeFt: 1200, isaDeviationC: 10, humidDensityAltitudeFt: 3300 };
+  const da = { densityAltitudeFt: 3000, fieldElevationFt: 1182, pressureAltitudeFt: 1200, isaDeviationC: 10, humidDensityAltitudeFt: 3300, stationPressureInHg: 28.65 };
   const cards = (u: TempUnit) => ({
     metar: renderToStaticMarkup(
       createElement(MetarPanel, { current, unit: 'kt', onUnitChange: () => {}, tempUnit: u, onTempUnitChange: () => {} }),

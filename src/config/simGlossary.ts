@@ -39,10 +39,9 @@
  *    reader that nothing on the page acts on.
  *  - DENSITY ALTITUDE. The glossary describes the pilot's method, from
  *    pressure altitude and temperature, which is the card's headline; but
- *    the card also gives a figure with humidity folded in, under the same
- *    name, which that method leaves out. Its note quotes the FAA's
- *    definition beside its citation, which is what a reader checking the
- *    figure wants.
+ *    the card's prose also covers its "With humidity" row, which that
+ *    method leaves out, and its note quotes the FAA's definition beside its
+ *    citation, which is what a reader checking the figure wants.
  *  - MSL and WING LOADING: the cards use them only in figures, labels, a
  *    title and an input prompt.
  *  - SIM, which every SIM link already opens, and terms the app uses only in

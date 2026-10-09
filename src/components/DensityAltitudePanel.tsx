@@ -1,13 +1,13 @@
 import type { DensityAltitudeResult } from '../domain/types';
 import { fmtTempDelta, type TempUnit } from '../domain/units';
-
-/** A difference with its sign. "Above field" goes negative on a cold,
- *  high-pressure day, which a bare "+" printed as "+-361". */
-const fmtSigned = (ft: number): string => `${ft >= 0 ? '+' : ''}${ft.toLocaleString()}`;
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { CITATIONS } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
+
+/** A difference with its sign. "Above field" goes negative on a cold,
+ *  high-pressure day, which a bare "+" printed as "+-361". */
+const fmtSigned = (ft: number): string => `${ft >= 0 ? '+' : ''}${ft.toLocaleString()}`;
 
 export function DensityAltitudePanel({
   da,
@@ -49,6 +49,8 @@ export function DensityAltitudePanel({
             <dd>{fmtSigned(da.densityAltitudeFt - da.fieldElevationFt)} ft</dd>
             <dt>Pressure altitude</dt>
             <dd>{da.pressureAltitudeFt.toLocaleString()} ft</dd>
+            <dt>Station pressure</dt>
+            <dd>{da.stationPressureInHg.toFixed(2)} inHg</dd>
             <dt>ISA deviation</dt>
             <dd>{fmtTempDelta(da.isaDeviationC, tempUnit, true, 1)}</dd>
             <dt>With humidity</dt>
@@ -66,15 +68,18 @@ export function DensityAltitudePanel({
               with the PIC's. */}
           <p className="muted small">
             High density altitude reduces a loaded jump plane’s climb performance — expect longer
-            climbs to altitude. The figure is the FAA’s density altitude, “pressure altitude
+            climbs to altitude. The headline is the FAA’s density altitude, “pressure altitude
             corrected for nonstandard temperature variations”, which leaves humidity out; when
             humidity is high, the same pamphlet says to “add 10 percent to your computed takeoff
             distance and anticipate a reduced climb rate”. Source:{' '}
             <SourceLink citation={CITATIONS.faaDensityAltitude} />
           </p>
           <p className="muted small">
-            Both figures are worked with the National Weather Service calculator’s formulas; the
-            humidity line is its figure with the dew point folded in. Source:{' '}
+            Both figures are worked with the National Weather Service calculator’s formulas, from
+            the station pressure the standard atmosphere has at the pressure altitude above. Given
+            that station pressure, the temperature and the dew point, the calculator gives the
+            humidity row to within a few feet; the headline is its formula with the thermometer
+            reading in place of the virtual temperature. Source:{' '}
             <SourceLink citation={CITATIONS.nwsDensityAltitude} />
           </p>
         </>
