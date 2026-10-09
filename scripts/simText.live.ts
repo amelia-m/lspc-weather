@@ -57,7 +57,7 @@ const partText = (r: SourceReading): Promise<string | null> => {
   return partTexts.get(r)!;
 };
 const missing = (r: SourceReading): string =>
-  `#${r.simPart!.anchor} to ${r.simPart!.until ?? 'the end of the article'} is no longer on uspa.org/sim/${r.simPart!.section}`;
+  `#${r.simPart!.anchor} to ${r.simPart!.until ?? 'the end of the content module'} is no longer on uspa.org/sim/${r.simPart!.section}`;
 
 describe('the SIM edition uspa.org names', () => {
   it(`is still the ${SIM_EDITION_YEAR} SIM`, async () => {
