@@ -315,7 +315,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [
-      'The pressure altitude is the standard atmosphere’s altitude for the station pressure, the reading of an altimeter set to 29.92, not the 1,000 ft per inch rule, which runs tens of feet off it away from 29.92. Is that the figure the pilot in command would start from?',
+      'The pressure altitude is the standard atmosphere’s altitude for the station pressure, the reading of an altimeter set to 29.92, not the 1,000 ft per inch rule, which drifts from it away from 29.92 (at this field 54 ft at 30.50, 105 ft at 31.00). Is that the figure the pilot in command would start from?',
       'KPMV’s altimeter setting is reduced to the drop zone’s 1,182 ft, not KPMV’s own 1,204 ft. Is that right for a field 12 miles from the station?',
     ],
   },

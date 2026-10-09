@@ -1,5 +1,5 @@
 import type { DensityAltitudeResult } from './types';
-import { HPA_PER_INHG, hpaToInHg } from './units';
+import { FT_PER_M, HPA_PER_INHG } from './units';
 
 /**
  * Density altitude by the National Weather Service's own formulas, those
@@ -16,7 +16,8 @@ import { HPA_PER_INHG, hpaToInHg } from './units';
  * (what an altimeter set to 29.92 reads), and the density altitude is the
  * standard atmosphere's altitude for the air's density. The pilot's rule,
  * elevation + (29.92 − altimeter) × 1,000, approximates the second line and
- * runs tens of feet off it away from 29.92; the card prints the exact one,
+ * drifts from it away from 29.92: at this field 54 ft at 30.50, 105 ft at
+ * 31.00, 70 ft at 28.90. The card prints the exact one,
  * so the headline follows from the rows printed under it (pressure
  * altitude, or the station pressure, and the temperature), as an E6B's does.
  *
@@ -59,13 +60,13 @@ export function densityAltitude(params: {
 }): DensityAltitudeResult {
   const { elevationFt, altimeterInHg, oatC, dewpointC } = params;
 
-  const stationInHg = altimeterInHg * ((288 - 0.0065 * elevationFt * 0.3048) / 288) ** 5.2561;
+  const stationInHg = altimeterInHg * ((288 - 0.0065 * (elevationFt / FT_PER_M)) / 288) ** 5.2561;
   const stationHpa = stationInHg * HPA_PER_INHG;
   const pressureAltitudeFt = (1 - (stationHpa / 1013.25) ** 0.190284) * 145366.45;
   const isaTempC = 15 - 1.98 * (pressureAltitudeFt / 1000);
   const tK = oatC + 273.15;
   const fromKelvin = (kelvin: number): number =>
-    145366 * (1 - ((17.326 * hpaToInHg(stationHpa)) / (kelvin * 1.8)) ** 0.235);
+    145366 * (1 - ((17.326 * stationInHg) / (kelvin * 1.8)) ** 0.235);
 
   let humidDensityAltitudeFt: number | null = null;
   if (dewpointC != null) {
