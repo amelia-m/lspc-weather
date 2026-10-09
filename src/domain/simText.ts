@@ -174,3 +174,26 @@ function decodeEntities(s: string): string {
     return NAMED[ref.toLowerCase()] ?? whole;
   });
 }
+
+/**
+ * What a refused request came back with, for a live check's error message:
+ * the page's title, Cloudflare's `cf-mitigated` header and its ray id, each
+ * when present. uspa.org sits behind Cloudflare (its pages carry `server:
+ * cloudflare`), and on 2026-10-09 the daily check got a bare "HTTP 403" for
+ * every page, which could not say whether it was a firewall block or a bot
+ * check. Read from two other Cloudflare hosts that day: a bot check carried
+ * `cf-mitigated: challenge` and the title "Just a moment...", a firewall
+ * block no such header and the title "Attention Required! | Cloudflare".
+ * The ray id is what the site's owner would need to find the request.
+ * `header` is a Headers-style lookup, so this stays pure. Empty when the
+ * response carried none of the three.
+ */
+export function refusalDetail(body: string, header: (name: string) => string | null): string {
+  const title = /<title[^>]*>([^<]*)<\/title>/i.exec(body)?.[1].trim();
+  const bits = [
+    title ? `title "${title}"` : null,
+    header('cf-mitigated') ? `cf-mitigated: ${header('cf-mitigated')}` : null,
+    header('cf-ray') ? `cf-ray ${header('cf-ray')}` : null,
+  ].filter((b): b is string => b != null);
+  return bits.length > 0 ? ` (${bits.join(', ')})` : '';
+}
