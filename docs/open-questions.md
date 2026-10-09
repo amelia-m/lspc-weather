@@ -89,14 +89,15 @@ limit applies to licensed jumpers, so the surface-wind card would not change.
 
 Asked for 2026-10-08, and added the same day at the maintainer's request:
 the Ceiling & sky card shows Open-Meteo's total cloud cover for each hour
-as a thin grey bar and a grey figure beside the NWS sky cover, with the
-low/mid/high bands in each hour's tooltip. It rides on the winds request
+as a narrow grey bar in an outlined track and a grey figure beside the NWS
+sky cover, with the low/mid/high bands in each hour's tooltip. It rides on the winds request
 (`OPEN_METEO_CLOUD_VARIABLES`), is left out when Open-Meteo does not
 answer, and is never shown as a ceiling: Open-Meteo serves cloud as a
 share of the sky (total, and bands up to 3 km, 3 to 8 km and above 8 km,
 per open-meteo.com/en/docs, read 2026-10-08), with no base height. It is
-grey whatever the amount, so it asserts no category; the NWS bars keep
-their existing colours.
+grey whatever the amount, so it asserts no category; since 2026-10-09 the
+NWS bars are likewise one colour whatever the cover (the few/scattered/
+broken/overcast colours had no key and read as a verdict).
 
 What the dashboard reads the sky from:
 
