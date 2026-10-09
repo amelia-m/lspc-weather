@@ -7,6 +7,7 @@ import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
+import { SimTerm } from './common/SimTerm';
 import { fmtTime } from './format';
 
 /** What the Ceiling line says when no ceiling height could be computed. */
@@ -84,8 +85,8 @@ export function CeilingSkyPanel({
         // MSL, where the figures are the higher ones.
         <p className="muted small">
           {CATEGORY_LABEL[category]}: reduced ceiling/visibility. 14 CFR 105.17 bars parachute ops
-          into or through cloud and sets flight visibility and distance from cloud: below 10,000 ft
-          MSL, 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft
+          into or through cloud and sets flight visibility and distance from cloud: below 10,000 ft{' '}
+          <SimTerm term="msl">MSL</SimTerm>, 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft
           MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile horizontal. Source:{' '}
           <SourceLink citation={CITATIONS.far10517} />
         </p>
@@ -135,7 +136,7 @@ export function CeilingSkyPanel({
         </div>
       )}
       <p className="muted small">
-        Bar height = sky cover %. Label = ceiling (thousands ft AGL); “none” = no broken/overcast
+        Bar height = sky cover %. Label = ceiling (thousands ft <SimTerm term="agl">AGL</SimTerm>); “none” = no broken/overcast
         layer, so no ceiling.
         {showOm && (
           <>

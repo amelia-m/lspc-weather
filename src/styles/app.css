@@ -446,6 +446,14 @@ a {
   cursor: help;
   color: var(--watch);
 }
+/* A word linked to its USPA SIM glossary entry (SimTerm): the prose's own
+   colour, so a sentence with two or three of them still reads as a sentence,
+   and the dotted underline the citation links use to mark it as a link. */
+a.sim-term {
+  color: inherit;
+  text-decoration: underline dotted var(--accent);
+  text-underline-offset: 2px;
+}
 
 /* Key/value lists */
 .kv {

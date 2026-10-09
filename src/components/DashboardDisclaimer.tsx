@@ -1,5 +1,6 @@
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { SIM_LAST_READ } from '../config/readingLog';
+import { SimTerm } from './common/SimTerm';
 
 /**
  * The banner above the advisories on both tabs.
@@ -23,7 +24,7 @@ export function DashboardDisclaimer(): JSX.Element {
         whether it is safe to jump. Its cited limits are readings of the sources, not a licensed
         professional&rsquo;s sign-off: verify each against its source before relying on it (the{' '}
         <a href="#citations">citations page</a> lists them). Always confirm conditions with current
-        official sources, the S&amp;TA, and the pilot in command.
+        official sources, the <SimTerm term="sta">S&amp;TA</SimTerm>, and the pilot in command.
       </p>
       <details className="disclaimer-more">
         <summary>About the sources</summary>

@@ -213,6 +213,16 @@ question, kept in the browser until sent. The site has no backend, so "Send as
 a GitHub issue" opens a prefilled issue in this repository, and "Copy answers"
 gives the same text for anyone without a GitHub account.
 
+**Glossary links.** Where a card's prose uses a term the USPA SIM glossary
+defines (S&TA, BSR, solo student, AGL, MSL, density altitude, jump run, exit
+point, exit weight, wing loading), its first use on that card links to the
+glossary, so a jumper can read USPA's own definition. The glossary has no
+anchor per term, so a link lands on the letter heading the entry is filed
+under. These are links, not citations: they back no flag and no figure. The
+entries, the day the glossary was read (2026-10-09), and why "waiver" and
+"night jump" are left unlinked are in
+[`src/config/simGlossary.ts`](src/config/simGlossary.ts).
+
 A second page, **How different from other sources** (`#parity`), shows what
 the scheduled comparison logs add up to: the winds-aloft table against Mark
 Schulze's Winds Aloft at the same valid hour, row by row, and the dashboard's

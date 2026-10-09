@@ -21,6 +21,7 @@ import type { SpeedUnit } from '../src/domain/units';
 import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
 import { normalizeMetar, normalizeNwsObservation } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
+import { withoutGlossaryLinks } from './support/glossaryLinks';
 
 const now = Date.parse('2025-06-27T13:30:00Z');
 
@@ -565,7 +566,7 @@ describe('an empty advisory list is not an all-clear', () => {
     expect(evaluateAdvisories(snapshot({ current: breezy }), t, now, 'kt').some((a) => a.id === 'surface-wind')).toBe(false);
     const note = (html: string) => /<p class="muted small">A lower maximum[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
     for (const current of [breezy, null]) {
-      const kt = note(windPanel(t, 'Student', 'kt', current));
+      const kt = note(withoutGlossaryLinks(windPanel(t, 'Student', 'kt', current)));
       expect(kt).toContain('A lower maximum ground wind, 8.7 kt, is published for solo students on round reserves.');
       expect(kt).toContain('The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so neither checks the lower one.');
       expect(kt).toContain(CITATIONS.uspaStudentWinds.url);

@@ -4,6 +4,8 @@ import { fmtLimitSpeed, toSpeed, type SpeedUnit } from '../../domain/units';
 import { limitLines, type Thresholds } from '../../config/thresholds';
 import { lowerLimitPublished, lowerLimitUnchecked } from '../../domain/advisories';
 import { SourceLink } from './SourceLink';
+import { SimTermSegments } from './SimTerm';
+import { GLOSSARY_KEYS, splitGlossaryTerms } from '../../config/simGlossary';
 import { fmtShortHour } from '../format';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
@@ -282,7 +284,14 @@ export function HourlyLegend({
           {/* The BSR's second student figure, which no line here marks: the
               Surface wind card's sentence and test (lowerLimitPublished,
               lowerLimitUnchecked), so the two cannot disagree. */}
-          {lowerLimitUnchecked(limits) && ` ${lowerLimitPublished(limits, unit)} The limit line is not it.`}
+          {lowerLimitUnchecked(limits) && (
+            <>
+              {' '}
+              <SimTermSegments
+                segments={splitGlossaryTerms(`${lowerLimitPublished(limits, unit)} The limit line is not it.`, GLOSSARY_KEYS)}
+              />
+            </>
+          )}
         </p>
       )}
     </>
