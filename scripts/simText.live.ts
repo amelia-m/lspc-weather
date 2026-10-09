@@ -12,6 +12,9 @@
  *
  * PRINT_SIM_FINGERPRINTS=1 prints the current fingerprints instead of
  * comparing, for taking them when a part is read again.
+ *
+ * It also checks that each SIM glossary entry the cards link to is still
+ * filed under the letter its link lands on (last block below).
  */
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -19,6 +22,7 @@ import { READING_LOG, citationsOf, type SourceReading } from '../src/config/read
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 import { CITATIONS, simUrl } from '../src/config/thresholds';
 import { simPartText } from '../src/domain/simText';
+import { GLOSSARY_KEYS, SIM_GLOSSARY } from '../src/config/simGlossary';
 
 const parts = READING_LOG.filter((r) => r.simPart != null);
 const pages = new Map<string, Promise<string>>();
@@ -113,6 +117,28 @@ describe('SIM quotes on #citations, in the parts they are tied to', () => {
           ).toBe(true);
         }
       }
+    });
+  }
+});
+
+/* The SIM glossary entries the cards link to (src/config/simGlossary.ts).
+ * The glossary has no anchor per term, so each link lands on the letter
+ * heading the entry is filed under; this checks the entry's name is still
+ * between that letter's anchor and the next letter's, so a link does not
+ * send a reader to a letter that no longer holds the term. Its definition is
+ * not fingerprinted. The page splits some names across bold runs ("BSR" and
+ * "s"), so those inline tags are dropped before simPartText reduces the
+ * rest; names are then compared as words, case aside (the page sets them in
+ * capitals with CSS). */
+describe('SIM glossary entries the cards link, under the letter each link lands on', () => {
+  const glossary = (): Promise<string> => page('glossary').then((p) => p.replace(/<\/?(?:b|span)\b[^>]*>/gi, ''));
+  for (const key of GLOSSARY_KEYS) {
+    const { term, letter } = SIM_GLOSSARY[key];
+    it(`${term} (#${letter})`, async () => {
+      const next = String.fromCharCode(letter.charCodeAt(0) + 1);
+      const text = simPartText(await glossary(), letter, next);
+      expect(text, `#${letter} to #${next} is no longer on uspa.org/sim/glossary`).not.toBeNull();
+      expect(words(text!), `${term} is no longer under ${letter} in the SIM glossary`).toContain(words(term));
     });
   }
 });

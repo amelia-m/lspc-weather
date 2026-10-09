@@ -2,6 +2,7 @@ import type { DensityAltitudeResult } from '../domain/types';
 import { fmtTempDelta, type TempUnit } from '../domain/units';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
+import { SimTerm } from './common/SimTerm';
 import { CITATIONS } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
 
@@ -50,7 +51,7 @@ export function DensityAltitudePanel({
               The number above is the reading; judging it is the reader's job,
               with the PIC's. */}
           <p className="muted small">
-            High density altitude reduces a loaded jump plane’s climb performance — expect longer
+            High <SimTerm term="densityAltitude">density altitude</SimTerm> reduces a loaded jump plane’s climb performance — expect longer
             climbs to altitude.{' '}
             {da.humidityCorrected
               ? 'Humidity-corrected (virtual temperature).'

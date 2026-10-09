@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DashboardDisclaimer } from '../src/components/DashboardDisclaimer';
 import { METAR_STATION_OFFSET, SITE } from '../src/config/site';
+import { withoutGlossaryLinks } from './support/glossaryLinks';
 
 /* The banner keeps in view what every reader needs before acting, and closes
  * the provenance behind it. renderToStaticMarkup runs no CSS, so "in view"
@@ -18,7 +19,7 @@ describe('the dashboard banner', () => {
     // detail to smooth over: it stays in view.
     expect(shown).toContain('not a licensed professional’s sign-off: verify each against its source');
     expect(shown).toContain('href="#citations"');
-    expect(shown).toContain('the S&amp;TA, and the pilot in command');
+    expect(withoutGlossaryLinks(shown)).toContain('the S&amp;TA, and the pilot in command');
   });
 
   it('moves the reading dates, the photo of the sign and the station offset into a section closed by default', () => {

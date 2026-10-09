@@ -1,5 +1,6 @@
 import { EDITABLE_LIMITS, EDITABLE_LIMIT_KEYS, isEditable, type Thresholds } from '../config/thresholds';
 import { NumberField } from './common/NumberField';
+import { SimTerm } from './common/SimTerm';
 
 /**
  * One row per threshold an advisory actually fires on.
@@ -41,8 +42,8 @@ export function SettingsPanel({
       <div className="panel-body">
         {/* Raised by the maintainer, 2026-10-08; docs/open-questions.md. */}
         <p className="muted small">
-          This section may be retired. A student does not set their own wind limits: the BSR
-          sets them, or the LSPC waiver raises them to its posted tier, which the profile
+          This section may be retired. A student does not set their own wind limits: the{' '}
+          <SimTerm term="bsr">BSR</SimTerm> sets them, or the LSPC waiver raises them to its posted tier, which the profile
           selector already picks. The visibility row, unedited, is 14 CFR 105.17&rsquo;s figure.
         </p>
         <p className="muted small">

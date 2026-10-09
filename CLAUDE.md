@@ -193,6 +193,18 @@ questions), or when uspa.org cannot be fetched. Every cited SIM part, and every 
 take its fingerprint with `PRINT_SIM_FINGERPRINTS=1` and move
 `SIM_LAST_READ` only if every part was read that day.
 
+Words in the cards' prose that the SIM glossary defines link to it
+(`SimTerm`, data in `src/config/simGlossary.ts`, read in the online SIM at
+uspa.org on 2026-10-09): each term at most once per card, never in a label,
+readout or existing link. The glossary has anchors per letter heading only
+(`…/sim/glossary#S`), so a link lands on the letter; do not invent a per-term
+fragment. They are links, not citations, so they are in neither `CITATIONS`
+nor the reading log. Linking a word asserts its definition applies:
+"waiver" stays unlinked because whether the club's posted waiver is a SIM 2-2
+waiver is open on `#citations`, and "night jump" because the glossary's
+one-hour figure is not the night flag's trigger. `scripts/simText.live.ts`
+also checks daily that each linked entry is still under its letter.
+
 When touching a citation:
 
 - `source` and `url` must name the same section, or neither may name one. A test

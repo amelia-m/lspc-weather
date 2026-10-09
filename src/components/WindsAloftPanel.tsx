@@ -9,6 +9,7 @@ import { CITATIONS } from '../config/thresholds';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
+import { SimTerm } from './common/SimTerm';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
 import { fmtTime, fmtZulu } from './format';
 
@@ -269,8 +270,8 @@ export function WindsAloftPanel({
           any wind rather than appearing only once an invented threshold is
           crossed. Read the speeds above and judge them. */}
       <p className="muted small">
-        Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit
-        separation accordingly. Source: <SourceLink citation={CITATIONS.uspaSpotting} />
+        Strong upper winds increase freefall drift and lengthen the spot — plan <SimTerm term="jumpRun">jump run</SimTerm> and
+        exit separation accordingly. Source: <SourceLink citation={CITATIONS.uspaSpotting} />
       </p>
       {!expanded && toggleable && collapsedTopFtAgl != null && top.highestFtAgl != null && (
         <p className="muted small">
@@ -332,7 +333,10 @@ export function WindsAloftPanel({
               different forecast runs, for up to about half an hour and most often between half past
               and ten to the hour; if they disagree then, look again later. Its
               altitudes are{' '}
-              <strong>AGL, like these</strong>, so the two tables are directly comparable; the “MSL”
+              <strong>
+                <SimTerm term="agl">AGL</SimTerm>, like these
+              </strong>
+              , so the two tables are directly comparable; the “<SimTerm term="msl">MSL</SimTerm>”
               on its page is the ground elevation it looked up, not the scale of its wind table.
             </p>
             {/* Their Surface rows measure different things, and the gap is the

@@ -2,7 +2,9 @@ import type { Advisory } from '../domain/types';
 import { Panel } from './common/Panel';
 import { SourceLinks } from './common/SourceLinks';
 import { SourceLink } from './common/SourceLink';
+import { SimTerm, SimTermSegments } from './common/SimTerm';
 import { DATA_SOURCES } from '../config/sources';
+import { GLOSSARY_KEYS, splitGlossaryTermsAcross } from '../config/simGlossary';
 
 const LEVEL_LABEL: Record<Advisory['level'], string> = {
   caution: 'Caution',
@@ -66,6 +68,12 @@ export function AdvisoryPanel({
       . Guidance sources are linked on each flag above.
     </>
   );
+  // Each flag's guidance is a plain string from the domain; a glossary term
+  // in it is linked at its first use in the list, not once per flag.
+  const guidance = splitGlossaryTermsAcross(
+    advisories.map((a) => a.guidance),
+    GLOSSARY_KEYS,
+  );
   return (
     <Panel
       className="advisory-panel"
@@ -97,20 +105,27 @@ export function AdvisoryPanel({
                 a wind limit for it — so read the speed on the Surface wind card.{' '}
               </>
             )}
-            {forPilots
-              ? 'This is not clearance to fly the load: the pilot in command decides.'
-              : 'This is not clearance to jump — confirm winds, clouds, and the spot yourself and with the S&TA.'}
+            {forPilots ? (
+              'This is not clearance to fly the load: the pilot in command decides.'
+            ) : (
+              <>
+                This is not clearance to jump — confirm winds, clouds, and the spot yourself and with
+                the <SimTerm term="sta">S&amp;TA</SimTerm>.
+              </>
+            )}
           </p>
         ) : (
           <ul className="advisory-list">
-            {advisories.map((a) => (
+            {advisories.map((a, i) => (
               <li key={a.id} className={`advisory advisory-${a.level}`}>
                 <div className="advisory-top">
                   <span className={`advisory-badge badge-${a.level}`}>{LEVEL_LABEL[a.level]}</span>
                   <span className="advisory-metric">{a.metric}</span>
                   <span className="advisory-value">{a.value}</span>
                 </div>
-                <p className="advisory-guidance">{a.guidance}</p>
+                <p className="advisory-guidance">
+                  <SimTermSegments segments={guidance[i]} />
+                </p>
                 <div className="advisory-cite">
                   {a.secondaryCitation ? 'Sources: ' : 'Source: '}
                   <SourceLink citation={a.citation} />

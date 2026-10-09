@@ -5,6 +5,8 @@ import { lowerLimitPublished, lowerLimitUnchecked, windBandUse } from '../domain
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
+import { SimTermSegments } from './common/SimTerm';
+import { GLOSSARY_KEYS, splitGlossaryTermsAcross } from '../config/simGlossary';
 
 /**
  * Surface wind, against whatever limit a source has actually published for the
@@ -58,6 +60,17 @@ export function SurfaceWindPanel({
   const caveat = t.windBandCaveat;
   const windEdited = isEdited(t, 'windCautionKt');
   const gustEdited = isEdited(t, 'gustCautionKt');
+  // The two standing notes' sentences, which come from the thresholds as
+  // plain strings; a glossary term in them is linked at its first use on
+  // the card.
+  const showCaveat = caveat != null && lowerLimitUnchecked(t);
+  const [caveatText, guidanceText] = splitGlossaryTermsAcross(
+    [
+      showCaveat ? `${lowerLimitPublished(t, unit)} ${windBandUse(t, unit)}, so neither checks the lower one.` : '',
+      !t.windLimitCitation ? t.windGuidance : '',
+    ],
+    GLOSSARY_KEYS,
+  );
 
   return (
     <Panel
@@ -133,9 +146,9 @@ export function SurfaceWindPanel({
           phrase and the same test the flag uses (windBandUse,
           lowerLimitUnchecked), so the two cannot disagree. Outside the
           reading: it is about the profile, with or without one. */}
-      {caveat && lowerLimitUnchecked(t) && (
+      {showCaveat && (
         <p className="muted small">
-          {lowerLimitPublished(t, unit)} {windBandUse(t, unit)}, so neither checks the lower one.{' '}
+          <SimTermSegments segments={caveatText} />{' '}
           <SourceLink citation={caveat.citation} />
         </p>
       )}
@@ -153,7 +166,7 @@ export function SurfaceWindPanel({
             The reading is the observation; judging it is yours.
           </p>
           <p className="muted small">
-            {t.windGuidance} Source: <SourceLink citation={t.windCitation} />
+            <SimTermSegments segments={guidanceText} /> Source: <SourceLink citation={t.windCitation} />
           </p>
         </>
       )}

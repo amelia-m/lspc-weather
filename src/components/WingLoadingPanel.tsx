@@ -11,6 +11,8 @@ import { againstChart, exitWeightLb, LB_PER_KG, sizesWithin, wingLoading } from 
 import { round } from '../domain/units';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
+import { SimTermSegments } from './common/SimTerm';
+import { GLOSSARY_KEYS, splitGlossaryTerms } from '../config/simGlossary';
 
 /** Above these an entry is taken for a typo (an extra zero) rather than
  *  worked out into figures that look authoritative. Input bounds, not
@@ -101,7 +103,9 @@ export function WingLoadingPanel({
       {/* Announced as it changes: the figures update as the reader types. */}
       <div aria-live="polite">
         {prompt != null || exitLb == null || student == null ? (
-          <p className="muted small">{prompt}</p>
+          <p className="muted small">
+            <SimTermSegments segments={splitGlossaryTerms(prompt ?? '', GLOSSARY_KEYS)} />
+          </p>
         ) : (
           <dl className="kv wl-kv">
             <dt>Exit weight</dt>

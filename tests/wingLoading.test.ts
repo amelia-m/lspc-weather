@@ -9,6 +9,7 @@ import {
 import { againstChart, exitWeightLb, sizesWithin, wingLoading } from '../src/domain/wingLoading';
 import { WingLoadingPanel } from '../src/components/WingLoadingPanel';
 import { CITATIONS } from '../src/config/thresholds';
+import { withoutGlossaryLinks } from './support/glossaryLinks';
 
 const size = (a: number) => NAVIGATOR_CHART.find((s) => s.areaSqFt === a)!;
 
@@ -58,7 +59,7 @@ describe('the exit weight & wing loading card', () => {
   it('starts with no body weight, and works nothing out until one is entered', () => {
     const html = renderToStaticMarkup(createElement(WingLoadingPanel));
     expect(html).toContain('placeholder="enter" value=""');
-    expect(html).toContain('Enter a body weight to work out exit weight and wing loading.');
+    expect(withoutGlossaryLinks(html)).toContain('Enter a body weight to work out exit weight and wing loading.');
     expect(html).not.toContain('Wing loading</dt>');
     expect(html).toContain(`value="${STUDENT_RIG_WEIGHT_LB}"`);
   });

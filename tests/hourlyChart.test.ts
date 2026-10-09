@@ -6,6 +6,7 @@ import { sunTimes } from '../src/domain/sun';
 import { SITE } from '../src/config/site';
 import { resolveThresholds, withOverrides } from '../src/config/thresholds';
 import type { HourlyPoint } from '../src/domain/types';
+import { withoutGlossaryLinks } from './support/glossaryLinks';
 
 /* The night shade must sit exactly between the drop zone's sunset and
  * sunrise on the chart's own time axis, and nowhere on a daytime chart. */
@@ -263,7 +264,7 @@ describe('HourlyChart limit lines', () => {
   it('names the BSR round-reserve figure the student line is not', () => {
     // The Surface wind card's standing note, carried to the chart: the line
     // is the ram-air figure, and a reader on a round reserve has a lower one.
-    expect(legend(resolveThresholds('student'))).toContain(
+    expect(text(withoutGlossaryLinks(legend(resolveThresholds('student'))))).toContain(
       'A lower maximum ground wind, 10 mph, is published for solo students on round reserves. The limit line is not it.',
     );
     // A waiver tier has no such caveat (the club's call, A5 on #citations).

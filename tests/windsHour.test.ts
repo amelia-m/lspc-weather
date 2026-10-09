@@ -5,6 +5,7 @@ import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
 import { DriftPanel } from '../src/components/DriftPanel';
 import { ForecastHourNav, type WindsHourNav } from '../src/components/common/ForecastHourNav';
 import type { WindsAloftLevel } from '../src/domain/types';
+import { withoutGlossaryLinks } from './support/glossaryLinks';
 
 const levels: WindsAloftLevel[] = [0, 1000, 3000, 5000, 7000, 10000].map((ft) => ({
   altitudeFtAgl: ft,
@@ -91,7 +92,7 @@ describe('Winds aloft hour buttons', () => {
 describe('Winds aloft explanatory text', () => {
   it('folds the background notes by default, and keeps the table and the guidance out', () => {
     const html = winds({ hourNav: nav() });
-    const about = /<details class="aloft-about">([\s\S]*?)<\/details>/.exec(html)?.[1] ?? '';
+    const about = /<details class="aloft-about">([\s\S]*?)<\/details>/.exec(withoutGlossaryLinks(html))?.[1] ?? '';
     // Closed until opened: no `open` attribute.
     expect(html).toContain('<details class="aloft-about"><summary');
     for (const note of ['AGL, like these', 'Mark Schulze’s Winds Aloft', 'linearly interpolated', 'model’s forecast wind at 10']) {
