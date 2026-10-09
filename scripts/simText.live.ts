@@ -35,19 +35,33 @@ const parts = READING_LOG.filter((r) => r.simPart != null);
  * went out back to back until 2026-10-09, when Cloudflare in front of
  * uspa.org refused every one from that day's runner with a 403. Whether the
  * pace had anything to do with it is not known; spacing them costs the run
- * a quarter of a minute. A refusal's error carries refusalDetail, so the
- * next one says whether it was a block or a bot check. */
+ * about twenty seconds. A refusal's error carries refusalDetail, so the
+ * next one says whether it was a block or a bot check, and every failure
+ * names the request it was. */
 const GAP_MS = 3_000;
 let lastRequest: Promise<unknown> = Promise.resolve();
 const get = (url: string, label: string): Promise<string> => {
   const request = lastRequest.then(async () => {
-    const r = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
-      signal: AbortSignal.timeout(30_000),
-    });
-    const body = await r.text();
-    if (!r.ok) throw new Error(`${label}: HTTP ${r.status}${refusalDetail(body, (n) => r.headers.get(n))}`);
-    return body;
+    let r: Response;
+    try {
+      r = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
+        signal: AbortSignal.timeout(30_000),
+      });
+    } catch (err) {
+      throw new Error(`${label}: ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}`);
+    }
+    if (!r.ok) {
+      // The status is the finding; a body that will not read only loses
+      // the detail.
+      const body = await r.text().catch(() => '');
+      throw new Error(`${label}: HTTP ${r.status}${refusalDetail(body, (n) => r.headers.get(n))}`);
+    }
+    try {
+      return await r.text();
+    } catch (err) {
+      throw new Error(`${label}: HTTP ${r.status}, body unread: ${err instanceof Error ? err.message : String(err)}`);
+    }
   });
   lastRequest = request.catch(() => undefined).then(() => new Promise((done) => setTimeout(done, GAP_MS)));
   return request;
