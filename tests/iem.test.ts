@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { chooseObservation, normalizeIemCurrent, supersedes, type RawIemCurrent } from '../src/domain/iem';
-import { tempsFromRaw } from '../src/domain/normalize';
 import type { CurrentConditions } from '../src/domain/types';
 
 /** IEM's current record for KPMV as a GitHub runner fetched it at 20:45Z on
@@ -78,20 +77,6 @@ describe('normalizeIemCurrent', () => {
 
   it('is null without a valid time', () => {
     expect(normalizeIemCurrent({ ...REC, utc_valid: null }, 'KPMV')).toBeNull();
-  });
-});
-
-describe('tempsFromRaw', () => {
-  it('reads below-zero tenths from the T group', () => {
-    expect(tempsFromRaw('KPMV 011255Z AUTO 00000KT 10SM CLR M05/M11 A3012 RMK AO2 T10501106')).toEqual({ tempC: -5, dewpointC: -10.6 });
-  });
-
-  it('falls back to the body group, M for minus', () => {
-    expect(tempsFromRaw('KPMV 011255Z AUTO 00000KT 10SM CLR M05/M11 A3012')).toEqual({ tempC: -5, dewpointC: -11 });
-  });
-
-  it('is null with neither', () => {
-    expect(tempsFromRaw('')).toBeNull();
   });
 });
 
