@@ -131,9 +131,7 @@ describe('glossaryHeadings', () => {
     expect(glossaryHeadings(GLOSSARY, 'V')).toEqual(glossaryHeadings(GLOSSARY, 'W'));
   });
 
-  it('ends the last letter at the end of the content module, not in the footer', () => {
-    // A bold-led paragraph after the module (the shape a footer address
-    // block would take) must not be read as a Z entry.
+  it('ends the last letter at the end of its content module, not in the next module', () => {
     // The module after the glossary holds a bold-led paragraph (the shape a
     // footer address block would take); it is not a Z entry.
     expect(glossaryHeadings(GLOSSARY, 'Z')).toEqual(['ZOO DIVE']);
