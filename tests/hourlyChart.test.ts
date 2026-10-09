@@ -289,9 +289,9 @@ describe('HourlyChart limit lines', () => {
   });
 });
 
-/* Past three days the axis names days, at the drop zone's local noon; up to
- * three days it keeps clock hours. A label every n/6 hours over a week would
- * fall on a different hour each day with nothing to say which day. */
+/* Each day is named at the drop zone's local noon: under the clock hours up
+ * to three days, and in their place beyond, where a label every n/6 hours
+ * would fall on a different hour each day with nothing to say which day. */
 describe('HourlyChart axis over several days', () => {
   const hours = (fromIso: string, n: number): HourlyPoint[] =>
     Array.from({ length: n }, (_, i) => ({
@@ -300,28 +300,46 @@ describe('HourlyChart axis over several days', () => {
       windGustKt: 12,
       precipProbPct: 0,
     })) as unknown as HourlyPoint[];
-  const axis = (points: HourlyPoint[]): string[] =>
-    [...renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt' })).matchAll(
-      /<text class="hc-axis" x="[\d.]+" y="148" text-anchor="middle">([^<]+)<\/text>/g,
-    )].map((m) => m[1]);
+  const render = (points: HourlyPoint[]): string => renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt' }));
+  const days = (points: HourlyPoint[]): string[] =>
+    [...render(points).matchAll(/<text class="hc-axis hc-day"[^>]*>([^<]+)<\/text>/g)].map((m) => m[1]);
+  const clock = (points: HourlyPoint[]): string[] =>
+    [...render(points).matchAll(/<text class="hc-axis" x="[\d.]+" y="148"[^>]*>([^<]+)<\/text>/g)].map((m) => m[1]);
 
-  it('names each day at local noon over seven days', () => {
+  it('names each day at local noon over seven days, with no clock hours', () => {
     // Midnight CDT Fri Oct 9 (05:00Z), 168 hours: noons Fri to Thu.
-    expect(axis(hours('2026-10-09T05:00:00Z', 168))).toEqual(['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']);
+    const week = hours('2026-10-09T05:00:00Z', 168);
+    expect(days(week)).toEqual(['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']);
+    expect(clock(week)).toEqual([]);
   });
 
   it('leaves out a day whose noon falls at the very edge of the plot', () => {
     // Starting at noon CDT Fri: Friday's noon is the first point, at the edge.
-    expect(axis(hours('2026-10-09T17:00:00Z', 120))[0]).toBe('Sat');
+    expect(days(hours('2026-10-09T17:00:00Z', 120))[0]).toBe('Sat');
     // Ending at noon CDT Wed (1 PM CDT Fri plus 119 h, the 120th point):
     // Wednesday's noon is the last point, at the right edge.
-    const toWed = axis(hours('2026-10-09T18:00:00Z', 120));
+    const toWed = days(hours('2026-10-09T18:00:00Z', 120));
     expect(toWed[toWed.length - 1]).toBe('Tue');
   });
 
-  it('keeps clock hours up to three days', () => {
-    const labels = axis(hours('2026-10-09T05:00:00Z', 72));
+  it('names the days under the clock hours up to three days', () => {
+    // 11 PM CDT Sat Oct 10 (04:00Z Sun), 72 hours: noons Sun, Mon, Tue.
+    const three = hours('2026-10-11T04:00:00Z', 72);
+    expect(days(three)).toEqual(['Sun', 'Mon', 'Tue']);
+    const labels = clock(three);
     expect(labels.length).toBeGreaterThan(3);
     for (const l of labels) expect(l).toMatch(/^\d{1,2}(am|pm)$/);
+  });
+
+  it('keeps the plot the same height when the day row is added', () => {
+    // The day row grows the chart; the plot area, and so every bar and line,
+    // stays where it was.
+    const withDays = render(hours('2026-10-11T04:00:00Z', 72));
+    const noNoon = render(hours('2026-10-11T04:00:00Z', 10)); // 11 PM to 8 AM: no noon
+    expect(days(hours('2026-10-11T04:00:00Z', 10))).toEqual([]);
+    expect(withDays).toMatch(/viewBox="0 0 340 165"/);
+    expect(noNoon).toMatch(/viewBox="0 0 340 154"/);
+    const rectY = (html: string): string => /<rect class="hc-night" x="[\d.]+" y="([\d.]+)" width="[\d.]+" height="([\d.]+)"/.exec(html)!.slice(1).join(',');
+    expect(rectY(withDays)).toBe(rectY(noNoon));
   });
 });
