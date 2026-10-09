@@ -6,7 +6,7 @@ import { lowerLimitPublished, lowerLimitUnchecked } from '../../domain/advisorie
 import { SourceLink } from './SourceLink';
 import { SimTermSegments } from './SimTerm';
 import { linkableTerms, splitGlossaryTerms } from '../../config/simGlossary';
-import { fmtShortHour } from '../format';
+import { fmtShortHour, fmtWeekday, localHour } from '../format';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
 
@@ -80,8 +80,20 @@ export function HourlyChart({
   const gridKt = [0, maxKt / 2, maxKt];
   const barW = n > 1 ? Math.max(2, plotW / n - 2) : plotW;
 
-  // Label roughly every 3 hours.
+  // Up to three days, about six clock-hour labels. Beyond that a label every
+  // n/6 hours would land on a different hour each day with no date to tell
+  // the days apart, so each day is named instead, at local noon (the middle
+  // of its daylight, between the night bands), and not so near an edge that
+  // the name is cut off.
   const labelEvery = Math.max(1, Math.round(n / 6));
+  const xLabels: { i: number; text: string }[] =
+    n > DAY_LABELS_AFTER_H
+      ? points.flatMap((p, i) =>
+          localHour(p.time) === 12 && xOf(i) > padL + EDGE_LABEL_PX && xOf(i) < W - padR - EDGE_LABEL_PX
+            ? [{ i, text: fmtWeekday(p.time) }]
+            : [],
+        )
+      : points.flatMap((p, i) => (i % labelEvery === 0 ? [{ i, text: fmtShortHour(p.time) }] : []));
 
   // Night at the drop zone, sunset to sunrise: the same times the 14 CFR
   // 105.19 night flag and the Daylight card use (domain/sun.ts), so the shade
@@ -207,13 +219,11 @@ export function HourlyChart({
       <path className="hc-wind" d={path(speeds)} fill="none" />
 
       {/* x labels */}
-      {points.map((p, i) =>
-        i % labelEvery === 0 ? (
-          <text key={p.time} className="hc-axis" x={xOf(i)} y={H - 6} textAnchor="middle">
-            {fmtShortHour(p.time)}
-          </text>
-        ) : null,
-      )}
+      {xLabels.map(({ i, text }) => (
+        <text key={points[i].time} className="hc-axis" x={xOf(i)} y={H - 6} textAnchor="middle">
+          {text}
+        </text>
+      ))}
     </svg>
   );
 }
@@ -221,6 +231,12 @@ export function HourlyChart({
 /** The least gap, in chart units, between a limit line and the top
  *  gridline: enough to see the dotted line apart from the solid one. */
 const MIN_LIMIT_GAP = 4;
+
+/** Longer than this many hours, the axis names days rather than hours. */
+const DAY_LABELS_AFTER_H = 72;
+/** How near either end of the plot a day name may sit, in chart units:
+ *  about half a three-letter name's width. */
+const EDGE_LABEL_PX = 10;
 
 /** Where the sun and moon sit: the middle of the chart's top margin. */
 const ICON_Y = 11;

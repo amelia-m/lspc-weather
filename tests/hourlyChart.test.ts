@@ -288,3 +288,36 @@ describe('HourlyChart limit lines', () => {
     expect(y - plotTop).toBeGreaterThanOrEqual(4);
   });
 });
+
+/* Past three days the axis names days, at the drop zone's local noon; up to
+ * three days it keeps clock hours. A label every n/6 hours over a week would
+ * fall on a different hour each day with nothing to say which day. */
+describe('HourlyChart axis over several days', () => {
+  const hours = (fromIso: string, n: number): HourlyPoint[] =>
+    Array.from({ length: n }, (_, i) => ({
+      time: Date.parse(fromIso) + i * 3_600_000,
+      windSpeedKt: 8,
+      windGustKt: 12,
+      precipProbPct: 0,
+    })) as unknown as HourlyPoint[];
+  const axis = (points: HourlyPoint[]): string[] =>
+    [...renderToStaticMarkup(createElement(HourlyChart, { points, unit: 'kt' })).matchAll(
+      /<text class="hc-axis" x="[\d.]+" y="148" text-anchor="middle">([^<]+)<\/text>/g,
+    )].map((m) => m[1]);
+
+  it('names each day at local noon over seven days', () => {
+    // Midnight CDT Fri Oct 9 (05:00Z), 168 hours: noons Fri to Thu.
+    expect(axis(hours('2026-10-09T05:00:00Z', 168))).toEqual(['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']);
+  });
+
+  it('leaves out a day whose noon falls at the very edge of the plot', () => {
+    // Starting at noon CDT Fri: Friday's noon is the first point, at the edge.
+    expect(axis(hours('2026-10-09T17:00:00Z', 120))[0]).toBe('Sat');
+  });
+
+  it('keeps clock hours up to three days', () => {
+    const labels = axis(hours('2026-10-09T05:00:00Z', 72));
+    expect(labels.length).toBeGreaterThan(3);
+    for (const l of labels) expect(l).toMatch(/^\d{1,2}(am|pm)$/);
+  });
+});
