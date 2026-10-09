@@ -34,7 +34,7 @@ out.push(`hourly = 15-minute step at the same hour: ${s.hourlyIsM15.same} of ${s
 }
 out.push(`default model = HRRR: ${s.defaultIsHrrr.same} of ${s.defaultIsHrrr.of}`);
 for (const d of s.defaultIsHrrr.diffs) {
-  out.push(`  differed at ${d.at}: up to ${d.dir}°, ${d.spd} kt, gust ${d.gust} kt${d.shapeDiffers ? '; the two carried different valid times' : ''}`);
+  out.push(`  differed at ${d.at}: up to ${d.dir}°, ${d.spd} kt, gust ${d.gust} kt${d.shapeDiffers ? '; the two carried different valid times or values' : ''}`);
 }
 const iv = (x: { median: number | null; min: number | null; max: number | null }): string =>
   `median ${x.median ?? '—'} (${x.min ?? '—'}–${x.max ?? '—'})`;
