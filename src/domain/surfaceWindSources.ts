@@ -111,7 +111,8 @@ export interface SurfaceWindRecord {
     cacheControl: string | null;
     /** Whether the same request with `models=ncep_hrrr_conus` returned the
      *  same numbers, every series: the default ("best match") being HRRR
-     *  here. null when that request failed. */
+     *  here. null when that request failed or returned no wind series
+     *  (omHrrrError says which). */
     sameAsHrrr: boolean | null;
     /** When not the same, the largest gaps between the two over all three
      *  series (maxWindDiff), and `shapeDiffers` when the two did not carry
@@ -121,7 +122,8 @@ export interface SurfaceWindRecord {
     hrrrMaxDiff?: HrrrDiff;
   };
   omError?: string;
-  /** Why the `models=ncep_hrrr_conus` request failed, when it did. */
+  /** Why the `models=ncep_hrrr_conus` comparison was not made: the request
+   *  failed, or it answered with no wind series to compare. */
   omHrrrError?: string;
   /** Run metadata per Open-Meteo model domain, keyed by its name; null for
    *  a domain whose metadata could not be read, and the reason here. */
@@ -395,7 +397,7 @@ export interface SurfaceWindSummary {
   lastAt: string | null;
   /** Distinct METAR reports seen. */
   metarReports: number;
-  errors: Record<SourceName | 'omMeta', number>;
+  errors: Record<SourceName | 'omMeta' | 'omHrrr', number>;
   cadence: Cadence[];
   staleness: Staleness[];
   vsMetar: VsMetar[];
@@ -795,6 +797,9 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
       om15: records.filter((r) => r.omError).length,
       omCurrent: records.filter((r) => r.omError).length,
       omMeta: records.filter((r) => !r.omMeta || Object.values(r.omMeta).some((m) => m == null)).length,
+      // Runs left out of defaultIsHrrr because the HRRR comparison was not
+      // made; counted here so they do not vanish from the summary.
+      omHrrr: records.filter((r) => r.omHrrrError).length,
     },
     cadence: sources.map((s) => cadenceOf(records, s)),
     staleness: sources.map((s) => stalenessOf(records, s)),

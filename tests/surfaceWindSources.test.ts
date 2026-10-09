@@ -326,6 +326,14 @@ describe('summarizeSurfaceWind', () => {
     expect(om15).toMatchObject({ n: 1, medianMin: 12, maxMin: 12 });
   });
 
+  it('errors: a run whose HRRR comparison was not made is counted, not left out silently', () => {
+    const s = summarizeSurfaceWind([
+      run('00:43', { om: om({}) }),
+      run('00:46', { om: om({}), omHrrrError: 'no wind series in the response' }),
+    ]);
+    expect(s.errors.omHrrr).toBe(1);
+  });
+
   it('against the METAR: each report once, from the first run that saw it, read by each source’s rule', () => {
     const forecasts = {
       nws: nws([w('00:00', 140, 6, 10), w('01:00', 150, 9, 14)]),
