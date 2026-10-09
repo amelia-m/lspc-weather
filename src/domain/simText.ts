@@ -59,9 +59,9 @@ export function simPartText(page: string, anchor: string, until: string | null):
  * (`<h4><a class="anchoroffset" name="S"></a><span>S</span></h4>`, read
  * 2026-10-09) and none per term. A letter's entries run from its anchor to
  * the next `<h4>` in the document, not to the next anchor: some anchors sit
- * inside a letter (one named RRS on an R entry, so R does not end there),
- * and the range anchors K-O, P-T and U-Z close the previous letter's last
- * paragraph), and some headings carry two or three (K's anchor is on L's
+ * inside a letter (one named RRS on an R entry, so R does not end there;
+ * and the range anchors F-J, K-O, P-T and U-Z close the previous letter's
+ * last paragraph, F-J a second time on F's heading), and some headings carry two or three (K's anchor is on L's
  * heading, Q's on R's, V's on W's, X's and Y's on Z's), so neither the next
  * anchor nor the next letter of the alphabet is reliably where a letter
  * ends. A letter with no heading of its own reads as the letter whose
@@ -74,8 +74,11 @@ export function glossaryHeadings(page: string, letter: string): string[] | null 
   const tag = `<a class="anchoroffset" name="${letter}"`;
   const start = page.indexOf(tag);
   if (start === -1 || start !== page.lastIndexOf(tag)) return null;
-  const next = page.indexOf('<h4', start);
-  const section = page.slice(start, next === -1 ? page.length : next);
+  // The next heading, or the end of the article for the last letter, so the
+  // page's footer is never read as entries.
+  const rest = page.slice(start + tag.length);
+  const stop = rest.search(/<h4\b|<\/article>/i);
+  const section = page.slice(start, stop === -1 ? page.length : start + tag.length + stop);
   const names: string[] = [];
   for (const [, body] of section.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)) {
     // Any wrapping <span>s and empty anchors (RRS opens its paragraph),
@@ -112,7 +115,7 @@ export function simEditionYear(page: string): number | null {
     const text = decodeEntities(inner.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
     // Not anchored, so a word added around the title ("USPA", "(SIM)") or
     // a dropped apostrophe does not read as a missing edition.
-    const m = /\b(\d{4}) Skydiver['’]?s Information Manual\b/i.exec(text);
+    const m = /\b(\d{4}) Skydiver(?:['’]s|s['’]?) Information Manual\b/i.exec(text);
     if (m) return Number(m[1]);
   }
   return null;

@@ -122,6 +122,11 @@ describe('glossaryHeadings', () => {
     expect(glossaryHeadings(GLOSSARY, 'V')).toEqual(glossaryHeadings(GLOSSARY, 'W'));
   });
 
+  it('ends the last letter at the end of the article, not in the footer', () => {
+    const withFooter = `<article>${GLOSSARY}</article><footer><p><b>USPA </b>5401 Southpoint Centre Blvd.</p></footer>`;
+    expect(glossaryHeadings(withFooter, 'Z')).toEqual(['ZOO DIVE']);
+  });
+
   it('is null when the letter’s anchor is missing or named twice', () => {
     expect(glossaryHeadings(GLOSSARY, 'K')).toBeNull();
     expect(glossaryHeadings(GLOSSARY + '<a class="anchoroffset" name="A"></a>', 'A')).toBeNull();
@@ -178,6 +183,7 @@ describe('simEditionYear', () => {
   it('reads a title with words added around it, or no apostrophe', () => {
     expect(simEditionYear(LANDING.replace('Information Manual</h1>', 'Information Manual (SIM)</h1>'))).toBe(2026);
     expect(simEditionYear(LANDING.replace('<h1>2026 Skydiver&#39;s', '<h1>USPA 2026 Skydivers'))).toBe(2026);
+    expect(simEditionYear(LANDING.replace('Skydiver&#39;s', 'Skydivers&rsquo;'))).toBe(2026);
   });
 
   it('is null when no heading names an edition, rather than a year from elsewhere', () => {

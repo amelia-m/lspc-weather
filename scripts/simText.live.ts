@@ -78,7 +78,7 @@ describe('the SIM edition uspa.org names', () => {
     // Taking fingerprints for a new edition is the step before moving the
     // year, so print mode reports the edition and does not fail on it.
     if (process.env.PRINT_SIM_FINGERPRINTS === '1') return;
-    expect(year, 'the SIM page no longer has a heading naming the edition: look at https://www.uspa.org/sim').not.toBeNull();
+    expect(year, `the SIM page no longer has a heading naming the edition: look at ${SIM_INDEX_URL}`).not.toBeNull();
     expect(
       year,
       `uspa.org now names the ${year} SIM: read every cited and quoted part in it, check the claims, take new fingerprints (PRINT_SIM_FINGERPRINTS=1), then move SIM_EDITION_YEAR and SIM_LAST_READ in src/config/readingLog.ts`,

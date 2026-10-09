@@ -46,6 +46,10 @@ const AIM_READ_NOTE =
 const FAA_PAMPHLET_READ_NOTE =
   'Read on 2026-09-23 from the linked PDF (FAA-P-8740-2, AFS-8, 2008) and matches this claim. The link is a copy in a FAASTeam event folder, not a catalogue entry — if it stops resolving, the pamphlet is what to look for.';
 
+/** The SIM's landing page: its contents, the edition's name, and where a
+ *  citation whose section is unknown stays. */
+export const SIM_INDEX_URL = 'https://www.uspa.org/sim';
+
 /** SIM section URLs all take this shape — `simUrl('2-1', '1H')` → …/sim/2-1#1H.
  *  Written once so a citation cannot drift into a URL shape (PDF mirrors, a
  *  guessed anchor) that may not resolve. The anchor is the page's own: uspa.org
@@ -57,10 +61,6 @@ const FAA_PAMPHLET_READ_NOTE =
  *  plus part letter, and one page skips letters). */
 export const simUrl = (section: string, anchor?: string): string =>
   `${SIM_INDEX_URL}/${section}${anchor ? `#${anchor}` : ''}`;
-
-/** The SIM's landing page: its contents, the edition's name, and where a
- *  citation whose section is unknown stays. */
-export const SIM_INDEX_URL = 'https://www.uspa.org/sim';
 
 const SIM_PREFIX = simUrl('');
 

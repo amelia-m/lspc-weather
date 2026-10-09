@@ -38,8 +38,10 @@
  *    to sunrise. A link from the flag would put a figure in front of the
  *    reader that nothing on the page acts on.
  *  - DENSITY ALTITUDE. The glossary describes the pilot's method, from
- *    pressure altitude and temperature; the card's figure is corrected for
- *    humidity, so a link would put a method beside it that it does not follow.
+ *    pressure altitude and temperature; the card corrects its figure for
+ *    humidity whenever the report has a dew point, which is most of the
+ *    time, so a link would usually put a method beside it that it does not
+ *    follow. (Without a dew point the card says it is a dry-air estimate.)
  *  - MSL and WING LOADING: the cards use them only in figures, labels, a
  *    title and an input prompt.
  *  - SIM, which every SIM link already opens, and terms the app uses only in
