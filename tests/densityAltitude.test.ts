@@ -100,7 +100,7 @@ describe('densityAltitude, by the NWS calculator’s method', () => {
     // The NWS pages give 656 ft; the 1,000 ft per inch rule, 602.
     expect(Math.round(nws.altpress(nws.convertinHGtomb(nws.stnpressure(30.5, 0.3048 * FIELD))))).toBe(656);
     expect(r.pressureAltitudeFt).toBe(656);
-    expect(r.isaDeviationC).toBe(1.3); // 15 − (15 − 1.98 × 0.656)
+    expect(r.isaDeviationC).toBeCloseTo(1.3, 1); // 15 − (15 − 1.98 × 0.656)
   });
 
   /* The headline follows from the rows printed under it, as an E6B's does:
@@ -115,9 +115,6 @@ describe('densityAltitude, by the NWS calculator’s method', () => {
   });
 });
 
-/* The card is worked from the latest report or shows nothing. A result kept
- * from an earlier report printed that report's temperature beside the METAR
- * card's newer one. */
 describe('densityAltitudeOf', () => {
   it('works the latest report, and gives nothing when it lacks the altimeter setting or temperature', () => {
     expect(densityAltitudeOf({ altimeterInHg: 29.92, tempC: 35, dewpointC: 24 }, FIELD)?.densityAltitudeFt).toBe(3728);
@@ -155,6 +152,16 @@ describe('the density-altitude card', () => {
 
   it('prints a tenth just below zero as 0.0, not -0.0', () => {
     expect(render(-17.8)).toContain('<dt>Dew point</dt><dd>0.0°F</dd>');
+  });
+
+  it('rounds the ISA deviation once, in the unit it prints', () => {
+    // 3.44 °C is 6.19 °F: "+6.2°F", where rounding to 3.4 °C first gave 6.1.
+    const html = renderToStaticMarkup(
+      createElement(DensityAltitudePanel, {
+        da: { ...densityAltitude({ elevationFt: FIELD, altimeterInHg: 29.92, oatC: 15 }), isaDeviationC: 3.44 },
+      }),
+    );
+    expect(html).toContain('<dt>ISA deviation</dt><dd>+6.2°F</dd>');
   });
 
   it('keeps the ISA deviation’s tenth when it is a whole number', () => {

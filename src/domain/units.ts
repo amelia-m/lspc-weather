@@ -29,10 +29,10 @@ export const toTemp = (c: number, u: TempUnit): number => (u === 'F' ? cToF(c) :
 export const fmtTemp = (c: number, u: TempUnit, digits = 0): string =>
   `${round(toTemp(c, u), digits).toFixed(digits)}°${u}`;
 
-/** A temperature DIFFERENCE in the page's unit (a dew-point spread, an ISA
- *  deviation): scaled by 9/5 with no 32 offset, since a difference of 5 °C is
- *  9 °F, not 41. Signed when `signed`; `digits` decimals (the ISA deviation
- *  keeps its tenth). */
+/** A temperature DIFFERENCE in the page's unit (the density-altitude card's
+ *  ISA deviation): scaled by 9/5 with no 32 offset, since a difference of
+ *  5 °C is 9 °F, not 41. Signed when `signed`; `digits` decimals, printed
+ *  even when zero ("+1.0°C"). */
 export const fmtTempDelta = (dc: number, u: TempUnit, signed = false, digits = 0): string => {
   const v = round(u === 'F' ? (dc * 9) / 5 : dc, digits);
   return `${signed && v >= 0 ? '+' : ''}${v.toFixed(digits)}°${u}`;

@@ -80,7 +80,7 @@ export function densityAltitude(params: {
     humidDensityAltitudeFt,
     pressureAltitudeFt: Math.round(pressureAltitudeFt),
     stationPressureInHg: Math.round(stationInHg * 100) / 100,
-    isaDeviationC: Math.round((oatC - isaTempC) * 10) / 10,
+    isaDeviationC: oatC - isaTempC,
     fieldElevationFt: elevationFt,
     oatC,
     dewpointC: dewpointC ?? null,
@@ -88,11 +88,7 @@ export function densityAltitude(params: {
 }
 
 /** The card's figures for one report, or null when the report has no
- *  altimeter setting or temperature. From that report or not at all: the
- *  card prints the temperature it was worked from, so a result kept from an
- *  earlier report would sit beside the METAR card's newer report worked
- *  from a different one, with nothing to say so. Without the inputs the
- *  card says what it needs. */
+ *  altimeter setting or temperature. */
 export function densityAltitudeOf(
   current: Pick<CurrentConditions, 'altimeterInHg' | 'tempC' | 'dewpointC'>,
   elevationFt: number,

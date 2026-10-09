@@ -127,6 +127,7 @@ export interface DensityAltitudeResult {
    *  station-pressure formula, to two decimals: what the NWS Density
    *  Altitude calculator asks for. */
   stationPressureInHg: number;
+  /** Unrounded: the card rounds it once, in the unit it prints. */
   isaDeviationC: number;
   fieldElevationFt: number;
   /** The temperature and dew point the figures were worked from, so the
