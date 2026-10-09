@@ -49,6 +49,53 @@ export function simPartText(page: string, anchor: string, until: string | null):
   return text.replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * The entry names filed under one letter of the SIM glossary
+ * (uspa.org/sim/glossary), as the page sets them: the bold text that opens
+ * each paragraph, reduced as simPartText reduces a part (tags become spaces,
+ * character references decoded, whitespace collapsed).
+ *
+ * The glossary has one anchor per letter heading
+ * (`<h4><a class="anchoroffset" name="S"></a><span>S</span></h4>`, read
+ * 2026-10-09) and none per term. A letter's entries run from its anchor to
+ * the next `<h4>` in the document, not to the next anchor: some anchors sit
+ * inside a letter (one named RRS on an R entry, so R does not end there),
+ * and the range anchors K-O, P-T and U-Z close the previous letter's last
+ * paragraph), and some headings carry two or three (K's anchor is on L's
+ * heading, Q's on R's, V's on W's, X's and Y's on Z's), so neither the next
+ * anchor nor the next letter of the alphabet is reliably where a letter
+ * ends. A letter with no heading of its own reads as the letter whose
+ * heading it shares. Only a paragraph's opening bold
+ * run counts as an entry name, so a term that appears inside another
+ * entry's definition ("5,000 feet AGL" under AIR) is not taken for an
+ * entry. Null when the anchor is missing or named twice. Pure.
+ */
+export function glossaryHeadings(page: string, letter: string): string[] | null {
+  const tag = `<a class="anchoroffset" name="${letter}"`;
+  const start = page.indexOf(tag);
+  if (start === -1 || start !== page.lastIndexOf(tag)) return null;
+  const next = page.indexOf('<h4', start);
+  const section = page.slice(start, next === -1 ? page.length : next);
+  const names: string[] = [];
+  for (const [, body] of section.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)) {
+    // Any wrapping <span>s and empty anchors (RRS opens its paragraph),
+    // then one or more bold runs: "BSR" and "s" are two runs on the page, so
+    // the name is every run before the definition.
+    const lead = /^(?:\s|<span\b[^>]*>|<a\b[^>]*><\/a>)*((?:<(b|strong)\b[^>]*>[\s\S]*?<\/\2>\s*)+)/i.exec(body);
+    if (lead) names.push(decodeEntities(lead[1].replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim());
+  }
+  return names;
+}
+
+/** Whether `term` is an entry name under `letter` in the glossary page.
+ *  Compared with case, spaces and punctuation set aside, because the page
+ *  splits a name across bold runs ("(BSR" then "s), USPA" reduce to
+ *  "(BSR s ), USPA"); the whole name must match, not a part of it. Pure. */
+export function isGlossaryEntry(page: string, letter: string, term: string): boolean {
+  const squash = (s: string): string => s.toLowerCase().replace(/[^a-z0-9&]+/g, '');
+  return (glossaryHeadings(page, letter) ?? []).some((n) => squash(n) === squash(term));
+}
+
 const NAMED: Record<string, string> = {
   amp: '&',
   lt: '<',

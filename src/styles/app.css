@@ -446,12 +446,14 @@ a {
   cursor: help;
   color: var(--watch);
 }
-/* A word linked to its USPA SIM glossary entry (SimTerm): the prose's own
-   colour, so a sentence with two or three of them still reads as a sentence,
-   and the dotted underline the citation links use to mark it as a link. */
+/* A word linked to its USPA SIM glossary definition (SimTerm). Deliberately
+   unlike a citation link (.source-link: accent text, accent dotted border):
+   the prose's own colour and a thin muted dotted underline, so a definition
+   is not read as the source of the figure beside it. */
 a.sim-term {
   color: inherit;
-  text-decoration: underline dotted var(--accent);
+  text-decoration: underline dotted var(--muted);
+  text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 

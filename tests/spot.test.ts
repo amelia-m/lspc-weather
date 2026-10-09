@@ -230,7 +230,7 @@ describe('the drift card’s deploy default', () => {
 
   it('opens Deploy on 3,000 ft and says the A-license minimum is higher than B to D', () => {
     expect(html).toMatch(/<option value="3000" selected="">/);
-    expect(withoutGlossaryLinks(html)).toContain('Deploy opens on 3,000 ft, the BSR minimum for students and A-license holders, which is higher than the B, C and D minimums listed below.');
+    expect(html).toContain('Deploy opens on 3,000 ft, the BSR minimum for students and A-license holders, which is higher than the B, C and D minimums listed below.');
     // "Listed below": the BSR paragraph, with its link.
     expect(html).toContain('B-license 2,500 ft');
     expect(html).toContain(`href="${CITATIONS.uspaOpeningAltitude.url}"`);

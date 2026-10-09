@@ -158,8 +158,8 @@ export function DriftPanel({
               about the default the Deploy box opened on, and the profile
               does not say which licence a jumper holds. */}
           <p className="muted small">
-            Deploy opens on {fmtFt(DEFAULT_DEPLOY_FT)}, the <SimTerm term="bsr">BSR</SimTerm> minimum for
-            students and A-license holders, which is higher than the B, C and D minimums listed below.
+            Deploy opens on {fmtFt(DEFAULT_DEPLOY_FT)}, the BSR minimum for students and A-license
+            holders, which is higher than the B, C and D minimums listed below.
           </p>
 
           <dl className="kv">
@@ -223,11 +223,9 @@ export function DriftPanel({
 
           <p className="muted small">
             USPA BSR minimum container-opening altitudes:{' '}
-            <strong>
-              students &amp; A-license 3,000 ft <SimTerm term="agl">AGL</SimTerm>
-            </strong>
-            , B-license 2,500 ft, C/D 2,500 ft (waiverable by an <SimTerm term="sta">S&amp;TA</SimTerm> to no
-            lower than 2,000 ft), tandem 5,000 ft. These
+            <strong>students &amp; A-license 3,000 ft AGL</strong>, B-license 2,500 ft, C/D
+            2,500 ft (waiverable by an <SimTerm term="sta">S&amp;TA</SimTerm> to no lower than 2,000 ft),
+            tandem 5,000 ft. These
             are floors — deploy above your minimum, not at it. See the{' '}
             <a href={CITATIONS.uspaOpeningAltitude.url} target="_blank" rel="noopener noreferrer">
               USPA SIM §2-1 (BSR)

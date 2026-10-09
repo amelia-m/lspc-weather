@@ -11,8 +11,7 @@ import { againstChart, exitWeightLb, LB_PER_KG, sizesWithin, wingLoading } from 
 import { round } from '../domain/units';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
-import { SimTermSegments } from './common/SimTerm';
-import { GLOSSARY_KEYS, splitGlossaryTerms } from '../config/simGlossary';
+import { SimTerm } from './common/SimTerm';
 
 /** Above these an entry is taken for a typo (an extra zero) rather than
  *  worked out into figures that look authoritative. Input bounds, not
@@ -103,9 +102,7 @@ export function WingLoadingPanel({
       {/* Announced as it changes: the figures update as the reader types. */}
       <div aria-live="polite">
         {prompt != null || exitLb == null || student == null ? (
-          <p className="muted small">
-            <SimTermSegments segments={splitGlossaryTerms(prompt ?? '', GLOSSARY_KEYS)} />
-          </p>
+          <p className="muted small">{prompt}</p>
         ) : (
           <dl className="kv wl-kv">
             <dt>Exit weight</dt>
@@ -160,7 +157,7 @@ export function WingLoadingPanel({
         </table>
       </div>
       <p className="muted small">
-        PD&rsquo;s maximum exit weight for each category on this size; the comparison above uses
+        PD&rsquo;s maximum <SimTerm term="exitWeight">exit weight</SimTerm> for each category on this size; the comparison above uses
         the Student figure only. Gear is one student rig weighed (about {STUDENT_RIG_WEIGHT_LB} lb);
         change it for yours. Body weight is not saved. PD gives its Student figures &ldquo;mainly to
         help instructors&rdquo; choose a student&rsquo;s canopy: which canopy a student jumps is the

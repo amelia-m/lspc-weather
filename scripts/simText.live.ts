@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 import { READING_LOG, citationsOf, type SourceReading } from '../src/config/readingLog';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 import { CITATIONS, simUrl } from '../src/config/thresholds';
-import { simPartText } from '../src/domain/simText';
+import { glossaryHeadings, isGlossaryEntry, simPartText } from '../src/domain/simText';
 import { GLOSSARY_KEYS, SIM_GLOSSARY } from '../src/config/simGlossary';
 
 const parts = READING_LOG.filter((r) => r.simPart != null);
@@ -123,22 +123,22 @@ describe('SIM quotes on #citations, in the parts they are tied to', () => {
 
 /* The SIM glossary entries the cards link to (src/config/simGlossary.ts).
  * The glossary has no anchor per term, so each link lands on the letter
- * heading the entry is filed under; this checks the entry's name is still
- * between that letter's anchor and the next letter's, so a link does not
+ * heading the entry is filed under; this checks the entry is still an entry
+ * name under that heading (glossaryHeadings, src/domain/simText.ts, which
+ * says where a letter ends and what counts as a name), so a link does not
  * send a reader to a letter that no longer holds the term. Its definition is
- * not fingerprinted. The page splits some names across bold runs ("BSR" and
- * "s"), so those inline tags are dropped before simPartText reduces the
- * rest; names are then compared as words, case aside (the page sets them in
- * capitals with CSS). */
+ * not fingerprinted. */
 describe('SIM glossary entries the cards link, under the letter each link lands on', () => {
-  const glossary = (): Promise<string> => page('glossary').then((p) => p.replace(/<\/?(?:b|span)\b[^>]*>/gi, ''));
   for (const key of GLOSSARY_KEYS) {
     const { term, letter } = SIM_GLOSSARY[key];
     it(`${term} (#${letter})`, async () => {
-      const next = String.fromCharCode(letter.charCodeAt(0) + 1);
-      const text = simPartText(await glossary(), letter, next);
-      expect(text, `#${letter} to #${next} is no longer on uspa.org/sim/glossary`).not.toBeNull();
-      expect(words(text!), `${term} is no longer under ${letter} in the SIM glossary`).toContain(words(term));
+      const glossary = await page('glossary');
+      const names = glossaryHeadings(glossary, letter);
+      expect(names, `#${letter} is no longer on uspa.org/sim/glossary, or is there twice`).not.toBeNull();
+      expect(
+        isGlossaryEntry(glossary, letter, term),
+        `${term} is no longer an entry under ${letter} in the SIM glossary; its entries there: ${names!.join(' | ')}`,
+      ).toBe(true);
     });
   }
 });
