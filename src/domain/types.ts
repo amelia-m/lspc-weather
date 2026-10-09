@@ -123,11 +123,16 @@ export interface DensityAltitudeResult {
    *  NWS calculator computes it; null when the report has no dew point. */
   humidDensityAltitudeFt: number | null;
   pressureAltitudeFt: number;
-  /** The standard atmosphere's pressure at `pressureAltitudeFt`, to two
-   *  decimals: what the NWS calculator asks for. */
+  /** The altimeter setting reduced to the field's elevation by the NWS
+   *  station-pressure formula, to two decimals: what the NWS Density
+   *  Altitude calculator asks for. */
   stationPressureInHg: number;
   isaDeviationC: number;
   fieldElevationFt: number;
+  /** The temperature and dew point the figures were worked from, so the
+   *  card can print them to the tenth the report carries. */
+  oatC: number;
+  dewpointC: number | null;
 }
 
 export interface SunTimes {

@@ -95,9 +95,9 @@ the published figures rather than Settings edits.
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
   The headline is the dry figure, FAA-P-8740-2's "pressure altitude corrected
   for nonstandard temperature variations"; a row under it gives the figure
-  with the dew point folded in. Both by the NWS calculators' formulas, from
-  the pressure altitude and temperature the card prints, with the station
-  pressure printed for a reader to put into the NWS calculator.
+  with the dew point folded in. Both by the NWS calculators' formulas, and
+  the card prints the station pressure, temperature and dew point they were
+  worked from, so a reader can put them into the NWS calculator.
 - 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
   countdown, because no published source sets a minutes-before-sunset figure.

@@ -211,9 +211,9 @@ figure wants the citation. Linking a word asserts its definition applies:
 "waiver" stays unlinked because whether the club's posted waiver is a SIM 2-2
 waiver is open on `#citations`; "night jump" because the glossary's one-hour
 figure is not the night flag's trigger; "density altitude" because the
-card's prose also covers its "With humidity" row, which the glossary's
-method (pressure altitude and temperature) leaves out, and its note quotes
-the FAA's definition beside the citation. `scripts/simText.live.ts` also
+card's note already quotes the FAA's definition beside its citation, and
+goes on to a "With humidity" row the glossary's method (pressure altitude
+and temperature) leaves out. `scripts/simText.live.ts` also
 checks daily that each linked term is still an entry heading under its
 letter (`glossaryHeadings`, `src/domain/simText.ts`).
 

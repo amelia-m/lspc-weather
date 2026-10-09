@@ -302,19 +302,21 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A13',
     title: 'Density altitude arithmetic',
     claim:
-      'Both figures are worked with the National Weather Service calculator’s formulas, from the station pressure the standard atmosphere has at the pressure altitude above.',
-    where: 'Density altitude card: the headline, the With humidity row and the Station pressure row.',
+      'Both density-altitude figures are worked with the National Weather Service calculators’ formulas: the altimeter setting reduced to the station pressure at the field, the pressure altitude from that station pressure, then the density altitude from the station pressure and the temperature (the headline) or the virtual temperature (the With humidity row).',
+    where: 'Density altitude card: the headline and its Pressure altitude, Station pressure and With humidity rows.',
     sources: [CITATIONS.nwsDensityAltitude],
     found: {
-      read: 'the NWS Density Altitude and Pressure Altitude calculator pages (weather.gov/epz) and the formula sheets they link, 2026-10-09',
+      read: 'the NWS Density Altitude, Station Pressure and Pressure Altitude calculator pages (weather.gov/epz/wxcalc_densityaltitude, wxcalc_stationpressure, wxcalc_pressurealtitude) and the formula sheets they link, 2026-10-09',
       says: [
         'The Density Altitude page asks for an air temperature, a station pressure and a dew point, and computes the vapour pressure as e = 6.11 × 10^(7.5 × Td / (237.3 + Td)), the virtual temperature as Tv = T / (1 − (e / P_mb) × (1 − 0.622)), and the density altitude as 145366 × (1 − (17.326 × P_inHg / Tv)^0.235), with Tv in degrees Rankine.',
         'It has no input for leaving the dew point out.',
+        'The Station Pressure page computes the station pressure from an altimeter setting and a station elevation h in metres as altimeter × ((288 − 0.0065 × h) / 288)^5.2561.',
         'The Pressure Altitude page computes (1 − (P_mb / 1013.25)^0.190284) × 145366.45 feet from a station pressure.',
       ],
     },
     asks: [
-      'The card takes pressure altitude by the 1,000 ft per inch rule from KPMV’s altimeter setting and derives the station pressure from it, rather than reducing the altimeter setting to the field’s elevation. Is that the figure the pilot in command would start from?',
+      'The pressure altitude is the standard atmosphere’s altitude for the station pressure, the reading of an altimeter set to 29.92, not the 1,000 ft per inch rule, which runs tens of feet off it away from 29.92. Is that the figure the pilot in command would start from?',
+      'KPMV’s altimeter setting is reduced to the drop zone’s 1,182 ft, not KPMV’s own 1,204 ft. Is that right for a field 12 miles from the station?',
     ],
   },
 ];
