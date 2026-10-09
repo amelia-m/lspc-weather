@@ -313,13 +313,18 @@ describe('HourlyChart axis over several days', () => {
     expect(clock(week)).toEqual([]);
   });
 
-  it('leaves out a day whose noon falls at the very edge of the plot', () => {
-    // Starting at noon CDT Fri: Friday's noon is the first point, at the edge.
-    expect(days(hours('2026-10-09T17:00:00Z', 120))[0]).toBe('Sat');
-    // Ending at noon CDT Wed (1 PM CDT Fri plus 119 h, the 120th point):
-    // Wednesday's noon is the last point, at the right edge.
-    const toWed = days(hours('2026-10-09T18:00:00Z', 120));
-    expect(toWed[toWed.length - 1]).toBe('Tue');
+  it('names a part day at the middle of what the chart shows of it, and skips one too narrow to name', () => {
+    // From noon CDT Fri, 120 h: Friday's twelve hours are shown, so Friday is
+    // named, at its half-day's middle.
+    expect(days(hours('2026-10-09T17:00:00Z', 120))[0]).toBe('Fri');
+    // From 9 PM CDT Fri, 120 h: three hours of Friday, too narrow for a name.
+    expect(days(hours('2026-10-10T02:00:00Z', 120))[0]).toBe('Sat');
+  });
+
+  it('names the hours before the first noon on a short chart', () => {
+    // 3 PM CDT Fri to 2 AM CDT Sun (36 h): Friday afternoon and evening,
+    // all of Saturday, and two hours of Sunday, too few to name.
+    expect(days(hours('2026-10-09T20:00:00Z', 36))).toEqual(['Fri', 'Sat']);
   });
 
   it('names the days under the clock hours up to three days', () => {
@@ -331,15 +336,22 @@ describe('HourlyChart axis over several days', () => {
     for (const l of labels) expect(l).toMatch(/^\d{1,2}(am|pm)$/);
   });
 
-  it('keeps the plot the same height when the day row is added', () => {
-    // The day row grows the chart; the plot area, and so every bar and line,
-    // stays where it was.
+  it('keeps the day row, and so the chart’s height, even when no day is wide enough to name', () => {
+    // The card must not jump in height as the hours roll by and a day's
+    // visible part grows wide enough to name, or shrinks too narrow.
     const withDays = render(hours('2026-10-11T04:00:00Z', 72));
-    const noNoon = render(hours('2026-10-11T04:00:00Z', 10)); // 11 PM to 8 AM: no noon
-    expect(days(hours('2026-10-11T04:00:00Z', 10))).toEqual([]);
+    // 11 PM and midnight: each day one point wide, too narrow to name.
+    const short = render(hours('2026-10-11T04:00:00Z', 2));
+    expect(days(hours('2026-10-11T04:00:00Z', 2))).toEqual([]);
     expect(withDays).toMatch(/viewBox="0 0 340 165"/);
-    expect(noNoon).toMatch(/viewBox="0 0 340 154"/);
-    const rectY = (html: string): string => /<rect class="hc-night" x="[\d.]+" y="([\d.]+)" width="[\d.]+" height="([\d.]+)"/.exec(html)!.slice(1).join(',');
-    expect(rectY(withDays)).toBe(rectY(noNoon));
+    expect(short).toMatch(/viewBox="0 0 340 165"/);
+  });
+
+  it('leaves the day row off a chart whose heading names its day', () => {
+    const day = renderToStaticMarkup(
+      createElement(HourlyChart, { points: hours('2026-10-11T05:00:00Z', 24), unit: 'kt', dayNames: false }),
+    );
+    expect(day).not.toContain('hc-day');
+    expect(day).toMatch(/viewBox="0 0 340 154"/);
   });
 });

@@ -49,7 +49,7 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
 
   it('puts each hour’s Open-Meteo figure under the NWS one, matched by time, and credits it', () => {
     const html = card(om);
-    const figures = [...html.matchAll(/<span class="sky-pct om-pct">([^<]*)<\/span>/g)].map((m) => m[1]);
+    const figures = [...html.matchAll(/<span class="sky-pct om-pct">([^<]*)/g)].map((m) => m[1]);
     // The axis column's unit first, then one per hour.
     expect(figures).toEqual(['%', '40', '—', '85']);
     expect(html.match(/class="sky-bar om-bar"/g)).toHaveLength(3);
@@ -69,9 +69,6 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
     expect(html).not.toContain('Open-Meteo');
   });
 
-  it('never paints the Open-Meteo bar by amount', () => {
-    expect(card(om)).not.toMatch(/om-bar"[^>]*data-cover/);
-  });
 });
 
 /* The NWS bars show an amount, not a category: one colour from clear to
@@ -110,9 +107,38 @@ describe('the Ceiling & sky timeline', () => {
     hours.forEach((t, i) => (i % 3 === 0 ? expect(t).toMatch(/^\d{1,2}(am|pm)$/) : expect(t).toBe(' ')));
   });
 
-  it('marks an hour with no ceiling with a dash', () => {
-    const ceil = [...html.matchAll(/<span class="sky-ceil"[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]).slice(1);
-    expect(ceil[0]).toBe('–');
+  it('says “no” for an hour with no ceiling, apart from the “—” of a figure not reported', () => {
+    const ceil = [...html.matchAll(/<span class="sky-ceil"[^>]*>([^<]*)/g)].map((m) => m[1]).slice(1);
+    expect(ceil[0]).toBe('no');
     expect(ceil[3]).toBe('4.5');
+  });
+
+  it('reads every figure to a screen reader with its unit, which the hidden axis column prints', () => {
+    expect(html).toContain('60<span class="sr-only">% sky cover, NWS</span>');
+    expect(html).toContain('2<span class="sr-only">% cloud cover, Open-Meteo</span>');
+    expect(html).toContain('4.5<span class="sr-only"> thousand ft ceiling</span>');
+    expect(html).toContain('no<span class="sr-only"> ceiling</span>');
+  });
+
+  it('prints a ceiling of 10,000 ft or more in whole thousands, to fit a phone column', () => {
+    const high = renderToStaticMarkup(
+      createElement(CeilingSkyPanel, {
+        current: null,
+        hourly: [{ time: t0, skyCoverPct: 70, ceilingFtAgl: 10_600, precipProbPct: 0 }] as unknown as HourlyPoint[],
+        omClouds: null,
+      }),
+    );
+    expect(high).toContain('11<span class="sr-only"> thousand ft ceiling</span>');
+  });
+
+  it('colours the NWS bars from one rule in the stylesheet, not by amount', async () => {
+    // The colour lives in CSS, so the markup alone cannot show it: no rule
+    // may pick a sky bar's colour by an attribute or its height.
+    // Read from disk (as sunArc.test.ts does): Vitest hands a CSS import
+    // over as an empty string.
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
+    const css = fs.readFileSync(decodeURIComponent(new URL('../src/styles/app.css', import.meta.url).pathname), 'utf8');
+    expect(css).not.toMatch(/sky-bar\[/);
+    expect(css).toMatch(/\.ceiling-timeline \.sky-bar:not\(\.om-bar\) \{[^}]*background: var\(--sky-cover\)/);
   });
 });

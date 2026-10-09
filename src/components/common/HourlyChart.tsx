@@ -6,7 +6,7 @@ import { lowerLimitPublished, lowerLimitUnchecked } from '../../domain/advisorie
 import { SourceLink } from './SourceLink';
 import { SimTermSegments } from './SimTerm';
 import { linkableTerms, splitGlossaryTerms } from '../../config/simGlossary';
-import { fmtShortHour, fmtWeekday, localHour } from '../format';
+import { fmtShortHour, fmtWeekday, localDateKey } from '../format';
 import { SITE } from '../../config/site';
 import { nightIntervals, skySpans } from '../../domain/sun';
 
@@ -20,9 +20,14 @@ export function HourlyChart({
   points,
   unit,
   limits,
+  dayNames = true,
 }: {
   points: HourlyPoint[];
   unit: SpeedUnit;
+  /** Name the days under the hours. Off for a chart whose heading already
+   *  names its one day (the 10-day outlook's day detail). Past 72 h the
+   *  axis names days whatever this says, having no hour labels. */
+  dayNames?: boolean;
   /** The jumper profile's limits, drawn as reference lines where a published
    *  source sets them (`limitLines`): the BSR student maximum, or a waiver
    *  tier's wind limit and gust ceiling. Nothing for Licensed, which has none. */
@@ -38,24 +43,34 @@ export function HourlyChart({
   const n = points.length;
   const xOf = (i: number): number => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
 
-  // Each day named at local noon (the middle of its daylight, between the
-  // night bands), not so near an edge that the name is cut off. Up to three
-  // days this is a second row under about six clock-hour labels; beyond
-  // that it is the only row, since a label every n/6 hours would land on a
-  // different hour each day with no date to tell the days apart.
-  const dayLabels = points.flatMap((p, i) =>
-    localHour(p.time) === 12 && xOf(i) > padL + EDGE_LABEL_PX && xOf(i) < W - padR - EDGE_LABEL_PX
-      ? [{ i, text: fmtWeekday(p.time) }]
-      : [],
-  );
+  // Each local day in view named at the middle of the part of it the chart
+  // shows (local noon for a whole day), so the hours before the first noon
+  // are named too; a part too narrow to hold its name gets none. Up to
+  // three days this is a second row under about six clock-hour labels;
+  // beyond that it is the only row, since a label every n/6 hours would
+  // land on a different hour each day with no date to tell the days apart.
+  const spans: { key: string; text: string; first: number; last: number }[] = [];
+  points.forEach((p, i) => {
+    const key = localDateKey(p.time);
+    const s = spans[spans.length - 1];
+    if (s && s.key === key) s.last = i;
+    else spans.push({ key, text: fmtWeekday(p.time), first: i, last: i });
+  });
+  const longRange = n > DAY_LABELS_AFTER_H;
+  const showDays = dayNames || longRange;
+  const dayLabels = showDays
+    ? spans.flatMap((s) =>
+        xOf(s.last) - xOf(s.first) >= MIN_DAY_SPAN ? [{ x: (xOf(s.first) + xOf(s.last)) / 2, text: s.text, key: s.key }] : [],
+      )
+    : [];
   const labelEvery = Math.max(1, Math.round(n / 6));
-  const hourLabels =
-    n > DAY_LABELS_AFTER_H
-      ? []
-      : points.flatMap((p, i) => (i % labelEvery === 0 ? [{ i, text: fmtShortHour(p.time) }] : []));
-  // The chart grows by a row when it carries both, so the plot keeps its
-  // height whichever range is shown.
-  const twoRows = hourLabels.length > 0 && dayLabels.length > 0;
+  const hourLabels = longRange
+    ? []
+    : points.flatMap((p, i) => (i % labelEvery === 0 ? [{ i, text: fmtShortHour(p.time) }] : []));
+  // The row for day names is kept whenever the chart names days under its
+  // hours, even when no day is wide enough to name, so the card does not
+  // change height as the hours roll by.
+  const twoRows = !longRange && showDays;
   const H = 154 + (twoRows ? DAY_ROW : 0);
   // The top margin holds the sun and moon (ICON_Y), so no line or bar is
   // ever drawn through one: the plot starts below them.
@@ -235,8 +250,8 @@ export function HourlyChart({
           {text}
         </text>
       ))}
-      {dayLabels.map(({ i, text }) => (
-        <text key={`day-${points[i].time}`} className="hc-axis hc-day" x={xOf(i)} y={dayY} textAnchor="middle">
+      {dayLabels.map(({ x, text, key }) => (
+        <text key={`day-${key}`} className="hc-axis hc-day" x={x} y={dayY} textAnchor="middle">
           {text}
         </text>
       ))}
@@ -252,9 +267,9 @@ const MIN_LIMIT_GAP = 4;
 const DAY_LABELS_AFTER_H = 72;
 /** The height, in chart units, of the row of day names under the hours. */
 const DAY_ROW = 11;
-/** How near either end of the plot a day name may sit, in chart units:
- *  about half a three-letter name's width. */
-const EDGE_LABEL_PX = 10;
+/** The narrowest part of a day, in chart units, that gets its name: a
+ *  little over a three-letter name's width, so names never touch. */
+const MIN_DAY_SPAN = 20;
 
 /** Where the sun and moon sit: the middle of the chart's top margin. */
 const ICON_Y = 11;

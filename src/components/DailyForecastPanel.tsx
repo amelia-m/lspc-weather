@@ -243,7 +243,8 @@ function DayDetail({
         </p>
       ) : (
         <>
-          <HourlyChart points={points} unit={unit} limits={limits} />
+          {/* The heading names the day; the chart need not name it again. */}
+          <HourlyChart points={points} unit={unit} limits={limits} dayNames={false} />
           <HourlyLegend unit={unit} limits={limits} profile={profile} />
           <div className="daily-scroll">
             <table className="daily-table hourly-detail-table">

@@ -10,8 +10,17 @@ import { SourceLink } from './common/SourceLink';
 import { fmtShortHour, fmtTime } from './format';
 
 /** A time under every third hour, as on the Precip card: twelve labels do
- *  not fit a phone-width card, and every hour's tooltip names its time. */
+ *  not fit a phone-width card. The hours between follow from them (and a
+ *  pointer's tooltip names each one; a phone shows no tooltip). */
 const LABEL_EVERY = 3;
+
+/** A ceiling in thousands of feet: one decimal below 10,000 ft ("4.5"),
+ *  whole thousands from there ("11"), so a figure fits a column a phone
+ *  makes 17 px wide. */
+function fmtCeilK(ft: number): string {
+  const k = ft / 1000;
+  return k < 10 ? String(Math.round(k * 10) / 10) : String(Math.round(k));
+}
 
 /** What the Ceiling line says when no ceiling height could be computed. */
 const CEILING_LABEL: Record<CeilingState, string> = {
@@ -116,9 +125,15 @@ export function CeilingSkyPanel({
             const om = omAt.get(h.time);
             return (
             <div key={h.time} className="sky-col" title={describeHour(h, om)}>
-              <span className="sky-pct">{h.skyCoverPct != null ? round(h.skyCoverPct) : '—'}</span>
+              <span className="sky-pct">
+                {h.skyCoverPct != null ? round(h.skyCoverPct) : '—'}
+                <span className="sr-only">{h.skyCoverPct != null ? '% sky cover, NWS' : 'sky cover not reported'}</span>
+              </span>
               {showOm && (
-                <span className="sky-pct om-pct">{om?.totalPct != null ? round(om.totalPct) : '—'}</span>
+                <span className="sky-pct om-pct">
+                  {om?.totalPct != null ? round(om.totalPct) : '—'}
+                  <span className="sr-only">{om?.totalPct != null ? '% cloud cover, Open-Meteo' : 'Open-Meteo cloud cover not served'}</span>
+                </span>
               )}
               <div className="sky-bar-track">
                 {/* One colour whatever the amount: the bar shows how much
@@ -136,7 +151,8 @@ export function CeilingSkyPanel({
                 )}
               </div>
               <span className="sky-ceil" title={h.ceilingFtAgl != null ? undefined : 'No ceiling (no broken/overcast layer)'}>
-                {h.ceilingFtAgl != null ? Math.round(h.ceilingFtAgl / 100) / 10 : '–'}
+                {h.ceilingFtAgl != null ? fmtCeilK(h.ceilingFtAgl) : 'no'}
+                <span className="sr-only">{h.ceilingFtAgl != null ? ' thousand ft ceiling' : ' ceiling'}</span>
               </span>
               <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
             </div>
@@ -147,7 +163,7 @@ export function CeilingSkyPanel({
       )}
       <p className="muted small">
         Bar height and the figure above it = sky cover %. Label under it = ceiling in thousands of
-        ft AGL; “–” = no broken/overcast layer, so no ceiling. A time under every {LABEL_EVERY} hours.
+        ft AGL; “no” = no broken/overcast layer, so no ceiling. A time under every {LABEL_EVERY} hours.
         {showOm && (
           <>
             {' '}
