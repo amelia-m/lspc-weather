@@ -39,6 +39,20 @@ const parts = READING_LOG.filter((r) => r.simPart != null);
  * next one says whether it was a block or a bot check, and every failure
  * names the request it was. */
 const GAP_MS = 3_000;
+/** A failed request as one line naming it. Node's fetch reports every
+ *  network failure as "TypeError: fetch failed" and keeps what happened
+ *  (DNS, TLS, a reset) in a chain of causes, so the innermost cause's code,
+ *  or else its message, goes in the line too, where the issue the workflow
+ *  opens will show it. */
+const failed = (label: string, what: string, err?: unknown): Error => {
+  let root: unknown = err;
+  while (root instanceof Error && root.cause !== undefined) root = root.cause;
+  const code = (root as { code?: unknown } | undefined)?.code;
+  const why =
+    root === err ? '' : ` (${typeof code === 'string' ? code : root instanceof Error ? root.message : String(root)})`;
+  const detail = err === undefined ? '' : `: ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}${why}`;
+  return new Error(`${label}: ${what}${detail}`, { cause: err });
+};
 let lastRequest: Promise<unknown> = Promise.resolve();
 const get = (url: string, label: string): Promise<string> => {
   const request = lastRequest.then(async () => {
@@ -49,18 +63,18 @@ const get = (url: string, label: string): Promise<string> => {
         signal: AbortSignal.timeout(30_000),
       });
     } catch (err) {
-      throw new Error(`${label}: ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}`);
+      throw failed(label, 'request failed', err);
     }
     if (!r.ok) {
       // The status is the finding; a body that will not read only loses
       // the detail.
       const body = await r.text().catch(() => '');
-      throw new Error(`${label}: HTTP ${r.status}${refusalDetail(body, (n) => r.headers.get(n))}`);
+      throw failed(label, `HTTP ${r.status}${refusalDetail(body, (n) => r.headers.get(n))}`);
     }
     try {
       return await r.text();
     } catch (err) {
-      throw new Error(`${label}: HTTP ${r.status}, body unread: ${err instanceof Error ? err.message : String(err)}`);
+      throw failed(label, `HTTP ${r.status}, body unread`, err);
     }
   });
   lastRequest = request.catch(() => undefined).then(() => new Promise((done) => setTimeout(done, GAP_MS)));

@@ -231,6 +231,10 @@ describe('refusalDetail', () => {
     );
   });
 
+  it('keeps the title on one line and its quotes unambiguous', () => {
+    expect(refusalDetail('<title>\n  Access &quot;denied&quot;\n</title>', headers({}))).toBe(' (title "Access \\"denied\\"")');
+  });
+
   it('decodes entities in the title', () => {
     expect(refusalDetail('<title>Just a moment&#8230;</title>', headers({}))).toBe(' (title "Just a moment…")');
   });
