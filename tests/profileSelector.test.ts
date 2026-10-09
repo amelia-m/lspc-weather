@@ -87,3 +87,25 @@ describe('what the selector’s buttons choose', () => {
     expect(profileLabel('licensed')).toBe('Licensed');
   });
 });
+
+/* A jumper choosing a waiver tier can open the sign the tiers were read off.
+ * The photo is served with the site (public/), so it opens without GitHub. */
+describe('the waiver sign photo link', () => {
+  it('sits under the tiers on a waiver profile, says the photo is undated, and nowhere else', () => {
+    const waiver = render(WAIVER_TIERS[0].id);
+    expect(waiver).toContain('class="tier-sign" href="/lspc-waiver-sign.jpg" target="_blank" rel="noopener noreferrer"');
+    expect(waiver).toContain('Photo of the posted sign (undated)');
+    expect(render('student')).not.toContain('tier-sign');
+    expect(render('licensed')).not.toContain('tier-sign');
+  });
+
+  it('points at a photo the site actually serves, sized for the web', async () => {
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as {
+      readFileSync: (p: string) => Uint8Array;
+    };
+    const jpg = fs.readFileSync(decodeURIComponent(new URL('../public/lspc-waiver-sign.jpg', import.meta.url).pathname));
+    // A JPEG (FF D8 FF), and a crop for the web rather than the 3 MB original.
+    expect([...jpg.slice(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+    expect(jpg.length).toBeLessThan(400_000);
+  });
+});

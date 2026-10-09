@@ -58,21 +58,14 @@ sky-parity log's "SIM edition on uspa.org" line). When it does not, read the new
 document and record its name and date beside `SIM_EDITION` in the reading
 log.
 
-## To do: link the waiver sign's photo under the tier selector
+## Done: the waiver sign's photo under the tier selector
 
-Asked for 2026-10-08. Under the LSPC waiver tier buttons (the
-`tier-toggle` row in `src/components/ProfileSelector.tsx`, shown on the
-Jumpers tab once Student and then "LSPC waiver" are picked), a link straight to the photo of the posted sign,
-`docs/lspc-waivered-wind-limits.jpg`, so a jumper choosing a tier can see
-the sign the tiers were transcribed from.
-
-Today the only way there is the `lspcWaiver` citation, which links to the
-transcription (`docs/lspc-waivered-wind-limits.md` on GitHub) and the photo
-from that. To decide: link the image on GitHub (`${REPO_URL}/blob/main/...`,
-like the citation) or serve a copy from the site under `public/` (opens
-without GitHub, but then two copies to keep the same; a test could compare
-them). Either way the link should say the photo is undated, as the
-citation's note does.
+Asked for 2026-10-08, added 2026-10-09: under the LSPC waiver tier buttons
+(`ProfileSelector`), "Photo of the posted sign (undated)" opens
+`public/lspc-waiver-sign.jpg`, served with the site so it opens without
+GitHub. It is a crop of `docs/lspc-waivered-wind-limits.jpg` (the photo as
+taken, kept as the record) to the framed sign, 1,400 px wide and about
+210 KB, against 3 MB for the original; a test checks the file is there.
 
 ## To do, later: a licence setting under Licensed
 
