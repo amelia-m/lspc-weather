@@ -115,7 +115,7 @@ export interface SurfaceWindRecord {
     sameAsHrrr: boolean | null;
     /** When not the same, the largest gaps between the two over all three
      *  series (maxWindDiff), and `shapeDiffers` when the two did not carry
-     *  the same valid times (from 2026-10-09 03:00Z; before, a difference in
+     *  the same valid times or the same values present (from 2026-10-09; before, a difference in
      *  shape alone would have logged 0/0/0, which no run in the first sample
      *  did). Absent when the same or not compared. */
     hrrrMaxDiff?: HrrrDiff;
@@ -417,7 +417,8 @@ export interface SurfaceWindSummary {
   /** Runs where Open-Meteo's default model returned HRRR's numbers, and for
    *  the runs where it did not, the largest gaps (hrrrMaxDiff, with
    *  `shapeDiffers` when the two responses did not carry the same valid
-   *  times, in which case the gaps cover only the times both had). */
+   *  times or the same values present, in which case the gaps cover only
+   *  the values both had). */
   defaultIsHrrr: { same: number; of: number; diffs: ({ at: string } & HrrrDiff)[] };
   /** Distinct run init times seen per model domain, in order, with the first
    *  run time each was seen at. */
@@ -459,15 +460,22 @@ export function maxWindDiff(a: readonly WindAt[], b: readonly WindAt[]): { dir: 
 /** Two responses compared series by series (current, hourly, 15-minute):
  *  the same only when every series is (sameWindSeries); otherwise the
  *  largest gaps over the valid times both carry, and `shapeDiffers` when
- *  any pair of series did not carry the same valid times, so a gap of
- *  0/0/0 is never logged as if it explained the difference. */
+ *  any pair of series did not carry the same valid times, or carried a
+ *  value on one side only, so a gap of 0/0/0 is never logged as if it
+ *  explained the difference. */
 export function compareWindResponses(pairs: readonly (readonly [readonly WindAt[], readonly WindAt[]])[]): {
   same: boolean;
   diff?: HrrrDiff;
 } {
   if (pairs.every(([a, b]) => sameWindSeries(a, b))) return { same: true };
   const d = pairs.map(([a, b]) => maxWindDiff(a, b));
-  const shapeDiffers = pairs.some(([a, b]) => a.length !== b.length || a.some((x, i) => x.t !== b[i].t));
+  // A different set of valid times, or a value one side served and the
+  // other did not (a gust on one, null on the other): either leaves the
+  // gaps above unable to say how the two differed.
+  const present = (w: WindAt): string => [w.dir, w.spd, w.gust].map((v) => (v == null ? '-' : '+')).join('');
+  const shapeDiffers = pairs.some(
+    ([a, b]) => a.length !== b.length || a.some((x, i) => x.t !== b[i].t || present(x) !== present(b[i])),
+  );
   return {
     same: false,
     diff: {

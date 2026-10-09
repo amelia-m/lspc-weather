@@ -259,15 +259,21 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
         let sameAsHrrr: boolean | null = null;
         let hrrrMaxDiff: HrrrDiff | undefined;
         if (omHrrrR.status === 'fulfilled') {
-          const h = omHrrrR.value;
-          const hc = openMeteoCurrent(h);
-          const cmp = compareWindResponses([
-            [current ? [current] : [], hc ? [hc] : []],
-            [hourly, openMeteoSeries(h.hourly)],
-            [m15, openMeteoSeries(h.minutely_15)],
-          ]);
-          sameAsHrrr = cmp.same;
-          hrrrMaxDiff = cmp.diff;
+          // Its own try: an unreadable HRRR response is an HRRR failure and
+          // must not discard the default model's good record.
+          try {
+            const h = omHrrrR.value;
+            const hc = openMeteoCurrent(h);
+            const cmp = compareWindResponses([
+              [current ? [current] : [], hc ? [hc] : []],
+              [hourly, openMeteoSeries(h.hourly)],
+              [m15, openMeteoSeries(h.minutely_15)],
+            ]);
+            sameAsHrrr = cmp.same;
+            hrrrMaxDiff = cmp.diff;
+          } catch (e) {
+            rec.omHrrrError = `unreadable response: ${msg(e)}`;
+          }
         }
         rec.om = {
           fetchedAt,

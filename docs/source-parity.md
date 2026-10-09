@@ -179,7 +179,8 @@ Open-Meteo's servers answered with the new run or the old one in turn; and
 now and then they differed by one degree of direction and nothing else (at
 15 of 36 consecutive pairs of runs, and between the two requests of one run
 at 16 of 37), which is no forecast change; net of those, a fixed valid time
-was revised at 5 of 41 runs. The NWS gridpoint was updated once in two hours
+was revised at 5 of the 36 pairs of consecutive runs that both returned a
+forecast. The NWS gridpoint was updated once in two hours
 and is served from caches that keep a copy up to an hour.
 Against seven KPMV reports, all 5 to 6 kt, every forecast was within about
 2 kt; too few, and too light, to say which is nearer.

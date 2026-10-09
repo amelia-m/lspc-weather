@@ -143,6 +143,12 @@ describe('reading Open-Meteo and NWS responses', () => {
     });
     // Same length, different times.
     expect(compareWindResponses([[a, [a[0], { ...a[1], t: '2026-10-09T00:30:00.000Z' }]]]).diff?.shapeDiffers).toBe(true);
+    // A value served on one side only (a gust against null) at the same
+    // times: not the same, and the 0/0/0 gaps are marked as not explaining it.
+    const noGust = a.map((x) => ({ ...x, gust: null }));
+    const mixed = compareWindResponses([[a, [noGust[0], a[1]]]]);
+    expect(mixed.same).toBe(false);
+    expect(mixed.diff?.shapeDiffers).toBe(true);
   });
 
   it('maxWindDiff: the largest gap at shared valid times, direction across north', () => {
