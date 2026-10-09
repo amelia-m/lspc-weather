@@ -37,6 +37,7 @@ import { SITE } from '../src/config/site';
 import { normalizeGridpoint, normalizeNwsObservation, type RawGridpoint, type RawNwsObservation } from '../src/domain/normalize';
 import { chooseObservation, normalizeIemCurrent, type RawIemCurrents } from '../src/domain/iem';
 import {
+  hasWind,
   compareWindResponses,
   maxAgeSeconds,
   metarWindGroup,
@@ -256,20 +257,23 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
         const current = openMeteoCurrent(raw);
         const hourly = openMeteoSeries(raw.hourly);
         const m15 = openMeteoSeries(raw.minutely_15);
+        // An answer with no wind in it is a failed request, not a forecast.
+        if (!hasWind([current ? [current] : [], hourly, m15])) throw new Error('no wind values in the response');
         let sameAsHrrr: boolean | null = null;
         let hrrrMaxDiff: HrrrDiff | undefined;
         if (omHrrrR.status === 'fulfilled') {
-          // An HRRR answer with no wind series (an empty or null body, or a
+          // An HRRR answer with no wind in it (no steps, or all null: the
           // model not yet available) is an HRRR failure, recorded as such
-          // rather than counted as "default model is not HRRR"; and in its
+          // rather than counted as "default model is not HRRR". A body that
+          // cannot be read at all throws and is recorded by the catch. Its
           // own try, so it never discards the default model's good record.
           try {
             const h = omHrrrR.value;
             const hc = openMeteoCurrent(h);
-            const hHourly = openMeteoSeries(h?.hourly);
-            const hM15 = openMeteoSeries(h?.minutely_15);
-            if (!hc && hHourly.length === 0 && hM15.length === 0) {
-              rec.omHrrrError = 'no wind series in the response';
+            const hHourly = openMeteoSeries(h.hourly);
+            const hM15 = openMeteoSeries(h.minutely_15);
+            if (!hasWind([hc ? [hc] : [], hHourly, hM15])) {
+              rec.omHrrrError = 'no wind values in the response';
             } else {
               const cmp = compareWindResponses([
                 [current ? [current] : [], hc ? [hc] : []],
@@ -326,7 +330,7 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
       `METAR ${station.id} (${rec.metar?.source ?? '—'}): ${rec.metar ? `${rec.metar.group ?? '?'} ${fmt(rec.metar.wind)}` : rec.metarError}`,
       `NWS gridpoint hour: ${rec.nws ? fmt(nwsHour) : rec.nwsError}  updateTime ${rec.nws?.updateTime ?? '—'}  hourly product updateTime ${rec.nws?.hourlyUpdateTime ?? '—'}`,
       `Open-Meteo hourly (nearest): ${rec.om ? fmt(hourNear) : rec.omError}`,
-      `Open-Meteo current: ${rec.om ? fmt(rec.om.current) : rec.omError}  same as HRRR: ${rec.om?.sameAsHrrr ?? '—'}`,
+      `Open-Meteo current: ${rec.om ? fmt(rec.om.current) : rec.omError}  same as HRRR: ${rec.om?.sameAsHrrr ?? rec.omHrrrError ?? '—'}`,
       ...OM_DOMAINS.map((d) => `  ${d}: init ${omMeta[d]?.init ?? '—'} avail ${omMeta[d]?.avail ?? '—'}`),
       `@@parity ${JSON.stringify(rec)}`,
     ]);

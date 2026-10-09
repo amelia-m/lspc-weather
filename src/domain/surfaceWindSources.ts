@@ -459,6 +459,15 @@ export function maxWindDiff(a: readonly WindAt[], b: readonly WindAt[]): { dir: 
   return { dir, spd, gust, matched };
 }
 
+/** Whether an Open-Meteo answer, read into its current, hourly and
+ *  15-minute series, carries any wind at all: a direction or speed at some
+ *  step. An answer whose steps are all null (a model not yet available for
+ *  the hours asked) or that has no steps carries none, and is a failure of
+ *  that request, not a forecast to compare. Pure. */
+export function hasWind(series: readonly (readonly WindAt[])[]): boolean {
+  return series.some((s) => s.some((w) => w.dir != null || w.spd != null));
+}
+
 /** Two responses compared series by series (current, hourly, 15-minute):
  *  the same only when every series is (sameWindSeries); otherwise the
  *  largest gaps over the valid times both carry, and `shapeDiffers` when
@@ -797,8 +806,9 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
       om15: records.filter((r) => r.omError).length,
       omCurrent: records.filter((r) => r.omError).length,
       omMeta: records.filter((r) => !r.omMeta || Object.values(r.omMeta).some((m) => m == null)).length,
-      // Runs left out of defaultIsHrrr because the HRRR comparison was not
-      // made; counted here so they do not vanish from the summary.
+      // Runs whose HRRR request failed or carried no wind, so they are not
+      // lost from the summary. A run whose default request failed is out of
+      // defaultIsHrrr too, and is counted under the om* errors above.
       omHrrr: records.filter((r) => r.omHrrrError).length,
     },
     cadence: sources.map((s) => cadenceOf(records, s)),
