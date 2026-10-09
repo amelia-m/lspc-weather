@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { estimateDrift } from '../src/domain/spot';
+import { deployShown, estimateDrift } from '../src/domain/spot';
 import { DriftPanel } from '../src/components/DriftPanel';
 import type { WindsAloftLevel } from '../src/domain/types';
 import { CITATIONS, type License } from '../src/config/thresholds';
@@ -249,6 +249,15 @@ describe('the drift card’s deploy default', () => {
     const html = markup('A');
     expect(html).toMatch(/<option value="3000" selected="">/);
     expect(html).toContain(`Deploy opens on 3,000 ft, the BSR minimum for A-license holders, listed below. ${licenseLine}`);
+  });
+
+  it('shows the wanted deploy while it is under the exit, and the highest option under the exit otherwise', () => {
+    const options = [2000, 2500, 3000, 3500, 4000];
+    expect(deployShown(3000, 10000, options)).toEqual({ ft: 3000, held: false });
+    expect(deployShown(2500, 3000, options)).toEqual({ ft: 2500, held: false });
+    expect(deployShown(3000, 3000, options)).toEqual({ ft: 2500, held: true });
+    expect(deployShown(4000, 3500, options)).toEqual({ ft: 3000, held: true });
+    expect(deployShown(3000, 2000, options)).toEqual({ ft: 3000, held: false });
   });
 
   it('opens Deploy on 2,500 ft for B, C and D, naming the license', () => {

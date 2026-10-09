@@ -90,10 +90,20 @@ describe('the Pilots tab and the jumper wind limits', () => {
     expect(app).toMatch(/useWeatherData\(advisoryThresholds, unit\)/);
     expect(app).toMatch(/advisories=\{advisoriesFor\(view, advisories\)\}/);
     expect(app).toMatch(/forPilots=\{!VIEW_USES_PROFILE\[view\]\}/);
-    expect(app).toMatch(
-      /\{VIEW_USES_PROFILE\[view\] && \(\s*<ProfileSelector\s+profile=\{profile\}\s+lastStudent=\{lastStudent\}\s+lastTier=\{lastTier\}\s+onChange=\{chooseProfile\}\s+license=\{license\}\s+onLicenseChange=\{setLicense\}\s*\/>\s*\)\}/,
-    );
+    const selector = app.match(/\{VIEW_USES_PROFILE\[view\] && \(\s*(<ProfileSelector\b[^>]*\/>)\s*\)\}/)?.[1] ?? '';
+    expect(selector).toContain('onChange={chooseProfile}');
+    expect(selector).toContain('onLicenseChange={chooseLicense}');
     expect(app).toMatch(/\{VIEW_USES_PROFILE\[view\] && \(\s*<SettingsPanel/);
+  });
+
+  /* A license stored from an earlier Licensed visit must not reach the drift
+   * card on a student profile: a B, C or D license would open Deploy on
+   * 2,500 ft, under the 3,000 ft student minimum. */
+  it('passes the license to the drift card only on the Licensed profile', async () => {
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
+    const app = fs.readFileSync(decodeURIComponent(new URL('../src/App.tsx', import.meta.url).pathname), 'utf8');
+    const drift = app.match(/<DriftPanel\b[^>]*\/>/)?.[0] ?? '';
+    expect(drift).toContain("license={profile === 'licensed' ? license : null}");
   });
 
   it('would fire the Pilots visibility flag even with a Jumpers edit that silences it', () => {

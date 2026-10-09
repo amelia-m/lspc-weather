@@ -61,8 +61,8 @@ export function ProfileSelector({
           under Licensed would not say what they choose. */}
       {licensed && (
         <div className="license-row">
-          <span className="license-label" aria-hidden="true">USPA license</span>
-          <div className="class-toggle class-toggle-sub" role="group" aria-label="USPA license">
+          <span className="license-label" id="license-label">USPA license</span>
+          <div className="class-toggle class-toggle-sub" role="group" aria-labelledby="license-label">
             {LICENSES.map((l) => choice(l, l === license, () => onLicenseChange(l)))}
           </div>
         </div>

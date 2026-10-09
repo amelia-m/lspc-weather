@@ -219,13 +219,14 @@ export default function App(): JSX.Element {
     }
   };
 
-  // Stored on every change and never cleared by a student profile, which
-  // simply does not pass it on (the drift card's `license` below), so
-  // Licensed and back returns to it.
+  // Stored when a jumper picks one, so storage holds no license nobody chose.
+  // A student profile leaves it as it is and does not pass it on (the drift
+  // card's `license` below), so Licensed and back returns to it.
   const [license, setLicense] = useState<License>(() => toLicense(safeLocalGet(LICENSE_KEY)));
-  useEffect(() => {
-    safeLocalSet(LICENSE_KEY, license);
-  }, [license]);
+  const chooseLicense = (l: License): void => {
+    setLicense(l);
+    safeLocalSet(LICENSE_KEY, l);
+  };
 
   const [overrides, setOverrides] = useState<Overrides>(() => {
     try {
@@ -402,7 +403,7 @@ export default function App(): JSX.Element {
               lastTier={lastTier}
               onChange={chooseProfile}
               license={license}
-              onLicenseChange={setLicense}
+              onLicenseChange={chooseLicense}
             />
           )}
           {/* Rendered outside a UnitToggleScope, so it names itself "Wind speed

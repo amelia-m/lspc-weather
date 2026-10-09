@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { WindsAloftLevel, WindsAloftSource } from '../domain/types';
 import { compass, round } from '../domain/units';
-import { estimateDrift, type DriftLeg } from '../domain/spot';
+import { deployShown, estimateDrift, type DriftLeg } from '../domain/spot';
 import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
 import { FallbackSources } from './common/FallbackSources';
 import { CITATIONS, openingMinimum, type License } from '../config/thresholds';
@@ -72,16 +72,12 @@ export function DriftPanel({
   const [chosenDeploy, setDeploy] = useState<number | null>(null);
   const [fallRate, setFallRate] = useState(120);
 
-  // Deploy must stay below exit. Offer only lower altitudes, and while the
-  // exit is at or below the wanted deploy, use the highest option still
-  // under it. Derived rather than written back, so raising the exit again
-  // returns the deploy altitude the jumper wanted. If no option is under the
-  // exit (only possible if exit's floor is ever dropped below deploy's),
-  // keep the wanted one rather than force a value.
+  // Deploy must stay below exit, so only lower altitudes are offered
+  // (`deployShown`). Derived rather than written back, so raising the exit
+  // again returns the deploy altitude the jumper wanted.
   const deployOptions = DEPLOY_OPTIONS.filter((a) => a < exitFt);
-  const wantedDeploy = chosenDeploy ?? opening.ft;
-  const deployHeldUnderExit = wantedDeploy >= exitFt && deployOptions.length > 0;
-  const deployFt = deployHeldUnderExit ? deployOptions[deployOptions.length - 1] : wantedDeploy;
+  const deploy = deployShown(chosenDeploy ?? opening.ft, exitFt, DEPLOY_OPTIONS);
+  const deployFt = deploy.ft;
 
   const drift = useMemo(
     () =>
@@ -163,8 +159,10 @@ export function DriftPanel({
             {license !== null && ' The license is the one chosen under Licensed at the top of the page.'}
             {/* The Deploy box would otherwise show a figure other than the
                 one this note names, with nothing saying why. */}
-            {deployHeldUnderExit &&
-              ` With the exit at ${fmtFt(exitFt)}, Deploy shows ${fmtFt(deployFt)}, the highest option below the exit.`}
+            {deploy.held &&
+              ` With the exit at ${fmtFt(exitFt)}, Deploy shows ${fmtFt(deployFt)}, the highest option below the exit${
+                deployFt < opening.ft ? `, which is under the ${fmtFt(opening.ft)} minimum` : ''
+              }.`}
           </p>
 
           <dl className="kv">
