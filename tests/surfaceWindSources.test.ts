@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareWindResponses,
+  hasWind,
   maxAgeSeconds,
   maxWindDiff,
   metarWindGroup,
@@ -329,9 +330,11 @@ describe('summarizeSurfaceWind', () => {
   it('errors: a run whose HRRR comparison was not made is counted, not left out silently', () => {
     const s = summarizeSurfaceWind([
       run('00:43', { om: om({}) }),
-      run('00:46', { om: om({}), omHrrrError: 'no wind series in the response' }),
+      run('00:46', { om: om({ sameAsHrrr: null }), omHrrrError: 'no wind values in the response' }),
     ]);
     expect(s.errors.omHrrr).toBe(1);
+    // And it is not counted as compared.
+    expect(s.defaultIsHrrr).toMatchObject({ same: 1, of: 1 });
   });
 
   it('against the METAR: each report once, from the first run that saw it, read by each source’s rule', () => {
@@ -533,5 +536,17 @@ describe('the log lines', () => {
 
   it('the #parity summary’s parser leaves them out, so a mixed log cannot feed that page', () => {
     expect(parseParityLines(log).map((r) => r.kind)).toEqual(['usairnet']);
+  });
+});
+
+describe('hasWind', () => {
+  const step = (t: string, dir: number | null, spd: number | null): WindAt => ({ t, dir, spd, gust: null });
+  it('is true when any step of any series has a direction or speed', () => {
+    expect(hasWind([[], [step('2026-10-09T00:00:00.000Z', null, 5)]])).toBe(true);
+    expect(hasWind([[step('2026-10-09T00:00:00.000Z', 140, null)], []])).toBe(true);
+  });
+  it('is false for no steps, or steps that are all null (a model not yet available)', () => {
+    expect(hasWind([[], [], []])).toBe(false);
+    expect(hasWind([[step('2026-10-09T00:00:00.000Z', null, null)], [step('2026-10-09T00:15:00.000Z', null, null)]])).toBe(false);
   });
 });
