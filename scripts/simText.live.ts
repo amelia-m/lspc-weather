@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
 import { READING_LOG, SIM_EDITION_YEAR, citationsOf, type SourceReading } from '../src/config/readingLog';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 import { CITATIONS, SIM_INDEX_URL, simUrl } from '../src/config/thresholds';
-import { glossaryHeadings, isGlossaryEntry, refusalDetail, simEditionYear, simPartText } from '../src/domain/simText';
+import { failureLine, glossaryHeadings, isGlossaryEntry, refusalDetail, simEditionYear, simPartText } from '../src/domain/simText';
 import { GLOSSARY_KEYS, SIM_GLOSSARY } from '../src/config/simGlossary';
 
 const parts = READING_LOG.filter((r) => r.simPart != null);
@@ -39,20 +39,7 @@ const parts = READING_LOG.filter((r) => r.simPart != null);
  * next one says whether it was a block or a bot check, and every failure
  * names the request it was. */
 const GAP_MS = 3_000;
-/** A failed request as one line naming it. Node's fetch reports every
- *  network failure as "TypeError: fetch failed" and keeps what happened
- *  (DNS, TLS, a reset) in a chain of causes, so the innermost cause's code,
- *  or else its message, goes in the line too, where the issue the workflow
- *  opens will show it. */
-const failed = (label: string, what: string, err?: unknown): Error => {
-  let root: unknown = err;
-  while (root instanceof Error && root.cause !== undefined) root = root.cause;
-  const code = (root as { code?: unknown } | undefined)?.code;
-  const why =
-    root === err ? '' : ` (${typeof code === 'string' ? code : root instanceof Error ? root.message : String(root)})`;
-  const detail = err === undefined ? '' : `: ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}${why}`;
-  return new Error(`${label}: ${what}${detail}`, { cause: err });
-};
+const failed = (label: string, what: string, err?: unknown): Error => new Error(failureLine(label, what, err));
 let lastRequest: Promise<unknown> = Promise.resolve();
 const get = (url: string, label: string): Promise<string> => {
   const request = lastRequest.then(async () => {

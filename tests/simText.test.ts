@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { glossaryHeadings, isGlossaryEntry, refusalDetail, simEditionYear, simPartText } from '../src/domain/simText';
+import { failureLine, glossaryHeadings, isGlossaryEntry, refusalDetail, simEditionYear, simPartText } from '../src/domain/simText';
 
 /* A section page in the shape uspa.org serves: each part opens with an
  * anchoroffset, some parts hold anchors of their own, and the content
@@ -241,5 +241,41 @@ describe('refusalDetail', () => {
 
   it('adds nothing when the response carries none of the three', () => {
     expect(refusalDetail('Forbidden', headers({}))).toBe('');
+  });
+});
+
+describe('failureLine', () => {
+  const chain = (...links: Error[]): Error => {
+    links.slice(1).forEach((inner, i) => Object.assign(links[i], { cause: inner }));
+    return links[0];
+  };
+  const coded = (message: string, code: unknown): Error => Object.assign(new Error(message), { code });
+
+  it('names the request and the status when there is no error', () => {
+    expect(failureLine('uspa.org/sim', 'HTTP 403')).toBe('uspa.org/sim: HTTP 403');
+  });
+
+  it('carries the first string code along the chain', () => {
+    // As Node's fetch reported a refused connection through the sandbox's
+    // proxy on 2026-10-09: two "fetch failed" links, then the code.
+    const err = chain(new TypeError('fetch failed'), new TypeError('fetch failed'), coded('Request was cancelled.', 'UND_ERR_ABORTED'));
+    expect(failureLine('uspa.org/sim', 'request failed', err)).toBe(
+      'uspa.org/sim: request failed: TypeError: fetch failed (UND_ERR_ABORTED)',
+    );
+  });
+
+  it('falls back to the deepest non-empty message, skipping a numeric code and an empty one', () => {
+    const err = chain(new TypeError('fetch failed'), coded('getaddrinfo ENOTFOUND www.uspa.org', 0), new Error(''));
+    expect(failureLine('x', 'request failed', err)).toBe('x: request failed: TypeError: fetch failed (getaddrinfo ENOTFOUND www.uspa.org)');
+  });
+
+  it('adds no brackets when the chain says nothing', () => {
+    expect(failureLine('x', 'request failed', new Error('boom'))).toBe('x: request failed: Error: boom');
+  });
+
+  it('stops on a chain that points back at itself', () => {
+    const err = new Error('loop');
+    Object.assign(err, { cause: err });
+    expect(failureLine('x', 'request failed', err)).toBe('x: request failed: Error: loop (loop)');
   });
 });
