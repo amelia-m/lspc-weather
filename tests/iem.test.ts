@@ -27,6 +27,13 @@ const REC: RawIemCurrent = {
 };
 
 describe('normalizeIemCurrent', () => {
+  it('takes the temperature pair from the text, not a dew point from IEM’s own figures', () => {
+    // The text has a temperature and no dew point; IEM's record has both.
+    const c = normalizeIemCurrent({ ...REC, raw: 'KPMV 272035Z AUTO 03003KT 10SM CLR 25/ A3003 RMK AO2' }, 'KPMV')!;
+    expect(c.tempC).toBe(25);
+    expect(c.dewpointC).toBeNull();
+  });
+
   it('reads the real 20:35Z record the way the cards need it', () => {
     const c = normalizeIemCurrent(REC, 'KPMV')!;
     expect(c).toMatchObject({

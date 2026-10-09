@@ -77,7 +77,10 @@ export function normalizeIemCurrent(rec: RawIemCurrent, stationId: string): Curr
     .filter((l) => ['BKN', 'OVC', 'VV'].includes(l.cover) && l.baseFtAgl != null)
     .reduce<number | null>((min, l) => (min == null ? l.baseFtAgl : Math.min(min, l.baseFtAgl!)), null);
 
-  const temps = tempsFromRaw(raw);
+  const temps = tempsFromRaw(raw) ?? {
+    tempC: rec.tmpf != null ? fToC(rec.tmpf) : null,
+    dewpointC: rec.dwpf != null ? fToC(rec.dwpf) : null,
+  };
   const speed = rec.sknt ?? null;
   const gust = rec.gust == null || rec.gust === '' ? null : Number(rec.gust);
   const wx = Array.isArray(rec.wxcodes) ? rec.wxcodes.join(' ') : rec.wxcodes;
@@ -97,8 +100,8 @@ export function normalizeIemCurrent(rec: RawIemCurrent, stationId: string): Curr
     skyLayers,
     ceilingFtAgl: ceiling,
     skyDecode: compareSkyDecodes(rawSky, decodedSky),
-    tempC: temps?.tempC ?? (rec.tmpf != null ? fToC(rec.tmpf) : null),
-    dewpointC: temps?.dewpointC ?? (rec.dwpf != null ? fToC(rec.dwpf) : null),
+    tempC: temps.tempC,
+    dewpointC: temps.dewpointC,
     altimeterInHg: altimeterFromRaw(raw) ?? rec.alti ?? null,
     wxString: wx ? wx : null,
   };

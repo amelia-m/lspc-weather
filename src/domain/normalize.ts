@@ -217,8 +217,17 @@ export function normalizeNwsObservation(
     .filter((l) => CEILING_COVERS.includes(l.cover) && l.baseFtAgl != null)
     .reduce<number | null>((min, l) => (min == null ? l.baseFtAgl : Math.min(min, l.baseFtAgl!)), null);
 
-  const tGroup = tGroupTemps(raw);
-  const body = bodyTemps(raw);
+  // The temperatures come from the METAR text, as the sky and the altimeter
+  // do, and the pair from the decode only when the text has none. Of 500
+  // records at five nearby stations read on 2026-10-09, one (KOFF,
+  // 2026-10-08 01:55Z) had a null decoded temperature, quality flag "Z",
+  // while its text read T01540118; where both were present they never
+  // differed. Without the temperature the density-altitude card shows
+  // nothing. A value NWS's quality control had rejected would come through
+  // from the text too, as it already does on the IEM path, which serves
+  // first and reads the same text; what the flags mean (MADIS's notes)
+  // could not be read from here.
+  const temps = tempsFromRaw(raw) ?? { tempC: p.temperature?.value ?? null, dewpointC: p.dewpoint?.value ?? null };
 
   const wxString =
     (p.presentWeather ?? [])
@@ -241,19 +250,8 @@ export function normalizeNwsObservation(
     skyLayers,
     ceilingFtAgl: ceiling,
     skyDecode,
-    // The temperatures come from the METAR text's T group first, as the sky
-    // and the altimeter come from the text. Of 500 records at five nearby
-    // stations read on 2026-10-09, one (KOFF, 2026-10-08 01:55Z) had a null
-    // decoded temperature, quality flag "Z", while its text read T01540118;
-    // where both were present they never differed. Without the temperature
-    // the density-altitude card shows nothing. The decode comes next, since
-    // it carries tenths, and the body group's whole degrees last. A value
-    // NWS's quality control had rejected would come through from the text
-    // too, as it already does on the IEM path, which serves first and reads
-    // the same text; what the flags mean (MADIS's notes) could not be read
-    // from here.
-    tempC: tGroup?.tempC ?? p.temperature?.value ?? body?.tempC ?? null,
-    dewpointC: tGroup?.dewpointC ?? p.dewpoint?.value ?? body?.dewpointC ?? null,
+    tempC: temps.tempC,
+    dewpointC: temps.dewpointC,
     // Prefer the altimeter setting parsed from the raw METAR; fall back to
     // the API's barometricPressure (Pa → inHg) only if the raw text lacks an
     // A/Q group. Despite its name it carries the altimeter setting, not the
@@ -289,33 +287,28 @@ export function altimeterFromRaw(raw: string): number | null {
   return null;
 }
 
-type Temps = { tempC: number | null; dewpointC: number | null };
-
-/** The remarks' T group: T02500173 is 25.0 °C over 17.3 °C, a 1 for minus. */
-function tGroupTemps(raw: string): Temps | null {
-  const t = /\bT([01])(\d{3})(?:([01])(\d{3}))?\b/.exec(raw.split(' RMK ')[1] ?? '');
-  if (!t) return null;
-  const val = (sign: string, digits: string): number => (sign === '1' ? -1 : 1) * (Number(digits) / 10);
-  return { tempC: val(t[1], t[2]), dewpointC: t[3] != null ? val(t[3], t[4]) : null };
-}
-
-/** The body group, whole degrees: 25/17, M for minus. */
-function bodyTemps(raw: string): Temps | null {
-  const body = /\s(M?\d{2})\/(M?\d{2})?\s/.exec(` ${raw.split(' RMK ')[0]} `);
-  if (!body) return null;
-  const val = (s: string): number => (s.startsWith('M') ? -Number(s.slice(1)) : Number(s));
-  return { tempC: val(body[1]), dewpointC: body[2] ? val(body[2]) : null };
-}
-
 /**
- * Temperature and dew point from the METAR text: the T group when present,
- * else the body group. The IEM path's order, since IEM's own dew point is
- * whole °F and converts back a tenth or more off, so even the body group is
- * no worse. The NWS path puts its decode between the two, since the decode
- * carries tenths (normalizeNwsObservation).
+ * Temperature and dew point from the METAR text, as a pair: the remarks' T
+ * group (T02500173: 25.0 °C over 17.3 °C, a 1 for minus) when present, else
+ * the body group (25/17, M for minus). Both observation feeds read it before
+ * their own decode and take the pair from one source, so the two feeds agree
+ * on one report and a dew point never comes from a different source than
+ * its temperature. IEM's own dew point is whole °F, which converts back a
+ * tenth or more off; NWS's decode can be missing while the text has the
+ * figure (normalizeNwsObservation).
  */
-export function tempsFromRaw(raw: string): Temps | null {
-  return tGroupTemps(raw) ?? bodyTemps(raw);
+export function tempsFromRaw(raw: string): { tempC: number | null; dewpointC: number | null } | null {
+  const t = /\bT([01])(\d{3})(?:([01])(\d{3}))?\b/.exec(raw.split(' RMK ')[1] ?? '');
+  if (t) {
+    const val = (sign: string, digits: string): number => (sign === '1' ? -1 : 1) * (Number(digits) / 10);
+    return { tempC: val(t[1], t[2]), dewpointC: t[3] != null ? val(t[3], t[4]) : null };
+  }
+  const body = /\s(M?\d{2})\/(M?\d{2})?\s/.exec(` ${raw.split(' RMK ')[0]} `);
+  if (body) {
+    const val = (s: string): number => (s.startsWith('M') ? -Number(s.slice(1)) : Number(s));
+    return { tempC: val(body[1]), dewpointC: body[2] ? val(body[2]) : null };
+  }
+  return null;
 }
 
 /* ------------------------------------------------------------------ *

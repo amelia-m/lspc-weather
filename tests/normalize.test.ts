@@ -168,9 +168,6 @@ describe('normalizeNwsObservation', () => {
   });
 });
 
-/* The temperatures come from the METAR text first, as the sky and the
- * altimeter do. On 2026-10-09 one of 500 nearby records (KOFF, 01:55Z the
- * day before) had a null decoded temperature while its text read T01540118. */
 describe('tempsFromRaw', () => {
   it('reads below-zero tenths from the T group', () => {
     expect(tempsFromRaw('KPMV 011255Z AUTO 00000KT 10SM CLR M05/M11 A3012 RMK AO2 T10501106')).toEqual({ tempC: -5, dewpointC: -10.6 });
@@ -185,6 +182,9 @@ describe('tempsFromRaw', () => {
   });
 });
 
+/* The temperatures come from the METAR text first, as the sky and the
+ * altimeter do. On 2026-10-09 one of 500 nearby records (KOFF, 01:55Z the
+ * day before) had a null decoded temperature while its text read T01540118. */
 describe('normalizeNwsObservation temperatures', () => {
   const withTemps = (rawMessage: string, tempC: number | null, dewpointC: number | null) =>
     normalizeNwsObservation(
@@ -211,16 +211,17 @@ describe('normalizeNwsObservation temperatures', () => {
     expect(c.dewpointC).toBe(19.4);
   });
 
-  it('prefers the decode’s tenths to the body group’s whole degrees when there is no T group', () => {
+  it('takes the body group over the decode when there is no T group, as the IEM path does', () => {
     const c = withTemps('KOFF 080155Z AUTO 00000KT 10SM CLR 15/12 A3001 RMK AO2', 15.4, 11.8);
-    expect(c.tempC).toBe(15.4);
-    expect(c.dewpointC).toBe(11.8);
+    expect(c.tempC).toBe(15);
+    expect(c.dewpointC).toBe(12);
   });
 
-  it('falls back to the body group when neither the T group nor the decode has them', () => {
-    const c = withTemps('KOFF 080155Z AUTO 00000KT 10SM CLR M05/M11 A3001 RMK AO2', null, null);
-    expect(c.tempC).toBe(-5);
-    expect(c.dewpointC).toBe(-11);
+  it('takes the pair from one source, never a dew point from another', () => {
+    // The text has a temperature and no dew point; the decode has both.
+    const c = withTemps('KOFF 080155Z AUTO 00000KT 10SM CLR 12/ A3001 RMK AO2', 11.6, 11.9);
+    expect(c.tempC).toBe(12);
+    expect(c.dewpointC).toBeNull();
   });
 
   it('uses the decode when the record has no text', () => {
