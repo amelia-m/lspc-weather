@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { glossaryHeadings, isGlossaryEntry, simEditionYear, simPartText } from '../src/domain/simText';
+import { glossaryHeadings, isGlossaryEntry, refusalDetail, simEditionYear, simPartText } from '../src/domain/simText';
 
 /* A section page in the shape uspa.org serves: each part opens with an
  * anchoroffset, some parts hold anchors of their own, and the content
@@ -208,5 +208,30 @@ describe('simEditionYear', () => {
     // "2026 SIM Translations" is an h2; the year must come from the h1.
     expect(simEditionYear(LANDING.replace(/<h1>2026[^<]*<\/h1>/, '<h1>Skydiver&#39;s Information Manual</h1>'))).toBeNull();
     expect(simEditionYear('<html></html>')).toBeNull();
+  });
+});
+
+/* The two refusals read from Cloudflare hosts on 2026-10-09, trimmed to the
+ * parts refusalDetail reads: a bot check (globe.adsb.fi) and a firewall
+ * block (api.adsb.one). */
+describe('refusalDetail', () => {
+  const headers = (h: Record<string, string>) => (n: string) => h[n] ?? null;
+
+  it('names a bot check by its header and title', () => {
+    const body = '<!DOCTYPE html><html><head><title>Just a moment...</title></head></html>';
+    expect(refusalDetail(body, headers({ 'cf-mitigated': 'challenge', 'cf-ray': 'a48100f9ceceaa17-IAD' }))).toBe(
+      ' (title "Just a moment...", cf-mitigated: challenge, cf-ray a48100f9ceceaa17-IAD)',
+    );
+  });
+
+  it('names a firewall block by its title, which comes with no cf-mitigated header', () => {
+    const body = '<html><head><title>Attention Required! | Cloudflare</title></head></html>';
+    expect(refusalDetail(body, headers({ 'cf-ray': 'a48100fb1921e57e-IAD' }))).toBe(
+      ' (title "Attention Required! | Cloudflare", cf-ray a48100fb1921e57e-IAD)',
+    );
+  });
+
+  it('adds nothing when the response carries none of the three', () => {
+    expect(refusalDetail('Forbidden', headers({}))).toBe('');
   });
 });

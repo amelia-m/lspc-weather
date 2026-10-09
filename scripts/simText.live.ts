@@ -25,24 +25,38 @@ import { describe, expect, it } from 'vitest';
 import { READING_LOG, SIM_EDITION_YEAR, citationsOf, type SourceReading } from '../src/config/readingLog';
 import { CHECKLIST, SIM_READ } from '../src/config/citationsChecklist';
 import { CITATIONS, SIM_INDEX_URL, simUrl } from '../src/config/thresholds';
-import { glossaryHeadings, isGlossaryEntry, simEditionYear, simPartText } from '../src/domain/simText';
+import { glossaryHeadings, isGlossaryEntry, refusalDetail, simEditionYear, simPartText } from '../src/domain/simText';
 import { GLOSSARY_KEYS, SIM_GLOSSARY } from '../src/config/simGlossary';
 
 const parts = READING_LOG.filter((r) => r.simPart != null);
+
+/* Every request to uspa.org goes through one queue, a few seconds apart:
+ * about eight a run (the landing page, the sections, the glossary), which
+ * went out back to back until 2026-10-09, when Cloudflare in front of
+ * uspa.org refused every one from that day's runner with a 403. Whether the
+ * pace had anything to do with it is not known; spacing them costs the run
+ * a quarter of a minute. A refusal's error carries refusalDetail, so the
+ * next one says whether it was a block or a bot check. */
+const GAP_MS = 3_000;
+let lastRequest: Promise<unknown> = Promise.resolve();
+const get = (url: string, label: string): Promise<string> => {
+  const request = lastRequest.then(async () => {
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
+      signal: AbortSignal.timeout(30_000),
+    });
+    const body = await r.text();
+    if (!r.ok) throw new Error(`${label}: HTTP ${r.status}${refusalDetail(body, (n) => r.headers.get(n))}`);
+    return body;
+  });
+  lastRequest = request.catch(() => undefined).then(() => new Promise((done) => setTimeout(done, GAP_MS)));
+  return request;
+};
+
+/** Each section page, fetched once however many checks read it. */
 const pages = new Map<string, Promise<string>>();
 const page = (section: string): Promise<string> => {
-  if (!pages.has(section)) {
-    pages.set(
-      section,
-      fetch(simUrl(section), {
-        headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
-        signal: AbortSignal.timeout(30_000),
-      }).then((r) => {
-        if (!r.ok) throw new Error(`uspa.org/sim/${section}: HTTP ${r.status}`);
-        return r.text();
-      }),
-    );
-  }
+  if (!pages.has(section)) pages.set(section, get(simUrl(section), `uspa.org/sim/${section}`));
   return pages.get(section)!;
 };
 
@@ -63,12 +77,7 @@ const missing = (r: SourceReading): string =>
 
 describe('the SIM edition uspa.org names', () => {
   it(`is still the ${SIM_EDITION_YEAR} SIM`, async () => {
-    const r = await fetch(SIM_INDEX_URL, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
-      signal: AbortSignal.timeout(30_000),
-    });
-    expect(r.ok, `uspa.org/sim: HTTP ${r.status}`).toBe(true);
-    const landing = await r.text();
+    const landing = await get(SIM_INDEX_URL, 'uspa.org/sim');
     const year = simEditionYear(landing);
     // Informational: whether the change-document list showed its error.
     // Its absence is not proof the list loaded (it could be reworded, or
