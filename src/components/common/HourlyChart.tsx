@@ -290,7 +290,10 @@ export function HourlyLegend({
               <SimTermSegments
                 segments={splitGlossaryTerms(
                   `${lowerLimitPublished(limits, unit)} The limit line is not it.`,
-                  linkableTerms([limits.windLimitCitation]),
+                  // The paragraph cites the limit lines' source, and the
+                  // sentence's figure is the caveat's: neither may sit
+                  // beside a glossary link to the document it cites.
+                  linkableTerms([limits.windLimitCitation, limits.windBandCaveat?.citation]),
                 )}
               />
             </>

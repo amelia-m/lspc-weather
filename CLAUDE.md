@@ -212,7 +212,8 @@ figure wants the citation. Linking a word asserts its definition applies:
 waiver is open on `#citations`; "night jump" because the glossary's one-hour
 figure is not the night flag's trigger; "density altitude" because the
 glossary gives the pilot's method from pressure altitude and temperature,
-and the card's figure is humidity-corrected. `scripts/simText.live.ts` also
+and the card corrects its figure for humidity whenever the report has a
+dew point. `scripts/simText.live.ts` also
 checks daily that each linked term is still an entry heading under its
 letter (`glossaryHeadings`, `src/domain/simText.ts`).
 
