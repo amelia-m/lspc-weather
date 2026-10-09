@@ -9,7 +9,7 @@ import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { fetchObservation } from '../api/iem';
 import { supersedes } from '../domain/iem';
 import { evaluateAdvisories } from '../domain/advisories';
-import { densityAltitude } from '../domain/densityAltitude';
+import { densityAltitudeOf } from '../domain/densityAltitude';
 import { sunTimes } from '../domain/sun';
 import { logSource } from '../api/sourceLog';
 import { describeObservationFeed, METAR_SKY_PROVENANCE } from '../domain/sourceProvenance';
@@ -137,19 +137,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
                   ...prev,
                   current,
                   currentOtherObservedAt: otherObservedAt,
-                  // From this report or not at all: the card prints the
-                  // temperature it was worked from, which beside the METAR
-                  // card's newer one would contradict it with nothing to say
-                  // why. Without the inputs the card says what it needs.
-                  densityAltitude:
-                    current.altimeterInHg != null && current.tempC != null
-                      ? densityAltitude({
-                          elevationFt: dz.elevationFt,
-                          altimeterInHg: current.altimeterInHg,
-                          oatC: current.tempC,
-                          dewpointC: current.dewpointC,
-                        })
-                      : null,
+                  densityAltitude: densityAltitudeOf(current, dz.elevationFt),
                 },
           );
           const feed = describeObservationFeed(current.source ?? 'nws', current.observedAt, otherObservedAt);
