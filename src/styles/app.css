@@ -1004,18 +1004,6 @@ a.sim-term {
   background: var(--muted);
   transition: height 0.2s;
 }
-.sky-bar[data-cover='few'] {
-  background: #3fb950;
-}
-.sky-bar[data-cover='sct'] {
-  background: #9acd32;
-}
-.sky-bar[data-cover='bkn'] {
-  background: var(--watch);
-}
-.sky-bar[data-cover='ovc'] {
-  background: var(--caution);
-}
 .sky-pct {
   display: block;
   font-size: 0.6rem;
@@ -1049,14 +1037,54 @@ a.sim-term {
   white-space: nowrap;
   margin: 0 -8px;
 }
-/* Open-Meteo's cloud cover beside the NWS bar on the Ceiling & sky card:
-   thin and neutral, so it reads as a second forecast, not a category. */
-.sky-bar.om-bar {
-  width: 30%;
+/* The Ceiling & sky card's timeline: twelve hours across the card without
+   scrolling, from 320 px up. Columns share the width and may shrink; the
+   figures are a size smaller, and a time sits under every third hour,
+   centred even when wider than its column (as on the Precip card). */
+.ceiling-timeline {
+  gap: 2px;
+  min-width: 0;
+  padding-right: 8px;
+}
+.ceiling-timeline .sky-col:not(.sky-axis-col) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.ceiling-timeline .sky-pct,
+.ceiling-timeline .sky-ceil {
+  font-size: 0.55rem;
+  white-space: nowrap;
+}
+.ceiling-timeline .sky-time {
+  display: flex;
+  justify-content: center;
+  white-space: nowrap;
+  margin: 0 -8px;
+}
+/* NWS sky cover: one colour whatever the amount (no few/scattered/broken/
+   overcast colours, which would read as a verdict). */
+.ceiling-timeline .sky-bar:not(.om-bar) {
+  flex: 1 1 0;
+  background: var(--accent);
+  opacity: 0.75;
+}
+/* Open-Meteo's cloud cover beside it: a fixed-width track outlined in the
+   border colour, so 0 to 5% reads as an almost empty column rather than as
+   nothing, filled in neutral grey. */
+.om-track {
   flex: none;
+  width: 6px;
+  height: 100%;
   margin-left: 2px;
+  display: flex;
+  align-items: flex-end;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+}
+.sky-bar.om-bar {
   background: var(--muted);
-  opacity: 0.8;
 }
 .sky-pct.om-pct {
   color: var(--muted);
