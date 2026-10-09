@@ -4,7 +4,7 @@ import { compass, round } from '../domain/units';
 import { estimateDrift, type DriftLeg } from '../domain/spot';
 import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
 import { FallbackSources } from './common/FallbackSources';
-import { CITATIONS, DEFAULT_DEPLOY_FT } from '../config/thresholds';
+import { CITATIONS, openingMinimum, type License } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
@@ -41,8 +41,12 @@ export function DriftPanel({
   source,
   validMs,
   hourNav,
+  license = null,
 }: {
   levels: WindsAloftLevel[];
+  /** The license chosen under Licensed, or null on a student profile. Only
+   *  the Deploy box's default reads it (`openingMinimum`). */
+  license?: License | null;
   /** The forecast hour `levels` are for, so the estimate says which winds it
    *  used. It is the Winds aloft card's hour, always: a drift worked from one
    *  hour beside a table for another would be two answers to one question. */
@@ -59,28 +63,26 @@ export function DriftPanel({
 }): JSX.Element {
   const now = useNow(60_000);
   const [exitFt, setExit] = useState(10000);
-  // DEFAULT_DEPLOY_FT, the BSR minimum no licence is below. It used to follow
-  // the wind-limit profile and gave Licensed 2,500 ft, under an A-license
-  // holder's 3,000 ft; the profile no longer sets it, so a profile switch no
-  // longer resets a deploy altitude the jumper chose.
-  const [deployFt, setDeploy] = useState(DEFAULT_DEPLOY_FT);
+  // The deploy altitude the jumper picked, or null to open on the BSR
+  // minimum for the profile and license. Null until a pick, so a license
+  // switch moves a default nobody has touched and never a deploy altitude
+  // the jumper chose.
+  const opening = openingMinimum(license);
+  const [chosenDeploy, setDeploy] = useState<number | null>(null);
   const [fallRate, setFallRate] = useState(120);
 
-
-  // Deploy must stay below exit. Offer only lower altitudes, and if a new exit
-  // drops at or below the current deploy, pull deploy down to the highest still-
-  // valid option.
+  // Deploy must stay below exit. Offer only lower altitudes, and while the
+  // exit is at or below the wanted deploy, use the highest option still
+  // under it. Derived rather than written back, so raising the exit again
+  // returns the deploy altitude the jumper wanted. If no option is under the
+  // exit (only possible if exit's floor is ever dropped below deploy's),
+  // keep the wanted one rather than force a value.
   const deployOptions = DEPLOY_OPTIONS.filter((a) => a < exitFt);
-  const setExitSafe = (v: number): void => {
-    setExit(v);
-    if (deployFt >= v) {
-      // Highest deploy option still below the new exit. If none exists (only
-      // possible if exit's floor is ever dropped below deploy's), leave deploy
-      // as-is rather than forcing a value at or above exit.
-      const valid = DEPLOY_OPTIONS.filter((a) => a < v);
-      if (valid.length) setDeploy(valid[valid.length - 1]);
-    }
-  };
+  const wantedDeploy = chosenDeploy ?? opening.ft;
+  const deployFt =
+    wantedDeploy < exitFt || deployOptions.length === 0
+      ? wantedDeploy
+      : deployOptions[deployOptions.length - 1];
 
   const drift = useMemo(
     () =>
@@ -137,7 +139,7 @@ export function DriftPanel({
               value={exitFt}
               options={EXIT_OPTIONS}
               format={fmtFt}
-              onChange={setExitSafe}
+              onChange={setExit}
             />
             <SelectField
               label="Deploy (ft AGL)"
@@ -155,11 +157,11 @@ export function DriftPanel({
             />
           </div>
           {/* Under the inputs rather than in the BSR note further down: it is
-              about the default the Deploy box opened on, and the profile
-              does not say which licence a jumper holds. */}
+              about the default the Deploy box opened on, and which choice at
+              the top of the page set it. */}
           <p className="muted small">
-            Deploy opens on {fmtFt(DEFAULT_DEPLOY_FT)}, the BSR minimum for students and A-license
-            holders, which is higher than the B, C and D minimums listed below.
+            Deploy opens on {fmtFt(opening.ft)}, the BSR minimum for {opening.who}, listed below.
+            {license !== null && ' The license is the one chosen under Licensed at the top of the page.'}
           </p>
 
           <dl className="kv">

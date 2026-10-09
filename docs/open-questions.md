@@ -67,17 +67,6 @@ GitHub. It is a crop of `docs/lspc-waivered-wind-limits.jpg` (the photo as
 taken, kept as the record) to the framed sign, 1,400 px wide and about
 210 KB, against 3 MB for the original; a test checks the file is there.
 
-## To do, later: a licence setting under Licensed
-
-Asked for 2026-10-08. The Licensed profile covers A, B, C and D licences,
-whose BSR minimum opening altitudes differ (2-1 I: 3,000 ft for students and
-A-license holders, 2,500 ft for B, C and D). The drift card's Deploy box
-therefore opens on 3,000 ft whatever the profile (`DEFAULT_DEPLOY_FT`), with
-a note saying B to D are lower. A licence choice under the Student/Licensed
-switch (`src/components/ProfileSelector.tsx`) would let the default follow
-the licence. Nothing else in the app reads a licence today: no BSR wind
-limit applies to licensed jumpers, so the surface-wind card would not change.
-
 ## Open-Meteo's cloud cover: shown, not yet compared
 
 Asked for 2026-10-08, and added the same day at the maintainer's request:

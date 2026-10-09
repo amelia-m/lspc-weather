@@ -90,7 +90,7 @@ describe('the Pilots tab and the jumper wind limits', () => {
     expect(app).toMatch(/useWeatherData\(advisoryThresholds, unit\)/);
     expect(app).toMatch(/advisories=\{advisoriesFor\(view, advisories\)\}/);
     expect(app).toMatch(/forPilots=\{!VIEW_USES_PROFILE\[view\]\}/);
-    expect(app).toMatch(/\{VIEW_USES_PROFILE\[view\] && <ProfileSelector profile=\{profile\} lastStudent=\{lastStudent\} lastTier=\{lastTier\} onChange=\{chooseProfile\} \/>\}/);
+    expect(app).toMatch(/\{VIEW_USES_PROFILE\[view\] && \(\s*<ProfileSelector\s/);
     expect(app).toMatch(/\{VIEW_USES_PROFILE\[view\] && \(\s*<SettingsPanel/);
   });
 
