@@ -1,5 +1,9 @@
 import type { DensityAltitudeResult } from '../domain/types';
 import { fmtTempDelta, type TempUnit } from '../domain/units';
+
+/** A difference with its sign. "Above field" goes negative on a cold,
+ *  high-pressure day, which a bare "+" printed as "+-361". */
+const fmtSigned = (ft: number): string => `${ft >= 0 ? '+' : ''}${ft.toLocaleString()}`;
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { CITATIONS } from '../config/thresholds';
@@ -29,6 +33,11 @@ export function DensityAltitudePanel({
         <p className="muted">Needs altimeter + temperature from the METAR.</p>
       ) : (
         <>
+          {/* The dry figure is the headline: FAA-P-8740-2's density altitude,
+              from pressure and temperature, the one the pilot in command
+              works out. The humidity figure is a row of its own, named, so
+              a reader comparing the headline with their own never meets a
+              correction they did not make (src/domain/densityAltitude.ts). */}
           <div className="da-readout">
             <span className="da-big">{da.densityAltitudeFt.toLocaleString()}</span>
             <span className="da-unit">ft DA</span>
@@ -37,11 +46,17 @@ export function DensityAltitudePanel({
             <dt>Field elevation</dt>
             <dd>{da.fieldElevationFt.toLocaleString()} ft</dd>
             <dt>Above field</dt>
-            <dd>+{(da.densityAltitudeFt - da.fieldElevationFt).toLocaleString()} ft</dd>
+            <dd>{fmtSigned(da.densityAltitudeFt - da.fieldElevationFt)} ft</dd>
             <dt>Pressure altitude</dt>
             <dd>{da.pressureAltitudeFt.toLocaleString()} ft</dd>
             <dt>ISA deviation</dt>
             <dd>{fmtTempDelta(da.isaDeviationC, tempUnit, true, 1)}</dd>
+            <dt>With humidity</dt>
+            <dd>
+              {da.humidDensityAltitudeFt == null
+                ? 'no dew point in the report'
+                : `${da.humidDensityAltitudeFt.toLocaleString()} ft`}
+            </dd>
           </dl>
           {/* This used to reach the reader as a flag that fired once DA ran
               2,000–4,000 ft above the field — bands nobody published. The claim
@@ -51,11 +66,16 @@ export function DensityAltitudePanel({
               with the PIC's. */}
           <p className="muted small">
             High density altitude reduces a loaded jump plane’s climb performance — expect longer
-            climbs to altitude.{' '}
-            {da.humidityCorrected
-              ? 'Humidity-corrected (virtual temperature).'
-              : 'Dry-air estimate (no dew point available).'}{' '}
-            Source: <SourceLink citation={CITATIONS.faaDensityAltitude} />
+            climbs to altitude. The figure is the FAA’s density altitude, “pressure altitude
+            corrected for nonstandard temperature variations”, which leaves humidity out; when
+            humidity is high, the same pamphlet says to “add 10 percent to your computed takeoff
+            distance and anticipate a reduced climb rate”. Source:{' '}
+            <SourceLink citation={CITATIONS.faaDensityAltitude} />
+          </p>
+          <p className="muted small">
+            Both figures are worked with the National Weather Service calculator’s formulas; the
+            humidity line is its figure with the dew point folded in. Source:{' '}
+            <SourceLink citation={CITATIONS.nwsDensityAltitude} />
           </p>
         </>
       )}

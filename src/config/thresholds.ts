@@ -173,16 +173,26 @@ export const CITATIONS = {
    *  ft-above-field bands that used to raise a watch/caution were the app's
    *  own. The card prints the DA figure; the reader judges it.
    *
-   *  Cited for the CLAIM, not the arithmetic: the pamphlet states no ft-per-°C
-   *  coefficient and leaves humidity out of the density-altitude computation
-   *  altogether (it treats humidity as an engine-power effect). The card's
-   *  formula and its virtual-temperature correction are in
-   *  src/domain/densityAltitude.ts, which says so. */
+   *  Also cited for the headline figure's definition, "pressure altitude
+   *  corrected for nonstandard temperature variations", which leaves
+   *  humidity out (the pamphlet treats it as an engine-power effect, with
+   *  its own advice). The arithmetic is `nwsDensityAltitude`'s. */
   faaDensityAltitude: {
     source: 'FAA-P-8740-2',
     ref: 'Density Altitude (FAA Safety pamphlet, AFS-8, 2008) — high density altitude means "reduced rate of climb" and "increased takeoff distance"',
     url: 'https://www.faasafety.gov/files/events/NM/NM07/2023/NM07120280/FAA-P-8740-02-DensityAltitude.pdf',
     note: FAA_PAMPHLET_READ_NOTE,
+  },
+  /** The National Weather Service's Density Altitude calculator, whose
+   *  formulas the card computes both figures with (src/domain/
+   *  densityAltitude.ts): the headline with the thermometer reading, the
+   *  line under it with the calculator's virtual temperature, which folds
+   *  the dew point in. */
+  nwsDensityAltitude: {
+    source: 'NWS Density Altitude calculator',
+    ref: 'National Weather Service, WFO El Paso, wxcalc: density altitude from station pressure, temperature and dew point (virtual temperature)',
+    url: 'https://www.weather.gov/epz/wxcalc_densityaltitude',
+    note: 'Read on 2026-10-09: the calculator page’s script and its formula sheets for density altitude and station pressure (weather.gov/media/epz/wxcalc/densityAltitude.pdf, stationPressure.pdf).',
   },
   /**
    * General weather awareness — the thunderstorm flag's claim.

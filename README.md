@@ -93,6 +93,9 @@ the published figures rather than Settings edits.
 - 🗺️ **Sectional chart** — FAA's VFR sectional around the drop zone, from FAA's own tile service, with a ring on the DZ and a zoom step; tap it for SkyVector's sectional on the same spot, or follow its links to live air traffic over the same chart on adsb.lol or adsb.fi.
 - 📝 **TAF** — nearest available TAF, raw text plus a decoded table: one row per period (prevailing, FM, TEMPO, BECMG, PROB) with wind, visibility, sky, weather in words and the FAA flight category (see cross-references below).
 - 🏔️ **Density altitude** — DA, pressure altitude, ISA deviation (C-182 note).
+  The headline is the dry figure, FAA-P-8740-2's "pressure altitude corrected
+  for nonstandard temperature"; a row under it gives the figure with the dew
+  point folded in. Both by the NWS Density Altitude calculator's formulas.
 - 🌅 **Daylight** — sunrise, sunset, and time remaining until sunset. Sunset is
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
   countdown, because no published source sets a minutes-before-sunset figure.
@@ -179,8 +182,9 @@ student ground-wind limit and the opening altitudes from the USPA SIM/BSR, the
 categories from FAA AIM 7-1-7, the sunset trigger from 14 CFR 105.19, and the
 waivered wind and gust ceilings from the club's posted policy
 ([`docs/lspc-waivered-wind-limits.md`](docs/lspc-waivered-wind-limits.md)).
-Density altitude cites FAA-P-8740-2 for the claim on its card, not for a
-threshold.
+Density altitude cites FAA-P-8740-2 for the claim on its card and the
+definition its headline follows, and the NWS calculator for the arithmetic;
+neither sets a threshold.
 
 **There is no "app heuristic" label.** There used to be: a citation reading
 "LSPC Weather — app heuristic" that let a threshold this dashboard invented

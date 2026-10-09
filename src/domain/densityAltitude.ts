@@ -1,37 +1,48 @@
 import type { DensityAltitudeResult } from './types';
-import { satVaporPressureHpa } from './humidity';
 
 /**
- * Density altitude via the standard E6B / flight-planning approximation.
+ * Density altitude by the National Weather Service's own method: the
+ * formulas behind its Density Altitude calculator (weather.gov/epz,
+ * wxcalc_densityaltitude), read 2026-10-09 from the page's script and its
+ * formula sheets (densityAltitude.pdf, stationPressure.pdf).
  *
- *   PA  = elevation + (29.92 − altimeter_inHg) × 1000
- *   ISA = 15 − 1.98 × elevation/1000           (standard temp at the field, °C)
- *   DA  = PA + 120 × (T − ISA)
+ *   station pressure  P = altimeter × ((288 − 0.0065 × h_m) / 288)^5.2561
+ *   density altitude  DA = 145366 × (1 − (17.326 × P_inHg / T_R)^0.235)
  *
- * The 120 ft per °C deviation rule is the accepted flight-planning
- * approximation and is more than adequate for a performance-awareness aid.
- * It is NOT in FAA-P-8740-2, the pamphlet the card cites for the performance
- * claim (2008 edition, read 2026-09-23): that document defines density
- * altitude as "pressure altitude corrected for nonstandard temperature
- * variations" and gives a rule-of-thumb chart rather than a coefficient. The
- * chart's rows work out to roughly 100–115 ft per °C, so this formula reads a
- * couple of hundred feet higher on a hot day than the chart would. The card
- * cites the pamphlet for the claim (worse climb, longer takeoff), not for
- * this number.
+ * with h_m the field elevation in metres and T_R the temperature in degrees
+ * Rankine. The second line is the standard atmosphere's density altitude:
+ * the height at which standard air has the density the field's air has now.
  *
- * When a dew point is supplied, moisture is folded in by replacing the dry OAT
- * with the VIRTUAL temperature (moist air is less dense, so it behaves like
- * warmer dry air → higher DA). The displayed ISA deviation stays the dry
- * thermometer reading; only the DA value carries the moisture correction.
- * The pamphlet does not do this: it says humidity "is not generally
- * considered a major factor in density altitude computations because the
- * effect of humidity is related to engine power rather than aerodynamic
- * efficiency", and advises adding 10 percent to takeoff distance when it is
- * high instead. The correction here is the air-density part of that effect,
- * which is why the card labels the figure "humidity-corrected" rather than
- * presenting it as the number an ASOS or an E6B would give the pilot.
+ * Two figures come out of it, because the two documents a reader would check
+ * the card against disagree about humidity:
  *
- * Pure function — no I/O, fully unit-tested.
+ *  - `densityAltitudeFt`, dry: T is the thermometer reading. This is
+ *    FAA-P-8740-2's density altitude, "pressure altitude corrected for
+ *    nonstandard temperature variations", and the card's headline. The
+ *    pamphlet leaves humidity out of the computation, "because the effect of
+ *    humidity is related to engine power rather than aerodynamic
+ *    efficiency", and advises adding 10 percent to takeoff distance when it
+ *    is high instead.
+ *  - `humidDensityAltitudeFt`: T is the virtual temperature, as the NWS
+ *    calculator computes it from the dew point (moist air is less dense, so
+ *    it behaves like warmer dry air). Null without a dew point.
+ *
+ * This replaced `PA + 120 × (T − ISA)` with the virtual temperature in T. The
+ * 120 ft per °C is in neither document (the pamphlet's chart works out to
+ * roughly 100 to 115), and the headline folded humidity in, so on a hot,
+ * humid day it ran 460 to 570 ft above the dry figure (30 °C over a 22 °C
+ * dew point, 35 °C over 24 °C, at the field on a 29.92 altimeter). The
+ * calculator's rounded constants put a standard day about 20 ft high, at
+ * sea level as at the field; that is its figure, and kept. The vapour pressure is
+ * the calculator's own formula rather than `satVaporPressureHpa`, so the
+ * humid figure is the one its page gives for the same inputs.
+ *
+ * Pressure altitude stays the pilot's rule, elevation + (29.92 − altimeter)
+ * × 1000, and the ISA deviation is from the standard temperature at the
+ * field, 15 − 1.98 °C per 1,000 ft: both are figures the card prints, not
+ * inputs to the density altitude.
+ *
+ * Pure function: no I/O.
  */
 export function densityAltitude(params: {
   elevationFt: number;
@@ -43,26 +54,23 @@ export function densityAltitude(params: {
 
   const pressureAltitudeFt = elevationFt + (29.92 - altimeterInHg) * 1000;
   const isaTempC = 15 - 1.98 * (elevationFt / 1000);
-  const isaDeviationC = oatC - isaTempC;
 
-  // Effective temperature driving DA: virtual temp when humidity is known.
-  let effectiveTempC = oatC;
-  const humidityCorrected = dewpointC != null;
-  if (humidityCorrected) {
-    // Station pressure (hPa) from the pressure altitude, standard atmosphere.
-    const pStationHpa = 1013.25 * (1 - pressureAltitudeFt * 6.8756e-6) ** 5.2559;
-    const eHpa = satVaporPressureHpa(dewpointC); // actual vapor pressure
-    const tK = oatC + 273.15;
-    const tvK = tK / (1 - (eHpa / pStationHpa) * (1 - 0.622));
-    effectiveTempC = tvK - 273.15;
+  const stationInHg = altimeterInHg * ((288 - 0.0065 * elevationFt * 0.3048) / 288) ** 5.2561;
+  const tK = oatC + 273.15;
+  const fromKelvin = (kelvin: number): number => 145366 * (1 - ((17.326 * stationInHg) / (kelvin * 1.8)) ** 0.235);
+
+  let humidDensityAltitudeFt: number | null = null;
+  if (dewpointC != null) {
+    const eHpa = 6.11 * 10 ** ((7.5 * dewpointC) / (237.3 + dewpointC));
+    const tvK = tK / (1 - (eHpa / (stationInHg * 33.8639)) * (1 - 0.622));
+    humidDensityAltitudeFt = Math.round(fromKelvin(tvK));
   }
-  const densityAltitudeFt = pressureAltitudeFt + 120 * (effectiveTempC - isaTempC);
 
   return {
-    densityAltitudeFt: Math.round(densityAltitudeFt),
+    densityAltitudeFt: Math.round(fromKelvin(tK)),
+    humidDensityAltitudeFt,
     pressureAltitudeFt: Math.round(pressureAltitudeFt),
-    isaDeviationC: Math.round(isaDeviationC * 10) / 10,
+    isaDeviationC: Math.round((oatC - isaTempC) * 10) / 10,
     fieldElevationFt: elevationFt,
-    humidityCorrected,
   };
 }

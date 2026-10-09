@@ -282,7 +282,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     title: 'Density altitude and climb performance',
     claim:
       'High density altitude reduces a loaded jump plane’s climb performance — expect longer climbs to altitude.',
-    where: 'Density altitude card, as a standing note under the figure. No flag fires on density altitude.',
+    where: 'Density altitude card, as a standing note under the figures, with the pamphlet’s definition (the headline) and its humidity advice. No flag fires on density altitude.',
     sources: [CITATIONS.faaDensityAltitude],
     found: {
       read: 'the linked PDF (FAA-P-8740-2, AFS-8, 2008 edition), 2026-09-23',
@@ -294,8 +294,8 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [
-      'The card’s headline figure folds humidity in (virtual temperature) whenever a dew point is available, so on a humid day it will not match the dry-air number an ASOS or an E6B gives the pilot. Should the headline be the dry-air figure, with the humidity correction as a separate line?',
-      'The app computes with 120 ft per °C of deviation from standard temperature; the pamphlet’s chart implies less. Which does the pilot in command expect to see?',
+      'The headline is the dry figure, by the pamphlet’s definition, worked with the NWS Density Altitude calculator’s formulas; the figure with the dew point folded in is a row under it. Is the headline the figure the pilot in command would compare their own against?',
+      'The note quotes the pamphlet’s advice for high humidity (add 10 percent to takeoff distance) at any humidity, since the pamphlet sets no level for “high”. Is that the right way to carry it?',
     ],
   },
 ];
