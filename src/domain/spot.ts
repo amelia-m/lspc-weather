@@ -187,3 +187,20 @@ export function estimateDrift(levels: WindsAloftLevel[], opts: DriftOptions): Dr
     highestLevelFtAgl: levels.length === 0 ? null : Math.max(...altitudes),
   };
 }
+
+/** The deploy altitude the drift card's Deploy box shows: the one wanted
+ *  (the jumper's change, or the BSR minimum), unless the exit is at or below
+ *  it, when the highest of `options` under the exit stands in. `held` says
+ *  which, so the card can say why the box shows another figure than its
+ *  note names. If no option is under the exit (only possible if exit's
+ *  floor is ever dropped below deploy's), the wanted one is kept rather than
+ *  a value forced. */
+export function deployShown(
+  wantedFt: number,
+  exitFt: number,
+  options: readonly number[],
+): { ft: number; held: boolean } {
+  const under = options.filter((a) => a < exitFt);
+  if (wantedFt < exitFt || under.length === 0) return { ft: wantedFt, held: false };
+  return { ft: under[under.length - 1], held: true };
+}

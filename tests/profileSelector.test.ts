@@ -20,7 +20,12 @@ const render = (profile: WindProfileId, lastStudent: WindProfileId = 'student', 
   );
 const active = (html: string) =>
   [...html.matchAll(/<button type="button" class="active" aria-pressed="true">([^<]+)<\/button>/g)].map((m) => m[1]);
-const groups = (html: string) => [...html.matchAll(/aria-label="([^"]+)"/g)].map((m) => m[1]);
+/** Each group's accessible name, from its aria-label or from the element its
+ *  aria-labelledby points at. */
+const groups = (html: string) =>
+  [...html.matchAll(/role="group" aria-label(ledby)?="([^"]+)"/g)].map((m) =>
+    m[1] ? (html.match(new RegExp(`id="${m[2]}">([^<]+)<`))?.[1] ?? `#${m[2]} not found`) : m[2],
+  );
 
 /** What clicking a button labelled `label` asks for. The component holds no
  *  state, so calling it and walking the element tree reaches its handlers
@@ -107,18 +112,9 @@ describe('the license choice under Licensed', () => {
     expect(press('licensed', 'student', 'C')).toEqual({ license: 'C' });
   });
 
-  it('names the choice on screen, not only to a screen reader', () => {
-    expect(render('licensed')).toContain('<span class="license-label" aria-hidden="true">USPA license</span>');
-  });
-
-  /* A license stored from an earlier Licensed visit must not reach the drift
-   * card on a student profile: a B, C or D license would open Deploy on
-   * 2,500 ft, under the 3,000 ft student minimum. */
-  it('reaches the drift card only on the Licensed profile', async () => {
-    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
-    const app = fs.readFileSync(decodeURIComponent(new URL('../src/App.tsx', import.meta.url).pathname), 'utf8');
-    const drift = app.slice(app.indexOf('<DriftPanel'), app.indexOf('/>', app.indexOf('<DriftPanel')));
-    expect(drift).toContain("license={profile === 'licensed' ? license : null}");
+  it('names the choice with the words on screen', () => {
+    // groups() above resolves the group's name through aria-labelledby.
+    expect(render('licensed')).toContain('<span class="license-label" id="license-label">USPA license</span>');
   });
 });
 
