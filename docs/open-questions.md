@@ -98,8 +98,8 @@ In short, the two read differently rather than one tracking the other:
   reported a ceiling, and on about a fifth of the hours it reported none.
   Some of that fifth may be cloud above the ceilometer's 12,000 ft.
 
-What is still open is the maintainer's call, not a measurement: whether
-the card keeps both. The per-pressure-level cover (`cloud_cover_850hPa` and
+Decided 2026-10-10 by the maintainer: the card keeps both, with a note
+saying where each read nearer KPMV (`CeilingSkyPanel`). The per-pressure-level cover (`cloud_cover_850hPa` and
 so on) is not used: on the day it was looked at every level read 0%.
 
 Found on the way, and not yet explained: **KPMV never reports FEW.** None of
@@ -107,8 +107,15 @@ its 71,889 reports from 2024-01-01 to 2026-10-10 in IEM's archive had a FEW
 layer, against 2,896 at KLNK and 7,214 at KOFF over the same span. A KPMV
 SCT may therefore cover amounts under 3/8, which the Ceiling & sky card,
 showing the report's layers as written, does not say. What KPMV's sensor
-does with small amounts is the open question. Its AWOS or ASOS type and its
-documentation would settle it; neither was read.
+does with small amounts is the open question. Looked into on 2026-10-10
+(cloud-cover-sources.md, "Stations that never report FEW"):
+
+- 19 of 46 Nebraska stations reported no FEW in September 2026. All were
+  AWOS sharing one report shape; every ASOS reported FEW.
+- The FAA's AWOS standard requires FMH-1 METAR coding, which has FEW, and
+  does not publish the algorithms.
+- The likely cause is one family's software, but that is not confirmed.
+  The state aeronautics division or the manufacturer could settle it.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 

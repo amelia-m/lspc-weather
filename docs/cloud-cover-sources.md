@@ -6,8 +6,11 @@ with what KPMV reports, often enough to be worth showing both
 (`docs/open-questions.md`)? This page answers with six months of past
 records, gathered and compared on 2026-10-10. It says what was measured, how
 it was read and what is only inferred. It changes nothing on the dashboard
-and adds no threshold, colour or verdict; whether both forecasts stay on the
-card is the maintainer's call.
+and adds no threshold, colour or verdict. Whether both forecasts stay on the
+card was the maintainer's call: on 2026-10-10 they kept both, with a note
+on the card saying where each read nearer KPMV. The note quotes figures
+from this page, and a test fails if one of them is no longer here
+(`tests/ceilingSkyClouds.test.ts`).
 
 ## What was compared
 
@@ -70,8 +73,9 @@ Two things the arithmetic cannot allow for, so read the figures with them:
   had a FEW layer, nor did any of its 71,889 reports from 2024-01-01 to
   2026-10-10 (IEM archive, read 2026-10-10). Over the same span KLNK
   reported FEW 2,896 times and KOFF 7,214. Every KPMV report in that span
-  was AUTO. Why it never reports FEW is not established. In practice a KPMV
-  SCT can be less than 3/8, so the SCT row's "inside" is narrower than the
+  was AUTO. Why it never reports FEW is not established; what was found is
+  under "Stations that never report FEW" below. In practice a KPMV SCT can
+  be less than 3/8, so the SCT row's "inside" is narrower than the
   station's real range. The SCT bullet under "Against the report" also
   counts the forecasts at or below 50%, which is 0 to 4/8.
 
@@ -122,7 +126,7 @@ reported, shows this better than "inside":
 | VV | 7 | 34 (24–68) | 14 (3–50) | 14 (3–50) | 3 (0–100) |
 
 Read down a column. The NWS median rises steadily with the reported cover
-(23, 54, 65, 83) and its 10th to 90th percentile band is wide in every row.
+(23%, 54%, 65%, 83%) and its 10th to 90th percentile band is wide in every row.
 Open-Meteo's start-of-run total sits at 0 or 100 most of the time:
 
 - On CLR hours, 1,789 of 2,631 (68%) were under 10% and 371 (14%) were 90%
@@ -181,3 +185,48 @@ and OVC's ranges.
 - **Where KPMV is not the drop zone.** KPMV is about 11.5 miles ENE of the
   drop zone, while both forecasts are for the drop zone's grid point.
   Some of every gap is that distance.
+
+## Stations that never report FEW
+
+Looked into on 2026-10-10, to see whether KPMV is alone. In September 2026
+(IEM's archive, every routine and special report), 46 Nebraska stations
+reported:
+
+| | reported FEW | never reported FEW |
+|---|---|---|
+| ASOS (17) | 17 | 0 |
+| AWOS (25) | 6 | 19 |
+| not in the FAA's list (4: KOFF and three remote sites) | 4 | 0 |
+
+The station types are the FAA's (NASR AWOS file, 2026-10-01 cycle). The
+19 that never reported FEW are 16 AWOS-3, one AWOS-3P and two AWOS-3PT,
+KPMV among them, and all of them are AWOS. They share a report shape:
+
+- a report every 20 minutes;
+- a T group (temperature to a tenth) in the remarks;
+- no sea-level pressure.
+
+The six AWOS that reported FEW split two ways. KJYR, K4V9, KCSB and KGGF
+also report every 20 minutes, but carry no T group. KEAR and KOLU report
+hourly with a sea-level pressure, as the ASOS do. So the 19 look like one
+family of units, and the registry's AWOS type does not tell them apart.
+
+The FAA's standard for non-federal AWOS (AC 150/5220-16E Change 1, read
+2026-10-10 in the PDF at faa.gov) does not explain it. It requires the
+output to "meet the METAR message requirements" of the Federal
+Meteorological Handbook No. 1, whose sky table includes FEW. It leaves the
+algorithms themselves to "FAA algorithms" that "may be obtained from the
+AWOS Non-Federal Engineering Office", which are not published.
+
+The likeliest cause is the sky algorithm in that family's software, which
+reports a small amount as SCT. That is inferred from the pattern above and
+not confirmed: neither the manufacturer nor a software document was read.
+The Nebraska Department of Transportation's aeronautics division, which
+runs many of the state's AWOS, or the unit's manufacturer could settle it.
+
+One more thing about KPMV does not square with the registry. The NASR file
+lists it as AWOS-3, which the AC defines without present-weather or
+thunderstorm sensors (those make it "AWOS III P", "T" or "P/T"). Yet in
+September its reports carried precipitation types (228 reports with rain,
+drizzle or snow) and VCTS and LTG remarks. Either the registry's type is
+out of date, or those come from another source. This was not looked into.
