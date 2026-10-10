@@ -1,4 +1,4 @@
-import { REPO_URL } from '../config/site';
+import { repoDoc as doc } from '../config/site';
 import { Panel } from './common/Panel';
 
 /**
@@ -12,7 +12,6 @@ import { Panel } from './common/Panel';
  * Like the rest of the page: what was measured, and no verdict on it.
  */
 
-const doc = (path: string): string => `${REPO_URL}/blob/main/${path}`;
 const SCHULZE_DOC = doc('docs/markschulze-altitude-reference.md');
 const PARITY_DOC = doc('docs/source-parity.md');
 const SUN_SOURCE = doc('src/domain/sun.ts');

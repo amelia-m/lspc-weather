@@ -98,9 +98,12 @@ In short, the two read differently rather than one tracking the other:
   reported a ceiling, and on about a fifth of the hours it reported none.
   Some of that fifth may be cloud above the ceilometer's 12,000 ft.
 
-Decided 2026-10-10 by the maintainer: the card keeps both, with a note
-saying where each read nearer KPMV (`CeilingSkyPanel`). The per-pressure-level cover (`cloud_cover_850hPa` and
-so on) is not used: on the day it was looked at every level read 0%.
+Decided 2026-10-10 by the maintainer: the card keeps both, with a note on
+how each compared with KPMV (`CeilingSkyPanel`, figures in
+`src/config/cloudComparison.ts`).
+
+The per-pressure-level cover (`cloud_cover_850hPa` and so on) is not used:
+on the day it was looked at every level read 0%.
 
 Found on the way, and not yet explained: **KPMV never reports FEW.** None of
 its 71,889 reports from 2024-01-01 to 2026-10-10 in IEM's archive had a FEW

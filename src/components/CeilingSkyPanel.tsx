@@ -4,7 +4,8 @@ import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory
 import { ceilingState, type CeilingState } from '../domain/normalize';
 import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
-import { REPO_URL } from '../config/site';
+import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
+import { CLOUD_COMPARISON } from '../config/cloudComparison';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
@@ -175,23 +176,29 @@ export function CeilingSkyPanel({
           </>
         )}
       </p>
-      {/* Where each forecast read nearer KPMV, so a reader can weigh them by
-          the kind of hour. Every figure is from the six-month comparison in
-          docs/cloud-cover-sources.md (2026-10-10), measured, not a threshold:
-          nothing here flags or colours an hour. The card's Open-Meteo hours
-          ahead come from runs between that doc's "start of run" and "a day
-          earlier" rows, so their figures fall between the two quoted here. */}
+      {/* How each forecast compared with KPMV, so a reader can weigh them by
+          the kind of hour: one measure for both, at the 5/8 cut AC 00-45H's
+          sky table supplies. The figures are CLOUD_COMPARISON's, which a
+          test works out again from the archived records; measured, not a
+          threshold, and nothing here flags or colours an hour. */}
       {showOm && (
         <p className="muted small">
-          How the two compared with KPMV, April to October 2026: the NWS figure is a graded amount,
-          seldom 0% or 100% (a median of 23% on hours KPMV reported clear, 83% on overcast ones).
-          Open-Meteo&rsquo;s is mostly near 0% or 100%. Clear hours: its total was under 10% on 68%
-          of them, its low-cloud figure (in the hour&rsquo;s tooltip) on 87%; the total also counts
-          high cloud, which a ceilometer cannot see above 12,000 ft. Overcast hours: its total was
-          90% or more on 82%, the NWS figure on 28%. Scattered and broken hours: both spread widely.
-          A day ahead, Open-Meteo&rsquo;s total was 5/8 or more on 43% of hours with no ceiling (21%
-          from its latest run); the NWS figure changed little.{' '}
-          <a href={`${REPO_URL}/blob/main/docs/cloud-cover-sources.md`} target="_blank" rel="noopener noreferrer">
+          How the two compared with {SITE.metarStation.id}, about{' '}
+          {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away, {CLOUD_COMPARISON.period}: on
+          hours it reported a ceiling, the NWS figure was 5/8 (62.5%) or more on{' '}
+          {CLOUD_COMPARISON.ceilingHours.nws}% and Open-Meteo&rsquo;s on{' '}
+          {CLOUD_COMPARISON.ceilingHours.omStart}% for the first hours of its runs,{' '}
+          {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. On hours it reported none, the NWS figure was
+          5/8 or more on {CLOUD_COMPARISON.noCeilingHours.nws}%, Open-Meteo&rsquo;s on{' '}
+          {CLOUD_COMPARISON.noCeilingHours.omStart}% for the first hours of its runs and{' '}
+          {CLOUD_COMPARISON.noCeilingHours.omDayAhead}% a day ahead; the card&rsquo;s hours ahead
+          fall between. Some of those hours had cloud above 12,000 ft, which the station&rsquo;s
+          ceilometer does not report. Open-Meteo&rsquo;s low-cloud share (below 3 km, in the
+          hour&rsquo;s tooltip where the screen shows one) was 5/8 or more on{' '}
+          {CLOUD_COMPARISON.noCeilingHours.omLowStart}% of the hours with no ceiling. The NWS figure is a graded amount,
+          0% or 100% on about {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours; Open-Meteo&rsquo;s is
+          0% or 100% on {CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%.{' '}
+          <a href={repoDoc('docs/cloud-cover-sources.md')} target="_blank" rel="noopener noreferrer">
             The comparison
           </a>
           .

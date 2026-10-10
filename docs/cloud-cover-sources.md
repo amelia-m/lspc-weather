@@ -8,9 +8,12 @@ records, gathered and compared on 2026-10-10. It says what was measured, how
 it was read and what is only inferred. It changes nothing on the dashboard
 and adds no threshold, colour or verdict. Whether both forecasts stay on the
 card was the maintainer's call: on 2026-10-10 they kept both, with a note
-on the card saying where each read nearer KPMV. The note quotes figures
-from this page, and a test fails if one of them is no longer here
-(`tests/ceilingSkyClouds.test.ts`).
+on the card on how each compared with KPMV. The note uses one measure for
+both, the "Ceilings" table's 5/8, and quotes Open-Meteo for the first hours
+of its runs and a day ahead, since the card's hours fall between. Its
+figures are in `src/config/cloudComparison.ts`, and
+`tests/ceilingSkyClouds.test.ts` works each one out again from the
+archived records.
 
 ## What was compared
 

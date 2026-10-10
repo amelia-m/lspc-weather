@@ -1,6 +1,6 @@
 import type { Citation, JumperClass } from '../domain/types';
 import { mphToKt } from '../domain/units';
-import { REPO_URL } from './site';
+import { repoDoc } from './site';
 import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
 
 /**
@@ -349,7 +349,7 @@ export const CITATIONS = {
   lspcWaiver: {
     source: 'LSPC Waivered Wind Limits',
     ref: 'Club wind-limit policy (posted at the DZ)',
-    url: `${REPO_URL}/blob/main/docs/lspc-waivered-wind-limits.md`,
+    url: repoDoc('docs/lspc-waivered-wind-limits.md'),
     // The one citation with no document to "read": its provenance is a photo
     // of the sign, undated, transcribed into docs/. The date here is the
     // earliest the repository can vouch for — when the transcription and the
