@@ -40,6 +40,9 @@ export interface NdfdRecord {
   valid: string;
   sky: number;
   gridKm: number;
+  /** The station whose point this is, in a multi-station file; absent in
+   *  the drop zone's. */
+  site?: string;
 }
 
 /** One hour of Open-Meteo's cloud cover: `historical` is its Historical
@@ -54,12 +57,14 @@ export interface OpenMeteoCloudRecord {
   mid: number | null;
   high: number | null;
   grid: string;
+  site?: string;
 }
 
 export interface MetarRecord {
   src: 'metar';
   obsAt: string;
   raw: string;
+  site?: string;
 }
 
 export type CloudCoverRecord = NdfdRecord | OpenMeteoCloudRecord | MetarRecord;
@@ -107,6 +112,10 @@ export function observedCover(layers: readonly SkyLayer[]): ObservedCover | null
   const [lo, hi] = EIGHTHS[category];
   return { category, loPct: lo * 12.5, hiPct: hi * 12.5 };
 }
+
+/** Whether a report of this cover has a ceiling: a BKN or OVC layer, or a
+ *  vertical visibility (AC 00-45H; normalize.ts's CEILING_COVERS). */
+export const isCeiling = (c: ObservedCategory): boolean => (CEILING_COVERS as readonly string[]).includes(c);
 
 /** How far a forecast percentage sits from the observed range: 0 inside it,
  *  negative below it, positive above. */
@@ -222,7 +231,7 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
     else above++;
     if (p.obs.category === 'SCT' && p.pct <= SCT_HI_PCT) sctAtOrBelowHalf++;
     if (p.pct === 0 || p.pct === 100) noneOrAll++;
-    const reported = (CEILING_COVERS as readonly string[]).includes(p.obs.category);
+    const reported = isCeiling(p.obs.category);
     const forecast = p.pct >= CEILING_EIGHTHS * 12.5;
     if (reported && forecast) ceiling.bothYes++;
     else if (reported) ceiling.reportedOnly++;

@@ -11,6 +11,11 @@ gate and nothing in the app imports it.
 
   python3 scripts/cloudCoverFetch.py 2026-04-01 2026-10-09 out.jsonl.gz
 
+With SITES set ("PMV:40.9484:-95.9174,OMA:41.3119:-95.9018"), the forecasts
+are read at each of those points instead of the drop zone, the METARs are
+each named station's, and every record carries `site`, the station's id.
+That is the station comparison in docs/cloud-cover-stations.md.
+
 Sources, each as read 2026-10-10:
 
   ndfd    NOAA's NDFD sky-cover grids, the CONUS 2.5 km grid (WMO header
@@ -33,6 +38,7 @@ import gzip
 import http.client
 import json
 import os
+import ssl
 import sys
 import tempfile
 import time
@@ -44,38 +50,59 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import eccodes
 
-# src/config/site.ts: the drop zone, as the dashboard asks every forecast for it.
+# src/config/site.ts: the drop zone, as the dashboard asks every forecast for
+# it, and KPMV's reports against it. Each site is (id, lat, lon); `TAGGED`
+# says whether records name their site (only when SITES is given, so the
+# drop zone's archive keeps its shape).
 DZ_LAT, DZ_LON = 40.8703, -96.1085
+
+
+def parse_sites(spec: str) -> list[tuple[str, float, float]]:
+    out = []
+    for part in spec.split(','):
+        sid, lat, lon = part.split(':')
+        out.append((sid, float(lat), float(lon)))
+    return out
+
+
+SITES = parse_sites(os.environ['SITES']) if os.environ.get('SITES') else [('PMV', DZ_LAT, DZ_LON)]
+TAGGED = bool(os.environ.get('SITES'))
+
+
+def tag(record: dict, site: str) -> dict:
+    return {**record, 'site': site} if TAGGED else record
 BUCKET = 'https://noaa-ndfd-pds.s3.amazonaws.com'
 UA = {'User-Agent': 'lspc-weather cloud-cover comparison (github.com/amelia-m/lspc-weather)'}
 ISSUE_HOURS = (0, 6, 12, 18)
 
 
 def get(url: str) -> bytes:
-    # A 30 MB file through the proxy is now and then cut short; try again.
-    for attempt in range(5):
+    # A 30 MB file through the proxy is now and then cut short, and on
+    # 2026-10-10 Open-Meteo's archive host dropped about one TLS handshake
+    # in three; try again, for up to about two minutes.
+    for attempt in range(8):
         try:
             req = urllib.request.Request(url, headers=UA)
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
-        except (http.client.IncompleteRead, urllib.error.URLError, TimeoutError, ConnectionError):
-            if attempt == 4:
+        except (http.client.IncompleteRead, urllib.error.URLError, ssl.SSLError, TimeoutError, ConnectionError):
+            if attempt == 7:
                 raise
-            time.sleep(2 ** attempt)
+            time.sleep(min(2 ** attempt, 30))
     raise AssertionError('unreachable')
 
 
-# The grid point nearest the drop zone, per grid geometry: finding it decodes
+# The grid point nearest each site, per grid geometry: finding it decodes
 # the grid's coordinates (about a second), reading one value by index does not.
 _nearest: dict[tuple, dict] = {}
 
 
-def nearest(h) -> dict:
+def nearest(h, lat: float, lon: float) -> dict:
     geom = tuple(eccodes.codes_get(h, k) for k in (
         'gridType', 'Nx', 'Ny', 'latitudeOfFirstGridPointInDegrees', 'longitudeOfFirstGridPointInDegrees', 'DxInMetres'))
-    if geom not in _nearest:
-        _nearest[geom] = eccodes.codes_grib_find_nearest(h, DZ_LAT, DZ_LON + 360)[0]
-    return _nearest[geom]
+    if (geom, lat, lon) not in _nearest:
+        _nearest[(geom, lat, lon)] = eccodes.codes_grib_find_nearest(h, lat, lon + 360)[0]
+    return _nearest[(geom, lat, lon)]
 
 
 def iso(t: dt.datetime) -> str:
@@ -122,19 +149,20 @@ def ndfd_records(key: str) -> list[dict]:
                         continue
                     ref = dt.datetime.strptime(f"{g('dataDate')}{g('dataTime'):04d}", '%Y%m%d%H%M').replace(tzinfo=dt.timezone.utc)
                     valid = dt.datetime.strptime(f"{g('validityDate')}{g('validityTime'):04d}", '%Y%m%d%H%M').replace(tzinfo=dt.timezone.utc)
-                    near = nearest(h)
-                    out.append({
-                        'src': 'ndfd', 'key': key.rsplit('/', 1)[1], 'issued': iso(issued), 'ref': iso(ref),
-                        'valid': iso(valid), 'sky': eccodes.codes_get_double_element(h, 'values', near['index']),
-                        'gridKm': round(near['distance'], 2),
-                    })
+                    for sid, lat, lon in SITES:
+                        near = nearest(h, lat, lon)
+                        out.append(tag({
+                            'src': 'ndfd', 'key': key.rsplit('/', 1)[1], 'issued': iso(issued), 'ref': iso(ref),
+                            'valid': iso(valid), 'sky': eccodes.codes_get_double_element(h, 'values', near['index']),
+                            'gridKm': round(near['distance'], 2),
+                        }, sid))
                 finally:
                     eccodes.codes_release(h)
         return out
 
 
-def om_records(start: dt.date, end: dt.date) -> list[dict]:
-    loc = f'latitude={DZ_LAT}&longitude={DZ_LON}&start_date={start}&end_date={end}&timezone=UTC'
+def om_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -> list[dict]:
+    loc = f'latitude={lat}&longitude={lon}&start_date={start}&end_date={end}&timezone=UTC'
     bands = ['cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high']
     out = []
     hist = json.loads(get(f'https://historical-forecast-api.open-meteo.com/v1/forecast?{loc}&hourly={",".join(bands)}'))
@@ -146,17 +174,19 @@ def om_records(start: dt.date, end: dt.date) -> list[dict]:
             vals = [hourly[n][i] for n in names]
             if all(v is None for v in vals):
                 continue
-            out.append({
+            out.append(tag({
                 'src': 'om', 'run': run, 'valid': t + 'Z', 'total': vals[0], 'low': vals[1], 'mid': vals[2], 'high': vals[3],
                 'grid': f"{data['latitude']},{data['longitude']}",
-            })
+            }, sid))
     return out
 
 
 def metar_records(start: dt.date, end: dt.date) -> list[dict]:
     last = end + dt.timedelta(days=1)
     url = (
-        'https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=PMV&data=metar'
+        'https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?'
+        + '&'.join(f'station={sid}' for sid, _, _ in SITES)
+        + '&data=metar'
         f'&year1={start.year}&month1={start.month}&day1={start.day}'
         f'&year2={last.year}&month2={last.month}&day2={last.day}'
         '&tz=Etc/UTC&format=onlycomma&latlon=no&report_type=3&report_type=4'
@@ -164,7 +194,7 @@ def metar_records(start: dt.date, end: dt.date) -> list[dict]:
     out = []
     for line in get(url).decode().splitlines()[1:]:
         station, valid, raw = line.split(',', 2)
-        out.append({'src': 'metar', 'obsAt': valid.replace(' ', 'T') + 'Z', 'raw': raw})
+        out.append(tag({'src': 'metar', 'obsAt': valid.replace(' ', 'T') + 'Z', 'raw': raw}, station))
     return out
 
 
@@ -172,7 +202,9 @@ def main() -> None:
     start, end = (dt.date.fromisoformat(a) for a in sys.argv[1:3])
     path = sys.argv[3]
     days = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
-    records = metar_records(start, end) + om_records(start, end)
+    records = metar_records(start, end)
+    for sid, lat, lon in SITES:
+        records += om_records(start, end, sid, lat, lon)
     with ThreadPoolExecutor(8) as pool:
         keys = [k for ks in pool.map(ndfd_keys, days) for k in ks]
     print(f'{len(keys)} NDFD files', file=sys.stderr)
