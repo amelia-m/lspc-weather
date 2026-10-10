@@ -206,14 +206,17 @@ def main() -> None:
     start, end = (dt.date.fromisoformat(a) for a in sys.argv[1:3])
     path = sys.argv[3]
     days = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
-    records = metar_records(start, end)
-    for sid, lat, lon in SITES:
+    # PARTS=metar,ndfd or PARTS=om fetches only those, to merge after: on
+    # 2026-10-10 Open-Meteo's archive answered 429 for an hour at a stretch.
+    parts = set(os.environ.get('PARTS', 'metar,om,ndfd').split(','))
+    records = metar_records(start, end) if 'metar' in parts else []
+    for sid, lat, lon in (SITES if 'om' in parts else []):
         # Spaced, so a run of fourteen sites does not meet the archive host's
         # dropped handshakes back to back.
         records += om_records(start, end, sid, lat, lon)
         time.sleep(3)
     with ThreadPoolExecutor(8) as pool:
-        keys = [k for ks in pool.map(ndfd_keys, days) for k in ks]
+        keys = [k for ks in pool.map(ndfd_keys, days if 'ndfd' in parts else []) for k in ks]
     print(f'{len(keys)} NDFD files', file=sys.stderr)
     # Processes, not threads: one ecCodes handle per process is the safe use.
     with ProcessPoolExecutor(int(os.environ.get('WORKERS', '6'))) as pool:
