@@ -104,6 +104,11 @@ export function AdvisoryPanel({
           <p className="advisory-edited muted small">
             <strong>Your own limits, from Settings:</strong> {ownLimits.join(', ')}. No published
             source sets them for this profile; the flags here fire at your figures.
+            {/* A gust ceiling alone flags gusts and nothing else: said here,
+                in either state of the list, or a steady wind with no gust
+                group reads as covered beside any other flag. */}
+            {!hasWindLimit &&
+              ' You have set no wind limit, so the sustained wind is not flagged at any speed: read it on the Surface wind card.'}
           </p>
         )}
         {forPilots && (
@@ -116,10 +121,9 @@ export function AdvisoryPanel({
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}
-            {/* Said whenever there is no wind limit, own gust ceiling or not:
-                a gust ceiling flags gusts, and a steady wind with no gust
-                group would otherwise read as covered. */}
-            {!forPilots && !hasWindLimit && (
+            {/* With an own gust ceiling, the note above already says the
+                steady wind goes unflagged. */}
+            {!forPilots && !hasWindLimit && ownLimits.length === 0 && (
               <>
                 Surface wind is never flagged on the {profile} profile unless you set your own wind
                 limit in Settings — no published source sets one — so read the speed on the Surface

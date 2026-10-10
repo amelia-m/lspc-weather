@@ -72,10 +72,11 @@ export function SurfaceWindPanel({
   // The note naming the reader's own limits, by the labels Settings and the
   // advisory list use. The figures go in only with no wind reading, when the
   // legend that prints them is not shown.
-  const ownNamed = ownLimits(t).map(
-    (k) =>
-      `${EDITABLE_LIMITS[k].ownLabel.toLowerCase()}${speed == null ? ` (${fmtLimitSpeed(t[k] as number, unit)})` : ''}`,
-  );
+  const ownNamed = ownLimits(t).map((k, i) => {
+    const label = EDITABLE_LIMITS[k].ownLabel;
+    const figure = speed == null ? ` (${fmtLimitSpeed(t[k] as number, unit)})` : '';
+    return `${i === 0 ? label : label.charAt(0).toLowerCase() + label.slice(1)}${figure}`;
+  });
   const ownBoth = ownNamed.length > 1;
   // The two standing notes come from the thresholds as plain strings, and
   // at most one of them shows (the caveat needs a published limit, the
@@ -196,7 +197,7 @@ export function SurfaceWindPanel({
             {windOwn || gustOwn ? (
               <>
                 <strong>No published limit for this profile.</strong>{' '}
-                {`${ownNamed.join(' and ').replace(/^y/, 'Y')} ${ownBoth ? 'are' : 'is'} set by you in Settings, and only you can check ${
+                {`${ownNamed.join(' and ')} ${ownBoth ? 'come' : 'comes'} from Settings, not a published source, and only you can check ${
                   ownBoth ? 'them' : 'it'
                 }; the ${ownBoth ? 'bands and flags here fire at your figures' : 'band and flag here fire at your figure'}.`}
                 {/* A gust ceiling alone leaves the steady wind unchecked:
