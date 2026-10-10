@@ -8,7 +8,7 @@ import { round } from '../../domain/units';
  *  where the club's sign shows two digits, with a step of 1 that nudges it to
  *  another number nobody posted. One decimal matches how the cards print a
  *  limit and is finer than a windsock resolves. */
-const shown = (v: number): string => String(round(v, 1));
+const shown = (v: number | null): string => (v == null ? '' : String(round(v, 1)));
 
 function clamp(v: number, lo: number, hi: number): number {
   if (!Number.isFinite(v)) return lo;
@@ -29,14 +29,22 @@ export function NumberField({
   max = Infinity,
   onCommit,
   className,
+  optional = false,
+  placeholder,
 }: {
   label: ReactNode;
-  value: number;
+  /** null only on an `optional` field: no value set. */
+  value: number | null;
   step: number;
   min: number;
   max?: number;
-  onCommit: (n: number) => void;
+  /** null when an `optional` field is cleared. */
+  onCommit: (n: number | null) => void;
   className?: string;
+  /** Whether clearing the field means "none" (a reader's own limit left
+   *  unset) rather than a typing slip, which clamps to the minimum. */
+  optional?: boolean;
+  placeholder?: string;
 }): JSX.Element {
   const [draft, setDraft] = useState(() => shown(value));
 
@@ -44,6 +52,10 @@ export function NumberField({
   useEffect(() => setDraft(shown(value)), [value]);
 
   const commit = (): void => {
+    if (optional && draft.trim() === '') {
+      if (value != null) onCommit(null);
+      return;
+    }
     const n = clamp(parseFloat(draft), min, max);
     // Tabbing through without editing must not write the rounded display back
     // as an override: the stored limit carries more precision than the field
@@ -64,6 +76,7 @@ export function NumberField({
         type="number"
         step={step}
         value={draft}
+        placeholder={placeholder}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {

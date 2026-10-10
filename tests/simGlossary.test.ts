@@ -165,12 +165,12 @@ const CARDS: [string, () => string, GlossaryKey[]][] = [
   ['the banner', () => r(createElement(DashboardDisclaimer)), ['sta']],
   [
     'Conditions to note, empty',
-    () => r(createElement(AdvisoryPanel, { advisories: [], profile: 'Student', hasSourcedWindLimit: true })),
+    () => r(createElement(AdvisoryPanel, { advisories: [], profile: 'Student', hasWindLimit: true })),
     ['sta'],
   ],
   [
     'Conditions to note, two flags naming the same terms',
-    () => r(createElement(AdvisoryPanel, { advisories: flags, profile: 'Student', hasSourcedWindLimit: true })),
+    () => r(createElement(AdvisoryPanel, { advisories: flags, profile: 'Student', hasWindLimit: true })),
     // The wind flag cites SIM 2-1 and 2-2, so its "BSR" stays plain; the
     // second flag cites neither, so the term's first link is there.
     ['soloStudent', 'sta', 'bsr'],

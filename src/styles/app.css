@@ -1280,11 +1280,6 @@ a.sim-term {
 .settings-unit {
   opacity: 0.7;
 }
-.settings-retire {
-  font-weight: normal;
-  font-size: 0.8em;
-  color: var(--muted);
-}
 .settings-field input {
   background: var(--panel-2);
   border: 1px solid var(--border);

@@ -1,6 +1,6 @@
 import type { CurrentConditions } from '../domain/types';
 import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
-import { isEdited, type Thresholds } from '../config/thresholds';
+import { hasWindLimit, isEdited, isOwnLimit, type Thresholds } from '../config/thresholds';
 import { lowerLimitPublished, lowerLimitUnchecked, windBandUse } from '../domain/advisories';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
@@ -60,6 +60,13 @@ export function SurfaceWindPanel({
   const caveat = t.windBandCaveat;
   const windEdited = isEdited(t, 'windCautionKt');
   const gustEdited = isEdited(t, 'gustCautionKt');
+  // The reader's own limits, set in Settings on Licensed where no source
+  // publishes one: drawn and named like a published limit, and always
+  // called theirs.
+  const windOwn = isOwnLimit(t, 'windCautionKt');
+  const gustOwn = isOwnLimit(t, 'gustCautionKt');
+  const hasWind = hasWindLimit(t);
+  const anyLimit = hasWind || t.gustCautionKt != null;
   // The two standing notes come from the thresholds as plain strings, and
   // at most one of them shows (the caveat needs a published limit, the
   // guidance note its absence). A glossary term in either is linked unless
@@ -79,7 +86,13 @@ export function SurfaceWindPanel({
       /* "flag bands" is only true where a source set one. On the licensed
          profile it named bands over a bar that draws none, for a profile that
          raises no wind flag — a label describing a different card. */
-      subtitle={t.windLimitCitation ? `${label} flag bands` : `${label} — no published limit`}
+      subtitle={
+        t.windLimitCitation
+          ? `${label} flag bands`
+          : windOwn || gustOwn
+            ? `${label} — your own limits`
+            : `${label} — no published limit`
+      }
       sources={[DATA_SOURCES.iemObservation, DATA_SOURCES.nwsObservation]}
       unit={unit}
       onUnitChange={onUnitChange}
@@ -95,29 +108,44 @@ export function SurfaceWindPanel({
             {gust != null && <span className="wind-gust">gust {fmtSpeed(gust, unit)}</span>}
           </div>
           <div className="wind-bar" role="img" aria-label={`Wind ${round(speed)} knots`}>
-            {t.windLimitCitation && (
-              <div className="wind-band band-caution" style={{ left: `${pct(t.windCautionKt)}%` }} />
-            )}
+            {hasWind && <div className="wind-band band-caution" style={{ left: `${pct(t.windCautionKt)}%` }} />}
             {t.gustCautionKt != null && (
               <div className="wind-band band-gust" style={{ left: `${pct(t.gustCautionKt)}%` }} />
             )}
             <div className="wind-fill" style={{ width: `${pct(speed)}%` }} />
             {gust != null && <div className="wind-gust-tick" style={{ left: `${pct(gust)}%` }} />}
           </div>
-          {/* Only a limit a published source sets (or the reader's marked
-              edit of it) is drawn or named. There is
+          {/* Only a limit a published source sets, the reader's marked edit
+              of it, or the reader's own limit where none is published (set
+              in Settings on Licensed, and called theirs) is drawn or
+              named. There is
               no earlier "watch" marker: the one that used to sit a few knots
               under this was the app's own arithmetic, and putting an unsourced
               number on the card beside sourced ones lent it their authority.
               It raises no flag now either — it does not exist. */}
+          {anyLimit && (
+            <p className="wind-legend">
+              {hasWind && (
+                <>
+                  {windOwn ? 'Your limit' : 'Caution'} ≥ {fmtLimitSpeed(t.windCautionKt, unit)}
+                  {windEdited && ' (edited)'}
+                </>
+              )}
+              {hasWind && t.gustCautionKt != null && ' · '}
+              {t.gustCautionKt != null &&
+                `${gustOwn ? 'Your gust ceiling' : 'Gust ceiling'} ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`}
+            </p>
+          )}
+          {/* An own limit has no source to link: the reader set it. */}
+          {(windOwn || gustOwn) && (
+            <p className="muted small">
+              Your own, set in Settings. No published source sets a {windOwn ? 'wind limit' : 'gust ceiling'}
+              {windOwn && gustOwn ? ' or gust ceiling' : ''} for this profile, so only you can check{' '}
+              {windOwn && gustOwn ? 'them' : 'it'}.
+            </p>
+          )}
           {t.windLimitCitation && (
             <>
-              <p className="wind-legend">
-                Caution ≥ {fmtLimitSpeed(t.windCautionKt, unit)}
-                {windEdited && ' (edited)'}
-                {t.gustCautionKt != null &&
-                  ` · Gust ceiling ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`}
-              </p>
               {/* An edited figure is the reader's, from Settings, and the
                   link below does not set it; so when either is edited the
                   line names the published figures the link does vouch for. */}
@@ -160,11 +188,22 @@ export function SurfaceWindPanel({
         <>
           {/* Split in two: what this dashboard does, then what a source says.
               Running them together would let the app's own silence borrow the
-              citation's authority. */}
+              citation's authority. With an own limit set the band and flag
+              are the reader's, and the first half says that instead. */}
           <p className="muted small">
-            <strong>No published limit for this profile</strong>, so there is no band to draw —
-            and no surface-wind flag appears under &ldquo;Conditions to note&rdquo; at any speed.
-            The reading is the observation; judging it is yours.
+            {windOwn ? (
+              <>
+                <strong>No published limit for this profile.</strong> The band and the surface-wind
+                flag here are your own limit from Settings.
+              </>
+            ) : (
+              <>
+                <strong>No published limit for this profile</strong>, so there is no band to draw —
+                and no surface-wind flag appears under &ldquo;Conditions to note&rdquo; at any speed.
+                The reading is the observation; judging it is yours. You can set your own limit in
+                Settings at the foot of the page.
+              </>
+            )}
           </p>
           <p className="muted small">
             <SimTermSegments segments={guidanceText} /> Source: <SourceLink citation={t.windCitation} />

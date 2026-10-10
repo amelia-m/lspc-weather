@@ -4,9 +4,13 @@ import {
   resolveThresholds,
   withOverrides,
   editedLimits,
+  hasWindLimit,
+  sanitizeOverrides,
+  WIND_PROFILE_IDS,
+  type Overrides,
+  isOwnLimitKey,
+  ownLimits,
   EDITABLE_LIMITS,
-  EDITABLE_LIMIT_KEYS,
-  isEditable,
   type EditableLimit,
   profileLabel,
   WAIVER_TIERS,
@@ -70,7 +74,6 @@ const UNIT_KEY = 'lspc:windUnit';
 const TEMP_UNIT_KEY = 'lspc:tempUnit';
 const WINDS_METHOD_KEY = 'lspc:windsMethod';
 
-type Overrides = Partial<Record<WindProfileId, Partial<Thresholds>>>;
 
 // localStorage can throw (private mode, disabled cookies, quota). Guard every
 // access so a storage failure degrades to in-memory state instead of a
@@ -90,42 +93,9 @@ function safeLocalSet(key: string, value: string): void {
   }
 }
 
-const VALID_PROFILE_IDS: readonly WindProfileId[] = [
-  'student',
-  'licensed',
-  ...WAIVER_TIERS.map((t) => t.id),
-];
-
 /** Validate a persisted profile id; anything unknown falls back to 'student'. */
 function toWindProfileId(raw: string | null): WindProfileId {
-  return VALID_PROFILE_IDS.includes(raw as WindProfileId) ? (raw as WindProfileId) : 'student';
-}
-
-/** Sanitize persisted threshold overrides. localStorage is user-writable, so a
- *  corrupt or tampered value (a string where a number belongs, an unknown
- *  profile key) would silently break threshold comparisons. Keep only entries
- *  under valid profile ids whose values are finite numbers for the limits
- *  Settings offers on that profile (`isEditable`); drop everything else. A stored value for any other field would change what a flag fires
- *  on with no row to see it and no "(edited)" mark anywhere. */
-function sanitizeOverrides(raw: unknown): Overrides {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
-  const out: Overrides = {};
-  for (const [id, entry] of Object.entries(raw)) {
-    if (!VALID_PROFILE_IDS.includes(id as WindProfileId)) continue;
-    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue;
-    const base = resolveThresholds(id as WindProfileId);
-    const clean: Partial<Thresholds> = {};
-    for (const [key, value] of Object.entries(entry as Record<string, unknown>)) {
-      if (!(EDITABLE_LIMIT_KEYS as string[]).includes(key)) continue;
-      if (!isEditable(base, key as EditableLimit)) continue;
-      const baseValue = (base as unknown as Record<string, unknown>)[key];
-      if (typeof baseValue === 'number' && typeof value === 'number' && Number.isFinite(value)) {
-        (clean as Record<string, number>)[key] = value;
-      }
-    }
-    if (Object.keys(clean).length > 0) out[id as WindProfileId] = clean;
-  }
-  return out;
+  return WIND_PROFILE_IDS.includes(raw as WindProfileId) ? (raw as WindProfileId) : 'student';
 }
 
 /** Which page or dashboard tab is showing. A hash rather than a router: the
@@ -263,10 +233,14 @@ export default function App(): JSX.Element {
   );
   const modified = !!profileOverride && Object.keys(profileOverride).length > 0;
 
-  const setThreshold = (key: keyof Thresholds, value: number): void =>
+  // null clears an own limit. A value equal to the published one is no
+  // edit and is dropped; an own limit is kept whatever its value, since it
+  // replaces no published figure (Licensed's 25 kt is only the card's bar
+  // scale, and a reader whose limit is 25 kt has still set one).
+  const setThreshold = (key: EditableLimit, value: number | null): void =>
     setOverrides((prev) => {
       const next: Partial<Thresholds> = { ...(prev[profile] ?? {}) };
-      if (value === (base[key] as number)) delete next[key];
+      if (value == null || (!isOwnLimitKey(base, key) && value === (base[key] as number))) delete next[key];
       else (next[key] as number) = value;
       const out = { ...prev, [profile]: next };
       if (Object.keys(next).length === 0) delete out[profile];
@@ -439,8 +413,9 @@ export default function App(): JSX.Element {
            otherwise empty; the Pilots list carries no jumper wind flag on
            any profile and says that instead (forPilots). Same null that
            gates the flag and the card's band. */
-        hasSourcedWindLimit={thresholds.windLimitCitation !== null}
+        hasWindLimit={hasWindLimit(advisoryThresholds)}
         editedLimits={editedLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].label)}
+        ownLimits={ownLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].ownLabel)}
         forPilots={!VIEW_USES_PROFILE[view]}
       />
 

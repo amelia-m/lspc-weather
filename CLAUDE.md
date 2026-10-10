@@ -67,6 +67,15 @@ precisely because they were colour and text rather than flags.
   Surface wind card still carries the profile's guidance and BSR citation as a
   standing note, and the empty advisory list still names the gap, so silence is
   not left to read as an all-clear.
+- **A licensed jumper's own limits are the one exception, and are always
+  called theirs.** "Set your own thresholds" (`SettingsPanel`) is open on
+  Licensed only (`takesOwnLimits`; the maintainer's call, 2026-10-10: a
+  student's limits are the BSR's or the waiver tier's). There a wind limit
+  or gust ceiling the reader sets (`own`, `isOwnLimit`, `hasWindLimit`)
+  draws a band and a chart line and raises a flag, and every one of them
+  says it is the reader's own, with no source link: a figure the person
+  who set it can check is not one this app invented. Do not extend it to
+  a figure the app supplies, and do not reopen it to students.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed

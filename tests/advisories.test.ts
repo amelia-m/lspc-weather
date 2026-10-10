@@ -196,7 +196,7 @@ describe('evaluateAdvisories', () => {
       createElement(AdvisoryPanel, {
         advisories,
         profile: '0–5 jumps',
-        hasSourcedWindLimit: true,
+        hasWindLimit: true,
       }),
     );
     expect(html).toContain('Sources:');
@@ -519,7 +519,7 @@ describe('an empty advisory list is not an all-clear', () => {
       createElement(AdvisoryPanel, {
         advisories: out,
         profile: 'Licensed',
-        hasSourcedWindLimit: false,
+        hasWindLimit: false,
       }),
     );
     expect(html).toContain('No conditions flagged');
@@ -537,7 +537,7 @@ describe('an empty advisory list is not an all-clear', () => {
       createElement(AdvisoryPanel, {
         advisories: [],
         profile: 'Student',
-        hasSourcedWindLimit: true,
+        hasWindLimit: true,
       }),
     );
     expect(html).toContain('No conditions flagged');
@@ -867,7 +867,7 @@ describe('a limit edited in Settings is not presented as the published one', () 
   it('says on the advisory list which limits are edited, empty or not', () => {
     const panel = (advisories: ReturnType<typeof evaluateAdvisories>, edited: string[]) =>
       markup(
-        createElement(AdvisoryPanel, { advisories, profile: 'Student', hasSourcedWindLimit: true, editedLimits: edited }),
+        createElement(AdvisoryPanel, { advisories, profile: 'Student', hasWindLimit: true, editedLimits: edited }),
       );
     // Caution raised to 20 kt in 15 kt: over the BSR's 12, nothing listed.
     const t = withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 20 });
@@ -885,15 +885,11 @@ describe('a limit edited in Settings is not presented as the published one', () 
       markup(
         createElement(SettingsPanel, { thresholds: t, base, label: 'x', modified: true, onChange: () => {}, onReset: () => {} }),
       ).replace(/<!-- -->/g, '');
-    const student = DEFAULT_THRESHOLDS.student;
-    const html = settings(withOverrides(student, { windCautionKt: 20 }), student);
-    expect(html).toContain('· published 12');
-    expect(settings(withOverrides(student), student)).not.toContain('published');
-    // A gust ceiling of 13.904 kt shows as 13.9.
-    const tier = resolveThresholds('waiver:0-5');
-    expect(settings(withOverrides(tier, { gustCautionKt: 18 }), tier)).toContain('· published 13.9');
-    // No Wind caution row at all where no source sets one.
-    expect(settings(DEFAULT_THRESHOLDS.licensed, DEFAULT_THRESHOLDS.licensed)).not.toContain('Wind — caution');
+    // Settings is open on Licensed only; there the visibility caution is
+    // the one published figure to edit.
+    const licensed = DEFAULT_THRESHOLDS.licensed;
+    expect(settings(withOverrides(licensed, { visibilityCautionSm: 5 }), licensed)).toContain('· published 3');
+    expect(settings(withOverrides(licensed), licensed)).not.toContain('published 3');
   });
 
   it('treats an override equal to the published value as unedited', () => {
