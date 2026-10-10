@@ -1,9 +1,9 @@
 import { SITE } from '../config/site';
+import { shortHour } from '../domain/localClock';
 
 /** "10pm": the hour alone, as the hourly chart's axis and the precip
  *  card's blocks print it, where "10:00 PM" would wrap on a phone. */
-export const fmtShortHour = (ms: number): string =>
-  new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', timeZone: SITE.timeZone }).replace(' ', '').toLowerCase();
+export const fmtShortHour = (ms: number): string => shortHour(ms, SITE.timeZone);
 
 /** "Fri": the weekday alone, at the drop zone, for the hourly chart's axis
  *  when it spans days. */

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
-import { resolveThresholds, type WindProfileId } from '../src/config/thresholds';
+import { resolveThresholds, withOverrides, type Thresholds, type WindProfileId } from '../src/config/thresholds';
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 
@@ -11,13 +11,13 @@ import { METAR_FIXTURE } from '../src/api/fixtures/metar';
  * its own row saying which reading it is held to and how far under it that
  * is, or that it is at or above it. The waiver's 21+ tier: caution 15.6 kt,
  * gust ceiling 17.4 kt. */
-const card = (wspd: number, wgst: number | null, profile: WindProfileId = 'waiver:21+') =>
+const card = (wspd: number, wgst: number | null, profile: WindProfileId | Thresholds = 'waiver:21+', unit: 'kt' | 'mph' = 'kt') =>
   renderToStaticMarkup(
     createElement(SurfaceWindPanel, {
       current: normalizeMetar({ ...METAR_FIXTURE[0], wspd, wgst }),
-      thresholds: resolveThresholds(profile),
+      thresholds: typeof profile === 'string' ? resolveThresholds(profile) : profile,
       label: 'test',
-      unit: 'kt',
+      unit,
       onUnitChange: () => {},
     }),
   );
@@ -41,7 +41,7 @@ describe('Surface wind limit rows', () => {
     // The student caution is a whole 12 kt (the BSR's 14 mph, rounded in
     // thresholds.ts), so a whole-knot reading can sit exactly on it.
     expect(statuses(card(12, null, 'student'))[0]).toBe('wind 12 kt: at or above [over]');
-    expect(statuses(card(11, null, 'student'))[0]).toMatch(/^wind 11 kt: 1(\.0)? kt under$/);
+    expect(statuses(card(11, null, 'student'))[0]).toBe('wind 11 kt: 1 kt under');
   });
 
   it('draws no limit row on Licensed, where no limit is set, and still keys the fill and tick', () => {
@@ -63,5 +63,37 @@ describe('Surface wind limit rows', () => {
     const lefts = [...card(12, 22).matchAll(/wind-gust-tick" style="left:([\d.]+)%/g)].map((m) => Number(m[1]));
     expect(lefts.length).toBeGreaterThan(0);
     for (const l of lefts) expect(l).toBeLessThan(97);
+  });
+
+  it('with a gust ceiling alone, still draws the steady wind', () => {
+    // Licensed, own gust ceiling, no wind limit: the gust row is the card's
+    // only bar, and the steady wind the key names has to be on it.
+    const html = card(35, null, withOverrides(resolveThresholds('licensed'), { gustCautionKt: 20 }));
+    expect(html).not.toContain('band-caution');
+    expect(html).toContain('wind-fill');
+    expect(html).toMatch(/key-fill[^>]*><\/span> steady wind/);
+  });
+
+  it('calls an own wind limit the reader’s in the key, not the caution', () => {
+    const html = card(10, 14, withOverrides(resolveThresholds('licensed'), { windCautionKt: 18 }));
+    expect(html).toContain('your limit counts whichever is higher');
+    expect(html).not.toContain('the caution counts');
+  });
+
+  it('prints a distance that adds up with the reading and the limit as shown, in either unit', () => {
+    // Every whole-knot reading under every limit from 10 to 22 kt in tenths:
+    // reading + distance is the limit as printed, or the row says "just
+    // under" where an mph reading rounds up to a limit it is still under.
+    for (const unit of ['kt', 'mph'] as const) {
+      for (let tenths = 100; tenths <= 220; tenths++) {
+        const t = withOverrides(resolveThresholds('licensed'), { windCautionKt: tenths / 10 });
+        const html = card(10, null, t, unit);
+        const limit = Number(/Your limit ≥ ([\d.]+)/.exec(html)![1]);
+        const [status] = statuses(html);
+        const m = /^wind (\d+) \w+: ([\d.]+) \w+ under$/.exec(status);
+        if (m) expect(Number((Number(m[1]) + Number(m[2])).toFixed(1))).toBe(limit);
+        else expect(status).toMatch(/at or above|just under/);
+      }
+    }
   });
 });

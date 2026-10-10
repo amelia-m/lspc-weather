@@ -3,8 +3,8 @@ import type { Advisory } from '../domain/types';
 /**
  * Which cards each tab of the dashboard shows, in order.
  *
- * Jumpers opens on the hourly wind chart and the winds aloft, then drift,
- * the ground wind against the limit, conditions now and the rest of the
+ * Jumpers opens on the ground wind against the limit, then the hourly wind
+ * chart, the winds aloft and drift, conditions now and the rest of the
  * day's planning. Pilots gathers what the jump pilot plans the load on: the
  * sectional, the terminal forecast, density altitude for the climb, winds
  * aloft for the jump run, and links to the services a pilot briefs from.
@@ -80,8 +80,9 @@ export const VIEW_HASH: Readonly<Record<View, string>> = {
 /**
  * Whether the tab shows the wind-limit profile (Student or Licensed; for a
  * student, USPA BSR or the LSPC waiver and its tier) and the threshold settings. The profile picks a jumper's
- * ground-wind limit; the Pilots tab shows no card that reads it, and its
- * two flags in the advisory list are left off that tab
+ * ground-wind limit; the Pilots tab shows no card that reads it, and the
+ * flags it drives in the advisory list (on the report and on the forecast)
+ * are left off that tab
  * (`JUMPER_ONLY_ADVISORIES`). Offering it there would ask a pilot which
  * jumper they are. The settings go with it, and the Pilots list fires on the
  * published figures, not on edits made on the Jumpers tab (App.tsx).

@@ -3,6 +3,7 @@ import { CITATIONS, hasWindLimit, isEdited, isOwnLimit, type Thresholds } from '
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
 import { SITE } from '../config/site';
+import { shortHour } from './localClock';
 
 /**
  * Turn a weather snapshot into a list of ADVISORIES — conditions worth noting,
@@ -284,9 +285,8 @@ function severityRank(level: AdvisoryLevel): number {
 export const FORECAST_FLAG_HOURS = 12;
 
 const MS_H = 3_600_000;
-const HOUR_LABEL = new Intl.DateTimeFormat('en-US', { hour: 'numeric', timeZone: SITE.timeZone });
-/** "10am", at the drop zone, as the hourly chart labels its hours. */
-const hourLabel = (ms: number): string => HOUR_LABEL.format(ms).replace(' ', '').toLowerCase();
+/** "10am", at the drop zone: the hourly chart's own label (`shortHour`). */
+const hourLabel = (ms: number): string => shortHour(ms, SITE.timeZone);
 
 /** The hours as runs of consecutive hours, "10am–7pm, 9pm–10pm". Each
  *  forecast point stands for the hour that starts at its time, so a run ends
@@ -302,9 +302,18 @@ export function hourRuns(times: readonly number[]): string {
 }
 
 /** The forecast hours in the coming FORECAST_FLAG_HOURS, the one in progress
- *  included. */
-function comingHours(hourly: readonly HourlyPoint[], now: number): HourlyPoint[] {
-  return hourly.filter((h) => h.time + MS_H > now && h.time < now + FORECAST_FLAG_HOURS * MS_H);
+ *  included, with wind and gust in whole knots. The gridpoint serves km/h,
+ *  so a gust converts to 17.44 kt; a METAR reports whole knots, and held
+ *  unrounded such a gust raised a flag against the 17.4 kt ceiling and then
+ *  printed its peak as "17 kt", under the figure the flag said it reached. */
+function comingHours(hourly: readonly HourlyPoint[], now: number): { time: number; wind: number | null; gust: number | null }[] {
+  return hourly
+    .filter((h) => h.time + MS_H > now && h.time < now + FORECAST_FLAG_HOURS * MS_H)
+    .map((h) => ({
+      time: h.time,
+      wind: h.windSpeedKt == null ? null : Math.round(h.windSpeedKt),
+      gust: h.windGustKt == null ? null : Math.round(h.windGustKt),
+    }));
 }
 
 /** The forecast's surface wind against the profile's caution and the
@@ -323,9 +332,9 @@ export function forecastWindAdvisories(
     `A forecast, not a reading: the ${metric} flag fires if ${SITE.metarStation.id} reports it.`;
 
   if (hasWindLimit(t)) {
-    const over = hours.filter((h) => Math.max(h.windSpeedKt ?? -Infinity, h.windGustKt ?? -Infinity) >= t.windCautionKt);
+    const over = hours.filter((h) => Math.max(h.wind ?? -Infinity, h.gust ?? -Infinity) >= t.windCautionKt);
     if (over.length > 0) {
-      const peak = Math.max(...over.map((h) => Math.max(h.windSpeedKt ?? -Infinity, h.windGustKt ?? -Infinity)));
+      const peak = Math.max(...over.map((h) => Math.max(h.wind ?? -Infinity, h.gust ?? -Infinity)));
       const which = isOwnLimit(t, 'windCautionKt')
         ? 'your own limit, set in Settings'
         : isEdited(t, 'windCautionKt')
@@ -337,8 +346,11 @@ export function forecastWindAdvisories(
         metric: 'Forecast wind',
         value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
         guidance:
-          `The NWS hourly forecast for the drop zone, gusts included, is at or above ${fmtLimitSpeed(t.windCautionKt, unit)}, ` +
-          `${which}, in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Surface wind')} ${t.windGuidance}`.trim(),
+          (`The NWS hourly forecast for the drop zone, gusts included, is at or above ${fmtLimitSpeed(t.windCautionKt, unit)}, ` +
+          `${which}, in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Surface wind')} ${t.windGuidance} ` +
+          // Which of the source's figures the flag uses, as the flag on the
+          // report says: on Student, the BSR's 14 mph and not its 10 mph.
+          windBandSentence(t, unit)).trim(),
         citation: t.windCitation,
         secondaryCitation: t.windSecondaryCitation,
       });
@@ -347,14 +359,23 @@ export function forecastWindAdvisories(
 
   if (t.gustCautionKt != null) {
     const ceiling = t.gustCautionKt;
-    const over = hours.filter((h) => h.windGustKt != null && h.windGustKt >= ceiling);
+    const over = hours.filter((h) => h.gust != null && h.gust >= ceiling);
     if (over.length > 0) {
-      const peak = Math.max(...over.map((h) => h.windGustKt as number));
+      const peak = Math.max(...over.map((h) => h.gust as number));
+      // As the Gust limit flag on the report words each case: an own ceiling
+      // quotes the profile's guidance the BSR link backs; an edited one names
+      // the waiver's own figure, so the link does not vouch for the edit;
+      // the waiver's states what it is measured on, which a forecast is not.
       const which = isOwnLimit(t, 'gustCautionKt')
         ? 'the gust ceiling you set in Settings, which only you can check'
         : isEdited(t, 'gustCautionKt')
           ? 'the gust ceiling as edited in Settings'
-          : 'the LSPC waiver gust ceiling for this experience tier';
+          : 'the LSPC waiver gust ceiling for this experience tier, which the waiver sets on gusts measured over the last 30 min';
+      const after = isOwnLimit(t, 'gustCautionKt')
+        ? ` ${t.windGuidance}`
+        : isEdited(t, 'gustCautionKt') && t.published?.gustCautionKt != null
+          ? ` The LSPC waiver's ceiling for this experience tier is ${fmtLimitSpeed(t.published.gustCautionKt, unit)} (gusts measured over the last 30 min).`
+          : '';
       out.push({
         id: 'forecast-gust',
         level: 'forecast',
@@ -362,7 +383,7 @@ export function forecastWindAdvisories(
         value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
         guidance:
           `The NWS hourly forecast for the drop zone has gusts at or above ${fmtLimitSpeed(ceiling, unit)}, ${which}, ` +
-          `in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Gust limit')}`,
+          `in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Gust limit')}${after}`.trim(),
         citation: t.windCitation,
       });
     }

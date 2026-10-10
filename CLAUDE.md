@@ -87,7 +87,9 @@ precisely because they were colour and text rather than flags.
   the afternoon's gusts well over the same limit lines. A forecast flag
   fires only on the limits the report flags use (published, or the
   reader's own), says it is a forecast, names its hours in the next 12, and
-  ranks below every observed flag. It is not a licence for forecast
+  ranks below every observed flag. It reads the forecast in whole knots, as
+  a METAR reports, so the peak it prints never sits under the limit it
+  names. It is not a licence for forecast
   thresholds of the app's own: a forecast storm or rain chance still flags
   nothing.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
