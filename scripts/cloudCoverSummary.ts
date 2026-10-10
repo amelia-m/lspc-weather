@@ -44,6 +44,9 @@ for (const x of s.vs) {
   );
 }
 out.push('');
+out.push('SCT hours with the forecast at or below 50% (SCT for a station that reports no FEW):');
+for (const x of s.vs) out.push(`  ${x.source}: ${x.sctAtOrBelowHalf} of ${x.byObserved.SCT.n} (${pct(x.sctAtOrBelowHalf, x.byObserved.SCT.n)})`);
+out.push('');
 out.push('| Forecast | Ceiling reported, forecast ≥ 5/8 | Ceiling reported, forecast below | No ceiling, forecast ≥ 5/8 | Neither |');
 out.push('|---|---|---|---|---|');
 for (const x of s.vs) {

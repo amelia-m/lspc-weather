@@ -34,11 +34,13 @@ shows.
 What each forecast is, by lead time:
 
 - **NWS, latest issuance** is the newest of the four daily files issued
-  before the hour, 0.7 to 7.2 hours ahead (12.2 for the 40 hours that the
-  missing file left without one). The card reads the API, which updates
-  more often, so on the card the lead is shorter than here, not longer.
-  "The issuance before" is six hours older, and "a day earlier" 24 hours
-  older.
+  before the hour, 0.7 to 7.2 hours ahead (up to 12.2 for the 5 hours,
+  2026-09-05 21Z to 09-06 01Z, that the missing file left without one).
+  The card reads the API, which updates more often, so on the card the
+  lead is shorter than here, not longer. "6 h or more ahead" and "24 h or
+  more ahead" are the newest file issued at least that long before the
+  hour, picked by time, so the missing file lengthens their lead rather
+  than moving an older file into the row.
 - **Open-Meteo, start of run** is its best case: each hour comes from the
   first hours of a model run. The card's hours ahead come from runs made
   earlier, so the card's figures lie somewhere between this row and the
@@ -70,8 +72,8 @@ Two things the arithmetic cannot allow for, so read the figures with them:
   reported FEW 2,896 times and KOFF 7,214. Every KPMV report in that span
   was AUTO. Why it never reports FEW is not established. In practice a KPMV
   SCT can be less than 3/8, so the SCT row's "inside" is narrower than the
-  station's real range; below, each SCT figure is also given against 0 to
-  50%.
+  station's real range. The SCT bullet under "Against the report" also
+  counts the forecasts at or below 50%, which is 0 to 4/8.
 
 The summary code is `src/domain/cloudCoverSources.ts` (pure, tested); the
 records are in `data/parity/cloud-cover-2026-04-01-to-2026-10-09.jsonl.gz`.
@@ -96,8 +98,8 @@ TEMPORAIRILY INOPERATIVE"). Of the rest: CLR 2,632, SCT 547, BKN 373, OVC
 | Forecast | Hours | Lead (h) | Inside the reported range | Below | Above | Median gap (points) | 90th pct gap |
 |---|---|---|---|---|---|---|---|
 | NWS, latest issuance | 4,476 | 0.7–12.2 | 288 (6%) | 1,260 (28%) | 2,928 (65%) | 19.5 | 62 |
-| NWS, the issuance before | 4,469 | 6.2–18.2 | 286 (6%) | 1,287 (29%) | 2,896 (65%) | 20.5 | 62 |
-| NWS, a day earlier | 4,451 | 24.2–36.2 | 265 (6%) | 1,305 (29%) | 2,881 (65%) | 22 | 62 |
+| NWS, 6 h or more ahead | 4,470 | 6.2–17.2 | 280 (6%) | 1,283 (29%) | 2,907 (65%) | 20.75 | 62 |
+| NWS, 24 h or more ahead | 4,452 | 24.2–35.2 | 248 (6%) | 1,310 (29%) | 2,894 (65%) | 22 | 62 |
 | Open-Meteo, start of run (total) | 4,475 | — | 1,904 (43%) | 725 (16%) | 1,846 (41%) | 2 | 86 |
 | Open-Meteo, a day earlier (total) | 4,475 | 24 | 1,563 (35%) | 606 (14%) | 2,306 (52%) | 12.5 | 100 |
 | Open-Meteo, start of run (low band) | 4,475 | — | 2,336 (52%) | 991 (22%) | 1,148 (26%) | 0 | 50 |
@@ -129,8 +131,8 @@ Open-Meteo's start-of-run total sits at 0 or 100 most of the time:
 - On OVC hours, 753 of 917 (82%) were 90% or more; the NWS figure was 90%
   or more on 259 (28%) and 80% or more on 509 (56%).
 - On SCT hours both scatter. Against 0 to 50% (KPMV reports no FEW), the
-  NWS figure was under 50 on 245 of 547 hours (45%) and Open-Meteo's on
-  327 (60%).
+  NWS figure was at or below 50 on 250 of 547 hours (46%), Open-Meteo's
+  total on 335 (61%) and its low band on 485 (89%).
 
 The 7 VV hours (fog) are too few to read.
 
@@ -139,22 +141,22 @@ The 7 VV hours (fog) are too few to read.
 | Forecast | Ceiling reported: forecast ≥ 5/8 | Ceiling reported: forecast below | No ceiling: forecast ≥ 5/8 | No ceiling: forecast below |
 |---|---|---|---|---|
 | NWS, latest issuance | 943 (73%) | 354 | 625 (20%) | 2,554 |
-| NWS, the issuance before | 905 (70%) | 391 | 584 (18%) | 2,589 |
-| NWS, a day earlier | 836 (65%) | 445 | 547 (17%) | 2,623 |
+| NWS, 6 h or more ahead | 912 (70%) | 384 | 590 (19%) | 2,584 |
+| NWS, 24 h or more ahead | 834 (65%) | 448 | 540 (17%) | 2,630 |
 | Open-Meteo, start of run (total) | 1,001 (77%) | 296 | 662 (21%) | 2,516 |
 | Open-Meteo, a day earlier (total) | 998 (77%) | 299 | 1,373 (43%) | 1,805 |
 | Open-Meteo, start of run (low band) | 856 (66%) | 441 | 120 (4%) | 3,058 |
 
 The percentages are of the hours with a ceiling (first column) and without
 one (third). "No ceiling" includes hours with cloud above 12,000 ft, so the
-third column counts some hours where the forecast cloud was really there.
+third column may count hours when the forecast cloud was there.
 The low band's 4% is the figure least affected by that.
 
 Lead time shows in each source differently. The NWS figure changes little
-from a day ahead to the latest issuance: it is at or above 5/8 on 65%, then
+from 24 h ahead to the latest issuance: it is at or above 5/8 on 65%, then
 73%, of the ceiling hours. Open-Meteo's day-ahead total is at or above 5/8
-on as many ceiling hours as its start of run is, but is at or above 5/8 on more than twice as many
-hours without a ceiling (43% against 21%).
+on as many ceiling hours as its start of run is, but also on more than
+twice as many hours without a ceiling (43% against 21%).
 
 ## The two forecasts against each other
 

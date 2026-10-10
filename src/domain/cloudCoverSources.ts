@@ -18,15 +18,15 @@
  * report's cover is its highest-ranked layer's range, in percent, and a
  * forecast percentage either falls inside that range or misses it by so many
  * points. That is the whole comparison: counts and spreads, never a grade
- * (CLAUDE.md, the governing rule). Two allowances the numbers cannot make on
- * their own, and the doc states: CLR says nothing above 12,000 ft, where a
- * forecast's total includes high cloud; and a forecast of 0% under FEW counts
- * as inside, because FEW's range starts at "less than 1/8".
+ * (CLAUDE.md, the governing rule). A forecast of 0% under FEW counts as
+ * inside, because FEW's range starts at "less than 1/8". One thing the
+ * numbers cannot allow for, and the doc states: CLR says nothing above
+ * 12,000 ft, where a forecast's total includes high cloud.
  *
  * Pure: records in, summary out. Every time is in a record.
  */
 import type { SkyLayer } from './types';
-import { parseSkyGroups } from './normalize';
+import { CEILING_COVERS, NO_CLOUD_COVERS, parseSkyGroups } from './normalize';
 import { median, percentile, spreadOf, type Spread } from './paritySummary';
 
 /** One NDFD sky-cover value at the drop zone's grid point (the NWS gridpoint
@@ -91,10 +91,13 @@ const EIGHTHS: Record<ObservedCategory, [number, number]> = {
  *  layer can have. */
 const CEILING_EIGHTHS = EIGHTHS.BKN[0];
 
+/** SCT's highest summation amount, in percent. */
+const SCT_HI_PCT = EIGHTHS.SCT[1] * 12.5;
+
 const RANK: Record<ObservedCategory, number> = { CLR: 0, FEW: 1, SCT: 2, BKN: 3, OVC: 4, VV: 5 };
 
 const categoryOf = (l: SkyLayer): ObservedCategory =>
-  l.cover === 'SKC' || l.cover === 'CLR' || l.cover === 'NSC' || l.cover === 'NCD' ? 'CLR' : l.cover;
+  NO_CLOUD_COVERS.includes(l.cover) ? 'CLR' : (l.cover as Exclude<ObservedCategory, 'CLR'>);
 
 /** The report's cover from its layers, or null when it has no sky group
  *  (not reported, which is not clear). */
@@ -151,6 +154,10 @@ export interface VsObserved {
    *  vertical visibility) and whether the forecast was at or above 5/8, the
    *  least a broken layer's summation amount can be. */
   ceiling: { bothYes: number; reportedOnly: number; forecastOnly: number; neither: number };
+  /** SCT hours with the forecast at or below 4/8, i.e. inside 0 to 50%: the
+   *  SCT range for a station that reports no FEW, so that a SCT there also
+   *  stands for amounts under 3/8 (KPMV, docs/cloud-cover-sources.md). */
+  sctAtOrBelowHalf: number;
 }
 
 export interface CategoryRow {
@@ -201,6 +208,7 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
   let below = 0;
   let above = 0;
   const ceiling = { bothYes: 0, reportedOnly: 0, forecastOnly: 0, neither: 0 };
+  let sctAtOrBelowHalf = 0;
   const gaps: number[] = [];
   const leads = pairs.map((p) => p.leadH).filter((l): l is number => l != null);
   for (const p of pairs) {
@@ -209,7 +217,8 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
     if (g === 0) inside++;
     else if (g < 0) below++;
     else above++;
-    const reported = RANK[p.obs.category] >= RANK.BKN;
+    if (p.obs.category === 'SCT' && p.pct <= SCT_HI_PCT) sctAtOrBelowHalf++;
+    const reported = (CEILING_COVERS as readonly string[]).includes(p.obs.category);
     const forecast = p.pct >= CEILING_EIGHTHS * 12.5;
     if (reported && forecast) ceiling.bothYes++;
     else if (reported) ceiling.reportedOnly++;
@@ -241,11 +250,11 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
         : null,
     byObserved: rows,
     ceiling,
+    sctAtOrBelowHalf,
   };
 }
 
-/** The NWS forecasts, newest first, for each hour: index 0 is the latest
- *  issuance before the hour, 1 the one before it, and so on. */
+/** The NWS forecasts issued before each hour, newest first. */
 function ndfdByHour(records: readonly NdfdRecord[]): Map<number, NdfdRecord[]> {
   const by = new Map<number, NdfdRecord[]>();
   for (const r of records) {
@@ -259,14 +268,22 @@ function ndfdByHour(records: readonly NdfdRecord[]): Map<number, NdfdRecord[]> {
   return by;
 }
 
-/** Which earlier NWS issuances the summary reads, by position in the
- *  newest-first list: with four issuances a day, 1 is six hours older than
- *  the latest and 4 a day older. */
-export const NWS_ISSUANCES: readonly { index: number; label: string }[] = [
-  { index: 0, label: 'NWS, latest issuance' },
-  { index: 1, label: 'NWS, the issuance before' },
-  { index: 4, label: 'NWS, a day earlier' },
+/** Which NWS issuances the summary reads for an hour: the newest one issued
+ *  at least `minLeadH` hours before it. Chosen by time, not by position in
+ *  the list, so a missing file lengthens a row's lead instead of moving an
+ *  older issuance into a newer row. */
+export const NWS_ISSUANCES: readonly { minLeadH: number; label: string }[] = [
+  { minLeadH: 0, label: 'NWS, latest issuance' },
+  { minLeadH: 6, label: 'NWS, 6 h or more ahead' },
+  { minLeadH: 24, label: 'NWS, 24 h or more ahead' },
 ];
+
+/** The Open-Meteo rows, named once so the pairing and the order agree. */
+export const OM_ROWS = {
+  startTotal: 'Open-Meteo, start of run (total)',
+  dayBeforeTotal: 'Open-Meteo, a day earlier (total)',
+  startLow: 'Open-Meteo, start of run (low band)',
+} as const;
 
 export function summarizeCloudCover(records: readonly CloudCoverRecord[]): CloudCoverSummary {
   const reports = records
@@ -285,14 +302,6 @@ export function summarizeCloudCover(records: readonly CloudCoverRecord[]): Cloud
     .filter((t) => Number.isFinite(t))
     .sort((a, b) => a - b);
 
-  // The reports are sorted, so a moving start keeps the search short.
-  let from = 0;
-  const near = (t: number): (typeof reports)[number] | null => {
-    while (from < reports.length && reports[from].t < t - REPORT_WINDOW_MIN * 60_000) from++;
-    let end = from;
-    while (end < reports.length && reports[end].t <= t + REPORT_WINDOW_MIN * 60_000) end++;
-    return reportNear(reports.slice(from, end), t);
-  };
 
   const observed = Object.fromEntries(OBSERVED_CATEGORIES.map((c) => [c, 0])) as Record<ObservedCategory, number>;
   const pairs = new Map<string, Pair[]>();
@@ -310,7 +319,7 @@ export function summarizeCloudCover(records: readonly CloudCoverRecord[]): Cloud
   const highWhenClear: number[] = [];
 
   for (const t of hours) {
-    const rep = near(t);
+    const rep = reportNear(reports, t);
     if (rep == null) continue;
     firstHour ??= t;
     lastHour = t;
@@ -322,15 +331,15 @@ export function summarizeCloudCover(records: readonly CloudCoverRecord[]): Cloud
     const obs = rep.obs;
     observed[obs.category]++;
     const nws = ndfd.get(t) ?? [];
-    for (const { index, label } of NWS_ISSUANCES) {
-      const r = nws[index];
+    for (const { minLeadH, label } of NWS_ISSUANCES) {
+      const r = nws.find((x) => t - Date.parse(x.issued) >= minLeadH * MS_H);
       if (r) add(label, { pct: r.sky, obs, leadH: (t - Date.parse(r.issued)) / MS_H });
     }
     const start = om.get(`historical|${t}`);
-    if (start?.total != null) add('Open-Meteo, start of run (total)', { pct: start.total, obs, leadH: null });
-    if (start?.low != null) add('Open-Meteo, start of run (low band)', { pct: start.low, obs, leadH: null });
+    if (start?.total != null) add(OM_ROWS.startTotal, { pct: start.total, obs, leadH: null });
+    if (start?.low != null) add(OM_ROWS.startLow, { pct: start.low, obs, leadH: null });
     const dayBefore = om.get(`previous_day1|${t}`);
-    if (dayBefore?.total != null) add('Open-Meteo, a day earlier (total)', { pct: dayBefore.total, obs, leadH: null });
+    if (dayBefore?.total != null) add(OM_ROWS.dayBeforeTotal, { pct: dayBefore.total, obs, leadH: null });
     if (obs.category === 'CLR' && start?.high != null) highWhenClear.push(start.high);
 
     const latest = nws[0];
@@ -345,12 +354,7 @@ export function summarizeCloudCover(records: readonly CloudCoverRecord[]): Cloud
     }
   }
 
-  const order = [
-    ...NWS_ISSUANCES.map((i) => i.label),
-    'Open-Meteo, start of run (total)',
-    'Open-Meteo, a day earlier (total)',
-    'Open-Meteo, start of run (low band)',
-  ];
+  const order = [...NWS_ISSUANCES.map((i) => i.label), OM_ROWS.startTotal, OM_ROWS.dayBeforeTotal, OM_ROWS.startLow];
   return {
     firstHour: firstHour == null ? null : new Date(firstHour).toISOString(),
     lastHour: lastHour == null ? null : new Date(lastHour).toISOString(),

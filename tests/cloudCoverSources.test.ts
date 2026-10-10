@@ -86,13 +86,22 @@ describe('summarizeCloudCover', () => {
     metar('2026-10-01T11:55Z', 'BKN030'),
     metar('2026-10-01T12:55Z', 'CLR'),
     metar('2026-10-01T13:55Z', ''),
-    // The 12Z hour: the 06Z issuance is the latest before it; 11Z, the one
-    // before; a file issued after the hour is not a forecast of it.
+    metar('2026-10-01T14:55Z', 'SCT040'),
+    // The 12Z hour. The 06Z file is the latest issued before it; 00Z is the
+    // newest at least 6 h ahead. The day before has only 11Z and 05Z, the
+    // 17Z and 23Z files missing: the newest at least 24 h ahead is 11Z
+    // (24.2 h), which a pick by position in the list would not reach. A file
+    // issued after the hour is not a forecast of it.
+    ndfd('2026-09-30T05:46Z', '2026-10-01T12:00Z', 10),
+    ndfd('2026-09-30T11:46Z', '2026-10-01T12:00Z', 90),
     ndfd('2026-10-01T00:46Z', '2026-10-01T12:00Z', 20),
     ndfd('2026-10-01T06:46Z', '2026-10-01T12:00Z', 70),
     ndfd('2026-10-01T12:46Z', '2026-10-01T12:00Z', 0),
+    // 13Z: the 06Z file is both the latest and 6.2 h ahead.
     ndfd('2026-10-01T06:46Z', '2026-10-01T13:00Z', 40),
     ndfd('2026-10-01T06:46Z', '2026-10-01T14:00Z', 40),
+    // 15Z, reported SCT: 30% is under SCT's 3/8 but within 0 to 50%.
+    ndfd('2026-10-01T06:46Z', '2026-10-01T15:00Z', 30),
     om('2026-10-01T12:00Z', 95),
     om('2026-10-01T13:00Z', 60, 60),
     om('2026-10-01T13:00Z', 10, 0, 'previous_day1'),
@@ -101,35 +110,44 @@ describe('summarizeCloudCover', () => {
   const vs = (source: string) => s.vs.find((x) => x.source === source);
 
   it('counts hours by what was reported, and a report with no sky group apart', () => {
-    expect(s.hoursWithReport).toBe(3);
+    expect(s.hoursWithReport).toBe(4);
     expect(s.hoursNoSkyGroup).toBe(1);
-    expect(s.observed).toMatchObject({ BKN: 1, CLR: 1 });
+    expect(s.observed).toMatchObject({ BKN: 1, CLR: 1, SCT: 1 });
     expect(s.firstHour).toBe('2026-10-01T12:00:00.000Z');
-    expect(s.lastHour).toBe('2026-10-01T14:00:00.000Z');
+    expect(s.lastHour).toBe('2026-10-01T15:00:00.000Z');
   });
 
-  it('pairs each hour with the latest NWS issuance before it, and the one before that', () => {
+  it('pairs each hour with the latest NWS issuance before it', () => {
     const latest = vs('NWS, latest issuance');
-    expect(latest?.n).toBe(2);
+    expect(latest?.n).toBe(3);
     expect(latest?.byObserved.BKN).toMatchObject({ n: 1, inside: 1, median: 70 });
     expect(latest?.byObserved.CLR).toMatchObject({ n: 1, inside: 0, median: 40 });
-    expect(latest?.inside).toBe(1);
-    expect(latest?.above).toBe(1);
-    expect(latest?.leadH).toEqual({ min: 5.2, max: 6.2 });
-    expect(vs('NWS, the issuance before')?.byObserved.BKN).toMatchObject({ n: 1, median: 20 });
-    expect(vs('NWS, the issuance before')?.below).toBe(1);
-    // 12Z: BKN reported, 70 forecast (≥ 5/8); 13Z: CLR reported, 40.
-    expect(latest?.ceiling).toEqual({ bothYes: 1, reportedOnly: 0, forecastOnly: 0, neither: 1 });
-    // 12Z: BKN reported, 20 forecast.
-    expect(vs('NWS, the issuance before')?.ceiling).toEqual({ bothYes: 0, reportedOnly: 1, forecastOnly: 0, neither: 0 });
-    // 13Z: CLR reported, Open-Meteo 60, just under 5/8.
-    expect(vs('Open-Meteo, start of run (total)')?.ceiling).toEqual({ bothYes: 1, reportedOnly: 0, forecastOnly: 0, neither: 1 });
+    expect(latest?.byObserved.SCT).toMatchObject({ n: 1, inside: 0, median: 30 });
+    expect([latest?.inside, latest?.below, latest?.above]).toEqual([1, 1, 1]);
+    expect(latest?.leadH).toEqual({ min: 5.2, max: 8.2 });
+    expect(latest?.sctAtOrBelowHalf).toBe(1);
+    // 12Z: BKN reported, 70 forecast (≥ 5/8); 13Z: CLR, 40; 15Z: SCT, 30.
+    expect(latest?.ceiling).toEqual({ bothYes: 1, reportedOnly: 0, forecastOnly: 0, neither: 2 });
+  });
+
+  it('picks the earlier NWS issuances by how far ahead they were issued, not by position', () => {
+    const six = vs('NWS, 6 h or more ahead');
+    expect(six?.byObserved.BKN).toMatchObject({ n: 1, median: 20 });
+    expect(six?.byObserved.CLR).toMatchObject({ n: 1, median: 40 });
+    expect(six?.leadH).toEqual({ min: 6.2, max: 11.2 });
+    expect(six?.ceiling).toEqual({ bothYes: 0, reportedOnly: 1, forecastOnly: 0, neither: 2 });
+    const day = vs('NWS, 24 h or more ahead');
+    expect(day?.n).toBe(1);
+    expect(day?.byObserved.BKN).toMatchObject({ n: 1, median: 90 });
+    expect(day?.leadH).toEqual({ min: 24.2, max: 24.2 });
   });
 
   it('pairs Open-Meteo by run, and compares the two forecasts on the hours both have', () => {
     expect(vs('Open-Meteo, start of run (total)')?.n).toBe(2);
     expect(vs('Open-Meteo, a day earlier (total)')?.byObserved.CLR).toMatchObject({ n: 1, median: 10 });
     expect(vs('Open-Meteo, start of run (low band)')?.byObserved.CLR).toMatchObject({ n: 1, inside: 1 });
+    // 13Z: CLR reported, Open-Meteo 60, just under 5/8.
+    expect(vs('Open-Meteo, start of run (total)')?.ceiling).toEqual({ bothYes: 1, reportedOnly: 0, forecastOnly: 0, neither: 1 });
     // 12Z: NWS 70 inside BKN, Open-Meteo 95 above; 13Z: 40 and 60 both above CLR.
     expect(s.bothInside).toEqual({ both: 0, nwsOnly: 1, omOnly: 0, neither: 1 });
     expect(s.nwsVsOpenMeteo?.mean).toBe(-22.5);

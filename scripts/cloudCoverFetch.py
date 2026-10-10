@@ -37,6 +37,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
@@ -84,9 +85,18 @@ def iso(t: dt.datetime) -> str:
 def ndfd_keys(day: dt.date) -> list[str]:
     """The day's CONUS sky files, one per issue hour: the last key written in it."""
     prefix = f'wmo/sky/{day:%Y/%m/%d}/YAUZ98_KWBN_'
-    xml = get(f'{BUCKET}/?list-type=2&prefix={prefix}&max-keys=1000')
     ns = {'s': 'http://s3.amazonaws.com/doc/2006-03-01/'}
-    keys = sorted(k.text for k in ET.fromstring(xml).findall('.//s:Key', ns))
+    keys: list[str] = []
+    token = ''
+    # A listing returns at most 1,000 keys a page; a day has about 48, but a
+    # later page must not be dropped without a word if that ever changes.
+    while True:
+        page = ET.fromstring(get(f'{BUCKET}/?list-type=2&prefix={prefix}&max-keys=1000{token}'))
+        keys += [k.text for k in page.findall('.//s:Key', ns)]
+        if page.findtext('s:IsTruncated', namespaces=ns) != 'true':
+            break
+        token = '&continuation-token=' + urllib.parse.quote(page.findtext('s:NextContinuationToken', namespaces=ns))
+    keys.sort()
     chosen = []
     for h in ISSUE_HOURS:
         in_hour = [k for k in keys if k.rsplit('_', 1)[1][8:10] == f'{h:02d}']
