@@ -217,3 +217,7 @@ export const METAR_STATION_OFFSET: DzOffset = offsetFromDz(
 /** Where this dashboard's source lives. The citations page sends a reviewer's
  *  answers here as a new issue, and the club-policy citation links here. */
 export const REPO_URL = 'https://github.com/amelia-m/lspc-weather';
+
+/** A file in this repository as GitHub shows it on main: where a card or
+ *  page links its own write-up. */
+export const repoDoc = (path: string): string => `${REPO_URL}/blob/main/${path}`;

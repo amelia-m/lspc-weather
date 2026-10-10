@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
+import { CLOUD_COMPARISON } from '../src/config/cloudComparison';
+import { NWS_ISSUANCES, OM_ROWS, parseCloudCoverLines, summarizeCloudCover } from '../src/domain/cloudCoverSources';
 import { normalizeOpenMeteoClouds, openMeteoHourlyVariables, type RawOpenMeteo } from '../src/domain/normalize';
 import type { HourlyPoint, OpenMeteoCloudHour } from '../src/domain/types';
 
@@ -70,20 +72,51 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
     expect(html).not.toContain('How the two compared');
   });
 
-  /* The note says where each forecast read nearer KPMV, from the six-month
-   * comparison. Its figures are that doc's; each must still be in it, so a
-   * rerun that moves a figure cannot leave the card quoting the old one. */
-  it('says how the two compared with KPMV, every figure as the comparison doc has it', async () => {
-    const html = card(om);
-    const note = /<p class="muted small">How the two compared[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
+  /* The note quotes the six-month comparison. Every figure comes from
+   * CLOUD_COMPARISON, and each is worked out again here from the archived
+   * records, so a rerun that moves one fails this test until the card
+   * quotes the new figure. */
+  it('quotes the comparison, every figure worked out again from the archived records', async () => {
+    const note = /<p class="muted small">How the two compared[\s\S]*?<\/p>/.exec(card(om))?.[0] ?? '';
     expect(note).toContain('docs/cloud-cover-sources.md');
+    const c = CLOUD_COMPARISON;
+    for (const f of [c.ceilingHours.nws, c.ceilingHours.omStart, c.noCeilingHours.nws, c.noCeilingHours.omDayAhead]) {
+      expect(note).toContain(`${f}%`);
+    }
+
     // Read as views.test.ts reads App.tsx: the typecheck has no Node types.
-    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
-    const doc = fs.readFileSync(decodeURIComponent(new URL('../docs/cloud-cover-sources.md', import.meta.url).pathname), 'utf8');
-    const figures = [...note.replace(/<[^>]+>/g, '').matchAll(/\b(\d+)%/g)].map((m) => m[1]).filter((f) => f !== '0' && f !== '100' && f !== '10' && f !== '90');
-    expect(figures).toEqual(['23', '83', '68', '87', '82', '28', '43', '21']);
-    for (const f of figures) expect(doc).toMatch(new RegExp(`\\b${f}%`));
-  });
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string) => Uint8Array };
+    const zlib = (await import(/* @vite-ignore */ 'node:' + 'zlib')) as { gunzipSync: (b: Uint8Array) => Uint8Array };
+    const path = decodeURIComponent(new URL(`../${c.archive}`, import.meta.url).pathname);
+    const records = parseCloudCoverLines(new TextDecoder().decode(zlib.gunzipSync(fs.readFileSync(path))));
+    const s = summarizeCloudCover(records);
+    const row = (label: string) => s.vs.find((x) => x.source === label)?.ceiling;
+    const pct = (a: number, b: number) => Math.round((100 * a) / b);
+    const withCeiling = (label: string) => {
+      const r = row(label)!;
+      return pct(r.bothYes, r.bothYes + r.reportedOnly);
+    };
+    const withoutCeiling = (label: string) => {
+      const r = row(label)!;
+      return pct(r.forecastOnly, r.forecastOnly + r.neither);
+    };
+    expect(c.ceilingHours).toEqual({
+      nws: withCeiling(NWS_ISSUANCES[0].label),
+      omStart: withCeiling(OM_ROWS.startTotal),
+      omDayAhead: withCeiling(OM_ROWS.dayBeforeTotal),
+    });
+    expect(c.noCeilingHours).toEqual({
+      nws: withoutCeiling(NWS_ISSUANCES[0].label),
+      omStart: withoutCeiling(OM_ROWS.startTotal),
+      omDayAhead: withoutCeiling(OM_ROWS.dayBeforeTotal),
+      omLowStart: withoutCeiling(OM_ROWS.startLow),
+    });
+    const edges = (xs: number[]) => pct(xs.filter((x) => x === 0 || x === 100).length, xs.length);
+    expect(c.exactlyNoneOrAll).toEqual({
+      nws: edges(records.flatMap((r) => (r.src === 'ndfd' ? [r.sky] : []))),
+      omStart: edges(records.flatMap((r) => (r.src === 'om' && r.run === 'historical' && r.total != null ? [r.total] : []))),
+    });
+  }, 30_000);
 });
 
 /* The NWS bars show an amount, not a category: one colour from clear to
