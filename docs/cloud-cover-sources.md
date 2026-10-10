@@ -9,12 +9,11 @@ it was read and what is only inferred. It changes nothing on the dashboard
 and adds no threshold, colour or verdict. Whether both forecasts stay on the
 card was the maintainer's call: on 2026-10-10 they kept both, with a note
 on how each compared with KPMV, short and collapsed at their request. One
-line shows, at the "Ceilings" table's 5/8 (cited to AC 00-45H): the share
-of hours with a ceiling each reached it (NWS 73%, Open-Meteo 77%) and of
-hours without one (NWS 20%, Open-Meteo 21%, 43% a day ahead). The rest,
-including Open-Meteo's low band and that neither forecast was measured at
-the lead the card shows, is under "How the two compared, in full". The
-figures are in `src/config/cloudComparison.ts`, and
+line shows the "Ceilings" table's figures at 5/8 (cited to AC 00-45H) for
+both forecasts. The rest, including Open-Meteo's low band and that neither
+forecast was measured at the lead the card shows, is under "How the two
+compared, in full". The figures are in `src/config/cloudComparison.ts`,
+and
 `tests/ceilingSkyClouds.test.ts` works each one out again from the
 archived records.
 

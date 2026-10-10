@@ -186,32 +186,34 @@ export function CeilingSkyPanel({
       {showOm && (
         <>
           <p className="muted small sky-compare-brief">
-            Against {SITE.metarStation.id}, {CLOUD_COMPARISON.period}, hours at {CEILING_EIGHTHS}/8
-            cover or more: with a ceiling, NWS {CLOUD_COMPARISON.ceilingHours.nws}%, Open-Meteo{' '}
-            {CLOUD_COMPARISON.ceilingHours.omStart}%; with none, NWS {CLOUD_COMPARISON.noCeilingHours.nws}%,
-            Open-Meteo {CLOUD_COMPARISON.noCeilingHours.omStart}% (
-            {CLOUD_COMPARISON.noCeilingHours.omDayAhead}% a day ahead). Source:{' '}
-            <SourceLink citation={CITATIONS.faaSkyCover} />
+            Against {SITE.metarStation.id}, {CLOUD_COMPARISON.period}, the share of hours each forecast
+            reached {CEILING_EIGHTHS}/8 cover: with a ceiling, NWS {CLOUD_COMPARISON.ceilingHours.nws}%,
+            Open-Meteo {CLOUD_COMPARISON.ceilingHours.omStart}% ({CLOUD_COMPARISON.ceilingHours.omDayAhead}% a
+            day ahead); with none, NWS {CLOUD_COMPARISON.noCeilingHours.nws}%, Open-Meteo{' '}
+            {CLOUD_COMPARISON.noCeilingHours.omStart}% ({CLOUD_COMPARISON.noCeilingHours.omDayAhead}% a day
+            ahead). Open-Meteo&rsquo;s first figure is its best case, the first hours of its runs.
           </p>
           <details className="sky-compare">
             <summary className="small">How the two compared, in full</summary>
             <p className="muted small">
-              {CEILING_EIGHTHS}/8 ({CEILING_EIGHTHS * 12.5}%) is the least a broken layer covers.{' '}
+              Each figure is the share of hours a forecast was at or above {CEILING_EIGHTHS}/8 (
+              {CEILING_EIGHTHS * 12.5}%), the least a broken layer covers.{' '}
               {SITE.metarStation.id} is about {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away. On
               hours it reported a ceiling: NWS {CLOUD_COMPARISON.ceilingHours.nws}%; Open-Meteo{' '}
               {CLOUD_COMPARISON.ceilingHours.omStart}% in the first hours of its runs and{' '}
               {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. With no ceiling: NWS{' '}
               {CLOUD_COMPARISON.noCeilingHours.nws}%; Open-Meteo {CLOUD_COMPARISON.noCeilingHours.omStart}%
               and {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%; Open-Meteo&rsquo;s low-cloud share
-              (below 3 km, in each hour&rsquo;s tooltip on a desktop){' '}
+              (below 3 km, in each hour&rsquo;s tooltip where hovering shows one){' '}
               {CLOUD_COMPARISON.noCeilingHours.omLowStart}%. Some no-ceiling hours may have had cloud
               above 12,000 ft, which the station does not report. Neither forecast was measured at the
               lead the card shows: NWS from four issuances a day, Open-Meteo at its runs&rsquo; first
               hours and a day ahead. Exactly 0% or 100%: NWS on{' '}
               {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours, Open-Meteo on{' '}
-              {CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%.{' '}
+              {CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%. Sources:{' '}
+              <SourceLink citation={CITATIONS.faaSkyCover} />;{' '}
               <a href={repoDoc('docs/cloud-cover-sources.md')} target="_blank" rel="noopener noreferrer">
-                The comparison
+                the comparison
               </a>
               .
             </p>
