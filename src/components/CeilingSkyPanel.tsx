@@ -6,6 +6,7 @@ import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
 import { CLOUD_COMPARISON } from '../config/cloudComparison';
+import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
@@ -177,29 +178,31 @@ export function CeilingSkyPanel({
         )}
       </p>
       {/* How each forecast compared with KPMV, so a reader can weigh them by
-          the kind of hour: one measure for both, at the 5/8 cut AC 00-45H's
-          sky table supplies. The figures are CLOUD_COMPARISON's, which a
-          test works out again from the archived records; measured, not a
-          threshold, and nothing here flags or colours an hour. */}
+          the kind of hour: one measure for both, the 5/8 that AC 00-45H's
+          sky table gives as the least a broken layer covers, cited. The
+          figures are CLOUD_COMPARISON's, which a test works out again from
+          the archived records; measured, not a threshold, and nothing here
+          flags or colours an hour. */}
       {showOm && (
         <p className="muted small">
           How the two compared with {SITE.metarStation.id}, about{' '}
-          {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away, {CLOUD_COMPARISON.period}: on
-          hours it reported a ceiling, the NWS figure was 5/8 (62.5%) or more on{' '}
-          {CLOUD_COMPARISON.ceilingHours.nws}% and Open-Meteo&rsquo;s on{' '}
-          {CLOUD_COMPARISON.ceilingHours.omStart}% for the first hours of its runs,{' '}
-          {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. On hours it reported none, the NWS figure was
-          5/8 or more on {CLOUD_COMPARISON.noCeilingHours.nws}%, Open-Meteo&rsquo;s on{' '}
-          {CLOUD_COMPARISON.noCeilingHours.omStart}% for the first hours of its runs and{' '}
-          {CLOUD_COMPARISON.noCeilingHours.omDayAhead}% a day ahead; the card&rsquo;s hours ahead
-          fall between. Some of those hours had cloud above 12,000 ft, which the station&rsquo;s
-          ceilometer does not report. Open-Meteo&rsquo;s low-cloud share (below 3 km, in the
-          hour&rsquo;s tooltip where the screen shows one) was 5/8 or more on{' '}
-          {CLOUD_COMPARISON.noCeilingHours.omLowStart}% of the hours with no ceiling. The NWS figure is a graded amount,
-          0% or 100% on about {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours; Open-Meteo&rsquo;s is
-          0% or 100% on {CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%.{' '}
+          {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away, {CLOUD_COMPARISON.period}, at{' '}
+          {CEILING_EIGHTHS}/8 ({CEILING_EIGHTHS * 12.5}%), the least a broken layer covers: on hours
+          it reported a ceiling, the NWS figure was at or above it on {CLOUD_COMPARISON.ceilingHours.nws}%,
+          Open-Meteo&rsquo;s on {CLOUD_COMPARISON.ceilingHours.omStart}% for the first hours of its
+          runs and {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. On hours it reported
+          none: the NWS figure on {CLOUD_COMPARISON.noCeilingHours.nws}%, Open-Meteo&rsquo;s on{' '}
+          {CLOUD_COMPARISON.noCeilingHours.omStart}% and {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%.
+          The card&rsquo;s hours ahead come from runs in between, which were not measured. Some of
+          those hours may have had cloud above 12,000 ft, which the station does not report;
+          Open-Meteo&rsquo;s low-cloud share (below 3 km, in the hour&rsquo;s tooltip where the
+          screen shows one) was at or above it on {CLOUD_COMPARISON.noCeilingHours.omLowStart}% of
+          them. The NWS figure is a graded amount, exactly 0% or 100% on{' '}
+          {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours; Open-Meteo&rsquo;s on{' '}
+          {CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%. Sources:{' '}
+          <SourceLink citation={CITATIONS.faaSkyCover} />;{' '}
           <a href={repoDoc('docs/cloud-cover-sources.md')} target="_blank" rel="noopener noreferrer">
-            The comparison
+            the comparison
           </a>
           .
         </p>

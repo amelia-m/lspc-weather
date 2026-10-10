@@ -3,6 +3,10 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
 import { CLOUD_COMPARISON } from '../src/config/cloudComparison';
+import { CITATIONS } from '../src/config/thresholds';
+
+/** The records the card's comparison figures come from. */
+const ARCHIVE = 'data/parity/cloud-cover-2026-04-01-to-2026-10-09.jsonl.gz';
 import { NWS_ISSUANCES, OM_ROWS, parseCloudCoverLines, summarizeCloudCover } from '../src/domain/cloudCoverSources';
 import { normalizeOpenMeteoClouds, openMeteoHourlyVariables, type RawOpenMeteo } from '../src/domain/normalize';
 import type { HourlyPoint, OpenMeteoCloudHour } from '../src/domain/types';
@@ -79,15 +83,22 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
   it('quotes the comparison, every figure worked out again from the archived records', async () => {
     const note = /<p class="muted small">How the two compared[\s\S]*?<\/p>/.exec(card(om))?.[0] ?? '';
     expect(note).toContain('docs/cloud-cover-sources.md');
+    expect(note).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
+    // Every figure, in the order the note gives them, after the cut itself.
     const c = CLOUD_COMPARISON;
-    for (const f of [c.ceilingHours.nws, c.ceilingHours.omStart, c.noCeilingHours.nws, c.noCeilingHours.omDayAhead]) {
-      expect(note).toContain(`${f}%`);
-    }
+    const quoted = [...note.replace(/<[^>]+>/g, '').matchAll(/(\d+(?:\.\d+)?)%/g)].map((m) => Number(m[1]));
+    expect(quoted).toEqual([
+      62.5,
+      c.ceilingHours.nws, c.ceilingHours.omStart, c.ceilingHours.omDayAhead,
+      c.noCeilingHours.nws, c.noCeilingHours.omStart, c.noCeilingHours.omDayAhead,
+      c.noCeilingHours.omLowStart,
+      0, 100, c.exactlyNoneOrAll.nws, c.exactlyNoneOrAll.omStart,
+    ]);
 
     // Read as views.test.ts reads App.tsx: the typecheck has no Node types.
     const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string) => Uint8Array };
     const zlib = (await import(/* @vite-ignore */ 'node:' + 'zlib')) as { gunzipSync: (b: Uint8Array) => Uint8Array };
-    const path = decodeURIComponent(new URL(`../${c.archive}`, import.meta.url).pathname);
+    const path = decodeURIComponent(new URL(`../${ARCHIVE}`, import.meta.url).pathname);
     const records = parseCloudCoverLines(new TextDecoder().decode(zlib.gunzipSync(fs.readFileSync(path))));
     const s = summarizeCloudCover(records);
     const row = (label: string) => s.vs.find((x) => x.source === label)?.ceiling;
@@ -111,11 +122,16 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
       omDayAhead: withoutCeiling(OM_ROWS.dayBeforeTotal),
       omLowStart: withoutCeiling(OM_ROWS.startLow),
     });
-    const edges = (xs: number[]) => pct(xs.filter((x) => x === 0 || x === 100).length, xs.length);
-    expect(c.exactlyNoneOrAll).toEqual({
-      nws: edges(records.flatMap((r) => (r.src === 'ndfd' ? [r.sky] : []))),
-      omStart: edges(records.flatMap((r) => (r.src === 'om' && r.run === 'historical' && r.total != null ? [r.total] : []))),
-    });
+    const edges = (label: string) => {
+      const v = s.vs.find((x) => x.source === label)!;
+      return pct(v.noneOrAll, v.n);
+    };
+    expect(c.exactlyNoneOrAll).toEqual({ nws: edges(NWS_ISSUANCES[0].label), omStart: edges(OM_ROWS.startTotal) });
+    const month = (iso: string | null) =>
+      new Date(iso as string).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }).split(' ');
+    const [m0] = month(s.firstHour);
+    const [m1, y1] = month(s.lastHour);
+    expect(c.period).toBe(`${m0} to ${m1} ${y1}`);
   }, 30_000);
 });
 

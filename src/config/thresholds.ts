@@ -167,6 +167,16 @@ export const CITATIONS = {
     url: 'https://www.faa.gov/air_traffic/publications/atpubs/aim_html/chap7_section_1.html',
     note: AIM_READ_NOTE,
   },
+  /** METAR sky-cover amounts in eighths. Backs the 5/8 cut the Ceiling & sky
+   *  card's comparison note uses (the least a broken layer, and so a ceiling
+   *  layer, covers), which is a measure for comparing two forecasts with the
+   *  reports, not a flag. */
+  faaSkyCover: {
+    source: 'FAA AC 00-45H',
+    ref: 'Table 3-3, METAR/SPECI Contractions for Sky Cover: FEW 1/8–2/8, SCT 3/8–4/8, BKN 5/8–7/8, OVC 8/8',
+    url: 'https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_00-45H_Chg_2.pdf',
+    note: 'Read on 2026-10-10 in the linked PDF (AC 00-45H Change 2, 3/6/19), page 3-15. Table 3-3 also says any layer amount under 1/8 is reported as FEW, and that CLR at an automated station means no layers at or below 12,000 ft.',
+  },
   /** Density altitude and its effect on climb performance. Backs the standing
    *  note on the density-altitude card, not a flag: the claim (a loaded jump
    *  plane climbs worse in high DA) is FAA-sourced and true at any DA, but the

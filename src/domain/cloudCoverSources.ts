@@ -89,7 +89,7 @@ const EIGHTHS: Record<ObservedCategory, [number, number]> = {
 
 /** BKN's lowest summation amount, in eighths: the least cover a ceiling
  *  layer can have. */
-const CEILING_EIGHTHS = EIGHTHS.BKN[0];
+export const CEILING_EIGHTHS = EIGHTHS.BKN[0];
 
 /** SCT's highest summation amount, in percent. */
 const SCT_HI_PCT = EIGHTHS.SCT[1] * 12.5;
@@ -158,6 +158,8 @@ export interface VsObserved {
    *  SCT range for a station that reports no FEW, so that a SCT there also
    *  stands for amounts under 3/8 (KPMV, docs/cloud-cover-sources.md). */
   sctAtOrBelowHalf: number;
+  /** Hours the forecast was exactly 0% or 100%. */
+  noneOrAll: number;
 }
 
 export interface CategoryRow {
@@ -209,6 +211,7 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
   let above = 0;
   const ceiling = { bothYes: 0, reportedOnly: 0, forecastOnly: 0, neither: 0 };
   let sctAtOrBelowHalf = 0;
+  let noneOrAll = 0;
   const gaps: number[] = [];
   const leads = pairs.map((p) => p.leadH).filter((l): l is number => l != null);
   for (const p of pairs) {
@@ -218,6 +221,7 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
     else if (g < 0) below++;
     else above++;
     if (p.obs.category === 'SCT' && p.pct <= SCT_HI_PCT) sctAtOrBelowHalf++;
+    if (p.pct === 0 || p.pct === 100) noneOrAll++;
     const reported = (CEILING_COVERS as readonly string[]).includes(p.obs.category);
     const forecast = p.pct >= CEILING_EIGHTHS * 12.5;
     if (reported && forecast) ceiling.bothYes++;
@@ -251,6 +255,7 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
     byObserved: rows,
     ceiling,
     sctAtOrBelowHalf,
+    noneOrAll,
   };
 }
 
