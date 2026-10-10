@@ -95,7 +95,7 @@ describe('own limits on Licensed', () => {
     expect(set).toContain('Your gust ceiling 20 kt');
     expect(set).toContain('Licensed — your own limits');
     const note = ownNote(set);
-    expect(note).toContain('Your wind limit and your gust ceiling are set by you in Settings, and only you can check them');
+    expect(note).toContain('Your wind limit and your gust ceiling come from Settings, not a published source, and only you can check them');
     expect(note).not.toContain('No wind limit is set');
     expect(note).not.toContain('<a ');
     const unset = card(withOverrides(licensed));
@@ -107,14 +107,14 @@ describe('own limits on Licensed', () => {
     const noWind = html(
       createElement(SurfaceWindPanel, { current: null, thresholds: own({ windCautionKt: 15 }), label: 'Licensed', unit: 'kt', onUnitChange: () => {} }),
     );
-    expect(ownNote(noWind)).toContain('Your wind limit (15 kt) is set by you in Settings');
+    expect(ownNote(noWind)).toContain('Your wind limit (15 kt) comes from Settings, not a published source');
   });
 
   it('with only a gust ceiling set, draws that and does not say there is no band', () => {
     const gustOnly = card(own({ gustCautionKt: 20 }));
     expect(gustOnly).toContain('band-gust');
     expect(gustOnly).not.toContain('band-caution');
-    expect(ownNote(gustOnly)).toContain('Your gust ceiling is set by you in Settings');
+    expect(ownNote(gustOnly)).toContain('Your gust ceiling comes from Settings, not a published source');
     expect(gustOnly).not.toContain('no band to draw');
     // The steady wind is still unchecked, and the card says so.
     expect(ownNote(gustOnly)).toContain('No wind limit is set, so the sustained wind draws no band and raises no flag at any speed.');
@@ -128,10 +128,17 @@ describe('own limits on Licensed', () => {
     expect(legend).toContain('Limit lines: your own, set in Settings.');
   });
 
-  it('still says the steady wind is never flagged when only a gust ceiling is set', () => {
-    const list = html(createElement(AdvisoryPanel, { advisories: [], profile: 'Licensed', hasWindLimit: false, ownLimits: ['Your gust ceiling'] }));
-    expect(list).toContain('Surface wind is never flagged on the Licensed profile unless you set your own wind limit in Settings');
-    expect(list).toContain('Your own limits, from Settings:</strong> Your gust ceiling.');
+  it('says the steady wind goes unflagged when only a gust ceiling is set, with other flags listed or none', () => {
+    const steady = 'You have set no wind limit, so the sustained wind is not flagged at any speed';
+    const overcast = { id: 'overcast', level: 'caution' as const, metric: 'Sky', value: 'OVC015', guidance: 'g', citation: { source: 's', ref: 'r', url: 'https://example.org/' } };
+    for (const advisories of [[], [overcast]]) {
+      const list = html(createElement(AdvisoryPanel, { advisories, profile: 'Licensed', hasWindLimit: false, ownLimits: ['Your gust ceiling'] }));
+      expect(list).toContain(steady);
+      // Not "surface wind is never flagged": the gust ceiling flags gusts.
+      expect(list).not.toContain('Surface wind is never flagged');
+    }
+    const withWind = html(createElement(AdvisoryPanel, { advisories: [], profile: 'Licensed', hasWindLimit: true, ownLimits: ['Your wind limit', 'Your gust ceiling'] }));
+    expect(withWind).not.toContain(steady);
   });
 
   it('names them on the advisory list', () => {
@@ -178,6 +185,7 @@ describe('stored values', () => {
       licensed: { windCautionKt: 1, gustCautionKt: 100 },
     });
     expect(sanitizeOverrides({ licensed: { visibilityCautionSm: -1 } })).toEqual({});
-    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0 } })).toEqual({});
+    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.25 } })).toEqual({});
+    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.5 } })).toEqual({ licensed: { visibilityCautionSm: 0.5 } });
   });
 });

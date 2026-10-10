@@ -493,9 +493,11 @@ export function hasWindLimit(t: Thresholds): boolean {
 export const EDITABLE_LIMITS = {
   windCautionKt: { label: 'Wind — caution', ownLabel: 'Your wind limit', unit: 'kt' },
   gustCautionKt: { label: 'Gust ceiling', ownLabel: 'Your gust ceiling', unit: 'kt' },
-  visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5 },
+  // At 0 the caution would never flag; the field and what is read back from
+  // storage both start at 0.5.
+  visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5, min: 0.5 },
 } as const satisfies Partial<
-  Record<keyof Thresholds, { label: string; ownLabel?: string; unit: string; step?: number }>
+  Record<keyof Thresholds, { label: string; ownLabel?: string; unit: string; step?: number; min?: number }>
 >;
 export type EditableLimit = keyof typeof EDITABLE_LIMITS;
 export const EDITABLE_LIMIT_KEYS = Object.keys(EDITABLE_LIMITS) as EditableLimit[];
@@ -793,9 +795,10 @@ export function sanitizeOverrides(raw: unknown): Overrides {
       // held to the range the field accepts.
       const baseValue = ownKey ? 0 : (base as unknown as Record<string, unknown>)[key];
       if (typeof baseValue !== 'number' || typeof value !== 'number' || !Number.isFinite(value)) continue;
-      // What the fields accept: an own limit 1 to 100 kt, a visibility
-      // caution above 0 (at 0 or below it would never flag).
-      if (ownKey ? value < OWN_LIMIT_RANGE_KT.min || value > OWN_LIMIT_RANGE_KT.max : value <= 0) continue;
+      // What the fields accept: an own limit within OWN_LIMIT_RANGE_KT,
+      // anything else from its EDITABLE_LIMITS minimum (or 0).
+      const entryMin = (EDITABLE_LIMITS[key as EditableLimit] as { min?: number }).min ?? 0;
+      if (ownKey ? value < OWN_LIMIT_RANGE_KT.min || value > OWN_LIMIT_RANGE_KT.max : value < entryMin) continue;
       (clean as Record<string, number>)[key] = value;
     }
     if (Object.keys(clean).length > 0) out[id as WindProfileId] = clean;
