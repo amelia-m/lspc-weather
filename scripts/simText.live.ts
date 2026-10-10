@@ -99,7 +99,7 @@ describe('the SIM edition uspa.org names', () => {
     // drawn by script), so that case says to look rather than "served".
     const downloads = /Downloads is currently unavailable/i.test(landing)
       ? 'showed "Downloads is currently unavailable"'
-      : `showed no error: look at ${SIM_INDEX_URL} for a change document for the ${SIM_EDITION_YEAR} SIM (on 2026-10-10 the list held only an archive of 2021-2022 and 2023-2024 revisions)`;
+      : `showed no error: its files load by script, so look at ${SIM_INDEX_URL} for a change document for the ${SIM_EDITION_YEAR} SIM (what it last held: src/config/readingLog.ts)`;
     process.stdout.write(`SIM edition on uspa.org: ${year ?? 'not found'}; change-document list ${downloads}\n`);
     // Taking fingerprints for a new edition is the step before moving the
     // year, so print mode reports the edition and does not fail on it.
