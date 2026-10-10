@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { comparePair, stationReports } from '../src/domain/stationPairs';
+import { AUTOMATED_TOP_FT, comparePair, stationReports } from '../src/domain/stationPairs';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 
 const metar = (station: string, obsAt: string, sky: string): MetarRecord => ({
@@ -13,6 +13,22 @@ describe('stationReports', () => {
   it('reads each report’s cover in time order, null without a sky group', () => {
     const r = stationReports([metar('PMV', '2026-10-01T12:55Z', 'SCT040'), metar('PMV', '2026-10-01T12:15Z', '')]);
     expect(r.map((x) => x.obs?.category ?? null)).toEqual([null, 'SCT']);
+  });
+});
+
+describe('stationReports below the automated top', () => {
+  it('leaves out layers above 12,000 ft, and reads a report left with none as CLR', () => {
+    const r = stationReports(
+      [
+        metar('OMA', '2026-10-01T11:53Z', 'FEW250'),
+        metar('OMA', '2026-10-01T12:53Z', 'SCT040 BKN250'),
+        metar('OMA', '2026-10-01T13:53Z', 'BKN/// OVC300'),
+        metar('OMA', '2026-10-01T14:53Z', ''),
+      ],
+      AUTOMATED_TOP_FT,
+    );
+    expect(r.map((x) => x.obs?.category ?? null)).toEqual(['CLR', 'SCT', 'BKN', null]);
+    expect(stationReports([metar('OMA', '2026-10-01T11:53Z', 'FEW250')])[0].obs?.category).toBe('FEW');
   });
 });
 

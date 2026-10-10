@@ -21,7 +21,7 @@ import {
   OBSERVED_CATEGORIES,
   isCeiling,
   REPORT_WINDOW_MIN,
-  observedCover,
+  observedCoverBelow,
   reportNear,
   type MetarRecord,
   type ObservedCategory,
@@ -34,11 +34,18 @@ export interface StationReport {
   obs: ObservedCover | null;
 }
 
+/** An automated station's ceilometer reports nothing above this (CLR is
+ *  "no layers ... at or below 12,000 ft", AC 00-45H Table 3-3). */
+export const AUTOMATED_TOP_FT = 12_000;
+
 /** One station's reports, in time order, each with its cover (null when the
- *  report has no sky group). */
-export function stationReports(records: readonly MetarRecord[]): StationReport[] {
+ *  report has no sky group). With `topFt`, layers based above it are left
+ *  out, and a report left with none reads as CLR: so a staffed station's
+ *  observer, who reports cirrus at 25,000 ft, is compared with an AWOS on
+ *  what the AWOS can see. A layer with no height is kept. */
+export function stationReports(records: readonly MetarRecord[], topFt = Infinity): StationReport[] {
   return records
-    .map((r) => ({ t: Date.parse(r.obsAt), obs: observedCover(parseSkyGroups(r.raw)) }))
+    .map((r) => ({ t: Date.parse(r.obsAt), obs: observedCoverBelow(parseSkyGroups(r.raw), topFt) }))
     .filter((r) => Number.isFinite(r.t))
     .sort((a, b) => a.t - b.t);
 }
