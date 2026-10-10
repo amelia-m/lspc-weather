@@ -18,8 +18,9 @@ const LEVEL_LABEL: Record<Advisory['level'], string> = {
  * verdict: the jumper / S&TA / PIC decides.
  *
  * The empty state is profile-aware, which is what `profile` and
- * `hasWindLimit` are for. On a profile with no published wind limit
- * (licensed) no surface-wind flag can reach this list at ANY speed, so "no
+ * `hasWindLimit` are for. On a profile with no wind limit, published or the
+ * reader's own (licensed with none set), no surface-wind flag can reach this
+ * list at ANY sustained speed, so "no
  * conditions flagged" on its own is a true statement about the app that reads
  * as a statement about the weather — an all-clear in a 60 kt gust. Naming the
  * gap costs one clause and sends the reader to the card that does print the
@@ -115,10 +116,14 @@ export function AdvisoryPanel({
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}
-            {!forPilots && !hasWindLimit && ownLimits.length === 0 && (
+            {/* Said whenever there is no wind limit, own gust ceiling or not:
+                a gust ceiling flags gusts, and a steady wind with no gust
+                group would otherwise read as covered. */}
+            {!forPilots && !hasWindLimit && (
               <>
-                Surface wind is never flagged on the {profile} profile — no published source sets
-                a wind limit for it — so read the speed on the Surface wind card.{' '}
+                Surface wind is never flagged on the {profile} profile unless you set your own wind
+                limit in Settings — no published source sets one — so read the speed on the Surface
+                wind card.{' '}
               </>
             )}
             {forPilots ? (

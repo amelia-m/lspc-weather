@@ -107,7 +107,7 @@ export function SettingsPanel({
                     optional={ownKey}
                     placeholder={ownKey ? 'none' : undefined}
                     step={'step' in f ? f.step : 1}
-                    min={ownKey ? OWN_LIMIT_RANGE_KT.min : 0}
+                    min={ownKey ? OWN_LIMIT_RANGE_KT.min : 0.5}
                     max={ownKey ? OWN_LIMIT_RANGE_KT.max : undefined}
                     onCommit={(v) => onChange(f.key, v)}
                   />

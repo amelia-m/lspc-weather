@@ -1,6 +1,6 @@
 import type { CurrentConditions } from '../domain/types';
 import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
-import { hasWindLimit, isEdited, isOwnLimit, type Thresholds } from '../config/thresholds';
+import { EDITABLE_LIMITS, hasWindLimit, isEdited, isOwnLimit, ownLimits, type Thresholds } from '../config/thresholds';
 import { lowerLimitPublished, lowerLimitUnchecked, windBandUse } from '../domain/advisories';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
@@ -69,12 +69,13 @@ export function SurfaceWindPanel({
   const gustOwn = isOwnLimit(t, 'gustCautionKt');
   const hasWind = hasWindLimit(t);
   const anyLimit = hasWind || t.gustCautionKt != null;
-  // The note naming the reader's own limits, with their figures: the legend
-  // that also prints them shows only with a wind reading.
-  const ownNamed = [
-    windOwn ? `wind limit (${fmtLimitSpeed(t.windCautionKt, unit)})` : null,
-    gustOwn && t.gustCautionKt != null ? `gust ceiling (${fmtLimitSpeed(t.gustCautionKt, unit)})` : null,
-  ].filter((n): n is string => n != null);
+  // The note naming the reader's own limits, by the labels Settings and the
+  // advisory list use. The figures go in only with no wind reading, when the
+  // legend that prints them is not shown.
+  const ownNamed = ownLimits(t).map(
+    (k) =>
+      `${EDITABLE_LIMITS[k].ownLabel.toLowerCase()}${speed == null ? ` (${fmtLimitSpeed(t[k] as number, unit)})` : ''}`,
+  );
   const ownBoth = ownNamed.length > 1;
   // The two standing notes come from the thresholds as plain strings, and
   // at most one of them shows (the caveat needs a published limit, the
@@ -195,9 +196,14 @@ export function SurfaceWindPanel({
             {windOwn || gustOwn ? (
               <>
                 <strong>No published limit for this profile.</strong>{' '}
-                {`Your ${ownNamed.join(' and ')} ${ownBoth ? 'are' : 'is'} your own, set in Settings, and only you can check ${
+                {`${ownNamed.join(' and ').replace(/^y/, 'Y')} ${ownBoth ? 'are' : 'is'} set by you in Settings, and only you can check ${
                   ownBoth ? 'them' : 'it'
                 }; the ${ownBoth ? 'bands and flags here fire at your figures' : 'band and flag here fire at your figure'}.`}
+                {/* A gust ceiling alone leaves the steady wind unchecked:
+                    said here, or a 35 kt wind with no gust group reads as
+                    covered. */}
+                {!windOwn &&
+                  ' No wind limit is set, so the sustained wind draws no band and raises no flag at any speed.'}
               </>
             ) : (
               <>
