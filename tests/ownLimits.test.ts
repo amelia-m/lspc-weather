@@ -77,8 +77,8 @@ describe('own limits on Licensed', () => {
     expect(f?.value).toBe('gusting 20 kt, your ceiling 18 kt (set in Settings)');
     expect(f?.guidance).toContain('you set in Settings, which only you can check');
     // The link under it backs the BSR's absence of a limit, which the
-    // guidance quotes, not the figure.
-    expect(f?.guidance).toContain('No USPA ground-wind limit for licensed jumpers');
+    // guidance names, not the figure.
+    expect(f?.guidance).toContain('No published source sets a gust ceiling for licensed jumpers: the BSR sets no ground-wind limit for them.');
     expect(f?.value).not.toContain('waiver');
   });
 
@@ -95,18 +95,25 @@ describe('own limits on Licensed', () => {
     expect(set).toContain('Your gust ceiling 20 kt');
     expect(set).toContain('Licensed — your own limits');
     const note = ownNote(set);
-    expect(note).toContain('Your wind limit and gust ceiling are your own, set in Settings, and only you can check them');
+    expect(note).toContain('Your wind limit (15 kt) and gust ceiling (20 kt) are your own, set in Settings, and only you can check them');
     expect(note).not.toContain('<a ');
     const unset = card(withOverrides(licensed));
     expect(unset).not.toContain('band-caution');
     expect(ownNote(unset)).toContain('You can set your own limit in Settings');
   });
 
+  it('names the figures in the note even with no wind reading', () => {
+    const noWind = html(
+      createElement(SurfaceWindPanel, { current: null, thresholds: own({ windCautionKt: 15 }), label: 'Licensed', unit: 'kt', onUnitChange: () => {} }),
+    );
+    expect(ownNote(noWind)).toContain('Your wind limit (15 kt) is your own');
+  });
+
   it('with only a gust ceiling set, draws that and does not say there is no band', () => {
     const gustOnly = card(own({ gustCautionKt: 20 }));
     expect(gustOnly).toContain('band-gust');
     expect(gustOnly).not.toContain('band-caution');
-    expect(ownNote(gustOnly)).toContain('Your gust ceiling is your own, set in Settings');
+    expect(ownNote(gustOnly)).toContain('Your gust ceiling (20 kt) is your own, set in Settings');
     expect(gustOnly).not.toContain('no band to draw');
   });
 
@@ -116,6 +123,12 @@ describe('own limits on Licensed', () => {
     const legend = html(createElement(HourlyLegend, { unit: 'kt', limits: own({ windCautionKt: 15 }), profile: 'Licensed' }));
     expect(legend).toContain('your wind limit');
     expect(legend).toContain('Limit lines: your own, set in Settings.');
+  });
+
+  it('does not say surface wind is never flagged when only a gust ceiling is set', () => {
+    const list = html(createElement(AdvisoryPanel, { advisories: [], profile: 'Licensed', hasWindLimit: false, ownLimits: ['Your gust ceiling'] }));
+    expect(list).not.toContain('never flagged');
+    expect(html(createElement(AdvisoryPanel, { advisories: [], profile: 'Licensed', hasWindLimit: false }))).toContain('never flagged');
   });
 
   it('names them on the advisory list', () => {
@@ -157,5 +170,10 @@ describe('stored values', () => {
     // An own limit outside what the field accepts: 0 would flag a calm, and
     // a huge one only stretches the charts.
     expect(sanitizeOverrides({ licensed: { windCautionKt: 0, gustCautionKt: 1e9 } })).toEqual({});
+    // The edges are kept: the field's clamp lands on them.
+    expect(sanitizeOverrides({ licensed: { windCautionKt: 1, gustCautionKt: 100 } })).toEqual({
+      licensed: { windCautionKt: 1, gustCautionKt: 100 },
+    });
+    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: -1 } })).toEqual({});
   });
 });

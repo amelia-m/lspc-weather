@@ -13,7 +13,8 @@ import { linkableTerms, splitGlossaryTerms } from '../config/simGlossary';
  * active profile.
  *
  * This is the most-read card on the page, and the band is a marker, not a
- * verdict. Only a published limit is drawn or named: the USPA ground-wind
+ * verdict. Only a published limit, or one the reader set as their own, is
+ * drawn or named: the USPA ground-wind
  * figure for students, the posted club policy for the waiver tiers, or the
  * reader's own edit of one in Settings, which is marked "(edited)" and never
  * shown under the source's name alone. On Licensed, where nobody publishes
@@ -68,6 +69,13 @@ export function SurfaceWindPanel({
   const gustOwn = isOwnLimit(t, 'gustCautionKt');
   const hasWind = hasWindLimit(t);
   const anyLimit = hasWind || t.gustCautionKt != null;
+  // The note naming the reader's own limits, with their figures: the legend
+  // that also prints them shows only with a wind reading.
+  const ownNamed = [
+    windOwn ? `wind limit (${fmtLimitSpeed(t.windCautionKt, unit)})` : null,
+    gustOwn && t.gustCautionKt != null ? `gust ceiling (${fmtLimitSpeed(t.gustCautionKt, unit)})` : null,
+  ].filter((n): n is string => n != null);
+  const ownBoth = ownNamed.length > 1;
   // The two standing notes come from the thresholds as plain strings, and
   // at most one of them shows (the caveat needs a published limit, the
   // guidance note its absence). A glossary term in either is linked unless
@@ -186,11 +194,10 @@ export function SurfaceWindPanel({
           <p className="muted small">
             {windOwn || gustOwn ? (
               <>
-                <strong>No published limit for this profile.</strong> Your{' '}
-                {windOwn && gustOwn ? 'wind limit and gust ceiling are' : windOwn ? 'wind limit is' : 'gust ceiling is'}{' '}
-                your own, set in Settings, and only you can check {windOwn && gustOwn ? 'them' : 'it'}; the
-                band{windOwn && gustOwn ? 's' : ''} and flag{windOwn && gustOwn ? 's' : ''} here fire at your figure
-                {windOwn && gustOwn ? 's' : ''}.
+                <strong>No published limit for this profile.</strong>{' '}
+                {`Your ${ownNamed.join(' and ')} ${ownBoth ? 'are' : 'is'} your own, set in Settings, and only you can check ${
+                  ownBoth ? 'them' : 'it'
+                }; the ${ownBoth ? 'bands and flags here fire at your figures' : 'band and flag here fire at your figure'}.`}
               </>
             ) : (
               <>
