@@ -14,9 +14,11 @@
  * The SIM is pinned two ways. `edition` is what uspa.org calls its online
  * SIM on the day ("2026 SIM"); USPA revises it within an edition through
  * change documents, and the page's list of them did not load on 2026-10-08
- * ("Downloads is currently unavailable", in a browser too on 2026-10-09),
- * so the edition name alone does not
- * say which text was read. `simPart` does: a SHA-256 of the part's text as
+ * ("Downloads is currently unavailable", in a browser too on 2026-10-09).
+ * When it did, seen in a browser on 2026-10-10, it held only an Archive
+ * folder: 2021-2022 SIM Rev1 to Rev4 and 2023-2024 SIM Rev1 to Rev3, none
+ * for the 2026 SIM. So the edition name alone does not say which text was
+ * read. `simPart` does: a SHA-256 of the part's text as
  * simPartText reduces it, taken from the page served that day, for every SIM
  * part a claim cites or quotes. scripts/simText.live.ts takes it again daily
  * and fails when a part's text has changed, which is the signal to read it
