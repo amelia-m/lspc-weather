@@ -119,6 +119,15 @@ does with small amounts is the open question. Looked into on 2026-10-10
   does not publish the algorithms.
 - The likely cause is one family's software, but that is not confirmed.
   The state aeronautics division or the manufacturer could settle it.
+- Dated the same day ([cloud-cover-stations.md](cloud-cover-stations.md)):
+  seven AWOS reported FEW until new equipment (their remarks changed from
+  AO1 to AO2) arrived between 2002-08-27 and 2003-03-04, and none has
+  since. Beside a nearby ASOS, a no-FEW AWOS reports SCT where an AWOS that
+  reports FEW gives FEW, and agrees about ceilings as often.
+
+Still to do: Open-Meteo's figures at those stations. Its archive answered
+"Daily API request limit exceeded" on 2026-10-10; fetch with `PARTS=om`
+and merge (cloud-cover-stations.md, end).
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 

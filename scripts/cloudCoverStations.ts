@@ -63,12 +63,20 @@ const agree = (v: VsObserved | undefined): string => {
   const c = v.ceiling;
   return pct(c.bothYes + c.neither, c.bothYes + c.reportedOnly + c.forecastOnly + c.neither);
 };
-const rows = [
+// Open-Meteo's columns only when the file has its records: its archive
+// refused the station fetch for a day on 2026-10-10 ("Daily API request
+// limit exceeded"), so a file can hold the METARs and NWS alone.
+const hasOm = records.some((r) => r.src === 'om');
+const rows: readonly (readonly [string, string])[] = [
   ['NWS', NWS_ISSUANCES[0].label],
-  ['OM start', OM_ROWS.startTotal],
-  ['OM day ahead', OM_ROWS.dayBeforeTotal],
-  ['OM low', OM_ROWS.startLow],
-] as const;
+  ...(hasOm
+    ? ([
+        ['OM start', OM_ROWS.startTotal],
+        ['OM day ahead', OM_ROWS.dayBeforeTotal],
+        ['OM low', OM_ROWS.startLow],
+      ] as const)
+    : []),
+];
 
 const out: string[] = [];
 const stations = [...new Set(PAIRS.flatMap(([a, b]) => [a, b]))];
