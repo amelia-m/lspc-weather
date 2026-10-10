@@ -78,6 +78,7 @@ export function SettingsPanel({
             <div className="settings-grid">
               {FIELDS.filter((f) => isEditable(base, f.key)).map((f) => {
                 const ownKey = isOwnLimitKey(base, f.key);
+                const range = editableRange(base, f.key);
                 const value = ownKey
                   ? isOwnLimit(thresholds, f.key)
                     ? (thresholds[f.key] as number)
@@ -107,8 +108,8 @@ export function SettingsPanel({
                     optional={ownKey}
                     placeholder={ownKey ? 'none' : undefined}
                     step={'step' in f ? f.step : 1}
-                    min={editableRange(base, f.key).min}
-                    max={editableRange(base, f.key).max}
+                    min={range.min}
+                    max={range.max}
                     onCommit={(v) => onChange(f.key, v)}
                   />
                 );
