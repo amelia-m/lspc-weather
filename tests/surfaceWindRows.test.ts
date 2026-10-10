@@ -69,29 +69,35 @@ describe('Surface wind card', () => {
     ]);
   });
 
-  it('says "at the limit" on the limit, which the flag counts as reached', () => {
+  it('says "at or above" on the limit, which the flag counts as reached', () => {
     // The student caution is a whole 12 kt (the BSR's 14 mph, rounded in
     // thresholds.ts), so a whole-knot reading can sit exactly on it.
-    expect(checks(card(12, null, 'student'))[0]).toBe('Caution ≥ 12 kt · wind or gust | at the limit [over]');
+    expect(checks(card(12, null, 'student'))[0]).toBe('Caution ≥ 12 kt · wind or gust | at or above [over]');
     expect(checks(card(11, null, 'student'))[0]).toBe('Caution ≥ 12 kt · wind or gust | 1 kt under');
+    // In mph, 16 kt (18.4) is past the 21+ caution (15.6 kt, 18.0) but both
+    // print as 18: the line says what the flag says, not "at the limit".
+    expect(checks(card(16, null, 'waiver:21+', 'mph'))[0]).toBe('Caution ≥ 18 mph · wind or gust | at or above [over]');
   });
 
   it('prints distances that add up with the reading and the limit as shown, in either unit', () => {
-    // Every limit from 10 to 22 kt in tenths, against readings either side:
-    // reading ± distance is the limit as printed, or the line says "just
-    // under" / "at the limit" where the two round to the same figure.
+    // Every limit from 10 to 22 kt in tenths, against readings either side,
+    // with and without a higher gust: the reading the caution is held to
+    // (the gust when higher) ± distance is the limit as printed, or the
+    // line says "just under" / "at or above" where the two round to the same
+    // figure.
     for (const unit of ['kt', 'mph'] as const) {
-      for (const wspd of [10, 16, 20]) {
+      for (const [wspd, wgst] of [[10, null], [16, null], [20, null], [8, 13], [12, 19]] as const) {
         for (let tenths = 100; tenths <= 220; tenths++) {
-          const html = card(wspd, null, withOverrides(resolveThresholds('licensed'), { windCautionKt: tenths / 10 }), unit);
+          const html = card(wspd, wgst, withOverrides(resolveThresholds('licensed'), { windCautionKt: tenths / 10 }), unit);
           const limit = Number(/Your limit ≥ ([\d.]+)/.exec(html)![1]);
-          const shown = Number(barLabels(html).find((l) => l.cls === 'wind-label')!.text);
+          const held = wgst != null ? 'gust-label' : 'wind-label';
+          const shown = Number(barLabels(html).find((l) => l.cls === held)!.text);
           const status = checks(html)[0].split(' | ')[1];
           const m = /^([\d.]+) \w+ (over|under)/.exec(status);
           if (m) {
             const sum = m[2] === 'over' ? shown - Number(m[1]) : shown + Number(m[1]);
             expect(Number(sum.toFixed(1))).toBe(limit);
-          } else expect(status).toMatch(/^(at the limit \[over\]|just under)$/);
+          } else expect(status).toMatch(/^(at or above \[over\]|just under)$/);
         }
       }
     }
@@ -134,10 +140,10 @@ describe('Surface wind card', () => {
   });
 
   it('subtitles a waiver tier in a few words', () => {
-    expect(profileShortLabel('waiver:21+')).toBe('Student · waiver 21+');
+    expect(profileShortLabel('waiver:21+')).toBe('Student · LSPC waiver 21+');
     expect(profileShortLabel('student')).toBe('Student · USPA BSR');
     expect(profileShortLabel('licensed')).toBe('Licensed');
-    expect(card(10, null)).toContain('Student · waiver 21+');
+    expect(card(10, null)).toContain('Student · LSPC waiver 21+');
     expect(card(10, null)).not.toContain('flag bands');
   });
 });
@@ -149,5 +155,9 @@ describe('spreadLabels', () => {
     expect(spreadLabels([90, 92], 14, 6, 94)).toEqual([80, 94]);
     expect(spreadLabels([1], 14, 6, 94)).toEqual([6]);
     expect(spreadLabels([20, 70], 14, 6, 94)).toEqual([20, 70]);
+    // Pushed back from the end, a label moves only as far as its neighbour
+    // needs; ones with room stay where they were.
+    expect(spreadLabels([10, 90, 92], 14, 6, 94)).toEqual([10, 80, 94]);
+    expect(spreadLabels([5, 20, 90, 92], 14, 6, 94)).toEqual([6, 20, 80, 94]);
   });
 });

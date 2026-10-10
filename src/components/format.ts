@@ -61,9 +61,9 @@ export function fmtZulu(ms: number): string {
 }
 
 /** Label positions (percent along the bar) pushed apart to at least `gap`
- *  and kept inside [lo, hi], in their original order. Two limits one mph
- *  apart (the waiver's 19 and 20) sit 4% apart on the bar, and their
- *  figures would print over each other. */
+ *  and kept inside [lo, hi], in their original order. A tier's two limits
+ *  can be one mph apart (the waiver's 10–20 tier: 18 and 19 mph), about 4%
+ *  of the bar, and their figures would print over each other. */
 export function spreadLabels(xs: readonly number[], gap: number, lo: number, hi: number): number[] {
   const order = xs.map((x, i) => [x, i] as const).sort((a, b) => a[0] - b[0]);
   const out = order.map(([x]) => Math.min(hi, Math.max(lo, x)));
@@ -71,7 +71,8 @@ export function spreadLabels(xs: readonly number[], gap: number, lo: number, hi:
   const over = out.length > 0 ? out[out.length - 1] - hi : 0;
   if (over > 0) {
     out[out.length - 1] = hi;
-    for (let i = out.length - 2; i >= 0; i--) out[i] = Math.min(out[i] - over, out[i + 1] - gap);
+    // Back from the end, moving a label only as far as its neighbour needs.
+    for (let i = out.length - 2; i >= 0; i--) out[i] = Math.min(out[i], out[i + 1] - gap);
   }
   const back: number[] = new Array(xs.length);
   order.forEach(([, i], k) => (back[i] = round(Math.max(lo, out[k]), 2)));
