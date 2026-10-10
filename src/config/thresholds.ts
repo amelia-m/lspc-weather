@@ -462,6 +462,13 @@ export type OwnLimit = 'windCautionKt' | 'gustCautionKt';
  *  every limit line in view. */
 export const OWN_LIMIT_RANGE_KT = { min: 1, max: 100 } as const;
 
+/** The values Settings accepts for a limit on a profile, one rule for the
+ *  field and for what is read back from storage: an own limit's range, else
+ *  the limit's EDITABLE_LIMITS minimum and no maximum. */
+export function editableRange(base: Thresholds, key: EditableLimit): { min: number; max: number } {
+  return isOwnLimitKey(base, key) ? { ...OWN_LIMIT_RANGE_KT } : { min: EDITABLE_LIMITS[key].min, max: Infinity };
+}
+
 /** Whether `key` is a limit this profile takes as the reader's own: Settings
  *  is open (`takesOwnLimits`) and no published figure sits there to edit. */
 export function isOwnLimitKey(base: Thresholds, key: EditableLimit): boolean {
@@ -491,11 +498,12 @@ export function hasWindLimit(t: Thresholds): boolean {
  *  with the name and unit its row shows. The one list: the Settings rows, the
  *  overrides App will load back, and `published` are all built from it. */
 export const EDITABLE_LIMITS = {
-  windCautionKt: { label: 'Wind — caution', ownLabel: 'Your wind limit', unit: 'kt' },
-  gustCautionKt: { label: 'Gust ceiling', ownLabel: 'Your gust ceiling', unit: 'kt' },
-  // At 0 the caution would never flag; the field and what is read back from
-  // storage both start at 0.5.
-  visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5, min: 0.5 },
+  // At 0 a wind or gust figure would flag a calm.
+  windCautionKt: { label: 'Wind — caution', ownLabel: 'Your wind limit', unit: 'kt', min: 1 },
+  gustCautionKt: { label: 'Gust ceiling', ownLabel: 'Your gust ceiling', unit: 'kt', min: 1 },
+  // At 0 the caution would never flag; 1/4 SM is the smallest visibility a
+  // METAR reports above zero.
+  visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5, min: 0.25 },
 } as const satisfies Partial<
   Record<keyof Thresholds, { label: string; ownLabel?: string; unit: string; step?: number; min?: number }>
 >;
@@ -795,10 +803,10 @@ export function sanitizeOverrides(raw: unknown): Overrides {
       // held to the range the field accepts.
       const baseValue = ownKey ? 0 : (base as unknown as Record<string, unknown>)[key];
       if (typeof baseValue !== 'number' || typeof value !== 'number' || !Number.isFinite(value)) continue;
-      // What the fields accept: an own limit within OWN_LIMIT_RANGE_KT,
-      // anything else from its EDITABLE_LIMITS minimum (or 0).
-      const entryMin = (EDITABLE_LIMITS[key as EditableLimit] as { min?: number }).min ?? 0;
-      if (ownKey ? value < OWN_LIMIT_RANGE_KT.min || value > OWN_LIMIT_RANGE_KT.max : value < entryMin) continue;
+      // What the field accepts (`editableRange`), so neither rewrites a
+      // value the other kept.
+      const range = editableRange(base, key as EditableLimit);
+      if (value < range.min || value > range.max) continue;
       (clean as Record<string, number>)[key] = value;
     }
     if (Object.keys(clean).length > 0) out[id as WindProfileId] = clean;
