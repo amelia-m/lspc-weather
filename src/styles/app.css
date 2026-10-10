@@ -1698,7 +1698,8 @@ a.sim-term {
   margin-top: 8px;
   font-size: 0.85rem;
 }
-.aloft-about summary {
+.aloft-about summary,
+.sky-compare summary {
   cursor: pointer;
   color: var(--accent);
   margin: 8px 0 4px;

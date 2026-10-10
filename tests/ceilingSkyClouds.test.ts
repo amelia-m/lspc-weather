@@ -73,7 +73,7 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
     expect(html).not.toContain('om-bar');
     expect(html).not.toContain('om-pct');
     expect(html).not.toContain('Open-Meteo');
-    expect(html).not.toContain('How the two compared');
+    expect(html).not.toContain('sky-compare');
   });
 
   /* The note quotes the six-month comparison. Every figure comes from
@@ -81,13 +81,21 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
    * records, so a rerun that moves one fails this test until the card
    * quotes the new figure. */
   it('quotes the comparison, every figure worked out again from the archived records', async () => {
-    const note = /<p class="muted small">How the two compared[\s\S]*?<\/p>/.exec(card(om))?.[0] ?? '';
-    expect(note).toContain('docs/cloud-cover-sources.md');
-    expect(note).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
-    // Every figure, in the order the note gives them, after the cut itself.
+    const html = card(om);
+    const text = (re: RegExp) => (re.exec(html)?.[0] ?? '').replace(/<[^>]+>/g, '');
+    const figures = (t: string) => [...t.matchAll(/(\d+(?:\.\d+)?)%/g)].map((m) => Number(m[1]));
     const c = CLOUD_COMPARISON;
-    const quoted = [...note.replace(/<[^>]+>/g, '').matchAll(/(\d+(?:\.\d+)?)%/g)].map((m) => Number(m[1]));
-    expect(quoted).toEqual([
+    // One line shows; the full comparison is collapsed under it.
+    const brief = text(/<p class="muted small sky-compare-brief">[\s\S]*?<\/p>/);
+    expect(brief).toContain(c.period);
+    expect(figures(brief)).toEqual([c.ceilingHours.nws, c.ceilingHours.omStart, c.noCeilingHours.omLowStart, c.noCeilingHours.omDayAhead]);
+    expect(html).toMatch(/<details class="sky-compare"><summary/);
+    expect(html).not.toMatch(/<details class="sky-compare" open/);
+    const full = /<details class="sky-compare">[\s\S]*?<\/details>/.exec(html)?.[0] ?? '';
+    expect(full).toContain('docs/cloud-cover-sources.md');
+    expect(full).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
+    // Every figure, in the order the full note gives them, after the cut itself.
+    expect(figures(full.replace(/<[^>]+>/g, ''))).toEqual([
       62.5,
       c.ceilingHours.nws, c.ceilingHours.omStart, c.ceilingHours.omDayAhead,
       c.noCeilingHours.nws, c.noCeilingHours.omStart, c.noCeilingHours.omDayAhead,
