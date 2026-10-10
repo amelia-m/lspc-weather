@@ -256,7 +256,9 @@ export interface Citation {
 }
 
 /** Neutral severity. NOT a recommendation — the human makes the call. */
-export type AdvisoryLevel = 'info' | 'watch' | 'caution';
+/** `forecast` is a published limit the forecast reaches in the coming hours,
+ *  not a reading: it ranks below every observed flag. */
+export type AdvisoryLevel = 'info' | 'forecast' | 'watch' | 'caution';
 
 export interface Advisory {
   id: string;

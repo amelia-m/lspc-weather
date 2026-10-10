@@ -81,6 +81,15 @@ precisely because they were colour and text rather than flags.
   unflagged. A figure the person
   who set it can check is not one this app invented. Do not extend it to
   a figure the app supplies, and do not reopen it to students.
+- **The wind and gust limits are read against the forecast too**
+  (`forecastWindAdvisories`, since 2026-10-10). The flags on the latest
+  report left the list empty on a calm morning while the hourly chart drew
+  the afternoon's gusts well over the same limit lines. A forecast flag
+  fires only on the limits the report flags use (published, or the
+  reader's own), says it is a forecast, names its hours in the next 12, and
+  ranks below every observed flag. It is not a licence for forecast
+  thresholds of the app's own: a forecast storm or rain chance still flags
+  nothing.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed

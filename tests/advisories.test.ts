@@ -72,10 +72,10 @@ describe('evaluateAdvisories', () => {
     }
   });
 
-  it('never emits a go/no-go verdict — only info/watch/caution levels', () => {
+  it('never emits a go/no-go verdict — only info/forecast/watch/caution levels', () => {
     const out = evaluateAdvisories(snapshot(), DEFAULT_THRESHOLDS.student, now);
     for (const a of out) {
-      expect(['info', 'watch', 'caution']).toContain(a.level);
+      expect(['info', 'forecast', 'watch', 'caution']).toContain(a.level);
     }
   });
 
