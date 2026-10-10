@@ -49,7 +49,10 @@ card, the charts' limit lines and the flags, each marked as theirs.
   CFRs / the FAA AIM / the club's posted waiver) or on a plain observed fact —
   overcast reported, `TS` in the METAR, the sun is down. Where nothing published
   sets a trigger, **no flag fires at all**; there is no "app heuristic" label to
-  fall back on. No go/no-go verdict.
+  fall back on. No go/no-go verdict. The wind and gust limits are also read
+  against the NWS hourly forecast for the next 12 hours: a **Forecast** flag
+  names the hours the forecast reaches the same limit, and ranks below every
+  flag on a report.
 - 💨 **Surface wind** — sustained + gust on a scale, kt/mph toggle. The limits
   follow the profile in the header: Student or Licensed, then for a student
   USPA BSR or the LSPC waiver, then the waiver's jump-count tier. A band is

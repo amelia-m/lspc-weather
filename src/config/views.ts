@@ -92,10 +92,10 @@ export const VIEW_USES_PROFILE: Readonly<Record<View, boolean>> = {
 
 /** The advisories that are jumper limits: the ground wind against the
  *  profile's limit (the BSR's student figure or the club waiver's) and the
- *  waiver's gust ceiling. Not aircraft limits, so off the Pilots tab, which
+ *  waiver's gust ceiling, and the same two against the forecast. Not aircraft limits, so off the Pilots tab, which
  *  says where they are instead. Visibility (14 CFR 105.17 binds the pilot
  *  dropping jumpers too), flight category, thunderstorms and night stay. */
-export const JUMPER_ONLY_ADVISORIES: readonly string[] = ['surface-wind', 'gust-limit'];
+export const JUMPER_ONLY_ADVISORIES: readonly string[] = ['surface-wind', 'gust-limit', 'forecast-wind', 'forecast-gust'];
 
 /** The advisory list as the tab shows it. */
 export function advisoriesFor(view: View, advisories: readonly Advisory[]): Advisory[] {

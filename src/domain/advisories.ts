@@ -1,4 +1,4 @@
-import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
+import type { Advisory, AdvisoryLevel, HourlyPoint, WeatherSnapshot } from './types';
 import { CITATIONS, hasWindLimit, isEdited, isOwnLimit, type Thresholds } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
@@ -211,6 +211,16 @@ export function evaluateAdvisories(
     }
   }
 
+  // --- Forecast wind against the same limits (the NWS hourly forecast) ---
+  // The flags above fire on the latest report, so on a calm morning before a
+  // windy afternoon the list was empty while the hourly chart drew the
+  // forecast well over the same limit lines (2026-10-10, the maintainer's
+  // screenshot: KPMV at 10 kt, gusts forecast to 28 kt against a 17.4 kt
+  // waiver ceiling). These fire on the same published limits, or the
+  // reader's own, and on nothing else; they say they are a forecast, name
+  // the hours, and rank below every observed flag.
+  out.push(...forecastWindAdvisories(snapshot.hourly, thresholds, now, unit));
+
   // No density-altitude flag: the FAA-cited claim it carried (a loaded jump
   // plane climbs worse in high DA) is real at any DA, but the ft-above-field
   // bands that decided when to raise it were the app's own. The claim now
@@ -266,7 +276,98 @@ function formatWind(speedKt: number | null, gustKt: number | null, unit: SpeedUn
 }
 
 function severityRank(level: AdvisoryLevel): number {
-  return level === 'caution' ? 2 : level === 'watch' ? 1 : 0;
+  return level === 'caution' ? 3 : level === 'watch' ? 2 : level === 'forecast' ? 1 : 0;
+}
+
+/** How many hours ahead the forecast wind flags read: today's flying, as a
+ *  jumper planning loads reads the hourly chart, not tomorrow's. */
+export const FORECAST_FLAG_HOURS = 12;
+
+const MS_H = 3_600_000;
+const HOUR_LABEL = new Intl.DateTimeFormat('en-US', { hour: 'numeric', timeZone: SITE.timeZone });
+/** "10am", at the drop zone, as the hourly chart labels its hours. */
+const hourLabel = (ms: number): string => HOUR_LABEL.format(ms).replace(' ', '').toLowerCase();
+
+/** The hours as runs of consecutive hours, "10am–7pm, 9pm–10pm". Each
+ *  forecast point stands for the hour that starts at its time, so a run ends
+ *  an hour after its last point. */
+export function hourRuns(times: readonly number[]): string {
+  const runs: [number, number][] = [];
+  for (const t of [...times].sort((a, b) => a - b)) {
+    const last = runs[runs.length - 1];
+    if (last && t - last[1] <= MS_H) last[1] = t;
+    else runs.push([t, t]);
+  }
+  return runs.map(([a, b]) => `${hourLabel(a)}–${hourLabel(b + MS_H)}`).join(', ');
+}
+
+/** The forecast hours in the coming FORECAST_FLAG_HOURS, the one in progress
+ *  included. */
+function comingHours(hourly: readonly HourlyPoint[], now: number): HourlyPoint[] {
+  return hourly.filter((h) => h.time + MS_H > now && h.time < now + FORECAST_FLAG_HOURS * MS_H);
+}
+
+/** The forecast's surface wind against the profile's caution and the
+ *  waiver's gust ceiling, the same limits and the same tests as the flags on
+ *  the latest report. Pure. */
+export function forecastWindAdvisories(
+  hourly: readonly HourlyPoint[],
+  t: Thresholds,
+  now: number,
+  unit: SpeedUnit,
+): Advisory[] {
+  const out: Advisory[] = [];
+  const hours = comingHours(hourly, now);
+  // Which flag on the report this one stands ahead of, by its metric.
+  const asForecast = (metric: string): string =>
+    `A forecast, not a reading: the ${metric} flag fires if ${SITE.metarStation.id} reports it.`;
+
+  if (hasWindLimit(t)) {
+    const over = hours.filter((h) => Math.max(h.windSpeedKt ?? -Infinity, h.windGustKt ?? -Infinity) >= t.windCautionKt);
+    if (over.length > 0) {
+      const peak = Math.max(...over.map((h) => Math.max(h.windSpeedKt ?? -Infinity, h.windGustKt ?? -Infinity)));
+      const which = isOwnLimit(t, 'windCautionKt')
+        ? 'your own limit, set in Settings'
+        : isEdited(t, 'windCautionKt')
+          ? 'the caution as edited in Settings'
+          : 'the surface-wind caution';
+      out.push({
+        id: 'forecast-wind',
+        level: 'forecast',
+        metric: 'Forecast wind',
+        value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
+        guidance:
+          `The NWS hourly forecast for the drop zone, gusts included, is at or above ${fmtLimitSpeed(t.windCautionKt, unit)}, ` +
+          `${which}, in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Surface wind')} ${t.windGuidance}`.trim(),
+        citation: t.windCitation,
+        secondaryCitation: t.windSecondaryCitation,
+      });
+    }
+  }
+
+  if (t.gustCautionKt != null) {
+    const ceiling = t.gustCautionKt;
+    const over = hours.filter((h) => h.windGustKt != null && h.windGustKt >= ceiling);
+    if (over.length > 0) {
+      const peak = Math.max(...over.map((h) => h.windGustKt as number));
+      const which = isOwnLimit(t, 'gustCautionKt')
+        ? 'the gust ceiling you set in Settings, which only you can check'
+        : isEdited(t, 'gustCautionKt')
+          ? 'the gust ceiling as edited in Settings'
+          : 'the LSPC waiver gust ceiling for this experience tier';
+      out.push({
+        id: 'forecast-gust',
+        level: 'forecast',
+        metric: 'Forecast gusts',
+        value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
+        guidance:
+          `The NWS hourly forecast for the drop zone has gusts at or above ${fmtLimitSpeed(ceiling, unit)}, ${which}, ` +
+          `in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Gust limit')}`,
+        citation: t.windCitation,
+      });
+    }
+  }
+  return out;
 }
 
 /**

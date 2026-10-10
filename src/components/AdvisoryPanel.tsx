@@ -9,12 +9,14 @@ import { GLOSSARY_KEYS, citesTerm, splitGlossaryTermsAcross } from '../config/si
 const LEVEL_LABEL: Record<Advisory['level'], string> = {
   caution: 'Caution',
   watch: 'Watch',
+  forecast: 'Forecast',
   info: 'Note',
 };
 
 /**
  * "Conditions to note" — the headline panel. It lists flagged conditions with
- * the value and its source. It deliberately renders NO overall go/no-go
+ * the value and its source: those on the latest report, then those the
+ * forecast reaches (`forecast`, the wind and gust limits only). It deliberately renders NO overall go/no-go
  * verdict: the jumper / S&TA / PIC decides.
  *
  * The empty state is profile-aware, which is what `profile` and

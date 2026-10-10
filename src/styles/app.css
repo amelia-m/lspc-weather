@@ -419,6 +419,11 @@ a {
 .advisory-info {
   border-left: 4px solid var(--info);
 }
+/* A limit the forecast reaches, not one a report has: the caution's colour,
+   dashed and outlined, as the chart draws its limit lines. */
+.advisory-forecast {
+  border-left: 4px dashed var(--caution);
+}
 .advisory-top {
   display: flex;
   align-items: center;
@@ -441,6 +446,11 @@ a {
 }
 .badge-info {
   background: var(--info);
+}
+.badge-forecast {
+  background: transparent;
+  color: var(--caution);
+  border: 1px solid var(--caution);
 }
 .advisory-metric {
   font-weight: 600;
