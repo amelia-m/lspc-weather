@@ -57,7 +57,7 @@ GitHub. It is a crop of `docs/lspc-waivered-wind-limits.jpg` (the photo as
 taken, kept as the record) to the framed sign, 1,400 px wide and about
 210 KB, against 3 MB for the original; a test checks the file is there.
 
-## Open-Meteo's cloud cover: shown, not yet compared
+## Open-Meteo's cloud cover: shown, and now compared
 
 Asked for 2026-10-08, and added the same day at the maintainer's request:
 the Ceiling & sky card shows Open-Meteo's total cloud cover for each hour
@@ -83,11 +83,32 @@ What the dashboard reads the sky from:
 - **10-day outlook:** Open-Meteo's daily weather code (its own reading of its
   model), or on the fallback the day's mean NWS gridpoint cover.
 
-Still open: whether the two forecasts agree with each other, and with the
-METAR, often enough to be worth both. A comparison logged over a few weeks
-of real cloud (the METAR's layers against each forecast's cover for the same
-hour) would answer it. The per-pressure-level cover (`cloud_cover_850hPa`
-and so on) is not used: on the day it was looked at every level read 0%.
+Compared 2026-10-10 over six months of past hours (2026-04-01 to
+2026-10-09, 4,482 hours): the NWS forecast from NOAA's NDFD archive, which
+served api.weather.gov's gridpoint values, and Open-Meteo's from its
+Historical Forecast and Previous Runs APIs, each against KPMV's report at the
+hour. The results are in [cloud-cover-sources.md](cloud-cover-sources.md).
+In short, the two read differently rather than one tracking the other:
+
+- The NWS figure is a graded amount, seldom 0 or 100. Its median rises with
+  the reported cover (23% on CLR hours, 83% on OVC hours).
+- Open-Meteo's is near yes-or-no, mostly 0 or 100.
+- At the same hour they differed by a median of 19 points.
+- Each was at or above 5/8 on about three quarters of the hours KPMV
+  reported a ceiling, and on about a fifth of the hours it reported none.
+  Some of that fifth may be cloud above the ceilometer's 12,000 ft.
+
+What is still open is the maintainer's call, not a measurement: whether
+the card keeps both. The per-pressure-level cover (`cloud_cover_850hPa` and
+so on) is not used: on the day it was looked at every level read 0%.
+
+Found on the way, and not yet explained: **KPMV never reports FEW.** None of
+its 71,889 reports from 2024-01-01 to 2026-10-10 in IEM's archive had a FEW
+layer, against 2,896 at KLNK and 7,214 at KOFF over the same span. A KPMV
+SCT may therefore cover amounts under 3/8, which the Ceiling & sky card,
+showing the report's layers as written, does not say. What KPMV's sensor
+does with small amounts is the open question. Its AWOS or ASOS type and its
+documentation would settle it; neither was read.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 
