@@ -182,30 +182,40 @@ export function CeilingSkyPanel({
           sky table gives as the least a broken layer covers, cited. The
           figures are CLOUD_COMPARISON's, which a test works out again from
           the archived records; measured, not a threshold, and nothing here
-          flags or colours an hour. */}
+          flags or colours an hour. One line shows; the rest is collapsed. */}
       {showOm && (
-        <p className="muted small">
-          How the two compared with {SITE.metarStation.id}, about{' '}
-          {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away, {CLOUD_COMPARISON.period}, at{' '}
-          {CEILING_EIGHTHS}/8 ({CEILING_EIGHTHS * 12.5}%), the least a broken layer covers: on hours
-          it reported a ceiling, the NWS figure was at or above it on {CLOUD_COMPARISON.ceilingHours.nws}%,
-          Open-Meteo&rsquo;s on {CLOUD_COMPARISON.ceilingHours.omStart}% for the first hours of its
-          runs and {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. On hours it reported
-          none: the NWS figure on {CLOUD_COMPARISON.noCeilingHours.nws}%, Open-Meteo&rsquo;s on{' '}
-          {CLOUD_COMPARISON.noCeilingHours.omStart}% and {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%.
-          The card&rsquo;s hours ahead come from runs in between, which were not measured. Some of
-          those hours may have had cloud above 12,000 ft, which the station does not report;
-          Open-Meteo&rsquo;s low-cloud share (below 3 km, in the hour&rsquo;s tooltip where the
-          screen shows one) was at or above it on {CLOUD_COMPARISON.noCeilingHours.omLowStart}% of
-          them. The NWS figure is a graded amount, exactly 0% or 100% on{' '}
-          {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours; Open-Meteo&rsquo;s on{' '}
-          {CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%. Sources:{' '}
-          <SourceLink citation={CITATIONS.faaSkyCover} />;{' '}
-          <a href={repoDoc('docs/cloud-cover-sources.md')} target="_blank" rel="noopener noreferrer">
-            the comparison
-          </a>
-          .
-        </p>
+        <>
+          <p className="muted small sky-compare-brief">
+            Against {SITE.metarStation.id}, {CLOUD_COMPARISON.period}: NWS and Open-Meteo reached 5/8
+            cover on {CLOUD_COMPARISON.ceilingHours.nws}% and {CLOUD_COMPARISON.ceilingHours.omStart}% of
+            hours with a ceiling. With none, Open-Meteo&rsquo;s low-cloud figure did on{' '}
+            {CLOUD_COMPARISON.noCeilingHours.omLowStart}%, its total a day ahead on{' '}
+            {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%.
+          </p>
+          <details className="sky-compare">
+            <summary className="small">How the two compared, in full</summary>
+            <p className="muted small">
+              At {CEILING_EIGHTHS}/8 ({CEILING_EIGHTHS * 12.5}%), the least a broken layer covers. On
+              hours {SITE.metarStation.id} (about {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away)
+              reported a ceiling: NWS {CLOUD_COMPARISON.ceilingHours.nws}%, Open-Meteo{' '}
+              {CLOUD_COMPARISON.ceilingHours.omStart}% for the first hours of its runs and{' '}
+              {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. With no ceiling:{' '}
+              {CLOUD_COMPARISON.noCeilingHours.nws}%, {CLOUD_COMPARISON.noCeilingHours.omStart}% and{' '}
+              {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%, and Open-Meteo&rsquo;s low-cloud share
+              (below 3 km, in each hour&rsquo;s tooltip) {CLOUD_COMPARISON.noCeilingHours.omLowStart}%;
+              some of those hours may have had cloud above 12,000 ft, which the station does not
+              report. The card&rsquo;s hours ahead come from Open-Meteo runs between those two leads,
+              not measured. The NWS figure is a graded amount (exactly 0% or 100% on{' '}
+              {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours), Open-Meteo&rsquo;s near all or nothing
+              ({CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%). Sources:{' '}
+              <SourceLink citation={CITATIONS.faaSkyCover} />;{' '}
+              <a href={repoDoc('docs/cloud-cover-sources.md')} target="_blank" rel="noopener noreferrer">
+                the comparison
+              </a>
+              .
+            </p>
+          </details>
+        </>
       )}
       {/* Only what is particular to this card. Confirming conditions with
           official sources, the S&TA and the PIC is the page's to say, in its

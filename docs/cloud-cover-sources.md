@@ -223,6 +223,14 @@ Meteorological Handbook No. 1, whose sky table includes FEW. It leaves the
 algorithms themselves to "FAA algorithms" that "may be obtained from the
 AWOS Non-Federal Engineering Office", which are not published.
 
+The AIM (7-1-10, read 2026-10-10 on faa.gov) says how an AWOS builds its
+sky: "The AWOS algorithm integrates the last 30 minutes of ceilometer data
+to derive cloud layers and heights", and the result "is totally dependent
+upon the cloud advection over the sensor site". That explains a single
+ceilometer missing cloud that never drifts over it. It does not explain
+19 stations never reporting FEW over a month, while a SCT layer was in
+18% of their reports, when 6 AWOS and every ASOS nearby report FEW.
+
 The likeliest cause is the sky algorithm in that family's software, which
 reports a small amount as SCT. That is inferred from the pattern above and
 not confirmed: neither the manufacturer nor a software document was read.
