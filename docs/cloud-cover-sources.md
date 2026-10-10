@@ -9,9 +9,11 @@ it was read and what is only inferred. It changes nothing on the dashboard
 and adds no threshold, colour or verdict. Whether both forecasts stay on the
 card was the maintainer's call: on 2026-10-10 they kept both, with a note
 on the card on how each compared with KPMV. The note uses one measure for
-both, the "Ceilings" table's 5/8, and quotes Open-Meteo for the first hours
-of its runs and a day ahead, since the card's hours fall between. Its
-figures are in `src/config/cloudComparison.ts`, and
+both, the "Ceilings" table's 5/8 (cited to AC 00-45H), and quotes
+Open-Meteo for the first hours of its runs and a day ahead; the card's
+hours ahead come from runs in between, a lead this comparison did not
+measure, and the note says so. Its figures are in
+`src/config/cloudComparison.ts`, and
 `tests/ceilingSkyClouds.test.ts` works each one out again from the
 archived records.
 
@@ -228,8 +230,11 @@ The Nebraska Department of Transportation's aeronautics division, which
 runs many of the state's AWOS, or the unit's manufacturer could settle it.
 
 One more thing about KPMV does not square with the registry. The NASR file
-lists it as AWOS-3, which the AC defines without present-weather or
-thunderstorm sensors (those make it "AWOS III P", "T" or "P/T"). Yet in
-September its reports carried precipitation types (228 reports with rain,
-drizzle or snow) and VCTS and LTG remarks. Either the registry's type is
-out of date, or those come from another source. This was not looked into.
+lists it as AWOS-3, and so does its Chart Supplement entry ("WEATHER DATA
+SOURCES: AWOS–3 118.975 (402) 298–7524", edition 3 Sep to 29 Oct 2026, read
+2026-10-10 in the page PDF at aeronav.faa.gov). The AC defines an AWOS-3
+without present-weather or thunderstorm sensors (those make it "AWOS III
+P", "T" or "P/T"). Yet in September its reports carried precipitation types
+(228 reports with rain, drizzle or snow) and VCTS and LTG remarks. Either
+both listings are out of date, or those come from another source. This was
+not looked into.

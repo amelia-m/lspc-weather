@@ -102,7 +102,7 @@ describe('summarizeCloudCover', () => {
     ndfd('2026-10-01T06:46Z', '2026-10-01T14:00Z', 40),
     // 15Z, reported SCT: 30% is under SCT's 3/8 but within 0 to 50%.
     ndfd('2026-10-01T06:46Z', '2026-10-01T15:00Z', 30),
-    om('2026-10-01T12:00Z', 95),
+    om('2026-10-01T12:00Z', 100),
     om('2026-10-01T13:00Z', 60, 60),
     om('2026-10-01T13:00Z', 10, 0, 'previous_day1'),
   ];
@@ -126,6 +126,9 @@ describe('summarizeCloudCover', () => {
     expect([latest?.inside, latest?.below, latest?.above]).toEqual([1, 1, 1]);
     expect(latest?.leadH).toEqual({ min: 5.2, max: 8.2 });
     expect(latest?.sctAtOrBelowHalf).toBe(1);
+    expect(latest?.noneOrAll).toBe(0);
+    expect(vs('Open-Meteo, a day earlier (total)')?.noneOrAll).toBe(0);
+    expect(vs('Open-Meteo, start of run (total)')?.noneOrAll).toBe(1);
     // 12Z: BKN reported, 70 forecast (≥ 5/8); 13Z: CLR, 40; 15Z: SCT, 30.
     expect(latest?.ceiling).toEqual({ bothYes: 1, reportedOnly: 0, forecastOnly: 0, neither: 2 });
   });
@@ -148,9 +151,9 @@ describe('summarizeCloudCover', () => {
     expect(vs('Open-Meteo, start of run (low band)')?.byObserved.CLR).toMatchObject({ n: 1, inside: 1 });
     // 13Z: CLR reported, Open-Meteo 60, just under 5/8.
     expect(vs('Open-Meteo, start of run (total)')?.ceiling).toEqual({ bothYes: 1, reportedOnly: 0, forecastOnly: 0, neither: 1 });
-    // 12Z: NWS 70 inside BKN, Open-Meteo 95 above; 13Z: 40 and 60 both above CLR.
+    // 12Z: NWS 70 inside BKN, Open-Meteo 100 above; 13Z: 40 and 60 both above CLR.
     expect(s.bothInside).toEqual({ both: 0, nwsOnly: 1, omOnly: 0, neither: 1 });
-    expect(s.nwsVsOpenMeteo?.mean).toBe(-22.5);
+    expect(s.nwsVsOpenMeteo?.mean).toBe(-25);
     expect(s.omHighWhenClear).toMatchObject({ n: 1, median: 60 });
   });
 });

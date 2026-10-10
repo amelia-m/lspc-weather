@@ -280,6 +280,14 @@ export const READING_LOG: SourceReading[] = [
   },
   {
     kind: 'cited',
+    section: 'FAA AC 00-45H, Aviation Weather Services, Table 3-3',
+    citations: ['faaSkyCover'],
+    lastRead: '2026-10-10',
+    edition: 'Change 2, 3/6/19',
+    how: 'the linked PDF on faa.gov, page 3-15',
+  },
+  {
+    kind: 'cited',
     section: 'FAA-P-8740-2, Density Altitude',
     citations: ['faaDensityAltitude'],
     lastRead: '2026-09-23',
