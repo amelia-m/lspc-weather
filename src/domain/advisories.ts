@@ -36,7 +36,8 @@ export function evaluateAdvisories(
     // Silence here is not an all-clear, and two surfaces say so rather than
     // leaving it implied — SurfaceWindPanel prints the reading plus the
     // profile's guidance and its citation as a standing note, and AdvisoryPanel
-    // names the gap when this list comes back empty.
+    // names the gap: when this list comes back empty, or beside an own gust
+    // ceiling, in its own-limits note.
     //
     // null speed/gust means the observation lacked a usable reading — that is
     // "no data", not calm. Level on the EFFECTIVE wind (max of sustained and

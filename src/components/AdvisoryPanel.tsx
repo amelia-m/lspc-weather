@@ -24,7 +24,9 @@ const LEVEL_LABEL: Record<Advisory['level'], string> = {
  * conditions flagged" on its own is a true statement about the app that reads
  * as a statement about the weather — an all-clear in a 60 kt gust. Naming the
  * gap costs one clause and sends the reader to the card that does print the
- * number. It is not a verdict in the other direction either: an empty list
+ * number. With only an own gust ceiling set (`ownLimits`), which flags gusts
+ * and nothing else, the own-limits note names the gap instead, in either
+ * state of the list, and the empty-state clause stays off. It is not a verdict in the other direction either: an empty list
  * still is not a stop, just a list that cannot cover wind here.
  *
  * Edited limits get the same treatment, in either state. A flag fires on the

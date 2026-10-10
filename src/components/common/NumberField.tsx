@@ -75,6 +75,8 @@ export function NumberField({
       <input
         type="number"
         step={step}
+        min={min}
+        max={Number.isFinite(max) ? max : undefined}
         value={draft}
         placeholder={placeholder}
         onChange={(e) => setDraft(e.target.value)}

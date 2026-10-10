@@ -167,6 +167,9 @@ describe('the Set your own thresholds panel', () => {
     expect(p).toContain('Your wind limit');
     expect(p).toContain('Your gust ceiling');
     expect(p.match(/placeholder="none" value=""/g)).toHaveLength(2);
+    // The field accepts what the stored-value check keeps (editableRange).
+    expect(p.match(/min="1" max="100" placeholder="none"/g)).toHaveLength(2);
+    expect(p).toContain('step="0.5" min="0.25" value="3"');
     expect(p).not.toContain('may be retired');
   });
 });
@@ -185,7 +188,7 @@ describe('stored values', () => {
       licensed: { windCautionKt: 1, gustCautionKt: 100 },
     });
     expect(sanitizeOverrides({ licensed: { visibilityCautionSm: -1 } })).toEqual({});
-    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.25 } })).toEqual({});
-    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.5 } })).toEqual({ licensed: { visibilityCautionSm: 0.5 } });
+    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.2 } })).toEqual({});
+    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.25 } })).toEqual({ licensed: { visibilityCautionSm: 0.25 } });
   });
 });
