@@ -89,21 +89,6 @@ of real cloud (the METAR's layers against each forecast's cover for the same
 hour) would answer it. The per-pressure-level cover (`cloud_cover_850hPa`
 and so on) is not used: on the day it was looked at every level read 0%.
 
-## May be retired: the Settings — thresholds section
-
-Raised 2026-10-08 by the maintainer: students do not set their own limits.
-The BSR sets them, or the LSPC waiver raises them to its posted tier, and the
-profile selector already picks the tier. The section is marked "may be
-retired" on the page and works as before until that is decided.
-
-What retiring it would touch: `SettingsPanel`, the overrides App keeps and
-persists (`withOverrides`, `isEdited`, `published`), and every place that
-says a figure was "edited in Settings" (the Surface wind card, the advisory
-list, the hourly chart's limit-line note and the "(edited)" beside each limit
-in its legend), each of which would then lose a
-branch. The visibility caution is editable too, for every profile; it would
-go with the rest.
-
 ## To do, eventually: add this app to Open-Meteo's list of users
 
 Raised 2026-10-08. Open-Meteo's README

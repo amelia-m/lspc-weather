@@ -432,16 +432,63 @@ export interface Thresholds {
    *  wearing a citation that does not set it. Absent on a profile straight
    *  from `resolveThresholds`, where nothing is edited. */
   published?: Pick<Thresholds, EditableLimit>;
+  /**
+   * Whether Settings takes the reader's own limits on this profile: true on
+   * Licensed only. A student's limits are the BSR's, or the LSPC waiver's
+   * posted tier that the profile selector already picks, so Settings is
+   * closed to every student profile (raised by the maintainer, 2026-10-10).
+   */
+  takesOwnLimits?: boolean;
+  /**
+   * The limits on this profile that are the reader's own, set in Settings
+   * where no published source sets one: the wind limit and gust ceiling on
+   * Licensed. Set by `withOverrides`. An own limit draws a band and a chart
+   * line and raises a flag like a published one, and every one of them says
+   * it is the reader's, never a source's: the BSR sets no ground-wind limit
+   * for licensed jumpers, so the figure is checkable only against the person
+   * who set it.
+   */
+  own?: Partial<Record<OwnLimit, true>>;
+}
+
+/** The limits a reader can set as their own where no source publishes one. */
+export type OwnLimit = 'windCautionKt' | 'gustCautionKt';
+
+/** Whether `key` is a limit this profile takes as the reader's own: Settings
+ *  is open (`takesOwnLimits`) and no published figure sits there to edit. */
+export function isOwnLimitKey(base: Thresholds, key: EditableLimit): boolean {
+  if (!base.takesOwnLimits) return false;
+  if (key === 'windCautionKt') return base.windLimitCitation === null;
+  if (key === 'gustCautionKt') return base.gustCautionKt == null;
+  return false;
+}
+
+/** Whether the reader has set `key` as their own limit. */
+export function isOwnLimit(t: Thresholds, key: EditableLimit): boolean {
+  return (key === 'windCautionKt' || key === 'gustCautionKt') && t.own?.[key] === true;
+}
+
+/** The reader's own limits that are set, in the panel's order. */
+export function ownLimits(t: Thresholds): OwnLimit[] {
+  return (['windCautionKt', 'gustCautionKt'] as const).filter((k) => isOwnLimit(t, k));
+}
+
+/** Whether the profile has a wind limit to draw and flag: a published one
+ *  (`windLimitCitation`) or the reader's own. */
+export function hasWindLimit(t: Thresholds): boolean {
+  return t.windLimitCitation !== null || isOwnLimit(t, 'windCautionKt');
 }
 
 /** The limits the Settings panel can edit, the ones an advisory fires on,
  *  with the name and unit its row shows. The one list: the Settings rows, the
  *  overrides App will load back, and `published` are all built from it. */
 export const EDITABLE_LIMITS = {
-  windCautionKt: { label: 'Wind — caution', unit: 'kt' },
-  gustCautionKt: { label: 'Gust ceiling', unit: 'kt' },
+  windCautionKt: { label: 'Wind — caution', ownLabel: 'Your wind limit', unit: 'kt' },
+  gustCautionKt: { label: 'Gust ceiling', ownLabel: 'Your gust ceiling', unit: 'kt' },
   visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5 },
-} as const satisfies Partial<Record<keyof Thresholds, { label: string; unit: string; step?: number }>>;
+} as const satisfies Partial<
+  Record<keyof Thresholds, { label: string; ownLabel?: string; unit: string; step?: number }>
+>;
 export type EditableLimit = keyof typeof EDITABLE_LIMITS;
 export const EDITABLE_LIMIT_KEYS = Object.keys(EDITABLE_LIMITS) as EditableLimit[];
 
@@ -449,7 +496,20 @@ export const EDITABLE_LIMIT_KEYS = Object.keys(EDITABLE_LIMITS) as EditableLimit
  *  own values in `published`. */
 export function withOverrides(base: Thresholds, override?: Partial<Thresholds>): Thresholds {
   const published = Object.fromEntries(EDITABLE_LIMIT_KEYS.map((k) => [k, base[k]]));
-  return { ...base, ...override, published: published as Pick<Thresholds, EditableLimit> };
+  // An own limit is one the reader set where the profile publishes none.
+  // Its presence in the override is what sets it, not a difference from the
+  // base: Licensed's windCautionKt is only a bar scale (25 kt), and a
+  // reader whose own limit is 25 kt has still set one.
+  const own: Partial<Record<OwnLimit, true>> = {};
+  for (const k of ['windCautionKt', 'gustCautionKt'] as const) {
+    if (isOwnLimitKey(base, k) && typeof override?.[k] === 'number') own[k] = true;
+  }
+  return {
+    ...base,
+    ...override,
+    published: published as Pick<Thresholds, EditableLimit>,
+    ...(Object.keys(own).length > 0 ? { own } : {}),
+  };
 }
 
 /** Whether Settings offers this limit on this profile: the profile has a
@@ -461,6 +521,7 @@ export function withOverrides(base: Thresholds, override?: Partial<Thresholds>):
  *  from storage, and for what counts as edited, so a value with no row to
  *  see it can neither be kept nor reported. */
 export function isEditable(t: Thresholds, key: EditableLimit): boolean {
+  if (isOwnLimitKey(t, key)) return true;
   if (typeof t[key] !== 'number') return false;
   if (key === 'windCautionKt') return t.windLimitCitation !== null;
   return true;
@@ -472,6 +533,8 @@ export function isEditable(t: Thresholds, key: EditableLimit): boolean {
  *  source's link unmarked is the failure this exists to stop, even where two
  *  figures would flag the same whole-knot readings. */
 export function isEdited(t: Thresholds, key: EditableLimit): boolean {
+  // An own limit is not an edit of a published figure: there was none.
+  if (isOwnLimit(t, key) || isOwnLimitKey(t, key)) return false;
   return t.published != null && isEditable(t, key) && t[key] !== t.published[key];
 }
 
@@ -481,15 +544,20 @@ export function editedLimits(t: Thresholds): EditableLimit[] {
 }
 
 /** The reference lines a chart draws for a profile: its wind limit where a
- *  published source sets one (`windLimitCitation`, the same switch the
- *  Surface wind card's band and the wind flag use), and its gust ceiling
- *  where it has one, each marked when the figure was edited in Settings. */
-export function limitLines(t: Thresholds | undefined): { kind: 'wind' | 'gust'; kt: number; edited: boolean }[] {
-  if (!t?.windLimitCitation) return [];
+ *  published source sets one or the reader set their own (`hasWindLimit`,
+ *  the same switch the Surface wind card's band and the wind flag use), and
+ *  its gust ceiling where it has one, each marked when the figure was edited
+ *  in Settings or is the reader's own. */
+export function limitLines(
+  t: Thresholds | undefined,
+): { kind: 'wind' | 'gust'; kt: number; edited: boolean; own: boolean }[] {
+  if (!t) return [];
   return [
-    { kind: 'wind', kt: t.windCautionKt, edited: isEdited(t, 'windCautionKt') },
+    ...(hasWindLimit(t)
+      ? [{ kind: 'wind' as const, kt: t.windCautionKt, edited: isEdited(t, 'windCautionKt'), own: isOwnLimit(t, 'windCautionKt') }]
+      : []),
     ...(t.gustCautionKt != null
-      ? [{ kind: 'gust' as const, kt: t.gustCautionKt, edited: isEdited(t, 'gustCautionKt') }]
+      ? [{ kind: 'gust' as const, kt: t.gustCautionKt, edited: isEdited(t, 'gustCautionKt'), own: isOwnLimit(t, 'gustCautionKt') }]
       : []),
   ];
 }
@@ -571,8 +639,10 @@ const LICENSED: Thresholds = {
   // written for students.
   windCitation: CITATIONS.uspaLicensedWinds,
   // No published limit exists for licensed jumpers, so the card shows no band
-  // and evaluateAdvisories raises no surface-wind flag for this profile.
+  // and evaluateAdvisories raises no surface-wind flag for this profile,
+  // unless the reader sets their own in Settings (`takesOwnLimits`).
   windLimitCitation: null,
+  takesOwnLimits: true,
   visibilityCautionSm: 3,
 };
 
@@ -681,4 +751,43 @@ export function profileLabel(id: WindProfileId): string {
   if (id === 'licensed') return 'Licensed';
   const tier = WAIVER_TIERS.find((t) => t.id === id);
   return tier ? `Student · LSPC waiver · ${tier.label}` : 'Student · USPA BSR';
+}
+
+/** Every profile id, for validating one read back from storage. */
+export const WIND_PROFILE_IDS: readonly WindProfileId[] = ['student', 'licensed', ...WAIVER_TIERS.map((t) => t.id)];
+
+/** The reader's Settings values, per profile, as App keeps and stores them. */
+export type Overrides = Partial<Record<WindProfileId, Partial<Thresholds>>>;
+
+/** Sanitize persisted threshold overrides. localStorage is user-writable, so a
+ *  corrupt or tampered value (a string where a number belongs, an unknown
+ *  profile key) would silently break threshold comparisons. Keep only entries
+ *  under valid profile ids whose values are finite numbers for the limits
+ *  Settings offers on that profile (`isEditable`), on a profile Settings is
+ *  open on (`takesOwnLimits`); drop everything else. A stored value for any
+ *  other field would change what a flag fires on with no row to see it and
+ *  no "(edited)" mark anywhere. */
+export function sanitizeOverrides(raw: unknown): Overrides {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+  const out: Overrides = {};
+  for (const [id, entry] of Object.entries(raw)) {
+    if (!WIND_PROFILE_IDS.includes(id as WindProfileId)) continue;
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue;
+    const base = resolveThresholds(id as WindProfileId);
+    // Settings is closed to every student profile, so a value stored for one
+    // before that (or by hand) is dropped rather than left to move a flag.
+    if (!base.takesOwnLimits) continue;
+    const clean: Partial<Thresholds> = {};
+    for (const [key, value] of Object.entries(entry as Record<string, unknown>)) {
+      if (!(EDITABLE_LIMIT_KEYS as string[]).includes(key)) continue;
+      if (!isEditable(base, key as EditableLimit)) continue;
+      // An own limit has no published value to share a type with.
+      const baseValue = isOwnLimitKey(base, key as EditableLimit) ? 0 : (base as unknown as Record<string, unknown>)[key];
+      if (typeof baseValue === 'number' && typeof value === 'number' && Number.isFinite(value)) {
+        (clean as Record<string, number>)[key] = value;
+      }
+    }
+    if (Object.keys(clean).length > 0) out[id as WindProfileId] = clean;
+  }
+  return out;
 }

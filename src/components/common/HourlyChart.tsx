@@ -315,7 +315,8 @@ export function HourlyLegend({
         ))}
         {lines.map((l) => (
           <span key={l.kind} className="hc-legend-item">
-            <span className={`hc-key hc-key-limit-${l.kind}`} /> {l.kind === 'wind' ? 'wind limit' : 'gust ceiling'}{' '}
+            <span className={`hc-key hc-key-limit-${l.kind}`} /> {l.own ? 'your ' : ''}
+            {l.kind === 'wind' ? 'wind limit' : 'gust ceiling'}{' '}
             {fmtLimitSpeed(l.kt, unit)}
             {/* A figure the reader edited is not the source's: said beside
                 the figure, not only in the note under it. */}
@@ -323,6 +324,13 @@ export function HourlyLegend({
           </span>
         ))}
       </p>
+      {/* An own limit has no source: the reader set it in Settings. */}
+      {lines.some((l) => l.own) && (
+        <p className="muted small">
+          Limit lines: your own, set in Settings. No published source sets them for{' '}
+          {profile ?? 'this profile'}.
+        </p>
+      )}
       {lines.length > 0 && limits?.windLimitCitation && (
         <p className="muted small">
           Limit lines: {profile ?? 'this profile'}. Source: <SourceLink citation={limits.windLimitCitation} />.

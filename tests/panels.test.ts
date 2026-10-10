@@ -24,7 +24,7 @@ const status: Record<SourceKey, SourceStatus> = {
 describe('cards that go through Panel', () => {
   it('keeps the advisory card’s accent class and its own footer', () => {
     const html = renderToStaticMarkup(
-      createElement(AdvisoryPanel, { advisories: [], profile: 'Student', hasSourcedWindLimit: true }),
+      createElement(AdvisoryPanel, { advisories: [], profile: 'Student', hasWindLimit: true }),
     );
     expect(html).toContain('<section class="panel advisory-panel">');
     expect(html).toMatch(/<footer class="panel-sources">Flag values from:/);

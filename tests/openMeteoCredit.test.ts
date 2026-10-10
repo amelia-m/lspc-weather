@@ -88,7 +88,7 @@ describe('Open-Meteo in the cards’ Data lines', () => {
     expect(dataLine(daily('open-meteo'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
     // No flag reads a forecast: the observation and the computed sun times.
     const flags = dataLine(
-      renderToStaticMarkup(createElement(AdvisoryPanel, { advisories: [], profile: 'Student', hasSourcedWindLimit: true })),
+      renderToStaticMarkup(createElement(AdvisoryPanel, { advisories: [], profile: 'Student', hasWindLimit: true })),
     );
     expect(flags).not.toContain('Open-Meteo');
     expect(flags).not.toContain(DATA_SOURCES.nwsForecast.label);

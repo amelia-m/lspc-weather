@@ -1,5 +1,5 @@
 import type { Advisory, AdvisoryLevel, WeatherSnapshot } from './types';
-import { CITATIONS, isEdited, type Thresholds } from '../config/thresholds';
+import { CITATIONS, hasWindLimit, isEdited, isOwnLimit, type Thresholds } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
 import { SITE } from '../config/site';
@@ -40,7 +40,11 @@ export function evaluateAdvisories(
     // "no data", not calm. Level on the EFFECTIVE wind (max of sustained and
     // gust): a gust past the limit is still wind past the limit, and a gust
     // reading alone (sustained unreported) is enough to evaluate.
-    if (thresholds.windLimitCitation && (speedKt != null || gustKt != null)) {
+    //
+    // The one exception to "published or nothing" is the reader's own limit,
+    // set in Settings on Licensed (`isOwnLimit`): theirs to set and theirs to
+    // check, and every sentence the flag carries says so.
+    if (hasWindLimit(thresholds) && (speedKt != null || gustKt != null)) {
       const limitKt = thresholds.windCautionKt;
       const effectiveKt = Math.max(speedKt ?? -Infinity, gustKt ?? -Infinity);
       if (effectiveKt >= limitKt) {
@@ -57,9 +61,11 @@ export function evaluateAdvisories(
           value:
             formatWind(speedKt, gustKt, unit) +
             (gustDriven
-              ? isEdited(thresholds, 'windCautionKt')
-                ? ' (gusts at or above the edited caution)'
-                : ' (gusts at or above the caution)'
+              ? isOwnLimit(thresholds, 'windCautionKt')
+                ? ' (gusts at or above your limit)'
+                : isEdited(thresholds, 'windCautionKt')
+                  ? ' (gusts at or above the edited caution)'
+                  : ' (gusts at or above the caution)'
               : ''),
           guidance: `${thresholds.windGuidance} ${windBandSentence(thresholds, unit)}`.trim(),
           citation: thresholds.windCitation,
@@ -90,11 +96,14 @@ export function evaluateAdvisories(
         //
         // An edited ceiling is not the waiver's, so it is not called one: the
         // citation would vouch for a number the posted sign does not carry.
-        value: isEdited(thresholds, 'gustCautionKt')
-          ? `gusting ${fmtSpeed(gustKt, unit)}, ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)} (edited in Settings)`
-          : `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
-        guidance:
-          isEdited(thresholds, 'gustCautionKt') && thresholds.published?.gustCautionKt != null
+        value: isOwnLimit(thresholds, 'gustCautionKt')
+          ? `gusting ${fmtSpeed(gustKt, unit)}, your ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)} (set in Settings)`
+          : isEdited(thresholds, 'gustCautionKt')
+            ? `gusting ${fmtSpeed(gustKt, unit)}, ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)} (edited in Settings)`
+            : `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
+        guidance: isOwnLimit(thresholds, 'gustCautionKt')
+          ? 'Gusts are at or above the gust ceiling you set in Settings. No published source sets one for this profile; it is yours to check.'
+          : isEdited(thresholds, 'gustCautionKt') && thresholds.published?.gustCautionKt != null
             ? `Gusts are at or above the gust ceiling edited in Settings; the LSPC waiver's ceiling for this experience tier is ${fmtLimitSpeed(thresholds.published.gustCautionKt, unit)} (gusts measured over the last 30 min).`
             : 'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
         citation: thresholds.windCitation,
@@ -264,6 +273,9 @@ function severityRank(level: AdvisoryLevel): number {
  */
 export function windBandUse(t: Thresholds, unit: SpeedUnit): string {
   const figure = fmtLimitSpeed(t.windCautionKt, unit);
+  if (isOwnLimit(t, 'windCautionKt')) {
+    return `The band and flag here use ${figure}, your own limit from Settings; no published source sets one for this profile`;
+  }
   if (isEdited(t, 'windCautionKt')) {
     return `The band and flag here use ${figure}, as edited in Settings, not a published figure`;
   }

@@ -30,10 +30,17 @@ METARs, the sectional, the TAF, density altitude, winds aloft and briefing
 links. Conditions now,
 the sky, daylight, radar and the advisories show on both. Which cards each tab
 shows is `src/config/views.ts`. The jumper wind-limit profile (Student,
-Licensed and its license, the waiver tiers) and the threshold Settings are on Jumpers only:
+Licensed and its license, the waiver tiers) and "Set your own thresholds" are on Jumpers only:
 the Pilots advisory list leaves out the two jumper wind flags (surface wind
 against the jumper's limit, the waiver gust ceiling), says so, and fires on
-the published figures rather than Settings edits.
+the published figures rather than anything set there.
+
+"Set your own thresholds", at the foot of the Jumpers tab, is open on
+Licensed only: a student's limits are the BSR's or the club waiver's posted
+tier, which the profile selector picks. On Licensed, where nobody publishes a
+ground-wind limit, a jumper can set their own wind limit and gust ceiling,
+and edit the visibility caution. What they set appears on the Surface wind
+card, the charts' limit lines and the flags, each marked as theirs.
 
 - ⚠️ **Conditions to note** — the flagged conditions, each with the source it
   relates to: surface wind, the LSPC waiver gust ceiling, visibility, FAA flight
@@ -50,7 +57,8 @@ the published figures rather than Settings edits.
   a student on the USPA BSR limits, the posted club policy for a student on an
   LSPC waiver tier — and is labelled
   with that source. The Licensed profile draws no band and says so: nobody
-  publishes a surface-wind limit for licensed jumpers.
+  publishes a surface-wind limit for licensed jumpers. A licensed jumper who
+  sets their own limit gets a band labelled as theirs.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   pressure-level model winds, with the

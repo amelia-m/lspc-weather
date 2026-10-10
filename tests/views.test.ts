@@ -127,9 +127,9 @@ describe('the Pilots tab and the jumper wind limits', () => {
   });
 
   it('says on the Pilots list where the jumper wind limits are, empty or not', () => {
-    const panel = (advisories: typeof all, forPilots: boolean, hasSourcedWindLimit = true) =>
+    const panel = (advisories: typeof all, forPilots: boolean, hasWindLimit = true) =>
       renderToStaticMarkup(
-        createElement(AdvisoryPanel, { advisories, profile: 'Licensed', hasSourcedWindLimit, forPilots }),
+        createElement(AdvisoryPanel, { advisories, profile: 'Licensed', hasWindLimit, forPilots }),
       );
     for (const list of [[], advisoriesFor('pilots', all)]) {
       const html = panel(list, true, false);

@@ -18,7 +18,7 @@ const LEVEL_LABEL: Record<Advisory['level'], string> = {
  * verdict: the jumper / S&TA / PIC decides.
  *
  * The empty state is profile-aware, which is what `profile` and
- * `hasSourcedWindLimit` are for. On a profile with no published wind limit
+ * `hasWindLimit` are for. On a profile with no published wind limit
  * (licensed) no surface-wind flag can reach this list at ANY speed, so "no
  * conditions flagged" on its own is a true statement about the app that reads
  * as a statement about the weather — an all-clear in a 60 kt gust. Naming the
@@ -39,18 +39,23 @@ const LEVEL_LABEL: Record<Advisory['level'], string> = {
 export function AdvisoryPanel({
   advisories,
   profile,
-  hasSourcedWindLimit,
+  hasWindLimit,
   editedLimits = [],
+  ownLimits = [],
   forPilots = false,
 }: {
   advisories: Advisory[];
   /** Active wind-limit profile, as shown on the header control ("Licensed"). */
   profile: string;
-  /** Whether a published source sets a surface-wind limit for that profile —
-   *  i.e. whether a surface-wind flag can appear in this list at all. */
-  hasSourcedWindLimit: boolean;
+  /** Whether the profile has a surface-wind limit, published or the
+   *  reader's own (`hasWindLimit` in thresholds.ts) — i.e. whether a
+   *  surface-wind flag can appear in this list at all. */
+  hasWindLimit: boolean;
   /** Names of the limits edited in Settings for this profile, if any. */
   editedLimits?: string[];
+  /** Names of the reader's own limits set in Settings, where no source
+   *  publishes one (Licensed). */
+  ownLimits?: string[];
   /** The Pilots tab's list: no jumper ground-wind flags, and published
    *  figures only (no Settings on that tab, so no edits to report). */
   forPilots?: boolean;
@@ -94,6 +99,12 @@ export function AdvisoryPanel({
             nothing listed. Settings shows the published figure beside each edited one.
           </p>
         )}
+        {ownLimits.length > 0 && (
+          <p className="advisory-edited muted small">
+            <strong>Your own limits, from Settings:</strong> {ownLimits.join(', ')}. No published
+            source sets them for this profile; the flags here fire at your figures.
+          </p>
+        )}
         {forPilots && (
           <p className="advisory-edited muted small">
             <strong>Jumper wind limits are not flagged here.</strong> The ground-wind limits for
@@ -104,7 +115,7 @@ export function AdvisoryPanel({
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}
-            {!forPilots && !hasSourcedWindLimit && (
+            {!forPilots && !hasWindLimit && (
               <>
                 Surface wind is never flagged on the {profile} profile — no published source sets
                 a wind limit for it — so read the speed on the Surface wind card.{' '}
