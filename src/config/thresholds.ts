@@ -782,6 +782,15 @@ export function profileLabel(id: WindProfileId): string {
   return tier ? `Student · LSPC waiver · ${tier.label}` : 'Student · USPA BSR';
 }
 
+/** The profile in as few words as name it, for the Surface wind card's
+ *  subtitle beside the unit toggle, where the full name wrapped onto a
+ *  second line on a phone: "Student · waiver 21+". The full name is in the
+ *  card's citation line and the header selector. */
+export function profileShortLabel(id: WindProfileId): string {
+  const tier = WAIVER_TIERS.find((t) => t.id === id);
+  return tier ? `Student · waiver ${tier.label.replace(/ jumps$/, '')}` : profileLabel(id);
+}
+
 /** Every profile id, for validating one read back from storage. */
 export const WIND_PROFILE_IDS: readonly WindProfileId[] = ['student', 'licensed', ...WAIVER_TIERS.map((t) => t.id)];
 

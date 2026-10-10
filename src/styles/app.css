@@ -629,58 +629,70 @@ a.sim-term {
   background: var(--watch);
   z-index: 3;
 }
-/* One row per limit: what it is, what reading it is held to and how far
-   under it is, then the bar. */
-.wind-check {
-  margin-top: 10px;
+/* One bar with every mark labelled: the limits' figures above it, the
+   wind's and the gust's below, each in its mark's colour. Then one line per
+   limit. */
+.wind-scale {
+  margin: 10px 0 0;
 }
-.wind-check-head {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 2px 10px;
+.wind-scale .wind-bar {
+  margin: 2px 0;
+}
+.wind-scale-labels {
+  position: relative;
+  height: 1.05rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.wind-scale-label {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  line-height: 1.05rem;
+}
+.band-caution-text {
+  color: var(--caution);
+}
+.band-gust-text {
+  color: var(--gust-ceiling);
+}
+.wind-label {
+  color: var(--accent);
+}
+.gust-label {
+  color: var(--watch);
+}
+.wind-checks {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
   font-size: 0.85rem;
 }
+.wind-check {
+  display: flex;
+  align-items: baseline;
+  gap: 2px 8px;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
 .wind-check-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  flex: 1 1 auto;
 }
 .wind-check-status {
   color: var(--muted);
+  white-space: nowrap;
 }
 /* At or above the limit: the flag's own condition, in the flag's colour. */
 .wind-check-status.over {
   color: var(--caution);
   font-weight: 600;
 }
-.wind-check .wind-bar {
-  margin: 4px 0 0;
-}
-.key-swatch {
-  display: inline-block;
-  vertical-align: middle;
-}
 .key-mark {
+  display: inline-block;
+  flex: none;
   width: 3px;
   height: 12px;
-}
-.key-fill {
-  width: 14px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--accent);
-}
-.key-gust {
-  width: 3px;
-  height: 12px;
-  background: var(--watch);
-  margin-left: 6px;
-}
-.wind-key {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin: 8px 0 0;
+  align-self: center;
 }
 
 /* The winds hour, on the Winds aloft and drift cards (ForecastHourNav): the

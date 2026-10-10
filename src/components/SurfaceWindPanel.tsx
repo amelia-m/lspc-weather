@@ -3,6 +3,7 @@ import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../doma
 import { EDITABLE_LIMITS, hasWindLimit, isEdited, isOwnLimit, ownLimits, type Thresholds } from '../config/thresholds';
 import { lowerLimitPublished, lowerLimitUnchecked, windBandUse } from '../domain/advisories';
 import { DATA_SOURCES } from '../config/sources';
+import { spreadLabels } from './format';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTermSegments } from './common/SimTerm';
@@ -71,10 +72,37 @@ export function SurfaceWindPanel({
   const windOwn = isOwnLimit(t, 'windCautionKt');
   const gustOwn = isOwnLimit(t, 'gustCautionKt');
   const hasWind = hasWindLimit(t);
-  const anyLimit = hasWind || t.gustCautionKt != null;
+  // The limits drawn on the bar and checked below it, in that order.
+  const limits: CardLimit[] = [
+    ...(hasWind
+      ? [
+          {
+            label: `${windOwn ? 'Your limit' : 'Caution'} ≥ ${fmtLimitSpeed(t.windCautionKt, unit)}${windEdited ? ' (edited)' : ''}`,
+            // The caution is held to the higher of the two, as its flag is.
+            heldTo: 'wind or gust',
+            markClass: 'band-caution' as const,
+            limitKt: t.windCautionKt,
+            readingKt: speed == null ? null : gust != null ? Math.max(speed, gust) : speed,
+            readingName: 'no wind reported',
+          },
+        ]
+      : []),
+    ...(t.gustCautionKt != null
+      ? [
+          {
+            label: `${gustOwn ? 'Your gust ceiling' : 'Gust ceiling'} ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`,
+            heldTo: 'gust',
+            markClass: 'band-gust' as const,
+            limitKt: t.gustCautionKt,
+            readingKt: gust,
+            readingName: 'no gust reported',
+          },
+        ]
+      : []),
+  ];
   // The note naming the reader's own limits, by the labels Settings and the
   // advisory list use. The figures go in only with no wind reading, when the
-  // legend that prints them is not shown.
+  // bar and the limit lines that print them are not shown.
   const ownNamed = ownLimits(t).map((k, i) => {
     const label = EDITABLE_LIMITS[k].ownLabel;
     const figure = speed == null ? ` (${fmtLimitSpeed(t[k] as number, unit)})` : '';
@@ -97,12 +125,12 @@ export function SurfaceWindPanel({
   return (
     <Panel
       title="Surface wind"
-      /* "flag bands" is only true where a source set one. On the licensed
-         profile it named bands over a bar that draws none, for a profile that
-         raises no wind flag — a label describing a different card. */
+      /* The profile alone where a source sets its limits; the source is
+         named on the citation line. On Licensed the subtitle says whose
+         limits, if any, the bar draws, since no source sets one. */
       subtitle={
         t.windLimitCitation
-          ? `${label} flag bands`
+          ? label
           : windOwn || gustOwn
             ? `${label} — your own limits`
             : `${label} — no published limit`
@@ -121,60 +149,26 @@ export function SurfaceWindPanel({
             <span className="wind-mph">({fmtSpeed(speed, other)})</span>
             {gust != null && <span className="wind-gust">gust {fmtSpeed(gust, unit)}</span>}
           </div>
-          {/* One row per limit, each saying which reading it is held to and
-              how far under it is, or that it is at or above it: the test
-              its flag uses, in words, so a reader need not match coloured
-              ticks to a legend (the maintainer, 2026-10-10). The caution is
-              held to the higher of the steady wind and the gust, as the flag
-              is; the gust ceiling to the gust. Only a limit a published
+          {/* One bar, every mark on it labelled with its figure: the limits
+              above it, the wind (at the fill's end) and the gust below. Then
+              one line per limit saying what it is held to and how far the
+              reading is from it. Two bars and a key (2026-10-10) said each
+              thing twice; one bar with a legend before that left the marks
+              unnamed (the maintainer, both times). Only a limit a published
               source sets, the reader's marked edit of it, or the reader's
               own limit where none is published (set in Settings on Licensed,
               and called theirs) is drawn or named. There is no earlier
               "watch" marker: the one that used to sit a few knots under this
               was the app's own arithmetic, and putting an unsourced number
               beside sourced ones lent it their authority. */}
-          {hasWind && (
-            <LimitRow
-              label={`${windOwn ? 'Your limit' : 'Caution'} ≥ ${fmtLimitSpeed(t.windCautionKt, unit)}${windEdited ? ' (edited)' : ''}`}
-              markClass="band-caution"
-              limitKt={t.windCautionKt}
-              readingName={gust != null && gust > speed ? 'gust' : 'wind'}
-              readingKt={gust != null ? Math.max(speed, gust) : speed}
-              speedKt={speed}
-              gustKt={gust}
-              pct={pct}
-              unit={unit}
-            />
+          <WindScale limits={limits} speedKt={speed} gustKt={gust} pct={pct} unit={unit} />
+          {limits.length > 0 && (
+            <ul className="wind-checks">
+              {limits.map((l) => (
+                <LimitCheck key={l.markClass} limit={l} unit={unit} />
+              ))}
+            </ul>
           )}
-          {t.gustCautionKt != null && (
-            <LimitRow
-              label={`${gustOwn ? 'Your gust ceiling' : 'Gust ceiling'} ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`}
-              markClass="band-gust"
-              limitKt={t.gustCautionKt}
-              readingName="gust"
-              readingKt={gust}
-              // The steady wind is drawn here only when no caution row
-              // draws it: with a gust ceiling alone (Licensed, own ceiling)
-              // this is the card's one bar.
-              speedKt={hasWind ? null : speed}
-              gustKt={gust}
-              pct={pct}
-              unit={unit}
-            />
-          )}
-          {!anyLimit && (
-            <div className="wind-bar" role="img" aria-label={`Wind ${round(toSpeed(speed, unit))} ${unit}`}>
-              <div className="wind-fill" style={{ width: `${pct(speed)}%` }} />
-              {gust != null && <div className="wind-gust-tick" style={{ left: `${pct(gust)}%` }} />}
-            </div>
-          )}
-          {/* The key on every profile: Licensed draws the same fill and tick
-              with no limit row to name them. */}
-          <p className="wind-key">
-            <span className="key-swatch key-fill" aria-hidden="true" /> steady wind{' '}
-            <span className="key-swatch key-gust" aria-hidden="true" /> gust
-            {hasWind && ` · ${windOwn ? 'your limit' : 'the caution'} counts whichever is higher, as its flag does`}
-          </p>
           {t.windLimitCitation && (
             <>
               {/* An edited figure is the reader's, from Settings, and the
@@ -252,58 +246,113 @@ export function SurfaceWindPanel({
   );
 }
 
-/** One limit on the Surface wind card: its label, the reading it is held to
- *  and how far under the limit that is (or that it is at or above it), and a
- *  bar with the limit marked. The distance is plain arithmetic on a published
- *  limit or the reader's own, in the card's unit, to the limit's decimal. */
-function LimitRow({
-  label,
-  markClass,
-  limitKt,
-  readingName,
-  readingKt,
+/** A limit as the card draws and checks it. */
+interface CardLimit {
+  /** "Caution ≥ 15.6 kt", "Your gust ceiling 20 kt (edited)". */
+  label: string;
+  /** What the limit is held to, as its flag holds it. */
+  heldTo: string;
+  markClass: 'band-caution' | 'band-gust';
+  limitKt: number;
+  /** The reading it is held to, or null with none reported. */
+  readingKt: number | null;
+  /** What to call a missing reading: "no gust reported". */
+  readingName: string;
+}
+
+/** Bar label positions are kept this far from each other and from the
+ *  ends, in percent of the bar: wide enough for "17.4" at 320 px. */
+const LABEL_GAP = 14;
+const LABEL_EDGE = 6;
+
+function WindScale({
+  limits,
   speedKt,
   gustKt,
   pct,
   unit,
 }: {
-  label: string;
-  markClass: string;
-  limitKt: number;
-  readingName: string;
-  readingKt: number | null;
-  speedKt: number | null;
+  limits: readonly CardLimit[];
+  speedKt: number;
   gustKt: number | null;
   pct: (v: number) => number;
   unit: SpeedUnit;
 }): JSX.Element {
-  const over = readingKt != null && readingKt >= limitKt;
-  // The distance is worked from the two figures as printed, so they add up
-  // on screen: rounded apart, a 17.6 mph reading (18) and a 20.4 mph limit
-  // (20) left "3 mph under". In mph a reading can round up to the limit it
-  // is still under; that one says so without a figure.
-  const places = unit === 'kt' ? 1 : 0;
-  const gap = readingKt == null ? 0 : round(round(toSpeed(limitKt, unit), places) - round(toSpeed(readingKt, unit)), places);
-  const status =
-    readingKt == null
-      ? `no ${readingName} reported`
-      : `${readingName} ${fmtSpeed(readingKt, unit)}: ${
-          over ? 'at or above' : gap > 0 ? `${gap} ${unit} under` : 'just under'
-        }`;
+  const top = spreadLabels(limits.map((l) => pct(l.limitKt)), LABEL_GAP, LABEL_EDGE, 100 - LABEL_EDGE);
+  const readings = [speedKt, ...(gustKt != null ? [gustKt] : [])];
+  const bottom = spreadLabels(readings.map(pct), LABEL_GAP, LABEL_EDGE, 100 - LABEL_EDGE);
+  // The figures alone: the unit is the readout's and the toggle's, and a
+  // limit's name is on its line below, beside the same coloured mark.
+  const figure = (kt: number, limit: boolean): string =>
+    (limit ? fmtLimitSpeed(kt, unit) : fmtSpeed(kt, unit)).replace(` ${unit}`, '');
+  const described = [
+    `Wind ${fmtSpeed(speedKt, unit)}`,
+    ...(gustKt != null ? [`gust ${fmtSpeed(gustKt, unit)}`] : []),
+    ...limits.map((l) => l.label),
+  ].join('; ');
   return (
-    <div className="wind-check">
-      <div className="wind-check-head">
-        <span className="wind-check-label">
-          <span className={`key-swatch key-mark ${markClass}`} aria-hidden="true" />
-          {label}
-        </span>
-        <span className={`wind-check-status${over ? ' over' : ''}`}>{status}</span>
-      </div>
-      <div className="wind-bar" role="img" aria-label={`${label}; ${status}`}>
-        <div className={`wind-band ${markClass}`} style={{ left: `${pct(limitKt)}%` }} />
-        {speedKt != null && <div className="wind-fill" style={{ width: `${pct(speedKt)}%` }} />}
+    <div className="wind-scale" role="img" aria-label={described}>
+      {limits.length > 0 && (
+        <div className="wind-scale-labels" aria-hidden="true">
+          {limits.map((l, i) => (
+            <span key={l.markClass} className={`wind-scale-label ${l.markClass}-text`} style={{ left: `${top[i]}%` }}>
+              {figure(l.limitKt, true)}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="wind-bar">
+        {limits.map((l) => (
+          <div key={l.markClass} className={`wind-band ${l.markClass}`} style={{ left: `${pct(l.limitKt)}%` }} />
+        ))}
+        <div className="wind-fill" style={{ width: `${pct(speedKt)}%` }} />
         {gustKt != null && <div className="wind-gust-tick" style={{ left: `${pct(gustKt)}%` }} />}
       </div>
+      <div className="wind-scale-labels" aria-hidden="true">
+        <span className="wind-scale-label wind-label" style={{ left: `${bottom[0]}%` }}>
+          {figure(speedKt, false)}
+        </span>
+        {gustKt != null && (
+          <span className="wind-scale-label gust-label" style={{ left: `${bottom[1]}%` }}>
+            {figure(gustKt, false)}
+          </span>
+        )}
+      </div>
     </div>
+  );
+}
+
+/** One limit's line under the bar: its mark, its name and what it is held
+ *  to, and how far the reading is from it. The distance is worked from the
+ *  two figures as printed, so they add up on screen: rounded apart, a 17.6
+ *  mph reading (18) and a 20.4 mph limit (20) left "3 mph under". In mph a
+ *  reading can round up to the limit it is still under; that one says so
+ *  without a figure, and one that rounds to the limit it reached says "at
+ *  the limit". */
+function LimitCheck({ limit: l, unit }: { limit: CardLimit; unit: SpeedUnit }): JSX.Element {
+  const over = l.readingKt != null && l.readingKt >= l.limitKt;
+  const places = unit === 'kt' ? 1 : 0;
+  const diff =
+    l.readingKt == null
+      ? 0
+      : round(Math.abs(round(toSpeed(l.limitKt, unit), places) - round(toSpeed(l.readingKt, unit))), places);
+  const status =
+    l.readingKt == null
+      ? l.readingName
+      : over
+        ? diff > 0
+          ? `${diff} ${unit} over`
+          : 'at the limit'
+        : diff > 0
+          ? `${diff} ${unit} under`
+          : 'just under';
+  return (
+    <li className="wind-check">
+      <span className={`key-mark ${l.markClass}`} aria-hidden="true" />
+      <span className="wind-check-label">
+        {l.label} <span className="muted">· {l.heldTo}</span>
+      </span>
+      <span className={`wind-check-status${over ? ' over' : ''}`}>{status}</span>
+    </li>
   );
 }

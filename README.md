@@ -55,9 +55,10 @@ card, the charts' limit lines and the flags, each marked as theirs.
   names the hours the forecast reaches the same limit, and ranks below every
   flag on a report.
 - 💨 **Surface wind** — the first card on the Jumpers tab: sustained + gust,
-  kt/mph toggle, and one row per limit saying which reading it is held to
-  (the caution takes the higher of wind and gust, the gust ceiling the gust)
-  and how far under the limit that is, or that it is at or above it. The limits
+  kt/mph toggle, one bar with every mark labelled by its figure, and a line
+  per limit saying which reading it is held to (the caution takes the higher
+  of wind and gust, the gust ceiling the gust) and how far over or under the
+  limit that is. The limits
   follow the profile in the header: Student or Licensed, then for a student
   USPA BSR or the LSPC waiver, then the waiver's jump-count tier. A band is
   drawn only where a published source sets it — the USPA ground-wind figure for
