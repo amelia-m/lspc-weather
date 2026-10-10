@@ -1,5 +1,6 @@
 import { SITE } from '../config/site';
 import { shortHour } from '../domain/localClock';
+import { round } from '../domain/units';
 
 /** "10pm": the hour alone, as the hourly chart's axis and the precip
  *  card's blocks print it, where "10:00 PM" would wrap on a phone. */
@@ -57,4 +58,22 @@ export function fmtZulu(ms: number): string {
   const hh = String(d.getUTCHours()).padStart(2, '0');
   const mm = String(d.getUTCMinutes()).padStart(2, '0');
   return `${hh}${mm}Z`;
+}
+
+/** Label positions (percent along the bar) pushed apart to at least `gap`
+ *  and kept inside [lo, hi], in their original order. Two limits one mph
+ *  apart (the waiver's 19 and 20) sit 4% apart on the bar, and their
+ *  figures would print over each other. */
+export function spreadLabels(xs: readonly number[], gap: number, lo: number, hi: number): number[] {
+  const order = xs.map((x, i) => [x, i] as const).sort((a, b) => a[0] - b[0]);
+  const out = order.map(([x]) => Math.min(hi, Math.max(lo, x)));
+  for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i], out[i - 1] + gap);
+  const over = out.length > 0 ? out[out.length - 1] - hi : 0;
+  if (over > 0) {
+    out[out.length - 1] = hi;
+    for (let i = out.length - 2; i >= 0; i--) out[i] = Math.min(out[i] - over, out[i + 1] - gap);
+  }
+  const back: number[] = new Array(xs.length);
+  order.forEach(([, i], k) => (back[i] = round(Math.max(lo, out[k]), 2)));
+  return back;
 }

@@ -92,16 +92,19 @@ precisely because they were colour and text rather than flags.
   names. It is not a licence for forecast
   thresholds of the app's own: a forecast storm or rain chance still flags
   nothing.
-- **The Surface wind card is first on the Jumpers tab and draws one row per
-  limit** (the maintainer, 2026-10-10). On one bar, a reader could not tell
-  that the yellow tick was the gust or what the red and purple marks were
-  without the hourly chart. Each row names its limit, the reading it is
-  held to (the caution takes the higher of wind and gust, as its flag does;
-  the gust ceiling takes the gust), and how far under that is, or "at or
-  above". The distance is worked from the figures as printed, so they add
-  up in mph. A key names the fill and the tick on every profile. The fill
-  is one colour: a green end read as "fine". Do not fold the rows back into
-  one bar with a legend.
+- **The Surface wind card is first on the Jumpers tab: one bar with every
+  mark labelled, then one line per limit** (the maintainer, 2026-10-10).
+  One bar with a legend left the marks unnamed: a reader could not tell
+  the yellow tick was the gust or what the red and purple marks were. A bar
+  and a status per limit, with a key, then said each thing twice. Now each
+  mark carries its figure on the bar (limits above, wind and gust below,
+  pushed apart when close, `spreadLabels`), and each limit's line names
+  it, what it is held to (the caution takes the higher of wind and gust,
+  as its flag does; the gust ceiling takes the gust), and how far over or
+  under the reading is. The distance is worked from the figures as
+  printed, so they add up in mph. The fill is one colour: a green end read
+  as "fine". Do not bring back a legend in place of the labels, or a bar
+  per limit.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed

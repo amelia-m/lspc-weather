@@ -595,12 +595,14 @@ describe('an empty advisory list is not an all-clear', () => {
     expect(windPanel(resolveThresholds('waiver:0-5'), 'Waiver', 'kt', null)).not.toContain('A lower maximum');
   });
 
-  it('does not caption a bandless bar "flag bands"', () => {
+  it('says on Licensed that no published limit is drawn, and names a sourced profile alone', () => {
     const licensed = windPanel(DEFAULT_THRESHOLDS.licensed, 'Licensed', 'kt', gale);
-    expect(licensed).not.toContain('flag bands');
-    expect(licensed).toContain('no published limit');
-    // The profiles that do draw a band keep the subtitle that describes it.
-    expect(windPanel(DEFAULT_THRESHOLDS.student, 'Student', 'kt', gale)).toContain('flag bands');
+    expect(licensed).toContain('Licensed — no published limit');
+    // A sourced profile's subtitle is its name; its source is on the
+    // citation line.
+    const student = windPanel(DEFAULT_THRESHOLDS.student, 'Student · USPA BSR', 'kt', gale);
+    expect(student).toContain('>Student · USPA BSR<');
+    expect(student).not.toContain('no published limit');
   });
 });
 

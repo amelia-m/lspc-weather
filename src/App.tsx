@@ -13,6 +13,7 @@ import {
   EDITABLE_LIMITS,
   type EditableLimit,
   profileLabel,
+  profileShortLabel,
   WAIVER_TIERS,
   toLicense,
   type License,
@@ -284,7 +285,7 @@ export default function App(): JSX.Element {
       <SurfaceWindPanel
         current={snapshot.current}
         thresholds={thresholds}
-        label={profileLabel(profile)}
+        label={profileShortLabel(profile)}
         unit={unit}
         onUnitChange={setUnit}
       />
