@@ -73,7 +73,9 @@ precisely because they were colour and text rather than flags.
   student's limits are the BSR's or the waiver tier's). There a wind limit
   or gust ceiling the reader sets (`own`, `isOwnLimit`, `hasWindLimit`)
   draws a band and a chart line and raises a flag, and every one of them
-  says it is the reader's own, with no source link: a figure the person
+  says it is the reader's own. No link is offered as the figure's source;
+  the BSR link beside an own-limit flag backs its quoted account that the
+  BSR sets no ground-wind limit for licensed jumpers. A figure the person
   who set it can check is not one this app invented. Do not extend it to
   a figure the app supplies, and do not reopen it to students.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
