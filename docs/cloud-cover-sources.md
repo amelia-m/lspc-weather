@@ -240,12 +240,18 @@ not confirmed: neither the manufacturer nor a software document was read.
 The Nebraska Department of Transportation's aeronautics division, which
 runs many of the state's AWOS, or the unit's manufacturer could settle it.
 
-One more thing about KPMV does not square with the registry. The NASR file
-lists it as AWOS-3, and so does its Chart Supplement entry ("WEATHER DATA
-SOURCES: AWOS–3 118.975 (402) 298–7524", edition 3 Sep to 29 Oct 2026, read
-2026-10-10 in the page PDF at aeronav.faa.gov). The AC defines an AWOS-3
-without present-weather or thunderstorm sensors (those make it "AWOS III
-P", "T" or "P/T"). Yet in September its reports carried precipitation types
-(228 reports with rain, drizzle or snow) and VCTS and LTG remarks. Either
-both listings are out of date, or those come from another source. This was
-not looked into.
+KPMV's type differs between the FAA's own listings. The NASR file lists it
+as AWOS-3, and so does its Chart Supplement entry ("WEATHER DATA SOURCES:
+AWOS–3 118.975 (402) 298–7524", edition 3 Sep to 29 Oct 2026, read
+2026-10-10 in the page PDF at aeronav.faa.gov). The FAA WeatherCams
+AWOS/ASOS stations list lists it as "AWOS-3PT (Non-Fed)". That was read in
+the maintainer's browser, from the list as last updated 2026-10-10 08:31Z;
+its API answers a script with 401, so it was not read from here. The AC
+defines an AWOS-3 without present-weather or thunderstorm sensors (those
+make it "AWOS III P", "T" or "P/T"). In September KPMV's reports carried
+precipitation types (228 reports with rain, drizzle or snow) and VCTS and
+LTG remarks, which fits the WeatherCams listing. So the NASR file and the
+Chart Supplement look out of date on this point. Either way, a 3PT's extra
+sensors are for weather and lightning, not cloud, so the type does not
+bear on FEW. In the table above, two of the 19 no-FEW stations are 3PT by
+NASR, and so are five of the six AWOS that do report FEW.

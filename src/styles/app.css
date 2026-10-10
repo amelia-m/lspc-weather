@@ -70,11 +70,16 @@ a {
   font-size: 0.85rem;
 }
 
+/* margin-left: auto keeps the column against the right edge when it wraps
+   under the title on a phone. Without it the column sat at the left of its
+   own line, as wide as its widest row, so choosing LSPC waiver (whose tier
+   row is the widest) threw every toggle from the left to the right. */
 .toggles {
   display: flex;
   flex-direction: column;
   gap: 6px;
   align-items: flex-end;
+  margin-left: auto;
 }
 .class-toggle button {
   background: var(--panel-2);
