@@ -31,8 +31,9 @@ links. Conditions now,
 the sky, daylight, radar and the advisories show on both. Which cards each tab
 shows is `src/config/views.ts`. The jumper wind-limit profile (Student,
 Licensed and its license, the waiver tiers) and "Set your own thresholds" are on Jumpers only:
-the Pilots advisory list leaves out the two jumper wind flags (surface wind
-against the jumper's limit, the waiver gust ceiling), says so, and fires on
+the Pilots advisory list leaves out the jumper wind flags (surface wind
+against the jumper's limit and the waiver gust ceiling, on the report and on
+the forecast), says so, and fires on
 the published figures rather than anything set there.
 
 "Set your own thresholds", at the foot of the Jumpers tab, is open on

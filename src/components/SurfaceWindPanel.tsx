@@ -153,7 +153,10 @@ export function SurfaceWindPanel({
               limitKt={t.gustCautionKt}
               readingName="gust"
               readingKt={gust}
-              speedKt={null}
+              // The steady wind is drawn here only when no caution row
+              // draws it: with a gust ceiling alone (Licensed, own ceiling)
+              // this is the card's one bar.
+              speedKt={hasWind ? null : speed}
               gustKt={gust}
               pct={pct}
               unit={unit}
@@ -170,7 +173,7 @@ export function SurfaceWindPanel({
           <p className="wind-key">
             <span className="key-swatch key-fill" aria-hidden="true" /> steady wind{' '}
             <span className="key-swatch key-gust" aria-hidden="true" /> gust
-            {hasWind && ' · the caution counts whichever is higher, as its flag does'}
+            {hasWind && ` · ${windOwn ? 'your limit' : 'the caution'} counts whichever is higher, as its flag does`}
           </p>
           {t.windLimitCitation && (
             <>
@@ -275,10 +278,18 @@ function LimitRow({
   unit: SpeedUnit;
 }): JSX.Element {
   const over = readingKt != null && readingKt >= limitKt;
+  // The distance is worked from the two figures as printed, so they add up
+  // on screen: rounded apart, a 17.6 mph reading (18) and a 20.4 mph limit
+  // (20) left "3 mph under". In mph a reading can round up to the limit it
+  // is still under; that one says so without a figure.
+  const places = unit === 'kt' ? 1 : 0;
+  const gap = readingKt == null ? 0 : round(round(toSpeed(limitKt, unit), places) - round(toSpeed(readingKt, unit)), places);
   const status =
     readingKt == null
       ? `no ${readingName} reported`
-      : `${readingName} ${fmtSpeed(readingKt, unit)}: ${over ? 'at or above' : `${fmtLimitSpeed(limitKt - readingKt, unit)} under`}`;
+      : `${readingName} ${fmtSpeed(readingKt, unit)}: ${
+          over ? 'at or above' : gap > 0 ? `${gap} ${unit} under` : 'just under'
+        }`;
   return (
     <div className="wind-check">
       <div className="wind-check-head">

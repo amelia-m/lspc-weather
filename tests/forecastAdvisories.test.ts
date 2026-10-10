@@ -109,6 +109,42 @@ describe('forecast wind flags', () => {
     expect(advisoriesFor('jumpers', out).some((a) => a.id === 'forecast-gust')).toBe(true);
   });
 
+  it('says which of the BSR’s two figures the Student flag uses, as the flag on the report does', () => {
+    const flag = forecastWindAdvisories(hourly, resolveThresholds('student'), now, 'kt').find((a) => a.id === 'forecast-wind');
+    expect(flag?.guidance).toContain('The band and flag here use 12 kt');
+    expect(flag?.guidance).toContain('nothing on this page flags the lower limit');
+  });
+
+  it('words the gust ceiling as the Gust limit flag does: own, edited, and the waiver’s measure', () => {
+    expect(gust?.guidance).toContain('which the waiver sets on gusts measured over the last 30 min');
+    const own = forecastWindAdvisories(hourly, withOverrides(resolveThresholds('licensed'), { gustCautionKt: 20 }), now, 'kt');
+    // The BSR link beside it backs the profile's guidance, which it quotes.
+    expect(own.map((a) => a.id)).toEqual(['forecast-gust']);
+    expect(own[0].guidance).toContain(resolveThresholds('licensed').windGuidance);
+    const edited = forecastWindAdvisories(hourly, withOverrides(waiver21, { gustCautionKt: 25 }), now, 'kt').find(
+      (a) => a.id === 'forecast-gust',
+    );
+    expect(edited?.guidance).toContain('the gust ceiling as edited in Settings');
+    expect(edited?.guidance).toContain("The LSPC waiver's ceiling for this experience tier is 17.4 kt");
+  });
+
+  it('holds the forecast in whole knots, so the peak it prints reaches the limit it names', () => {
+    // The gridpoint's 32.3 km/h is 17.44 kt: 17 kt, under the 17.4 kt
+    // ceiling, as a METAR would report it. 33 km/h (17.8 kt) is 18.
+    const kmh = (v: number) => v / 1.852;
+    const quiet = forecastWindAdvisories([at(14, 5, kmh(32.3))], waiver21, now, 'kt');
+    expect(quiet.some((a) => a.id === 'forecast-gust')).toBe(false);
+    const over = forecastWindAdvisories([at(14, 5, kmh(33))], waiver21, now, 'kt');
+    expect(over.find((a) => a.id === 'forecast-gust')?.value).toBe('9am–10am, to 18 kt');
+  });
+
+  it('credits the NWS forecast in the list’s footer only when a Forecast flag is shown', () => {
+    const render = (advisories: typeof out) =>
+      renderToStaticMarkup(createElement(AdvisoryPanel, { advisories, profile: 'waiver:21+', hasWindLimit: true }));
+    expect(render(out)).toContain('NWS forecast');
+    expect(render(out.filter((a) => a.level !== 'forecast'))).not.toContain('NWS forecast');
+  });
+
   it('shows as Forecast in the list, not as a caution', () => {
     const html = renderToStaticMarkup(
       createElement(AdvisoryPanel, { advisories: out, profile: 'waiver:21+', hasWindLimit: true }),

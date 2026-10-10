@@ -1,5 +1,6 @@
 /**
- * Turn a bare local clock time ("8:15 AM") into an instant.
+ * Local clock times at the drop zone: a bare one ("8:15 AM") turned into an
+ * instant, and an instant's hour as the dashboard labels it (`shortHour`).
  *
  * usairnet stamps its observation "as of 8:15 AM CDST": a wall-clock time in
  * the station's zone with no date. To say which of two sources had the newer
@@ -65,4 +66,12 @@ export function resolveLocalClock(clock: string, nearMs: number, zone: string): 
     if (best == null || Math.abs(ms - nearMs) < Math.abs(best - nearMs)) best = ms;
   }
   return best;
+}
+
+/** "10am": the hour alone at `ms` in `zone`, as the hourly chart labels its
+ *  axis and the forecast flags their hours. Any space before am/pm goes,
+ *  U+202F included, which newer ICU builds put there in place of a plain
+ *  space. */
+export function shortHour(ms: number, zone: string): string {
+  return new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', timeZone: zone }).replace(/\s/g, '').toLowerCase();
 }

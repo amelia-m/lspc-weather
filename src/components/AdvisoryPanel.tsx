@@ -66,15 +66,21 @@ export function AdvisoryPanel({
    *  figures only (no Settings on that tab, so no edits to report). */
   forPilots?: boolean;
 }): JSX.Element {
-  // Only what evaluateAdvisories reads: the observation and the computed
-  // sun times. It listed the NWS forecast and Open-Meteo too, which no flag
-  // reads, and now that a licence link rides on Open-Meteo that would credit
-  // forecast data as the flags' source.
+  // Only what evaluateAdvisories reads: the observation, the computed sun
+  // times, and the NWS hourly forecast when a Forecast flag is in the list
+  // (the forecast wind flags read it). Open-Meteo is never listed: no flag
+  // reads it, and with its licence link it would read as the flags' source.
+  const forecastShown = advisories.some((a) => a.level === 'forecast');
   const footer = (
     <>
       Flag values from:{' '}
       <SourceLinks
-        sources={[DATA_SOURCES.iemObservation, DATA_SOURCES.nwsObservation, DATA_SOURCES.computed]}
+        sources={[
+          DATA_SOURCES.iemObservation,
+          DATA_SOURCES.nwsObservation,
+          ...(forecastShown ? [DATA_SOURCES.nwsForecast] : []),
+          DATA_SOURCES.computed,
+        ]}
       />
       . Guidance sources are linked on each flag above.
     </>
