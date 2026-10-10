@@ -67,8 +67,23 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
     expect(html).not.toContain('om-bar');
     expect(html).not.toContain('om-pct');
     expect(html).not.toContain('Open-Meteo');
+    expect(html).not.toContain('How the two compared');
   });
 
+  /* The note says where each forecast read nearer KPMV, from the six-month
+   * comparison. Its figures are that doc's; each must still be in it, so a
+   * rerun that moves a figure cannot leave the card quoting the old one. */
+  it('says how the two compared with KPMV, every figure as the comparison doc has it', async () => {
+    const html = card(om);
+    const note = /<p class="muted small">How the two compared[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
+    expect(note).toContain('docs/cloud-cover-sources.md');
+    // Read as views.test.ts reads App.tsx: the typecheck has no Node types.
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
+    const doc = fs.readFileSync(decodeURIComponent(new URL('../docs/cloud-cover-sources.md', import.meta.url).pathname), 'utf8');
+    const figures = [...note.replace(/<[^>]+>/g, '').matchAll(/\b(\d+)%/g)].map((m) => m[1]).filter((f) => f !== '0' && f !== '100' && f !== '10' && f !== '90');
+    expect(figures).toEqual(['23', '83', '68', '87', '82', '28', '43', '21']);
+    for (const f of figures) expect(doc).toMatch(new RegExp(`\\b${f}%`));
+  });
 });
 
 /* The NWS bars show an amount, not a category: one colour from clear to
