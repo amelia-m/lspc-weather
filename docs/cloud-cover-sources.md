@@ -193,6 +193,10 @@ and OVC's ranges.
 
 ## Stations that never report FEW
 
+Followed up in [cloud-cover-stations.md](cloud-cover-stations.md): when
+these AWOS stopped reporting FEW (with new equipment in 2002-03), and how
+they compare hour by hour with a nearby ASOS.
+
 Looked into on 2026-10-10, to see whether KPMV is alone. In September 2026
 (IEM's archive, every routine and special report), 46 Nebraska stations
 reported:

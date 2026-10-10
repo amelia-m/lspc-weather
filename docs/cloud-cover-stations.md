@@ -122,3 +122,97 @@ categories with no FEW. That date and the SA categories are from search
 summaries of NOAA's METAR program overview and a NOAA paper (Free and Sun,
 on biases in US cloud-cover records), which the sandbox could not open.
 
+
+## Each AWOS beside its ASOS
+
+Six AWOS that never report FEW, and two that do (KCSB, KGGF), each set
+beside the ASOS nearest it, April 1 to October 9 2026. Distances are from
+the FAA's coordinates (NASR AWOS file). At each top of the hour each
+station's report nearest it, within 10 minutes, is taken. Both are read
+below 12,000 ft (`AUTOMATED_TOP_FT`): an AWOS's ceilometer reports nothing
+higher, and KOMA, staffed, reports cirrus at 25,000 ft, which would
+otherwise count as a disagreement it is not. A report whose layers all lie
+above reads as CLR, as an automated station would report it.
+`npx tsx scripts/cloudCoverStations.ts
+data/parity/cloud-cover-stations-2026-04-01-to-2026-10-09.jsonl.gz` prints
+this table and the next; the arithmetic is `src/domain/stationPairs.ts`.
+
+| AWOS | ASOS | Miles | Hours | Same category | Ceiling: both / AWOS only / ASOS only / neither | ASOS FEW: AWOS CLR / FEW / SCT / BKN+ | AWOS SCT: ASOS CLR / FEW / SCT / BKN+ |
+|---|---|---|---|---|---|---|---|
+| KBTA | KOMA | 12.9 | 4455 | 62% | 26% / 5% / 5% / 63% | 586 / 0 / 124 / 49 (n 759) | 48 / 124 / 161 / 154 (n 487) |
+| KMLE | KOMA | 13.6 | 4466 | 62% | 27% / 6% / 5% / 62% | 574 / 0 / 119 / 61 (n 754) | 55 / 119 / 175 / 167 (n 516) |
+| KAUH | KGRI | 17.2 | 4497 | 76% | 26% / 6% / 3% / 65% | 96 / 0 / 82 / 91 (n 269) | 211 / 82 / 47 / 98 (n 438) |
+| KPMV | KOMA | 25.1 | 4463 | 58% | 23% / 6% / 9% / 62% | 572 / 0 / 132 / 60 (n 764) | 69 / 132 / 137 / 208 (n 546) |
+| KAHQ | KLNK | 28.3 | 4335 | 71% | 22% / 6% / 8% / 64% | 106 / 0 / 70 / 76 (n 252) | 200 / 70 / 56 / 177 (n 503) |
+| KLCG | KOFK | 29.4 | 4417 | 71% | 26% / 8% / 5% / 61% | 104 / 0 / 74 / 93 (n 271) | 201 / 74 / 40 / 118 (n 433) |
+| KCSB | KMCK | 23.8 | 4390 | 74% | 21% / 7% / 4% / 68% | 95 / 42 / 42 / 69 (n 248) | 87 / 42 / 20 / 74 (n 223) |
+| KGGF | KIML | 25.6 | 3714 | 71% | 21% / 8% / 5% / 66% | 92 / 30 / 26 / 64 (n 212) | 77 / 26 / 23 / 64 (n 190) |
+
+The last two columns are counts of hours, out of n: when the ASOS reported
+FEW, what the AWOS reported; and when the AWOS reported SCT, what the ASOS
+reported.
+
+What it shows:
+
+- **Away from KOMA, the no-FEW AWOS agree with their ASOS as often as the
+  FEW-reporting ones do**: the same category on 71 to 76% of hours (KAUH,
+  KAHQ, KLCG), against 71 and 74% (KGGF, KCSB). They agree about a ceiling,
+  or its absence, on 86 to 91% of hours, against 87 and 89%.
+- **Where the ASOS reports FEW, a no-FEW AWOS reports SCT about as often
+  as a FEW-reporting AWOS reports FEW or SCT together.** At KAUH, KAHQ and
+  KLCG: CLR 36 to 42%, SCT 27 to 30%, BKN or more 30 to 34%. At KCSB and
+  KGGF: CLR 38 and 43%, FEW 17 and 14%, SCT 17 and 12%, BKN or more 28 and
+  30%. The FEW the controls report shows up, at the no-FEW AWOS, as SCT.
+  That is what the KPMV doc inferred: a small amount, reported as SCT.
+- **KOMA is the exception.** Its three AWOS (KBTA, KMLE and KPMV, 13 to 25
+  miles off) agree on the category on 58 to 62% of hours. On the hours
+  KOMA reported FEW below 12,000 ft, they reported CLR on 75 to 77%. KOMA
+  is staffed (its reports carry no AUTO), and an observer sees the whole
+  sky, while one ceilometer sees only the cloud that drifts over it (AIM
+  7-1-10, quoted in cloud-cover-sources.md). Ceiling agreement there is 85
+  to 89%, near the others.
+
+Some of every disagreement is the sky: the stations are 13 to 29 miles
+apart.
+
+## The forecasts at each station
+
+The NWS forecast (NDFD, the gridpoint API's figures, cloud-cover-sources.md)
+read at each station's own grid point, its latest issuance before the
+hour, against that station's reports, both below 12,000 ft. Figures are
+the share of hours the forecast was at or above 5/8, the least a broken
+layer covers (AC 00-45H), on hours the station reported a ceiling and on
+hours it reported none, and the share of hours its call (5/8 or more, or
+not) matched the report.
+
+| Station | Hours | FEW reports | Ceiling hours reached: NWS | No-ceiling hours reached: NWS | Ceiling call agreed: NWS |
+|---|---|---|---|---|---|
+| KBTA | 4469 | 0% | 78% | 21% | 79% |
+| KOMA | 4589 | 12% | 75% | 18% | 80% |
+| KMLE | 4480 | 0% | 76% | 20% | 79% |
+| KAUH | 4502 | 0% | 77% | 18% | 80% |
+| KGRI | 4597 | 6% | 80% | 18% | 82% |
+| KPMV | 4477 | 0% | 74% | 20% | 78% |
+| KAHQ | 4338 | 0% | 77% | 23% | 77% |
+| KLNK | 4606 | 6% | 74% | 18% | 79% |
+| KLCG | 4487 | 0% | 72% | 22% | 76% |
+| KOFK | 4532 | 6% | 77% | 19% | 80% |
+| KCSB | 4439 | 5% | 73% | 16% | 81% |
+| KMCK | 4553 | 5% | 73% | 16% | 81% |
+| KGGF | 4467 | 6% | 63% | 16% | 78% |
+| KIML | 3808 | 5% | 49% | 31% | 64% |
+
+- The NWS forecast's call matched **76 to 80% of hours at the no-FEW AWOS,
+  79 to 82% at the ASOS, and 78 and 81% at the two FEW-reporting AWOS.**
+  Which kind of station reports makes little difference to how the
+  forecast reads against it; KPMV's 78% is in the middle.
+- KIML (64%) stands apart, and has a gap in its reports in July and August
+  (592 and 258 reports, against 829 to 935 in the other full months). Why
+  its figures differ was not looked into.
+
+**Open-Meteo is not in these tables yet.** Its archive refused the
+fetch on 2026-10-10 after a run of 429 answers: "Daily API request limit
+exceeded. Please try again tomorrow." The sandbox shares its address, so
+the limit is not this comparison's alone. The fetch script takes
+`PARTS=om` to fetch that part alone and merge it; the summary script adds
+Open-Meteo's columns when the file has its records.
