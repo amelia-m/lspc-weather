@@ -197,10 +197,11 @@ is one file: `src/config/readingLog.ts`, shown as a list at the end of
 `#citations`. Every citation has exactly one entry there, and its note's
 date must be the entry's (a test holds both); the SIM notes and the
 checklist's SIM readings take their date from it. uspa.org names its online
-SIM only as the "2026 SIM", and its change-document list (which did not
-load on 2026-10-08) held only an archive of 2021-2022 and 2023-2024
-revisions when it did, on 2026-10-10, none for the 2026 SIM. So each
-cited or quoted SIM part is also pinned by a SHA-256 of
+SIM only as the "2026 SIM" and revises it within an edition, so the
+edition name does not say which text was read. (Its change-document list,
+seen in the maintainer's browser on 2026-10-10, held only 2021-2022 and
+2023-2024 revisions; see `src/config/readingLog.ts`.) So each cited or
+quoted SIM part is also pinned by a SHA-256 of
 its text (`simPartText`, `src/domain/simText.ts`, from the part's anchor to
 the next part's, named because some parts hold anchors of their own).
 `scripts/simText.live.ts` takes it again daily and fails when a part's

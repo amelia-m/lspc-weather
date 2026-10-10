@@ -36,6 +36,18 @@ These cannot be settled from the code.
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
 
+## Watch: a change document for the 2026 SIM
+
+USPA revises the online SIM within an edition through change documents,
+listed on https://www.uspa.org/sim under "Available Change Documents". The
+list loads by script, so a fetch of the page cannot read it. In the
+maintainer's browser on 2026-10-10 it held only an Archive folder (2021-2022
+SIM Rev1 to Rev4, 2023-2024 SIM Rev1 to Rev3), none for the 2026 SIM. When
+one appears, read it, read again any part it changes that this app cites or
+quotes, and record it in `src/config/readingLog.ts`. The daily fingerprint
+check catches a changed cited part either way; a change document is what
+would name the revision.
+
 ## Done: the waiver sign's photo under the tier selector
 
 Asked for 2026-10-08, added 2026-10-09: under the LSPC waiver tier buttons

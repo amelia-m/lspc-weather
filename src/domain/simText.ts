@@ -17,8 +17,9 @@
  * each SIM part the app cites or quotes, as it read on the day it was read;
  * scripts/simText.live.ts takes it again from the live page and fails when it
  * differs. That is the pin: uspa.org names its online SIM only as "2026 SIM",
- * and its list of change documents did not load (2026-10-08), so the
- * fingerprint is what records which text was read. Null when either anchor
+ * and its list of change documents held none for that edition when it
+ * loaded (2026-10-10), so the fingerprint is what records which text was
+ * read. Null when either anchor
  * is missing or named twice, `until` comes before `anchor`, or (with
  * `until` null) the anchor sits in no module that closes: the page is no
  * longer the shape the log describes. Pure.
@@ -126,9 +127,9 @@ function moduleEnd(page: string, from: number): number {
  * The edition year uspa.org's SIM landing page names in its heading, which
  * read "<h1>2026 Skydiver&#39;s Information Manual</h1>" on 2026-10-09. The
  * heading is the one place the page states the edition; the list of change
- * documents below it would say which revision, but it served "Error:
- * Downloads is currently unavailable" to a script on 2026-10-08 and to a
- * browser on 2026-10-09. Null when no h1 names "<year> Skydiver's
+ * documents below it is drawn by script, so a fetch of the page cannot read
+ * it (it held none for the 2026 SIM when the maintainer read it in a
+ * browser on 2026-10-10; src/config/readingLog.ts). Null when no h1 names "<year> Skydiver's
  * Information Manual": the page has changed shape, which is itself a reason
  * to look. Only an h1 counts: the page's other headings ("2026 SIM
  * Translations") name editions of other documents. Pure.

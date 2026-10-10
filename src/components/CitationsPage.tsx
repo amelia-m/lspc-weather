@@ -256,7 +256,8 @@ export function CitationsPage(): JSX.Element {
       <p className="muted small cite-intro">
         Every section a citation on the dashboard links to, and every SIM part this page quotes, when
         it was last read, in which edition, and how. uspa.org names its online SIM only as the {SIM_EDITION}, and revises it within an
-        edition; its list of change documents did not load when the SIM was last read. So each SIM
+        edition; its list of change documents, when it loaded on 2026-10-10, held none for this
+        edition, and an edit to the online text need not come with one. So each SIM
         part also carries a fingerprint of its text as it read that day, and a daily check compares
         the live page against it: a changed part fails the check, and is read again before its date
         moves. FAA-P-8740-2 is a copy in a FAASTeam event folder rather than a catalogue entry; if
