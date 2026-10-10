@@ -104,7 +104,7 @@ export function evaluateAdvisories(
             ? `gusting ${fmtSpeed(gustKt, unit)}, ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)} (edited in Settings)`
             : `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
         guidance: isOwnLimit(thresholds, 'gustCautionKt')
-          ? 'Gusts are at or above the gust ceiling you set in Settings, which only you can check. No published source sets a gust ceiling for licensed jumpers: the BSR sets no ground-wind limit for them.'
+          ? `Gusts are at or above the gust ceiling you set in Settings, which only you can check. ${thresholds.windGuidance}`
           : isEdited(thresholds, 'gustCautionKt') && thresholds.published?.gustCautionKt != null
             ? `Gusts are at or above the gust ceiling edited in Settings; the LSPC waiver's ceiling for this experience tier is ${fmtLimitSpeed(thresholds.published.gustCautionKt, unit)} (gusts measured over the last 30 min).`
             : 'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
