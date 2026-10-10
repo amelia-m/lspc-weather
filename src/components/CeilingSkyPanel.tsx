@@ -186,31 +186,32 @@ export function CeilingSkyPanel({
       {showOm && (
         <>
           <p className="muted small sky-compare-brief">
-            Against {SITE.metarStation.id}, {CLOUD_COMPARISON.period}: NWS and Open-Meteo reached 5/8
-            cover on {CLOUD_COMPARISON.ceilingHours.nws}% and {CLOUD_COMPARISON.ceilingHours.omStart}% of
-            hours with a ceiling. With none, Open-Meteo&rsquo;s low-cloud figure did on{' '}
-            {CLOUD_COMPARISON.noCeilingHours.omLowStart}%, its total a day ahead on{' '}
-            {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%.
+            Against {SITE.metarStation.id}, {CLOUD_COMPARISON.period}, hours at {CEILING_EIGHTHS}/8
+            cover or more: with a ceiling, NWS {CLOUD_COMPARISON.ceilingHours.nws}%, Open-Meteo{' '}
+            {CLOUD_COMPARISON.ceilingHours.omStart}%; with none, NWS {CLOUD_COMPARISON.noCeilingHours.nws}%,
+            Open-Meteo {CLOUD_COMPARISON.noCeilingHours.omStart}% (
+            {CLOUD_COMPARISON.noCeilingHours.omDayAhead}% a day ahead). Source:{' '}
+            <SourceLink citation={CITATIONS.faaSkyCover} />
           </p>
           <details className="sky-compare">
             <summary className="small">How the two compared, in full</summary>
             <p className="muted small">
-              At {CEILING_EIGHTHS}/8 ({CEILING_EIGHTHS * 12.5}%), the least a broken layer covers. On
-              hours {SITE.metarStation.id} (about {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away)
-              reported a ceiling: NWS {CLOUD_COMPARISON.ceilingHours.nws}%, Open-Meteo{' '}
-              {CLOUD_COMPARISON.ceilingHours.omStart}% for the first hours of its runs and{' '}
-              {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. With no ceiling:{' '}
-              {CLOUD_COMPARISON.noCeilingHours.nws}%, {CLOUD_COMPARISON.noCeilingHours.omStart}% and{' '}
-              {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%, and Open-Meteo&rsquo;s low-cloud share
-              (below 3 km, in each hour&rsquo;s tooltip) {CLOUD_COMPARISON.noCeilingHours.omLowStart}%;
-              some of those hours may have had cloud above 12,000 ft, which the station does not
-              report. The card&rsquo;s hours ahead come from Open-Meteo runs between those two leads,
-              not measured. The NWS figure is a graded amount (exactly 0% or 100% on{' '}
-              {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours), Open-Meteo&rsquo;s near all or nothing
-              ({CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%). Sources:{' '}
-              <SourceLink citation={CITATIONS.faaSkyCover} />;{' '}
+              {CEILING_EIGHTHS}/8 ({CEILING_EIGHTHS * 12.5}%) is the least a broken layer covers.{' '}
+              {SITE.metarStation.id} is about {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away. On
+              hours it reported a ceiling: NWS {CLOUD_COMPARISON.ceilingHours.nws}%; Open-Meteo{' '}
+              {CLOUD_COMPARISON.ceilingHours.omStart}% in the first hours of its runs and{' '}
+              {CLOUD_COMPARISON.ceilingHours.omDayAhead}% a day ahead. With no ceiling: NWS{' '}
+              {CLOUD_COMPARISON.noCeilingHours.nws}%; Open-Meteo {CLOUD_COMPARISON.noCeilingHours.omStart}%
+              and {CLOUD_COMPARISON.noCeilingHours.omDayAhead}%; Open-Meteo&rsquo;s low-cloud share
+              (below 3 km, in each hour&rsquo;s tooltip on a desktop){' '}
+              {CLOUD_COMPARISON.noCeilingHours.omLowStart}%. Some no-ceiling hours may have had cloud
+              above 12,000 ft, which the station does not report. Neither forecast was measured at the
+              lead the card shows: NWS from four issuances a day, Open-Meteo at its runs&rsquo; first
+              hours and a day ahead. Exactly 0% or 100%: NWS on{' '}
+              {CLOUD_COMPARISON.exactlyNoneOrAll.nws}% of hours, Open-Meteo on{' '}
+              {CLOUD_COMPARISON.exactlyNoneOrAll.omStart}%.{' '}
               <a href={repoDoc('docs/cloud-cover-sources.md')} target="_blank" rel="noopener noreferrer">
-                the comparison
+                The comparison
               </a>
               .
             </p>

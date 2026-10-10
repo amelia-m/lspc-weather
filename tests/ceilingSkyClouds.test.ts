@@ -7,7 +7,7 @@ import { CITATIONS } from '../src/config/thresholds';
 
 /** The records the card's comparison figures come from. */
 const ARCHIVE = 'data/parity/cloud-cover-2026-04-01-to-2026-10-09.jsonl.gz';
-import { NWS_ISSUANCES, OM_ROWS, parseCloudCoverLines, summarizeCloudCover } from '../src/domain/cloudCoverSources';
+import { CEILING_EIGHTHS, NWS_ISSUANCES, OM_ROWS, parseCloudCoverLines, summarizeCloudCover } from '../src/domain/cloudCoverSources';
 import { normalizeOpenMeteoClouds, openMeteoHourlyVariables, type RawOpenMeteo } from '../src/domain/normalize';
 import type { HourlyPoint, OpenMeteoCloudHour } from '../src/domain/types';
 
@@ -88,12 +88,13 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
     // One line shows; the full comparison is collapsed under it.
     const brief = text(/<p class="muted small sky-compare-brief">[\s\S]*?<\/p>/);
     expect(brief).toContain(c.period);
-    expect(figures(brief)).toEqual([c.ceilingHours.nws, c.ceilingHours.omStart, c.noCeilingHours.omLowStart, c.noCeilingHours.omDayAhead]);
+    expect(brief).toContain(`at ${CEILING_EIGHTHS}/8 cover`);
+    expect(figures(brief)).toEqual([c.ceilingHours.nws, c.ceilingHours.omStart, c.noCeilingHours.nws, c.noCeilingHours.omStart, c.noCeilingHours.omDayAhead]);
+    expect(/<p class="muted small sky-compare-brief">[\s\S]*?<\/p>/.exec(html)?.[0]).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
     expect(html).toMatch(/<details class="sky-compare"><summary/);
     expect(html).not.toMatch(/<details class="sky-compare" open/);
     const full = /<details class="sky-compare">[\s\S]*?<\/details>/.exec(html)?.[0] ?? '';
     expect(full).toContain('docs/cloud-cover-sources.md');
-    expect(full).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
     // Every figure, in the order the full note gives them, after the cut itself.
     expect(figures(full.replace(/<[^>]+>/g, ''))).toEqual([
       62.5,

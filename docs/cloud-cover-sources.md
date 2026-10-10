@@ -8,12 +8,13 @@ records, gathered and compared on 2026-10-10. It says what was measured, how
 it was read and what is only inferred. It changes nothing on the dashboard
 and adds no threshold, colour or verdict. Whether both forecasts stay on the
 card was the maintainer's call: on 2026-10-10 they kept both, with a note
-on the card on how each compared with KPMV. The note uses one measure for
-both, the "Ceilings" table's 5/8 (cited to AC 00-45H), and quotes
-Open-Meteo for the first hours of its runs and a day ahead; the card's
-hours ahead come from runs in between, a lead this comparison did not
-measure, and the note says so. Its figures are in
-`src/config/cloudComparison.ts`, and
+on how each compared with KPMV, short and collapsed at their request. One
+line shows, at the "Ceilings" table's 5/8 (cited to AC 00-45H): the share
+of hours with a ceiling each reached it (NWS 73%, Open-Meteo 77%) and of
+hours without one (NWS 20%, Open-Meteo 21%, 43% a day ahead). The rest,
+including Open-Meteo's low band and that neither forecast was measured at
+the lead the card shows, is under "How the two compared, in full". The
+figures are in `src/config/cloudComparison.ts`, and
 `tests/ceilingSkyClouds.test.ts` works each one out again from the
 archived records.
 
@@ -223,13 +224,16 @@ Meteorological Handbook No. 1, whose sky table includes FEW. It leaves the
 algorithms themselves to "FAA algorithms" that "may be obtained from the
 AWOS Non-Federal Engineering Office", which are not published.
 
-The AIM (7-1-10, read 2026-10-10 on faa.gov) says how an AWOS builds its
+The AIM (7-1-10, read 2026-10-10 in the HTML AIM on faa.gov, whose section
+page does not name its change) says how an AWOS builds its
 sky: "The AWOS algorithm integrates the last 30 minutes of ceilometer data
 to derive cloud layers and heights", and the result "is totally dependent
 upon the cloud advection over the sensor site". That explains a single
 ceilometer missing cloud that never drifts over it. It does not explain
 19 stations never reporting FEW over a month, while a SCT layer was in
-18% of their reports, when 6 AWOS and every ASOS nearby report FEW.
+18% of their reports (7,367 of their 40,675 September reports, counting a
+report with any SCT group in its body), when 6 AWOS and every ASOS nearby
+report FEW.
 
 The likeliest cause is the sky algorithm in that family's software, which
 reports a small amount as SCT. That is inferred from the pattern above and
