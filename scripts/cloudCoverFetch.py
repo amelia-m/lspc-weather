@@ -76,19 +76,23 @@ UA = {'User-Agent': 'lspc-weather cloud-cover comparison (github.com/amelia-m/ls
 ISSUE_HOURS = (0, 6, 12, 18)
 
 
+ATTEMPTS = 14
+
+
 def get(url: str) -> bytes:
     # A 30 MB file through the proxy is now and then cut short, and on
     # 2026-10-10 Open-Meteo's archive host dropped about one TLS handshake
-    # in three; try again, for up to about two minutes.
-    for attempt in range(8):
+    # in three, and in runs, for minutes at a time; try again, for up to
+    # about ten minutes.
+    for attempt in range(ATTEMPTS):
         try:
             req = urllib.request.Request(url, headers=UA)
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
         except (http.client.IncompleteRead, urllib.error.URLError, ssl.SSLError, TimeoutError, ConnectionError):
-            if attempt == 7:
+            if attempt == ATTEMPTS - 1:
                 raise
-            time.sleep(min(2 ** attempt, 30))
+            time.sleep(min(2 ** attempt, 60))
     raise AssertionError('unreachable')
 
 
@@ -204,7 +208,10 @@ def main() -> None:
     days = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
     records = metar_records(start, end)
     for sid, lat, lon in SITES:
+        # Spaced, so a run of fourteen sites does not meet the archive host's
+        # dropped handshakes back to back.
         records += om_records(start, end, sid, lat, lon)
+        time.sleep(3)
     with ThreadPoolExecutor(8) as pool:
         keys = [k for ks in pool.map(ndfd_keys, days) for k in ks]
     print(f'{len(keys)} NDFD files', file=sys.stderr)
