@@ -8,6 +8,7 @@ import { SettingsPanel } from '../src/components/SettingsPanel';
 import { HourlyLegend } from '../src/components/common/HourlyChart';
 import {
   DEFAULT_THRESHOLDS,
+  editableRange,
   editedLimits,
   hasWindLimit,
   isEdited,
@@ -167,9 +168,12 @@ describe('the Set your own thresholds panel', () => {
     expect(p).toContain('Your wind limit');
     expect(p).toContain('Your gust ceiling');
     expect(p.match(/placeholder="none" value=""/g)).toHaveLength(2);
-    // The field accepts what the stored-value check keeps (editableRange).
-    expect(p.match(/min="1" max="100" placeholder="none"/g)).toHaveLength(2);
-    expect(p).toContain('step="0.5" min="0.25" value="3"');
+    // The field takes its bounds from editableRange, as the stored-value
+    // check does; the visibility minimum is on the field's own step.
+    const wind = editableRange(licensed, 'windCautionKt');
+    expect(p.match(new RegExp(`min="${wind.min}" max="${wind.max}" placeholder="none"`, 'g'))).toHaveLength(2);
+    expect(p).toContain(`step="0.5" min="${editableRange(licensed, 'visibilityCautionSm').min}" value="3"`);
+    expect(editableRange(licensed, 'visibilityCautionSm').min % 0.5).toBe(0);
     expect(p).not.toContain('may be retired');
   });
 });
@@ -188,7 +192,12 @@ describe('stored values', () => {
       licensed: { windCautionKt: 1, gustCautionKt: 100 },
     });
     expect(sanitizeOverrides({ licensed: { visibilityCautionSm: -1 } })).toEqual({});
-    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.2 } })).toEqual({});
-    expect(sanitizeOverrides({ licensed: { visibilityCautionSm: 0.25 } })).toEqual({ licensed: { visibilityCautionSm: 0.25 } });
+    // What the field accepts is what is kept: editableRange's edges.
+    for (const key of ['windCautionKt', 'gustCautionKt', 'visibilityCautionSm'] as const) {
+      const { min, max } = editableRange(licensed, key);
+      expect(sanitizeOverrides({ licensed: { [key]: min } })).toEqual({ licensed: { [key]: min } });
+      expect(sanitizeOverrides({ licensed: { [key]: min - 0.01 } })).toEqual({});
+      if (Number.isFinite(max)) expect(sanitizeOverrides({ licensed: { [key]: max + 0.01 } })).toEqual({});
+    }
   });
 });

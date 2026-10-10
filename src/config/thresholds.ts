@@ -466,7 +466,9 @@ export const OWN_LIMIT_RANGE_KT = { min: 1, max: 100 } as const;
  *  field and for what is read back from storage: an own limit's range, else
  *  the limit's EDITABLE_LIMITS minimum and no maximum. */
 export function editableRange(base: Thresholds, key: EditableLimit): { min: number; max: number } {
-  return isOwnLimitKey(base, key) ? { ...OWN_LIMIT_RANGE_KT } : { min: EDITABLE_LIMITS[key].min, max: Infinity };
+  if (isOwnLimitKey(base, key)) return { ...OWN_LIMIT_RANGE_KT };
+  const entry = EDITABLE_LIMITS[key];
+  return { min: 'min' in entry ? entry.min : 0, max: Infinity };
 }
 
 /** Whether `key` is a limit this profile takes as the reader's own: Settings
@@ -498,12 +500,12 @@ export function hasWindLimit(t: Thresholds): boolean {
  *  with the name and unit its row shows. The one list: the Settings rows, the
  *  overrides App will load back, and `published` are all built from it. */
 export const EDITABLE_LIMITS = {
-  // At 0 a wind or gust figure would flag a calm.
-  windCautionKt: { label: 'Wind — caution', ownLabel: 'Your wind limit', unit: 'kt', min: 1 },
-  gustCautionKt: { label: 'Gust ceiling', ownLabel: 'Your gust ceiling', unit: 'kt', min: 1 },
-  // At 0 the caution would never flag; 1/4 SM is the smallest visibility a
-  // METAR reports above zero.
-  visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5, min: 0.25 },
+  windCautionKt: { label: 'Wind — caution', ownLabel: 'Your wind limit', unit: 'kt' },
+  gustCautionKt: { label: 'Gust ceiling', ownLabel: 'Your gust ceiling', unit: 'kt' },
+  // At 0 the caution would never flag. 0.5 rather than anything lower: the
+  // field steps in half miles and shows one decimal, so a smaller figure
+  // could be stored that it cannot show or step back to.
+  visibilityCautionSm: { label: 'Visibility — caution', unit: 'SM', step: 0.5, min: 0.5 },
 } as const satisfies Partial<
   Record<keyof Thresholds, { label: string; ownLabel?: string; unit: string; step?: number; min?: number }>
 >;

@@ -26,8 +26,9 @@ const LEVEL_LABEL: Record<Advisory['level'], string> = {
  * gap costs one clause and sends the reader to the card that does print the
  * number. With only an own gust ceiling set (`ownLimits`), which flags gusts
  * and nothing else, the own-limits note names the gap instead, in either
- * state of the list, and the empty-state clause stays off. It is not a verdict in the other direction either: an empty list
- * still is not a stop, just a list that cannot cover wind here.
+ * state of the list, and the empty-state clause stays off. It is not a
+ * verdict in the other direction either: an empty list still is not a stop,
+ * just a list that cannot cover wind here.
  *
  * Edited limits get the same treatment, in either state. A flag fires on the
  * figure in Settings, so with a limit raised there this list can be empty
