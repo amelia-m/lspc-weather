@@ -92,6 +92,16 @@ precisely because they were colour and text rather than flags.
   names. It is not a licence for forecast
   thresholds of the app's own: a forecast storm or rain chance still flags
   nothing.
+- **The Surface wind card is first on the Jumpers tab and draws one row per
+  limit** (the maintainer, 2026-10-10). On one bar, a reader could not tell
+  that the yellow tick was the gust or what the red and purple marks were
+  without the hourly chart. Each row names its limit, the reading it is
+  held to (the caution takes the higher of wind and gust, as its flag does;
+  the gust ceiling takes the gust), and how far under that is, or "at or
+  above". The distance is worked from the figures as printed, so they add
+  up in mph. A key names the fill and the tick on every profile. The fill
+  is one colour: a green end read as "fine". Do not fold the rows back into
+  one bar with a legend.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed
@@ -346,6 +356,23 @@ Two habits worth keeping. `NODE_USE_ENV_PROXY=1` plus
 `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` makes Node's fetch go through the
 proxy, which is what let the live paths run at all. And some hosts refuse a bare
 request: `markschulze.net` 403s without a `Referer`.
+
+Open-Meteo's daily request limit is per address, and the sandbox's address is
+shared, so the sandbox can be refused for a day by requests that are not this
+repo's: "Daily API request limit exceeded. Please try again tomorrow." It
+happened twice in this repo's sessions, on 2026-09-23 (the forecast API,
+partway through a Schulze comparison) and on 2026-10-10 (the
+historical-forecast archive, after an hour of plain 429s, which stopped the
+station cloud-cover fetch). The GitHub runners have not met it. In the
+comparison artifacts and the archived sampler log read on 2026-10-10 (about
+1,700 Schulze comparisons from 2026-09-24, and 300 surface-wind samples from
+2026-10-09), no Open-Meteo request got a 429. Its 40 failures were 32
+timeouts, 6 dropped connections and 2 HTTP 503s. A heavy Open-Meteo fetch is
+safer run as a workflow than from here. A script that fetches from here should
+give up on the daily-limit 429 rather than retry it
+(`scripts/cloudCoverFetch.py` does), and fetch in parts so that what came back
+is kept. The dashboard is not affected: each reader's browser calls
+Open-Meteo from its own address.
 
 ## Conventions
 
