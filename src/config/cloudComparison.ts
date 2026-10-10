@@ -10,10 +10,11 @@
  * One measure for both forecasts, and a published one: whether the forecast
  * was at or above 5/8, the least cover a broken layer can have (AC 00-45H,
  * Table 3-3), on hours KPMV reported a ceiling and on hours it reported
- * none. NWS figures are its latest issuance before the hour, as the card
- * shows it. Open-Meteo's are quoted twice, for the first hours of its runs
- * and for its forecast a day ahead: the card's hours ahead come from runs
- * made in between, a lead the comparison did not measure.
+ * none. NWS figures are its latest issuance before the hour of four a
+ * day, 0.7 to 7.2 hours ahead; the card reads the API, which updates more
+ * often. Open-Meteo's are quoted twice, for the first hours of its runs and
+ * for its forecast a day ahead; the card's hours ahead come from runs made
+ * in between. Neither source was measured at the card's own lead.
  */
 export const CLOUD_COMPARISON = {
   period: 'April to October 2026',

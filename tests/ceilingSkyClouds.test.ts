@@ -88,13 +88,16 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
     // One line shows; the full comparison is collapsed under it.
     const brief = text(/<p class="muted small sky-compare-brief">[\s\S]*?<\/p>/);
     expect(brief).toContain(c.period);
-    expect(brief).toContain(`at ${CEILING_EIGHTHS}/8 cover`);
-    expect(figures(brief)).toEqual([c.ceilingHours.nws, c.ceilingHours.omStart, c.noCeilingHours.nws, c.noCeilingHours.omStart, c.noCeilingHours.omDayAhead]);
-    expect(/<p class="muted small sky-compare-brief">[\s\S]*?<\/p>/.exec(html)?.[0]).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
+    expect(brief).toContain(`reached ${CEILING_EIGHTHS}/8 cover`);
+    expect(figures(brief)).toEqual([
+      c.ceilingHours.nws, c.ceilingHours.omStart, c.ceilingHours.omDayAhead,
+      c.noCeilingHours.nws, c.noCeilingHours.omStart, c.noCeilingHours.omDayAhead,
+    ]);
     expect(html).toMatch(/<details class="sky-compare"><summary/);
     expect(html).not.toMatch(/<details class="sky-compare" open/);
     const full = /<details class="sky-compare">[\s\S]*?<\/details>/.exec(html)?.[0] ?? '';
     expect(full).toContain('docs/cloud-cover-sources.md');
+    expect(full).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
     // Every figure, in the order the full note gives them, after the cut itself.
     expect(figures(full.replace(/<[^>]+>/g, ''))).toEqual([
       62.5,
