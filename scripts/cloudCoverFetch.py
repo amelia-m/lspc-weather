@@ -89,10 +89,17 @@ def get(url: str) -> bytes:
             req = urllib.request.Request(url, headers=UA)
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
+        except urllib.error.HTTPError as e:
+            # A refusal that waiting minutes will not change: any 4xx but a
+            # 429, and Open-Meteo's daily-limit 429 ("Daily API request limit
+            # exceeded"). Retry 5xx and an ordinary 429.
+            body = e.read().decode(errors='replace') if e.fp else ''
+            if (400 <= e.code < 500 and e.code != 429) or 'Daily API request limit' in body or attempt == ATTEMPTS - 1:
+                raise
         except (http.client.IncompleteRead, urllib.error.URLError, ssl.SSLError, TimeoutError, ConnectionError):
             if attempt == ATTEMPTS - 1:
                 raise
-            time.sleep(min(2 ** attempt, 60))
+        time.sleep(min(2 ** attempt, 60))
     raise AssertionError('unreachable')
 
 

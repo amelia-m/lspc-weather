@@ -38,7 +38,7 @@ def get(url: str) -> str:
     raise AssertionError('unreachable')
 
 
-def july(sid: str, year: int) -> tuple[int, int] | None:
+def july(sid: str, year: int) -> tuple[int, int]:
     """Reports in July of `year`, and how many had a FEW layer."""
     url = (f'{IEM}?station={sid}&data=skyc1&data=skyc2&data=skyc3&data=skyc4'
            f'&year1={year}&month1=7&day1=1&year2={year}&month2=8&day2=1'
@@ -57,7 +57,7 @@ def table(types: dict[str, str]) -> None:
     for s in ids:
         cells = []
         for y in years:
-            n, few = got[(s, y)] or (0, 0)
+            n, few = got[(s, y)]
             # Under 50 reports: the station is not in the archive that July.
             cells.append('·' if n < 50 else str(round(100 * few / n)))
         print(f'| K{s} | {types[s]} | ' + ' | '.join(cells) + ' |')
@@ -71,7 +71,10 @@ def switch() -> None:
         url = (f'{IEM}?station={sid}&data=metar&year1=2002&month1=7&day1=1&year2=2003&month2=8&day2=1'
                '&tz=Etc/UTC&format=onlycomma&latlon=no&report_type=3&report_type=4')
         last_few = first_ao2 = None
-        for _, valid, raw in list(csv.reader(io.StringIO(get(url))))[1:]:
+        # Split at the first two commas only, as the fetch script does: a
+        # METAR's remarks can hold one.
+        for line in get(url).splitlines()[1:]:
+            _, valid, raw = line.split(',', 2)
             if re.search(r'\sFEW\d{3}', raw.split(' RMK ')[0]):
                 last_few = valid
             if first_ao2 is None and re.search(r'\bAO2\b', raw):

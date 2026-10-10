@@ -70,6 +70,13 @@ describe('comparePair', () => {
     expect(s.ceiling).toEqual({ both: 1, aOnly: 0, bOnly: 0, neither: 2 });
   });
 
+  it('counts an hour whose only reports fall just after it, at either end', () => {
+    const a1 = stationReports([metar('PMV', '2026-10-01T12:05Z', 'SCT030'), metar('PMV', '2026-10-01T12:55Z', 'CLR')]);
+    const b1 = stationReports([metar('OMA', '2026-10-01T12:03Z', 'FEW030'), metar('OMA', '2026-10-01T12:53Z', 'CLR')]);
+    // 12Z from the :03 and :05; 13Z from the :53 and :55.
+    expect(comparePair(a1, b1).hours).toBe(2);
+  });
+
   it('gives nothing for a station with no reports', () => {
     expect(comparePair(awos, []).hours).toBe(0);
   });

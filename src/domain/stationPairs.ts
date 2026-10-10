@@ -21,34 +21,18 @@ import {
   OBSERVED_CATEGORIES,
   isCeiling,
   REPORT_WINDOW_MIN,
-  observedCoverBelow,
   reportNear,
-  type MetarRecord,
   type ObservedCategory,
-  type ObservedCover,
+  type StationReport,
 } from './cloudCoverSources';
-import { parseSkyGroups } from './normalize';
 
-export interface StationReport {
-  t: number;
-  obs: ObservedCover | null;
-}
+export { stationReports, type StationReport } from './cloudCoverSources';
 
 /** An automated station's ceilometer reports nothing above this (CLR is
- *  "no layers ... at or below 12,000 ft", AC 00-45H Table 3-3). */
+ *  "no layers ... at or below 12,000 ft", AC 00-45H Table 3-3). Passed as
+ *  stationReports' top, a staffed station's observer, who reports cirrus at
+ *  25,000 ft, is compared with an AWOS on what the AWOS can see. */
 export const AUTOMATED_TOP_FT = 12_000;
-
-/** One station's reports, in time order, each with its cover (null when the
- *  report has no sky group). With `topFt`, layers based above it are left
- *  out, and a report left with none reads as CLR: so a staffed station's
- *  observer, who reports cirrus at 25,000 ft, is compared with an AWOS on
- *  what the AWOS can see. A layer with no height is kept. */
-export function stationReports(records: readonly MetarRecord[], topFt = Infinity): StationReport[] {
-  return records
-    .map((r) => ({ t: Date.parse(r.obsAt), obs: observedCoverBelow(parseSkyGroups(r.raw), topFt) }))
-    .filter((r) => Number.isFinite(r.t))
-    .sort((a, b) => a.t - b.t);
-}
 
 const MS_H = 3_600_000;
 const WINDOW_MS = REPORT_WINDOW_MIN * 60_000;
@@ -69,16 +53,18 @@ const emptyTable = (): PairSummary['table'] =>
     OBSERVED_CATEGORIES.map((a) => [a, Object.fromEntries(OBSERVED_CATEGORIES.map((b) => [b, 0]))]),
   ) as PairSummary['table'];
 
-/** Station A's reports against station B's, at every top of the hour from
- *  the first report of either to the last. */
+/** Station A's reports against station B's, at every top of the hour
+ *  both stations' reports could reach: from the first hour within the
+ *  window of the later station's first report to the last hour within the
+ *  window of the earlier station's last. */
 export function comparePair(a: readonly StationReport[], b: readonly StationReport[]): PairSummary {
   const table = emptyTable();
   const ceiling = { both: 0, aOnly: 0, bOnly: 0, neither: 0 };
   let hours = 0;
   let sameCategory = 0;
   if (a.length === 0 || b.length === 0) return { hours, table, sameCategory, ceiling };
-  const first = Math.ceil(Math.max(a[0].t, b[0].t) / MS_H) * MS_H;
-  const last = Math.min(a[a.length - 1].t, b[b.length - 1].t);
+  const first = Math.ceil((Math.max(a[0].t, b[0].t) - WINDOW_MS) / MS_H) * MS_H;
+  const last = Math.min(a[a.length - 1].t, b[b.length - 1].t) + WINDOW_MS;
   // Each list is sorted, so a moving start keeps each search to the reports
   // near the hour; reportNear still decides which, if any, is near enough.
   let ia = 0;

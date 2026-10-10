@@ -3,7 +3,7 @@
  * each forecast's percentage against KPMV's reported cover at the same hours,
  * and the two forecasts against each other. Usage:
  *
- *   npx tsx scripts/cloudCoverSummary.ts data/parity/cloud-cover-*.jsonl.gz
+ *   npx tsx scripts/cloudCoverSummary.ts data/parity/cloud-cover-2026-04-01-to-2026-10-09.jsonl.gz
  *
  * Prints Markdown tables, then the summary as JSON. The arithmetic is in
  * src/domain/cloudCoverSources.ts (pure, tested); this file only reads files
@@ -21,7 +21,12 @@ import {
 const records: CloudCoverRecord[] = [];
 for (const file of process.argv.slice(2)) {
   const buf = readFileSync(file);
-  records.push(...parseCloudCoverLines((file.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8')));
+  // The drop zone's records only: a multi-station file (its records carry
+  // `site`) belongs to scripts/cloudCoverStations.ts. One push per record,
+  // since a spread of half a million overflows the stack.
+  for (const r of parseCloudCoverLines((file.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8'))) {
+    if (r.site == null) records.push(r);
+  }
 }
 const s = summarizeCloudCover(records);
 const pct = (a: number, b: number): string => (b === 0 ? '—' : `${Math.round((a / b) * 100)}%`);
