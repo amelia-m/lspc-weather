@@ -605,7 +605,7 @@ a.sim-term {
   height: 100%;
   /* One colour whatever the speed: a green end read as "fine", a verdict
      the bar has no source for. Where the reading stands against a limit,
-     the row above the bar says in words. */
+     the limit lines under the bar say in words. */
   background: var(--accent);
 }
 .wind-band {

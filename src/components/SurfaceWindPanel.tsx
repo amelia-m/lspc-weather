@@ -327,8 +327,8 @@ function WindScale({
  *  two figures as printed, so they add up on screen: rounded apart, a 17.6
  *  mph reading (18) and a 20.4 mph limit (20) left "3 mph under". In mph a
  *  reading can round up to the limit it is still under; that one says so
- *  without a figure, and one that rounds to the limit it reached says "at
- *  the limit". */
+ *  without a figure, and one that rounds to the figure of a limit it reached
+ *  or passed says "at or above", the flag's own words. */
 function LimitCheck({ limit: l, unit }: { limit: CardLimit; unit: SpeedUnit }): JSX.Element {
   const over = l.readingKt != null && l.readingKt >= l.limitKt;
   const places = unit === 'kt' ? 1 : 0;
@@ -342,7 +342,7 @@ function LimitCheck({ limit: l, unit }: { limit: CardLimit; unit: SpeedUnit }): 
       : over
         ? diff > 0
           ? `${diff} ${unit} over`
-          : 'at the limit'
+          : 'at or above'
         : diff > 0
           ? `${diff} ${unit} under`
           : 'just under';
