@@ -158,6 +158,17 @@ describe('summarizeCloudCover', () => {
   });
 });
 
+describe('summarizeCloudCover below a top', () => {
+  it('reads a report with only high cloud as CLR when given 12,000 ft', () => {
+    const records: CloudCoverRecord[] = [
+      { src: 'metar', obsAt: '2026-10-01T11:53Z', raw: 'KOMA 011153Z 10SM FEW250 15/10 A3001' },
+      { src: 'om', run: 'historical', valid: '2026-10-01T12:00Z', total: 0, low: 0, mid: 0, high: 0, grid: 'x' },
+    ];
+    expect(summarizeCloudCover(records).observed.FEW).toBe(1);
+    expect(summarizeCloudCover(records, 12_000).observed).toMatchObject({ FEW: 0, CLR: 1 });
+  });
+});
+
 describe('parseCloudCoverLines', () => {
   it('keeps the three kinds of record and skips the rest', () => {
     const text = [

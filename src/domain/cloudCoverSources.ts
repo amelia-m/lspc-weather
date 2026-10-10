@@ -117,6 +117,16 @@ export function observedCover(layers: readonly SkyLayer[]): ObservedCover | null
  *  vertical visibility (AC 00-45H; normalize.ts's CEILING_COVERS). */
 export const isCeiling = (c: ObservedCategory): boolean => (CEILING_COVERS as readonly string[]).includes(c);
 
+/** The cover of the layers at or below `topFt`, a layer with no height
+ *  kept; a report whose layers all lie above reads as CLR, as an automated
+ *  station reports it ("no layers ... at or below 12,000 ft"). Null when
+ *  the report has no sky group. With topFt Infinity, observedCover. */
+export function observedCoverBelow(layers: readonly SkyLayer[], topFt: number): ObservedCover | null {
+  if (layers.length === 0) return null;
+  const seen = layers.filter((l) => l.baseFtAgl == null || l.baseFtAgl <= topFt);
+  return observedCover(seen.length > 0 ? seen : [{ cover: 'CLR', baseFtAgl: null }]);
+}
+
 /** How far a forecast percentage sits from the observed range: 0 inside it,
  *  negative below it, positive above. */
 export function gapToRange(forecastPct: number, obs: ObservedCover): number {
@@ -299,10 +309,13 @@ export const OM_ROWS = {
   startLow: 'Open-Meteo, start of run (low band)',
 } as const;
 
-export function summarizeCloudCover(records: readonly CloudCoverRecord[]): CloudCoverSummary {
+/** `topFt` reads every report as observedCoverBelow does, so a staffed
+ *  station, whose observer reports cloud above 12,000 ft, is read as an
+ *  automated one would be. */
+export function summarizeCloudCover(records: readonly CloudCoverRecord[], topFt = Infinity): CloudCoverSummary {
   const reports = records
     .filter((r): r is MetarRecord => r.src === 'metar')
-    .map((r) => ({ t: Date.parse(r.obsAt), obs: observedCover(parseSkyGroups(r.raw)) }))
+    .map((r) => ({ t: Date.parse(r.obsAt), obs: observedCoverBelow(parseSkyGroups(r.raw), topFt) }))
     .filter((r) => Number.isFinite(r.t))
     .sort((a, b) => a.t - b.t);
   const ndfd = ndfdByHour(records.filter((r): r is NdfdRecord => r.src === 'ndfd'));

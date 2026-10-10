@@ -22,7 +22,7 @@ import {
   type MetarRecord,
   type VsObserved,
 } from '../src/domain/cloudCoverSources';
-import { comparePair, stationReports } from '../src/domain/stationPairs';
+import { AUTOMATED_TOP_FT, comparePair, stationReports } from '../src/domain/stationPairs';
 
 /** Each AWOS beside the ASOS nearest it, miles apart by the FAA's
  *  coordinates (NASR AWOS file, 2026-10-01 cycle). The last two AWOS report
@@ -41,7 +41,8 @@ const PAIRS: readonly [awos: string, asos: string, miles: number][] = [
 const records: CloudCoverRecord[] = [];
 for (const file of process.argv.slice(2)) {
   const buf = readFileSync(file);
-  records.push(...parseCloudCoverLines((file.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8')));
+  // One push per record: a spread of half a million overflows the stack.
+  for (const r of parseCloudCoverLines((file.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8'))) records.push(r);
 }
 const bySite = new Map<string, CloudCoverRecord[]>();
 for (const r of records) {
@@ -71,9 +72,11 @@ const rows = [
 
 const out: string[] = [];
 const stations = [...new Set(PAIRS.flatMap(([a, b]) => [a, b]))];
-const summaries = new Map(stations.map((s) => [s, summarizeCloudCover(bySite.get(s) ?? [])]));
+// Every station read below 12,000 ft, so a staffed ASOS's observer's cirrus
+// does not count against a forecast an AWOS is not held to.
+const summaries = new Map(stations.map((s) => [s, summarizeCloudCover(bySite.get(s) ?? [], AUTOMATED_TOP_FT)]));
 
-out.push('### Each forecast against each station, at 5/8', '');
+out.push('### Each forecast against each station, at 5/8, layers at or below 12,000 ft', '');
 out.push(
   '| Station | Hours | FEW reports | Ceiling hours reached: ' + rows.map(([n]) => n).join(' / ') +
     ' | No-ceiling hours reached: ' + rows.map(([n]) => n).join(' / ') +
@@ -105,12 +108,14 @@ for (const s of stations) {
   out.push(`| K${s} | ` + rows.map(([, l]) => cell(l)).join(' | ') + ' |');
 }
 
-out.push('', '### Each AWOS against its ASOS, same hour', '');
+out.push('', '### Each AWOS against its ASOS, same hour, layers at or below 12,000 ft', '');
 out.push('| AWOS | ASOS | Miles | Hours | Same category | Ceiling: both / AWOS only / ASOS only / neither | ASOS FEW: AWOS CLR / FEW / SCT / BKN+ | AWOS SCT: ASOS CLR / FEW / SCT / BKN+ |');
 out.push('|---|---|---|---|---|---|---|---|');
 for (const [a, b, miles] of PAIRS) {
-  const ra = stationReports((bySite.get(a) ?? []).filter((r): r is MetarRecord => r.src === 'metar'));
-  const rb = stationReports((bySite.get(b) ?? []).filter((r): r is MetarRecord => r.src === 'metar'));
+  // Both read below 12,000 ft: the AWOS sees nothing above, and a staffed
+  // ASOS's observer (KOMA's, here) reports cirrus at 25,000 ft.
+  const ra = stationReports((bySite.get(a) ?? []).filter((r): r is MetarRecord => r.src === 'metar'), AUTOMATED_TOP_FT);
+  const rb = stationReports((bySite.get(b) ?? []).filter((r): r is MetarRecord => r.src === 'metar'), AUTOMATED_TOP_FT);
   const p = comparePair(ra, rb);
   const t = p.table;
   const col = (asos: 'FEW') => {
