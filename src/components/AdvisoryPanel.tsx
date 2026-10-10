@@ -115,7 +115,7 @@ export function AdvisoryPanel({
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}
-            {!forPilots && !hasWindLimit && (
+            {!forPilots && !hasWindLimit && ownLimits.length === 0 && (
               <>
                 Surface wind is never flagged on the {profile} profile — no published source sets
                 a wind limit for it — so read the speed on the Surface wind card.{' '}

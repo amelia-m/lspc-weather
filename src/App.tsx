@@ -409,10 +409,11 @@ export default function App(): JSX.Element {
         profile={profileLabel(profile)}
         /* Not "is the wind high" — whether there is a limit to flag it
            against: a published one, or the reader's own on Licensed. With
-           neither the Jumpers list cannot carry surface wind at any speed
-           and says so when it is otherwise empty; the Pilots list carries no
-           jumper wind flag on any profile and says that instead (forPilots).
-           The same test gates the flag and the card's band. */
+           neither, and no own gust ceiling (ownLimits), the Jumpers list
+           cannot carry surface wind at any speed and says so when it is
+           otherwise empty; the Pilots list carries no jumper wind flag on any
+           profile and says that instead (forPilots). The same test gates the
+           wind flag and the card's band. */
         hasWindLimit={hasWindLimit(advisoryThresholds)}
         editedLimits={editedLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].label)}
         ownLimits={ownLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].ownLabel)}

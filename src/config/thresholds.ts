@@ -793,7 +793,9 @@ export function sanitizeOverrides(raw: unknown): Overrides {
       // held to the range the field accepts.
       const baseValue = ownKey ? 0 : (base as unknown as Record<string, unknown>)[key];
       if (typeof baseValue !== 'number' || typeof value !== 'number' || !Number.isFinite(value)) continue;
-      if (ownKey && (value < OWN_LIMIT_RANGE_KT.min || value > OWN_LIMIT_RANGE_KT.max)) continue;
+      // What the fields accept: an own limit 1 to 100 kt, anything else not
+      // below 0 (a negative visibility caution would never flag).
+      if (ownKey ? value < OWN_LIMIT_RANGE_KT.min || value > OWN_LIMIT_RANGE_KT.max : value < 0) continue;
       (clean as Record<string, number>)[key] = value;
     }
     if (Object.keys(clean).length > 0) out[id as WindProfileId] = clean;

@@ -30,8 +30,9 @@ export function evaluateAdvisories(
     // waiver — and is null where nobody published one. The
     // earlier "watch" band was this app's own arithmetic on those limits, and
     // for licensed jumpers (whose own guidance says no USPA limit binds them)
-    // BOTH bands were invented, so that profile now raises no surface-wind flag
-    // at all: a trigger a reader cannot check is not a flag this app raises.
+    // BOTH bands were invented, so that profile raises no surface-wind flag of
+    // the app's: a trigger a reader cannot check is not a flag this app
+    // raises. It flags only a limit the reader set as their own in Settings.
     // Silence here is not an all-clear, and two surfaces say so rather than
     // leaving it implied — SurfaceWindPanel prints the reading plus the
     // profile's guidance and its citation as a standing note, and AdvisoryPanel
@@ -103,7 +104,7 @@ export function evaluateAdvisories(
             ? `gusting ${fmtSpeed(gustKt, unit)}, ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)} (edited in Settings)`
             : `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
         guidance: isOwnLimit(thresholds, 'gustCautionKt')
-          ? `Gusts are at or above the gust ceiling you set in Settings, which only you can check: ${thresholds.windGuidance}`
+          ? 'Gusts are at or above the gust ceiling you set in Settings, which only you can check. No published source sets a gust ceiling for licensed jumpers: the BSR sets no ground-wind limit for them.'
           : isEdited(thresholds, 'gustCautionKt') && thresholds.published?.gustCautionKt != null
             ? `Gusts are at or above the gust ceiling edited in Settings; the LSPC waiver's ceiling for this experience tier is ${fmtLimitSpeed(thresholds.published.gustCautionKt, unit)} (gusts measured over the last 30 min).`
             : 'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
