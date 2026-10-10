@@ -169,6 +169,17 @@ describe('summarizeCloudCover below a top', () => {
   });
 });
 
+describe('summarizeCloudCover with several sites', () => {
+  it('refuses them, so stations are never merged into one', () => {
+    const records: CloudCoverRecord[] = [
+      { src: 'metar', site: 'PMV', obsAt: '2026-10-01T11:55Z', raw: 'KPMV 011155Z AUTO CLR' },
+      { src: 'metar', site: 'OMA', obsAt: '2026-10-01T11:53Z', raw: 'KOMA 011153Z CLR' },
+    ];
+    expect(() => summarizeCloudCover(records)).toThrow(/2 sites/);
+    expect(() => summarizeCloudCover(records.slice(0, 1))).not.toThrow();
+  });
+});
+
 describe('parseCloudCoverLines', () => {
   it('keeps the three kinds of record and skips the rest', () => {
     const text = [

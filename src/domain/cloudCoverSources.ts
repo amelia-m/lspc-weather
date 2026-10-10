@@ -309,15 +309,35 @@ export const OM_ROWS = {
   startLow: 'Open-Meteo, start of run (low band)',
 } as const;
 
+/** One station's report, its time and its cover (null when it has no sky
+ *  group). */
+export interface StationReport {
+  t: number;
+  obs: ObservedCover | null;
+}
+
+/** A station's reports in time order, each read as observedCoverBelow
+ *  reads it. The one place a METAR record becomes a cover, for the
+ *  forecast comparison and the station pairs alike. */
+export function stationReports(records: readonly MetarRecord[], topFt = Infinity): StationReport[] {
+  return records
+    .map((r) => ({ t: Date.parse(r.obsAt), obs: observedCoverBelow(parseSkyGroups(r.raw), topFt) }))
+    .filter((r) => Number.isFinite(r.t))
+    .sort((a, b) => a.t - b.t);
+}
+
 /** `topFt` reads every report as observedCoverBelow does, so a staffed
  *  station, whose observer reports cloud above 12,000 ft, is read as an
  *  automated one would be. */
 export function summarizeCloudCover(records: readonly CloudCoverRecord[], topFt = Infinity): CloudCoverSummary {
-  const reports = records
-    .filter((r): r is MetarRecord => r.src === 'metar')
-    .map((r) => ({ t: Date.parse(r.obsAt), obs: observedCoverBelow(parseSkyGroups(r.raw), topFt) }))
-    .filter((r) => Number.isFinite(r.t))
-    .sort((a, b) => a.t - b.t);
+  // One place's records: mixed, every station's reports and forecasts would
+  // merge into one, and the summary would be wrong without a word.
+  const sites = new Set(records.map((r) => r.site));
+  if (sites.size > 1) throw new Error(`summarizeCloudCover: records from ${sites.size} sites; filter to one first`);
+  const reports = stationReports(
+    records.filter((r): r is MetarRecord => r.src === 'metar'),
+    topFt,
+  );
   const ndfd = ndfdByHour(records.filter((r): r is NdfdRecord => r.src === 'ndfd'));
   const om = new Map<string, OpenMeteoCloudRecord>();
   for (const r of records) if (r.src === 'om') om.set(`${r.run}|${Date.parse(r.valid)}`, r);

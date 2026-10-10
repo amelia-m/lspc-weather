@@ -139,14 +139,14 @@ this table and the next; the arithmetic is `src/domain/stationPairs.ts`.
 
 | AWOS | ASOS | Miles | Hours | Same category | Ceiling: both / AWOS only / ASOS only / neither | ASOS FEW: AWOS CLR / FEW / SCT / BKN+ | AWOS SCT: ASOS CLR / FEW / SCT / BKN+ |
 |---|---|---|---|---|---|---|---|
-| KBTA | KOMA | 12.9 | 4455 | 62% | 26% / 5% / 5% / 63% | 586 / 0 / 124 / 49 (n 759) | 48 / 124 / 161 / 154 (n 487) |
-| KMLE | KOMA | 13.6 | 4466 | 62% | 27% / 6% / 5% / 62% | 574 / 0 / 119 / 61 (n 754) | 55 / 119 / 175 / 167 (n 516) |
-| KAUH | KGRI | 17.2 | 4497 | 76% | 26% / 6% / 3% / 65% | 96 / 0 / 82 / 91 (n 269) | 211 / 82 / 47 / 98 (n 438) |
-| KPMV | KOMA | 25.1 | 4463 | 58% | 23% / 6% / 9% / 62% | 572 / 0 / 132 / 60 (n 764) | 69 / 132 / 137 / 208 (n 546) |
-| KAHQ | KLNK | 28.3 | 4335 | 71% | 22% / 6% / 8% / 64% | 106 / 0 / 70 / 76 (n 252) | 200 / 70 / 56 / 177 (n 503) |
-| KLCG | KOFK | 29.4 | 4417 | 71% | 26% / 8% / 5% / 61% | 104 / 0 / 74 / 93 (n 271) | 201 / 74 / 40 / 118 (n 433) |
-| KCSB | KMCK | 23.8 | 4390 | 74% | 21% / 7% / 4% / 68% | 95 / 42 / 42 / 69 (n 248) | 87 / 42 / 20 / 74 (n 223) |
-| KGGF | KIML | 25.6 | 3714 | 71% | 21% / 8% / 5% / 66% | 92 / 30 / 26 / 64 (n 212) | 77 / 26 / 23 / 64 (n 190) |
+| KBTA | KOMA | 12.9 | 4456 | 62% | 26% / 5% / 5% / 63% | 586 / 0 / 124 / 49 (n 759) | 48 / 124 / 161 / 154 (n 487) |
+| KMLE | KOMA | 13.6 | 4467 | 62% | 27% / 6% / 5% / 62% | 574 / 0 / 119 / 61 (n 754) | 55 / 119 / 175 / 167 (n 516) |
+| KAUH | KGRI | 17.2 | 4498 | 76% | 26% / 6% / 3% / 65% | 96 / 0 / 82 / 91 (n 269) | 211 / 82 / 47 / 98 (n 438) |
+| KPMV | KOMA | 25.1 | 4464 | 58% | 23% / 6% / 9% / 63% | 572 / 0 / 132 / 60 (n 764) | 69 / 132 / 137 / 208 (n 546) |
+| KAHQ | KLNK | 28.3 | 4336 | 71% | 22% / 6% / 8% / 64% | 106 / 0 / 70 / 76 (n 252) | 200 / 70 / 56 / 177 (n 503) |
+| KLCG | KOFK | 29.4 | 4418 | 71% | 26% / 8% / 5% / 61% | 104 / 0 / 74 / 93 (n 271) | 201 / 74 / 40 / 118 (n 433) |
+| KCSB | KMCK | 23.8 | 4391 | 74% | 21% / 7% / 4% / 68% | 95 / 42 / 42 / 69 (n 248) | 87 / 42 / 20 / 74 (n 223) |
+| KGGF | KIML | 25.6 | 3715 | 71% | 21% / 8% / 5% / 66% | 92 / 30 / 26 / 64 (n 212) | 77 / 26 / 23 / 64 (n 190) |
 
 The last two columns are counts of hours, out of n: when the ASOS reported
 FEW, what the AWOS reported; and when the AWOS reported SCT, what the ASOS
@@ -169,7 +169,7 @@ What it shows:
   KOMA reported FEW below 12,000 ft, they reported CLR on 75 to 77%. KOMA
   is staffed (its reports carry no AUTO), and an observer sees the whole
   sky, while one ceilometer sees only the cloud that drifts over it (AIM
-  7-1-10, quoted in cloud-cover-sources.md). Ceiling agreement there is 85
+  7-1-10, quoted in cloud-cover-sources.md). Ceiling agreement there is 86
   to 89%, near the others.
 
 Some of every disagreement is the sky: the stations are 13 to 29 miles
@@ -188,7 +188,7 @@ not) matched the report.
 | Station | Hours | FEW reports | Ceiling hours reached: NWS | No-ceiling hours reached: NWS | Ceiling call agreed: NWS |
 |---|---|---|---|---|---|
 | KBTA | 4469 | 0% | 78% | 21% | 79% |
-| KOMA | 4589 | 12% | 75% | 18% | 80% |
+| KOMA | 4589 | 15% | 75% | 18% | 80% |
 | KMLE | 4480 | 0% | 76% | 20% | 79% |
 | KAUH | 4502 | 0% | 77% | 18% | 80% |
 | KGRI | 4597 | 6% | 80% | 18% | 82% |
@@ -214,5 +214,8 @@ not) matched the report.
 fetch on 2026-10-10 after a run of 429 answers: "Daily API request limit
 exceeded. Please try again tomorrow." The sandbox shares its address, so
 the limit is not this comparison's alone. The fetch script takes
-`PARTS=om` to fetch that part alone and merge it; the summary script adds
+`PARTS=om` to fetch that part alone; give it the same points, which
+`npx tsx scripts/cloudCoverStations.ts --sites` prints in its SITES form,
+and append its gzipped lines to the archive above (the two are
+concatenated JSON lines; `zcat a b | gzip`). The summary script adds
 Open-Meteo's columns when the file has its records.
