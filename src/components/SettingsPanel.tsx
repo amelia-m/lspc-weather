@@ -4,6 +4,7 @@ import {
   isEditable,
   isOwnLimit,
   isOwnLimitKey,
+  OWN_LIMIT_RANGE_KT,
   type EditableLimit,
   type Thresholds,
 } from '../config/thresholds';
@@ -106,7 +107,8 @@ export function SettingsPanel({
                     optional={ownKey}
                     placeholder={ownKey ? 'none' : undefined}
                     step={'step' in f ? f.step : 1}
-                    min={0}
+                    min={ownKey ? OWN_LIMIT_RANGE_KT.min : 0}
+                    max={ownKey ? OWN_LIMIT_RANGE_KT.max : undefined}
                     onCommit={(v) => onChange(f.key, v)}
                   />
                 );

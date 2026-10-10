@@ -16,10 +16,11 @@ import { linkableTerms, splitGlossaryTerms } from '../config/simGlossary';
  * verdict. Only a published limit is drawn or named: the USPA ground-wind
  * figure for students, the posted club policy for the waiver tiers, or the
  * reader's own edit of one in Settings, which is marked "(edited)" and never
- * shown under the source's name alone.
+ * shown under the source's name alone. On Licensed, where nobody publishes
+ * one, a limit the reader sets in Settings is drawn and named as theirs.
  *
- * Where nobody published one — licensed jumpers — there is no band, and no
- * surface-wind flag fires anywhere in the app at any speed. That makes this
+ * Where nobody published one and the reader set none, there is no band, and
+ * no surface-wind flag fires anywhere in the app at any speed. That makes this
  * card the only place the profile's own account of that absence can reach a
  * reader, so it prints here as a standing note with its citation, in a 3 kt
  * breeze and in a 60 kt gale alike. It is the same treatment the winds-aloft
@@ -136,14 +137,6 @@ export function SurfaceWindPanel({
                 `${gustOwn ? 'Your gust ceiling' : 'Gust ceiling'} ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`}
             </p>
           )}
-          {/* An own limit has no source to link: the reader set it. */}
-          {(windOwn || gustOwn) && (
-            <p className="muted small">
-              Your own, set in Settings. No published source sets a {windOwn ? 'wind limit' : 'gust ceiling'}
-              {windOwn && gustOwn ? ' or gust ceiling' : ''} for this profile, so only you can check{' '}
-              {windOwn && gustOwn ? 'them' : 'it'}.
-            </p>
-          )}
           {t.windLimitCitation && (
             <>
               {/* An edited figure is the reader's, from Settings, and the
@@ -191,10 +184,13 @@ export function SurfaceWindPanel({
               citation's authority. With an own limit set the band and flag
               are the reader's, and the first half says that instead. */}
           <p className="muted small">
-            {windOwn ? (
+            {windOwn || gustOwn ? (
               <>
-                <strong>No published limit for this profile.</strong> The band and the surface-wind
-                flag here are your own limit from Settings.
+                <strong>No published limit for this profile.</strong> Your{' '}
+                {windOwn && gustOwn ? 'wind limit and gust ceiling are' : windOwn ? 'wind limit is' : 'gust ceiling is'}{' '}
+                your own, set in Settings, and only you can check {windOwn && gustOwn ? 'them' : 'it'}; the
+                band{windOwn && gustOwn ? 's' : ''} and flag{windOwn && gustOwn ? 's' : ''} here fire at your figure
+                {windOwn && gustOwn ? 's' : ''}.
               </>
             ) : (
               <>

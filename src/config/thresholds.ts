@@ -368,10 +368,11 @@ export interface Thresholds {
    * the app's own invention: no BSR, club waiver or reg defines an early-warning
    * speed, so a reader had nothing to check it against.
    *
-   * Meaningful only where `windLimitCitation` is set, i.e. where a published
-   * source puts a number here. Where nobody published one (licensed jumpers) no
-   * flag fires and the card draws no band; the value then survives only as the
-   * upper bound the surface-wind card scales its bar against.
+   * Meaningful where `hasWindLimit` holds: a published source puts a number
+   * here (`windLimitCitation`), or the reader set their own on Licensed
+   * (`own`). Otherwise (licensed jumpers with none set) no flag fires and the
+   * card draws no band; the value then survives only as the upper bound the
+   * surface-wind card scales its bar against.
    */
   windCautionKt: number;
   /** Absolute gust ceiling, knots (LSPC waiver). undefined = no absolute rule. */
@@ -400,10 +401,11 @@ export interface Thresholds {
    * band at a specific speed and needs the source of THAT speed: the USPA
    * figure for students, the posted club policy for waiver tiers.
    *
-   * null means no published rule sets a limit for this profile. That is also
-   * the switch on the flag itself: with no sourced number there is no trigger a
-   * reader could check, so `evaluateAdvisories` raises no surface-wind flag and
-   * the card draws no band.
+   * null means no published rule sets a limit for this profile. With no
+   * sourced number there is no trigger a reader could check, so
+   * `evaluateAdvisories` raises no surface-wind flag and the card draws no
+   * band, unless the reader set their own limit (`hasWindLimit`), which every
+   * surface then calls theirs.
    */
   windLimitCitation: Citation | null;
   /** A lower published ground-wind maximum this profile's band does not
@@ -453,6 +455,12 @@ export interface Thresholds {
 
 /** The limits a reader can set as their own where no source publishes one. */
 export type OwnLimit = 'windCautionKt' | 'gustCautionKt';
+
+/** The range an own limit may take, knots. Not a threshold of this app's:
+ *  bounds on what the field accepts. Below 1 kt a limit would flag a calm;
+ *  above 100 kt it would only stretch the charts, whose scale grows to keep
+ *  every limit line in view. */
+export const OWN_LIMIT_RANGE_KT = { min: 1, max: 100 } as const;
 
 /** Whether `key` is a limit this profile takes as the reader's own: Settings
  *  is open (`takesOwnLimits`) and no published figure sits there to edit. */
@@ -512,14 +520,13 @@ export function withOverrides(base: Thresholds, override?: Partial<Thresholds>):
   };
 }
 
-/** Whether Settings offers this limit on this profile: the profile has a
- *  number for it AND that number drives something. `windCautionKt` fails the
- *  second test on a profile with no published limit (licensed): no source
- *  sets the band there, so the wind flag does not fire and the value
- *  survives only to scale the card's bar. Offering it as a tunable would
- *  imply a flag behind it. One rule for the rows, for what App loads back
- *  from storage, and for what counts as edited, so a value with no row to
- *  see it can neither be kept nor reported. */
+/** Whether Settings offers this limit on this profile: a limit the profile
+ *  takes as the reader's own (`isOwnLimitKey`), or one the profile has a
+ *  number for that drives something. `windCautionKt` with no published
+ *  limit fails the second test: no source sets a band there, and the value
+ *  only scales the card's bar. One rule for the rows, for what App loads
+ *  back from storage, and for what counts as edited, so a value with no row
+ *  to see it can neither be kept nor reported. */
 export function isEditable(t: Thresholds, key: EditableLimit): boolean {
   if (isOwnLimitKey(t, key)) return true;
   if (typeof t[key] !== 'number') return false;
@@ -627,7 +634,7 @@ const STUDENT: Thresholds = {
  * for a trigger this profile no longer has — the treatment the winds-aloft and
  * density-altitude guidance got when their invented triggers were removed. A
  * licensed jumper in 60 kt of wind reads it there; nothing in this app flags
- * that wind for them.
+ * that wind for them unless they set their own limit in Settings.
  */
 const LICENSED: Thresholds = {
   windCautionKt: LICENSED_BAR_SCALE_KT,
@@ -781,11 +788,13 @@ export function sanitizeOverrides(raw: unknown): Overrides {
     for (const [key, value] of Object.entries(entry as Record<string, unknown>)) {
       if (!(EDITABLE_LIMIT_KEYS as string[]).includes(key)) continue;
       if (!isEditable(base, key as EditableLimit)) continue;
-      // An own limit has no published value to share a type with.
-      const baseValue = isOwnLimitKey(base, key as EditableLimit) ? 0 : (base as unknown as Record<string, unknown>)[key];
-      if (typeof baseValue === 'number' && typeof value === 'number' && Number.isFinite(value)) {
-        (clean as Record<string, number>)[key] = value;
-      }
+      const ownKey = isOwnLimitKey(base, key as EditableLimit);
+      // An own limit has no published value to share a type with, and is
+      // held to the range the field accepts.
+      const baseValue = ownKey ? 0 : (base as unknown as Record<string, unknown>)[key];
+      if (typeof baseValue !== 'number' || typeof value !== 'number' || !Number.isFinite(value)) continue;
+      if (ownKey && (value < OWN_LIMIT_RANGE_KT.min || value > OWN_LIMIT_RANGE_KT.max)) continue;
+      (clean as Record<string, number>)[key] = value;
     }
     if (Object.keys(clean).length > 0) out[id as WindProfileId] = clean;
   }

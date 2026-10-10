@@ -24,9 +24,10 @@ export function evaluateAdvisories(
   // --- Surface wind ---
   if (current) {
     const { speedKt, gustKt } = current.wind;
-    // Fires at the published CAUTION limit and nowhere else. `windLimitCitation`
-    // is the gate: it holds the source of that number — the USPA student figure
-    // or the posted club waiver — and is null where nobody published one. The
+    // Fires at the published CAUTION limit, or the reader's own, and nowhere
+    // else. `hasWindLimit` is the gate: `windLimitCitation` holds the source
+    // of a published number — the USPA student figure or the posted club
+    // waiver — and is null where nobody published one. The
     // earlier "watch" band was this app's own arithmetic on those limits, and
     // for licensed jumpers (whose own guidance says no USPA limit binds them)
     // BOTH bands were invented, so that profile now raises no surface-wind flag
@@ -102,10 +103,12 @@ export function evaluateAdvisories(
             ? `gusting ${fmtSpeed(gustKt, unit)}, ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)} (edited in Settings)`
             : `gusting ${fmtSpeed(gustKt, unit)}, waiver ceiling ${fmtLimitSpeed(thresholds.gustCautionKt, unit)}`,
         guidance: isOwnLimit(thresholds, 'gustCautionKt')
-          ? 'Gusts are at or above the gust ceiling you set in Settings. No published source sets one for this profile; it is yours to check.'
+          ? `Gusts are at or above the gust ceiling you set in Settings, which only you can check: ${thresholds.windGuidance}`
           : isEdited(thresholds, 'gustCautionKt') && thresholds.published?.gustCautionKt != null
             ? `Gusts are at or above the gust ceiling edited in Settings; the LSPC waiver's ceiling for this experience tier is ${fmtLimitSpeed(thresholds.published.gustCautionKt, unit)} (gusts measured over the last 30 min).`
             : 'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
+        // On an own ceiling the link backs the guidance's account of the
+        // BSR (no ground-wind limit for licensed jumpers), not the figure.
         citation: thresholds.windCitation,
       });
     }
