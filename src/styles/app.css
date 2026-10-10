@@ -603,7 +603,10 @@ a.sim-term {
 .wind-fill {
   position: absolute;
   height: 100%;
-  background: linear-gradient(90deg, var(--ok), var(--accent));
+  /* One colour whatever the speed: a green end read as "fine", a verdict
+     the bar has no source for. Where the reading stands against a limit,
+     the row above the bar says in words. */
+  background: var(--accent);
 }
 .wind-band {
   position: absolute;
@@ -626,10 +629,58 @@ a.sim-term {
   background: var(--watch);
   z-index: 3;
 }
-.wind-legend {
+/* One row per limit: what it is, what reading it is held to and how far
+   under it is, then the bar. */
+.wind-check {
+  margin-top: 10px;
+}
+.wind-check-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 10px;
+  font-size: 0.85rem;
+}
+.wind-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.wind-check-status {
+  color: var(--muted);
+}
+/* At or above the limit: the flag's own condition, in the flag's colour. */
+.wind-check-status.over {
+  color: var(--caution);
+  font-weight: 600;
+}
+.wind-check .wind-bar {
+  margin: 4px 0 0;
+}
+.key-swatch {
+  display: inline-block;
+  vertical-align: middle;
+}
+.key-mark {
+  width: 3px;
+  height: 12px;
+}
+.key-fill {
+  width: 14px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.key-gust {
+  width: 3px;
+  height: 12px;
+  background: var(--watch);
+  margin-left: 6px;
+}
+.wind-key {
   font-size: 0.75rem;
   color: var(--muted);
-  margin: 0;
+  margin: 8px 0 0;
 }
 
 /* The winds hour, on the Winds aloft and drift cards (ForecastHourNav): the
