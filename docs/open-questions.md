@@ -29,7 +29,9 @@ These cannot be settled from the code.
    (A5). The page takes the answers in place — a verdict per claim, yes / no /
    not sure and a note per question, kept in the browser — and sends them as a
    prefilled GitHub issue or as copied text. The next step is an instructor or
-   S&TA working through it.
+   S&TA working through it. The maintainer asked on 2026-10-09 not to be
+   asked about the verdicts again for a week: raise it no sooner than
+   2026-10-16.
 
 3. **The app's own thresholds, for an instructor's judgement rather than a
    lookup.** Part B of the citations page — currently one entry, the 25 kt
@@ -127,7 +129,9 @@ does with small amounts is the open question. Looked into on 2026-10-10
 
 Still to do: Open-Meteo's figures at those stations. Its archive answered
 "Daily API request limit exceeded" on 2026-10-10; fetch with `PARTS=om`
-and merge (cloud-cover-stations.md, end).
+and merge (cloud-cover-stations.md, end). The limit is the sandbox's shared
+address's, not this repo's (CLAUDE.md, under what a sandbox can verify), so
+if it refuses again, run the fetch from a workflow instead.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 
@@ -320,6 +324,10 @@ sandbox's allowlist. If an instructor confirms it for every student rig, no
 student here jumps a round reserve, which is the fact the second option
 waits on. "Most" is not "every": a rig with a round reserve would still need
 the 10 mph figure.
+
+The maintainer's call, 2026-10-10: leave both options until it is known
+whether any of the student rigs has a round reserve. Do not pick one before
+then.
 
 ## Winds aloft
 
