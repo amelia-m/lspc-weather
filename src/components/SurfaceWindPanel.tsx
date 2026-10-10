@@ -56,7 +56,10 @@ export function SurfaceWindPanel({
 }): JSX.Element {
   const speed = current?.wind.speedKt ?? null;
   const gust = current?.wind.gustKt ?? null;
-  const max = Math.max(t.windCautionKt + 6, t.gustCautionKt ?? 0, gust ?? 0, speed ?? 0);
+  // Room past the highest mark, so a gust or limit at the top of the scale
+  // draws inside the bar rather than on its right edge, where a 22 kt gust's
+  // tick could not be seen (2026-10-10).
+  const max = Math.max(t.windCautionKt + 6, t.gustCautionKt ?? 0, gust ?? 0, speed ?? 0) + 2;
   const pct = (v: number): number => Math.min(100, (v / max) * 100);
   const other: SpeedUnit = unit === 'kt' ? 'mph' : 'kt';
   const caveat = t.windBandCaveat;
@@ -118,35 +121,57 @@ export function SurfaceWindPanel({
             <span className="wind-mph">({fmtSpeed(speed, other)})</span>
             {gust != null && <span className="wind-gust">gust {fmtSpeed(gust, unit)}</span>}
           </div>
-          <div className="wind-bar" role="img" aria-label={`Wind ${round(speed)} knots`}>
-            {hasWind && <div className="wind-band band-caution" style={{ left: `${pct(t.windCautionKt)}%` }} />}
-            {t.gustCautionKt != null && (
-              <div className="wind-band band-gust" style={{ left: `${pct(t.gustCautionKt)}%` }} />
-            )}
-            <div className="wind-fill" style={{ width: `${pct(speed)}%` }} />
-            {gust != null && <div className="wind-gust-tick" style={{ left: `${pct(gust)}%` }} />}
-          </div>
-          {/* Only a limit a published source sets, the reader's marked edit
-              of it, or the reader's own limit where none is published (set
-              in Settings on Licensed, and called theirs) is drawn or
-              named. There is
-              no earlier "watch" marker: the one that used to sit a few knots
-              under this was the app's own arithmetic, and putting an unsourced
-              number on the card beside sourced ones lent it their authority.
-              It raises no flag now either — it does not exist. */}
-          {anyLimit && (
-            <p className="wind-legend">
-              {hasWind && (
-                <>
-                  {windOwn ? 'Your limit' : 'Caution'} ≥ {fmtLimitSpeed(t.windCautionKt, unit)}
-                  {windEdited && ' (edited)'}
-                </>
-              )}
-              {hasWind && t.gustCautionKt != null && ' · '}
-              {t.gustCautionKt != null &&
-                `${gustOwn ? 'Your gust ceiling' : 'Gust ceiling'} ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`}
-            </p>
+          {/* One row per limit, each saying which reading it is held to and
+              how far under it is, or that it is at or above it: the test
+              its flag uses, in words, so a reader need not match coloured
+              ticks to a legend (the maintainer, 2026-10-10). The caution is
+              held to the higher of the steady wind and the gust, as the flag
+              is; the gust ceiling to the gust. Only a limit a published
+              source sets, the reader's marked edit of it, or the reader's
+              own limit where none is published (set in Settings on Licensed,
+              and called theirs) is drawn or named. There is no earlier
+              "watch" marker: the one that used to sit a few knots under this
+              was the app's own arithmetic, and putting an unsourced number
+              beside sourced ones lent it their authority. */}
+          {hasWind && (
+            <LimitRow
+              label={`${windOwn ? 'Your limit' : 'Caution'} ≥ ${fmtLimitSpeed(t.windCautionKt, unit)}${windEdited ? ' (edited)' : ''}`}
+              markClass="band-caution"
+              limitKt={t.windCautionKt}
+              readingName={gust != null && gust > speed ? 'gust' : 'wind'}
+              readingKt={gust != null ? Math.max(speed, gust) : speed}
+              speedKt={speed}
+              gustKt={gust}
+              pct={pct}
+              unit={unit}
+            />
           )}
+          {t.gustCautionKt != null && (
+            <LimitRow
+              label={`${gustOwn ? 'Your gust ceiling' : 'Gust ceiling'} ${fmtLimitSpeed(t.gustCautionKt, unit)}${gustEdited ? ' (edited)' : ''}`}
+              markClass="band-gust"
+              limitKt={t.gustCautionKt}
+              readingName="gust"
+              readingKt={gust}
+              speedKt={null}
+              gustKt={gust}
+              pct={pct}
+              unit={unit}
+            />
+          )}
+          {!anyLimit && (
+            <div className="wind-bar" role="img" aria-label={`Wind ${round(toSpeed(speed, unit))} ${unit}`}>
+              <div className="wind-fill" style={{ width: `${pct(speed)}%` }} />
+              {gust != null && <div className="wind-gust-tick" style={{ left: `${pct(gust)}%` }} />}
+            </div>
+          )}
+          {/* The key on every profile: Licensed draws the same fill and tick
+              with no limit row to name them. */}
+          <p className="wind-key">
+            <span className="key-swatch key-fill" aria-hidden="true" /> steady wind{' '}
+            <span className="key-swatch key-gust" aria-hidden="true" /> gust
+            {hasWind && ' · the caution counts whichever is higher, as its flag does'}
+          </p>
           {t.windLimitCitation && (
             <>
               {/* An edited figure is the reader's, from Settings, and the
@@ -221,5 +246,53 @@ export function SurfaceWindPanel({
         </>
       )}
     </Panel>
+  );
+}
+
+/** One limit on the Surface wind card: its label, the reading it is held to
+ *  and how far under the limit that is (or that it is at or above it), and a
+ *  bar with the limit marked. The distance is plain arithmetic on a published
+ *  limit or the reader's own, in the card's unit, to the limit's decimal. */
+function LimitRow({
+  label,
+  markClass,
+  limitKt,
+  readingName,
+  readingKt,
+  speedKt,
+  gustKt,
+  pct,
+  unit,
+}: {
+  label: string;
+  markClass: string;
+  limitKt: number;
+  readingName: string;
+  readingKt: number | null;
+  speedKt: number | null;
+  gustKt: number | null;
+  pct: (v: number) => number;
+  unit: SpeedUnit;
+}): JSX.Element {
+  const over = readingKt != null && readingKt >= limitKt;
+  const status =
+    readingKt == null
+      ? `no ${readingName} reported`
+      : `${readingName} ${fmtSpeed(readingKt, unit)}: ${over ? 'at or above' : `${fmtLimitSpeed(limitKt - readingKt, unit)} under`}`;
+  return (
+    <div className="wind-check">
+      <div className="wind-check-head">
+        <span className="wind-check-label">
+          <span className={`key-swatch key-mark ${markClass}`} aria-hidden="true" />
+          {label}
+        </span>
+        <span className={`wind-check-status${over ? ' over' : ''}`}>{status}</span>
+      </div>
+      <div className="wind-bar" role="img" aria-label={`${label}; ${status}`}>
+        <div className={`wind-band ${markClass}`} style={{ left: `${pct(limitKt)}%` }} />
+        {speedKt != null && <div className="wind-fill" style={{ width: `${pct(speedKt)}%` }} />}
+        {gustKt != null && <div className="wind-gust-tick" style={{ left: `${pct(gustKt)}%` }} />}
+      </div>
+    </div>
   );
 }
