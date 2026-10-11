@@ -130,8 +130,10 @@ does with small amounts is the open question. Looked into on 2026-10-10
 Still to do: Open-Meteo's figures at those stations. Its archive answered
 "Daily API request limit exceeded" on 2026-10-10; fetch with `PARTS=om`
 and merge (cloud-cover-stations.md, end). The limit is the sandbox's shared
-address's, not this repo's (CLAUDE.md, under what a sandbox can verify), so
-if it refuses again, run the fetch from a workflow instead.
+address's, not this repo's (CLAUDE.md, under what a sandbox can verify).
+It refused again at 01:10Z on 2026-10-11, so the fetch runs from
+`.github/workflows/cloud-cover-fetch.yml` (by hand, PARTS=om and the SITES
+above) and its artifact is merged.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 
