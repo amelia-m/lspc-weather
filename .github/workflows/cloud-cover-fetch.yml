@@ -1,0 +1,62 @@
+name: Cloud-cover fetch (by hand)
+
+# Runs scripts/cloudCoverFetch.py on GitHub's runners and keeps its output
+# as an artifact, for a fetch the sandbox cannot make. Open-Meteo's daily
+# request limit is per address, and the sandbox's address is shared: on
+# 2026-10-10 and again at 01:10Z on 2026-10-11, an hour after the limit
+# reset, its historical-forecast archive answered "Daily API request limit
+# exceeded" to the station comparison's first request. No runner request had
+# met that limit (CLAUDE.md, under what a sandbox can verify).
+#
+# Started by hand only (Actions > Cloud-cover fetch > Run workflow). It
+# changes nothing in the repository: download the artifact and merge its
+# lines into the archive under data/parity/, as docs/cloud-cover-stations.md
+# says. Inputs are the script's own: the dates, PARTS and SITES (the form
+# `npx tsx scripts/cloudCoverStations.ts --sites` prints).
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: First day, YYYY-MM-DD
+        required: true
+      end:
+        description: Last day, YYYY-MM-DD
+        required: true
+      parts:
+        description: PARTS (metar, om, ndfd; comma-separated, spaces dropped)
+        required: true
+        default: om
+      sites:
+        description: SITES (ID:lat:lon,...); empty for the drop zone alone
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # ecCodes decodes the NDFD part; the script imports it whatever PARTS
+      # says.
+      - run: pip install eccodes eccodeslib
+      - name: Fetch
+        env:
+          PARTS: ${{ inputs.parts }}
+          SITES: ${{ inputs.sites }}
+          START: ${{ inputs.start }}
+          END: ${{ inputs.end }}
+        # The script splits PARTS on commas as given, so "metar, om" would
+        # skip " om" without a word; spaces go first. It writes gzip.
+        run: PARTS="${PARTS// /}" python scripts/cloudCoverFetch.py "$START" "$END" cloud-cover-fetch.jsonl.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloud-cover-fetch-${{ github.run_id }}
+          path: cloud-cover-fetch.jsonl.gz
+          retention-days: 7

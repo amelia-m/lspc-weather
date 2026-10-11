@@ -374,8 +374,11 @@ timeouts, 6 dropped connections and 2 HTTP 503s. A heavy Open-Meteo fetch is
 safer run as a workflow than from here. A script that fetches from here should
 give up on the daily-limit 429 rather than retry it
 (`scripts/cloudCoverFetch.py` does), and fetch in parts so that what came back
-is kept. The dashboard is not affected: each reader's browser calls
-Open-Meteo from its own address.
+is kept. `.github/workflows/cloud-cover-fetch.yml`, started by hand, runs
+`scripts/cloudCoverFetch.py` on a runner and keeps its output as an
+artifact; it was added when the sandbox was refused again at 01:10Z on
+2026-10-11, an hour after the limit reset. The dashboard is not affected:
+each reader's browser calls Open-Meteo from its own address.
 
 ## Conventions
 
