@@ -177,45 +177,112 @@ apart.
 
 ## The forecasts at each station
 
-The NWS forecast (NDFD, the gridpoint API's figures, cloud-cover-sources.md)
-read at each station's own grid point, its latest issuance before the
-hour, against that station's reports, both below 12,000 ft. Figures are
-the share of hours the forecast was at or above 5/8, the least a broken
-layer covers (AC 00-45H), on hours the station reported a ceiling and on
-hours it reported none, and the share of hours its call (5/8 or more, or
-not) matched the report.
+Each forecast read at each station's own point, against that station's
+reports, both below 12,000 ft:
 
-| Station | Hours | FEW reports | Ceiling hours reached: NWS | No-ceiling hours reached: NWS | Ceiling call agreed: NWS |
-|---|---|---|---|---|---|
-| KBTA | 4469 | 0% | 78% | 21% | 79% |
-| KOMA | 4589 | 15% | 75% | 18% | 80% |
-| KMLE | 4480 | 0% | 76% | 20% | 79% |
-| KAUH | 4502 | 0% | 77% | 18% | 80% |
-| KGRI | 4597 | 6% | 80% | 18% | 82% |
-| KPMV | 4477 | 0% | 74% | 20% | 78% |
-| KAHQ | 4338 | 0% | 77% | 23% | 77% |
-| KLNK | 4606 | 6% | 74% | 18% | 79% |
-| KLCG | 4487 | 0% | 72% | 22% | 76% |
-| KOFK | 4532 | 6% | 77% | 19% | 80% |
-| KCSB | 4439 | 5% | 73% | 16% | 81% |
-| KMCK | 4553 | 5% | 73% | 16% | 81% |
-| KGGF | 4467 | 6% | 63% | 16% | 78% |
-| KIML | 3808 | 5% | 49% | 31% | 64% |
+- **NWS**: the NDFD figure (the gridpoint API's, cloud-cover-sources.md)
+  at the station's grid point, its latest issuance before the hour, 0.7 to
+  7.2 hours ahead.
+- **OM start**: Open-Meteo's total cover from the first hours of each run
+  (its Historical Forecast API), its best case and the shortest lead here.
+- **OM day ahead**: Open-Meteo's total as forecast 24 hours before
+  (`_previous_day1`).
+- **OM low**: Open-Meteo's low band (up to 3 km) at the start of its runs.
 
-- The NWS forecast's call matched **76 to 80% of hours at the no-FEW AWOS,
-  79 to 82% at the ASOS, and 78 and 81% at the two FEW-reporting AWOS.**
-  Which kind of station reports makes little difference to how the
-  forecast reads against it; KPMV's 78% is in the middle.
-- KIML (64%) stands apart, and has a gap in its reports in July and August
-  (592 and 258 reports, against 829 to 935 in the other full months). Why
-  its figures differ was not looked into.
+The measure is the one in cloud-cover-sources.md: whether the forecast was
+at or above 5/8, the least a broken layer covers (AC 00-45H), on hours the
+station reported a ceiling and on hours it reported none. "Call agreed" is
+the share of hours that call (5/8 or more, or not) matched the report. The
+Open-Meteo figures were fetched on 2026-10-11 by
+`.github/workflows/cloud-cover-fetch.yml` (run 38101248541), since the
+archive refused the sandbox two days running; the tables below are
+`scripts/cloudCoverStations.ts`'s, set out one measure to a table.
 
-**Open-Meteo is not in these tables yet.** Its archive refused the
-fetch on 2026-10-10 after a run of 429 answers: "Daily API request limit
-exceeded. Please try again tomorrow." The sandbox shares its address, so
-the limit is not this comparison's alone. The fetch script takes
-`PARTS=om` to fetch that part alone; give it the same points, which
-`npx tsx scripts/cloudCoverStations.ts --sites` prints in its SITES form,
-and append its gzipped lines to the archive above (the two are
-concatenated JSON lines; `zcat a b | gzip`). The summary script adds
-Open-Meteo's columns when the file has its records.
+| Station | Hours | FEW reports | Call agreed: NWS | OM start | OM day ahead | OM low |
+|---|---|---|---|---|---|---|
+| KBTA | 4469 | 0% | 79% | 82% | 64% | 89% |
+| KOMA | 4589 | 15% | 80% | 82% | 65% | 88% |
+| KMLE | 4480 | 0% | 79% | 80% | 64% | 88% |
+| KAUH | 4502 | 0% | 80% | 83% | 67% | 88% |
+| KGRI | 4597 | 6% | 82% | 83% | 68% | 89% |
+| KPMV | 4477 | 0% | 78% | 81% | 63% | 90% |
+| KAHQ | 4338 | 0% | 77% | 81% | 64% | 89% |
+| KLNK | 4606 | 6% | 79% | 81% | 64% | 88% |
+| KLCG | 4487 | 0% | 76% | 81% | 66% | 87% |
+| KOFK | 4532 | 6% | 80% | 81% | 66% | 88% |
+| KCSB | 4439 | 5% | 81% | 82% | 68% | 87% |
+| KMCK | 4553 | 5% | 81% | 84% | 67% | 91% |
+| KGGF | 4467 | 6% | 78% | 80% | 64% | 86% |
+| KIML | 3808 | 5% | 64% | 84% | 68% | 90% |
+
+| Station | Ceiling hours ≥ 5/8: NWS | OM start | OM day ahead | OM low | No-ceiling hours ≥ 5/8: NWS | OM start | OM day ahead | OM low |
+|---|---|---|---|---|---|---|---|---|
+| KBTA | 78% | 83% | 79% | 71% | 21% | 18% | 42% | 2% |
+| KOMA | 75% | 83% | 80% | 67% | 18% | 18% | 41% | 3% |
+| KMLE | 76% | 80% | 78% | 69% | 20% | 19% | 42% | 3% |
+| KAUH | 77% | 81% | 80% | 67% | 18% | 16% | 38% | 2% |
+| KGRI | 80% | 82% | 82% | 67% | 18% | 17% | 38% | 2% |
+| KPMV | 74% | 83% | 78% | 72% | 20% | 20% | 44% | 3% |
+| KAHQ | 77% | 82% | 80% | 69% | 23% | 19% | 42% | 3% |
+| KLNK | 74% | 81% | 79% | 67% | 18% | 19% | 43% | 3% |
+| KLCG | 72% | 78% | 80% | 66% | 22% | 18% | 41% | 3% |
+| KOFK | 77% | 79% | 81% | 65% | 19% | 18% | 41% | 2% |
+| KCSB | 73% | 76% | 77% | 60% | 16% | 16% | 36% | 3% |
+| KMCK | 73% | 83% | 77% | 70% | 16% | 16% | 37% | 2% |
+| KGGF | 63% | 74% | 72% | 57% | 16% | 19% | 39% | 3% |
+| KIML | 49% | 82% | 75% | 67% | 31% | 16% | 35% | 2% |
+
+| Station | Median gap, inside: NWS | OM start | OM day ahead | OM low |
+|---|---|---|---|---|
+| KBTA | 20, 6% | 1, 45% | 12.5, 38% | 0, 55% |
+| KOMA | 14, 16% | 1, 49% | 12.5, 39% | 0, 59% |
+| KMLE | 19.5, 6% | 2, 44% | 11, 37% | 0, 54% |
+| KAUH | 17, 6% | 1, 47% | 7, 39% | 0, 55% |
+| KGRI | 18, 7% | 1, 49% | 6, 40% | 0, 60% |
+| KPMV | 20, 6% | 2, 43% | 12.5, 35% | 0, 54% |
+| KAHQ | 21, 6% | 2, 44% | 12.5, 37% | 0, 54% |
+| KLNK | 19, 7% | 1, 48% | 11.5, 38% | 0, 58% |
+| KLCG | 21, 5% | 1, 47% | 7.25, 41% | 0, 57% |
+| KOFK | 18, 7% | 1, 50% | 9, 39% | 0, 62% |
+| KCSB | 17, 7% | 1, 49% | 7.5, 39% | 0, 63% |
+| KMCK | 16, 7% | 0, 53% | 6, 40% | 0, 68% |
+| KGGF | 19, 6% | 1, 48% | 11, 38% | 0, 63% |
+| KIML | 34.25, 5% | 0, 54% | 4, 43% | 0, 67% |
+
+In the last table, the first figure is the median gap in points between the
+forecast and the reported range of eighths, and the second is the share of
+hours inside that range.
+
+- **Open-Meteo's start of run agreed with the report's ceiling call on 80
+  to 84% of hours at every station, more often than the NWS figure at
+  every one**: by 1 to 5 points at thirteen, and by 20 at KIML. Its lead is
+  also the shortest here, so this is not a like-for-like ranking of the two
+  at the card's lead (cloud-cover-sources.md, "What this does not say").
+- **The kind of station makes little difference to either forecast.** OM
+  start agreed on 80 to 83% at the no-FEW AWOS, 81 to 84% at the ASOS, and
+  80 and 82% at the two FEW-reporting AWOS. The NWS figures were 76 to 80%,
+  79 to 82% (KIML aside), and 78 and 81%.
+- **KIML's 64% is the NWS forecast's at its grid point, not the
+  station's.** Against the same reports, OM start agreed on 84%, while the
+  NWS figure reached 5/8 on 49% of KIML's ceiling hours and on 31% of its
+  hours without one. Why the NWS grid reads that way there was not looked
+  into.
+- **A day ahead, Open-Meteo's total called a ceiling about as often on
+  ceiling hours (72 to 82%) but about twice as often on hours without one
+  (35 to 44%), so its call agreed on 63 to 68%.** That is the pattern found
+  at KPMV (cloud-cover-sources.md, "Ceilings"), at every station.
+- **The low band agreed most often (86 to 91%)** because it almost never
+  calls a ceiling where none was reported (2 to 3% of those hours); it
+  missed 28 to 43% of the reported ceilings.
+- **Open-Meteo's start of run was inside the reported range on 43 to 54% of
+  hours (median gap 0 to 2 points), the NWS figure on 5 to 16% (14 to 34.25
+  points).** That follows from the shapes in cloud-cover-sources.md: CLR's
+  and OVC's ranges are 0 and 100 alone, and the NWS figure is rarely at
+  either.
+- **Where KPMV is not the drop zone, measured.** At KPMV's own coordinates
+  OM start reached 5/8 on 83% of KPMV's ceiling hours; at the drop zone's
+  grid point (cloud-cover-sources.md) it was 77%. The NWS figure moved
+  less, 74% against 73%.
+- KIML has a gap in its reports in July and August (592 and 258 reports,
+  against 829 to 935 in the other full months), which is why its hours are
+  fewer.
