@@ -189,7 +189,10 @@ and OVC's ranges.
   from both sides, and the card's next twelve hours sit between them.
 - **Where KPMV is not the drop zone.** KPMV is about 11.5 miles ENE of the
   drop zone, while both forecasts are for the drop zone's grid point.
-  Some of every gap is that distance.
+  Some of every gap is that distance. Read at KPMV's own coordinates
+  (cloud-cover-stations.md), Open-Meteo's start of run reached 5/8 on 83%
+  of the ceiling hours rather than 77%; the NWS figure, 74% rather than
+  73%.
 
 ## Stations that never report FEW
 
