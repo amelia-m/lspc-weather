@@ -333,7 +333,13 @@ Still not checkable here, so do not imply a green suite covers them:
 - **The deployed site in a browser.** Playwright's Chromium does not trust the
   proxy's TLS-intercepting CA, so it cannot load any https:// page, and the
   fixes for that (the NSS store, a Chromium enterprise policy) are blocked by
-  the sandbox's own guardrails. <https://amelia-m.github.io/lspc-weather/> has
+  the sandbox's own guardrails. Checked again 2026-10-13: the proxy's notes
+  (/root/.ccr/README.md) say the browser NSS store is set up, but
+  `~/.pki/nssdb/cert9.db` holds no certificates, `certutil` is not
+  installed, and pointing Chromium at the session proxy explicitly still
+  fails with ERR_CERT_AUTHORITY_INVALID. The fix is the environment's setup
+  script, which the maintainer controls (docs/open-questions.md, "Viewing
+  the deployed site from the sandbox"). <https://amelia-m.github.io/lspc-weather/> has
   therefore never been loaded, and the app has never been seen in a browser
   against *live* data.
 
