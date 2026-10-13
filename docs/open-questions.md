@@ -302,25 +302,36 @@ visibility to 0.05 mile, rainfall per 6-hour period in mm. A second run at
 18:09Z, the API not yet updated again, read the same files and printed the
 same figures.
 
-The issuance at 17:46Z, the first after the API's update, matched the API
-at every hour it covers: visibility 30 of 30, wind speed, gust and
-direction and temperature and dew point 42 of 42 each (to day 3), rainfall
-11 of 11 periods; the day 4 to 7 files (the 97 and 87 headers, issued
-17:33Z, which carry wind speed and direction, temperature and dew point,
-gust on 97 only, and `pop12`, but no visibility or rainfall) 16 of 16
-hours for each wind and temperature element (`pop12` below). The issuance at 17:16Z (17:17Z for wind speed and gust),
-before the update, differed by 1 °F at 16 hours of temperature
-(15Z tomorrow to 06Z the day after) and by up to half a mile at 9 hours
-of visibility; its winds and dew points already matched. So what the API
-served from 17:31Z was not yet in the 17:16Z issuance and was in the next
-one, 15 minutes after the update; the CONUS files come every half hour.
-One pair shows that much, not how long an edit can take in general. The 17:16Z visibility
-file's last two hours (22Z and 23Z tomorrow) decoded as −16,091,830 m,
-which is −9999 miles to the metre, most likely a missing value of −9999
-in the office's unit carried through the conversion to metres, at the end of the file's 30-hour span. The 17:46Z
-file filled those hours. Every element is non-negative, so the script
-counts a negative value as missing; a reader of the archive should do the
-same.
+The issuance at 17:46Z, the first after the API's update, matched the
+API at every hour it covers: visibility 30 of 30, wind speed, gust and
+direction and temperature and dew point 42 of 42 each (to day 3),
+rainfall 11 of 11 periods; the day 4 to 7 files (the 97 and 87 headers,
+issued 17:33Z, which carry wind speed and direction, temperature and dew
+point, gust on 97 only, and `pop12`, but no visibility or rainfall) 16
+of 16 hours for each wind and temperature element (`pop12` below). The
+issuance at 17:16Z (17:17Z for wind speed and gust), before the update,
+differed by 1 °F at 16 hours of temperature (15Z tomorrow to 06Z the day
+after) and by up to half a mile at 9 hours of visibility; its winds and
+dew points already matched. So what the API served from 17:31Z was not
+yet in the 17:16Z issuance and was in the next one, 15 minutes after the
+update; the CONUS files come every half hour. One pair shows that much,
+not how long an edit can take in general.
+
+The 17:16Z visibility file's last two hours (22Z and 23Z tomorrow)
+decoded as −16,091,830 m, which is −9999 miles to the metre: a no-data
+fill. Read again with ecCodes the same day, every message in both
+visibility files holds that one negative value and no other, at
+1,465,586 of the grid's 2,953,665 points in the first hours (the Pacific
+off California among them, so likely the grid's area outside any
+office's forecast), rising toward the end of the 30-hour span: to
+2,116,312 at 22Z and 23Z tomorrow in the 17:16Z file, the drop zone
+among them, and to 2,006,478 at 00Z the day after in the 17:46Z file,
+where the drop zone had values to the end. The files declare no bitmap
+and no missing-value management (`bitmapPresent` and
+`missingValueManagementUsed` both 0, `grid_complex` packing), so a
+decoder hands the fill back as an ordinary number. Every element is
+non-negative, so the script counts a negative value as missing; a reader
+of the archive has to do the same.
 
 What NDFD stores is not what the API prints, by a little: m/s, K and m are
 packed to about a tenth, so 5 kt comes back as 5.05 kt and 57 °F as
