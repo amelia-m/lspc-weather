@@ -19,6 +19,7 @@ import {
   CEILING_BANDS,
   DIFF_BINS,
   diffDistribution,
+  FLIGHT_BANDS,
   openMeteoByCeilingBand,
   parseCeilingLines,
   summarizeCeilings,
@@ -95,7 +96,7 @@ for (const [site, name] of points) {
     }
   }
   for (const r of rows) {
-    out.push('', `**${r.label}**, what KPMV reported, by the forecast's band (share of each column above)`, '');
+    out.push('', `**${r.label}**, what KPMV reported, by the forecast's band (each row: shares of that band's hours)`, '');
     out.push('| Forecast | Hours | ' + CEILING_BANDS.map((b) => `Reported ${b}`).join(' | ') + ' |');
     out.push('|---|---|' + CEILING_BANDS.map(() => '---').join('|') + '|');
     for (const fb of CEILING_BANDS) {
@@ -107,11 +108,10 @@ for (const [site, name] of points) {
       ['reported', "KPMV's reported band"],
     ] as const) {
       const dist = diffDistribution(r.pairs, by);
-      const bands = ['LIFR', 'IFR', 'MVFR', 'VFR'] as const;
       out.push('', `**${r.label}**, forecast − reported (ft), by ${name} (hours both had a ceiling)`, '');
       out.push('| Band | Hours | 10th | 25th | Median | 75th | 90th | Forecast ÷ reported, 25th–median–75th |');
       out.push('|---|---|---|---|---|---|---|---|');
-      for (const b of bands) {
+      for (const b of FLIGHT_BANDS) {
         const d = dist[b];
         out.push(
           `| ${b} | ${d.n} | ` +
@@ -122,7 +122,7 @@ for (const [site, name] of points) {
       out.push('', `Share of those hours by size of the difference ("low": forecast below the report):`, '');
       out.push('| Band | ' + DIFF_BINS.join(' | ') + ' |');
       out.push('|---|' + DIFF_BINS.map(() => '---').join('|') + '|');
-      for (const b of bands) {
+      for (const b of FLIGHT_BANDS) {
         out.push(`| ${b} | ` + dist[b].bins.map((c) => pct(c, dist[b].n)).join(' | ') + ' |');
       }
     }
