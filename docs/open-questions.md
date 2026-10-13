@@ -256,6 +256,60 @@ rather than the hour's its docs describe (below the hour's largest 15-minute
 gust at one of four hours, by 2.5 kt).
 Nothing on the dashboard changed.
 
+## Viewing the deployed site from the sandbox
+
+Waiting on the maintainer since 2026-10-13. Chromium here rejects the
+egress proxy's certificate because its trust store, `~/.pki/nssdb`, is
+empty (cert9.db has no rows), though the proxy's notes say it was set up.
+Filling it needs NSS's `certutil` (package `libnss3-tools`), which is not
+installed, and installing tools from inside a session has been blocked
+before. The environment's setup script runs before a session starts and
+is the maintainer's to edit (the cloud environment menu, Edit, Setup
+script). Proposed, untested:
+
+```bash
+apt-get install -y libnss3-tools
+mkdir -p ~/.pki/nssdb
+csplit -s -z -f /tmp/ccr-ca- /root/.ccr/ca-bundle.crt '/-----BEGIN CERTIFICATE-----/' '{*}'
+for f in /tmp/ccr-ca-*; do
+  openssl x509 -in "$f" -noout -subject 2>/dev/null | grep -q 'O = Anthropic' &&
+    certutil -d sql:$HOME/.pki/nssdb -A -t 'C,,' -n "ccr-$(basename "$f")" -i "$f"
+done
+```
+
+It trusts only the bundle's proxy certificates (subjects "CCR agent-proxy
+interception CA", "sandbox-egress ... TLS Inspection CA" and the like,
+O = Anthropic) and switches no checking off. Unknown: whether the bundle
+exists when the setup script runs. If it works, load the live site at 390
+and 320 px and correct the "Still not checkable" paragraph in CLAUDE.md.
+
+## KOFF's TAF: no feed a browser can read carries it
+
+Read 2026-10-13. Offutt's TAF is issued by the USAF, not the NWS:
+
+- api.weather.gov: no product under any lookup (also 2026-09-27 and -30).
+- IEM: no KOFF TAF since 2020, and none for Wright-Patterson (KFFO),
+  Barksdale (KBAD) or Dover (KDOV) either, against about 60,000 rows for
+  KOMA. IEM's TAF page says its archive is built by processing the NWS's
+  text TAF products, which a USAF TAF is not, so this is not an outage.
+- aviationweather.gov's API and NOAA's raw file
+  (tgftp.nws.noaa.gov/data/forecasts/taf/stations/KOFF.TXT) carry it, but
+  send no CORS header, so a browser cannot read them. How a USAF TAF
+  reaches them was not traced.
+
+Offutt does not issue around the clock. The TAF read that day was issued
+Saturday 10 October 10Z, valid to Sunday 16Z, ending "LAST NO AMDS AFT
+1013 NEXT 1310": no amendments after Saturday 13Z and the next issue
+Tuesday 10Z. KOMA's TAF had no such gap.
+
+Options, for the maintainer: a small relay (a free Cloudflare Worker in
+their name) that fetches aviationweather.gov and adds a CORS header, which
+would be current; or a workflow that copies the TAF onto the site on a
+schedule, which needs no new account but would run late as often as this
+repo has seen GitHub schedules run late. Keyed services (CheckWX and the
+like) would put the key in the public page. Until one is chosen, the card
+shows the next station, KOMA, and links Offutt's TAF.
+
 ## Live-site smoke test
 
 Run against live data on 2026-09-22 (first time the app had ever been exercised
