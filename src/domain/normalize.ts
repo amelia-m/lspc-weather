@@ -533,6 +533,22 @@ export interface RawGridpoint {
   };
 }
 
+/** The gridpoint properties normalizeGridpoint reads: what the forecast
+ *  keeper (scripts/forecastKeep.ts) stores, so a kept snapshot rebuilds the
+ *  card's hours exactly (tests/forecastKeep.test.ts). */
+export const GRIDPOINT_FIELDS = [
+  'skyCover',
+  'ceilingHeight',
+  'visibility',
+  'windSpeed',
+  'windGust',
+  'windDirection',
+  'probabilityOfPrecipitation',
+  'probabilityOfThunder',
+  'quantitativePrecipitation',
+  'temperature',
+] as const;
+
 /** Expand NWS gridpoint properties into a contiguous hourly series. Generation
  *  stops at the last hour any property carries data, so callers get the real
  *  horizon without a tail of all-null hours. The series starts at the
@@ -807,6 +823,20 @@ export function openMeteoWindsUrl(lat: number, lon: number): string {
     `${OPEN_METEO_FORECAST_URL}?latitude=${lat}&longitude=${lon}` +
     `&hourly=${openMeteoHourlyVariables().join(',')}` +
     `&wind_speed_unit=kn&forecast_days=2&timeformat=unixtime&timezone=UTC`
+  );
+}
+
+/** The 10-day outlook request (temps, wind and gust maxima, precip chance,
+ *  WMO weather code), as one string, so the app's fetch and the forecast
+ *  keeper (scripts/forecastKeep.ts) ask the same question. timezone is the
+ *  drop zone's, so daily aggregates follow local days. */
+export function openMeteoDailyUrl(lat: number, lon: number, timeZone: string): string {
+  return (
+    `${OPEN_METEO_FORECAST_URL}?latitude=${lat}&longitude=${lon}` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,` +
+    `precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant` +
+    `&forecast_days=10&wind_speed_unit=kn&timeformat=unixtime` +
+    `&timezone=${encodeURIComponent(timeZone)}`
   );
 }
 
