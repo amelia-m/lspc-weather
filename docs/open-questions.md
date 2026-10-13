@@ -257,6 +257,33 @@ rather than the hour's its docs describe (below the hour's largest 15-minute
 gust at one of four hours, by 2.5 kt).
 Nothing on the dashboard changed.
 
+## Forecasts kept for later
+
+Started 2026-10-13, at the maintainer's request: where no archive holds a
+forecast the dashboard shows, keep it now, so it can be set against what
+happened later. What has an archive and what does not, as read that day:
+
+- **NWS gridpoint, archived in NDFD** (noaa-ndfd-pds.s3.amazonaws.com,
+  `wmo/`): sky cover (`sky`) and ceiling (`cig`), each checked value for
+  value against the API (docs/cloud-cover-sources.md,
+  docs/ceiling-heights.md); grids also exist for visibility (`vis`), wind
+  speed, gust and direction (`wspd`, `wgust`, `wdir`), temperature
+  (`temp`) and rainfall (`qpf`), not yet checked against the API.
+- **NWS gridpoint, not archived:** the hourly rain chance (NDFD has only a
+  12-hour `pop12`) and the thunder chance (no NDFD element). These feed the
+  precipitation card.
+- **Open-Meteo:** its Historical Forecast and Previous Runs APIs hold
+  hourly forecasts, the winds aloft among them (start of run, and up to a
+  week before). The 10-day outlook's daily figures as the card asks for
+  them, `precipitation_probability_max` in particular, are not held.
+
+`.github/workflows/forecast-keep.yml` keeps, once an hour, every gridpoint
+field the card reads and the outlook as the card asks for it, on the
+`forecast-archive` branch (`data/YYYY/MM/DD/HHMMZ.json.gz`, about 4 KB
+each). Keeping the card's own requests also gives the lead a reader saw,
+which the NDFD rows only bracket. Nothing reads them yet; the first use
+would be the rain and thunder chances against KPMV's reports.
+
 ## Viewing the deployed site from the sandbox
 
 Waiting on the maintainer since 2026-10-13. Chromium here rejects the

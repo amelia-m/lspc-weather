@@ -388,6 +388,15 @@ each reader's browser calls Open-Meteo from its own address.
 
 ## Conventions
 
+- **Every finding goes in the repo in the same piece of work.** A fetch, a
+  test result, a comparison, a dead end worth not repeating: write it in
+  the relevant `docs/*.md`, `docs/open-questions.md` (anything waiting on
+  the maintainer) or here, with any data under `data/parity/` beside the
+  script that made it. A reply in the chat is not a record; on 2026-10-13
+  two investigations (KOFF's TAF sources, the empty browser trust store)
+  were reported only there until the maintainer asked. A project hook
+  (`.claude/settings.json`, UserPromptSubmit) repeats this reminder on
+  every prompt.
 - **Comments explain WHY, with domain context.** Calibrate on
   `src/domain/densityAltitude.ts`. Never write a comment describing behaviour
   the code does not have — several did, and each one misled a later reader.
@@ -498,6 +507,13 @@ time something again, the sampler workflow and `scripts/sampleLoop.sh` are
 in the history (removed 2026-10-05): it was a job that looped, not a cron
 line per sample, because GitHub ran an every-fifteen-minutes schedule under
 ten percent of the time and a running job is not throttled.
+`.github/workflows/forecast-keep.yml` runs hourly and commits what the
+dashboard's forecasts said (the NWS gridpoint fields the card reads,
+`GRIDPOINT_FIELDS`, and Open-Meteo's 10-day outlook, `openMeteoDailyUrl`)
+to the `forecast-archive` branch, one gzipped file per run
+(`scripts/forecastKeep.ts`). Both serve only the future, and no archive
+holds the hourly rain and thunder chances or the outlook as the card asks
+for them. It never touches `main`, so it starts no deploy.
 `.github/workflows/surface-wind-sample.yml` is that pattern again, temporary:
 it runs `scripts/surfaceWindCompare.live.ts` every five minutes
 (`scripts/surfaceWindLoop.sh`) until 2026-10-30T02:00Z, uploads

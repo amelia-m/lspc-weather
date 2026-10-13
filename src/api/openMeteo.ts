@@ -5,7 +5,7 @@ import {
   normalizeOpenMeteoHours,
   normalizeOpenMeteoClouds,
   coerceOpenMeteoTimes,
-  OPEN_METEO_FORECAST_URL,
+  openMeteoDailyUrl,
   openMeteoWindsUrl,
   type RawOpenMeteo,
   type RawOpenMeteoDaily,
@@ -68,13 +68,6 @@ export async function fetchWindsAloft(
 export async function fetchDailyForecast(lat: number, lon: number): Promise<DailyPoint[]> {
   const data: RawOpenMeteoDaily = USE_FIXTURES
     ? OPEN_METEO_DAILY_FIXTURE
-    : await fetchJson<RawOpenMeteoDaily>(
-        `${OPEN_METEO_FORECAST_URL}?latitude=${lat}&longitude=${lon}` +
-          `&daily=weather_code,temperature_2m_max,temperature_2m_min,` +
-          `precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant` +
-          `&forecast_days=10&wind_speed_unit=kn&timeformat=unixtime` +
-          `&timezone=${encodeURIComponent(SITE.timeZone)}`,
-        OPEN_METEO_OPTS,
-      );
+    : await fetchJson<RawOpenMeteoDaily>(openMeteoDailyUrl(lat, lon, SITE.timeZone), OPEN_METEO_OPTS);
   return normalizeOpenMeteoDaily(data);
 }

@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf %s '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"Reminder (project hook): record every finding, fetch, test result or investigation from this turn in the repo (docs/*.md, docs/open-questions.md or CLAUDE.md) as part of the same piece of work, not only in the chat reply. Data goes under data/parity/ with the script that made it; anything waiting on the maintainer goes in docs/open-questions.md.\"}}'"
+          }
+        ]
+      }
+    ]
+  }
+}
