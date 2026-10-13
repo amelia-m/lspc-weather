@@ -69,13 +69,18 @@ for (const [site, name] of points) {
         `${d ? `${d.median}, ${d.p10} to ${d.p90}` : '—'} | ${d ? d.medianAbs : '—'} |`,
     );
   }
-  out.push('', 'Forecast − reported (ft), median, by the reported ceiling\'s band (hours both had a ceiling):', '');
-  out.push('| Issuance | LIFR | IFR | MVFR | VFR |');
-  out.push('|---|---|---|---|---|');
-  for (const r of rows) {
-    const b = r.diffByBand;
-    const cell = (k: 'LIFR' | 'IFR' | 'MVFR' | 'VFR') => (b[k].median == null ? '—' : `${b[k].median} (n ${b[k].n})`);
-    out.push(`| ${r.label} | ${cell('LIFR')} | ${cell('IFR')} | ${cell('MVFR')} | ${cell('VFR')} |`);
+  for (const [key, by] of [
+    ['diffByBand', "the reported ceiling's band"],
+    ['diffByForecastBand', "the forecast ceiling's band"],
+  ] as const) {
+    out.push('', `Forecast − reported (ft), median, by ${by} (hours both had a ceiling):`, '');
+    out.push('| Issuance | LIFR | IFR | MVFR | VFR |');
+    out.push('|---|---|---|---|---|');
+    for (const r of rows) {
+      const b = r[key];
+      const cell = (k: 'LIFR' | 'IFR' | 'MVFR' | 'VFR') => (b[k].median == null ? '—' : `${b[k].median} (n ${b[k].n})`);
+      out.push(`| ${r.label} | ${cell('LIFR')} | ${cell('IFR')} | ${cell('MVFR')} | ${cell('VFR')} |`);
+    }
   }
   for (const r of rows) {
     out.push('', `**${r.label}**, hours by band (rows: KPMV reported; columns: forecast)`, '');

@@ -56,6 +56,14 @@ Forecast − reported (ft), median, by the reported ceiling's band (hours both h
 | NWS, 6 h or more ahead | 300 (n 138) | 200 (n 147) | -200 (n 238) | -1200 (n 361) |
 | NWS, 24 h or more ahead | 785 (n 104) | 335 (n 126) | 115 (n 198) | -800 (n 287) |
 
+Forecast − reported (ft), median, by the forecast ceiling's band (hours both had a ceiling):
+
+| Issuance | LIFR | IFR | MVFR | VFR |
+|---|---|---|---|---|
+| NWS, latest issuance | 100 (n 40) | 100 (n 210) | -100 (n 289) | 100 (n 360) |
+| NWS, 6 h or more ahead | 100 (n 41) | 100 (n 212) | -140 (n 281) | 200 (n 350) |
+| NWS, 24 h or more ahead | 0 (n 13) | 0 (n 139) | 200 (n 247) | 1315 (n 316) |
+
 **NWS, latest issuance**, hours by band (rows: KPMV reported; columns: forecast)
 
 | Reported \ Forecast | LIFR | IFR | MVFR | VFR | none | Same band |
@@ -105,17 +113,30 @@ Forecast − reported (ft), median, by the reported ceiling's band (hours both h
 - **How high, when both had one.** The median difference was +100 ft, and
   half the hours were within 700 ft; the 10th to 90th percentiles ran from
   3,100 ft too low to 2,400 ft too high.
-- **The lowest ceilings came out high, the highest low.** By the band KPMV
-  reported, the median difference was +300 ft under 500 ft, +200 ft from
-  500 to under 1,000, -200 ft from 1,000 to 3,000, and -1,100 ft above
-  3,000. Of the 149 hours KPMV reported a ceiling under 500 ft, the
-  forecast put 35 in that band, 67 at 500 to 1,000 ft, 29 at 1,000 to
-  3,000, 5 above 3,000 and 13 at none: 114 (77%) higher. The overall median near zero is those two
-  tendencies offsetting.
+- **Read by the forecast's own figure, it was near the mark in every
+  band.** Grouped by the band the forecast gave, the median difference
+  was +100 ft under 500 ft, +100 from 500 to under 1,000, -100 from 1,000
+  to 3,000 and +100 above 3,000: one 100 ft step. That is the grouping a
+  reader of the card's figure is in.
+- **Grouped by what KPMV reported, it looks biased, and that is mostly
+  the grouping.** By the reported band the medians are +300, +200, -200
+  and -1,100 ft. Sorting hours by the observed value does this to any
+  forecast with errors: a reported 300 ft ceiling can be missed upward by
+  thousands of feet but downward by 200 at most, and above 3,000 ft the
+  12,000 ft cap removes forecasts that ran higher. The medians are stable
+  (a by-hand resampling on 2026-10-13, 2,000 draws, put the under-500 ft
+  one's 90% interval at 300 to 300) and round because both sides come in 100 ft steps: every reported
+  base is a whole hundred, and 93% of the forecast heights were within
+  2 ft of one before the 10 ft rounding.
+- **What the grouping does show: the forecast seldom goes very low.**
+  KPMV reported a ceiling under 500 ft on 149 hours; the forecast put one
+  there on 41, 35 of them on those hours. Of the 149, it put 67 at 500 to
+  1,000 ft, 29 at 1,000 to 3,000, 5 above and 13 at none.
 - **Six hours ahead reads much as the latest issuance does; a day ahead,
   less closely.** At 24 hours or more ahead the median size of the
-  difference grew from 700 to 1,170 ft, and the forecast put 8 of 134
-  sub-500 ft ceilings in that band.
+  difference grew from 700 to 1,170 ft, the forecast put 8 of 134
+  sub-500 ft ceilings in that band, and where it gave a ceiling above
+  3,000 ft the reported one was a median 1,315 ft lower.
 - **KPMV's own grid point reads almost the same** as the drop zone's
   (`scripts/ceilingSummary.ts` prints both): the ceiling call moved by up
   to 17 of about 4,500 hours, the medians by up to 185 ft.
