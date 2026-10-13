@@ -87,6 +87,8 @@ export function reportedCeiling(layers: readonly SkyLayer[], topFt = AUTOMATED_T
 export type CeilingBand = FlightCategory | 'none';
 /** Lowest first, then no ceiling. */
 export const CEILING_BANDS: readonly CeilingBand[] = ['LIFR', 'IFR', 'MVFR', 'VFR', 'none'];
+/** The bands a ceiling height falls in, lowest first. */
+export const FLIGHT_BANDS = ['LIFR', 'IFR', 'MVFR', 'VFR'] as const satisfies readonly FlightCategory[];
 
 /** A ceiling's flight-category band (VFR here is above 3,000 ft up to the
  *  12,000 ft top), or 'none'. */
@@ -143,13 +145,8 @@ const emptyBands = (): CeilingRow['bands'] =>
 
 const round0 = (x: number): number => Math.round(x);
 
-const medianByBand = (by: Map<FlightCategory, number[]>): CeilingRow['diffByBand'] =>
-  Object.fromEntries(
-    (['LIFR', 'IFR', 'MVFR', 'VFR'] as const).map((b) => {
-      const ds = by.get(b) ?? [];
-      return [b, { n: ds.length, median: ds.length ? round0(median(ds) as number) : null }];
-    }),
-  ) as CeilingRow['diffByBand'];
+const mediansOf = (d: Record<FlightCategory, DiffDistribution>): CeilingRow['diffByBand'] =>
+  Object.fromEntries(FLIGHT_BANDS.map((b) => [b, { n: d[b].n, median: d[b].diffFt?.[2] ?? null }])) as CeilingRow['diffByBand'];
 
 /**
  * The NWS ceiling against the reports, one row per NWS_ISSUANCES entry
@@ -183,8 +180,6 @@ export function summarizeCeilings(
     const call = { both: 0, forecastOnly: 0, reportedOnly: 0, neither: 0 };
     const bands = emptyBands();
     const diffs: number[] = [];
-    const byBand = new Map<FlightCategory, number[]>();
-    const byForecastBand = new Map<FlightCategory, number[]>();
     const leads: number[] = [];
     let n = 0;
     let sameBand = 0;
@@ -209,12 +204,6 @@ export function summarizeCeilings(
       if (fc !== 'none' && rep.ceiling !== 'none') {
         call.both++;
         diffs.push(fc - rep.ceiling);
-        const list = byBand.get(rb as FlightCategory) ?? [];
-        list.push(fc - rep.ceiling);
-        byBand.set(rb as FlightCategory, list);
-        const flist = byForecastBand.get(fb as FlightCategory) ?? [];
-        flist.push(fc - rep.ceiling);
-        byForecastBand.set(fb as FlightCategory, flist);
       } else if (fc !== 'none') call.forecastOnly++;
       else if (rep.ceiling !== 'none') call.reportedOnly++;
       else call.neither++;
@@ -234,8 +223,8 @@ export function summarizeCeilings(
             medianAbs: round0(median(diffs.map(Math.abs)) as number),
           }
         : null,
-      diffByBand: medianByBand(byBand),
-      diffByForecastBand: medianByBand(byForecastBand),
+      diffByBand: mediansOf(diffDistribution(pairs, 'reported')),
+      diffByForecastBand: mediansOf(diffDistribution(pairs, 'forecast')),
       bands,
       sameBand,
       pairs,
@@ -272,16 +261,28 @@ export interface DiffDistribution {
   n: number;
   /** Hours in each DIFF_BINS bin. */
   bins: number[];
-  /** Forecast minus reported, ft: nearest-rank 10th, 25th, 50th, 75th
-   *  and 90th percentiles. */
-  diffFt: [number, number, number, number, number] | null;
-  /** Forecast over reported, the same percentiles, to two places. A miss
-   *  grows with the height, so this reads alike across the bands where
-   *  the difference in ft does not. */
-  ratio: [number, number, number, number, number] | null;
+  /** Forecast minus reported, ft: the 10th, 25th, 50th, 75th and 90th
+   *  percentiles, nearest-rank but for the 50th, which is the median as
+   *  every other table here takes it (the middle two averaged). */
+  diffFt: Quantiles | null;
+  /** Forecast over reported, the same percentiles, to two places, on the
+   *  hours with a reported ceiling above 0 ft. A miss grows with the
+   *  height, so this reads alike across the bands where the difference
+   *  in ft does not. */
+  ratio: Quantiles | null;
 }
 
-const QS = [0.1, 0.25, 0.5, 0.75, 0.9];
+type Quantiles = [number, number, number, number, number];
+
+/** As `percentile` and `median` (paritySummary.ts) take them, sorting once. */
+function quantiles(xs: readonly number[], round: (n: number) => number): Quantiles | null {
+  if (xs.length === 0) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const rank = (p: number) => s[Math.min(s.length, Math.max(1, Math.ceil(p * s.length))) - 1];
+  const mid = Math.floor(s.length / 2);
+  const med = s.length % 2 === 1 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  return [rank(0.1), rank(0.25), med, rank(0.75), rank(0.9)].map(round) as Quantiles;
+}
 
 /** The spread of forecast minus reported on the hours both had a ceiling,
  *  by one side's band: `'forecast'` is what a reader of the card's figure
@@ -291,26 +292,28 @@ export function diffDistribution(
   pairs: CeilingRow['pairs'],
   by: 'forecast' | 'reported',
 ): Record<FlightCategory, DiffDistribution> {
-  const groups = new Map<FlightCategory, { d: number; r: number }[]>();
+  const diffs = new Map<FlightCategory, number[]>(FLIGHT_BANDS.map((b) => [b, []]));
+  const ratios = new Map<FlightCategory, number[]>(FLIGHT_BANDS.map((b) => [b, []]));
   for (const { forecast, reported } of pairs) {
     if (forecast === 'none' || reported === 'none') continue;
     const band = ceilingCategory(by === 'forecast' ? forecast : reported);
-    const list = groups.get(band) ?? [];
-    list.push({ d: forecast - reported, r: forecast / reported });
-    groups.set(band, list);
+    diffs.get(band)!.push(forecast - reported);
+    // A VV000 or OVC000 report has no ratio to give.
+    if (reported > 0) ratios.get(band)!.push(forecast / reported);
   }
   return Object.fromEntries(
-    (['LIFR', 'IFR', 'MVFR', 'VFR'] as const).map((band) => {
-      const xs = groups.get(band) ?? [];
+    FLIGHT_BANDS.map((band) => {
+      const ds = diffs.get(band)!;
       const bins = DIFF_BINS.map(() => 0);
-      for (const x of xs) bins[diffBin(x.d)]++;
-      const ds = xs.map((x) => x.d);
-      const rs = xs.map((x) => x.r);
-      const qs = (v: number[], f: (n: number) => number) =>
-        v.length ? (QS.map((p) => f(percentile(v, p) as number)) as DiffDistribution['diffFt']) : null;
+      for (const d of ds) bins[diffBin(d)]++;
       return [
         band,
-        { n: xs.length, bins, diffFt: qs(ds, round0), ratio: qs(rs, (n) => Math.round(n * 100) / 100) },
+        {
+          n: ds.length,
+          bins,
+          diffFt: quantiles(ds, round0),
+          ratio: quantiles(ratios.get(band)!, (n) => Math.round(n * 100) / 100),
+        },
       ];
     }),
   ) as Record<FlightCategory, DiffDistribution>;
@@ -335,7 +338,7 @@ export function openMeteoByCeilingBand(
   const reports = ceilingReports(metars, topFt);
   const atLeast = (v: number | null): boolean => v != null && v >= CEILING_EIGHTHS * 12.5;
   const rows = new Map<FlightCategory, OmByCeilingBand>(
-    (['LIFR', 'IFR', 'MVFR', 'VFR'] as const).map((b) => [b, { band: b, hours: 0, low: 0, mid: 0, total: 0 }]),
+    FLIGHT_BANDS.map((b) => [b, { band: b, hours: 0, low: 0, mid: 0, total: 0 }]),
   );
   for (const r of om) {
     if (r.run !== 'historical') continue;

@@ -118,6 +118,11 @@ describe('summarizeCeilings', () => {
     expect(row.diffByForecastBand.LIFR).toEqual({ n: 0, median: null });
   });
 
+  it('keeps each hour’s pair, no ceiling on either side included', () => {
+    expect(latest.pairs).toEqual([{ forecast: 2000, reported: 1500 }]);
+    expect(six.pairs).toEqual([{ forecast: 'none', reported: 1500 }]);
+  });
+
   it('tables each side’s band', () => {
     expect(latest.bands.MVFR.MVFR).toBe(1);
     expect(latest.sameBand).toBe(1);
@@ -188,13 +193,14 @@ describe('diffBin', () => {
 });
 
 describe('diffDistribution', () => {
-  // Three hours: a forecast IFR 800 ft against 2,000 reported (MVFR), a
-  // forecast MVFR 2,000 against 800 (IFR), and one where the report had
-  // no ceiling, which neither grouping may count.
+  // Four hours: a forecast IFR 800 ft against 2,000 reported (MVFR), a
+  // forecast MVFR 2,000 against 800 (IFR), and one hour each with no
+  // ceiling on one side, which neither grouping may count.
   const pairs = [
     { forecast: 800, reported: 2000 },
     { forecast: 2000, reported: 800 },
     { forecast: 900, reported: 'none' as const },
+    { forecast: 'none' as const, reported: 900 },
   ];
 
   it('groups by the side asked for, on hours both had a ceiling', () => {
@@ -209,5 +215,23 @@ describe('diffDistribution', () => {
     const byReported = diffDistribution(pairs, 'reported');
     expect(byReported.IFR.diffFt?.[2]).toBe(1200);
     expect(byReported.MVFR.diffFt?.[2]).toBe(-1200);
+  });
+
+  it('takes the median as the other tables do, and leaves a 0 ft report out of the ratio', () => {
+    // Two hours in the IFR band by the forecast: +200 and +300. The
+    // nearest-rank 50th would say 200; the median, as everywhere else, 250.
+    const two = diffDistribution(
+      [
+        { forecast: 700, reported: 500 },
+        { forecast: 800, reported: 500 },
+      ],
+      'forecast',
+    );
+    expect(two.IFR.diffFt).toEqual([200, 200, 250, 300, 300]);
+    // VV000 under a 100 ft forecast: a difference, but no ratio.
+    const fog = diffDistribution([{ forecast: 100, reported: 0 }], 'forecast');
+    expect(fog.LIFR.n).toBe(1);
+    expect(fog.LIFR.diffFt?.[2]).toBe(100);
+    expect(fog.LIFR.ratio).toBeNull();
   });
 });
