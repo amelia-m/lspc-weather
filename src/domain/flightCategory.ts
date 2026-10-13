@@ -31,7 +31,7 @@ export function flightCategory(
   return cats.reduce((worst, c) => (RANK[c] > RANK[worst] ? c : worst));
 }
 
-function ceilingCategory(ft: number | null): FlightCategory {
+export function ceilingCategory(ft: number | null): FlightCategory {
   if (ft == null) return 'VFR'; // no ceiling reported → unlimited
   if (ft < 500) return 'LIFR';
   if (ft < 1000) return 'IFR';
