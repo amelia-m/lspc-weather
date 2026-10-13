@@ -17,6 +17,8 @@ import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import {
   CEILING_BANDS,
+  DIFF_BINS,
+  diffDistribution,
   openMeteoByCeilingBand,
   parseCeilingLines,
   summarizeCeilings,
@@ -90,6 +92,39 @@ for (const [site, name] of points) {
       const row = r.bands[rb];
       const n = CEILING_BANDS.reduce((s, fb) => s + row[fb], 0);
       out.push(`| ${rb} | ` + CEILING_BANDS.map((fb) => String(row[fb])).join(' | ') + ` | ${pct(row[rb], n)} of ${n} |`);
+    }
+  }
+  for (const r of rows) {
+    out.push('', `**${r.label}**, what KPMV reported, by the forecast's band (share of each column above)`, '');
+    out.push('| Forecast | Hours | ' + CEILING_BANDS.map((b) => `Reported ${b}`).join(' | ') + ' |');
+    out.push('|---|---|' + CEILING_BANDS.map(() => '---').join('|') + '|');
+    for (const fb of CEILING_BANDS) {
+      const n = CEILING_BANDS.reduce((sum, rb) => sum + r.bands[rb][fb], 0);
+      out.push(`| ${fb} | ${n} | ` + CEILING_BANDS.map((rb) => pct(r.bands[rb][fb], n)).join(' | ') + ' |');
+    }
+    for (const [by, name] of [
+      ['forecast', "the forecast's band"],
+      ['reported', "KPMV's reported band"],
+    ] as const) {
+      const dist = diffDistribution(r.pairs, by);
+      const bands = ['LIFR', 'IFR', 'MVFR', 'VFR'] as const;
+      out.push('', `**${r.label}**, forecast − reported (ft), by ${name} (hours both had a ceiling)`, '');
+      out.push('| Band | Hours | 10th | 25th | Median | 75th | 90th | Forecast ÷ reported, 25th–median–75th |');
+      out.push('|---|---|---|---|---|---|---|---|');
+      for (const b of bands) {
+        const d = dist[b];
+        out.push(
+          `| ${b} | ${d.n} | ` +
+            (d.diffFt ? d.diffFt.join(' | ') : '— | — | — | — | —') +
+            ` | ${d.ratio ? `${d.ratio[1]}–${d.ratio[2]}–${d.ratio[3]}` : '—'} |`,
+        );
+      }
+      out.push('', `Share of those hours by size of the difference ("low": forecast below the report):`, '');
+      out.push('| Band | ' + DIFF_BINS.join(' | ') + ' |');
+      out.push('|---|' + DIFF_BINS.map(() => '---').join('|') + '|');
+      for (const b of bands) {
+        out.push(`| ${b} | ` + dist[b].bins.map((c) => pct(c, dist[b].n)).join(' | ') + ' |');
+      }
     }
   }
   out.push('');

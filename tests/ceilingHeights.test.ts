@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   bandOf,
+  DIFF_BINS,
+  diffBin,
+  diffDistribution,
   forecastCeiling,
   NDFD_MISSING,
   NDFD_NO_CEILING,
@@ -166,5 +169,45 @@ describe('parseCeilingLines', () => {
   it('keeps ceiling records only', () => {
     const text = [JSON.stringify(fc(2, 610)), '{"src":"ndfd","sky":50}', 'not json', ''].join('\n');
     expect(parseCeilingLines(text)).toHaveLength(1);
+  });
+});
+
+describe('diffBin', () => {
+  it('puts each size on its larger end, the same on either side', () => {
+    const at = (d: number) => DIFF_BINS[diffBin(d)];
+    expect([0, 100, -100].map(at)).toEqual(['within 100', 'within 100', 'within 100']);
+    expect([110, 500, -110, -500].map(at)).toEqual(['100 to 500 high', '100 to 500 high', '100 to 500 low', '100 to 500 low']);
+    expect([1000, -1000, 3000, -3000].map(at)).toEqual([
+      '500 to 1,000 high',
+      '500 to 1,000 low',
+      '1,000 to 3,000 high',
+      '1,000 to 3,000 low',
+    ]);
+    expect([3010, -3010].map(at)).toEqual(['more than 3,000 high', 'more than 3,000 low']);
+  });
+});
+
+describe('diffDistribution', () => {
+  // Three hours: a forecast IFR 800 ft against 2,000 reported (MVFR), a
+  // forecast MVFR 2,000 against 800 (IFR), and one where the report had
+  // no ceiling, which neither grouping may count.
+  const pairs = [
+    { forecast: 800, reported: 2000 },
+    { forecast: 2000, reported: 800 },
+    { forecast: 900, reported: 'none' as const },
+  ];
+
+  it('groups by the side asked for, on hours both had a ceiling', () => {
+    const byForecast = diffDistribution(pairs, 'forecast');
+    expect(byForecast.IFR.n).toBe(1);
+    expect(byForecast.IFR.diffFt).toEqual([-1200, -1200, -1200, -1200, -1200]);
+    expect(byForecast.IFR.ratio?.[2]).toBe(0.4);
+    expect(byForecast.IFR.bins[DIFF_BINS.indexOf('1,000 to 3,000 low')]).toBe(1);
+    expect(byForecast.MVFR.diffFt?.[2]).toBe(1200);
+    expect(byForecast.LIFR).toEqual({ n: 0, bins: DIFF_BINS.map(() => 0), diffFt: null, ratio: null });
+
+    const byReported = diffDistribution(pairs, 'reported');
+    expect(byReported.IFR.diffFt?.[2]).toBe(1200);
+    expect(byReported.MVFR.diffFt?.[2]).toBe(-1200);
   });
 });

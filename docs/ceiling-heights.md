@@ -94,6 +94,89 @@ Forecast − reported (ft), median, by the forecast ceiling's band (hours both h
 | VFR | 0 | 6 | 51 | 230 | 316 | 38% of 603 |
 | none | 0 | 3 | 44 | 232 | 2682 | 91% of 2961 |
 
+## The distributions behind the medians
+
+Asked 2026-10-13, after the medians by the forecast's band came out one
+100 ft step from zero: what do the differences look like whole? Drop
+zone's grid point, latest issuance; `scripts/ceilingSummary.ts` prints
+the same for every issuance and for KPMV's point
+(`diffDistribution`, `src/domain/ceilingHeights.ts`). The ratio column
+is forecast ÷ reported; percentiles are nearest-rank.
+
+**NWS, latest issuance**, what KPMV reported, by the forecast's band (share of each column above)
+
+| Forecast | Hours | Reported LIFR | Reported IFR | Reported MVFR | Reported VFR | Reported none |
+|---|---|---|---|---|---|---|
+| LIFR | 41 | 85% | 5% | 7% | 0% | 2% |
+| IFR | 215 | 31% | 39% | 23% | 5% | 2% |
+| MVFR | 331 | 9% | 15% | 44% | 20% | 13% |
+| VFR | 621 | 1% | 2% | 8% | 48% | 42% |
+| none | 3267 | 0% | 1% | 2% | 9% | 88% |
+
+**NWS, latest issuance**, forecast − reported (ft), by the forecast's band (hours both had a ceiling)
+
+| Band | Hours | 10th | 25th | Median | 75th | 90th | Forecast ÷ reported, 25th–median–75th |
+|---|---|---|---|---|---|---|---|
+| LIFR | 40 | -400 | 0 | 100 | 200 | 200 | 1–1.5–2 |
+| IFR | 210 | -1100 | -300 | 100 | 300 | 400 | 0.69–1.14–1.6 |
+| MVFR | 289 | -4300 | -1000 | -100 | 600 | 1100 | 0.65–0.94–1.67 |
+| VFR | 360 | -4100 | -2000 | 100 | 2400 | 4900 | 0.79–1.02–1.59 |
+
+Share of those hours by size of the difference ("low": forecast below the report):
+
+| Band | more than 3,000 low | 1,000 to 3,000 low | 500 to 1,000 low | 100 to 500 low | within 100 | 100 to 500 high | 500 to 1,000 high | 1,000 to 3,000 high | more than 3,000 high |
+|---|---|---|---|---|---|---|---|---|---|
+| LIFR | 0% | 0% | 8% | 5% | 60% | 28% | 0% | 0% | 0% |
+| IFR | 2% | 8% | 7% | 18% | 24% | 40% | 2% | 0% | 0% |
+| MVFR | 12% | 12% | 7% | 18% | 9% | 15% | 16% | 10% | 0% |
+| VFR | 14% | 19% | 7% | 6% | 4% | 4% | 6% | 20% | 19% |
+
+**NWS, latest issuance**, forecast − reported (ft), by KPMV's reported band (hours both had a ceiling)
+
+| Band | Hours | 10th | 25th | Median | 75th | 90th | Forecast ÷ reported, 25th–median–75th |
+|---|---|---|---|---|---|---|---|
+| LIFR | 136 | 100 | 200 | 300 | 600 | 1190 | 1.5–2–3.25 |
+| IFR | 146 | -100 | 0 | 200 | 600 | 1800 | 1–1.4–1.83 |
+| MVFR | 244 | -900 | -500 | -200 | 700 | 2400 | 0.68–0.9–1.39 |
+| VFR | 373 | -5500 | -3000 | -1100 | 700 | 2900 | 0.57–0.84–1.12 |
+
+Share of those hours by size of the difference ("low": forecast below the report):
+
+| Band | more than 3,000 low | 1,000 to 3,000 low | 500 to 1,000 low | 100 to 500 low | within 100 | 100 to 500 high | 500 to 1,000 high | 1,000 to 3,000 high | more than 3,000 high |
+|---|---|---|---|---|---|---|---|---|---|
+| LIFR | 0% | 0% | 0% | 1% | 21% | 51% | 16% | 8% | 4% |
+| IFR | 0% | 0% | 0% | 10% | 32% | 32% | 10% | 12% | 5% |
+| MVFR | 0% | 9% | 14% | 29% | 11% | 9% | 7% | 12% | 9% |
+| VFR | 24% | 26% | 8% | 7% | 4% | 4% | 5% | 12% | 9% |
+
+- **The medians sit near zero; the spread does not.** By the forecast's
+  band, the middle half of the differences ran 0 to +200 ft under 500 ft,
+  -300 to +300 from 500 to under 1,000, -1,000 to +600 from 1,000 to
+  3,000, and -2,000 to +2,400 above 3,000. A forecast ceiling above
+  3,000 ft missed by more than 1,000 ft, one way or the other, on 72% of
+  the hours both had one, and was within 100 ft on 4%.
+- **The miss grows with the height, roughly in proportion.** As a ratio
+  the middle half reads alike from 500 ft up: the forecast was about 0.65
+  to 1.6 times the reported height in the IFR, MVFR and VFR bands. Under
+  500 ft (40 hours) its middle half ran 1 to 2 times, the forecast at or
+  above the report.
+- **When the forecast said IFR, the report was lower 31% of the time.**
+  Of 215 hours with a forecast ceiling from 500 to under 1,000 ft, KPMV
+  reported one under 500 ft on 67. A forecast under 500 ft was itself
+  borne out on 35 of 41 hours (85%), but there were few of them.
+- **A forecast ceiling above 3,000 ft came with no reported ceiling on
+  42% of its hours**, and a forecast of none with a reported ceiling on
+  12% (9% above 3,000 ft).
+- **Grouped by what was reported, the shape leans** as the medians did:
+  under 500 ft, 79% of the forecasts were above the report and 1% below
+  (a 300 ft report cannot be missed downward by more than 300 ft); above
+  3,000 ft, 50% were more than 1,000 ft below it.
+- **A day ahead** the medians by the forecast's band were 0, 0, +200 and
+  +1,300 ft, and the middle half above 3,000 ft ran -1,300 to +3,300.
+- **At KPMV's own grid point** the medians and quartiles by the
+  forecast's band moved by 200 ft at most, the 10th percentile by up to
+  800 ft (-4,300 to -3,500 in the MVFR band).
+
 ## The NWS ceiling at KPMV's own grid point
 
 The same reports, with the forecast read at the grid point nearest KPMV's
@@ -170,11 +253,14 @@ the counts move by up to 17 of about 4,500 hours and the medians by up to
 - **How high, when both had one.** The median difference was +100 ft, and
   half the hours were within 700 ft; the 10th to 90th percentiles ran from
   3,100 ft too low to 2,400 ft too high.
-- **Read by the forecast's own figure, it was near the mark in every
-  band.** Grouped by the band the forecast gave, the median difference
-  was +100 ft under 500 ft, +100 from 500 to under 1,000, -100 from 1,000
-  to 3,000 and +100 above 3,000: one 100 ft step. That is the grouping a
-  reader of the card's figure is in.
+- **Read by the forecast's own figure, the median was near the mark in
+  every band, and the spread around it was not.** Grouped by the band
+  the forecast gave, the median difference was +100 ft under 500 ft,
+  +100 from 500 to under 1,000, -100 from 1,000 to 3,000 and +100 above
+  3,000: one 100 ft step. That is the grouping a reader of the card's
+  figure is in. The middle half of the differences widened from 200 ft
+  under 500 ft to 4,400 ft above 3,000, about in proportion to the
+  height (see "The distributions behind the medians").
 - **Grouped by what KPMV reported, it looks biased, and that is mostly
   the grouping.** By the reported band the medians are +300, +200, -200
   and -1,100 ft. Sorting hours by the observed value does this to any
