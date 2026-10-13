@@ -131,6 +131,9 @@ export interface CeilingRow {
   bands: Record<CeilingBand, Record<CeilingBand, number>>;
   /** Hours both sides fell in the same band, 'none' included. */
   sameBand: number;
+  /** Every hour counted, in time order: the forecast ceiling and the
+   *  reported one, each ft or 'none'. What the distributions are read from. */
+  pairs: { forecast: Ceiling; reported: Ceiling }[];
 }
 
 const emptyBands = (): CeilingRow['bands'] =>
@@ -185,6 +188,7 @@ export function summarizeCeilings(
     const leads: number[] = [];
     let n = 0;
     let sameBand = 0;
+    const pairs: CeilingRow['pairs'] = [];
     for (const t of hours) {
       const rep = reportAt.get(t);
       if (rep?.ceiling == null) continue;
@@ -196,6 +200,7 @@ export function summarizeCeilings(
       if (!pick) continue;
       const fc = forecastCeiling(pick.cig, topFt) as Ceiling;
       n++;
+      pairs.push({ forecast: fc, reported: rep.ceiling });
       leads.push((t - Date.parse(pick.issued)) / MS_H);
       const rb = bandOf(rep.ceiling);
       const fb = bandOf(fc);
@@ -233,8 +238,82 @@ export function summarizeCeilings(
       diffByForecastBand: medianByBand(byForecastBand),
       bands,
       sameBand,
+      pairs,
     };
   });
+}
+
+/** Forecast minus reported, binned by size and side. "Low" is a forecast
+ *  below the reported ceiling. Each bin holds its larger end, so a 500 ft
+ *  miss is "100 to 500", on either side alike. */
+export const DIFF_BINS = [
+  'more than 3,000 low',
+  '1,000 to 3,000 low',
+  '500 to 1,000 low',
+  '100 to 500 low',
+  'within 100',
+  '100 to 500 high',
+  '500 to 1,000 high',
+  '1,000 to 3,000 high',
+  'more than 3,000 high',
+] as const;
+
+const DIFF_STEPS_FT = [100, 500, 1000, 3000];
+
+/** The DIFF_BINS index of a difference in ft. */
+export function diffBin(d: number): number {
+  const step = DIFF_STEPS_FT.findIndex((s) => Math.abs(d) <= s);
+  const size = step < 0 ? DIFF_STEPS_FT.length : step;
+  const mid = DIFF_STEPS_FT.length;
+  return size === 0 ? mid : d < 0 ? mid - size : mid + size;
+}
+
+export interface DiffDistribution {
+  n: number;
+  /** Hours in each DIFF_BINS bin. */
+  bins: number[];
+  /** Forecast minus reported, ft: nearest-rank 10th, 25th, 50th, 75th
+   *  and 90th percentiles. */
+  diffFt: [number, number, number, number, number] | null;
+  /** Forecast over reported, the same percentiles, to two places. A miss
+   *  grows with the height, so this reads alike across the bands where
+   *  the difference in ft does not. */
+  ratio: [number, number, number, number, number] | null;
+}
+
+const QS = [0.1, 0.25, 0.5, 0.75, 0.9];
+
+/** The spread of forecast minus reported on the hours both had a ceiling,
+ *  by one side's band: `'forecast'` is what a reader of the card's figure
+ *  met, `'reported'` sorts by the outcome (see `diffByBand` on why that
+ *  grouping leans). */
+export function diffDistribution(
+  pairs: CeilingRow['pairs'],
+  by: 'forecast' | 'reported',
+): Record<FlightCategory, DiffDistribution> {
+  const groups = new Map<FlightCategory, { d: number; r: number }[]>();
+  for (const { forecast, reported } of pairs) {
+    if (forecast === 'none' || reported === 'none') continue;
+    const band = ceilingCategory(by === 'forecast' ? forecast : reported);
+    const list = groups.get(band) ?? [];
+    list.push({ d: forecast - reported, r: forecast / reported });
+    groups.set(band, list);
+  }
+  return Object.fromEntries(
+    (['LIFR', 'IFR', 'MVFR', 'VFR'] as const).map((band) => {
+      const xs = groups.get(band) ?? [];
+      const bins = DIFF_BINS.map(() => 0);
+      for (const x of xs) bins[diffBin(x.d)]++;
+      const ds = xs.map((x) => x.d);
+      const rs = xs.map((x) => x.r);
+      const qs = (v: number[], f: (n: number) => number) =>
+        v.length ? (QS.map((p) => f(percentile(v, p) as number)) as DiffDistribution['diffFt']) : null;
+      return [
+        band,
+        { n: xs.length, bins, diffFt: qs(ds, round0), ratio: qs(rs, (n) => Math.round(n * 100) / 100) },
+      ];
+    }),
+  ) as Record<FlightCategory, DiffDistribution>;
 }
 
 /** Open-Meteo's start-of-run bands on the hours KPMV reported a ceiling,
