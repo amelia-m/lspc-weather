@@ -266,12 +266,16 @@ happened later. What has an archive and what does not, as read that day:
 - **NWS gridpoint, archived in NDFD** (noaa-ndfd-pds.s3.amazonaws.com,
   `wmo/`): sky cover (`sky`) and ceiling (`cig`), each checked value for
   value against the API (docs/cloud-cover-sources.md,
-  docs/ceiling-heights.md); grids also exist for visibility (`vis`), wind
-  speed, gust and direction (`wspd`, `wgust`, `wdir`), temperature
-  (`temp`) and rainfall (`qpf`), not yet checked against the API.
+  docs/ceiling-heights.md); and visibility (`vis`), wind speed, gust and
+  direction (`wspd`, `wgust`, `wdir`), temperature and dew point (`temp`,
+  `td`) and rainfall (`qpf`), checked at the drop zone on 2026-10-13 below.
 - **NWS gridpoint, not archived:** the hourly rain chance (NDFD has only a
-  12-hour `pop12`) and the thunder chance (no NDFD element). These feed the
-  precipitation card.
+  12-hour `pop12`, which in every standard period read on 2026-10-13 was
+  the highest hourly chance in its 12 hours, so the hours cannot be got
+  back from it) and the thunder chance (no NDFD
+  element). These feed the precipitation card. Rainfall past day 3 is not
+  archived either: the API's `quantitativePrecipitation` ran to day 8 on
+  2026-10-13, and NDFD's `qpf` has only the three-day headers.
 - **Open-Meteo:** its Historical Forecast and Previous Runs APIs hold
   hourly forecasts, the winds aloft among them (start of run, and up to a
   week before). The 10-day outlook's daily figures as the card asks for
@@ -283,6 +287,56 @@ field the card reads and the outlook as the card asks for it, on the
 each). Keeping the card's own requests also gives the lead a reader saw,
 which the NDFD rows only bracket. Nothing reads them yet; the first use
 would be the rain and thunder chances against KPMV's reports.
+
+### NDFD against the API, element by element (2026-10-13)
+
+`scripts/ndfdApiCheck.py` read api.weather.gov's gridpoint for the drop
+zone (OAX/77,42, `updateTime` 17:31:36Z) and, around 18:00Z, the CONUS
+NDFD files for each element issued either side of that update, decoded at
+the grid point nearest the drop zone (0.87 km away, the point the sky and
+ceiling checks used). Its output, the gridpoint as served and every
+decoded value, is `data/parity/ndfd-api-check-2026-10-13T1800Z.jsonl.gz`;
+`--from` prints the comparison again from it. Each pair was compared in
+the forecast office's unit, as a reader sees it: whole knots, whole °F,
+visibility to 0.05 mile, rainfall per 6-hour period in mm. A second run at
+18:09Z, the API not yet updated again, read the same files and printed the
+same figures.
+
+The issuance at 17:46Z, the first after the API's update, matched the API
+at every hour it covers: visibility 30 of 30, wind speed, gust and
+direction and temperature and dew point 42 of 42 each (to day 3), rainfall
+11 of 11 periods; the day 4 to 7 files (the 97 and 87 headers, issued
+17:33Z, which carry wind speed and direction, temperature and dew point,
+gust on 97 only, and `pop12`, but no visibility or rainfall) 16 of 16
+hours for each wind and temperature element (`pop12` below). The issuance at 17:16Z (17:17Z for wind speed and gust),
+before the update, differed by 1 °F at 16 hours of temperature
+(15Z tomorrow to 06Z the day after) and by up to half a mile at 9 hours
+of visibility; its winds and dew points already matched. So what the API
+served from 17:31Z was not yet in the 17:16Z issuance and was in the next
+one, 15 minutes after the update; the CONUS files come every half hour.
+One pair shows that much, not how long an edit can take in general. The 17:16Z visibility
+file's last two hours (22Z and 23Z tomorrow) decoded as −16,091,830 m,
+which is −9999 miles to the metre, most likely a missing value of −9999
+in the office's unit carried through the conversion to metres, at the end of the file's 30-hour span. The 17:46Z
+file filled those hours. Every element is non-negative, so the script
+counts a negative value as missing; a reader of the archive should do the
+same.
+
+What NDFD stores is not what the API prints, by a little: m/s, K and m are
+packed to about a tenth, so 5 kt comes back as 5.05 kt and 57 °F as
+56.9 °F. Read in the office's units they are the same figures.
+
+`pop12` equalled the highest of the API's hourly chances inside its 12
+hours in all 12 standard periods (00 to 12 and 12 to 00 UTC) from day 1
+to day 7, values from 0 to 95%. A file's first `pop12` runs from its own
+reference time and is not a standard period; at 17:46Z it read 10%
+where the hourly chances in those 12 hours reached 24%.
+
+The 88 and 87 headers are the same grids on a 5 km mesh and held the
+same figures at this point. One moment at one point is a small sample,
+and it does not say whether a past day's archive was ever edited after
+the fact; it says the archive and the API were the same forecast that
+hour.
 
 ## Viewing the deployed site from the sandbox
 
