@@ -94,6 +94,63 @@ Forecast − reported (ft), median, by the forecast ceiling's band (hours both h
 | VFR | 0 | 6 | 51 | 230 | 316 | 38% of 603 |
 | none | 0 | 3 | 44 | 232 | 2682 | 91% of 2961 |
 
+## The NWS ceiling at KPMV's own grid point
+
+The same reports, with the forecast read at the grid point nearest KPMV's
+coordinates (40.9484, -95.9174, the FAA's), 1.08 km from them, instead of
+at the drop zone's, about 11.5 miles away. This takes the distance between
+forecast and station out of the comparison.
+
+| Issuance | Hours | Lead (h) | Both a ceiling | Forecast only | Reported only | Neither | Same band | Forecast − reported (ft): median, 10th–90th | Median size |
+|---|---|---|---|---|---|---|---|---|---|
+| NWS, latest issuance | 4475 | 0.9–12.2 | 909 | 297 | 387 | 2882 | 77% | 100, -3200 to 2600 | 800 |
+| NWS, 6 h or more ahead | 4470 | 6.2–17.2 | 901 | 316 | 395 | 2858 | 76% | 100, -3100 to 2600 | 700 |
+| NWS, 24 h or more ahead | 4137 | 24.2–30.2 | 717 | 282 | 459 | 2679 | 74% | 300, -3200 to 3400 | 1170 |
+
+Forecast − reported (ft), median, by the reported ceiling's band (hours both had a ceiling):
+
+| Issuance | LIFR | IFR | MVFR | VFR |
+|---|---|---|---|---|
+| NWS, latest issuance | 300 (n 138) | 200 (n 151) | -100 (n 246) | -1200 (n 374) |
+| NWS, 6 h or more ahead | 300 (n 140) | 200 (n 148) | -200 (n 245) | -1100 (n 368) |
+| NWS, 24 h or more ahead | 700 (n 109) | 300 (n 123) | 300 (n 205) | -700 (n 280) |
+
+Forecast − reported (ft), median, by the forecast ceiling's band (hours both had a ceiling):
+
+| Issuance | LIFR | IFR | MVFR | VFR |
+|---|---|---|---|---|
+| NWS, latest issuance | 100 (n 41) | 100 (n 214) | 0 (n 281) | 300 (n 373) |
+| NWS, 6 h or more ahead | 100 (n 37) | 100 (n 225) | -100 (n 278) | 200 (n 361) |
+| NWS, 24 h or more ahead | 0 (n 16) | 70 (n 135) | 300 (n 242) | 1385 (n 324) |
+
+**NWS, latest issuance**, hours by band (rows: KPMV reported; columns: forecast)
+
+| Reported \ Forecast | LIFR | IFR | MVFR | VFR | none | Same band |
+|---|---|---|---|---|---|---|
+| LIFR | 38 | 71 | 24 | 5 | 11 | 26% of 149 |
+| IFR | 2 | 85 | 52 | 12 | 18 | 50% of 169 |
+| MVFR | 1 | 46 | 147 | 52 | 76 | 46% of 322 |
+| VFR | 0 | 12 | 58 | 304 | 282 | 46% of 656 |
+| none | 0 | 6 | 44 | 247 | 2882 | 91% of 3179 |
+
+- **Ceiling or not:** a ceiling on 909 of the 1,296 hours KPMV reported
+  one (70%), and on 297 of the 3,179 it reported none (9%). At the drop
+  zone's point, 69% and 10%.
+- **How high, both a ceiling:** median +100 ft, half within 800 ft (700
+  at the drop zone's), 10th to 90th percentiles -3,200 to +2,600 ft.
+- **By the forecast's band:** +100, +100, 0 and +300 ft (at the drop
+  zone's point +100, +100, -100 and +100). Near the mark in every band
+  again.
+- **Very low ceilings:** the forecast put one under 500 ft on 41 hours,
+  against 149 reported, the same count as at the drop zone's point.
+- **A day ahead:** where it gave a ceiling above 3,000 ft, the reported
+  one was a median 1,385 ft lower (1,315 at the drop zone's).
+
+So the 11.5 miles between the drop zone and KPMV account for little of
+the difference between the forecast and the report: at KPMV's own point
+the counts move by up to 17 of about 4,500 hours and the medians by up to
+200 ft, not consistently in one direction.
+
 ## Open-Meteo's bands, by the ceiling KPMV reported
 
 | Reported ceiling | Hours | Low band ≥ 5/8 | Mid band ≥ 5/8 | Total ≥ 5/8 |
@@ -137,9 +194,8 @@ Forecast − reported (ft), median, by the forecast ceiling's band (hours both h
   difference grew from 700 to 1,170 ft, the forecast put 8 of 134
   sub-500 ft ceilings in that band, and where it gave a ceiling above
   3,000 ft the reported one was a median 1,315 ft lower.
-- **KPMV's own grid point reads almost the same** as the drop zone's
-  (`scripts/ceilingSummary.ts` prints both): the ceiling call moved by up
-  to 17 of about 4,500 hours, the medians by up to 185 ft.
+- **KPMV's own grid point reads almost the same** as the drop zone's;
+  see the section above.
 - **Open-Meteo's low band at or above 5/8** was there on 92 to 93% of the
   hours KPMV reported a ceiling of 3,000 ft or lower, and on 40% of those
   with one above 3,000 ft (its mid band on 38%). It marks a low
@@ -150,5 +206,6 @@ Forecast − reported (ft), median, by the forecast ceiling's band (hours both h
 - **Season.** April to early October at one station, as before.
 - **The card's lead.** The rows here are four issuances a day; the card
   reads an API that updates about hourly.
-- **Distance.** KPMV is about 11.5 miles from the drop zone; the two grid
-  points read almost alike, but the sky over each can differ.
+- **Distance.** KPMV is about 11.5 miles from the drop zone. The forecast
+  at the two grid points reads almost alike against KPMV's reports, but
+  nothing here measures the sky over the drop zone itself.
