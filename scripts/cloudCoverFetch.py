@@ -26,6 +26,14 @@ Sources, each as read 2026-10-10:
           sites on 2026-10-10; at a fourth the API's grid was a day old.
           Four issuances a day (the last file in each of 00, 06, 12 and 18 Z),
           every step in the file.
+  cig     NOAA's NDFD ceiling grids, the same archive and grid (WMO header
+          YMUZ98, wmo/cig/), read 2026-10-13: api.weather.gov's gridpoint
+          `ceilingHeight`, which the Ceiling & sky card reads, served the
+          same values, in metres, as the latest file at the drop zone's grid
+          point for every hour of its next day. -29 is "no ceiling" (the
+          API's null), 9999 the grid's missing value; both are kept as
+          given. The files come twice an hour; as for sky cover, the last
+          in each of 00, 06, 12 and 18 Z, every step in the file.
   om      Open-Meteo's cloud cover (total, low, mid, high) for the point the
           dashboard asks for, default model, from the Historical Forecast API
           (the start of each model run, stitched) and the Previous Runs API's
@@ -74,6 +82,12 @@ def tag(record: dict, site: str) -> dict:
 BUCKET = 'https://noaa-ndfd-pds.s3.amazonaws.com'
 UA = {'User-Agent': 'lspc-weather cloud-cover comparison (github.com/amelia-m/lspc-weather)'}
 ISSUE_HOURS = (0, 6, 12, 18)
+# Each NDFD part: its archive folder, its CONUS 2.5 km file header, its GRIB2
+# (discipline, category, number), and the record's `src` and value field.
+NDFD_PARTS = {
+    'ndfd': ('sky', 'YAUZ98', (0, 6, 1), 'ndfd', 'sky'),
+    'cig': ('cig', 'YMUZ98', (0, 6, 13), 'ndfd-cig', 'cig'),
+}
 
 
 ATTEMPTS = 14
@@ -120,9 +134,12 @@ def iso(t: dt.datetime) -> str:
     return t.strftime('%Y-%m-%dT%H:%MZ')
 
 
-def ndfd_keys(day: dt.date) -> list[str]:
-    """The day's CONUS sky files, one per issue hour: the last key written in it."""
-    prefix = f'wmo/sky/{day:%Y/%m/%d}/YAUZ98_KWBN_'
+def ndfd_keys(job: tuple[dt.date, str]) -> list[tuple[str, str]]:
+    """The day's CONUS files for one NDFD part, one per issue hour: the last
+    key written in it, with the part's name."""
+    day, part = job
+    folder, header = NDFD_PARTS[part][:2]
+    prefix = f'wmo/{folder}/{day:%Y/%m/%d}/{header}_KWBN_'
     ns = {'s': 'http://s3.amazonaws.com/doc/2006-03-01/'}
     keys: list[str] = []
     token = ''
@@ -139,11 +156,13 @@ def ndfd_keys(day: dt.date) -> list[str]:
     for h in ISSUE_HOURS:
         in_hour = [k for k in keys if k.rsplit('_', 1)[1][8:10] == f'{h:02d}']
         if in_hour:
-            chosen.append(in_hour[-1])
+            chosen.append((in_hour[-1], part))
     return chosen
 
 
-def ndfd_records(key: str) -> list[dict]:
+def ndfd_records(job: tuple[str, str]) -> list[dict]:
+    key, part = job
+    param, src, field = NDFD_PARTS[part][2:]
     issued = dt.datetime.strptime(key.rsplit('_', 1)[1], '%Y%m%d%H%M').replace(tzinfo=dt.timezone.utc)
     with tempfile.NamedTemporaryFile(suffix='.grib2') as tmp:
         tmp.write(get(f'{BUCKET}/{key}'))
@@ -156,15 +175,15 @@ def ndfd_records(key: str) -> list[dict]:
                     break
                 try:
                     g = lambda k: eccodes.codes_get(h, k)
-                    if (g('discipline'), g('parameterCategory'), g('parameterNumber')) != (0, 6, 1):
+                    if (g('discipline'), g('parameterCategory'), g('parameterNumber')) != param:
                         continue
                     ref = dt.datetime.strptime(f"{g('dataDate')}{g('dataTime'):04d}", '%Y%m%d%H%M').replace(tzinfo=dt.timezone.utc)
                     valid = dt.datetime.strptime(f"{g('validityDate')}{g('validityTime'):04d}", '%Y%m%d%H%M').replace(tzinfo=dt.timezone.utc)
                     for sid, lat, lon in SITES:
                         near = nearest(h, lat, lon)
                         out.append(tag({
-                            'src': 'ndfd', 'key': key.rsplit('/', 1)[1], 'issued': iso(issued), 'ref': iso(ref),
-                            'valid': iso(valid), 'sky': eccodes.codes_get_double_element(h, 'values', near['index']),
+                            'src': src, 'key': key.rsplit('/', 1)[1], 'issued': iso(issued), 'ref': iso(ref),
+                            'valid': iso(valid), field: eccodes.codes_get_double_element(h, 'values', near['index']),
                             'gridKm': round(near['distance'], 2),
                         }, sid))
                 finally:
@@ -215,6 +234,9 @@ def main() -> None:
     days = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
     # PARTS=metar,ndfd or PARTS=om fetches only those, to merge after: on
     # 2026-10-10 Open-Meteo's archive answered 429 for an hour at a stretch.
+    # PARTS=cig, the ceiling, is never in the default; its records
+    # ('ndfd-cig') go to their own archive, data/parity/ceiling-*, and
+    # parseCloudCoverLines skips them if they share a file with sky cover.
     parts = set(os.environ.get('PARTS', 'metar,om,ndfd').split(','))
     records = metar_records(start, end) if 'metar' in parts else []
     for sid, lat, lon in (SITES if 'om' in parts else []):
@@ -222,8 +244,9 @@ def main() -> None:
         # dropped handshakes back to back.
         records += om_records(start, end, sid, lat, lon)
         time.sleep(3)
+    jobs = [(d, p) for p in NDFD_PARTS if p in parts for d in days]
     with ThreadPoolExecutor(8) as pool:
-        keys = [k for ks in pool.map(ndfd_keys, days if 'ndfd' in parts else []) for k in ks]
+        keys = [k for ks in pool.map(ndfd_keys, jobs) for k in ks]
     print(f'{len(keys)} NDFD files', file=sys.stderr)
     # Processes, not threads: one ecCodes handle per process is the safe use.
     with ProcessPoolExecutor(int(os.environ.get('WORKERS', '6'))) as pool:

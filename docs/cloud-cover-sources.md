@@ -180,8 +180,8 @@ and OVC's ranges.
 ## What this does not say
 
 - **Height.** Neither forecast here has a base. The card's NWS ceiling
-  figure comes from the gridpoint's separate `ceilingHeight`, which this
-  comparison did not read.
+  figure comes from the gridpoint's separate `ceilingHeight`, compared on
+  its own in [ceiling-heights.md](ceiling-heights.md) (2026-10-13).
 - **Season.** April to early October, the jumping season, at one station.
   Winter stratus may behave differently.
 - **The card's actual lead.** The NWS rows bracket it from above (the

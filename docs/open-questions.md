@@ -133,6 +133,13 @@ station"): its start of run agreed with each station's ceiling call more
 often than the NWS figure at all fourteen, and neither forecast reads much
 differently at a station that reports no FEW.
 
+Ceiling heights, compared 2026-10-13 ([ceiling-heights.md](ceiling-heights.md)):
+the NWS ceiling the card shows was within 700 ft of KPMV's on half the
+hours both had one, put ceilings under 500 ft a median 300 ft too high and
+those above 3,000 ft 1,100 ft too low. Open-Meteo has no ceiling figure
+here; its low band marks a ceiling of 3,000 ft or lower on 92 to 93% of
+those hours without placing it. Whether the card should say so is open.
+
 ## To do, eventually: add this app to Open-Meteo's list of users
 
 Raised 2026-10-08. Open-Meteo's README
