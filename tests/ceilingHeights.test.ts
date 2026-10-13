@@ -108,6 +108,11 @@ describe('summarizeCeilings', () => {
     expect(row.diffByBand.LIFR).toEqual({ n: 1, median: 1700 });
     expect(row.diffByBand.VFR).toEqual({ n: 1, median: -4000 });
     expect(row.diffByBand.IFR).toEqual({ n: 0, median: null });
+    // Grouped by the forecast's band instead: 610 m (2,000 ft) is MVFR,
+    // 1,219 m (4,000 ft) VFR.
+    expect(row.diffByForecastBand.MVFR).toEqual({ n: 1, median: 1700 });
+    expect(row.diffByForecastBand.VFR).toEqual({ n: 1, median: -4000 });
+    expect(row.diffByForecastBand.LIFR).toEqual({ n: 0, median: null });
   });
 
   it('tables each side’s band', () => {

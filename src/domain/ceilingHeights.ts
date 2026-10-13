@@ -119,9 +119,14 @@ export interface CeilingRow {
    *  median and 10th and 90th percentiles, and the median of the size. */
   diffFt: { n: number; median: number; p10: number; p90: number; medianAbs: number } | null;
   /** The same difference by the reported ceiling's band, on hours both
-   *  had a ceiling: one median over every band can sit near zero while the
-   *  lowest ceilings are forecast high and the highest low. */
+   *  had a ceiling. Grouped by what was reported, an unbiased but noisy
+   *  forecast still reads high in the lowest band and low in the highest
+   *  (a reported 300 ft ceiling can be missed upward by thousands of feet
+   *  but downward by 200 at most), so read it beside `diffByForecastBand`. */
   diffByBand: Record<FlightCategory, { n: number; median: number | null }>;
+  /** The same difference by the forecast ceiling's band: what a reader of
+   *  the card's figure would have found. */
+  diffByForecastBand: Record<FlightCategory, { n: number; median: number | null }>;
   /** `bands[reported][forecast]`: hours by each side's band. */
   bands: Record<CeilingBand, Record<CeilingBand, number>>;
   /** Hours both sides fell in the same band, 'none' included. */
@@ -134,6 +139,14 @@ const emptyBands = (): CeilingRow['bands'] =>
   ) as CeilingRow['bands'];
 
 const round0 = (x: number): number => Math.round(x);
+
+const medianByBand = (by: Map<FlightCategory, number[]>): CeilingRow['diffByBand'] =>
+  Object.fromEntries(
+    (['LIFR', 'IFR', 'MVFR', 'VFR'] as const).map((b) => {
+      const ds = by.get(b) ?? [];
+      return [b, { n: ds.length, median: ds.length ? round0(median(ds) as number) : null }];
+    }),
+  ) as CeilingRow['diffByBand'];
 
 /**
  * The NWS ceiling against the reports, one row per NWS_ISSUANCES entry
@@ -168,6 +181,7 @@ export function summarizeCeilings(
     const bands = emptyBands();
     const diffs: number[] = [];
     const byBand = new Map<FlightCategory, number[]>();
+    const byForecastBand = new Map<FlightCategory, number[]>();
     const leads: number[] = [];
     let n = 0;
     let sameBand = 0;
@@ -193,6 +207,9 @@ export function summarizeCeilings(
         const list = byBand.get(rb as FlightCategory) ?? [];
         list.push(fc - rep.ceiling);
         byBand.set(rb as FlightCategory, list);
+        const flist = byForecastBand.get(fb as FlightCategory) ?? [];
+        flist.push(fc - rep.ceiling);
+        byForecastBand.set(fb as FlightCategory, flist);
       } else if (fc !== 'none') call.forecastOnly++;
       else if (rep.ceiling !== 'none') call.reportedOnly++;
       else call.neither++;
@@ -212,12 +229,8 @@ export function summarizeCeilings(
             medianAbs: round0(median(diffs.map(Math.abs)) as number),
           }
         : null,
-      diffByBand: Object.fromEntries(
-        (['LIFR', 'IFR', 'MVFR', 'VFR'] as const).map((b) => {
-          const ds = byBand.get(b) ?? [];
-          return [b, { n: ds.length, median: ds.length ? round0(median(ds) as number) : null }];
-        }),
-      ) as CeilingRow['diffByBand'],
+      diffByBand: medianByBand(byBand),
+      diffByForecastBand: medianByBand(byForecastBand),
       bands,
       sameBand,
     };
