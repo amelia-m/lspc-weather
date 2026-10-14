@@ -192,7 +192,7 @@ thead th { color: var(--ink-2); font-weight: 600; }
   };
   const BIN_VARS = ['--lo-4', '--lo-3', '--lo-2', '--lo-1', '--mid', '--hi-1', '--hi-2', '--hi-3', '--hi-4'];
   const BAND_VARS = { LIFR: '--b-lifr', IFR: '--b-ifr', MVFR: '--b-mvfr', VFR: '--b-vfr', none: '--b-none' };
-  const LEAD_SHORT = ['Latest', '6 h or more ahead', '24 h or more ahead'];
+  const leadLabel = (r) => (r.minLeadH ? `${r.minLeadH} h or more ahead` : 'Latest');
   const state = { site: 'DZ', lead: 0, by: 'forecast', unit: 'ft' };
   try {
     const saved = JSON.parse(localStorage.getItem('ceiling-errors-view') || 'null');
@@ -202,7 +202,13 @@ thead th { color: var(--ink-2); font-weight: 600; }
   let fileNote = '';
 
   const $ = (id) => document.getElementById(id);
-  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  // Token values, read once per render: the charts draw with the theme's
+  // colours, and a theme change re-renders.
+  let tokens = new Map();
+  const css = (v) => {
+    if (!tokens.has(v)) tokens.set(v, getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+    return tokens.get(v);
+  };
   const fmt = (n) => Math.abs(n).toLocaleString('en-US');
   const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(n);
   const pct = (a, b) => (b ? Math.round((100 * a) / b) : 0);
@@ -223,14 +229,21 @@ thead th { color: var(--ink-2); font-weight: 600; }
 
   function save() { try { localStorage.setItem('ceiling-errors-view', JSON.stringify(state)); } catch (e) { /* ignore */ } }
 
+  // Buttons are kept while their options stay the same, so a click does not
+  // take keyboard focus away from the control it was made on.
   function seg(id, options, key) {
     const box = $(id);
-    box.replaceChildren();
-    for (const [value, label] of options) {
-      const b = el('button', { type: 'button', 'aria-pressed': String(state[key] === value) }, label);
-      b.addEventListener('click', () => { state[key] = value; save(); render(); });
-      box.append(b);
+    const sig = JSON.stringify(options);
+    if (box.dataset.sig !== sig) {
+      box.dataset.sig = sig;
+      box.replaceChildren();
+      for (const [value, label] of options) {
+        const b = el('button', { type: 'button' }, label);
+        b.addEventListener('click', () => { state[key] = value; save(); render(); });
+        box.append(b);
+      }
     }
+    options.forEach(([value], i) => box.children[i].setAttribute('aria-pressed', String(state[key] === value)));
   }
 
   // One tooltip per chart, placed beside the pointer or the focused mark.
@@ -259,10 +272,15 @@ thead th { color: var(--ink-2); font-weight: 600; }
     mark.addEventListener('blur', () => { tip.hidden = true; });
   }
 
+  // A saved or stale choice the data does not hold falls back to the first
+  // option, and the controls show the fallback.
   function current() {
-    const point = data.points.find((p) => p.site === state.site) || data.points[0];
-    const row = point.rows[state.lead] || point.rows[0];
-    return { point, row };
+    let point = data.points.find((p) => p.site === state.site);
+    if (!point) { point = data.points[0]; state.site = point.site; }
+    if (!point.rows[state.lead]) state.lead = 0;
+    if (state.by !== 'forecast' && state.by !== 'reported') state.by = 'forecast';
+    if (state.unit !== 'ft' && state.unit !== 'ratio') state.unit = 'ft';
+    return { point, row: point.rows[state.lead] };
   }
 
   function rowHead(svg, y, width, left, right) {
@@ -291,7 +309,9 @@ thead th { color: var(--ink-2); font-weight: 600; }
     const defs = el('defs');
     svg.append(defs);
     const step = ext <= 0.4 ? 0.1 : 0.2;
-    for (let t = -ext; t <= ext + 1e-9; t += step) {
+    const nTicks = Math.floor(ext / step + 1e-9);
+    for (let k = -nTicks; k <= nTicks; k++) {
+      const t = k * step;
       const xx = x(t);
       svg.append(el('line', { x1: xx, x2: xx, y1: top + 16, y2: height - axisH + 4, stroke: Math.abs(t) < 1e-9 ? css('--axis') : css('--grid'), 'stroke-width': 1 }));
       svg.append(el('text', { x: xx, y: height - 8, fill: css('--muted'), 'font-size': 11.5, 'text-anchor': 'middle' }, `${Math.round(Math.abs(t) * 100)}%`));
@@ -511,9 +531,10 @@ thead th { color: var(--ink-2); font-weight: 600; }
 
   function render() {
     if (!data) return;
-    seg('c-site', data.points.map((p) => [p.site, p.site === 'DZ' ? 'Drop zone' : 'KPMV']), 'site');
+    tokens = new Map();
     const { point, row } = current();
-    seg('c-lead', point.rows.map((r, i) => [i, LEAD_SHORT[i] || r.label]), 'lead');
+    seg('c-site', data.points.map((p) => [p.site, p.short]), 'site');
+    seg('c-lead', point.rows.map((r, i) => [i, leadLabel(r)]), 'lead');
     seg('c-by', [['forecast', "Forecast's band"], ['reported', 'Reported band']], 'by');
     seg('c-unit', [['ft', 'Feet'], ['ratio', 'Ratio']], 'unit');
     const facts = $('facts');
@@ -522,7 +543,7 @@ thead th { color: var(--ink-2); font-weight: 600; }
     fact(row.hours.toLocaleString('en-US'), 'hours compared');
     fact(row.call.both.toLocaleString('en-US'), 'with a ceiling on both sides');
     if (row.leadH) fact(`${row.leadH.min.toFixed(1)} to ${row.leadH.max.toFixed(1)} h`, 'ahead');
-    if (point.gridKm != null) fact(`${point.gridKm} km`, `from ${point.site === 'DZ' ? 'the drop zone' : 'KPMV'} to the grid point`);
+    if (point.gridKm != null) fact(`${point.gridKm} km`, `from ${point.place} to the grid point read`);
     binLegend();
     drawSize(row);
     drawSpread(row);
@@ -536,34 +557,52 @@ thead th { color: var(--ink-2); font-weight: 600; }
     $('meta').textContent = `${r.count.toLocaleString('en-US')} KPMV reports, ${from(r.span && r.span.from)} to ${from(r.span && r.span.to)}. Data file made ${data.generatedAt.slice(0, 10)} from ${[...data.sources.ceiling, ...data.sources.cover].join(', ')}.${fileNote}`;
   }
 
-  function accept(d) {
-    if (!d || d.version !== 1 || !Array.isArray(d.points) || !d.points.length) throw new Error('This is not a ceiling-errors data file (version 1).');
-    data = d;
-    describe();
-    render();
+  const wellFormed = (d) =>
+    d && d.version === 1 && Array.isArray(d.bands) && Array.isArray(d.ceilingBands) && Array.isArray(d.bins) &&
+    d.reports && d.sources && Array.isArray(d.points) && d.points.length > 0 &&
+    d.points.every((p) => p.site && p.short && Array.isArray(p.rows) && p.rows.length > 0 &&
+      p.rows.every((r) => r.call && r.bands && r.byForecast && r.byReported && typeof r.hours === 'number'));
+
+  // A file that does not draw leaves the page as it was.
+  function accept(d, note) {
+    if (!wellFormed(d)) throw new Error('it is not a ceiling-errors data file (version 1)');
+    const before = { data, fileNote };
+    try {
+      data = d; fileNote = note;
+      describe();
+      render();
+    } catch (err) {
+      data = before.data; fileNote = before.fileNote;
+      if (data) { describe(); render(); }
+      throw err;
+    }
   }
 
   $('f-load').addEventListener('change', async (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
     try {
-      fileNote = ` Showing ${f.name}, opened in this browser only.`;
-      accept(JSON.parse(await f.text()));
+      accept(JSON.parse(await f.text()), ` Showing ${f.name}, opened in this browser only.`);
       $('f-status').textContent = `Showing ${f.name}. Reload the page to go back to the published file.`;
     } catch (err) {
-      fileNote = '';
-      $('f-status').textContent = `${f.name} could not be read: ${err.message}`;
+      $('f-status').textContent = `${f.name} was not shown: ${err.message}. The page still shows the data it had.`;
     }
   });
 
-  let resizeTimer;
-  new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 80); }).observe(document.querySelector('main'));
+  // Redraw when the width changes; opening the table view only changes the height.
+  let resizeTimer, lastWidth = 0;
+  new ResizeObserver(([entry]) => {
+    const w = Math.round(entry.contentRect.width);
+    if (w === lastWidth) return;
+    lastWidth = w;
+    clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 80);
+  }).observe(document.querySelector('main'));
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
   new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   fetch('ceiling-errors.json')
     .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-    .then(accept)
+    .then((d) => accept(d, ''))
     .catch((err) => {
       const m = $('meta');
       m.textContent = '';

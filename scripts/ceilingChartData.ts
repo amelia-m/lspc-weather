@@ -59,18 +59,26 @@ for (const r of parseCloudCoverLines(lines(args.cover))) {
   if (r.site == null && r.src === 'metar') metars.push(r);
 }
 
+// `short` labels the page's control; `place` is what the grid point is
+// nearest, for its "km from … to the grid point read" line.
 const POINTS = [
-  { site: 'DZ', name: "Drop zone's grid point", note: 'the point the Ceiling & sky card reads' },
-  { site: 'PMV', name: "KPMV's grid point", note: 'about 11.5 miles from the drop zone' },
+  { site: 'DZ', short: 'Drop zone', place: 'the drop zone' },
+  { site: 'PMV', short: 'KPMV', place: 'KPMV' },
 ] as const;
 
+/** First and last of a set of ISO times, without spreading the whole set
+ *  into one call (an archive of a few hundred thousand overflows the stack). */
 const span = (ts: string[]): { from: string; to: string } | null => {
-  if (!ts.length) return null;
-  const sorted = [...ts].sort();
-  return { from: sorted[0], to: sorted[sorted.length - 1] };
+  let from: string | null = null;
+  let to: string | null = null;
+  for (const t of ts) {
+    if (from == null || t < from) from = t;
+    if (to == null || t > to) to = t;
+  }
+  return from == null || to == null ? null : { from, to };
 };
 
-const points = POINTS.map(({ site, name, note }) => {
+const points = POINTS.map(({ site, short, place }) => {
   const mine = forecasts.filter((r) => r.site === site);
   const rows = summarizeCeilings(mine, metars).map((r) => ({
     label: r.label,
@@ -82,9 +90,8 @@ const points = POINTS.map(({ site, name, note }) => {
     byForecast: diffDistribution(r.pairs, 'forecast'),
     byReported: diffDistribution(r.pairs, 'reported'),
   }));
-  const valid = span(mine.map((r) => r.valid));
-  const gridKm = mine.length ? Math.max(...mine.map((r) => r.gridKm)) : null;
-  return { site, name, note, gridKm, forecastValid: valid, rows };
+  const gridKm = mine.reduce<number | null>((m, r) => (m == null || r.gridKm > m ? r.gridKm : m), null);
+  return { site, short, place, gridKm, rows };
 });
 
 const data = {
