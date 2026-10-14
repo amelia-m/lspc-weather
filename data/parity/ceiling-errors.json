@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generatedAt": "2026-10-14T16:15:12.830Z",
+ "generatedAt": "2026-10-14T16:23:53.642Z",
  "sources": {
   "ceiling": [
    "ceiling-2026-04-01-to-2026-10-09.jsonl.gz"
@@ -44,13 +44,9 @@
  "points": [
   {
    "site": "DZ",
-   "name": "Drop zone's grid point",
-   "note": "the point the Ceiling & sky card reads",
+   "short": "Drop zone",
+   "place": "the drop zone",
    "gridKm": 0.87,
-   "forecastValid": {
-    "from": "2026-04-01T02:00Z",
-    "to": "2026-10-11T01:00Z"
-   },
    "rows": [
     {
      "label": "NWS, latest issuance",
@@ -896,13 +892,9 @@
   },
   {
    "site": "PMV",
-   "name": "KPMV's grid point",
-   "note": "about 11.5 miles from the drop zone",
+   "short": "KPMV",
+   "place": "KPMV",
    "gridKm": 1.08,
-   "forecastValid": {
-    "from": "2026-04-01T02:00Z",
-    "to": "2026-10-11T01:00Z"
-   },
    "rows": [
     {
      "label": "NWS, latest issuance",

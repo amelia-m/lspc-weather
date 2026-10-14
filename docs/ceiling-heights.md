@@ -192,7 +192,12 @@ the report to the left), the spread as percentiles in ft or as forecast
 ÷ reported on a doubling scale, and the other side's bands for each band.
 Its controls choose the grid point, the issuance and which side's band
 groups the hours, and a table view repeats every figure. The page draws;
-it does not compute.
+it does not compute. `docs/ceiling-errors.html` is the artifact's source,
+written for the artifact's wrapper (which supplies the doctype and
+charset) and fetching `ceiling-errors.json` from beside itself; opened
+from the repository as it stands it finds no data. To view it locally,
+wrap it in a skeleton and serve it with the data file next to it, as was
+done to check it at 1,100, 390 and 320 px on 2026-10-14.
 
 The data file is `data/parity/ceiling-errors.json`, written by
 `scripts/ceilingChartData.ts` from the same archives and the same
