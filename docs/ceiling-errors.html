@@ -1,0 +1,573 @@
+<title>LSPC Ceiling Forecast Errors</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one reading column; a control row scopes three stacked chart panels, then the table view and the method. */
+:root {
+  --page: #f6f6f3;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #7a7873;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --ring: rgba(11, 11, 11, 0.10);
+  --accent: #2a78d6;
+  --accent-wash: rgba(42, 120, 214, 0.18);
+  --chip: #ebebe6;
+  --chip-on: #0b0b0b;
+  --chip-on-ink: #fcfcfb;
+  /* forecast below the report: blue arm, nearest the centre first */
+  --lo-1: #86b6ef; --lo-2: #5598e7; --lo-3: #2a78d6; --lo-4: #184f95;
+  --mid: #cfcec6;
+  /* forecast above the report: red arm, nearest the centre first */
+  --hi-1: #eb9a93; --hi-2: #e3726b; --hi-3: #cf3f3c; --hi-4: #962526;
+  /* ceiling bands, lowest ceiling strongest */
+  --b-lifr: #3b2c9c; --b-ifr: #6250d6; --b-mvfr: #8d7ee6; --b-vfr: #b4aaf0; --b-none: #dcdbd4;
+  --font: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0f0f0e; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #94928b;
+    --grid: #2c2c2a; --axis: #45443f; --ring: rgba(255, 255, 255, 0.10);
+    --accent: #3987e5; --accent-wash: rgba(57, 135, 229, 0.28);
+    --chip: #262624; --chip-on: #f0efec; --chip-on-ink: #1a1a19;
+    --lo-1: #1c5cab; --lo-2: #2a78d6; --lo-3: #5598e7; --lo-4: #9ec5f4;
+    --mid: #4a4945;
+    --hi-1: #8f2a2a; --hi-2: #c83c3b; --hi-3: #e66767; --hi-4: #f2a29d;
+    --b-lifr: #c3bcf4; --b-ifr: #9085e9; --b-mvfr: #6a5ad9; --b-vfr: #4a3bb0; --b-none: #3a3a37;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0f0f0e; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #94928b;
+  --grid: #2c2c2a; --axis: #45443f; --ring: rgba(255, 255, 255, 0.10);
+  --accent: #3987e5; --accent-wash: rgba(57, 135, 229, 0.28);
+  --chip: #262624; --chip-on: #f0efec; --chip-on-ink: #1a1a19;
+  --lo-1: #1c5cab; --lo-2: #2a78d6; --lo-3: #5598e7; --lo-4: #9ec5f4;
+  --mid: #4a4945;
+  --hi-1: #8f2a2a; --hi-2: #c83c3b; --hi-3: #e66767; --hi-4: #f2a29d;
+  --b-lifr: #c3bcf4; --b-ifr: #9085e9; --b-mvfr: #6a5ad9; --b-vfr: #4a3bb0; --b-none: #3a3a37;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+}
+main { max-width: 860px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-size: clamp(26px, 5vw, 34px); line-height: 1.15; font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h2 { font-size: 17px; font-weight: 650; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--ink-2); }
+.meta { font-size: 13px; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: end; }
+.control { display: grid; gap: 6px; min-width: 0; }
+.control > span { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--chip); border-radius: 8px; padding: 3px; gap: 2px; }
+.seg button {
+  font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--ink-2);
+  padding: 5px 11px; border-radius: 6px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-ink); font-weight: 600; }
+.seg button:focus-visible, .panel [tabindex]:focus-visible, summary:focus-visible, .file:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-weight: 650; }
+.panel { background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 1px var(--ring); padding: 18px 18px 14px; display: grid; gap: 12px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: start; }
+.panel-head > div:first-child { display: grid; gap: 4px; min-width: 0; flex: 1 1 320px; }
+.panel-head > .seg { flex: 0 0 auto; }
+.sub { font-size: 13.5px; color: var(--ink-2); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend .side { color: var(--muted); font-weight: 600; }
+.chart { position: relative; min-width: 0; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--font); }
+.tip {
+  position: absolute; pointer-events: none; z-index: 2; background: var(--surface); color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ring), 0 6px 20px rgba(0,0,0,0.12); border-radius: 8px; padding: 8px 10px;
+  font-size: 13px; line-height: 1.4; max-width: 240px; font-variant-numeric: tabular-nums;
+}
+.tip strong { display: block; font-size: 15px; }
+.tip .k { color: var(--ink-2); }
+details { background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 1px var(--ring); padding: 12px 18px; }
+summary { cursor: pointer; font-weight: 600; }
+.tables { display: grid; gap: 18px; padding-top: 12px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; min-width: 100%; }
+caption { text-align: left; font-weight: 600; padding-bottom: 6px; font-size: 13.5px; }
+th, td { padding: 5px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { color: var(--ink-2); font-weight: 600; }
+.notes { display: grid; gap: 10px; font-size: 14px; color: var(--ink-2); }
+.notes h2 { color: var(--ink); }
+.notes code { font-size: 12.5px; background: var(--chip); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.file { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+.file input { font: inherit; font-size: 13px; color: var(--ink-2); max-width: 100%; }
+.status { font-size: 13px; color: var(--muted); }
+.error { color: var(--ink); background: var(--chip); padding: 10px 12px; border-radius: 8px; }
+@media (prefers-reduced-motion: no-preference) { .seg button { transition: background 120ms, color 120ms; } }
+</style>
+
+<main>
+  <header>
+    <p class="eyebrow">Brown's Airport (NE69) · NWS ceiling forecast against KPMV's reports</p>
+    <h1>Ceiling forecast errors</h1>
+    <p class="lede">How far the National Weather Service's forecast ceiling sat from the one the Blair AWOS (KPMV) reported, hour by hour. Heights are feet above ground; the bands are the FAA flight-category ceiling limits. Counts and spreads, not a grade.</p>
+    <p class="meta" id="meta">Loading data…</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="What to show">
+    <div class="control"><span id="l-site">Forecast read at</span><div class="seg" id="c-site" aria-labelledby="l-site"></div></div>
+    <div class="control"><span id="l-lead">Forecast issued</span><div class="seg" id="c-lead" aria-labelledby="l-lead"></div></div>
+    <div class="control"><span id="l-by">Group hours by</span><div class="seg" id="c-by" aria-labelledby="l-by"></div></div>
+  </div>
+
+  <div class="facts" id="facts" aria-live="polite"></div>
+
+  <section class="panel" aria-labelledby="h1-size">
+    <div class="panel-head">
+      <div>
+        <h2 id="h1-size">How far off, by size</h2>
+        <p class="sub" id="s1-size">Hours both had a ceiling. Left of centre the forecast was below the report; right of centre, above it.</p>
+      </div>
+    </div>
+    <div class="legend" id="lg-size"></div>
+    <div class="chart" id="ch-size"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h2-spread">
+    <div class="panel-head">
+      <div>
+        <h2 id="h2-spread">The spread, in feet</h2>
+        <p class="sub" id="s2-spread"></p>
+      </div>
+      <div class="seg" id="c-unit" aria-label="Scale"></div>
+    </div>
+    <div class="legend" id="lg-spread"></div>
+    <div class="chart" id="ch-spread"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h3-band">
+    <div class="panel-head">
+      <div>
+        <h2 id="h3-band"></h2>
+        <p class="sub" id="s3-band"></p>
+      </div>
+    </div>
+    <div class="legend" id="lg-band"></div>
+    <div class="chart" id="ch-band"></div>
+  </section>
+
+  <details id="tables-wrap">
+    <summary>Table view</summary>
+    <div class="tables" id="tables"></div>
+  </details>
+
+  <section class="notes" aria-labelledby="h-notes">
+    <h2 id="h-notes">How these are counted, and adding data</h2>
+    <p>Each hour pairs KPMV's report nearest the top of the hour (within 10 minutes) with the newest NWS ceiling issued at least 0, 6 or 24 hours before it, from NOAA's NDFD archive, which matched api.weather.gov's <code>ceilingHeight</code> value for value when checked. A ceiling is the lowest broken, overcast or vertical-visibility base. Both sides are held to 12,000 ft, the most an AWOS reports. Percentiles are nearest rank; the median averages the middle two.</p>
+    <p>Grouped by the forecast's band, the rows are what a reader of the forecast faced. Grouped by the reported band, the rows lean by construction: a 300 ft report can be missed upward by thousands of feet but downward by 300 at most.</p>
+    <p>To add data, fetch a later window and regenerate the file this page reads, then republish it beside the page: <code>npx tsx scripts/ceilingChartData.ts --ceiling &lt;ceiling archives…&gt; --cover &lt;cloud-cover archives…&gt; --out data/parity/ceiling-errors.json</code>. Each flag takes any number of files, and a record in two of them counts once. The method is in <code>docs/ceiling-heights.md</code> in the lspc-weather repository.</p>
+    <div class="file">
+      <label for="f-load">View a newer data file in this browser:</label>
+      <input type="file" id="f-load" accept=".json,application/json">
+    </div>
+    <p class="status" id="f-status"></p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const BAND_LABEL = {
+    LIFR: 'Under 500 ft', IFR: '500 to 999 ft', MVFR: '1,000 to 3,000 ft', VFR: 'Over 3,000 ft', none: 'No ceiling',
+  };
+  const BIN_VARS = ['--lo-4', '--lo-3', '--lo-2', '--lo-1', '--mid', '--hi-1', '--hi-2', '--hi-3', '--hi-4'];
+  const BAND_VARS = { LIFR: '--b-lifr', IFR: '--b-ifr', MVFR: '--b-mvfr', VFR: '--b-vfr', none: '--b-none' };
+  const LEAD_SHORT = ['Latest', '6 h or more ahead', '24 h or more ahead'];
+  const state = { site: 'DZ', lead: 0, by: 'forecast', unit: 'ft' };
+  try {
+    const saved = JSON.parse(localStorage.getItem('ceiling-errors-view') || 'null');
+    if (saved && typeof saved === 'object') Object.assign(state, saved);
+  } catch (e) { /* storage unavailable: defaults stand */ }
+  let data = null;
+  let fileNote = '';
+
+  const $ = (id) => document.getElementById(id);
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const fmt = (n) => Math.abs(n).toLocaleString('en-US');
+  const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(n);
+  const pct = (a, b) => (b ? Math.round((100 * a) / b) : 0);
+  const el = (tag, attrs = {}, text) => {
+    const ns = ['svg', 'g', 'rect', 'line', 'text', 'path', 'clipPath', 'defs', 'circle', 'title'].includes(tag);
+    const n = ns ? document.createElementNS('http://www.w3.org/2000/svg', tag) : document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  const luminance = (hex) => {
+    const m = hex.replace('#', '').match(/../g);
+    if (!m) return 1;
+    const [r, g, b] = m.map((x) => { const c = parseInt(x, 16) / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const inkOn = (hex) => (luminance(hex) > 0.28 ? '#0b0b0b' : '#ffffff');
+
+  function save() { try { localStorage.setItem('ceiling-errors-view', JSON.stringify(state)); } catch (e) { /* ignore */ } }
+
+  function seg(id, options, key) {
+    const box = $(id);
+    box.replaceChildren();
+    for (const [value, label] of options) {
+      const b = el('button', { type: 'button', 'aria-pressed': String(state[key] === value) }, label);
+      b.addEventListener('click', () => { state[key] = value; save(); render(); });
+      box.append(b);
+    }
+  }
+
+  // One tooltip per chart, placed beside the pointer or the focused mark.
+  function tipFor(chart) {
+    let tip = chart.querySelector('.tip');
+    if (!tip) { tip = el('div', { class: 'tip', role: 'status' }); tip.hidden = true; chart.append(tip); }
+    return tip;
+  }
+  function bindTip(chart, mark, lines) {
+    const tip = tipFor(chart);
+    const show = (x, y) => {
+      tip.replaceChildren();
+      tip.append(el('strong', {}, lines[0]));
+      for (const l of lines.slice(1)) tip.append(el('div', { class: 'k' }, l));
+      tip.hidden = false;
+      const box = chart.getBoundingClientRect();
+      const w = tip.offsetWidth;
+      let left = x - box.left + 12;
+      if (left + w > box.width) left = Math.max(0, x - box.left - w - 12);
+      tip.style.left = left + 'px';
+      tip.style.top = Math.max(0, y - box.top - tip.offsetHeight - 10) + 'px';
+    };
+    mark.addEventListener('pointermove', (e) => show(e.clientX, e.clientY));
+    mark.addEventListener('pointerleave', () => { tip.hidden = true; });
+    mark.addEventListener('focus', () => { const r = mark.getBoundingClientRect(); show(r.left + r.width / 2, r.top); });
+    mark.addEventListener('blur', () => { tip.hidden = true; });
+  }
+
+  function current() {
+    const point = data.points.find((p) => p.site === state.site) || data.points[0];
+    const row = point.rows[state.lead] || point.rows[0];
+    return { point, row };
+  }
+
+  function rowHead(svg, y, width, left, right) {
+    svg.append(el('text', { x: 0, y, fill: css('--ink'), 'font-size': 13.5, 'font-weight': 600 }, left));
+    svg.append(el('text', { x: width, y, fill: css('--muted'), 'font-size': 12.5, 'text-anchor': 'end' }, right));
+  }
+
+  // Chart 1: diverging stacked bars, centred on the middle of "within 100".
+  function drawSize(row) {
+    const chart = $('ch-size');
+    chart.replaceChildren();
+    const dist = state.by === 'forecast' ? row.byForecast : row.byReported;
+    const width = Math.max(280, chart.clientWidth);
+    const rowH = 54, barH = 20, top = 4, axisH = 26;
+    const rows = data.bands.map((b) => ({ band: b, d: dist[b] })).filter((r) => r.d && r.d.n > 0);
+    const shares = rows.map((r) => r.d.bins.map((c) => c / r.d.n));
+    let ext = 0.1;
+    for (const s of shares) {
+      ext = Math.max(ext, s.slice(0, 4).reduce((a, b) => a + b, 0) + s[4] / 2, s.slice(5).reduce((a, b) => a + b, 0) + s[4] / 2);
+    }
+    ext = Math.ceil(ext * 10) / 10;
+    const cx = width / 2;
+    const x = (f) => cx + (f / ext) * (width / 2 - 2);
+    const height = top + rows.length * rowH + axisH;
+    const svg = el('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': 'Share of hours by size of the difference, per band' });
+    const defs = el('defs');
+    svg.append(defs);
+    const step = ext <= 0.4 ? 0.1 : 0.2;
+    for (let t = -ext; t <= ext + 1e-9; t += step) {
+      const xx = x(t);
+      svg.append(el('line', { x1: xx, x2: xx, y1: top + 16, y2: height - axisH + 4, stroke: Math.abs(t) < 1e-9 ? css('--axis') : css('--grid'), 'stroke-width': 1 }));
+      svg.append(el('text', { x: xx, y: height - 8, fill: css('--muted'), 'font-size': 11.5, 'text-anchor': 'middle' }, `${Math.round(Math.abs(t) * 100)}%`));
+    }
+    rows.forEach((r, i) => {
+      const y0 = top + i * rowH;
+      rowHead(svg, y0 + 13, width, `${BAND_LABEL[r.band]} · ${r.band}`, `${r.d.n.toLocaleString('en-US')} h`);
+      const by = y0 + 22;
+      const s = shares[i];
+      let start = -(s.slice(0, 4).reduce((a, b) => a + b, 0) + s[4] / 2);
+      const left = x(start);
+      const right = x(start + s.reduce((a, b) => a + b, 0));
+      const clip = el('clipPath', { id: `clip-size-${i}` });
+      clip.append(el('rect', { x: left, y: by, width: Math.max(0, right - left), height: barH, rx: 4 }));
+      defs.append(clip);
+      const g = el('g', { 'clip-path': `url(#clip-size-${i})` });
+      svg.append(g);
+      s.forEach((f, k) => {
+        if (f <= 0) { return; }
+        const x0 = x(start), x1 = x(start + f);
+        start += f;
+        const w = Math.max(0, x1 - x0 - 2);
+        const fill = css(BIN_VARS[k]);
+        const mark = el('rect', { x: x0 + 1, y: by, width: w, height: barH, fill, tabindex: 0, 'aria-label': `${data.bins[k]} ft: ${pct(r.d.bins[k], r.d.n)}%` });
+        g.append(mark);
+        const label = `${Math.round(f * 100)}%`;
+        if (w >= label.length * 7 + 8 && f >= 0.06) {
+          svg.append(el('text', { x: x0 + 1 + w / 2, y: by + 14.5, fill: inkOn(fill), 'font-size': 11.5, 'font-weight': 600, 'text-anchor': 'middle', 'pointer-events': 'none' }, label));
+        }
+        bindTip(chart, mark, [`${pct(r.d.bins[k], r.d.n)}% of hours`, `${data.bins[k]} ft`, `${r.d.bins[k]} of ${r.d.n} hours, ${BAND_LABEL[r.band].toLowerCase()}`]);
+      });
+    });
+    chart.append(svg);
+  }
+
+  function binLegend() {
+    const lg = $('lg-size');
+    lg.replaceChildren();
+    lg.append(el('span', { class: 'side' }, 'Forecast below:'));
+    for (let k = 0; k < 4; k++) lg.append(swatch(BIN_VARS[k], data.bins[k].replace(' low', '')));
+    lg.append(swatch('--mid', 'within 100 ft'));
+    lg.append(el('span', { class: 'side' }, 'above:'));
+    for (let k = 5; k < 9; k++) lg.append(swatch(BIN_VARS[k], data.bins[k].replace(' high', '')));
+  }
+  function swatch(v, text) {
+    const s = el('span');
+    const i = el('i');
+    i.style.background = css(v);
+    s.append(i, document.createTextNode(text));
+    return s;
+  }
+
+  // Chart 2: 10th to 90th percentile whisker, 25th to 75th box, median tick.
+  function drawSpread(row) {
+    const chart = $('ch-spread');
+    chart.replaceChildren();
+    const dist = state.by === 'forecast' ? row.byForecast : row.byReported;
+    const ratio = state.unit === 'ratio';
+    const key = ratio ? 'ratio' : 'diffFt';
+    const rows = data.bands.map((b) => ({ band: b, d: dist[b] })).filter((r) => r.d && r.d[key]);
+    const width = Math.max(280, chart.clientWidth);
+    // Narrow: the figures go on their own line under the band's name.
+    const narrow = width < 620;
+    const rowH = narrow ? 70 : 54, boxH = 16, top = 4, axisH = 26, boxTop = narrow ? 38 : 22;
+    const height = top + rows.length * rowH + axisH;
+    let lo, hi, ticks, x;
+    if (ratio) {
+      const vals = rows.flatMap((r) => [r.d.ratio[0], r.d.ratio[4]]).filter((v) => v > 0);
+      lo = Math.min(0.25, ...vals); hi = Math.max(4, ...vals);
+      const l0 = Math.floor(Math.log2(lo)), l1 = Math.ceil(Math.log2(hi));
+      ticks = []; for (let e = l0; e <= l1; e++) ticks.push(2 ** e);
+      lo = 2 ** l0; hi = 2 ** l1;
+      x = (v) => 8 + ((Math.log2(Math.max(v, lo)) - l0) / (l1 - l0)) * (width - 16);
+    } else {
+      const vals = rows.flatMap((r) => [r.d.diffFt[0], r.d.diffFt[4]]);
+      const m = Math.max(1000, ...vals.map(Math.abs));
+      const stepFt = m > 4000 ? 2000 : m > 2000 ? 1000 : 500;
+      hi = Math.ceil(m / stepFt) * stepFt; lo = -hi;
+      ticks = []; for (let t = lo; t <= hi; t += stepFt) ticks.push(t);
+      x = (v) => 8 + ((v - lo) / (hi - lo)) * (width - 16);
+    }
+    const svg = el('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': ratio ? 'Forecast over reported, percentiles per band' : 'Forecast minus reported in feet, percentiles per band' });
+    for (const t of ticks) {
+      const xx = x(t);
+      const isRef = ratio ? t === 1 : t === 0;
+      svg.append(el('line', { x1: xx, x2: xx, y1: top + 16, y2: height - axisH + 4, stroke: isRef ? css('--axis') : css('--grid'), 'stroke-width': 1 }));
+      const label = ratio ? (t < 1 ? `×${t}` : `×${t}`) : t === 0 ? '0' : `${t > 0 ? '+' : '−'}${Math.abs(t) >= 1000 ? Math.abs(t) / 1000 + 'k' : Math.abs(t)}`;
+      svg.append(el('text', { x: xx, y: height - 8, fill: css('--muted'), 'font-size': 11.5, 'text-anchor': 'middle' }, label));
+    }
+    rows.forEach((r, i) => {
+      const q = r.d[key];
+      const y0 = top + i * rowH;
+      const mid = y0 + boxTop + boxH / 2;
+      const desc = ratio
+        ? `median ×${q[2]} · middle half ×${q[1]} to ×${q[3]}`
+        : `median ${signed(q[2])} ft · middle half ${signed(q[1])} to ${signed(q[3])}`;
+      if (narrow) {
+        svg.append(el('text', { x: 0, y: y0 + 13, fill: css('--ink'), 'font-size': 13.5, 'font-weight': 600 }, `${BAND_LABEL[r.band]} · ${r.band}`));
+        svg.append(el('text', { x: 0, y: y0 + 30, fill: css('--muted'), 'font-size': 12.5, 'data-fit': width }, desc));
+      } else {
+        rowHead(svg, y0 + 13, width, `${BAND_LABEL[r.band]} · ${r.band}`, desc);
+      }
+      const g = el('g', { tabindex: 0, 'aria-label': `${BAND_LABEL[r.band]}: ${desc}` });
+      g.append(el('rect', { x: x(q[0]) - 4, y: mid - 14, width: x(q[4]) - x(q[0]) + 8, height: 28, fill: 'transparent' }));
+      g.append(el('line', { x1: x(q[0]), x2: x(q[4]), y1: mid, y2: mid, stroke: css('--muted'), 'stroke-width': 1.5, 'stroke-linecap': 'round' }));
+      for (const e of [q[0], q[4]]) g.append(el('line', { x1: x(e), x2: x(e), y1: mid - 5, y2: mid + 5, stroke: css('--muted'), 'stroke-width': 1.5 }));
+      g.append(el('rect', { x: x(q[1]), y: mid - boxH / 2, width: Math.max(2, x(q[3]) - x(q[1])), height: boxH, rx: 4, fill: css('--accent-wash'), stroke: css('--accent'), 'stroke-width': 1.5 }));
+      g.append(el('line', { x1: x(q[2]), x2: x(q[2]), y1: mid - boxH / 2 - 3, y2: mid + boxH / 2 + 3, stroke: css('--ink'), 'stroke-width': 2.5, 'stroke-linecap': 'round' }));
+      svg.append(g);
+      const f = (v) => (ratio ? `×${v}` : `${signed(v)} ft`);
+      bindTip(chart, g, [`median ${f(q[2])}`, `middle half ${f(q[1])} to ${f(q[3])}`, `10th to 90th ${f(q[0])} to ${f(q[4])}`, `${r.d.n.toLocaleString('en-US')} hours`]);
+    });
+    chart.append(svg);
+    // A figures line wider than the chart shrinks to fit rather than run off it.
+    for (const t of svg.querySelectorAll('[data-fit]')) {
+      const room = Number(t.getAttribute('data-fit'));
+      const len = t.getComputedTextLength();
+      if (len > room) t.setAttribute('font-size', (12.5 * room / len).toFixed(2));
+    }
+    const lg = $('lg-spread');
+    lg.replaceChildren();
+    const k1 = el('span'); const i1 = el('i'); i1.style.background = css('--accent-wash'); i1.style.boxShadow = `inset 0 0 0 1.5px ${css('--accent')}`; k1.append(i1, document.createTextNode('middle half (25th to 75th percentile)'));
+    const k2 = el('span'); const i2 = el('i'); i2.style.background = css('--ink'); i2.style.width = '3px'; k2.append(i2, document.createTextNode('median'));
+    const k3 = el('span'); const i3 = el('i'); i3.style.background = css('--muted'); i3.style.height = '2px'; i3.style.width = '16px'; k3.append(i3, document.createTextNode('10th to 90th percentile'));
+    lg.append(k1, k2, k3);
+    $('h2-spread').textContent = ratio ? 'The spread, as forecast ÷ reported' : 'The spread, in feet';
+    $('s2-spread').textContent = ratio
+      ? 'The same hours on a doubling scale. ×1 is a forecast equal to the report; ×2 is twice its height.'
+      : 'Forecast minus reported on the hours both had a ceiling. Negative: the forecast was lower.';
+  }
+
+  // Chart 3: for each band on the grouping side, the other side's bands.
+  function drawBands(row) {
+    const chart = $('ch-band');
+    chart.replaceChildren();
+    const cats = data.ceilingBands;
+    const byForecast = state.by === 'forecast';
+    $('h3-band').textContent = byForecast ? 'What KPMV reported, for each forecast band' : 'What was forecast, for each reported band';
+    $('s3-band').textContent = byForecast
+      ? 'Every hour with a forecast and a report, no ceiling on either side included.'
+      : 'Every hour with a forecast and a report, no ceiling on either side included. Each row is what KPMV reported.';
+    const rows = cats.map((c) => {
+      const counts = cats.map((o) => (byForecast ? row.bands[o][c] : row.bands[c][o]));
+      return { band: c, counts, n: counts.reduce((a, b) => a + b, 0) };
+    }).filter((r) => r.n > 0);
+    const width = Math.max(280, chart.clientWidth);
+    const rowH = 54, barH = 20, top = 4, axisH = 26;
+    const height = top + rows.length * rowH + axisH;
+    const x = (f) => 1 + f * (width - 2);
+    const svg = el('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': $('h3-band').textContent });
+    const defs = el('defs'); svg.append(defs);
+    for (let t = 0; t <= 1.0001; t += 0.25) {
+      svg.append(el('line', { x1: x(t), x2: x(t), y1: top + 16, y2: height - axisH + 4, stroke: css('--grid'), 'stroke-width': 1 }));
+      svg.append(el('text', { x: x(t), y: height - 8, fill: css('--muted'), 'font-size': 11.5, 'text-anchor': t === 0 ? 'start' : t > 0.99 ? 'end' : 'middle' }, `${Math.round(t * 100)}%`));
+    }
+    rows.forEach((r, i) => {
+      const y0 = top + i * rowH;
+      rowHead(svg, y0 + 13, width, `${byForecast ? 'Forecast' : 'Reported'} ${BAND_LABEL[r.band].toLowerCase()}${r.band === 'none' ? '' : ' · ' + r.band}`, `${r.n.toLocaleString('en-US')} h`);
+      const by = y0 + 22;
+      const clip = el('clipPath', { id: `clip-band-${i}` });
+      clip.append(el('rect', { x: x(0), y: by, width: x(1) - x(0), height: barH, rx: 4 }));
+      defs.append(clip);
+      const g = el('g', { 'clip-path': `url(#clip-band-${i})` });
+      svg.append(g);
+      let start = 0;
+      r.counts.forEach((c, k) => {
+        if (!c) return;
+        const f = c / r.n;
+        const x0 = x(start), x1 = x(start + f);
+        start += f;
+        const w = Math.max(0, x1 - x0 - 2);
+        const fill = css(BAND_VARS[cats[k]]);
+        const other = byForecast ? 'reported' : 'forecast';
+        const mark = el('rect', { x: x0 + 1, y: by, width: w, height: barH, fill, tabindex: 0, 'aria-label': `${other} ${BAND_LABEL[cats[k]]}: ${pct(c, r.n)}%` });
+        g.append(mark);
+        const label = `${pct(c, r.n)}%`;
+        if (w >= label.length * 7 + 8 && f >= 0.06) {
+          svg.append(el('text', { x: x0 + 1 + w / 2, y: by + 14.5, fill: inkOn(fill), 'font-size': 11.5, 'font-weight': 600, 'text-anchor': 'middle', 'pointer-events': 'none' }, label));
+        }
+        bindTip(chart, mark, [`${pct(c, r.n)}% of hours`, `${other}: ${BAND_LABEL[cats[k]].toLowerCase()}`, `${c} of ${r.n} hours`]);
+      });
+    });
+    chart.append(svg);
+    const lg = $('lg-band');
+    lg.replaceChildren();
+    lg.append(el('span', { class: 'side' }, byForecast ? 'Reported:' : 'Forecast:'));
+    for (const c of cats) lg.append(swatch(BAND_VARS[c], BAND_LABEL[c].toLowerCase()));
+  }
+
+  function table(caption, head, body) {
+    const wrap = el('div', { class: 'scroll' });
+    const t = el('table');
+    t.append(el('caption', {}, caption));
+    const thead = el('thead'); const tr = el('tr');
+    for (const h of head) tr.append(el('th', { scope: 'col' }, h));
+    thead.append(tr); t.append(thead);
+    const tb = el('tbody');
+    for (const r of body) { const row = el('tr'); r.forEach((c, i) => row.append(el(i ? 'td' : 'th', i ? {} : { scope: 'row' }, String(c)))); tb.append(row); }
+    t.append(tb); wrap.append(t);
+    return wrap;
+  }
+
+  function drawTables(row) {
+    const box = $('tables');
+    box.replaceChildren();
+    const dist = state.by === 'forecast' ? row.byForecast : row.byReported;
+    const side = state.by === 'forecast' ? "forecast's band" : 'reported band';
+    const bands = data.bands.filter((b) => dist[b]);
+    box.append(table(`Hours by size of the difference, ft, by the ${side}`, ['Band', 'Hours', ...data.bins],
+      bands.map((b) => [b, dist[b].n, ...dist[b].bins.map((c) => `${c} (${pct(c, dist[b].n)}%)`)])));
+    box.append(table(`Forecast − reported, ft, and forecast ÷ reported, by the ${side}`, ['Band', 'Hours', '10th', '25th', 'Median', '75th', '90th', '÷ 25th', '÷ median', '÷ 75th'],
+      bands.map((b) => { const d = dist[b]; const q = d.diffFt || []; const r = d.ratio || []; return [b, d.n, ...[0, 1, 2, 3, 4].map((i) => (q[i] == null ? '–' : signed(q[i]))), ...[1, 2, 3].map((i) => (r[i] == null ? '–' : r[i]))]; })));
+    const cats = data.ceilingBands;
+    box.append(table('Hours by band (rows: reported; columns: forecast)', ['Reported \\ Forecast', ...cats, 'Total'],
+      cats.map((rb) => { const cs = cats.map((fb) => row.bands[rb][fb]); return [rb, ...cs, cs.reduce((a, b) => a + b, 0)]; })));
+  }
+
+  function render() {
+    if (!data) return;
+    seg('c-site', data.points.map((p) => [p.site, p.site === 'DZ' ? 'Drop zone' : 'KPMV']), 'site');
+    const { point, row } = current();
+    seg('c-lead', point.rows.map((r, i) => [i, LEAD_SHORT[i] || r.label]), 'lead');
+    seg('c-by', [['forecast', "Forecast's band"], ['reported', 'Reported band']], 'by');
+    seg('c-unit', [['ft', 'Feet'], ['ratio', 'Ratio']], 'unit');
+    const facts = $('facts');
+    facts.replaceChildren();
+    const fact = (b, t) => { const s = el('span'); s.append(el('b', {}, b), document.createTextNode(' ' + t)); facts.append(s); };
+    fact(row.hours.toLocaleString('en-US'), 'hours compared');
+    fact(row.call.both.toLocaleString('en-US'), 'with a ceiling on both sides');
+    if (row.leadH) fact(`${row.leadH.min.toFixed(1)} to ${row.leadH.max.toFixed(1)} h`, 'ahead');
+    if (point.gridKm != null) fact(`${point.gridKm} km`, `from ${point.site === 'DZ' ? 'the drop zone' : 'KPMV'} to the grid point`);
+    binLegend();
+    drawSize(row);
+    drawSpread(row);
+    drawBands(row);
+    drawTables(row);
+  }
+
+  function describe() {
+    const r = data.reports;
+    const from = (s) => (s ? s.slice(0, 10) : '?');
+    $('meta').textContent = `${r.count.toLocaleString('en-US')} KPMV reports, ${from(r.span && r.span.from)} to ${from(r.span && r.span.to)}. Data file made ${data.generatedAt.slice(0, 10)} from ${[...data.sources.ceiling, ...data.sources.cover].join(', ')}.${fileNote}`;
+  }
+
+  function accept(d) {
+    if (!d || d.version !== 1 || !Array.isArray(d.points) || !d.points.length) throw new Error('This is not a ceiling-errors data file (version 1).');
+    data = d;
+    describe();
+    render();
+  }
+
+  $('f-load').addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try {
+      fileNote = ` Showing ${f.name}, opened in this browser only.`;
+      accept(JSON.parse(await f.text()));
+      $('f-status').textContent = `Showing ${f.name}. Reload the page to go back to the published file.`;
+    } catch (err) {
+      fileNote = '';
+      $('f-status').textContent = `${f.name} could not be read: ${err.message}`;
+    }
+  });
+
+  let resizeTimer;
+  new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 80); }).observe(document.querySelector('main'));
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  fetch('ceiling-errors.json')
+    .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(accept)
+    .catch((err) => {
+      const m = $('meta');
+      m.textContent = '';
+      m.append(el('span', { class: 'error' }, `The data file ceiling-errors.json did not load (${err.message}). Open one with the file picker below.`));
+    });
+})();
+</script>
