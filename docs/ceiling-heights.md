@@ -180,6 +180,46 @@ Share of those hours by size of the difference ("low": forecast below the report
   forecast's band moved by 200 ft at most, the 10th percentile by up to
   800 ft (-4,300 to -3,500 in the MVFR band).
 
+## The chart
+
+The tables above, and the same for every issuance and both grid points,
+are drawn on one page: `docs/ceiling-errors.html`, published on
+2026-10-14 as a private artifact at
+<https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx> (only the maintainer
+can open it until it is shared). It has three charts, all from one data
+file: hours by size of the difference (a diverging bar, forecast below
+the report to the left), the spread as percentiles in ft or as forecast
+÷ reported on a doubling scale, and the other side's bands for each band.
+Its controls choose the grid point, the issuance and which side's band
+groups the hours, and a table view repeats every figure. The page draws;
+it does not compute.
+
+The data file is `data/parity/ceiling-errors.json`, written by
+`scripts/ceilingChartData.ts` from the same archives and the same
+functions as `scripts/ceilingSummary.ts` (`summarizeCeilings`,
+`diffDistribution`), so the chart and the tables above agree. To add
+data:
+
+1. Fetch a later window of ceilings at both points and KPMV's reports
+   for it: `PARTS=cig SITES="DZ:40.8703:-96.1085,PMV:40.9484:-95.9174"
+   python3 scripts/cloudCoverFetch.py <start> <end> ceiling-<…>.jsonl.gz`,
+   and `PARTS=metar python3 scripts/cloudCoverFetch.py <start> <end>
+   cloud-cover-<…>.jsonl.gz` (no SITES, so the records keep the drop
+   zone archive's shape). Keep both under `data/parity/`.
+2. `npx tsx scripts/ceilingChartData.ts --ceiling <every ceiling file>
+   --cover <every cloud-cover file> --out data/parity/ceiling-errors.json`.
+   Each flag takes any number of files; a line in two of them counts
+   once, so overlapping windows are safe.
+3. Republish the page with the new file beside it (Claude does this with
+   the artifact URL above, which keeps the link). The page also has a
+   file picker that shows a newer `ceiling-errors.json` in one browser
+   without republishing.
+
+The hourly forecasts kept on the `forecast-archive` branch
+(docs/open-questions.md, "Forecasts kept for later") hold the API's
+`ceilingHeight` itself, at the card's own lead; nothing reads them into
+this file yet.
+
 ## The NWS ceiling at KPMV's own grid point
 
 The same reports, with the forecast read at the grid point nearest KPMV's
