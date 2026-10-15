@@ -245,19 +245,29 @@ npx tsx scripts/ceilingChartData.ts --ceiling … --cover … \
 fetched 2026-10-15 at 16:45Z, 410 reports to 16:35Z); a later run needs
 a later METAR fetch beside it.
 
-An hour counts for a source only when it is at most 6 hours after that
-source's last issuance (`LAST_ISSUANCE_REACH_H`): the NDFD archive was
-read four issuances a day, and the keeper's runs have come 3 to 6 hours
-apart. Without it, the new reports for October 10 to 15 were scored
-against the NDFD archive's last issuance (October 9, 18Z), up to 30
-hours old, in its "latest issuance" row, and that row grew from 4,475 to
-4,500 hours. With it, the NDFD rows are the same as before to the
-figure; checked against the data file on `main` that day.
+An hour counts in a row only when the issuance that row would need for
+it could have been in what was gathered: at most 6 hours
+(`END_REACH_H`) past the source's last issuance, beyond the row's own
+lead (`summarizeCeilings`, so every caller has it). Six hours is the
+NDFD archive's spacing as read (four issuances a day) and the longest
+gap between the keeper's runs seen. Without it, the new reports for
+October 10 to 15 were scored against the NDFD archive's last issuance
+(October 9, 18Z), up to 30 hours old, in its "latest issuance" row,
+which grew from 4,475 to 4,500 hours. With it, that row is the same as
+before to the figure, and the 6 h and 24 h rows hold 6 and 24 more hours
+than the tables above: October 10's hours, which the October 9
+issuances do reach at those leads. The tables above, from the archives
+alone, are unchanged by the rule (`ceilingSummary.ts` output compared
+line for line on 2026-10-15). A gap between kept snapshots in the middle
+of the series is not cut: its hours count, at the lead the gap gives
+them, which the chart's lead range shows.
 
 First figures, 2026-10-15, from 11 snapshots (2026-10-13 15:35Z to
 2026-10-15 13:57Z updates) against KPMV to 16:35Z: 49 hours with the
 newest kept forecast at most 6.4 hours old, 27 of them with a ceiling on
-both sides, 43 at 6 hours or more ahead and 24 at 24 hours or more. That
+both sides, 43 at 6 hours or more ahead and 24 at 24 hours or more; 11
+snapshots gave records (a snapshot whose fetch failed gives none and is
+not counted). That
 is two days and mostly one rainy spell, so the chart shows it but no
 finding rests on it yet. Because GitHub has run the keeper every 3 to 6
 hours instead of hourly, its "latest" row is older than the card's own

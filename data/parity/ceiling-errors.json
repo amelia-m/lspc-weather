@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generatedAt": "2026-10-15T16:48:46.894Z",
+ "generatedAt": "2026-10-15T16:53:22.241Z",
  "sources": {
   "ceiling": [
    "ceiling-2026-04-01-to-2026-10-09.jsonl.gz"
@@ -340,7 +340,7 @@
     {
      "label": "NWS, 6 h or more ahead",
      "minLeadH": 6,
-     "hours": 4470,
+     "hours": 4476,
      "leadH": {
       "min": 6.216666666666667,
       "max": 17.233333333333334
@@ -349,7 +349,7 @@
       "both": 884,
       "forecastOnly": 320,
       "reportedOnly": 412,
-      "neither": 2854
+      "neither": 2860
      },
      "bands": {
       "LIFR": {
@@ -385,7 +385,7 @@
        "IFR": 8,
        "MVFR": 53,
        "VFR": 257,
-       "none": 2854
+       "none": 2860
       }
      },
      "byForecast": {
@@ -620,7 +620,7 @@
     {
      "label": "NWS, 24 h or more ahead",
      "minLeadH": 24,
-     "hours": 4137,
+     "hours": 4161,
      "leadH": {
       "min": 24.216666666666665,
       "max": 30.233333333333334
@@ -629,7 +629,7 @@
       "both": 715,
       "forecastOnly": 279,
       "reportedOnly": 461,
-      "neither": 2682
+      "neither": 2706
      },
      "bands": {
       "LIFR": {
@@ -665,7 +665,7 @@
        "IFR": 3,
        "MVFR": 44,
        "VFR": 232,
-       "none": 2682
+       "none": 2706
       }
      },
      "byForecast": {
@@ -1195,7 +1195,7 @@
     {
      "label": "NWS, 6 h or more ahead",
      "minLeadH": 6,
-     "hours": 4470,
+     "hours": 4476,
      "leadH": {
       "min": 6.216666666666667,
       "max": 17.233333333333334
@@ -1204,7 +1204,7 @@
       "both": 901,
       "forecastOnly": 316,
       "reportedOnly": 395,
-      "neither": 2858
+      "neither": 2864
      },
      "bands": {
       "LIFR": {
@@ -1240,7 +1240,7 @@
        "IFR": 4,
        "MVFR": 56,
        "VFR": 254,
-       "none": 2858
+       "none": 2864
       }
      },
      "byForecast": {
@@ -1475,7 +1475,7 @@
     {
      "label": "NWS, 24 h or more ahead",
      "minLeadH": 24,
-     "hours": 4137,
+     "hours": 4161,
      "leadH": {
       "min": 24.216666666666665,
       "max": 30.233333333333334
@@ -1484,7 +1484,7 @@
       "both": 717,
       "forecastOnly": 282,
       "reportedOnly": 459,
-      "neither": 2679
+      "neither": 2703
      },
      "bands": {
       "LIFR": {
@@ -1520,7 +1520,7 @@
        "IFR": 1,
        "MVFR": 50,
        "VFR": 231,
-       "none": 2679
+       "none": 2703
       }
      },
      "byForecast": {
