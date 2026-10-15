@@ -5,6 +5,8 @@ import {
   diffBin,
   diffDistribution,
   forecastCeiling,
+  keptCeilingRecords,
+  type KeptGridpointSnapshot,
   NDFD_MISSING,
   NDFD_NO_CEILING,
   openMeteoByCeilingBand,
@@ -233,5 +235,55 @@ describe('diffDistribution', () => {
     expect(fog.LIFR.n).toBe(1);
     expect(fog.LIFR.diffFt?.[2]).toBe(100);
     expect(fog.LIFR.ratio).toBeNull();
+  });
+});
+
+describe('keptCeilingRecords', () => {
+  const snap = (values: { validTime: string; value: number | null }[], uom = 'wmoUnit:m'): KeptGridpointSnapshot => ({
+    at: '2026-10-15T15:07:13.953Z',
+    nwsGridpoint: {
+      url: 'https://api.weather.gov/gridpoints/OAX/77,42',
+      updateTime: '2026-10-15T13:57:06+00:00',
+      properties: { ceilingHeight: { uom, values } },
+    },
+  });
+
+  it('gives each hour of a range, issued at the update time, null as no ceiling', () => {
+    const recs = keptCeilingRecords(
+      snap([
+        { validTime: '2026-10-15T14:00:00+00:00/PT2H', value: 518.16 },
+        { validTime: '2026-10-15T16:00:00+00:00/PT1H', value: null },
+      ]),
+      'card',
+    );
+    expect(recs).toEqual([
+      { issued: '2026-10-15T13:57:06+00:00', valid: '2026-10-15T14:00Z', cig: 518.16, site: 'card' },
+      { issued: '2026-10-15T13:57:06+00:00', valid: '2026-10-15T15:00Z', cig: 518.16, site: 'card' },
+      { issued: '2026-10-15T13:57:06+00:00', valid: '2026-10-15T16:00Z', cig: NDFD_NO_CEILING, site: 'card' },
+    ]);
+    // 518.16 m is the 1,700 ft the office wrote.
+    expect(forecastCeiling(recs[0].cig)).toBe(1700);
+  });
+
+  it('reads feet as feet, and nothing from a failed fetch', () => {
+    const [r] = keptCeilingRecords(snap([{ validTime: '2026-10-15T14:00:00+00:00/PT1H', value: 1700 }], 'wmoUnit:ft'), 'card');
+    expect(forecastCeiling(r.cig)).toBe(1700);
+    expect(keptCeilingRecords({ at: 'x', nwsGridpoint: null }, 'card')).toEqual([]);
+    expect(() => keptCeilingRecords(snap([], 'wmoUnit:km'), 'card')).toThrow(/km/);
+  });
+
+  it('feeds summarizeCeilings, which skips the hours before the update', () => {
+    // KPMV reported BKN017 at 12:55 and 13:55, for the 13:00 and 14:00
+    // hours; the forecast updated at 13:57 said 1,700 ft for both, and only
+    // 14:00 is after it.
+    const recs = keptCeilingRecords(
+      snap([{ validTime: '2026-10-15T13:00:00+00:00/PT2H', value: 518.16 }]),
+      'card',
+    );
+    const report: MetarRecord = { src: 'metar', obsAt: '2026-10-15T13:55Z', raw: 'KPMV 151355Z AUTO 32008KT 10SM BKN017 12/11 A3004 RMK AO2' };
+    const early: MetarRecord = { src: 'metar', obsAt: '2026-10-15T12:55Z', raw: 'KPMV 151255Z AUTO 32008KT 10SM BKN017 12/11 A3004 RMK AO2' };
+    const [latest] = summarizeCeilings(recs, [early, report]);
+    expect(latest.hours).toBe(1);
+    expect(latest.pairs).toEqual([{ forecast: 1700, reported: 1700 }]);
   });
 });

@@ -23,7 +23,7 @@
  * Pure: records in, summary out. Every time is in a record.
  */
 import type { SkyLayer } from './types';
-import { CEILING_COVERS, parseSkyGroups } from './normalize';
+import { CEILING_COVERS, parseSkyGroups, parseValidTime } from './normalize';
 import { ceilingCategory, type FlightCategory } from './flightCategory';
 import {
   CEILING_EIGHTHS,
@@ -36,17 +36,62 @@ import { AUTOMATED_TOP_FT } from './stationPairs';
 import { median, percentile } from './paritySummary';
 import { mToFt } from './units';
 
-/** One NDFD ceiling value at a grid point. `cig` is metres AGL as the grid
- *  gives it, with its two codes kept: NDFD_NO_CEILING and NDFD_MISSING. */
-export interface NdfdCeilingRecord {
-  src: 'ndfd-cig';
-  key: string;
+/** One forecast ceiling for one hour from one issuance: what
+ *  summarizeCeilings reads. `cig` is metres AGL, with NDFD's two codes:
+ *  NDFD_NO_CEILING and NDFD_MISSING. */
+export interface CeilingForecast {
   issued: string;
-  ref: string;
   valid: string;
   cig: number;
-  gridKm: number;
   site?: string;
+}
+
+/** One NDFD ceiling value at a grid point, `cig` as the grid gives it. */
+export interface NdfdCeilingRecord extends CeilingForecast {
+  src: 'ndfd-cig';
+  key: string;
+  ref: string;
+  gridKm: number;
+}
+
+/** The part of a kept snapshot (scripts/forecastKeep.ts, the
+ *  `forecast-archive` branch) this reads: the gridpoint as the card
+ *  fetched it, or null when that fetch failed. */
+export interface KeptGridpointSnapshot {
+  at: string;
+  nwsGridpoint: {
+    url: string;
+    updateTime: string;
+    properties: { ceilingHeight?: { uom?: string; values: { validTime: string; value: number | null }[] } };
+  } | null;
+}
+
+/**
+ * The ceiling forecast in a kept snapshot, one record per hour, issued at
+ * the gridpoint's `updateTime`: the hour the forecast was made, as an NDFD
+ * file's issue time is, so the lead reads alike in both. The API serves no
+ * ceiling as null (its NDFD value is NDFD_NO_CEILING, read 2026-10-13), so
+ * null becomes that code. Hours before `updateTime` are in the snapshot
+ * too; summarizeCeilings never picks an issuance made after its hour.
+ */
+export function keptCeilingRecords(snap: KeptGridpointSnapshot, site: string): CeilingForecast[] {
+  const gp = snap.nwsGridpoint;
+  const prop = gp?.properties.ceilingHeight;
+  if (!gp || !prop) return [];
+  const uom = prop.uom ?? 'wmoUnit:m';
+  const toM = uom === 'wmoUnit:m' ? 1 : uom === 'wmoUnit:ft' ? 0.3048 : null;
+  if (toM == null) throw new Error(`keptCeilingRecords: ceilingHeight in ${uom}`);
+  const out: CeilingForecast[] = [];
+  for (const { validTime, value } of prop.values) {
+    const span = parseValidTime(validTime);
+    if (!span) continue;
+    const cig = value == null ? NDFD_NO_CEILING : value * toM;
+    for (let h = 0; h < span.hours; h++) {
+      const valid = new Date(span.start + h * 3_600_000).toISOString().replace(/:00\.000Z$/, 'Z');
+      out.push({ issued: gp.updateTime, valid, cig, site });
+    }
+  }
+  return out;
 }
 
 /** The grid's "no ceiling", which api.weather.gov serves as null. */
@@ -155,14 +200,14 @@ const mediansOf = (d: Record<FlightCategory, DiffDistribution>): CeilingRow['dif
  * forecast for one grid point, the reports of one station.
  */
 export function summarizeCeilings(
-  forecasts: readonly NdfdCeilingRecord[],
+  forecasts: readonly CeilingForecast[],
   metars: readonly MetarRecord[],
   topFt = AUTOMATED_TOP_FT,
 ): CeilingRow[] {
   const sites = new Set(forecasts.map((r) => r.site));
   if (sites.size > 1) throw new Error(`summarizeCeilings: forecasts from ${sites.size} sites; filter to one first`);
   const reports = ceilingReports(metars, topFt);
-  const byHour = new Map<number, NdfdCeilingRecord[]>();
+  const byHour = new Map<number, CeilingForecast[]>();
   for (const r of forecasts) {
     // An issuance made after its hour is never picked: every row asks for
     // one at least 0 h before it.

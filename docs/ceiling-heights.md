@@ -220,10 +220,48 @@ data:
    file picker that shows a newer `ceiling-errors.json` in one browser
    without republishing.
 
-The hourly forecasts kept on the `forecast-archive` branch
-(docs/open-questions.md, "Forecasts kept for later") hold the API's
-`ceilingHeight` itself, at the card's own lead; nothing reads them into
-this file yet.
+### The forecasts the card read, kept hourly
+
+Since 2026-10-15 the data file also takes the snapshots
+`scripts/forecastKeep.ts` commits to the `forecast-archive` branch
+(docs/open-questions.md, "Forecasts kept for later"): api.weather.gov's
+own `ceilingHeight` at the drop zone, as the card fetched it. They are a
+third source on the chart's "Forecast read at" control ("Drop zone, as
+the card read it"), never merged into the NDFD rows. Each snapshot's
+hours are issued at its `updateTime`, the hour the forecast was made, as
+an NDFD file's are at its issue time (`keptCeilingRecords`,
+`src/domain/ceilingHeights.ts`); the API's null is no ceiling.
+
+```
+git fetch origin forecast-archive
+git worktree add --detach <dir> origin/forecast-archive
+npx tsx scripts/ceilingChartData.ts --ceiling … --cover … \
+  data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz --kept <dir>/data \
+  --out data/parity/ceiling-errors.json
+```
+
+`--kept` takes files or folders. KPMV's reports for the kept window are
+`data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz` (`PARTS=metar`,
+fetched 2026-10-15 at 16:45Z, 410 reports to 16:35Z); a later run needs
+a later METAR fetch beside it.
+
+An hour counts for a source only when it is at most 6 hours after that
+source's last issuance (`LAST_ISSUANCE_REACH_H`): the NDFD archive was
+read four issuances a day, and the keeper's runs have come 3 to 6 hours
+apart. Without it, the new reports for October 10 to 15 were scored
+against the NDFD archive's last issuance (October 9, 18Z), up to 30
+hours old, in its "latest issuance" row, and that row grew from 4,475 to
+4,500 hours. With it, the NDFD rows are the same as before to the
+figure; checked against the data file on `main` that day.
+
+First figures, 2026-10-15, from 11 snapshots (2026-10-13 15:35Z to
+2026-10-15 13:57Z updates) against KPMV to 16:35Z: 49 hours with the
+newest kept forecast at most 6.4 hours old, 27 of them with a ceiling on
+both sides, 43 at 6 hours or more ahead and 24 at 24 hours or more. That
+is two days and mostly one rainy spell, so the chart shows it but no
+finding rests on it yet. Because GitHub has run the keeper every 3 to 6
+hours instead of hourly, its "latest" row is older than the card's own
+forecast at most hours.
 
 ## The NWS ceiling at KPMV's own grid point
 
