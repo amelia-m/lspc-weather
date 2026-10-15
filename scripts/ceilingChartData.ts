@@ -75,12 +75,16 @@ const keptFiles = (paths: string[]): string[] => {
   return [...new Set(found)].sort();
 };
 
-const forecasts: CeilingForecast[] = parseCeilingLines(lines(args.ceiling));
-const kept = keptFiles(args.kept ?? []);
-for (const f of kept) {
-  // The kept gridpoint is the drop zone's (the card's); site KEPT keeps it
-  // apart from the NDFD records read at the same point.
-  for (const r of keptCeilingRecords(JSON.parse(read(f)) as KeptGridpointSnapshot, 'KEPT')) forecasts.push(r);
+const ndfd = parseCeilingLines(lines(args.ceiling));
+const forecasts: CeilingForecast[] = [...ndfd];
+// The kept gridpoint is the drop zone's (the card's); site KEPT keeps it
+// apart from the NDFD records read at the same point. A snapshot whose
+// fetch failed gives none and is not counted.
+let keptUsed = 0;
+for (const f of keptFiles(args.kept ?? [])) {
+  const recs = keptCeilingRecords(JSON.parse(read(f)) as KeptGridpointSnapshot, 'KEPT');
+  if (recs.length) keptUsed++;
+  for (const r of recs) forecasts.push(r);
 }
 const metars: MetarRecord[] = [];
 // The drop zone's archive only (no `site`): KPMV's reports.
@@ -112,19 +116,8 @@ const span = (ts: string[]): { from: string; to: string } | null => {
   return from == null || to == null ? null : { from, to };
 };
 
-/** Hours after a source's last issuance by more than this are past the end
- *  of what was gathered for it, not forecasts that went stale: the NDFD
- *  archive was read at four issuances a day, and the keeper's runs have
- *  come 3 to 6 hours apart (docs/open-questions.md). Without it, reports
- *  fetched for a later window are scored against the last forecast a
- *  source's fetch happened to end on, a day or more ahead, in its
- *  "latest issuance" row. */
-const LAST_ISSUANCE_REACH_H = 6;
-
 const points = POINTS.map(({ site, short, place }) => {
-  const all = forecasts.filter((r) => r.site === site);
-  const lastIssued = all.reduce((m, r) => Math.max(m, Date.parse(r.issued)), -Infinity);
-  const mine = all.filter((r) => Date.parse(r.valid) <= lastIssued + LAST_ISSUANCE_REACH_H * 3_600_000);
+  const mine = forecasts.filter((r) => r.site === site);
   const rows = summarizeCeilings(mine, metars).map((r) => ({
     label: r.label,
     minLeadH: r.minLeadH,
@@ -137,10 +130,7 @@ const points = POINTS.map(({ site, short, place }) => {
   }));
   // NDFD records carry their distance to the grid point; kept ones do not
   // (the API names its grid cell, not how far its centre is).
-  const gridKm = mine.reduce<number | null>(
-    (m, r) => ('gridKm' in r && typeof r.gridKm === 'number' && (m == null || r.gridKm > m) ? r.gridKm : m),
-    null,
-  );
+  const gridKm = ndfd.reduce<number | null>((m, r) => (r.site === site && (m == null || r.gridKm > m) ? r.gridKm : m), null);
   const issued = new Set(mine.map((r) => r.issued));
   return { site, short, place, gridKm, issuances: { count: issued.size, span: span([...issued].map(iso)) }, rows };
 }).filter((p) => p.rows.some((r) => r.hours > 0));
@@ -151,7 +141,7 @@ const data = {
   sources: {
     ceiling: args.ceiling.map((f) => basename(f)),
     cover: args.cover.map((f) => basename(f)),
-    kept: kept.length,
+    kept: keptUsed,
   },
   reports: { station: 'KPMV', count: metars.length, span: span(metars.map((r) => r.obsAt)) },
   bands: FLIGHT_BANDS,

@@ -133,6 +133,17 @@ describe('summarizeCeilings', () => {
     expect(day.sameBand).toBe(0);
   });
 
+  it('counts no hour past the end of what was gathered, for each row’s lead', () => {
+    // The only issuance is 10 h before the hour: the latest row would take
+    // it as "latest" though the fetch ended 10 h before; the 6 h row takes
+    // it, as a 6 h forecast the fetch covers.
+    const [latestRow, sixRow] = summarizeCeilings([fc(10, 610)], [metar(5, 'BKN015')]);
+    expect(latestRow.hours).toBe(0);
+    expect(sixRow.hours).toBe(1);
+    // Asked for no limit, the latest row takes it too.
+    expect(summarizeCeilings([fc(10, 610)], [metar(5, 'BKN015')], undefined, Infinity)[0].hours).toBe(1);
+  });
+
   it('skips an issuance made after the hour, a missing value, and an hour with no usable report', () => {
     const late = { ...fc(2, 610), issued: iso(T + 10 * 60_000) };
     expect(summarizeCeilings([late], [metar(5, 'BKN015')])[0].hours).toBe(0);
@@ -268,7 +279,12 @@ describe('keptCeilingRecords', () => {
   it('reads feet as feet, and nothing from a failed fetch', () => {
     const [r] = keptCeilingRecords(snap([{ validTime: '2026-10-15T14:00:00+00:00/PT1H', value: 1700 }], 'wmoUnit:ft'), 'card');
     expect(forecastCeiling(r.cig)).toBe(1700);
-    expect(keptCeilingRecords({ at: 'x', nwsGridpoint: null }, 'card')).toEqual([]);
+    // The keeper stores a failed fetch as { error }, and a property the API
+    // left out as null.
+    expect(keptCeilingRecords({ at: 'x', nwsGridpoint: { error: 'fetch failed' } }, 'card')).toEqual([]);
+    const noCeiling = snap([]);
+    if (noCeiling.nwsGridpoint && 'properties' in noCeiling.nwsGridpoint) noCeiling.nwsGridpoint.properties.ceilingHeight = null;
+    expect(keptCeilingRecords(noCeiling, 'card')).toEqual([]);
     expect(() => keptCeilingRecords(snap([], 'wmoUnit:km'), 'card')).toThrow(/km/);
   });
 

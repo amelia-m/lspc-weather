@@ -56,14 +56,18 @@ export interface NdfdCeilingRecord extends CeilingForecast {
 
 /** The part of a kept snapshot (scripts/forecastKeep.ts, the
  *  `forecast-archive` branch) this reads: the gridpoint as the card
- *  fetched it, or null when that fetch failed. */
+ *  fetched it, or `{ error }` when that fetch failed. The keeper copies a
+ *  property the API left out as null. */
 export interface KeptGridpointSnapshot {
   at: string;
-  nwsGridpoint: {
-    url: string;
-    updateTime: string;
-    properties: { ceilingHeight?: { uom?: string; values: { validTime: string; value: number | null }[] } };
-  } | null;
+  nwsGridpoint:
+    | {
+        url: string;
+        updateTime?: string;
+        properties: { ceilingHeight?: { uom?: string; values: { validTime: string; value: number | null }[] } | null };
+      }
+    | { error: string }
+    | null;
 }
 
 /**
@@ -76,8 +80,9 @@ export interface KeptGridpointSnapshot {
  */
 export function keptCeilingRecords(snap: KeptGridpointSnapshot, site: string): CeilingForecast[] {
   const gp = snap.nwsGridpoint;
-  const prop = gp?.properties.ceilingHeight;
-  if (!gp || !prop) return [];
+  if (!gp || 'error' in gp || !gp.updateTime) return [];
+  const prop = gp.properties.ceilingHeight;
+  if (!prop) return [];
   const uom = prop.uom ?? 'wmoUnit:m';
   const toM = uom === 'wmoUnit:m' ? 1 : uom === 'wmoUnit:ft' ? 0.3048 : null;
   if (toM == null) throw new Error(`keptCeilingRecords: ceilingHeight in ${uom}`);
@@ -88,7 +93,7 @@ export function keptCeilingRecords(snap: KeptGridpointSnapshot, site: string): C
     const cig = value == null ? NDFD_NO_CEILING : value * toM;
     for (let h = 0; h < span.hours; h++) {
       const valid = new Date(span.start + h * 3_600_000).toISOString().replace(/:00\.000Z$/, 'Z');
-      out.push({ issued: gp.updateTime, valid, cig, site });
+      out.push({ issued: gp.updateTime as string, valid, cig, site });
     }
   }
   return out;
@@ -153,6 +158,15 @@ function ceilingReports(metars: readonly MetarRecord[], topFt: number): CeilingR
 
 const MS_H = 3_600_000;
 
+/** How far past a source's last issuance its records still count, beyond
+ *  each row's own lead. Past that, an hour is outside the window the
+ *  forecasts were gathered for, and its "newest" issuance is only the one
+ *  the fetch ended on: reports fetched for a later window would be scored
+ *  against it a day or more ahead in the "latest issuance" row. Six hours
+ *  is the spacing of the NDFD archive as read (four issuances a day) and
+ *  the longest gap between the keeper's runs seen to 2026-10-15. */
+export const END_REACH_H = 6;
+
 /** One NWS issuance row against the reports. */
 export interface CeilingRow {
   label: string;
@@ -197,12 +211,15 @@ const mediansOf = (d: Record<FlightCategory, DiffDistribution>): CeilingRow['dif
  * The NWS ceiling against the reports, one row per NWS_ISSUANCES entry
  * (the newest issuance at least so many hours before the hour, picked by
  * time as the cloud-cover summary picks them). One place's records: the
- * forecast for one grid point, the reports of one station.
+ * forecast for one grid point, the reports of one station. An hour past
+ * the end of what was gathered, for a row's lead, counts in no row
+ * (`endReachH`, END_REACH_H).
  */
 export function summarizeCeilings(
   forecasts: readonly CeilingForecast[],
   metars: readonly MetarRecord[],
   topFt = AUTOMATED_TOP_FT,
+  endReachH = END_REACH_H,
 ): CeilingRow[] {
   const sites = new Set(forecasts.map((r) => r.site));
   if (sites.size > 1) throw new Error(`summarizeCeilings: forecasts from ${sites.size} sites; filter to one first`);
@@ -218,6 +235,7 @@ export function summarizeCeilings(
   }
   for (const rs of byHour.values()) rs.sort((a, b) => Date.parse(b.issued) - Date.parse(a.issued));
   const hours = [...byHour.keys()].sort((a, b) => a - b);
+  const lastIssued = forecasts.reduce((m, r) => Math.max(m, Date.parse(r.issued)), -Infinity);
   // Each hour's report, found once for the three rows.
   const reportAt = new Map(hours.map((t) => [t, reportNear(reports, t)]));
 
@@ -230,6 +248,8 @@ export function summarizeCeilings(
     let sameBand = 0;
     const pairs: CeilingRow['pairs'] = [];
     for (const t of hours) {
+      // Past the end of what was gathered, for this row's lead: see END_REACH_H.
+      if (t - minLeadH * MS_H > lastIssued + endReachH * MS_H) continue;
       const rep = reportAt.get(t);
       if (rep?.ceiling == null) continue;
       // The newest issuance far enough ahead that has a value there: one
