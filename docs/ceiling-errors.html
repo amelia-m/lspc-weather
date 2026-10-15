@@ -175,6 +175,7 @@ thead th { color: var(--ink-2); font-weight: 600; }
   <section class="notes" aria-labelledby="h-notes">
     <h2 id="h-notes">How these are counted, and adding data</h2>
     <p>Each hour pairs KPMV's report nearest the top of the hour (within 10 minutes) with the newest NWS ceiling issued at least 0, 6 or 24 hours before it, from NOAA's NDFD archive, which matched api.weather.gov's <code>ceilingHeight</code> value for value when checked. A ceiling is the lowest broken, overcast or vertical-visibility base. Both sides are held to 12,000 ft, the most an AWOS reports. Percentiles are nearest rank; the median averages the middle two.</p>
+    <p>"Drop zone, as the card read it" is api.weather.gov's own <code>ceilingHeight</code> for the drop zone, saved by an hourly job from 2026-10-13 and issued at the forecast's update time. GitHub has run that job every 3 to 6 hours rather than hourly, so its "latest" row is older than the card's own forecast at most hours, and it holds a few days, not a season. Hours more than 6 hours after a source's last forecast are left out of that source, so reports fetched for a later window are never scored against a forecast a fetch happened to end on.</p>
     <p>Grouped by the forecast's band, the rows are what a reader of the forecast faced. Grouped by the reported band, the rows lean by construction: a 300 ft report can be missed upward by thousands of feet but downward by 300 at most.</p>
     <p>To add data, fetch a later window and regenerate the file this page reads, then republish it beside the page: <code>npx tsx scripts/ceilingChartData.ts --ceiling &lt;ceiling archives…&gt; --cover &lt;cloud-cover archives…&gt; --out data/parity/ceiling-errors.json</code>. Each flag takes any number of files, and a record in two of them counts once. The method is in <code>docs/ceiling-heights.md</code> in the lspc-weather repository.</p>
     <div class="file">
@@ -543,6 +544,10 @@ thead th { color: var(--ink-2); font-weight: 600; }
     fact(row.hours.toLocaleString('en-US'), 'hours compared');
     fact(row.call.both.toLocaleString('en-US'), 'with a ceiling on both sides');
     if (row.leadH) fact(`${row.leadH.min.toFixed(1)} to ${row.leadH.max.toFixed(1)} h`, 'ahead');
+    if (point.issuances && point.issuances.span) {
+      const day = (t) => t.slice(0, 10);
+      fact(point.issuances.count.toLocaleString('en-US'), `forecasts issued ${day(point.issuances.span.from)} to ${day(point.issuances.span.to)}`);
+    }
     if (point.gridKm != null) fact(`${point.gridKm} km`, `from ${point.place} to the grid point read`);
     binLegend();
     drawSize(row);
@@ -554,7 +559,7 @@ thead th { color: var(--ink-2); font-weight: 600; }
   function describe() {
     const r = data.reports;
     const from = (s) => (s ? s.slice(0, 10) : '?');
-    $('meta').textContent = `${r.count.toLocaleString('en-US')} KPMV reports, ${from(r.span && r.span.from)} to ${from(r.span && r.span.to)}. Data file made ${data.generatedAt.slice(0, 10)} from ${[...data.sources.ceiling, ...data.sources.cover].join(', ')}.${fileNote}`;
+    $('meta').textContent = `${r.count.toLocaleString('en-US')} KPMV reports, ${from(r.span && r.span.from)} to ${from(r.span && r.span.to)}. Data file made ${data.generatedAt.slice(0, 10)} from ${[...data.sources.ceiling, ...data.sources.cover].join(', ')}${data.sources.kept ? ` and ${data.sources.kept} kept forecast snapshots` : ''}.${fileNote}`;
   }
 
   const wellFormed = (d) =>

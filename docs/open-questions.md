@@ -285,8 +285,21 @@ happened later. What has an archive and what does not, as read that day:
 field the card reads and the outlook as the card asks for it, on the
 `forecast-archive` branch (`data/YYYY/MM/DD/HHMMZ.json.gz`, about 4 KB
 each). Keeping the card's own requests also gives the lead a reader saw,
-which the NDFD rows only bracket. Nothing reads them yet; the first use
-would be the rain and thunder chances against KPMV's reports.
+which the NDFD rows only bracket. Since 2026-10-15 the ceiling-error
+chart reads their `ceilingHeight` (docs/ceiling-heights.md, "The
+forecasts the card read, kept hourly"); the rain and thunder chances
+against KPMV's reports are still to come.
+
+**The keeper does not run hourly.** Its schedule is `23 * * * *`, but by
+2026-10-15 15:07Z GitHub had started it 10 times in about 47 hours, 3 to
+6 hours apart (one more run was dispatched by hand), so 11 snapshots
+where hourly would be about 48. This is the throttling the comparison
+sampler met (CLAUDE.md: GitHub ran an every-fifteen-minutes schedule
+under ten percent of the time), and the sampler's fix would serve here: a
+job that loops and keeps a snapshot each hour itself, restarted by a
+schedule or dispatch, instead of a cron line per snapshot. Waiting on the
+maintainer: whether the hourly lead is worth a long-running job's
+minutes.
 
 ### NDFD against the API, element by element (2026-10-13)
 
