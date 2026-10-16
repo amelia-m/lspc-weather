@@ -416,16 +416,6 @@ and it does not say whether a past day's archive was ever edited after
 the fact; it says the archive and the API were the same forecast that
 hour.
 
-## The ceiling-error chart showed a blank page
-
-On 2026-10-16 the maintainer saw a blank page at the chart's artifact
-link. The served page and data were read back and rendered here without
-error (docs/ceiling-heights.md, "The chart"). It was opened in the
-Claude desktop app. The page writes its header and notes as plain HTML,
-so a frame with no text at all means the page did not load there, not
-that its script failed. Waiting on the maintainer: whether it shows at
-claude.ai in a browser while signed in to the same account.
-
 ## Viewing the deployed site from the sandbox
 
 Waiting on the maintainer since 2026-10-13. Chromium here rejects the

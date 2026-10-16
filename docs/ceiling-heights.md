@@ -205,8 +205,11 @@ beside it, and the served page, rendered in Playwright's Chromium with
 that file, drew all three charts at 1,100 px light and 390 px dark and
 light, with the kept source and a saved view restored, and logged no
 script error. The page draws its header without any script, so a fully
-blank frame points at the viewer rather than the page's code; what the
-viewer showed is open (docs/open-questions.md).
+blank frame points at the viewer rather than the page's code. It was
+opened in the Claude desktop app; the same link in a web browser at
+claude.ai showed the page whole (the maintainer's screenshot, dark
+theme, all three sources on the control), so the blank was the desktop
+app's view of it. Open the chart in a browser.
 
 The data file is `data/parity/ceiling-errors.json`, written by
 `scripts/ceilingChartData.ts` from the same archives and the same
