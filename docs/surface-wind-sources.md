@@ -337,6 +337,16 @@ ends, archive them under `data/parity/`, summarise them with
 `scripts/surfaceWindSummary.ts`, write the result up here, and delete the
 workflow.
 
+**It has not covered the whole day.** Read from the Actions API on
+2026-10-16: 27 runs, all successful, each 4.6 to 5.8 hours long. But its
+own five-hourly starts were throttled too: from its first run (2026-10-09
+03:43Z) to 2026-10-14 05:20Z the runs covered 57% of the time, with gaps
+of up to 9 hours between one run's end and the next start; from then to
+2026-10-16 14:40Z, 96%, gaps of 28 minutes or less. The workflow did not
+change in between, so the cause is GitHub's scheduling. The summary should
+count samples by hour of day before ranking sources, so the uncovered
+hours of the first five days do not weigh as if they were sampled.
+
 ## Status
 
 Measurement only. Nothing on the dashboard changed. The open question is

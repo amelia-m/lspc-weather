@@ -197,7 +197,16 @@ written for the artifact's wrapper (which supplies the doctype and
 charset) and fetching `ceiling-errors.json` from beside itself; opened
 from the repository as it stands it finds no data. To view it locally,
 wrap it in a skeleton and serve it with the data file next to it, as was
-done to check it at 1,100, 390 and 320 px on 2026-10-14.
+done to check it at 1,100, 390 and 320 px on 2026-10-14. On 2026-10-16
+the maintainer saw a blank page at the artifact's link. The served files
+were read back the same day: `index.html` is the repository's page,
+byte for byte, inside the artifact's wrapper, with `ceiling-errors.json`
+beside it, and the served page, rendered in Playwright's Chromium with
+that file, drew all three charts at 1,100 px light and 390 px dark and
+light, with the kept source and a saved view restored, and logged no
+script error. The page draws its header without any script, so a fully
+blank frame points at the viewer rather than the page's code; what the
+viewer showed is open (docs/open-questions.md).
 
 The data file is `data/parity/ceiling-errors.json`, written by
 `scripts/ceilingChartData.ts` from the same archives and the same

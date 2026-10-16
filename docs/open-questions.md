@@ -301,6 +301,48 @@ schedule or dispatch, instead of a cron line per snapshot. Waiting on the
 maintainer: whether the hourly lead is worth a long-running job's
 minutes.
 
+What that choice involves, as read 2026-10-16:
+
+- **Cost.** The repository is public (`visibility: public` from the API
+  that day), and GitHub's billing pages, as quoted in search results that
+  day, say standard GitHub-hosted runners are free for public
+  repositories; the 2026 pricing changes (hosted-runner prices cut from
+  January 1, a self-hosted platform charge from March 1) left that alone.
+  Private repositories draw on a monthly quota (2,000 minutes on Free, by
+  a third-party listing; the official page was not read). A job looping
+  around the clock is about 43,000 minutes a month: nothing while the
+  repository is public, many times the quota if it ever went private.
+  docs.github.com is not on the sandbox allowlist (the proxy refused it,
+  and WebFetch could not resolve it), so none of this was read on
+  GitHub's own pages.
+- **Limits.** A job on a GitHub-hosted runner stops at 6 hours, so a loop
+  is a chain of starts, as the surface-wind sampler is. A workflow run
+  stops at 35 days. Scheduled workflows in a public repository are
+  disabled after a stretch with no repository activity (60 days by common
+  account; the search snippet cut off before the figure).
+- **Terms.** GitHub's terms for Actions list, among uses not allowed,
+  "any other activity unrelated to the production, testing, deployment,
+  or publication of the software project" of the repository, and say
+  misuse can end jobs or restrict Actions. That wording was read in
+  copies of the terms (a mirror of the github/docs repository), not the
+  live page. A keeper whose records check this project's own forecasts is
+  arguably within the project; the surface-wind sampler already runs the
+  same way.
+- **Precedent.** The surface-wind sampler (`surface-wind-sample.yml`) is
+  that loop: 27 runs to 2026-10-16, all successful, 4.6 to 5.8 hours
+  each. But its own five-hourly starts were throttled too: it covered
+  57% of the time from 2026-10-09 to 10-14, with gaps of up to 9 hours,
+  and 96% since (docs/surface-wind-sources.md). A loop makes each start
+  count for hours, which is why it does far better than a cron line per
+  snapshot, but it does not make the starts arrive on time. Starting it
+  more often than it runs (a queue of one waiting start, as the sampler
+  has) is what closes the gaps.
+- **What it buys.** NDFD archives every kept field but the hourly rain and
+  thunder chances and the outlook (above). A snapshot every 3 to 6 hours
+  still catches most of the office's updates, but not the forecast a
+  reader saw in the hour before a jump, and an hour not kept cannot be
+  fetched later.
+
 ### NDFD against the API, element by element (2026-10-13)
 
 `scripts/ndfdApiCheck.py` read api.weather.gov's gridpoint for the drop
@@ -361,6 +403,14 @@ same figures at this point. One moment at one point is a small sample,
 and it does not say whether a past day's archive was ever edited after
 the fact; it says the archive and the API were the same forecast that
 hour.
+
+## The ceiling-error chart showed a blank page
+
+On 2026-10-16 the maintainer saw a blank page at the chart's artifact
+link. The served page and data were read back and rendered here without
+error (docs/ceiling-heights.md, "The chart"). Waiting on the maintainer:
+where it was opened (phone app, desktop app or browser), and whether any
+of the page's own text showed.
 
 ## Viewing the deployed site from the sandbox
 
