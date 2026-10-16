@@ -507,13 +507,17 @@ time something again, the sampler workflow and `scripts/sampleLoop.sh` are
 in the history (removed 2026-10-05): it was a job that looped, not a cron
 line per sample, because GitHub ran an every-fifteen-minutes schedule under
 ten percent of the time and a running job is not throttled.
-`.github/workflows/forecast-keep.yml` runs hourly and commits what the
-dashboard's forecasts said (the NWS gridpoint fields the card reads,
+`.github/workflows/forecast-keep.yml` commits what the dashboard's
+forecasts said (the NWS gridpoint fields the card reads,
 `GRIDPOINT_FIELDS`, and Open-Meteo's 10-day outlook, `openMeteoDailyUrl`)
-to the `forecast-archive` branch, one gzipped file per run
+to the `forecast-archive` branch, one gzipped file an hour
 (`scripts/forecastKeep.ts`). Both serve only the future, and no archive
 holds the hourly rain and thunder chances or the outlook as the card asks
-for them. It never touches `main`, so it starts no deploy.
+for them. It never touches `main`, so it starts no deploy. Since
+2026-10-16 it is a job that loops (`scripts/forecastKeepLoop.sh`, a
+snapshot at minute 23 of each hour, pushed as taken) for nearly six
+hours, started every hour so a delivered start is always waiting: as a
+cron line per snapshot it ran every 3 to 6 hours.
 `.github/workflows/surface-wind-sample.yml` is that pattern again, temporary:
 it runs `scripts/surfaceWindCompare.live.ts` every five minutes
 (`scripts/surfaceWindLoop.sh`) until 2026-10-30T02:00Z, uploads
