@@ -27,7 +27,9 @@ import { basename, join } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import {
   CEILING_BANDS,
+  densityCurve,
   DIFF_BINS,
+  type DiffDistribution,
   diffDistribution,
   FLIGHT_BANDS,
   keptCeilingRecords,
@@ -101,6 +103,22 @@ const POINTS = [
   { site: 'KEPT', short: 'Drop zone, as the card read it', place: 'the drop zone' },
 ] as const;
 
+/** Each band's density curves for the chart's clouds: the difference in
+ *  ft (kernel no narrower than 50 ft, half a report's 100 ft step), and
+ *  forecast ÷ reported in log2, the scale the chart draws it on (kernel no
+ *  narrower than 0.1, about a 7% step). Null where a band has too few
+ *  hours for a curve (DENSITY_MIN_N). Rounded so the file stays small. */
+const withDensity = (d: Record<string, DiffDistribution>) =>
+  Object.fromEntries(
+    Object.entries(d).map(([band, v]) => {
+      const ft = densityCurve(v.values, 50);
+      const ratio = densityCurve(v.ratios.filter((r) => r > 0).map(Math.log2), 0.1);
+      const round = (c: [number, number][], dx: number) =>
+        c.map(([x, y]) => [Math.round(x * dx) / dx, Number(y.toPrecision(4))]);
+      return [band, { ...v, density: { ft: ft && round(ft.curve, 1), log2Ratio: ratio && round(ratio.curve, 1000) } }];
+    }),
+  );
+
 /** An ISO time in UTC as the records write it, so "+00:00" and "Z" sort together. */
 const iso = (t: string): string => new Date(t).toISOString().replace(/:\d\d\.\d{3}Z$/, 'Z');
 
@@ -125,8 +143,8 @@ const points = POINTS.map(({ site, short, place }) => {
     leadH: r.leadH,
     call: r.call,
     bands: r.bands,
-    byForecast: diffDistribution(r.pairs, 'forecast'),
-    byReported: diffDistribution(r.pairs, 'reported'),
+    byForecast: withDensity(diffDistribution(r.pairs, 'forecast')),
+    byReported: withDensity(diffDistribution(r.pairs, 'reported')),
   }));
   // NDFD records carry their distance to the grid point; kept ones do not
   // (the API names its grid cell, not how far its centre is).
@@ -135,8 +153,10 @@ const points = POINTS.map(({ site, short, place }) => {
   return { site, short, place, gridKm, issuances: { count: issued.size, span: span([...issued].map(iso)) }, rows };
 }).filter((p) => p.rows.some((r) => r.hours > 0));
 
+// Version 2 holds every hour's value and the density curves (the chart's
+// rainclouds); the page refuses a version 1 file.
 const data = {
-  version: 1,
+  version: 2,
   generatedAt: new Date().toISOString(),
   sources: {
     ceiling: args.ceiling.map((f) => basename(f)),
@@ -149,7 +169,8 @@ const data = {
   bins: DIFF_BINS,
   points,
 };
-writeFileSync(out, JSON.stringify(data, null, 1) + '\n');
+// Compact: with every hour's value in it, one number a line was 930 KB.
+writeFileSync(out, JSON.stringify(data) + '\n');
 console.log(
   `wrote ${out}: ${points.map((p) => `${p.site} ${p.rows.map((r) => r.hours).join('/')} h`).join(', ')}`,
 );

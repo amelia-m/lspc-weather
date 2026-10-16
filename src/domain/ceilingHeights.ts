@@ -335,6 +335,11 @@ export interface DiffDistribution {
    *  height, so this reads alike across the bands where the difference
    *  in ft does not. */
   ratio: Quantiles | null;
+  /** Every hour's difference, ft, lowest first: the points a chart draws. */
+  values: number[];
+  /** Every hour's forecast ÷ reported (reported above 0 ft), to three
+   *  places, lowest first. */
+  ratios: number[];
 }
 
 type Quantiles = [number, number, number, number, number];
@@ -371,17 +376,61 @@ export function diffDistribution(
       const ds = diffs.get(band)!;
       const bins = DIFF_BINS.map(() => 0);
       for (const d of ds) bins[diffBin(d)]++;
+      const rs = ratios.get(band)!;
       return [
         band,
         {
           n: ds.length,
           bins,
           diffFt: quantiles(ds, round0),
-          ratio: quantiles(ratios.get(band)!, (n) => Math.round(n * 100) / 100),
+          ratio: quantiles(rs, (n) => Math.round(n * 100) / 100),
+          values: [...ds].sort((a, b) => a - b),
+          ratios: rs.map((r) => Math.round(r * 1000) / 1000).sort((a, b) => a - b),
         },
       ];
     }),
   ) as Record<FlightCategory, DiffDistribution>;
+}
+
+/** Fewer hours than this give no density curve: the shape of four points
+ *  is the kernel's, not the data's, and a chart should show the points. */
+export const DENSITY_MIN_N = 5;
+
+/**
+ * A Gaussian kernel density of `xs`, for a chart's cloud: `points` pairs
+ * [x, density] from two bandwidths below the lowest value to two above
+ * the highest; the density integrates to 1 over all x, a little under
+ * over the grid, which leaves the tails past two bandwidths off. The bandwidth is Silverman's
+ * rule of thumb, 0.9 · min(sd, IQR / 1.34) · n^(-1/5) (IQR left out when
+ * it is 0, as when most hours share one value), and never below
+ * `minBandwidth`: the reports come in 100 ft steps, and a narrower kernel
+ * draws each step as its own spike. Null under DENSITY_MIN_N values.
+ */
+export function densityCurve(
+  xs: readonly number[],
+  minBandwidth: number,
+  points = 80,
+): { bandwidth: number; curve: [number, number][] } | null {
+  const n = xs.length;
+  if (n < DENSITY_MIN_N) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const mean = s.reduce((a, b) => a + b, 0) / n;
+  const sd = Math.sqrt(s.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1));
+  const q = quantiles(s, (v) => v) as Quantiles;
+  const iqr = q[3] - q[1];
+  const spread = iqr > 0 ? Math.min(sd, iqr / 1.34) : sd;
+  const bandwidth = Math.max(minBandwidth, 0.9 * spread * n ** -0.2);
+  const lo = s[0] - 2 * bandwidth;
+  const hi = s[n - 1] + 2 * bandwidth;
+  const norm = 1 / (n * bandwidth * Math.sqrt(2 * Math.PI));
+  const curve: [number, number][] = [];
+  for (let i = 0; i < points; i++) {
+    const x = lo + ((hi - lo) * i) / (points - 1);
+    let sum = 0;
+    for (const v of s) sum += Math.exp(-0.5 * ((x - v) / bandwidth) ** 2);
+    curve.push([x, sum * norm]);
+  }
+  return { bandwidth, curve };
 }
 
 /** Open-Meteo's start-of-run bands on the hours KPMV reported a ceiling,

@@ -174,7 +174,7 @@ thead th { color: var(--ink-2); font-weight: 600; }
 
   <section class="notes" aria-labelledby="h-notes">
     <h2 id="h-notes">How these are counted, and adding data</h2>
-    <p>Each hour pairs KPMV's report nearest the top of the hour (within 10 minutes) with the newest NWS ceiling issued at least 0, 6 or 24 hours before it, from NOAA's NDFD archive, which matched api.weather.gov's <code>ceilingHeight</code> value for value when checked. A ceiling is the lowest broken, overcast or vertical-visibility base. Both sides are held to 12,000 ft, the most an AWOS reports. Percentiles are nearest rank; the median averages the middle two.</p>
+    <p>Each hour pairs KPMV's report nearest the top of the hour (within 10 minutes) with the newest NWS ceiling issued at least 0, 6 or 24 hours before it, from NOAA's NDFD archive, which matched api.weather.gov's <code>ceilingHeight</code> value for value when checked. A ceiling is the lowest broken, overcast or vertical-visibility base. Both sides are held to 12,000 ft, the most an AWOS reports. Percentiles are nearest rank; the median averages the middle two. In the spread chart each dot is an hour, and each cloud is a smoothed curve through them (a Gaussian kernel density, Silverman's bandwidth, never narrower than 50 ft or, as a ratio, about a 7% step), scaled to its own peak so shapes compare rather than heights; a band with fewer than 5 hours shows only its dots. The axis runs from the 5th to the 95th percentile of the points shown, and points past it are counted at the edge.</p>
     <p>"Drop zone, as the card read it" is api.weather.gov's own <code>ceilingHeight</code> for the drop zone, saved by an hourly job from 2026-10-13 and issued at the forecast's update time. GitHub has run that job every 3 to 6 hours rather than hourly, so its "latest" row is older than the card's own forecast at most hours, and it holds a few days, not a season. An hour is left out of a row when the forecast that row needs for it would come more than 6 hours after the last one a source's fetch holds, so reports fetched for a later window are never scored against the forecast a fetch happened to end on. Gaps between kept forecasts are not cut; the lead range above the charts shows how old the forecasts were.</p>
     <p>Grouped by the forecast's band, the rows are what a reader of the forecast faced. Grouped by the reported band, the rows lean by construction: a 300 ft report can be missed upward by thousands of feet but downward by 300 at most.</p>
     <p>To add data, fetch a later window and regenerate the file this page reads, then republish it beside the page: <code>npx tsx scripts/ceilingChartData.ts --ceiling &lt;ceiling archives…&gt; --cover &lt;cloud-cover archives…&gt; --out data/parity/ceiling-errors.json</code>. Each flag takes any number of files, and a record in two of them counts once. The method is in <code>docs/ceiling-heights.md</code> in the lspc-weather repository.</p>
@@ -365,65 +365,115 @@ thead th { color: var(--ink-2); font-weight: 600; }
     return s;
   }
 
-  // Chart 2: 10th to 90th percentile whisker, 25th to 75th box, median tick.
+  // Chart 2: a raincloud per band. The cloud is the density of the hours'
+  // differences (each band scaled to its own peak, so shapes compare, not
+  // heights); under it, the 10th to 90th percentile line, the middle half
+  // and the median; under that, every hour as a dot. Curves and percentiles
+  // come from the data file; the page only places them.
   function drawSpread(row) {
     const chart = $('ch-spread');
     chart.replaceChildren();
     const dist = state.by === 'forecast' ? row.byForecast : row.byReported;
     const ratio = state.unit === 'ratio';
-    const key = ratio ? 'ratio' : 'diffFt';
-    const rows = data.bands.map((b) => ({ band: b, d: dist[b] })).filter((r) => r.d && r.d[key]);
+    const rows = data.bands.map((b) => ({ band: b, d: dist[b] })).filter((r) => r.d && r.d.n > 0);
+    // Points on the drawing's scale: ft, or log2 of forecast ÷ reported.
+    const pts = (d) => (ratio ? d.ratios.filter((v) => v > 0).map(Math.log2) : d.values);
     const width = Math.max(280, chart.clientWidth);
-    // Narrow: the figures go on their own line under the band's name.
     const narrow = width < 620;
-    const rowH = narrow ? 70 : 54, boxH = 16, top = 4, axisH = 26, boxTop = narrow ? 38 : 22;
+    const head = narrow ? 38 : 22, cloudH = 34, gap = 6, rainH = 20, top = 4, axisH = 26;
+    const rowH = head + cloudH + gap + rainH + 14;
     const height = top + rows.length * rowH + axisH;
-    let lo, hi, ticks, x;
+    // The axis spans the 5th to the 95th percentile of every band's points
+    // (wider, the long tails above 3,000 ft squeezed the low bands to a
+    // sliver); points past it sit at the edge, counted there.
+    const nr = (v, p) => v[Math.min(v.length, Math.max(1, Math.ceil(p * v.length))) - 1];
+    const all = rows.map((r) => pts(r.d).slice().sort((a, b) => a - b)).filter((v) => v.length);
+    let lo = Math.min(0, ...all.map((v) => nr(v, 0.05)));
+    let hi = Math.max(0, ...all.map((v) => nr(v, 0.95)));
+    const maxTicks = narrow ? 5 : 9;
+    let ticks;
     if (ratio) {
-      const vals = rows.flatMap((r) => [r.d.ratio[0], r.d.ratio[4]]).filter((v) => v > 0);
-      lo = Math.min(0.25, ...vals); hi = Math.max(4, ...vals);
-      const l0 = Math.floor(Math.log2(lo)), l1 = Math.ceil(Math.log2(hi));
-      ticks = []; for (let e = l0; e <= l1; e++) ticks.push(2 ** e);
-      lo = 2 ** l0; hi = 2 ** l1;
-      x = (v) => 8 + ((Math.log2(Math.max(v, lo)) - l0) / (l1 - l0)) * (width - 16);
+      lo = Math.floor(lo); hi = Math.ceil(hi);
+      if (hi - lo < 2) { lo -= 1; hi += 1; }
+      const step = Math.ceil((hi - lo) / (maxTicks - 1));
+      ticks = []; for (let e = lo; e <= hi; e += step) ticks.push(e);
     } else {
-      const vals = rows.flatMap((r) => [r.d.diffFt[0], r.d.diffFt[4]]);
-      const m = Math.max(1000, ...vals.map(Math.abs));
-      const stepFt = m > 4000 ? 2000 : m > 2000 ? 1000 : 500;
-      hi = Math.ceil(m / stepFt) * stepFt; lo = -hi;
-      ticks = []; for (let t = lo; t <= hi; t += stepFt) ticks.push(t);
-      x = (v) => 8 + ((v - lo) / (hi - lo)) * (width - 16);
+      const step = [250, 500, 1000, 2000, 4000, 8000].find((st) => (Math.ceil(hi / st) - Math.floor(lo / st)) + 1 <= maxTicks) || 8000;
+      lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+      if (hi === lo) hi = lo + step;
+      ticks = []; for (let t = lo; t <= hi; t += step) ticks.push(t);
     }
-    const svg = el('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': ratio ? 'Forecast over reported, percentiles per band' : 'Forecast minus reported in feet, percentiles per band' });
+    const x0 = 8, x1 = width - 8;
+    // Unclamped for the cloud (clipped to the plot instead), clamped for dots
+    // and marks, which sit at the edge when past it.
+    const xu = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0);
+    const x = (v) => xu(Math.min(hi, Math.max(lo, v)));
+    const svg = el('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': ratio ? 'Forecast over reported, distribution per band' : 'Forecast minus reported in feet, distribution per band' });
+    const defs = el('defs'); svg.append(defs);
+    const clip = el('clipPath', { id: 'clip-spread' });
+    clip.append(el('rect', { x: x0, y: 0, width: x1 - x0, height }));
+    defs.append(clip);
     for (const t of ticks) {
       const xx = x(t);
-      const isRef = ratio ? t === 1 : t === 0;
+      const isRef = t === 0;
       svg.append(el('line', { x1: xx, x2: xx, y1: top + 16, y2: height - axisH + 4, stroke: isRef ? css('--axis') : css('--grid'), 'stroke-width': 1 }));
-      const label = ratio ? (t < 1 ? `×${t}` : `×${t}`) : t === 0 ? '0' : `${t > 0 ? '+' : '−'}${Math.abs(t) >= 1000 ? Math.abs(t) / 1000 + 'k' : Math.abs(t)}`;
-      svg.append(el('text', { x: xx, y: height - 8, fill: css('--muted'), 'font-size': 11.5, 'text-anchor': 'middle' }, label));
+      const label = ratio ? `×${2 ** t}` : t === 0 ? '0' : `${t > 0 ? '+' : '−'}${Math.abs(t) >= 1000 ? Math.abs(t) / 1000 + 'k' : Math.abs(t)}`;
+      const anchor = t === ticks[0] ? 'start' : t === ticks[ticks.length - 1] ? 'end' : 'middle';
+      svg.append(el('text', { x: anchor === 'start' ? xx - 4 : anchor === 'end' ? xx + 4 : xx, y: height - 8, fill: css('--muted'), 'font-size': 11.5, 'text-anchor': anchor }, label));
     }
     rows.forEach((r, i) => {
-      const q = r.d[key];
+      const q = ratio ? r.d.ratio : r.d.diffFt;
+      const qx = q && (ratio ? q.map((v) => x(Math.log2(v))) : q.map(x));
       const y0 = top + i * rowH;
-      const mid = y0 + boxTop + boxH / 2;
-      const desc = ratio
-        ? `median ×${q[2]} · middle half ×${q[1]} to ×${q[3]}`
+      const base = y0 + head + cloudH;
+      const desc = !q ? 'no ratio: every report at 0 ft'
+        : ratio ? `median ×${q[2]} · middle half ×${q[1]} to ×${q[3]}`
         : `median ${signed(q[2])} ft · middle half ${signed(q[1])} to ${signed(q[3])}`;
+      const title = `${BAND_LABEL[r.band]} · ${r.band}`;
       if (narrow) {
-        svg.append(el('text', { x: 0, y: y0 + 13, fill: css('--ink'), 'font-size': 13.5, 'font-weight': 600 }, `${BAND_LABEL[r.band]} · ${r.band}`));
+        svg.append(el('text', { x: 0, y: y0 + 13, fill: css('--ink'), 'font-size': 13.5, 'font-weight': 600 }, title));
         svg.append(el('text', { x: 0, y: y0 + 30, fill: css('--muted'), 'font-size': 12.5, 'data-fit': width }, desc));
       } else {
-        rowHead(svg, y0 + 13, width, `${BAND_LABEL[r.band]} · ${r.band}`, desc);
+        rowHead(svg, y0 + 13, width, title, desc);
       }
-      const g = el('g', { tabindex: 0, 'aria-label': `${BAND_LABEL[r.band]}: ${desc}` });
-      g.append(el('rect', { x: x(q[0]) - 4, y: mid - 14, width: x(q[4]) - x(q[0]) + 8, height: 28, fill: 'transparent' }));
-      g.append(el('line', { x1: x(q[0]), x2: x(q[4]), y1: mid, y2: mid, stroke: css('--muted'), 'stroke-width': 1.5, 'stroke-linecap': 'round' }));
-      for (const e of [q[0], q[4]]) g.append(el('line', { x1: x(e), x2: x(e), y1: mid - 5, y2: mid + 5, stroke: css('--muted'), 'stroke-width': 1.5 }));
-      g.append(el('rect', { x: x(q[1]), y: mid - boxH / 2, width: Math.max(2, x(q[3]) - x(q[1])), height: boxH, rx: 4, fill: css('--accent-wash'), stroke: css('--accent'), 'stroke-width': 1.5 }));
-      g.append(el('line', { x1: x(q[2]), x2: x(q[2]), y1: mid - boxH / 2 - 3, y2: mid + boxH / 2 + 3, stroke: css('--ink'), 'stroke-width': 2.5, 'stroke-linecap': 'round' }));
+      const g = el('g', { tabindex: 0, 'aria-label': `${title}: ${desc}, ${r.d.n} hours` });
+      g.append(el('rect', { x: x0, y: y0 + head, width: x1 - x0, height: cloudH + gap + rainH + 6, fill: 'transparent' }));
+      // The cloud, or a word where there are too few hours for one.
+      const curve = r.d.density && (ratio ? r.d.density.log2Ratio : r.d.density.ft);
+      if (curve && curve.length) {
+        const peak = Math.max(...curve.map((c) => c[1])) || 1;
+        let dpath = `M ${xu(curve[0][0]).toFixed(1)} ${base}`;
+        for (const [cx, cy] of curve) dpath += ` L ${xu(cx).toFixed(1)} ${(base - (cy / peak) * cloudH).toFixed(1)}`;
+        dpath += ` L ${xu(curve[curve.length - 1][0]).toFixed(1)} ${base} Z`;
+        g.append(el('path', { d: dpath, fill: css('--accent-wash'), stroke: css('--accent'), 'stroke-width': 1.5, 'stroke-linejoin': 'round', 'clip-path': 'url(#clip-spread)' }));
+      } else {
+        g.append(el('text', { x: x0 + 2, y: base - 6, fill: css('--muted'), 'font-size': 11.5 }, `${r.d.n} hours: too few for a curve`));
+      }
+      // Percentiles on the cloud's base line.
+      if (qx) {
+        g.append(el('line', { x1: qx[0], x2: qx[4], y1: base, y2: base, stroke: css('--ink-2'), 'stroke-width': 1.5, 'stroke-linecap': 'round' }));
+        g.append(el('rect', { x: qx[1], y: base - 4, width: Math.max(2, qx[3] - qx[1]), height: 8, rx: 2, fill: css('--surface'), stroke: css('--ink-2'), 'stroke-width': 1.2 }));
+        g.append(el('line', { x1: qx[2], x2: qx[2], y1: base - 7, y2: base + 7, stroke: css('--ink'), 'stroke-width': 2.5, 'stroke-linecap': 'round' }));
+      }
+      // The rain: every hour, spread down the band by a fixed sequence so
+      // the dots sit still between redraws.
+      const v = pts(r.d);
+      const rainTop = base + gap + 2;
+      const opacity = v.length > 200 ? 0.35 : v.length > 50 ? 0.5 : 0.75;
+      let under = 0, over = 0;
+      v.forEach((p, k) => {
+        if (p < lo) under++;
+        if (p > hi) over++;
+        g.append(el('circle', { cx: x(p).toFixed(1), cy: (rainTop + ((k * 0.6180339887) % 1) * rainH).toFixed(1), r: 1.9, fill: css('--accent'), 'fill-opacity': opacity }));
+      });
+      const edgeNote = (n, side) => g.append(el('text', { x: side === 'lo' ? x0 : x1, y: rainTop + rainH + 11, fill: css('--muted'), 'font-size': 11, 'text-anchor': side === 'lo' ? 'start' : 'end' }, side === 'lo' ? `‹ ${n} further left` : `${n} further right ›`));
+      if (under) edgeNote(under, 'lo');
+      if (over) edgeNote(over, 'hi');
       svg.append(g);
-      const f = (v) => (ratio ? `×${v}` : `${signed(v)} ft`);
-      bindTip(chart, g, [`median ${f(q[2])}`, `middle half ${f(q[1])} to ${f(q[3])}`, `10th to 90th ${f(q[0])} to ${f(q[4])}`, `${r.d.n.toLocaleString('en-US')} hours`]);
+      const f = (val) => (ratio ? `×${val}` : `${signed(val)} ft`);
+      bindTip(chart, g, q
+        ? [`median ${f(q[2])}`, `middle half ${f(q[1])} to ${f(q[3])}`, `10th to 90th ${f(q[0])} to ${f(q[4])}`, `${r.d.n.toLocaleString('en-US')} hours`]
+        : [desc, `${r.d.n} hours`]);
     });
     chart.append(svg);
     // A figures line wider than the chart shrinks to fit rather than run off it.
@@ -434,10 +484,12 @@ thead th { color: var(--ink-2); font-weight: 600; }
     }
     const lg = $('lg-spread');
     lg.replaceChildren();
-    const k1 = el('span'); const i1 = el('i'); i1.style.background = css('--accent-wash'); i1.style.boxShadow = `inset 0 0 0 1.5px ${css('--accent')}`; k1.append(i1, document.createTextNode('middle half (25th to 75th percentile)'));
-    const k2 = el('span'); const i2 = el('i'); i2.style.background = css('--ink'); i2.style.width = '3px'; k2.append(i2, document.createTextNode('median'));
-    const k3 = el('span'); const i3 = el('i'); i3.style.background = css('--muted'); i3.style.height = '2px'; i3.style.width = '16px'; k3.append(i3, document.createTextNode('10th to 90th percentile'));
-    lg.append(k1, k2, k3);
+    const key = (styler, text) => { const k = el('span'); const i = el('i'); styler(i.style); k.append(i, document.createTextNode(text)); lg.append(k); };
+    key((st) => { st.background = css('--accent-wash'); st.boxShadow = `inset 0 0 0 1.5px ${css('--accent')}`; st.borderRadius = '6px 6px 0 0'; }, 'how the hours spread (each band to its own peak)');
+    key((st) => { st.background = css('--accent'); st.width = '6px'; st.height = '6px'; st.borderRadius = '50%'; }, 'one hour');
+    key((st) => { st.background = css('--surface'); st.boxShadow = `inset 0 0 0 1.2px ${css('--ink-2')}`; st.height = '8px'; }, 'middle half');
+    key((st) => { st.background = css('--ink'); st.width = '3px'; }, 'median');
+    key((st) => { st.background = css('--ink-2'); st.height = '2px'; st.width = '16px'; }, '10th to 90th percentile');
     $('h2-spread').textContent = ratio ? 'The spread, as forecast ÷ reported' : 'The spread, in feet';
     $('s2-spread').textContent = ratio
       ? 'The same hours on a doubling scale. ×1 is a forecast equal to the report; ×2 is twice its height.'
@@ -563,14 +615,15 @@ thead th { color: var(--ink-2); font-weight: 600; }
   }
 
   const wellFormed = (d) =>
-    d && d.version === 1 && Array.isArray(d.bands) && Array.isArray(d.ceilingBands) && Array.isArray(d.bins) &&
+    d && d.version === 2 && Array.isArray(d.bands) && Array.isArray(d.ceilingBands) && Array.isArray(d.bins) &&
     d.reports && d.sources && Array.isArray(d.points) && d.points.length > 0 &&
     d.points.every((p) => p.site && p.short && Array.isArray(p.rows) && p.rows.length > 0 &&
-      p.rows.every((r) => r.call && r.bands && r.byForecast && r.byReported && typeof r.hours === 'number'));
+      p.rows.every((r) => r.call && r.bands && r.byForecast && r.byReported && typeof r.hours === 'number' &&
+        Object.values(r.byForecast).every((b) => Array.isArray(b.values) && Array.isArray(b.ratios))));
 
   // A file that does not draw leaves the page as it was.
   function accept(d, note) {
-    if (!wellFormed(d)) throw new Error('it is not a ceiling-errors data file (version 1)');
+    if (!wellFormed(d)) throw new Error('it is not a ceiling-errors data file of version 2, the one with every hour in it');
     const before = { data, fileNote };
     try {
       data = d; fileNote = note;

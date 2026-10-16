@@ -3,6 +3,8 @@ import {
   bandOf,
   DIFF_BINS,
   diffBin,
+  densityCurve,
+  DENSITY_MIN_N,
   diffDistribution,
   forecastCeiling,
   keptCeilingRecords,
@@ -223,7 +225,10 @@ describe('diffDistribution', () => {
     expect(byForecast.IFR.ratio?.[2]).toBe(0.4);
     expect(byForecast.IFR.bins[DIFF_BINS.indexOf('1,000 to 3,000 low')]).toBe(1);
     expect(byForecast.MVFR.diffFt?.[2]).toBe(1200);
-    expect(byForecast.LIFR).toEqual({ n: 0, bins: DIFF_BINS.map(() => 0), diffFt: null, ratio: null });
+    expect(byForecast.LIFR).toEqual({ n: 0, bins: DIFF_BINS.map(() => 0), diffFt: null, ratio: null, values: [], ratios: [] });
+    // Each hour's value, for a chart's points: the difference, and the ratio.
+    expect(byForecast.IFR.values).toEqual([-1200]);
+    expect(byForecast.IFR.ratios).toEqual([0.4]);
 
     const byReported = diffDistribution(pairs, 'reported');
     expect(byReported.IFR.diffFt?.[2]).toBe(1200);
@@ -235,12 +240,15 @@ describe('diffDistribution', () => {
     // nearest-rank 50th would say 200; the median, as everywhere else, 250.
     const two = diffDistribution(
       [
-        { forecast: 700, reported: 500 },
         { forecast: 800, reported: 500 },
+        { forecast: 700, reported: 500 },
       ],
       'forecast',
     );
     expect(two.IFR.diffFt).toEqual([200, 200, 250, 300, 300]);
+    // Points come lowest first, whatever order the hours came in.
+    expect(two.IFR.values).toEqual([200, 300]);
+    expect(two.IFR.ratios).toEqual([1.4, 1.6]);
     // VV000 under a 100 ft forecast: a difference, but no ratio.
     const fog = diffDistribution([{ forecast: 100, reported: 0 }], 'forecast');
     expect(fog.LIFR.n).toBe(1);
@@ -301,5 +309,43 @@ describe('keptCeilingRecords', () => {
     const [latest] = summarizeCeilings(recs, [early, report]);
     expect(latest.hours).toBe(1);
     expect(latest.pairs).toEqual([{ forecast: 1700, reported: 1700 }]);
+  });
+});
+
+describe('densityCurve', () => {
+  const area = (c: [number, number][]) =>
+    c.slice(1).reduce((a, [x, y], i) => a + ((x - c[i][0]) * (y + c[i][1])) / 2, 0);
+
+  it('integrates to about 1, peaks where the values bunch, and is symmetric for symmetric values', () => {
+    const d = densityCurve([-300, -100, 0, 0, 0, 100, 300], 50, 201)!;
+    // The tails past two bandwidths are left off: a little under 1.
+    expect(area(d.curve)).toBeGreaterThan(0.98);
+    expect(area(d.curve)).toBeLessThan(1);
+    const peak = d.curve.reduce((m, p) => (p[1] > m[1] ? p : m));
+    expect(Math.abs(peak[0])).toBeLessThan(10);
+    const ys = d.curve.map(([, y]) => y);
+    expect(ys[0]).toBeCloseTo(ys[ys.length - 1], 10);
+  });
+
+  it('uses Silverman’s bandwidth, held to the floor given', () => {
+    // sd of 0..900 by 100 is 302.8; IQR (nearest rank) 200 to 700 is 500,
+    // /1.34 = 373.1, so the sd is the smaller: 0.9 × 302.8 × 10^-0.2 = 171.9.
+    const spread = densityCurve([0, 100, 200, 300, 400, 500, 600, 700, 800, 900], 50)!;
+    expect(spread.bandwidth).toBeCloseTo(171.9, 0);
+    // Spread more in the tails than the middle: the IQR is the smaller.
+    // sd 469.0; IQR 0 to 100 = 100, /1.34 = 74.6; 0.9 × 74.6 × 9^-0.2 = 43.0,
+    // under the 50 ft floor.
+    expect(densityCurve([-1000, -500, 0, 0, 0, 100, 100, 500, 1000], 50)!.bandwidth).toBe(50);
+    expect(densityCurve([-1000, -500, 0, 0, 0, 100, 100, 500, 1000], 10)!.bandwidth).toBeCloseTo(43.0, 0);
+    // Most hours on one value: IQR 0 is set aside for the sd, and the floor
+    // holds when even that is 0.
+    expect(densityCurve([100, 100, 100, 100, 100, 100, 900], 50)!.bandwidth).toBeGreaterThan(50);
+    expect(densityCurve([100, 100, 100, 100, 100], 50)!.bandwidth).toBe(50);
+  });
+
+  it('gives no curve under the minimum count', () => {
+    expect(DENSITY_MIN_N).toBe(5);
+    expect(densityCurve([1, 2, 3, 4], 1)).toBeNull();
+    expect(densityCurve([1, 2, 3, 4, 5], 1)).not.toBeNull();
   });
 });

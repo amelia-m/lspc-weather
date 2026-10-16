@@ -188,11 +188,24 @@ are drawn on one page: `docs/ceiling-errors.html`, published on
 <https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx> (only the maintainer
 can open it until it is shared). It has three charts, all from one data
 file: hours by size of the difference (a diverging bar, forecast below
-the report to the left), the spread as percentiles in ft or as forecast
-÷ reported on a doubling scale, and the other side's bands for each band.
-Its controls choose the grid point, the issuance and which side's band
-groups the hours, and a table view repeats every figure. The page draws;
-it does not compute. `docs/ceiling-errors.html` is the artifact's source,
+the report to the left), the spread in ft or as forecast ÷ reported on
+a doubling scale, and the other side's bands for each band. Its controls
+choose the grid point, the issuance and which side's band groups the
+hours, and a table view repeats every figure. Since 2026-10-16, at the
+maintainer's request, the spread is a raincloud per band in place of a
+box plot: a density curve scaled to its own peak, the 10th to 90th
+percentile line, middle half and median on its base, and every hour as a
+dot beneath. A raincloud rather than a violin because the dots stay in
+view, which matters where a band has a handful of hours (the kept
+source's do); under 5 hours (`DENSITY_MIN_N`) a band shows its dots and
+no curve. The curves are `densityCurve` (`src/domain/ceilingHeights.ts`,
+tested): a Gaussian kernel at Silverman's bandwidth, never narrower than
+50 ft, or in log2 of the ratio 0.1, since the reports come in 100 ft
+steps and a narrower kernel draws each step as a spike. The data file
+(version 2, about 290 KB) carries each band's values and curves; the
+page computes only its axis, from the 5th to the 95th percentile of the
+points shown (a wider one squeezed the low bands to a sliver), and counts
+the points past it at the edges. `docs/ceiling-errors.html` is the artifact's source,
 written for the artifact's wrapper (which supplies the doctype and
 charset) and fetching `ceiling-errors.json` from beside itself; opened
 from the repository as it stands it finds no data. To view it locally,
