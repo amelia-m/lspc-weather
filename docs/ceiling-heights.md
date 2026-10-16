@@ -225,7 +225,10 @@ blank frame points at the viewer rather than the page's code. It was
 opened in the Claude desktop app; the same link in a web browser at
 claude.ai showed the page whole (the maintainer's screenshot, dark
 theme, all three sources on the control), so the blank was the desktop
-app's view of it. Open the chart in a browser.
+app's view of it. Later the same day, after the raincloud version was
+published, the maintainer saw the page whole in the desktop app's side
+panel too, so the blank did not last; nothing in the page changed to
+fix it. A browser at claude.ai is the fallback if it recurs.
 
 The data file is `data/parity/ceiling-errors.json`, written by
 `scripts/ceilingChartData.ts` from the same archives and the same
