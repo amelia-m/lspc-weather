@@ -9,7 +9,10 @@
  *     --ceiling data/parity/ceiling-2026-04-01-to-2026-10-09.jsonl.gz \
  *     --cover data/parity/cloud-cover-2026-04-01-to-2026-10-09.jsonl.gz \
  *     --kept <forecast-archive checkout>/data \
- *     --out data/parity/ceiling-errors.json
+ *     --out public/ceiling-errors/ceiling-errors.json
+ *
+ * The output is served beside the chart page, public/ceiling-errors/
+ * index.html, on the dashboard's site; merging it to main publishes it.
  *
  * More data is more files: each flag takes any number, so a later fetch
  * (scripts/cloudCoverFetch.py with PARTS=cig and SITES for both points,

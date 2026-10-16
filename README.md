@@ -263,6 +263,14 @@ hand that the figures were read beside — and never a grade. A daily workflow
 writes its data from the logs. The pipeline and how to read the page are in
 [`docs/source-parity.md`](docs/source-parity.md).
 
+A third, **[Ceiling forecast errors](https://amelia-m.github.io/lspc-weather/ceiling-errors/)**,
+linked from the footer, charts how far the NWS forecast ceiling sat from the
+one KPMV reported, hour by hour from April 2026: by size of the miss, as a
+raincloud of every hour per band, and band against band, for each grid point
+and lead, with the forecasts the dashboard itself read added since October. It
+is a static page beside the app (`public/ceiling-errors/`); how it is made and
+updated is in [`docs/ceiling-heights.md`](docs/ceiling-heights.md), "The chart".
+
 Every USPA, CFR and FAA citation here began as an AI recollection; the club's
 posted wind-limit tiers did not — they are a transcription of an undated photo
 of the sign, and stay that. On 2026-09-22 the USPA SIM sections were fetched
