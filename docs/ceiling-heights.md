@@ -227,7 +227,10 @@ site at 1,280, 390 and 320 px, and on the dev server, on 2026-10-16 by
 following the footer link and back, with no policy violation logged; at
 320 px a legend entry that would not wrap made the page scroll
 sideways, and the first chart's axis labels ran together, both fixed
-then. While it was an
+then. Deployed the same day: the page, `chart.js` and the data file
+answered 200 from amelia-m.github.io (fetched with curl, which the
+sandbox can do; its browser still cannot load the live site), and the
+deployed dashboard's script carries the footer link. While it was an
 artifact, on 2026-10-16 the maintainer saw a blank page at its link. The served files
 were read back the same day: `index.html` is the repository's page,
 byte for byte, inside the artifact's wrapper, with `ceiling-errors.json`
