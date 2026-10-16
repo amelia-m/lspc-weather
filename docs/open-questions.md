@@ -420,6 +420,16 @@ and it does not say whether a past day's archive was ever edited after
 the fact; it says the archive and the API were the same forecast that
 hour.
 
+## The ceiling chart's old artifact
+
+The ceiling-error chart moved on 2026-10-16 from a private claude.ai
+artifact (<https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx>) to the
+dashboard's site (`public/ceiling-errors/`, docs/ceiling-heights.md, "The
+chart"). The artifact still opens, for the maintainer only, with the data
+of 2026-10-16 and nothing saying it moved. Waiting on the maintainer:
+delete it, or keep it as it is. Claude deletes an artifact only when
+asked.
+
 ## Viewing the deployed site from the sandbox
 
 Waiting on the maintainer since 2026-10-13. Chromium here rejects the
