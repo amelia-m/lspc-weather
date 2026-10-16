@@ -309,7 +309,11 @@ down, or a push refused) still runs to its end and then fails, so the
 loss shows. Tried before merging against a throwaway copy of the
 repository with 30-second spacing: two live snapshots fetched, committed
 and pushed under distinct names, exit 0; with the copy's remote refusing
-pushes, nothing pushed, the checkout untouched, exit 1. Whether the
+pushes, nothing pushed, the checkout untouched, exit 1. Started by hand
+after the merge (run 38943086043, 17:53:02Z): it queued its successor
+(38943109753) 12 seconds later, and its first snapshot, `1823Z.json.gz`,
+was committed at 18:23:02Z with both sources fetched (the gridpoint's
+`updateTime` 18:05:33Z, Open-Meteo's outlook without error). Whether the
 chain keeps the hours covered is to be read from the branch after a few
 days.
 
