@@ -169,8 +169,15 @@ const data = {
   bins: DIFF_BINS,
   points,
 };
-// Compact: with every hour's value in it, one number a line was 930 KB.
-writeFileSync(out, JSON.stringify(data) + '\n');
+// One key a line, so a regenerated file diffs by field, but each array of
+// numbers (or of [x, y] pairs) on one line: one number a line was 930 KB.
+const NUM = String.raw`-?\d+(?:\.\d+)?(?:e[-+]?\d+)?`;
+const flat = (re: RegExp) => (json: string) => json.replace(re, (m) => m.replace(/\s+/g, ''));
+const text = [
+  flat(new RegExp(String.raw`\[\s*${NUM}(?:,\s*${NUM})*\s*\]`, 'g')),
+  flat(new RegExp(String.raw`\[\s*\[[^\[\]]*\](?:,\s*\[[^\[\]]*\])*\s*\]`, 'g')),
+].reduce((j, f) => f(j), JSON.stringify(data, null, 1));
+writeFileSync(out, text + '\n');
 console.log(
   `wrote ${out}: ${points.map((p) => `${p.site} ${p.rows.map((r) => r.hours).join('/')} h`).join(', ')}`,
 );

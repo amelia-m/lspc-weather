@@ -317,7 +317,7 @@ describe('densityCurve', () => {
     c.slice(1).reduce((a, [x, y], i) => a + ((x - c[i][0]) * (y + c[i][1])) / 2, 0);
 
   it('integrates to about 1, peaks where the values bunch, and is symmetric for symmetric values', () => {
-    const d = densityCurve([-300, -100, 0, 0, 0, 100, 300], 50, 201)!;
+    const d = densityCurve([-300, -100, 0, 0, 0, 100, 300], 50)!;
     // The tails past two bandwidths are left off: a little under 1.
     expect(area(d.curve)).toBeGreaterThan(0.98);
     expect(area(d.curve)).toBeLessThan(1);
@@ -341,6 +341,14 @@ describe('densityCurve', () => {
     // holds when even that is 0.
     expect(densityCurve([100, 100, 100, 100, 100, 100, 900], 50)!.bandwidth).toBeGreaterThan(50);
     expect(densityCurve([100, 100, 100, 100, 100], 50)!.bandwidth).toBe(50);
+  });
+
+  it('samples no wider than half a bandwidth, within its cap, and needs a floor above 0', () => {
+    const d = densityCurve([-3000, -100, 0, 0, 100, 9000], 50)!;
+    const step = d.curve[1][0] - d.curve[0][0];
+    expect(step).toBeLessThanOrEqual(d.bandwidth / 2 + 1e-9);
+    expect(densityCurve([-3000, -100, 0, 0, 100, 9000], 50, 100)!.curve).toHaveLength(100);
+    expect(() => densityCurve([100, 100, 100, 100, 100], 0)).toThrow(/above 0/);
   });
 
   it('gives no curve under the minimum count', () => {
