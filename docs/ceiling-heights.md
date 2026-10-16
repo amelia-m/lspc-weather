@@ -185,13 +185,18 @@ Share of those hours by size of the difference ("low": forecast below the report
 The tables above, and the same for every issuance and both grid points,
 are drawn on one page on the dashboard's own site:
 <https://amelia-m.github.io/lspc-weather/ceiling-errors/>, linked from
-the dashboard's footer ("Ceiling forecast errors"). Its source is
-`public/ceiling-errors/index.html`, a standalone page that Vite copies to
-the site as it is, with its data file beside it; it loads nothing from
-another host and uses the dashboard's system font. Since 2026-10-16;
-before that it was a private claude.ai artifact
+the dashboard's footer ("Ceiling forecast errors"), which points at the
+file, `ceiling-errors/index.html`, since `npm run dev` answers the bare
+folder with the dashboard (Pages serves the page for both). Its source is
+`public/ceiling-errors/`: `index.html`, its script `chart.js` and the
+data file, which Vite copies to the site as they are. The page carries a
+Content-Security-Policy narrowed from the dashboard's (`vite.config.ts`):
+its own script and data only, no inline script, no other host; it uses
+the dashboard's system font. Since 2026-10-16; before that it was a
+private claude.ai artifact
 (<https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx>), which only the
-maintainer could open, and which is no longer updated. It has three charts, all from one data
+maintainer could open, and which is no longer updated
+(docs/open-questions.md). It has three charts, all from one data
 file: hours by size of the difference (a diverging bar, forecast below
 the report to the left), the spread in ft or as forecast ÷ reported on
 a doubling scale, and the other side's bands for each band. Its controls
@@ -214,12 +219,15 @@ sliver), and counts the points past it at the edges. Curves are sampled
 no wider than half their bandwidth, so no peak falls between samples.
 The file is written one key a line with each array of numbers on one
 line, so a regenerated file diffs by field. `tests/ceilingErrorsPage.test.ts`
-holds the page and its data to each other (the footer link, the data
-version, every band's hours) and checks the page loads nothing from
-another host. Checked on the built site at 1,280, 390 and 320 px on
-2026-10-16 by following the footer link and back; at 320 px a legend
-entry that would not wrap made the page scroll sideways, and the first
-chart's axis labels ran together, both fixed then. While it was an
+holds the page, its script and its data to each other (the footer link,
+the data version, every band's hours), and checks the policy refuses
+inline script and other hosts and that no address appears outside a
+plain link; each was broken once to see it fail. Checked on the built
+site at 1,280, 390 and 320 px, and on the dev server, on 2026-10-16 by
+following the footer link and back, with no policy violation logged; at
+320 px a legend entry that would not wrap made the page scroll
+sideways, and the first chart's axis labels ran together, both fixed
+then. While it was an
 artifact, on 2026-10-16 the maintainer saw a blank page at its link. The served files
 were read back the same day: `index.html` is the repository's page,
 byte for byte, inside the artifact's wrapper, with `ceiling-errors.json`

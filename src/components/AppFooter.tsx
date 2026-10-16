@@ -1,9 +1,11 @@
 import { REPO_URL } from '../config/site';
 import { OpenMeteoCredit } from './OpenMeteoCredit';
 
-/** The ceiling-error charts' page, served from public/ceiling-errors/. The
- *  trailing slash matters: the page fetches its data file relative to it. */
-export const CEILING_ERRORS_URL = `${import.meta.env.BASE_URL}ceiling-errors/`;
+/** The ceiling-error charts' page, served from public/ceiling-errors/. By
+ *  its file, not its folder: Pages serves the folder's index.html, but the
+ *  dev server answers the folder with the dashboard itself. The page fetches
+ *  its data file relative to this. */
+export const CEILING_ERRORS_URL = `${import.meta.env.BASE_URL}ceiling-errors/index.html`;
 
 /** The dashboard's footer: where the data come from, Open-Meteo's licence
  *  credit, the pages behind the dashboard, and a sign-off. */
