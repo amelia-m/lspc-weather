@@ -297,9 +297,15 @@ where hourly would be about 48. This is the throttling the comparison
 sampler met (CLAUDE.md: GitHub ran an every-fifteen-minutes schedule
 under ten percent of the time), and the sampler's fix would serve here: a
 job that loops and keeps a snapshot each hour itself, restarted by a
-schedule or dispatch, instead of a cron line per snapshot. Waiting on the
-maintainer: whether the hourly lead is worth a long-running job's
-minutes.
+schedule or dispatch, instead of a cron line per snapshot. The maintainer
+chose the loop on 2026-10-16: `forecast-keep.yml` now runs
+`scripts/forecastKeepLoop.sh` for 340 minutes, keeping a snapshot at
+minute 23 of each hour and pushing each as it is taken, and is started
+every hour so that a delivered start waits in the queue for the running
+one to end (the sampler's lesson, below). Tried before merging against a
+throwaway copy of the repository with 30-second spacing: two live
+snapshots fetched, committed and pushed. Whether the starts keep the
+hours covered is to be read from the branch after a few days.
 
 What that choice involves, as read 2026-10-16:
 
@@ -408,9 +414,11 @@ hour.
 
 On 2026-10-16 the maintainer saw a blank page at the chart's artifact
 link. The served page and data were read back and rendered here without
-error (docs/ceiling-heights.md, "The chart"). Waiting on the maintainer:
-where it was opened (phone app, desktop app or browser), and whether any
-of the page's own text showed.
+error (docs/ceiling-heights.md, "The chart"). It was opened in the
+Claude desktop app. The page writes its header and notes as plain HTML,
+so a frame with no text at all means the page did not load there, not
+that its script failed. Waiting on the maintainer: whether it shows at
+claude.ai in a browser while signed in to the same account.
 
 ## Viewing the deployed site from the sandbox
 

@@ -1,6 +1,6 @@
 name: Forecast keeper
 
-# Once an hour, keep what the dashboard's forecasts said: the NWS gridpoint
+# Every hour, keep what the dashboard's forecasts said: the NWS gridpoint
 # fields the card reads and Open-Meteo's 10-day outlook, as the app asks for
 # them (scripts/forecastKeep.ts says which and why). Both serve only the
 # future, and no archive holds the gridpoint's hourly rain and thunder
@@ -8,19 +8,31 @@ name: Forecast keeper
 # against what happened needs them kept now (docs/open-questions.md,
 # "Forecasts kept for later").
 #
-# Each run commits one gzipped JSON file to the `forecast-archive` branch,
-# data/YYYY/MM/DD/HHMMZ.json.gz. Nothing reaches `main`, so no deploy runs.
-# A run GitHub skips or delays leaves a gap, and each file's `at` says when
-# it was really fetched, so a gap shows as a gap.
+# Each snapshot is one gzipped JSON file on the `forecast-archive` branch,
+# data/YYYY/MM/DD/HHMMZ.json.gz, committed and pushed as it is taken.
+# Nothing reaches `main`, so no deploy runs. Each file's `at` says when it
+# was really fetched, so a gap shows as a gap.
+#
+# One job that loops (scripts/forecastKeepLoop.sh), keeping a snapshot at
+# minute 23 of every hour for about five hours and forty minutes. A cron line
+# per snapshot was throttled: GitHub ran `23 * * * *` 10 times in about 47
+# hours (2026-10-13 to 15). The starts below are throttled too, so they come
+# every hour while a run lasts nearly six: whichever start GitHub does
+# deliver waits in the queue and begins as the running one ends. The
+# surface-wind sampler, started every five hours for five-hour runs, covered
+# only 57% of the time while its starts were late (docs/surface-wind-
+# sources.md); the waiting start is what closes that gap.
 on:
   schedule:
-    # Minute 23, off the hour's crowd.
     - cron: '23 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# One run at a time, and one waiting: GitHub keeps a single pending run in
+# a group and a newer start replaces it, which loses nothing, since either
+# would begin as the running one ends.
 concurrency:
   group: forecast-keep
   cancel-in-progress: false
@@ -28,7 +40,8 @@ concurrency:
 jobs:
   keep:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The loop's 340 minutes, plus setup; GitHub's ceiling is 360.
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,26 +49,5 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Fetch
-        run: |
-          stamp=$(date -u +%Y/%m/%d/%H%MZ)
-          echo "STAMP=$stamp" >> "$GITHUB_ENV"
-          npx tsx scripts/forecastKeep.ts snapshot.json.gz
-      - name: Commit to forecast-archive
-        run: |
-          git config user.name "forecast-keep workflow"
-          git config user.email "actions@users.noreply.github.com"
-          mv snapshot.json.gz "$RUNNER_TEMP/snapshot.json.gz"
-          # The branch holds only the kept files; start it empty the first time.
-          if git fetch origin forecast-archive 2>/dev/null; then
-            git switch -C forecast-archive FETCH_HEAD
-          else
-            git switch --orphan forecast-archive
-            git rm -rf --quiet . || true
-          fi
-          mkdir -p "data/$(dirname "$STAMP")"
-          cp "$RUNNER_TEMP/snapshot.json.gz" "data/$STAMP.json.gz"
-          git add "data/$STAMP.json.gz"
-          git commit -m "Keep forecasts ($STAMP)" --quiet
-          # Another run may have pushed between fetch and push; rebase once.
-          git push origin forecast-archive || { git pull --rebase origin forecast-archive && git push origin forecast-archive; }
+      - name: Keep a snapshot every hour
+        run: scripts/forecastKeepLoop.sh 340
