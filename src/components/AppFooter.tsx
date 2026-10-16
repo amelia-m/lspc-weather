@@ -1,6 +1,10 @@
 import { REPO_URL } from '../config/site';
 import { OpenMeteoCredit } from './OpenMeteoCredit';
 
+/** The ceiling-error charts' page, served from public/ceiling-errors/. The
+ *  trailing slash matters: the page fetches its data file relative to it. */
+export const CEILING_ERRORS_URL = `${import.meta.env.BASE_URL}ceiling-errors/`;
+
 /** The dashboard's footer: where the data come from, Open-Meteo's licence
  *  credit, the pages behind the dashboard, and a sign-off. */
 export function AppFooter(): JSX.Element {
@@ -13,6 +17,11 @@ export function AppFooter(): JSX.Element {
       <br />
       <a href="#parity">How different from other sources</a> — the winds table against Mark
       Schulze&rsquo;s and the observation against usairnet&rsquo;s, from the comparison logs.
+      <br />
+      {/* A static page beside the app (public/ceiling-errors/), not a route:
+          it reads its own data file and draws its own charts. */}
+      <a href={CEILING_ERRORS_URL}>Ceiling forecast errors</a> — the NWS forecast ceiling against
+      KPMV&rsquo;s reports, hour by hour.
       <br />
       <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
         Source on GitHub

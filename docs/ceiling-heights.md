@@ -183,10 +183,15 @@ Share of those hours by size of the difference ("low": forecast below the report
 ## The chart
 
 The tables above, and the same for every issuance and both grid points,
-are drawn on one page: `docs/ceiling-errors.html`, published on
-2026-10-14 as a private artifact at
-<https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx> (only the maintainer
-can open it until it is shared). It has three charts, all from one data
+are drawn on one page on the dashboard's own site:
+<https://amelia-m.github.io/lspc-weather/ceiling-errors/>, linked from
+the dashboard's footer ("Ceiling forecast errors"). Its source is
+`public/ceiling-errors/index.html`, a standalone page that Vite copies to
+the site as it is, with its data file beside it; it loads nothing from
+another host and uses the dashboard's system font. Since 2026-10-16;
+before that it was a private claude.ai artifact
+(<https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx>), which only the
+maintainer could open, and which is no longer updated. It has three charts, all from one data
 file: hours by size of the difference (a diverging bar, forecast below
 the report to the left), the spread in ft or as forecast ÷ reported on
 a doubling scale, and the other side's bands for each band. Its controls
@@ -208,13 +213,14 @@ the points shown, pooled (a wider one squeezed the low bands to a
 sliver), and counts the points past it at the edges. Curves are sampled
 no wider than half their bandwidth, so no peak falls between samples.
 The file is written one key a line with each array of numbers on one
-line, so a regenerated file diffs by field. `docs/ceiling-errors.html` is the artifact's source,
-written for the artifact's wrapper (which supplies the doctype and
-charset) and fetching `ceiling-errors.json` from beside itself; opened
-from the repository as it stands it finds no data. To view it locally,
-wrap it in a skeleton and serve it with the data file next to it, as was
-done to check it at 1,100, 390 and 320 px on 2026-10-14. On 2026-10-16
-the maintainer saw a blank page at the artifact's link. The served files
+line, so a regenerated file diffs by field. `tests/ceilingErrorsPage.test.ts`
+holds the page and its data to each other (the footer link, the data
+version, every band's hours) and checks the page loads nothing from
+another host. Checked on the built site at 1,280, 390 and 320 px on
+2026-10-16 by following the footer link and back; at 320 px a legend
+entry that would not wrap made the page scroll sideways, and the first
+chart's axis labels ran together, both fixed then. While it was an
+artifact, on 2026-10-16 the maintainer saw a blank page at its link. The served files
 were read back the same day: `index.html` is the repository's page,
 byte for byte, inside the artifact's wrapper, with `ceiling-errors.json`
 beside it, and the served page, rendered in Playwright's Chromium with
@@ -230,7 +236,7 @@ published, the maintainer saw the page whole in the desktop app's side
 panel too, so the blank did not last; nothing in the page changed to
 fix it. A browser at claude.ai is the fallback if it recurs.
 
-The data file is `data/parity/ceiling-errors.json`, written by
+The data file is `public/ceiling-errors/ceiling-errors.json`, written by
 `scripts/ceilingChartData.ts` from the same archives and the same
 functions as `scripts/ceilingSummary.ts` (`summarizeCeilings`,
 `diffDistribution`), so the chart and the tables above agree. To add
@@ -243,13 +249,12 @@ data:
    cloud-cover-<…>.jsonl.gz` (no SITES, so the records keep the drop
    zone archive's shape). Keep both under `data/parity/`.
 2. `npx tsx scripts/ceilingChartData.ts --ceiling <every ceiling file>
-   --cover <every cloud-cover file> --out data/parity/ceiling-errors.json`.
+   --cover <every cloud-cover file> --out public/ceiling-errors/ceiling-errors.json`.
    Each flag takes any number of files; a line in two of them counts
    once, so overlapping windows are safe.
-3. Republish the page with the new file beside it (Claude does this with
-   the artifact URL above, which keeps the link). The page also has a
-   file picker that shows a newer `ceiling-errors.json` in one browser
-   without republishing.
+3. Merge it to `main`: the Pages deploy publishes the new file beside
+   the page. The page also has a file picker that shows a newer
+   `ceiling-errors.json` in one browser without a deploy.
 
 ### The forecasts the card read, kept hourly
 
@@ -268,7 +273,7 @@ git fetch origin forecast-archive
 git worktree add --detach <dir> origin/forecast-archive
 npx tsx scripts/ceilingChartData.ts --ceiling … --cover … \
   data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz --kept <dir>/data \
-  --out data/parity/ceiling-errors.json
+  --out public/ceiling-errors/ceiling-errors.json
 ```
 
 `--kept` takes files or folders. KPMV's reports for the kept window are
