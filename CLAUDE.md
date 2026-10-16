@@ -515,9 +515,12 @@ to the `forecast-archive` branch, one gzipped file an hour
 holds the hourly rain and thunder chances or the outlook as the card asks
 for them. It never touches `main`, so it starts no deploy. Since
 2026-10-16 it is a job that loops (`scripts/forecastKeepLoop.sh`, a
-snapshot at minute 23 of each hour, pushed as taken) for nearly six
-hours, started every hour so a delivered start is always waiting: as a
-cron line per snapshot it ran every 3 to 6 hours.
+snapshot at minute 23 of each hour, pushed as taken; five or six a run)
+and queues its own successor before it starts, so the chain does not
+wait on GitHub's schedule; a three-hourly schedule restarts it if a
+dispatch fails. As a cron line per snapshot it ran every 3 to 6 hours.
+To stop it, disable the workflow in the Actions tab: a run dispatched
+only by the last one would otherwise follow it for good.
 `.github/workflows/surface-wind-sample.yml` is that pattern again, temporary:
 it runs `scripts/surfaceWindCompare.live.ts` every five minutes
 (`scripts/surfaceWindLoop.sh`) until 2026-10-30T02:00Z, uploads

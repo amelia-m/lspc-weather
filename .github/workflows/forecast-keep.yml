@@ -14,25 +14,29 @@ name: Forecast keeper
 # was really fetched, so a gap shows as a gap.
 #
 # One job that loops (scripts/forecastKeepLoop.sh), keeping a snapshot at
-# minute 23 of every hour for about five hours and forty minutes. A cron line
-# per snapshot was throttled: GitHub ran `23 * * * *` 10 times in about 47
-# hours (2026-10-13 to 15). The starts below are throttled too, so they come
-# every hour while a run lasts nearly six: whichever start GitHub does
-# deliver waits in the queue and begins as the running one ends. The
-# surface-wind sampler, started every five hours for five-hour runs, covered
-# only 57% of the time while its starts were late (docs/surface-wind-
-# sources.md); the waiting start is what closes that gap.
+# minute 23 of every hour; it stops after its last mark that fits in 340
+# minutes, so a run keeps five or six. A cron line per snapshot was
+# throttled: GitHub ran `23 * * * *` 10 times in about 47 hours (2026-10-13
+# to 15). Scheduled starts of a looping job are throttled too: the
+# surface-wind sampler, started every five hours, covered only 57% of the
+# time while its starts were late (docs/surface-wind-sources.md). So each
+# run first queues its own successor with a workflow_dispatch, which waits
+# and begins as this run ends, and the chain does not depend on the
+# schedule. The schedule is a backup that restarts the chain if a dispatch
+# ever fails; a start it delivers while one is waiting replaces that one
+# (listed as cancelled), which loses nothing.
 on:
   schedule:
-    - cron: '23 * * * *'
+    - cron: '23 */3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+  # To queue the next run.
+  actions: write
 
 # One run at a time, and one waiting: GitHub keeps a single pending run in
-# a group and a newer start replaces it, which loses nothing, since either
-# would begin as the running one ends.
+# a group and a newer start replaces it.
 concurrency:
   group: forecast-keep
   cancel-in-progress: false
@@ -49,5 +53,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Before the loop, so a run that dies part-way still leaves its
+      # successor waiting. Only on main: a run dispatched on a branch to try
+      # it out keeps one run's snapshots and does not chain.
+      - name: Queue the next run
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run forecast-keep.yml --ref main
       - name: Keep a snapshot every hour
         run: scripts/forecastKeepLoop.sh 340

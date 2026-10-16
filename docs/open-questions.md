@@ -299,13 +299,19 @@ under ten percent of the time), and the sampler's fix would serve here: a
 job that loops and keeps a snapshot each hour itself, restarted by a
 schedule or dispatch, instead of a cron line per snapshot. The maintainer
 chose the loop on 2026-10-16: `forecast-keep.yml` now runs
-`scripts/forecastKeepLoop.sh` for 340 minutes, keeping a snapshot at
-minute 23 of each hour and pushing each as it is taken, and is started
-every hour so that a delivered start waits in the queue for the running
-one to end (the sampler's lesson, below). Tried before merging against a
-throwaway copy of the repository with 30-second spacing: two live
-snapshots fetched, committed and pushed. Whether the starts keep the
-hours covered is to be read from the branch after a few days.
+`scripts/forecastKeepLoop.sh` for up to 340 minutes, keeping a snapshot
+at minute 23 of each hour and pushing each as it is taken (five or six a
+run), and each run first queues its own successor with a
+`workflow_dispatch`, so the chain does not wait on the schedule, which
+the sampler's lesson below shows is late too; a three-hourly schedule
+restarts it if a dispatch fails. A run that loses an hour (both sources
+down, or a push refused) still runs to its end and then fails, so the
+loss shows. Tried before merging against a throwaway copy of the
+repository with 30-second spacing: two live snapshots fetched, committed
+and pushed under distinct names, exit 0; with the copy's remote refusing
+pushes, nothing pushed, the checkout untouched, exit 1. Whether the
+chain keeps the hours covered is to be read from the branch after a few
+days.
 
 What that choice involves, as read 2026-10-16:
 
