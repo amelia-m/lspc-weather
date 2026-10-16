@@ -203,9 +203,12 @@ tested): a Gaussian kernel at Silverman's bandwidth, never narrower than
 50 ft, or in log2 of the ratio 0.1, since the reports come in 100 ft
 steps and a narrower kernel draws each step as a spike. The data file
 (version 2, about 290 KB) carries each band's values and curves; the
-page computes only its axis, from the 5th to the 95th percentile of the
-points shown (a wider one squeezed the low bands to a sliver), and counts
-the points past it at the edges. `docs/ceiling-errors.html` is the artifact's source,
+page computes only its axis, from the 5th to the 95th percentile of all
+the points shown, pooled (a wider one squeezed the low bands to a
+sliver), and counts the points past it at the edges. Curves are sampled
+no wider than half their bandwidth, so no peak falls between samples.
+The file is written one key a line with each array of numbers on one
+line, so a regenerated file diffs by field. `docs/ceiling-errors.html` is the artifact's source,
 written for the artifact's wrapper (which supplies the doctype and
 charset) and fetching `ceiling-errors.json` from beside itself; opened
 from the repository as it stands it finds no data. To view it locally,

@@ -397,10 +397,12 @@ export function diffDistribution(
 export const DENSITY_MIN_N = 5;
 
 /**
- * A Gaussian kernel density of `xs`, for a chart's cloud: `points` pairs
+ * A Gaussian kernel density of `xs`, for a chart's cloud: pairs
  * [x, density] from two bandwidths below the lowest value to two above
- * the highest; the density integrates to 1 over all x, a little under
- * over the grid, which leaves the tails past two bandwidths off. The bandwidth is Silverman's
+ * the highest, spaced no wider than half a bandwidth (at least 80, at most
+ * `maxPoints`), so no peak falls between samples; the density integrates
+ * to 1 over all x, a little under over the grid, which leaves the tails
+ * past two bandwidths off. The bandwidth is Silverman's
  * rule of thumb, 0.9 · min(sd, IQR / 1.34) · n^(-1/5) (IQR left out when
  * it is 0, as when most hours share one value), and never below
  * `minBandwidth`: the reports come in 100 ft steps, and a narrower kernel
@@ -409,8 +411,9 @@ export const DENSITY_MIN_N = 5;
 export function densityCurve(
   xs: readonly number[],
   minBandwidth: number,
-  points = 80,
+  maxPoints = 400,
 ): { bandwidth: number; curve: [number, number][] } | null {
+  if (!(minBandwidth > 0)) throw new Error(`densityCurve: minBandwidth must be above 0, not ${minBandwidth}`);
   const n = xs.length;
   if (n < DENSITY_MIN_N) return null;
   const s = [...xs].sort((a, b) => a - b);
@@ -422,6 +425,7 @@ export function densityCurve(
   const bandwidth = Math.max(minBandwidth, 0.9 * spread * n ** -0.2);
   const lo = s[0] - 2 * bandwidth;
   const hi = s[n - 1] + 2 * bandwidth;
+  const points = Math.min(maxPoints, Math.max(80, Math.ceil((hi - lo) / (bandwidth / 2)) + 1));
   const norm = 1 / (n * bandwidth * Math.sqrt(2 * Math.PI));
   const curve: [number, number][] = [];
   for (let i = 0; i < points; i++) {

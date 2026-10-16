@@ -375,27 +375,31 @@ thead th { color: var(--ink-2); font-weight: 600; }
     chart.replaceChildren();
     const dist = state.by === 'forecast' ? row.byForecast : row.byReported;
     const ratio = state.unit === 'ratio';
-    const rows = data.bands.map((b) => ({ band: b, d: dist[b] })).filter((r) => r.d && r.d.n > 0);
-    // Points on the drawing's scale: ft, or log2 of forecast ÷ reported.
-    const pts = (d) => (ratio ? d.ratios.filter((v) => v > 0).map(Math.log2) : d.values);
+    // Each band's points on the drawing's scale, lowest first as the file
+    // gives them: ft, or log2 of forecast ÷ reported.
+    const rows = data.bands.map((b) => ({ band: b, d: dist[b] })).filter((r) => r.d && r.d.n > 0)
+      .map((r) => ({ ...r, v: ratio ? r.d.ratios.filter((x) => x > 0).map(Math.log2) : r.d.values }));
     const width = Math.max(280, chart.clientWidth);
     const narrow = width < 620;
     const head = narrow ? 38 : 22, cloudH = 34, gap = 6, rainH = 20, top = 4, axisH = 26;
     const rowH = head + cloudH + gap + rainH + 14;
     const height = top + rows.length * rowH + axisH;
-    // The axis spans the 5th to the 95th percentile of every band's points
-    // (wider, the long tails above 3,000 ft squeezed the low bands to a
-    // sliver); points past it sit at the edge, counted there.
-    const nr = (v, p) => v[Math.min(v.length, Math.max(1, Math.ceil(p * v.length))) - 1];
-    const all = rows.map((r) => pts(r.d).slice().sort((a, b) => a - b)).filter((v) => v.length);
-    let lo = Math.min(0, ...all.map((v) => nr(v, 0.05)));
-    let hi = Math.max(0, ...all.map((v) => nr(v, 0.95)));
+    // The axis spans the 5th to the 95th percentile of all the points shown,
+    // pooled, so a band of two hours cannot stretch it (wider, the long
+    // tails above 3,000 ft squeezed the low bands to a sliver); points past
+    // it sit at the edge, counted there.
+    const pooled = rows.flatMap((r) => r.v).sort((a, b) => a - b);
+    const nr = (p) => pooled[Math.min(pooled.length, Math.max(1, Math.ceil(p * pooled.length))) - 1];
+    let lo = Math.min(0, pooled.length ? nr(0.05) : 0);
+    let hi = Math.max(0, pooled.length ? nr(0.95) : 0);
     const maxTicks = narrow ? 5 : 9;
     let ticks;
     if (ratio) {
+      // Whole doublings, every `step` of them, and always through ×1.
       lo = Math.floor(lo); hi = Math.ceil(hi);
       if (hi - lo < 2) { lo -= 1; hi += 1; }
       const step = Math.ceil((hi - lo) / (maxTicks - 1));
+      lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
       ticks = []; for (let e = lo; e <= hi; e += step) ticks.push(e);
     } else {
       const step = [250, 500, 1000, 2000, 4000, 8000].find((st) => (Math.ceil(hi / st) - Math.floor(lo / st)) + 1 <= maxTicks) || 8000;
@@ -457,7 +461,7 @@ thead th { color: var(--ink-2); font-weight: 600; }
       }
       // The rain: every hour, spread down the band by a fixed sequence so
       // the dots sit still between redraws.
-      const v = pts(r.d);
+      const v = r.v;
       const rainTop = base + gap + 2;
       const opacity = v.length > 200 ? 0.35 : v.length > 50 ? 0.5 : 0.75;
       let under = 0, over = 0;
@@ -619,7 +623,7 @@ thead th { color: var(--ink-2); font-weight: 600; }
     d.reports && d.sources && Array.isArray(d.points) && d.points.length > 0 &&
     d.points.every((p) => p.site && p.short && Array.isArray(p.rows) && p.rows.length > 0 &&
       p.rows.every((r) => r.call && r.bands && r.byForecast && r.byReported && typeof r.hours === 'number' &&
-        Object.values(r.byForecast).every((b) => Array.isArray(b.values) && Array.isArray(b.ratios))));
+        [r.byForecast, r.byReported].every((by) => Object.values(by).every((b) => Array.isArray(b.values) && Array.isArray(b.ratios)))));
 
   // A file that does not draw leaves the page as it was.
   function accept(d, note) {
