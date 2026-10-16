@@ -15,11 +15,14 @@
 # does not keep a second snapshot in it.
 #
 # Each snapshot is pushed on its own, so a job cut short keeps every hour it
-# reached. A snapshot whose fetches both fail is not committed (the script
-# exits 1, as the one-shot workflow's step did); one source failing is
-# recorded in the file as { error } and committed.
+# reached. A snapshot whose fetches both fail is not committed; one source
+# failing is recorded in the file as { error } and committed. The loop runs
+# to its end either way and then exits 1 if any hour was not kept, so a
+# lost hour shows as a failed run, as it did when each run kept one.
 #
-# KEEP_EVERY_SECONDS (default 3600) changes the spacing, for a trial run.
+# KEEP_EVERY_SECONDS (default 3600) changes the spacing, for a trial run;
+# under a minute, files are named to the second so a trial does not
+# overwrite its own snapshots.
 set -u
 
 minutes="$1"
@@ -32,14 +35,17 @@ start=$(date -u +%s)
 stop=$((start + minutes * 60))
 
 # The archive branch in its own worktree, so the job's checkout of main is
-# left as it is.
+# left as it is. Every git command below names the worktree with -C, never
+# a cd, so a worktree that failed to appear cannot turn them on main.
 git worktree remove --force "$archive" 2>/dev/null || true
-if git fetch --quiet origin forecast-archive; then
-  git worktree add --quiet --detach "$archive" FETCH_HEAD
+if git ls-remote --exit-code --heads origin forecast-archive >/dev/null; then
+  git fetch --quiet origin forecast-archive && git worktree add --quiet --detach "$archive" FETCH_HEAD \
+    || { echo "could not check out forecast-archive"; exit 1; }
 else
-  # First run on a repository without the branch: start it empty.
-  git worktree add --quiet --detach "$archive"
-  git -C "$archive" checkout --quiet --orphan forecast-archive
+  # Only when the remote says the branch is not there (not on a failed
+  # fetch): start it empty.
+  git worktree add --quiet --detach "$archive" || exit 1
+  git -C "$archive" checkout --quiet --orphan forecast-archive || exit 1
   git -C "$archive" rm -rf --quiet . || true
 fi
 git -C "$archive" config user.name "forecast-keep workflow"
@@ -58,7 +64,32 @@ next_mark() {
   fi
 }
 
+# Commit one snapshot to the archive branch and push it. Each step is
+# checked by hand: errexit does not hold inside a function or subshell whose
+# status is tested, so a failed commit must not fall through to a push that
+# succeeds with nothing in it.
+keep_one() {
+  local stamp=$1 w=$archive
+  # Nothing else writes the branch while this runs (one run at a time, by
+  # the workflow's concurrency group); starting from the remote's tip and
+  # retrying a rejected push once covers a commit pushed by hand.
+  if git -C "$w" fetch --quiet origin forecast-archive; then
+    git -C "$w" reset --quiet --hard FETCH_HEAD || return 1
+  fi
+  mkdir -p "$w/data/$(dirname "$stamp")" || return 1
+  cp "$tmp/snapshot.json.gz" "$w/data/$stamp.json.gz" || return 1
+  git -C "$w" add "data/$stamp.json.gz" || return 1
+  git -C "$w" commit --quiet -m "Keep forecasts ($stamp)" || return 1
+  git -C "$w" push --quiet origin HEAD:forecast-archive && return 0
+  git -C "$w" pull --quiet --rebase origin forecast-archive || return 1
+  git -C "$w" push --quiet origin HEAD:forecast-archive
+}
+
+name_format='%Y/%m/%d/%H%MZ'
+[ "$every" -lt 60 ] && name_format='%Y/%m/%d/%H%M%SZ'
+
 kept=0
+lost=0
 while :; do
   now=$(date -u +%s)
   mark=$(next_mark "$now")
@@ -66,25 +97,19 @@ while :; do
   [ $((mark + 60)) -gt "$stop" ] && break
   sleep $((mark - now))
 
-  stamp=$(date -u +%Y/%m/%d/%H%MZ)
+  stamp=$(date -u +"$name_format")
   echo "== keep at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   if ! npx tsx scripts/forecastKeep.ts "$tmp/snapshot.json.gz"; then
     echo "both sources failed; nothing committed for $stamp"
+    lost=$((lost + 1))
     continue
   fi
-  # Push this one before the next; another writer (a dispatched run) may
-  # have pushed in between, so start from the branch as it stands and
-  # retry once on a rejected push.
-  (
-    set -e
-    cd "$archive"
-    if git fetch --quiet origin forecast-archive; then git reset --quiet --hard FETCH_HEAD; fi
-    mkdir -p "data/$(dirname "$stamp")"
-    cp "$tmp/snapshot.json.gz" "data/$stamp.json.gz"
-    git add "data/$stamp.json.gz"
-    git commit --quiet -m "Keep forecasts ($stamp)"
-    git push --quiet origin HEAD:forecast-archive \
-      || { git pull --quiet --rebase origin forecast-archive && git push --quiet origin HEAD:forecast-archive; }
-  ) && kept=$((kept + 1)) || echo "commit or push failed for $stamp"
+  if keep_one "$stamp"; then
+    kept=$((kept + 1))
+  else
+    echo "commit or push failed for $stamp"
+    lost=$((lost + 1))
+  fi
 done
-echo "loop done: $kept snapshot(s) kept"
+echo "loop done: $kept snapshot(s) kept, $lost not"
+[ "$lost" -eq 0 ]
