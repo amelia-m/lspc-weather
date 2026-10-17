@@ -204,7 +204,7 @@ hours, and a table view repeats every figure. Since 2026-10-17 a
 fourth section, with controls of its own, scores the kept forecasts'
 hourly rain and thunder chances against KPMV's reports
 (docs/forecast-chances.md); the data file carries them as `chances`,
-written whenever `--kept` is given. Since 2026-10-16, at the
+written whenever the kept snapshots hold any. Since 2026-10-16, at the
 maintainer's request, the spread is a raincloud per band in place of a
 box plot: a density curve scaled to its own peak, the 10th to 90th
 percentile line, middle half and median on its base, and every hour as a

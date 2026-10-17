@@ -23,18 +23,27 @@ question will receive at least 0.01" of rain" (weather.gov/ffc/pop, read
 the weather group: drizzle with no `P` group, or `P0000` (a trace), is
 precipitation but not 0.01 in. Those hours are counted separately
 ("some precipitation reported, under 0.01 in.") and are not rain here.
+Drifting or blowing snow (`DRSN`, `BLSN`) is snow lifted by the wind and
+counts as neither (none in the archive).
 
 KPMV reports at :15, :35 and :55. From April to October 9, 2026 there
 were 4,460, 4,453 and 4,462 reports at those minutes, and 19 or fewer at
-any other. Its `P` amount runs from one :55 report to the next. On
+any other (57 off those minutes from April to October 16, special
+reports among them). Its `P` amount runs from one :55 report to the next. On
 2026-10-15 the reports read `P0006` at 10:55, then `P0001`, `P0003` and
 `P0007` at 11:15, 11:35 and 11:55, with the six-hour `60013` at 11:55
 equal to 0.06 + 0.07. Across the archive to October 9, in all 220 hours
 with a `P` group in two or more reports, the amount rose or held from
 :15 to :35 to :55; it never fell. So the hour read for rain is the one
-ending at :55, five minutes ahead of the forecast's clock hour. An hour
-counts only when its :55 report is on record, since without it the
-hour's amount is not all there.
+ending at :55, five minutes ahead of the forecast's clock hour, for every
+reading: a report at :56 to :59 belongs to the next hour, since its
+amount runs from the :55 report before it. An hour counts only when its
+:55 report is on record, since without it the hour's amount is not all
+there; a special report at :48 is not the hourly one. A report with no
+`P` group is no precipitation unless it says `PNO`, the gauge not
+available (2026-08-26 07:15Z, once in the archive), or gives `P////`;
+then the hour is unknown and left out of the rain count, unless another
+report in it measured 0.01 in.
 
 **Thunder.** An hour counts as thunder when a report in it gave `TS` in
 its weather group (`TS`, `TSRA`, `-TSSN` and so on). `VCTS`, a
@@ -43,8 +52,9 @@ counted separately. KPMV wrote one as `-VCTSRA` on 2026-10-13, with the
 intensity before `VC`, and that is read as vicinity weather too. An hour
 whose reports say `TSNO` (the lightning sensor not available), and that
 reported no `TS`, is left out as unknown: one hour in the archive. KPMV
-does report thunder. Of the 4,642 hours from April to October 16 with a
-:55 report, 98 had `TS` and 277 had 0.01 in. or more.
+does report thunder. Of the 4,629 hours from April 1 to October 16 with
+a :55 report, 97 had `TS` and 276 had 0.01 in. or more (one unknown
+each).
 
 Scoring the thunder chance against the station alone is this app's
 choice. NWS's own definition of its thunder chance (a point, or an area
@@ -60,11 +70,14 @@ the row's lead are left out (`END_REACH_H`). The API runs equal hours
 together (`P2DT21H` at 0% for 69 hours, read 2026-10-17), and each hour
 of a run takes its value. A null value is no forecast.
 
-The chances are grouped as 0%, 1 to 9%, then tens to 90 to 100%. For
+The chances are grouped as 0%, 1 to 9%, then tens to 90 to 100%. The
+API's are whole percents; a fractional one would join the group whose
+lowest value it reaches, and a value outside 0 to 100% stops the run. For
 each group the page shows how many hours, how many it happened in, and
 the group's average chance. Beside them it gives the chances added up:
 the number of hours a forecast meaning exactly what it said would have
-expected it in. It computes no score.
+expected it in. It computes no score. The hours short of the event are
+counted by `CHANCE_NEAR`, beside `CHANCE_EVENT`.
 
 ## First reading, 2026-10-17
 
@@ -94,4 +107,4 @@ The chances come from the kept snapshots and KPMV's reports. A later
 METAR fetch (`PARTS=metar python3 scripts/cloudCoverFetch.py`) and a
 current checkout of `forecast-archive` extend them. Regenerate the data
 file as docs/ceiling-heights.md, "The chart", says; the chances are
-written whenever `--kept` is given.
+written whenever the kept snapshots hold any.

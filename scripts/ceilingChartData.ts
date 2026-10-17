@@ -25,7 +25,8 @@
  * They become a third forecast source beside the two NDFD grid points,
  * never merged into them. The same snapshots' hourly rain and thunder
  * chances, which no archive holds, are scored against KPMV's reports too
- * (`chances` in the file; src/domain/chances.ts, docs/forecast-chances.md).
+ * (`chances` in the file, whenever the snapshots hold any;
+ * src/domain/chances.ts, docs/forecast-chances.md).
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
@@ -46,7 +47,6 @@ import {
 import {
   CHANCE_BINS,
   CHANCE_ELEMENTS,
-  CHANCE_EVENT,
   keptChanceRecords,
   reportedHours,
   summarizeChances,
@@ -173,34 +173,24 @@ const points = POINTS.map(({ site, short, place }) => {
 }).filter((p) => p.rows.some((r) => r.hours > 0));
 
 // The kept rain and thunder chances against what KPMV reported, per
-// issuance row: hours and the hours it happened in, by chance bin. Beside
-// each row, the counted hours with something short of the event: some
-// precipitation but under 0.01 in., or thunder only in the vicinity.
+// issuance row: hours and the hours it happened in, by chance group, and
+// beside them the hours with something short of it (CHANCE_NEAR). Written
+// whenever the kept snapshots hold any chances.
 const reported = reportedHours(metars);
-const reportedAt = new Map(reported.map((h) => [h.t, h]));
-const NEAR_MISS = {
+const WORDS = {
   probabilityOfPrecipitation: { name: 'Rain', event: 'at least 0.01 in. measured at KPMV', near: 'some precipitation reported, under 0.01 in.' },
   probabilityOfThunder: { name: 'Thunder', event: 'thunder (TS) reported at KPMV', near: 'thunder reported only in the vicinity (VCTS)' },
 } as const;
-const chances = keptUsed
+const chances = CHANCE_ELEMENTS.some((e) => chanceForecasts[e].length)
   ? {
       bins: CHANCE_BINS,
       elements: CHANCE_ELEMENTS.map((key) => ({
         key,
-        ...NEAR_MISS[key],
-        rows: summarizeChances(chanceForecasts[key], reported, CHANCE_EVENT[key]).map((r) => ({
-          label: r.label,
-          minLeadH: r.minLeadH,
-          hours: r.hours,
-          events: r.events,
-          chanceSum: r.chanceSum,
-          leadH: r.leadH,
-          span: span(r.pairs.map((p) => iso(p.valid))),
-          nearMiss: r.pairs.filter((p) => {
-            const h = reportedAt.get(Date.parse(p.valid))!;
-            return !p.event && (key === 'probabilityOfPrecipitation' ? h.precip : h.vcts);
-          }).length,
-          bins: r.bins,
+        ...WORDS[key],
+        rows: summarizeChances(chanceForecasts[key], reported, key).map(({ pairs, ...r }) => ({
+          ...r,
+          // First and last hour counted, for the page's small-sample note.
+          span: span(pairs.map((p) => iso(p.valid))),
         })),
       })),
     }
