@@ -328,23 +328,45 @@ soon as it is saved.
 - the usairnet KPMV page the Ceiling & sky card links to, as a second decode of
   the same METAR (plain HTML, fetchable with a browser User-Agent).
 
-Still not checkable here, so do not imply a green suite covers them:
+Not covered by `npm test`, so do not imply a green suite covers them:
 
-- **The deployed site in a browser.** Playwright's Chromium does not trust the
-  proxy's TLS-intercepting CA, so it cannot load any https:// page, and the
-  fixes for that (the NSS store, a Chromium enterprise policy) are blocked by
-  the sandbox's own guardrails. Checked again 2026-10-13: the proxy's notes
-  (/root/.ccr/README.md) say the browser NSS store is set up, but
-  `~/.pki/nssdb/cert9.db` holds no certificates, `certutil` is not
-  installed, and pointing Chromium at the session proxy explicitly still
-  fails with ERR_CERT_AUTHORITY_INVALID. The fix is the environment's setup
-  script, which the maintainer controls (docs/open-questions.md, "Viewing
-  the deployed site from the sandbox"). <https://amelia-m.github.io/lspc-weather/> has
-  therefore never been loaded, and the app has never been seen in a browser
-  against *live* data.
+- **The deployed site in a browser, against live data: checkable since
+  2026-10-17.** Playwright's Chromium does not trust the proxy's
+  TLS-intercepting CA on its own (`~/.pki/nssdb` is empty and `certutil`
+  is not installed, so the NSS store cannot be filled from here), but
+  Chromium accepts a list of public-key hashes to trust,
+  `--ignore-certificate-errors-spki-list`. Given the hashes of the
+  proxy's own CA certificates from `/root/.ccr/ca-bundle.crt` (subjects
+  with `O = Anthropic`) and the session proxy, it loads
+  <https://amelia-m.github.io/lspc-weather/> and the live APIs, and still
+  rejects any other certificate (without the flag the same page fails with
+  ERR_CERT_AUTHORITY_INVALID). It trusts exactly what the empty NSS store
+  was meant to:
 
-  What can still be checked in a browser, and is worth doing rather than
-  skipping: serve the production build over local http and let Playwright
+  ```
+  d=$(mktemp -d)   # fresh, so no certificate from an earlier split is trusted
+  spki=$(csplit -s -z -f $d/ca- /root/.ccr/ca-bundle.crt '/-----BEGIN CERTIFICATE-----/' '{*}';
+    for f in $d/ca-*; do openssl x509 -in $f -noout -subject | grep -q Anthropic &&
+      openssl x509 -in $f -pubkey -noout | openssl pkey -pubin -outform der |
+      openssl dgst -sha256 -binary | base64; done | sort -u | paste -sd,)
+  # in the script:
+  # chromium.launch({ executablePath, proxy: { server: process.env.HTTPS_PROXY },
+  #   args: [`--ignore-certificate-errors-spki-list=${spki}`] })
+  ```
+
+  First load, 2026-10-17 about 01:30Z, at 1280, 390 and 320 px: the page
+  rendered with live data and no sideways scroll at any width. Two things
+  showed in the console. Open-Meteo's two requests failed on the first
+  try after about 11 seconds as "blocked by CORS policy" and succeeded on
+  the app's retry (200, `access-control-allow-origin: *`); Open-Meteo
+  sends that header, so the failed answer was most likely the proxy's
+  own on a slow request, not Open-Meteo's, and a reader's browser would
+  not meet it. And `/favicon.ico` at the domain root is a 404: the page
+  names no icon, so the browser asks there. docs/open-questions.md,
+  "Viewing the deployed site from the sandbox", has the rest.
+
+  For a change not yet deployed, still worth doing rather than skipping:
+  serve the production build over local http and let Playwright
   fulfil cross-origin images itself. That is how the radar marker was verified
   —
 
@@ -426,11 +448,12 @@ each reader's browser calls Open-Meteo from its own address.
 
 ## Verifying UI work
 
-Playwright is available, but **it cannot currently reach any https:// site**:
-its Chromium does not trust the egress proxy's CA and fails with
-`ERR_CERT_AUTHORITY_INVALID`. Local `npm run dev` over http works; the deployed
-site does not. Do not report a live-site UI check as done on the strength of a
-Node render.
+Playwright is available. It reaches https:// sites only with the proxy's
+CA keys passed to `--ignore-certificate-errors-spki-list` (above, "The
+deployed site in a browser"); without them it fails with
+`ERR_CERT_AUTHORITY_INVALID`. Local `npm run dev` over http works either
+way. Do not report a live-site UI check as done on the strength of a Node
+render.
 
 When it does run: the browser binary is `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`
 (the `chromium` symlink next to it is not the executable) — pass it as
