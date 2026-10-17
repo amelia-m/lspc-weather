@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { compass } from '../domain/units';
 import { haversineMiles, initialBearingDeg } from '../domain/geo';
-import { DZ_ON_RADAR_IMAGE, SITE } from '../config/site';
+import { DZ_ON_RADAR_IMAGE, RADAR_IMAGE_PX, SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 
@@ -37,6 +37,8 @@ export function RadarPanel(): JSX.Element {
             className="radar-img"
             src={loop}
             alt={`NWS ${r.id} radar loop`}
+            width={RADAR_IMAGE_PX.width}
+            height={RADAR_IMAGE_PX.height}
             loading="lazy"
             onError={() => setFailed(true)}
           />
