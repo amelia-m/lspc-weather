@@ -475,14 +475,15 @@
     }
   });
 
-  // Redraw when the width changes; opening the table view only changes the height.
+  // Redraw when the charts' column changes width (the window, or the notes
+  // moving beside it); opening the table view only changes the height.
   let resizeTimer, lastWidth = 0;
   new ResizeObserver(([entry]) => {
     const w = Math.round(entry.contentRect.width);
     if (w === lastWidth) return;
     lastWidth = w;
     clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 80);
-  }).observe(document.querySelector('main'));
+  }).observe(document.querySelector('.charts'));
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
 
   fetch('ceiling-errors.json')
