@@ -123,6 +123,13 @@ export const NEARBY_METAR_STATIONS: readonly { id: string; iemId: string; name: 
 ];
 export const NEARBY_METAR_NETWORK = 'NE_ASOS';
 
+/** The RIDGE "standard" loop's size in pixels (naturalWidth and
+ *  naturalHeight 600 and 550 in the live page, 2026-10-17). The card gives
+ *  the image these as its width and height so the browser keeps the box at
+ *  this shape before the lazily loaded GIF arrives; without them the box sat
+ *  60 px tall and the drop-zone ring floated in it, away from where it lands. */
+export const RADAR_IMAGE_PX = { width: 600, height: 550 } as const;
+
 /**
  * Georeferencing of the NWS RIDGE "standard" radar image the Radar card shows.
  *
@@ -154,13 +161,6 @@ export const NEARBY_METAR_NETWORK = 'NE_ASOS';
  * marker moves silently, so `docs/open-questions.md` carries the method for
  * re-measuring it.
  */
-/** The RIDGE "standard" loop's size in pixels (naturalWidth and
- *  naturalHeight 600 and 550 in the live page, 2026-10-17). The card gives
- *  the image these as its width and height so the browser keeps the box at
- *  this shape before the lazily loaded GIF arrives; without them the box sat
- *  60 px tall and the drop-zone ring floated in it, away from where it lands. */
-export const RADAR_IMAGE_PX = { width: 600, height: 550 } as const;
-
 export const RADAR_IMAGE_GEOREF: RadarImageGeoref = {
   spanDeg: 4.287,
   centreLatOffsetDeg: 0.0603,

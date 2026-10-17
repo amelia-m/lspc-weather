@@ -22,9 +22,11 @@ permissions:
   contents: read
   issues: write
 
+# Queued, not cancelled: a run started by a failed deploy is skipped at the
+# job, and cancelling for it would end a daily check partway.
 concurrency:
   group: live-site
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   check:

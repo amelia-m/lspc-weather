@@ -86,6 +86,26 @@ async function load(page: { name: string; path: string }, width: number): Promis
     if (why === 'net::ERR_ABORTED') return;
     (own(r.url()) ? o.ownFailures : o.otherFailures).push(`${why} ${short(r.url())}`);
   });
+  // Anything that throws from here on (a crashed tab, a navigation that
+  // destroys the page's context) is a fault of this load, not the end of
+  // the run: the other pages and widths are still checked, and this one
+  // gets its second load.
+  try {
+    await observe(p, page, o);
+  } catch (e) {
+    o.pageErrors.push(`the check could not read the page: ${(e as Error).message.split('\n')[0]}`);
+  } finally {
+    await ctx.close().catch(() => undefined);
+  }
+  return o;
+}
+
+async function observe(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Playwright's types are not installed here
+  p: any,
+  page: { name: string; path: string },
+  o: LoadObservation,
+): Promise<void> {
   try {
     await p.goto(BASE + page.path, { waitUntil: 'networkidle', timeout: 90_000 });
   } catch (e) {
@@ -140,8 +160,6 @@ async function load(page: { name: string; path: string }, width: number): Promis
   } else {
     o.checks.push({ name: 'cards rendered', ok: seen.panels > 0, detail: `${seen.panels} panels` });
   }
-  await ctx.close();
-  return o;
 }
 
 let failed = 0;
