@@ -426,9 +426,14 @@ The ceiling-error chart moved on 2026-10-16 from a private claude.ai
 artifact (<https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx>) to the
 dashboard's site (`public/ceiling-errors/`, docs/ceiling-heights.md, "The
 chart"). The artifact still opens, for the maintainer only, with the data
-of 2026-10-16 and nothing saying it moved. Waiting on the maintainer:
-delete it, or keep it as it is. Claude deletes an artifact only when
-asked.
+of 2026-10-16 and nothing saying it moved. Compared the same day: its
+data file is the site's byte for byte (SHA-256 2ac6d9d6…), its page is
+older than the site's (without the CSP, the 320 px fixes or the corrected
+keeper text), and every version it was published at was a commit first,
+so `git log --follow public/ceiling-errors/index.html` holds them all.
+Nothing would be lost; its only extras are opening in Claude's side panel
+and claude.ai comments. Waiting on the maintainer: delete it, or keep it.
+Claude deletes an artifact only when asked.
 
 ## Viewing the deployed site from the sandbox
 
