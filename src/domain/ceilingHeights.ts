@@ -192,9 +192,11 @@ export interface CeilingRow {
   bands: Record<CeilingBand, Record<CeilingBand, number>>;
   /** Hours both sides fell in the same band, 'none' included. */
   sameBand: number;
-  /** Every hour counted, in time order: the forecast ceiling and the
-   *  reported one, each ft or 'none'. What the distributions are read from. */
-  pairs: { forecast: Ceiling; reported: Ceiling }[];
+  /** Every hour counted, in time order: the hour (ISO, UTC), the forecast
+   *  ceiling and the reported one, each ft or 'none'. What the
+   *  distributions are read from, and how two sources are matched hour for
+   *  hour. */
+  pairs: { valid: string; forecast: Ceiling; reported: Ceiling }[];
 }
 
 const emptyBands = (): CeilingRow['bands'] =>
@@ -260,7 +262,7 @@ export function summarizeCeilings(
       if (!pick) continue;
       const fc = forecastCeiling(pick.cig, topFt) as Ceiling;
       n++;
-      pairs.push({ forecast: fc, reported: rep.ceiling });
+      pairs.push({ valid: new Date(t).toISOString(), forecast: fc, reported: rep.ceiling });
       leads.push((t - Date.parse(pick.issued)) / MS_H);
       const rb = bandOf(rep.ceiling);
       const fb = bandOf(fc);
@@ -359,7 +361,7 @@ function quantiles(xs: readonly number[], round: (n: number) => number): Quantil
  *  met, `'reported'` sorts by the outcome (see `diffByBand` on why that
  *  grouping leans). */
 export function diffDistribution(
-  pairs: CeilingRow['pairs'],
+  pairs: readonly { forecast: Ceiling; reported: Ceiling }[],
   by: 'forecast' | 'reported',
 ): Record<FlightCategory, DiffDistribution> {
   const diffs = new Map<FlightCategory, number[]>(FLIGHT_BANDS.map((b) => [b, []]));

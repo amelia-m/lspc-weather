@@ -89,6 +89,7 @@ p { margin: 0; max-width: 68ch; }
 .seg button:focus-visible, .panel [tabindex]:focus-visible, summary:focus-visible, .file:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .facts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .facts b { color: var(--ink); font-weight: 650; }
+.sample-note { font-size: 14px; color: var(--ink); background: var(--chip); border-radius: 8px; padding: 10px 14px; max-width: none; }
 .panel { background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 1px var(--ring); padding: 18px 18px 14px; display: grid; gap: 12px; min-width: 0; }
 .panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: start; }
 .panel-head > div:first-child { display: grid; gap: 4px; min-width: 0; flex: 1 1 320px; }
@@ -151,6 +152,7 @@ a { color: var(--accent); }
   </div>
 
   <div class="facts" id="facts" aria-live="polite"></div>
+  <p class="sample-note" id="sample-note" hidden></p>
 
   <section class="panel" aria-labelledby="h1-size">
     <div class="panel-head">

@@ -143,6 +143,8 @@ const points = POINTS.map(({ site, short, place }) => {
     label: r.label,
     minLeadH: r.minLeadH,
     hours: r.hours,
+    // First and last hour counted: the page names them when a row is small.
+    span: span(r.pairs.map((p) => iso(p.valid))),
     leadH: r.leadH,
     call: r.call,
     bands: r.bands,
