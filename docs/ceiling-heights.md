@@ -193,9 +193,8 @@ data file, which Vite copies to the site as they are. The page carries a
 Content-Security-Policy narrowed from the dashboard's (`vite.config.ts`):
 its own script and data only, no inline script, no other host; it uses
 the dashboard's system font. Since 2026-10-16; before that it was a
-private claude.ai artifact
-(<https://claude.ai/artifact/MvreJBrMpSKfX5HsFACnGx>), which only the
-maintainer could open, and which is no longer updated
+private claude.ai artifact that only the maintainer could open, deleted
+on 2026-10-17 once the site's page had everything it held
 (docs/open-questions.md). It has three charts, all from one data
 file: hours by size of the difference (a diverging bar, forecast below
 the report to the left), the spread in ft or as forecast ÷ reported on

@@ -443,35 +443,44 @@ older than the site's (without the CSP, the 320 px fixes or the corrected
 keeper text), and every version it was published at was a commit first,
 so `git log --follow public/ceiling-errors/index.html` holds them all.
 Nothing would be lost; its only extras are opening in Claude's side panel
-and claude.ai comments. Waiting on the maintainer: delete it, or keep it.
-Claude deletes an artifact only when asked.
+and claude.ai comments, and it had no comments. Deleted 2026-10-17 at the
+maintainer's word ("if it's fully superseded delete"); its link no
+longer opens.
 
 ## Viewing the deployed site from the sandbox
 
-Waiting on the maintainer since 2026-10-13. Chromium here rejects the
-egress proxy's certificate because its trust store, `~/.pki/nssdb`, is
-empty (cert9.db has no rows), though the proxy's notes say it was set up.
-Filling it needs NSS's `certutil` (package `libnss3-tools`), which is not
-installed, and installing tools from inside a session has been blocked
-before. The environment's setup script runs before a session starts and
-is the maintainer's to edit (the cloud environment menu, Edit, Setup
-script). Proposed, untested:
+Settled 2026-10-17, with nothing for the maintainer to do. Chromium here
+rejects the egress proxy's certificate because its trust store,
+`~/.pki/nssdb`, is empty (cert9.db has no rows), though the proxy's notes
+say it was set up, and filling it needs NSS's `certutil`, which is not
+installed. The fix proposed on 2026-10-13 was an `apt-get install
+libnss3-tools` and a `certutil` loop in the environment's setup script.
 
-```bash
-apt-get install -y libnss3-tools
-mkdir -p ~/.pki/nssdb
-csplit -s -z -f /tmp/ccr-ca- /root/.ccr/ca-bundle.crt '/-----BEGIN CERTIFICATE-----/' '{*}'
-for f in /tmp/ccr-ca-*; do
-  openssl x509 -in "$f" -noout -subject 2>/dev/null | grep -q 'O = Anthropic' &&
-    certutil -d sql:$HOME/.pki/nssdb -A -t 'C,,' -n "ccr-$(basename "$f")" -i "$f"
-done
-```
+It is not needed. Chromium's `--ignore-certificate-errors-spki-list`
+takes the SHA-256 hashes of public keys to trust; given those of the
+bundle's proxy CA certificates (`/root/.ccr/ca-bundle.crt`, subjects with
+`O = Anthropic`: "CCR agent-proxy interception CA (production) 2026-08",
+"sandbox-egress-gateway-production Egress Gateway CA" and
+"sandbox-egress-production TLS Inspection CA"), and the session proxy as
+its proxy, it loaded the live site; without the flag, the same launch
+failed with ERR_CERT_AUTHORITY_INVALID. It trusts only those keys, as
+the NSS store would have. The recipe is in CLAUDE.md, "The deployed site
+in a browser". The hashes are taken from the bundle each time, so a
+rotated proxy CA needs nothing changed. What the first load found is
+under "Live-site smoke test" below.
 
-It trusts only the bundle's proxy certificates (subjects "CCR agent-proxy
-interception CA", "sandbox-egress ... TLS Inspection CA" and the like,
-O = Anthropic) and switches no checking off. Unknown: whether the bundle
-exists when the setup script runs. If it works, load the live site at 390
-and 320 px and correct the "Still not checkable" paragraph in CLAUDE.md.
+## Issue #147: a timeout, not a disagreement
+
+The sky-parity run of 2026-10-11 (run 38161231894) opened issue #147.
+Its log, read 2026-10-17: the one failing test, "parses the METAR text
+the way aviationweather.gov decodes it", failed on its first request
+(`fetch failed`, connect ETIMEDOUT to 150.171.109.72, an
+aviationweather.gov address), so it compared nothing. The same run's
+other aviationweather.gov requests, made a moment later (flight
+category, TAF), passed, and so did every check on uspa.org and the
+Pilots tab links. Every daily run on `main` since, 2026-10-12 to 10-16,
+passed. Nothing for the code to fix. Proposed: close #147 as not
+planned with a comment saying so. Waiting on the maintainer.
 
 ## KOFF's TAF: no feed a browser can read carries it
 
@@ -529,21 +538,21 @@ Settled:
   no published limit", no band, the standing note and BSR citation present, and
   the advisory list naming the gap.
 
-Still unexercised:
+Exercised since:
 
-- **The deployed site, in a browser, on live data.** The data checks above ran
-  the app's own fetch and render code under Node (`renderToStaticMarkup`, the
-  way the advisory tests work). <https://amelia-m.github.io/lspc-weather/> has
-  never been loaded: Playwright's Chromium does not trust the sandbox's
-  TLS-intercepting proxy CA, so it cannot open any https:// page, and the fixes
-  for that are blocked.
-
-  Layout *was* checked, on the production bundle served over local http with
-  fixtures, at 1280/390/320 px — see CLAUDE.md for the recipe. The radar card,
-  the DZ marker's placement, the CSP and horizontal overflow are all verified
-  that way. What is left unverified is the combination: real data arriving over
-  the real network into a real browser, and the radar `<img>` actually being
-  fetched cross-origin from radar.weather.gov rather than fulfilled locally.
+- **The deployed site, in a browser, on live data** (2026-10-17, about
+  01:30Z; how, in "Viewing the deployed site from the sandbox" below).
+  <https://amelia-m.github.io/lspc-weather/> loaded at 1280, 390 and
+  320 px with no sideways scroll, and every source answered: IEM and
+  NWS's latest KPMV observation, the gridpoint, the TAF chain (KOFF had
+  no product, KOMA did, as on 2026-09-22), and the radar GIF fetched
+  cross-origin from radar.weather.gov (200, drawn at 600 px wide).
+  Open-Meteo's two requests failed on the first try, after about 11
+  seconds, as "blocked by CORS policy", and succeeded on the app's retry;
+  Open-Meteo answers with `access-control-allow-origin: *`, so the failed
+  answer was most likely the sandbox proxy's on a slow request rather
+  than Open-Meteo's. The console's one 404 is `/favicon.ico` at the
+  domain root: the page names no icon.
 
 ## The Student profile models no canopy type
 
