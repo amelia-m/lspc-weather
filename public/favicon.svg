@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The site's icon: a plain canopy over a jumper. Blue only, never a
+       status colour, since the app reads red, amber and green as claims about
+       the conditions. The dashboard's accent (#4aa8ff, src/styles/app.css)
+       on a dark tab bar, the ceiling-error page's light accent (#2a78d6) on
+       a light one, where the paler blue would wash out. -->
+  <style>
+    .f { fill: #4aa8ff; }
+    .s { fill: none; stroke: #4aa8ff; }
+    @media (prefers-color-scheme: light) { .f { fill: #2a78d6; } .s { stroke: #2a78d6; } }
+  </style>
+  <path class="f" d="M3 13 Q16 -1 29 13 Q25.75 10.5 22.5 13 Q19.25 10.5 16 13 Q12.75 10.5 9.5 13 Q6.25 10.5 3 13 Z"/>
+  <path class="s" stroke-width="1.2" stroke-linecap="round" d="M3 13 L16 25 M9.5 13 L16 25 M22.5 13 L16 25 M29 13 L16 25"/>
+  <circle class="f" cx="16" cy="27.5" r="2.5"/>
+</svg>

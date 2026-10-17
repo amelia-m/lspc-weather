@@ -361,8 +361,13 @@ Not covered by `npm test`, so do not imply a green suite covers them:
   the app's retry (200, `access-control-allow-origin: *`); Open-Meteo
   sends that header, so the failed answer was most likely the proxy's
   own on a slow request, not Open-Meteo's, and a reader's browser would
-  not meet it. And `/favicon.ico` at the domain root is a 404: the page
-  names no icon, so the browser asks there. docs/open-questions.md,
+  not meet it. And `/favicon.ico` at the domain root was a 404: the page
+  named no icon, so the browser asked there. Since 2026-10-17 both pages
+  name `public/favicon.svg` (the app as `/favicon.svg`, which Vite
+  rewrites under the base; the ceiling-error page as `../favicon.svg`),
+  checked in a base-path build served locally, where Chromium fetched it
+  with a 200 from both and logged no 404 (`tests/favicon.test.ts`).
+  docs/open-questions.md,
   "Viewing the deployed site from the sandbox", has the rest.
 
   For a change not yet deployed, still worth doing rather than skipping:

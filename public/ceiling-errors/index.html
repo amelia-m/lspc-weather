@@ -7,6 +7,9 @@
 <!-- The dashboard's policy (vite.config.ts) narrowed to what this page
      needs: its own script and data file, inline styles, nothing else. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<!-- The dashboard's icon, one folder up. Relative, since nothing rewrites
+     this page's URLs for the base path; same-origin, so img-src 'self'. -->
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <title>Ceiling forecast errors — LSPC Weather</title>
 <meta name="description" content="How far the NWS forecast ceiling sat from the one KPMV reported, April to October 2026, by band, lead and grid point. Counts and spreads, not a grade.">
 <!-- Served by the dashboard's GitHub Pages site from public/ceiling-errors/,

@@ -583,8 +583,21 @@ Exercised since:
   seconds, as "blocked by CORS policy", and succeeded on the app's retry;
   Open-Meteo answers with `access-control-allow-origin: *`, so the failed
   answer was most likely the sandbox proxy's on a slow request rather
-  than Open-Meteo's. The console's one 404 is `/favicon.ico` at the
-  domain root: the page names no icon.
+  than Open-Meteo's. The console's one 404 was `/favicon.ico` at the
+  domain root: the page named no icon. Both pages have named one since
+  2026-10-17, `public/favicon.svg`, a canopy in the accent blue. The app
+  links it as `/favicon.svg`, which the build writes as
+  `/lspc-weather/favicon.svg` (read in `dist/index.html` from a build with
+  `BASE_PATH=/lspc-weather/`, the base deploy.yml builds with by leaving
+  it unset); the static ceiling-error page links `../favicon.svg`, since
+  nothing rewrites it. Served from a folder named `lspc-weather`, both
+  pages loaded in Chromium with no same-origin request under 200 and no
+  404 in the console, and each page's icon href fetched with a 200 as
+  `image/svg+xml` and drew as an image under the page's own policy (both
+  allow it as `'self'`, unchanged). `npm run dev` serves the same href. Not
+  yet seen on the deployed site; a headless load does not show whether a
+  browser stops asking for `/favicon.ico` there, so the next live load is
+  the check.
 
 ## The Student profile models no canopy type
 
