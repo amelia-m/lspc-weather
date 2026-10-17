@@ -383,6 +383,15 @@ Not covered by `npm test`, so do not imply a green suite covers them:
 - CI is no better: it runs the same fixture-backed suite. Nothing in `npm test`
   touches the network.
 
+**The sandbox cannot delete a remote branch**, and the failure looks like
+success: `git push origin --delete <branch>` prints "Everything up-to-date"
+and exits 0 while the ref stays, and `gh api -X DELETE /repos/.../git/refs/
+heads/<branch>` answers 403 "Write access to this GitHub API path is not
+permitted through this proxy" (both tried 2026-10-17). Deleting a local
+branch works. So a merged branch can only be tidied up by the maintainer, on
+GitHub or from their own checkout; `docs/open-questions.md` carries the list
+waiting for that.
+
 Two habits worth keeping. `NODE_USE_ENV_PROXY=1` plus
 `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` makes Node's fetch go through the
 proxy, which is what let the live paths run at all. And some hosts refuse a bare

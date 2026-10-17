@@ -3,6 +3,37 @@
 Live backlog. Closed items should be deleted rather than marked done — the
 repository history is the record.
 
+## Merged branches waiting to be deleted
+
+The sandbox cannot delete a remote branch (see CLAUDE.md, "What can and cannot
+be verified from a sandbox"), so these need the maintainer, on GitHub or from
+their own checkout. State as of 2026-10-17; none holds a file that is absent
+from `main`, which is the test that matters, since a squash merge leaves a
+branch's commits looking unmerged by ancestry:
+
+- **`claude/bold-thompson-c28git`** (`f53cf6c`) — squash-merged as `a4dfacf`
+  (PR #54). `git diff f53cf6c a4dfacf` is empty, so the squash took the branch
+  byte for byte. Its local copy is already deleted.
+- **`claude/skydiver-weather-dashboard-gqved3`** (`1bc617f`) — content-identical
+  to `b52fe7a` on `main`, i.e. the pre-squash copy of a commit already merged.
+- **`claude/fervent-feynman-zm42xw`** — merged during this audit (its tip
+  `b192f6c` reached `main` between two checks twenty minutes apart), so it went
+  from nine unmerged commits to none while being written up. Worth re-checking
+  it is not still in use before deleting.
+
+**`forecast-archive` is not in this list and must not be deleted.** It is the
+forecast keeper's data branch, 41 commits and 41 files that are deliberately
+absent from `main`; it never merges by design.
+
+To re-check the list:
+
+```
+for b in $(git ls-remote --heads origin | awk '{print $2}' | sed 's#refs/heads/##'); do
+  printf "%-44s files-absent-from-main=%s\n" "$b" \
+    "$(git diff origin/$b origin/main --diff-filter=D --name-only | wc -l)"
+done
+```
+
 ## Needs a human with a document
 
 These cannot be settled from the code.
