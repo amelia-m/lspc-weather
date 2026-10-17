@@ -317,6 +317,17 @@ was committed at 18:23:02Z with both sources fetched (the gridpoint's
 chain keeps the hours covered is to be read from the branch after a few
 days.
 
+First handoff, read 2026-10-17 at about 00:45Z: every hour from 18:23Z
+on October 16 to 00:23Z on the 17th has its snapshot (seven), against
+four in the 17 hours before the loop. The 3-hourly schedule's 21:23Z
+start took the place of the queued dispatch (38943109753 shows
+"cancelled" at 21:23:18Z): with `cancel-in-progress: false` the group
+keeps one run waiting and a newer one replaces it. So it waited instead,
+started at 23:23 when the first run ended (38969012619), took the 00:23Z
+snapshot, and queued its own successor (38981163510). A cancelled
+dispatch in the run list is therefore the schedule taking its turn, not
+a lost hour; a gap in the branch's file names is what would show one.
+
 What that choice involves, as read 2026-10-16:
 
 - **Cost.** The repository is public (`visibility: public` from the API
