@@ -323,7 +323,23 @@ both sides, 43 at 6 hours or more ahead and 24 at 24 hours or more; 11
 snapshots gave records (a snapshot whose fetch failed gives none and is
 not counted). That
 is two days and mostly one rainy spell, so the chart shows it but no
-finding rests on it yet. Because GitHub has run the keeper every 3 to 6
+finding rests on it yet.
+
+Read hour by hour on 2026-10-17, after the maintainer asked why this
+source looks so unlike the other two: its 27 hours with a ceiling on both
+sides are three spells, the evening of October 13 (5 hours, reported
+2,000 to 2,200 ft, forecast 3,300 to 4,600), October 14 (5 hours,
+reported 3,200 to 6,000, forecast 5,200 to 9,100) and one ceiling that
+came down from 3,000 ft to 300 ft between 00Z and 16Z on October 15 (17
+hours; the forecast came down with it, a step behind, a few hundred to
+1,500 ft above). The forecast was above the report in 26 of the 27.
+Consecutive hours of one spell are not independent, and its bands hold
+1 to 15 hours, so its shares swing on single hours (the 500 to 999 ft
+row's 100% is one hour). It is the same forecast as the NDFD grid (the
+API matched it value for value, docs/open-questions.md); what differs is
+which hours: two days of October against six months. Not yet done: the
+NDFD archive for October 13 to 15, to set the two drop-zone sources
+side by side over the same hours. Because GitHub has run the keeper every 3 to 6
 hours instead of hourly, its "latest" row is older than the card's own
 forecast at most hours.
 
