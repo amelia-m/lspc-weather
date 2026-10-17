@@ -494,6 +494,21 @@ the batch of fixes it asks for — not after every small push. Run the four
 gates and read your own diff first; a review spent on a typo is a review not
 available for the change that needs one.
 
+`.github/workflows/live-site.yml` is not a gate either: daily, after every
+deploy and on dispatch, it loads the deployed site in a browser, every page
+at 1280, 390 and 320 px on live data (`scripts/liveSite.ts`), and fails
+when a reader would meet a fault, as `src/domain/liveSite.ts` counts one:
+a script error, the crash screen, a page wider than the viewport, a site
+file not served, a Data health source in error or still loading, the radar
+image not drawn, the parity summary or the ceiling page's data not loaded.
+Another host's failed request and console errors are printed as notes,
+since the app retries them. A page failing its first load is loaded once
+more before it counts, and a failure on `main` opens one issue labelled
+`live-site`. It runs from the sandbox too (the script's header has the
+environment), against the live site or a local build: on 2026-10-17 it
+failed the live `#citations` at 320 px, before the fix deployed, and passed
+every page of a local build with the fix.
+
 `.github/workflows/sky-parity.yml` is not a gate: it runs daily and on
 dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
 `vitest.live.config.ts` so `npm test` stays hermetic. It fails when the

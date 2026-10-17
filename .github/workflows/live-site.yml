@@ -1,0 +1,95 @@
+name: Live site check
+
+# Load the deployed site in a browser, every page at 1280, 390 and 320 px
+# on live data, and fail when a reader would meet a fault: a script error,
+# the crash screen, a page wider than the phone, a site file not served, a
+# Data health source in error or still loading, the radar image not drawn,
+# the parity summary or the ceiling page's data not loaded
+# (scripts/liveSite.ts; what counts is src/domain/liveSite.ts). A page
+# failing on its first load is loaded once more before it counts.
+# Daily, after every deploy, and on demand. Opens (or updates) one issue
+# labelled live-site on failure. Not part of CI: it needs the network and
+# the deployed site, and the PR suite stays hermetic.
+on:
+  schedule:
+    - cron: '17 15 * * *' # 10:17 CDT / 09:17 CST, after the morning's deploys
+  workflow_run:
+    workflows: ['Deploy to GitHub Pages']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: live-site
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # After a deploy only when it succeeded: a failed deploy left the old site
+    # up, which the daily run checks anyway.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Playwright is not one of the app's dependencies; it is installed
+      # beside the run, at the version the sandbox's checks used.
+      - name: Install a browser
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      # Pages can serve the previous build for a minute or two after a deploy
+      # finishes.
+      - name: Let a fresh deploy reach the CDN
+        if: github.event_name == 'workflow_run'
+        run: sleep 120
+      - name: Check the live site
+        shell: bash
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright/index.mjs
+        run: |
+          set -o pipefail
+          npx tsx scripts/liveSite.ts 2>&1 | tee live.log
+      # A run dispatched on a branch is a trial of that branch's check and
+      # must not open an issue against main.
+      - name: Open or update the live-site issue
+        if: failure() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          gh label create live-site --color D93F0B --force \
+            --description "The deployed site showed a fault in the live-site check"
+          {
+            echo "The live-site check failed on $(date -u +%Y-%m-%d). Run: $RUN_URL"
+            echo
+            echo "A page of the deployed site showed a fault on two loads in a row (scripts/liveSite.ts; what counts is src/domain/liveSite.ts). The log names the page, the width and the fault; notes are not faults."
+            echo
+            echo '```'
+            # The log exists only if the check itself ran; a failed setup
+            # must still produce an issue rather than kill this step.
+            if [ -f live.log ]; then
+              grep -v '  note: ' live.log | tail -n 80
+            else
+              echo "(no live.log: the run failed before the check started; see the run for the setup error)"
+            fi
+            echo '```'
+          } > body.md
+          existing=$(gh issue list --label live-site --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh issue create --title "Live-site check failed" --label live-site --body-file body.md
+          fi
