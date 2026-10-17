@@ -186,7 +186,6 @@ function ceilingReports(metars: readonly MetarRecord[], topFt: number): CeilingR
     .sort((a, b) => a.t - b.t);
 }
 
-
 /** How far past a source's last issuance its records still count, beyond
  *  each row's own lead. Past that, an hour is outside the window the
  *  forecasts were gathered for, and its "newest" issuance is only the one
@@ -248,15 +247,18 @@ const mediansOf = (d: Record<FlightCategory, DiffDistribution>): CeilingRow['dif
 export function byValidHour<T extends { issued: string; valid: string }>(
   forecasts: readonly T[],
 ): { byHour: Map<number, T[]>; lastIssued: number } {
+  // Each issue time parsed once: an archive holds hundreds of thousands.
+  const issuedAt = new Map<T, number>(forecasts.map((r) => [r, Date.parse(r.issued)]));
   const byHour = new Map<number, T[]>();
+  let lastIssued = -Infinity;
   for (const r of forecasts) {
+    lastIssued = Math.max(lastIssued, issuedAt.get(r)!);
     const t = Date.parse(r.valid);
     const list = byHour.get(t);
     if (list) list.push(r);
     else byHour.set(t, [r]);
   }
-  for (const rs of byHour.values()) rs.sort((a, b) => Date.parse(b.issued) - Date.parse(a.issued));
-  const lastIssued = forecasts.reduce((m, r) => Math.max(m, Date.parse(r.issued)), -Infinity);
+  for (const rs of byHour.values()) rs.sort((a, b) => issuedAt.get(b)! - issuedAt.get(a)!);
   return { byHour, lastIssued };
 }
 

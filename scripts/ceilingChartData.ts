@@ -95,15 +95,22 @@ const ndfd = parseCeilingLines(lines(args.ceiling));
 const forecasts: CeilingForecast[] = [...ndfd];
 // The kept gridpoint is the drop zone's (the card's); site KEPT keeps it
 // apart from the NDFD records read at the same point. A snapshot whose
-// fetch failed gives none and is not counted.
+// fetch failed gives none and is not counted; one holding a ceiling or a
+// chance is.
 let keptUsed = 0;
 const chanceForecasts: Record<string, ChanceForecast[]> = Object.fromEntries(CHANCE_ELEMENTS.map((e) => [e, []]));
 for (const f of keptFiles(args.kept ?? [])) {
   const snap = JSON.parse(read(f)) as KeptGridpointSnapshot;
   const recs = keptCeilingRecords(snap, 'KEPT');
-  if (recs.length) keptUsed++;
   for (const r of recs) forecasts.push(r);
-  for (const e of CHANCE_ELEMENTS) for (const r of keptChanceRecords(snap, e)) chanceForecasts[e].push(r);
+  let chancesHeld = 0;
+  for (const e of CHANCE_ELEMENTS) {
+    for (const r of keptChanceRecords(snap, e)) {
+      chanceForecasts[e].push(r);
+      chancesHeld++;
+    }
+  }
+  if (recs.length || chancesHeld) keptUsed++;
 }
 const metars: MetarRecord[] = [];
 // The drop zone's archive only (no `site`): KPMV's reports.

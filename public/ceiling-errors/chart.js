@@ -458,7 +458,10 @@
     const c = data.chances;
     panel.hidden = !c;
     if (!c) {
-      for (const id of ['c-facts', 'lg-chance', 'ch-chance', 't-chance']) $(id).replaceChildren();
+      for (const id of ['c-facts', 'lg-chance', 'ch-chance', 't-chance', 'c-el', 'c-clead']) $(id).replaceChildren();
+      for (const id of ['c-el', 'c-clead']) delete $(id).dataset.sig;
+      $('c-note').textContent = '';
+      $('c-note').hidden = true;
       return;
     }
     let elem = c.elements.find((e) => e.key === state.el);

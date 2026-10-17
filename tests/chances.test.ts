@@ -76,24 +76,31 @@ describe('reportedHours', () => {
     // 16Z: a special report at :48 is not the hourly one.
     m(16, 15, ''), m(16, 35, ''), m(16, 48, 'RA', 'P0003'),
     // 17Z dry to its :55 report; a special at 17:58 measures rain since
-    // then, which is 18Z's.
+    // then, which is 18Z's amount, though the rain was seen in 17Z.
     m(17, 15, ''), m(17, 35, ''), m(17, 55, ''), m(17, 58, 'RA', 'P0002'),
     m(18, 15, ''), m(18, 35, ''), m(18, 55, ''),
     // 19Z: the gauge not available.
     m(19, 15, ''), m(19, 35, ''), m(19, 55, '', 'PNO'),
-    // 20Z: blowing snow is lifted, not falling.
-    m(20, 15, 'BLSN'), m(20, 35, ''), m(20, 55, ''),
+    // 20Z: blowing snow is lifted, not falling; thunder in a special at
+    // 20:58 was seen in 20Z, though its gauge reading opens 21Z.
+    m(20, 15, 'BLSN'), m(20, 35, ''), m(20, 55, ''), m(20, 58, 'TS'),
+    m(21, 15, ''), m(21, 35, ''), m(21, 55, ''),
     // A report seen twice changes nothing.
     m(10, 55, 'RA', 'P0006'),
   ]);
 
   it('counts only hours holding the hourly report', () => {
-    expect(hours.map((h) => new Date(h.t).getUTCHours())).toEqual([9, 10, 11, 12, 13, 14, 17, 18, 19, 20]);
+    expect(hours.map((h) => new Date(h.t).getUTCHours())).toEqual([9, 10, 11, 12, 13, 14, 17, 18, 19, 20, 21]);
   });
 
-  it('reads the hour ending with its :55 report, so a report after :55 opens the next', () => {
-    expect(hourOf(hours, 17)).toMatchObject({ measurable: false, precip: false });
+  it('reads the P amount over the hour ending with its :55 report, so a report after :55 opens the next', () => {
+    expect(hourOf(hours, 17)).toMatchObject({ measurable: false, precip: true });
     expect(hourOf(hours, 18)).toMatchObject({ measurable: true, precip: true });
+  });
+
+  it('reads the weather group in the clock hour it was seen in', () => {
+    expect(hourOf(hours, 20)?.ts).toBe(true);
+    expect(hourOf(hours, 21)?.ts).toBe(false);
   });
 
   it('reads a measurable amount from the P group alone', () => {
@@ -165,16 +172,18 @@ describe('summarizeChances, near misses and odd values', () => {
   const hours = [h(T, { precip: true }), h(T + H, { measurable: true, precip: true }), h(T + 2 * H, { vcts: true })];
 
   it('counts each element’s near misses from its own reading', () => {
-    const fc = [at(T, 9.5), at(T + H, 50), at(T + 2 * H, 20)];
+    const fc = [at(T, 9.5), at(T + H, 50), at(T + 2 * H, 0.5)];
     const [rain] = summarizeChances(fc, hours, 'probabilityOfPrecipitation');
     const [thunder] = summarizeChances(fc, hours, 'probabilityOfThunder');
     expect(rain).toMatchObject({ hours: 3, events: 1, nearMiss: 1 });
     expect(thunder).toMatchObject({ hours: 3, events: 0, nearMiss: 1 });
     expect(rain.pairs.map((p) => p.near)).toEqual([true, false, false]);
     expect(thunder.pairs.map((p) => p.near)).toEqual([false, false, true]);
-    // 9.5% has a group (1 to 9%), and the totals are the groups'.
-    expect(rain.bins.find((b) => b.lo === 1)).toMatchObject({ hours: 1, chanceSum: 9.5 });
-    expect(rain.chanceSum).toBe(79.5);
+    // 9.5% and 0.5% both join 1 to 9%; 0% holds only 0. The totals are
+    // the groups'.
+    expect(rain.bins.find((b) => b.lo === 1)).toMatchObject({ hours: 2, chanceSum: 10 });
+    expect(rain.bins[0].hours).toBe(0);
+    expect(rain.chanceSum).toBe(60);
   });
 
   it('refuses a chance outside 0 to 100%', () => {
