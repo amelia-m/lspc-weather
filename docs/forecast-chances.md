@@ -35,9 +35,12 @@ reports among them). Its `P` amount runs from one :55 report to the next. On
 equal to 0.06 + 0.07. Across the archive to October 9, in all 220 hours
 with a `P` group in two or more reports, the amount rose or held from
 :15 to :35 to :55; it never fell. So the hour read for rain is the one
-ending at :55, five minutes ahead of the forecast's clock hour, for every
-reading: a report at :56 to :59 belongs to the next hour, since its
-amount runs from the :55 report before it. An hour counts only when its
+ending at :55, five minutes ahead of the forecast's clock hour: a
+report at :56 to :59 gives its amount to the next hour, since it runs
+from the :55 report before it. The weather group is different. It is
+what was seen at the report's minute, so thunder, vicinity weather and
+precipitation codes count in the clock hour they were seen in, a special
+report at 16:58 in 16Z. An hour counts only when its
 :55 report is on record, since without it the hour's amount is not all
 there; a special report at :48 is not the hourly one. A report with no
 `P` group is no precipitation unless it says `PNO`, the gauge not
@@ -72,7 +75,10 @@ of a run takes its value. A null value is no forecast.
 
 The chances are grouped as 0%, 1 to 9%, then tens to 90 to 100%. The
 API's are whole percents; a fractional one would join the group whose
-lowest value it reaches, and a value outside 0 to 100% stops the run. For
+lowest value it reaches (one under 1% the 1 to 9% group, so 0% holds
+only 0), and a value outside 0 to 100% stops the run. KPMV's hourly
+report has always been at :55 in the archive; one filed a minute either
+side would drop its hour, and nothing here allows for it. For
 each group the page shows how many hours, how many it happened in, and
 the group's average chance. Beside them it gives the chances added up:
 the number of hours a forecast meaning exactly what it said would have

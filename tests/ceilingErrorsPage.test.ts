@@ -94,7 +94,7 @@ describe('the ceiling-error page', () => {
     const c = data.chances as { bins: unknown; elements: { key: string; rows: Row[] }[] };
     expect(page).toContain('id="chances-panel"');
     // The panel's grid display would otherwise outrank its hidden attribute.
-    expect(page).toContain('.panel[hidden] { display: none; }');
+    expect(page).toMatch(/\.panel\[hidden\]\s*\{\s*display:\s*none;?\s*\}/);
     expect(script).toMatch(/seg\('c-el', [^\n]*, renderChances\);/);
     expect(c.bins).toEqual(CHANCE_BINS);
     expect(c.elements.map((e) => e.key)).toEqual([...CHANCE_ELEMENTS]);

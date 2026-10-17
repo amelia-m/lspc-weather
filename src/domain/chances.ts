@@ -38,10 +38,9 @@ export function keptChanceRecords(snap: KeptGridpointSnapshot, element: ChanceEl
   return kept.hours.flatMap(({ valid, value }) => (value == null ? [] : [{ issued: kept.issued, valid, chance: value }]));
 }
 
-/** What KPMV's reports in one hour say happened. The hour is the one
- *  ending with its :55 report, five minutes ahead of the clock hour it is
- *  scored as: KPMV's `P` group is the amount since its last :55 report
- *  (docs/forecast-chances.md), so a report at :56 to :59 opens the next. */
+/** What KPMV's reports say happened in one hour (reportedHours: the `P`
+ *  amount over the hour ending at :55, the weather group over the clock
+ *  hour). */
 export interface ReportedHour {
   /** The clock hour's start, ms. */
   t: number;
@@ -93,49 +92,63 @@ function readReport(raw: string) {
   const rtoks = rmk.split(/\s+/);
   const p = rtoks.map((x) => P_GROUP.exec(x)).find(Boolean);
   const amount = p ? (p[1] === '////' ? null : Number(p[1]) / 100) : rtoks.includes('PNO') ? null : 0;
-  return { precip: precip || p != null, ts, vcts, amount, tsno: rtoks.includes('TSNO') };
+  return { precip, ts, vcts, tsno: rtoks.includes('TSNO'), amount, pGroup: p != null };
 }
 
 /**
- * KPMV's reports grouped by the hour ending at :55. An hour counts only
- * when its :55 report, the hourly one carrying the hour's whole `P`
- * amount, is on record: KPMV reports at :15, :35 and :55 (about 4,460 of
- * each from April to October 9, 2026; 57 reports at any other minute from
- * April to October 16), and
- * without the :55 one the hour's rain is not all there.
+ * What KPMV reported, hour by hour. Two readings, two hours. The `P`
+ * amount runs from one :55 report to the next, so it is read over the
+ * hour ending with the :55 report (a report at :56 to :59 opens the next
+ * one). The weather group is what was seen at the report's minute, so
+ * thunder, vicinity weather and precipitation codes are read in the clock
+ * hour they were seen in. An hour counts only when its :55 report, the
+ * hourly one carrying the hour's whole `P` amount, is on record: KPMV
+ * reports at :15, :35 and :55 (about 4,460 of each from April to October
+ * 9, 2026; 57 reports at any other minute from April to October 16, none
+ * of them an hourly report out of place), and without the :55 one the
+ * hour's rain is not all there.
  */
 export function reportedHours(metars: readonly MetarRecord[]): ReportedHour[] {
   // A report seen twice (overlapping fetches) changes nothing: every
   // reading below asks whether any report in the hour said so.
-  const byHour = new Map<number, { hourly: boolean; r: ReturnType<typeof readReport> }[]>();
+  type Read = ReturnType<typeof readReport>;
+  const seen = new Map<number, Read[]>();
+  const gauge = new Map<number, { hourly: boolean; r: Read }[]>();
+  const push = <V>(map: Map<number, V[]>, t: number, v: V) => {
+    const list = map.get(t);
+    if (list) list.push(v);
+    else map.set(t, [v]);
+  };
   for (const m of metars) {
     const at = Date.parse(m.obsAt);
-    const min = Math.floor((at % MS_H) / 60_000);
-    const t = Math.floor(at / MS_H) * MS_H + (min > 55 ? MS_H : 0);
-    const list = byHour.get(t) ?? [];
-    list.push({ hourly: min === 55, r: readReport(m.raw) });
-    byHour.set(t, list);
+    const hour = Math.floor(at / MS_H) * MS_H;
+    const min = Math.floor((at - hour) / 60_000);
+    const r = readReport(m.raw);
+    push(seen, hour, r);
+    push(gauge, min > 55 ? hour + MS_H : hour, { hourly: min === 55, r });
   }
   const out: ReportedHour[] = [];
-  for (const [t, list] of byHour) {
+  for (const [t, list] of gauge) {
     if (!list.some((x) => x.hourly)) continue;
-    const rs = list.map((x) => x.r);
-    const measured = rs.some((r) => r.amount != null && r.amount >= 0.01);
-    const ts = rs.some((r) => r.ts);
+    const amounts = list.map((x) => x.r);
+    const wx = seen.get(t) ?? [];
+    const measured = amounts.some((r) => r.amount != null && r.amount >= 0.01);
+    const ts = wx.some((r) => r.ts);
     out.push({
       t,
-      measurable: measured ? true : rs.some((r) => r.amount == null) ? null : false,
-      precip: rs.some((r) => r.precip),
-      ts: ts ? true : rs.some((r) => r.tsno) ? null : false,
-      vcts: rs.some((r) => r.vcts),
+      measurable: measured ? true : amounts.some((r) => r.amount == null) ? null : false,
+      precip: wx.some((r) => r.precip) || amounts.some((r) => r.pGroup),
+      ts: ts ? true : wx.some((r) => r.tsno) ? null : false,
+      vcts: wx.some((r) => r.vcts),
     });
   }
   return out.sort((a, b) => a.t - b.t);
 }
 
 /** The chance groups: 0 on its own (most hours), then tens. `hi` is the
- *  label's; a chance belongs to the last group whose `lo` it reaches, so a
- *  fractional one (none seen) still has a group. */
+ *  label's; a chance above 0 belongs to the last group whose `lo` it
+ *  reaches, or to 1 to 9% below 1, so a fractional one (none seen) still
+ *  has a group and 0% holds only 0. */
 export const CHANCE_BINS: readonly { lo: number; hi: number }[] = [
   { lo: 0, hi: 0 },
   { lo: 1, hi: 9 },
@@ -196,7 +209,7 @@ export function summarizeChances(
       const pick = byHour.get(h.t)?.find((r) => h.t - Date.parse(r.issued) >= minLeadH * MS_H);
       if (!pick) continue;
       if (!(pick.chance >= 0 && pick.chance <= 100)) throw new Error(`summarizeChances: a chance of ${pick.chance}%`);
-      const bin = bins.filter((b) => pick.chance >= b.lo).pop()!;
+      const bin = pick.chance === 0 ? bins[0] : (bins.filter((b) => b.lo > 0 && pick.chance >= b.lo).pop() ?? bins[1]);
       bin.hours++;
       bin.chanceSum += pick.chance;
       if (happened) bin.events++;
