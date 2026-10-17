@@ -365,8 +365,9 @@ Not covered by `npm test`, so do not imply a green suite covers them:
   named no icon, so the browser asked there. Since 2026-10-17 both pages
   name `public/favicon.svg` (the app as `/favicon.svg`, which Vite
   rewrites under the base; the ceiling-error page as `../favicon.svg`),
-  checked in a base-path build served locally, where Chromium fetched it
-  with a 200 from both and logged no 404 (`tests/favicon.test.ts`).
+  checked by hand in a base-path build served locally, where Chromium
+  fetched it with a 200 from both and logged no 404. `tests/favicon.test.ts`
+  pins only the links and the file; it loads no browser.
   docs/open-questions.md,
   "Viewing the deployed site from the sandbox", has the rest.
 

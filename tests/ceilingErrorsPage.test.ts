@@ -75,12 +75,16 @@ describe('the ceiling-error page', () => {
     // A row with no hours has no days to name.
     expect(sampleNote({ hours: 0, span: null })).toBeNull();
     expect(sampleNote(row(0, '2026-10-13T16:00Z', '2026-10-13T16:00Z'))).toBeNull();
-    // In the data file: the kept rows get it, the six-month NDFD rows do not.
-    const notes = Object.fromEntries(
-      data.points.map((p: { site: string; rows: Row[] }) => [p.site, p.rows.map((r) => sampleNote(r) != null)]),
-    );
-    expect(notes.KEPT).toEqual([true, true, true]);
-    expect(notes.DZ).toEqual([false, false, false]);
+    // In the data file: a row gets it exactly when its hours fall within 14
+    // days, worked out here from its span, so the test holds as the weekly
+    // refresh (ceiling-data-refresh.yml) lengthens the kept rows past two
+    // weeks. The six-month NDFD rows never get it.
+    const days = (r: Row) => Math.floor(Date.parse(r.span!.to) / 864e5) - Math.floor(Date.parse(r.span!.from) / 864e5) + 1;
+    for (const p of data.points as { site: string; rows: Row[] }[]) {
+      for (const r of p.rows) expect(sampleNote(r) != null).toBe(r.hours > 0 && days(r) <= 14);
+    }
+    const dz = (data.points as { site: string; rows: Row[] }[]).find((p) => p.site === 'DZ')!;
+    expect(dz.rows.map((r) => sampleNote(r))).toEqual([null, null, null]);
     for (const p of data.points) {
       for (const r of p.rows) {
         if (r.hours) expect(r.span.from <= r.span.to).toBe(true);

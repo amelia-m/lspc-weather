@@ -86,6 +86,7 @@ jobs:
           PARTS=cig SITES="$CEILING_SITES" python scripts/cloudCoverFetch.py "$START" "$END" "$RUNNER_TEMP/$name"
           npx tsx scripts/ceilingRefresh.ts fetched ceiling "$RUNNER_TEMP/$name" --since "$SINCE" --start "$START" --end "$END"
           mv "$RUNNER_TEMP/$name" "data/parity/$name"
+          mkdir -p "$RUNNER_TEMP/trial" && cp "data/parity/$name" "$RUNNER_TEMP/trial/"
 
       - name: Fetch KPMV's reports
         if: steps.window.outputs.fetch_metar == 'true'
@@ -102,6 +103,7 @@ jobs:
           PARTS=metar python scripts/cloudCoverFetch.py "$START" "$END" "$RUNNER_TEMP/$name"
           npx tsx scripts/ceilingRefresh.ts fetched metar "$RUNNER_TEMP/$name" --since "$SINCE" --start "$START" --end "$END"
           mv "$RUNNER_TEMP/$name" "data/parity/$name"
+          mkdir -p "$RUNNER_TEMP/trial" && cp "data/parity/$name" "$RUNNER_TEMP/trial/"
 
       # The keeper's snapshots in a worktree of their own, as
       # scripts/forecastKeepLoop.sh does, so main's checkout is untouched.
@@ -117,12 +119,17 @@ jobs:
         if: steps.window.outputs.skip != 'true'
         run: |
           set -euo pipefail
-          mapfile -t ceiling < <(npx tsx scripts/ceilingRefresh.ts inputs ceiling)
-          mapfile -t cover < <(npx tsx scripts/ceilingRefresh.ts inputs cover)
+          # To files first: a failure inside a process substitution would
+          # not stop the step, and the rebuild would run on too few files.
+          npx tsx scripts/ceilingRefresh.ts inputs ceiling > "$RUNNER_TEMP/ceiling-inputs.txt"
+          npx tsx scripts/ceilingRefresh.ts inputs cover > "$RUNNER_TEMP/cover-inputs.txt"
+          mapfile -t ceiling < "$RUNNER_TEMP/ceiling-inputs.txt"
+          mapfile -t cover < "$RUNNER_TEMP/cover-inputs.txt"
           npx tsx scripts/ceilingChartData.ts --ceiling "${ceiling[@]}" --cover "${cover[@]}" \
             --kept "$RUNNER_TEMP/forecast-archive/data" --out "$RUNNER_TEMP/ceiling-errors.json"
           npx tsx scripts/ceilingRefresh.ts check public/ceiling-errors/ceiling-errors.json "$RUNNER_TEMP/ceiling-errors.json"
           cp "$RUNNER_TEMP/ceiling-errors.json" public/ceiling-errors/ceiling-errors.json
+          mkdir -p "$RUNNER_TEMP/trial" && cp "$RUNNER_TEMP/ceiling-errors.json" "$RUNNER_TEMP/trial/"
 
       # The page's tests hold it and its data file to each other; the deploy
       # runs them too, but by then the file would be on main.
@@ -135,10 +142,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ceiling-data-refresh-${{ github.run_id }}
-          path: |
-            data/parity/ceiling-*.jsonl.gz
-            data/parity/metar-*.jsonl.gz
-            public/ceiling-errors/ceiling-errors.json
+          # Only what this run fetched and built, not every archive.
+          path: ${{ runner.temp }}/trial
           retention-days: 7
 
       - name: Commit and deploy
