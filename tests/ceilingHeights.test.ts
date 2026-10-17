@@ -123,8 +123,8 @@ describe('summarizeCeilings', () => {
   });
 
   it('keeps each hour’s pair, no ceiling on either side included', () => {
-    expect(latest.pairs).toEqual([{ valid: '2026-07-01T18:00:00.000Z', forecast: 2000, reported: 1500 }]);
-    expect(six.pairs).toEqual([{ valid: '2026-07-01T18:00:00.000Z', forecast: 'none', reported: 1500 }]);
+    expect(latest.pairs).toEqual([{ valid: '2026-07-01T18:00:00.000Z', issued: '2026-07-01T16:00Z', forecast: 2000, reported: 1500 }]);
+    expect(six.pairs).toEqual([{ valid: '2026-07-01T18:00:00.000Z', issued: '2026-07-01T10:00Z', forecast: 'none', reported: 1500 }]);
   });
 
   it('tables each side’s band', () => {
@@ -308,7 +308,7 @@ describe('keptCeilingRecords', () => {
     const early: MetarRecord = { src: 'metar', obsAt: '2026-10-15T12:55Z', raw: 'KPMV 151255Z AUTO 32008KT 10SM BKN017 12/11 A3004 RMK AO2' };
     const [latest] = summarizeCeilings(recs, [early, report]);
     expect(latest.hours).toBe(1);
-    expect(latest.pairs).toEqual([{ valid: '2026-10-15T14:00:00.000Z', forecast: 1700, reported: 1700 }]);
+    expect(latest.pairs).toEqual([{ valid: '2026-10-15T14:00:00.000Z', issued: '2026-10-15T13:57:06+00:00', forecast: 1700, reported: 1700 }]);
   });
 });
 

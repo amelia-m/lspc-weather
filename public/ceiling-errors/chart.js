@@ -7,11 +7,6 @@
   // The data file's layout this page reads (scripts/ceilingChartData.ts
   // writes it); a file of another version is refused.
   const DATA_VERSION = 2;
-  // Under this many hours a source is a few days, often one or two weather
-  // spells, whose hours are not independent of each other; the page says so
-  // above the charts (the kept source's first 49 hours were three spells,
-  // docs/ceiling-heights.md). A line of context, not a grade.
-  const SMALL_SAMPLE_HOURS = 100;
   const BAND_LABEL = {
     LIFR: 'Under 500 ft', IFR: '500 to 999 ft', MVFR: '1,000 to 3,000 ft', VFR: 'Over 3,000 ft', none: 'No ceiling',
   };
@@ -434,15 +429,11 @@
       fact(point.issuances.count.toLocaleString('en-US'), `forecasts issued ${day(point.issuances.span.from)} to ${day(point.issuances.span.to)}`);
     }
     if (point.gridKm != null) fact(`${point.gridKm} km`, `from ${point.place} to the grid point read`);
+    // note.js, loaded before this file.
     const note = $('sample-note');
-    if (row.hours < SMALL_SAMPLE_HOURS) {
-      const day = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-      const when = row.span ? `, ${day(row.span.from)} to ${day(row.span.to)}` : '';
-      note.textContent = `Only ${row.hours} hours${when}. That is a few days, often one or two weather spells, and the hours of one spell are not independent of each other, so these shares describe those days rather than how the forecast does in general.`;
-      note.hidden = false;
-    } else {
-      note.hidden = true;
-    }
+    const text = sampleNote(row);
+    note.textContent = text ?? '';
+    note.hidden = text == null;
     binLegend();
     drawSize(row);
     drawSpread(row);

@@ -192,11 +192,12 @@ export interface CeilingRow {
   bands: Record<CeilingBand, Record<CeilingBand, number>>;
   /** Hours both sides fell in the same band, 'none' included. */
   sameBand: number;
-  /** Every hour counted, in time order: the hour (ISO, UTC), the forecast
+  /** Every hour counted, in time order: the hour (ISO, UTC), when the
+   *  issuance read for it was issued (as the record wrote it), the forecast
    *  ceiling and the reported one, each ft or 'none'. What the
    *  distributions are read from, and how two sources are matched hour for
    *  hour. */
-  pairs: { valid: string; forecast: Ceiling; reported: Ceiling }[];
+  pairs: { valid: string; issued: string; forecast: Ceiling; reported: Ceiling }[];
 }
 
 const emptyBands = (): CeilingRow['bands'] =>
@@ -262,7 +263,7 @@ export function summarizeCeilings(
       if (!pick) continue;
       const fc = forecastCeiling(pick.cig, topFt) as Ceiling;
       n++;
-      pairs.push({ valid: new Date(t).toISOString(), forecast: fc, reported: rep.ceiling });
+      pairs.push({ valid: new Date(t).toISOString(), issued: pick.issued, forecast: fc, reported: rep.ceiling });
       leads.push((t - Date.parse(pick.issued)) / MS_H);
       const rb = bandOf(rep.ceiling);
       const fb = bandOf(fc);
