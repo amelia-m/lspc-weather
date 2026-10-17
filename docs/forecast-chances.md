@@ -114,6 +114,9 @@ about 30% of the time. That needs weeks of hours in each group.
 
 The chances come from the kept snapshots and KPMV's reports. A later
 METAR fetch (`PARTS=metar python3 scripts/cloudCoverFetch.py`) and a
-current checkout of `forecast-archive` extend them. Regenerate the data
-file as docs/ceiling-heights.md, "The chart", says; the chances are
-written whenever the kept snapshots hold any.
+current checkout of `forecast-archive` extend them. Since 2026-10-17
+`.github/workflows/ceiling-data-refresh.yml` does both every week and
+rebuilds the data file (docs/ceiling-heights.md, "The chart"); the
+chances are written whenever the kept snapshots hold any, and a rebuild
+whose chance rows hold fewer hours than the published ones is not
+committed.

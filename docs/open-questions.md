@@ -479,6 +479,20 @@ and claude.ai comments, and it had no comments. Deleted 2026-10-17 at the
 maintainer's word ("if it's fully superseded delete"); its link no
 longer opens.
 
+## The ceiling data refresh: its first run on GitHub
+
+`.github/workflows/ceiling-data-refresh.yml` (added 2026-10-17;
+docs/ceiling-heights.md, "The chart") was run step by step in a scratch
+copy from the sandbox, but never on GitHub, so its commit, rebase, push
+to `main` and deploy dispatch are untried. Once it is on `main`, the
+first scheduled run is the next Monday at 07:41Z, or start one from the
+Actions tab. Worth a look then: that the run made one commit, "Ceiling
+data to <day>", holding a `ceiling-` and a `metar-` file and the data
+file, that a Pages deploy followed, and that the page's `sources` name
+the new files. Two choices for the maintainer to confirm or change:
+Mondays at 07:41Z, and committing a ceiling and a METAR file every week
+(about 15 KB) rather than merging them into fewer archives.
+
 ## Viewing the deployed site from the sandbox
 
 Settled 2026-10-17, with nothing for the maintainer to do. Chromium here
