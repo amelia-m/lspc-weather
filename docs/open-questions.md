@@ -480,8 +480,8 @@ aviationweather.gov address), so it compared nothing. The same run's
 other aviationweather.gov requests, made a moment later (flight
 category, TAF), passed, and so did every check on uspa.org and the
 Pilots tab links. Every daily run on `main` since, 2026-10-12 to 10-16,
-passed. Nothing for the code to fix. Proposed: close #147 as not
-planned with a comment saying so. Waiting on the maintainer.
+passed. Nothing for the code to fix. Closed as not planned on
+2026-10-17 at the maintainer's word, with a comment saying why.
 
 ## KOFF's TAF: no feed a browser can read carries it
 
