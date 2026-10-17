@@ -54,17 +54,24 @@ export interface NdfdCeilingRecord extends CeilingForecast {
   gridKm: number;
 }
 
+/** One gridpoint property as the API serves it and the keeper keeps it. */
+export type KeptSeries = { uom?: string; values: { validTime: string; value: number | null }[] } | null;
+
 /** The part of a kept snapshot (scripts/forecastKeep.ts, the
- *  `forecast-archive` branch) this reads: the gridpoint as the card
- *  fetched it, or `{ error }` when that fetch failed. The keeper copies a
- *  property the API left out as null. */
+ *  `forecast-archive` branch) this reads, here and in chances.ts: the
+ *  gridpoint as the card fetched it, or `{ error }` when that fetch
+ *  failed. The keeper copies a property the API left out as null. */
 export interface KeptGridpointSnapshot {
   at: string;
   nwsGridpoint:
     | {
         url: string;
         updateTime?: string;
-        properties: { ceilingHeight?: { uom?: string; values: { validTime: string; value: number | null }[] } | null };
+        properties: {
+          ceilingHeight?: KeptSeries;
+          probabilityOfPrecipitation?: KeptSeries;
+          probabilityOfThunder?: KeptSeries;
+        };
       }
     | { error: string }
     | null;

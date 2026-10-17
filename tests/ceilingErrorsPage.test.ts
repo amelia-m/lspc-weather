@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { AppFooter, CEILING_ERRORS_URL } from '../src/components/AppFooter';
+import { CHANCE_BINS, CHANCE_ELEMENTS } from '../src/domain/chances';
 // Raw imports: the typecheck has no Node types for the tests.
 import page from '../public/ceiling-errors/index.html?raw';
 import script from '../public/ceiling-errors/chart.js?raw';
@@ -83,6 +84,32 @@ describe('the ceiling-error page', () => {
     for (const p of data.points) {
       for (const r of p.rows) {
         if (r.hours) expect(r.span.from <= r.span.to).toBe(true);
+      }
+    }
+  });
+
+  it('holds the kept rain and thunder chances, every hour in one chance group', () => {
+    type Bin = { lo: number; hi: number; hours: number; events: number; chanceSum: number };
+    type Row = { hours: number; events: number; chanceSum: number; nearMiss: number; bins: Bin[] };
+    const c = data.chances as { bins: unknown; elements: { key: string; rows: Row[] }[] };
+    expect(page).toContain('id="chances-panel"');
+    expect(script).toContain('renderChances()');
+    expect(c.bins).toEqual(CHANCE_BINS);
+    expect(c.elements.map((e) => e.key)).toEqual([...CHANCE_ELEMENTS]);
+    for (const e of c.elements) {
+      expect(e.rows).toHaveLength(3);
+      for (const r of e.rows) {
+        const sum = (k: 'hours' | 'events' | 'chanceSum') => r.bins.reduce((a, b) => a + b[k], 0);
+        expect(sum('hours')).toBe(r.hours);
+        expect(sum('events')).toBe(r.events);
+        expect(sum('chanceSum')).toBe(r.chanceSum);
+        expect(r.bins.map((b) => [b.lo, b.hi])).toEqual(CHANCE_BINS.map((b) => [b.lo, b.hi]));
+        for (const b of r.bins) {
+          expect(b.events).toBeLessThanOrEqual(b.hours);
+          expect(b.chanceSum).toBeGreaterThanOrEqual(b.lo * b.hours);
+          expect(b.chanceSum).toBeLessThanOrEqual(b.hi * b.hours);
+        }
+        expect(r.events + r.nearMiss).toBeLessThanOrEqual(r.hours);
       }
     }
   });

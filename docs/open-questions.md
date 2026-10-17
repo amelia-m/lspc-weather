@@ -287,8 +287,9 @@ field the card reads and the outlook as the card asks for it, on the
 each). Keeping the card's own requests also gives the lead a reader saw,
 which the NDFD rows only bracket. Since 2026-10-15 the ceiling-error
 chart reads their `ceilingHeight` (docs/ceiling-heights.md, "The
-forecasts the card read, kept hourly"); the rain and thunder chances
-against KPMV's reports are still to come.
+forecasts the card read, kept hourly"), and since 2026-10-17 the same
+page scores their hourly rain and thunder chances against KPMV's reports
+(docs/forecast-chances.md).
 
 **The keeper does not run hourly.** Its schedule is `23 * * * *`, but by
 2026-10-15 15:07Z GitHub had started it 10 times in about 47 hours, 3 to

@@ -267,7 +267,10 @@ A third, **[Ceiling forecast errors](https://amelia-m.github.io/lspc-weather/cei
 linked from the footer, charts how far the NWS forecast ceiling sat from the
 one KPMV reported, hour by hour from April 2026: by size of the miss, as a
 raincloud of every hour per band, and band against band, for each grid point
-and lead, with the forecasts the dashboard itself read added since October. It
+and lead, with the forecasts the dashboard itself read added since October.
+Below them, the hourly rain and thunder chances the dashboard read, against
+whether KPMV measured rain or reported thunder in that hour
+([`docs/forecast-chances.md`](docs/forecast-chances.md)). It
 is a static page beside the app (`public/ceiling-errors/`); how it is made and
 updated is in [`docs/ceiling-heights.md`](docs/ceiling-heights.md), "The chart".
 

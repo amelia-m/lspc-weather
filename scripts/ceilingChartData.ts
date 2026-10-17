@@ -23,7 +23,9 @@
  * commits to the `forecast-archive` branch, as files or folders to search:
  * the API's own `ceilingHeight` at the drop zone, as the card read it.
  * They become a third forecast source beside the two NDFD grid points,
- * never merged into them.
+ * never merged into them. The same snapshots' hourly rain and thunder
+ * chances, which no archive holds, are scored against KPMV's reports too
+ * (`chances` in the file; src/domain/chances.ts, docs/forecast-chances.md).
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
@@ -41,6 +43,15 @@ import {
   type KeptGridpointSnapshot,
   summarizeCeilings,
 } from '../src/domain/ceilingHeights';
+import {
+  CHANCE_BINS,
+  CHANCE_ELEMENTS,
+  CHANCE_EVENT,
+  keptChanceRecords,
+  reportedHours,
+  summarizeChances,
+  type ChanceForecast,
+} from '../src/domain/chances';
 import { parseCloudCoverLines, type MetarRecord } from '../src/domain/cloudCoverSources';
 
 const args: Record<string, string[]> = {};
@@ -86,10 +97,13 @@ const forecasts: CeilingForecast[] = [...ndfd];
 // apart from the NDFD records read at the same point. A snapshot whose
 // fetch failed gives none and is not counted.
 let keptUsed = 0;
+const chanceForecasts: Record<string, ChanceForecast[]> = Object.fromEntries(CHANCE_ELEMENTS.map((e) => [e, []]));
 for (const f of keptFiles(args.kept ?? [])) {
-  const recs = keptCeilingRecords(JSON.parse(read(f)) as KeptGridpointSnapshot, 'KEPT');
+  const snap = JSON.parse(read(f)) as KeptGridpointSnapshot;
+  const recs = keptCeilingRecords(snap, 'KEPT');
   if (recs.length) keptUsed++;
   for (const r of recs) forecasts.push(r);
+  for (const e of CHANCE_ELEMENTS) for (const r of keptChanceRecords(snap, e)) chanceForecasts[e].push(r);
 }
 const metars: MetarRecord[] = [];
 // The drop zone's archive only (no `site`): KPMV's reports.
@@ -158,6 +172,40 @@ const points = POINTS.map(({ site, short, place }) => {
   return { site, short, place, gridKm, issuances: { count: issued.size, span: span([...issued].map(iso)) }, rows };
 }).filter((p) => p.rows.some((r) => r.hours > 0));
 
+// The kept rain and thunder chances against what KPMV reported, per
+// issuance row: hours and the hours it happened in, by chance bin. Beside
+// each row, the counted hours with something short of the event: some
+// precipitation but under 0.01 in., or thunder only in the vicinity.
+const reported = reportedHours(metars);
+const reportedAt = new Map(reported.map((h) => [h.t, h]));
+const NEAR_MISS = {
+  probabilityOfPrecipitation: { name: 'Rain', event: 'at least 0.01 in. measured at KPMV', near: 'some precipitation reported, under 0.01 in.' },
+  probabilityOfThunder: { name: 'Thunder', event: 'thunder (TS) reported at KPMV', near: 'thunder reported only in the vicinity (VCTS)' },
+} as const;
+const chances = keptUsed
+  ? {
+      bins: CHANCE_BINS,
+      elements: CHANCE_ELEMENTS.map((key) => ({
+        key,
+        ...NEAR_MISS[key],
+        rows: summarizeChances(chanceForecasts[key], reported, CHANCE_EVENT[key]).map((r) => ({
+          label: r.label,
+          minLeadH: r.minLeadH,
+          hours: r.hours,
+          events: r.events,
+          chanceSum: r.chanceSum,
+          leadH: r.leadH,
+          span: span(r.pairs.map((p) => iso(p.valid))),
+          nearMiss: r.pairs.filter((p) => {
+            const h = reportedAt.get(Date.parse(p.valid))!;
+            return !p.event && (key === 'probabilityOfPrecipitation' ? h.precip : h.vcts);
+          }).length,
+          bins: r.bins,
+        })),
+      })),
+    }
+  : null;
+
 // Version 2 holds every hour's value and the density curves (the chart's
 // rainclouds); the page refuses a version 1 file.
 const data = {
@@ -173,16 +221,20 @@ const data = {
   ceilingBands: CEILING_BANDS,
   bins: DIFF_BINS,
   points,
+  chances,
 };
 // One key a line, so a regenerated file diffs by field, but each array of
-// numbers (or of [x, y] pairs) on one line: one number a line was 930 KB.
+// numbers (or of [x, y] pairs), and each object holding only numbers, on
+// one line: one number a line was 930 KB.
 const NUM = String.raw`-?\d+(?:\.\d+)?(?:e[-+]?\d+)?`;
 const flat = (re: RegExp) => (json: string) => json.replace(re, (m) => m.replace(/\s+/g, ''));
 const text = [
   flat(new RegExp(String.raw`\[\s*${NUM}(?:,\s*${NUM})*\s*\]`, 'g')),
   flat(new RegExp(String.raw`\[\s*\[[^\[\]]*\](?:,\s*\[[^\[\]]*\])*\s*\]`, 'g')),
+  flat(new RegExp(String.raw`\{\s*"\w+":\s*${NUM}(?:,\s*"\w+":\s*${NUM})*\s*\}`, 'g')),
 ].reduce((j, f) => f(j), JSON.stringify(data, null, 1));
 writeFileSync(out, text + '\n');
 console.log(
-  `wrote ${out}: ${points.map((p) => `${p.site} ${p.rows.map((r) => r.hours).join('/')} h`).join(', ')}`,
+  `wrote ${out}: ${points.map((p) => `${p.site} ${p.rows.map((r) => r.hours).join('/')} h`).join(', ')}` +
+    (chances ? `; chances ${chances.elements.map((e) => `${e.name} ${e.rows.map((r) => r.hours).join('/')} h`).join(', ')}` : ''),
 );

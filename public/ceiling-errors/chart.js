@@ -13,7 +13,7 @@
   const BIN_VARS = ['--lo-4', '--lo-3', '--lo-2', '--lo-1', '--mid', '--hi-1', '--hi-2', '--hi-3', '--hi-4'];
   const BAND_VARS = { LIFR: '--b-lifr', IFR: '--b-ifr', MVFR: '--b-mvfr', VFR: '--b-vfr', none: '--b-none' };
   const leadLabel = (r) => (r.minLeadH ? `${r.minLeadH} h or more ahead` : 'Latest');
-  const state = { site: 'DZ', lead: 0, by: 'forecast', unit: 'ft' };
+  const state = { site: 'DZ', lead: 0, by: 'forecast', unit: 'ft', el: 'probabilityOfPrecipitation', clead: 0 };
   try {
     const saved = JSON.parse(localStorage.getItem('ceiling-errors-view') || 'null');
     if (saved && typeof saved === 'object') Object.assign(state, saved);
@@ -439,6 +439,81 @@
     drawSpread(row);
     drawBands(row);
     drawTables(row);
+    renderChances();
+  }
+
+  // The rain and thunder chances: one row per chance group with any hours,
+  // the group's average chance as a ring and the share of its hours it
+  // happened in as a dot, on one 0 to 100% axis. A file without them
+  // (made with no kept forecasts) hides the section.
+  function renderChances() {
+    const panel = $('chances-panel');
+    const c = data.chances;
+    panel.hidden = !c;
+    if (!c) return;
+    let elem = c.elements.find((e) => e.key === state.el);
+    if (!elem) { elem = c.elements[0]; state.el = elem.key; }
+    if (!elem.rows[state.clead]) state.clead = 0;
+    const row = elem.rows[state.clead];
+    seg('c-el', c.elements.map((e) => [e.key, e.name]), 'el');
+    seg('c-clead', elem.rows.map((r, i) => [i, leadLabel(r)]), 'clead');
+    const facts = $('c-facts');
+    facts.replaceChildren();
+    const fact = (b, t) => { const s = el('span'); s.append(el('b', {}, b), document.createTextNode(' ' + t)); facts.append(s); };
+    fact(row.hours.toLocaleString('en-US'), 'hours compared');
+    fact(row.events.toLocaleString('en-US'), `with ${elem.event}`);
+    fact((row.chanceSum / 100).toFixed(1), 'hours, the chances added up');
+    if (row.nearMiss) fact(row.nearMiss.toLocaleString('en-US'), `more with ${elem.near}`);
+    if (row.leadH) fact(`${row.leadH.min.toFixed(1)} to ${row.leadH.max.toFixed(1)} h`, 'ahead');
+    const note = $('c-note');
+    const text = sampleNote(row);
+    note.textContent = text ?? '';
+    note.hidden = text == null;
+
+    const lg = $('lg-chance');
+    lg.replaceChildren();
+    for (const [cls, label] of [['ring', 'Average chance forecast'], ['dot', `Share of hours with ${elem.name.toLowerCase()}`]]) {
+      const s = el('span'); s.append(el('i', { class: cls }), document.createTextNode(label)); lg.append(s);
+    }
+
+    const chart = $('ch-chance');
+    chart.replaceChildren();
+    const groups = row.bins.filter((b) => b.hours > 0);
+    const label = (b) => (b.lo === b.hi ? `${b.lo}%` : `${b.lo} to ${b.hi}%`);
+    if (!groups.length) {
+      chart.append(el('p', { class: 'status' }, 'No hours to compare at this lead yet.'));
+    } else {
+      const width = Math.max(280, chart.clientWidth);
+      const rowH = 44, top = 4, axisH = 26, pad = 8;
+      const height = top + groups.length * rowH + axisH;
+      const x = (f) => pad + (f / 100) * (width - 2 * pad);
+      const svg = el('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `${elem.name}: average chance and share of hours it happened, by chance` });
+      for (const t of [0, 25, 50, 75, 100]) {
+        svg.append(el('line', { x1: x(t), x2: x(t), y1: top + 16, y2: height - axisH + 4, stroke: css('--grid'), 'stroke-width': 1 }));
+        svg.append(el('text', { x: x(t), y: height - 8, fill: css('--muted'), 'font-size': 11.5, 'text-anchor': t === 0 ? 'start' : t === 100 ? 'end' : 'middle' }, `${t}%`));
+      }
+      groups.forEach((b, i) => {
+        const y0 = top + i * rowH;
+        rowHead(svg, y0 + 13, width, `Chance ${label(b)}`, `${b.events} of ${b.hours.toLocaleString('en-US')} h`);
+        const cy = y0 + 30;
+        const mean = b.chanceSum / b.hours;
+        const share = (100 * b.events) / b.hours;
+        svg.append(el('line', { x1: x(Math.min(mean, share)), x2: x(Math.max(mean, share)), y1: cy, y2: cy, stroke: css('--axis'), 'stroke-width': 2 }));
+        // The dot under a wider, unfilled ring, so where the two agree (0%
+        // and 0 hours, most often) both still show: a dot in a ring.
+        svg.append(el('circle', { cx: x(share), cy, r: 4.5, fill: css('--accent'), stroke: css('--surface'), 'stroke-width': 1.5 }));
+        svg.append(el('circle', { cx: x(mean), cy, r: 7, fill: 'none', stroke: css('--ink-2'), 'stroke-width': 2 }));
+        const hit = el('rect', { x: 0, y: y0, width, height: rowH, fill: 'transparent', tabindex: 0, 'aria-label': `Chance ${label(b)}: ${b.events} of ${b.hours} hours, average chance ${Math.round(mean)}%` });
+        svg.append(hit);
+        bindTip(chart, hit, [`${Math.round(share)}% of hours`, `${b.events} of ${b.hours} hours with ${elem.event}`, `average chance ${Math.round(mean)}%, chances ${label(b)}`]);
+      });
+      chart.append(svg);
+    }
+
+    const box = $('t-chance');
+    box.replaceChildren();
+    box.append(table(`${elem.name}: hours by the chance forecast, ${leadLabel(row).toLowerCase()}`, ['Chance', 'Hours', 'Happened', 'Share', 'Average chance'],
+      groups.map((b) => [label(b), b.hours, b.events, `${pct(b.events, b.hours)}%`, `${Math.round(b.chanceSum / b.hours)}%`])));
   }
 
   function describe() {
@@ -452,7 +527,10 @@
     d.reports && d.sources && Array.isArray(d.points) && d.points.length > 0 &&
     d.points.every((p) => p.site && p.short && Array.isArray(p.rows) && p.rows.length > 0 &&
       p.rows.every((r) => r.call && r.bands && r.byForecast && r.byReported && typeof r.hours === 'number' &&
-        [r.byForecast, r.byReported].every((by) => Object.values(by).every((b) => Array.isArray(b.values) && Array.isArray(b.ratios)))));
+        [r.byForecast, r.byReported].every((by) => Object.values(by).every((b) => Array.isArray(b.values) && Array.isArray(b.ratios))))) &&
+    (d.chances == null || (Array.isArray(d.chances.elements) && d.chances.elements.length > 0 &&
+      d.chances.elements.every((e) => e.key && e.name && Array.isArray(e.rows) && e.rows.length > 0 &&
+        e.rows.every((r) => typeof r.hours === 'number' && Array.isArray(r.bins)))));
 
   // A file that does not draw leaves the page as it was.
   function accept(d, note) {
