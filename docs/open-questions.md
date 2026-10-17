@@ -598,6 +598,37 @@ Exercised since:
   yet seen on the deployed site; a headless load does not show whether a
   browser stops asking for `/favicon.ico` there, so the next live load is
   the check.
+- **Every page, at every width, on live data** (2026-10-17, about 17:50Z,
+  a Saturday with KPMV gusting 18 kt and the surface-wind caution
+  raised). Jumpers, Pilots, `#citations`, `#parity` and the ceiling-error
+  page, each at 1280, 390 and 320 px, logging console errors, failed
+  requests, the page's width and every element past the viewport's edge.
+  - **Fixed, `#citations` at 320 px:** the page was 348 px wide, so it
+    scrolled sideways. A citation's "read" line carries unbroken
+    URL-like words (`weather.gov/epz/wxcalc_densityaltitude,`) that could
+    not wrap. `.panel-body` now breaks a word only when it cannot fit
+    (`overflow-wrap: break-word`); 320 and 390 px then measured exactly
+    the viewport.
+  - **Fixed, the radar card before its image loads:** the loop is lazily
+    loaded, so on a phone it waits until scrolled to (118 KB, about half a
+    second through the proxy once asked for). Until then its box sat at
+    the 60 px minimum and the drop-zone ring, placed in percentages of the
+    box, floated in it. The image now carries its size (`RADAR_IMAGE_PX`,
+    600 by 550, read from the live image), so the box keeps the map's
+    shape and the ring sits where it will land: 328 by 301 px at 390.
+  - **By design:** the wide tables (10-day outlook, winds aloft, TAF,
+    exit weight, the parity and ceiling-page tables) run past a phone's
+    edge inside their own scroll boxes, and the page does not; the
+    sectional chart's tiles are clipped by their frame; the ceiling page's
+    raincloud paths extend past the chart only under their clip path.
+  - **Console:** Open-Meteo's first request failed as "blocked by CORS
+    policy" on most loads and succeeded on the retry; once Open-Meteo
+    itself answered 500 (`#parity` at 320 px), and once api.weather.gov's
+    TAF list for KOMA failed the same "CORS" way (Pilots at 320 px). Each
+    card filled on the retry. Both hosts send the CORS header when they
+    answer, so these are most likely the sandbox proxy's own failures on
+    slow or dropped requests, as on the first load; a check from a GitHub
+    runner, outside the proxy, would tell them apart.
 
 ## The Student profile models no canopy type
 

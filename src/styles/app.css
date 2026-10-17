@@ -353,6 +353,9 @@ a {
 }
 .panel-body {
   padding: 12px 14px;
+  /* A long unbroken token (a URL path in a citation's "read" line) widened
+     the whole page at 320 px; break such a word only when it cannot fit. */
+  overflow-wrap: break-word;
 }
 
 .grid {
@@ -1377,6 +1380,9 @@ a.sim-term {
 }
 .radar-img {
   width: 100%;
+  /* With the width and height attributes, keeps the image's shape while it
+     loads (RADAR_IMAGE_PX). */
+  height: auto;
   border-radius: 6px;
   display: block;
   background: var(--panel-2);
