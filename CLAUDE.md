@@ -361,7 +361,8 @@ Not covered by `npm test`, so do not imply a green suite covers them:
   the app's retry (200, `access-control-allow-origin: *`); Open-Meteo
   sends that header, so the failed answer was most likely the proxy's
   own on a slow request, not Open-Meteo's, and a reader's browser would
-  not meet it. And `/favicon.ico` at the domain root was a 404: the page
+  not meet it; the live-site check's first run from a GitHub runner, the
+  same day, met no such failure on any page. And `/favicon.ico` at the domain root was a 404: the page
   named no icon, so the browser asked there. Since 2026-10-17 both pages
   name `public/favicon.svg` (the app as `/favicon.svg`, which Vite
   rewrites under the base; the ceiling-error page as `../favicon.svg`),

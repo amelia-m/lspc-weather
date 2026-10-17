@@ -611,7 +611,8 @@ Exercised since:
   allow it as `'self'`, unchanged). `npm run dev` serves the same href. Not
   yet seen on the deployed site; a headless load does not show whether a
   browser stops asking for `/favicon.ico` there, so the next live load is
-  the check.
+  the check. It was: the live-site check's first run on a GitHub runner,
+  after the icon deployed, logged no 404 on any page (below).
 - **Every page, at every width, on live data** (2026-10-17, about 17:50Z,
   a Saturday with KPMV gusting 18 kt and the surface-wind caution
   raised). Jumpers, Pilots, `#citations`, `#parity` and the ceiling-error
@@ -645,8 +646,12 @@ Exercised since:
     runner, outside the proxy, would tell them apart.
   - **Checked daily since:** `.github/workflows/live-site.yml` runs this
     walk on a GitHub runner, outside the proxy, daily and after every
-    deploy (CLAUDE.md). Its first runs will also say whether the
-    first-request failures above happen away from the sandbox.
+    deploy (CLAUDE.md). Its first run, after the deploy of 2026-10-17
+    (run 39057948085), passed every page at every width with no note at
+    all: no failed request to any host and no console error. So the
+    first-request failures above are the sandbox proxy's, not something a
+    reader meets, and the `/favicon.ico` 404 is gone from the deployed
+    site.
 
 ## The Student profile models no canopy type
 
