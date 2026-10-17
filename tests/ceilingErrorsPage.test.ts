@@ -54,4 +54,15 @@ describe('the ceiling-error page', () => {
       }
     }
   });
+
+  it('says when a row holds only a few days, naming them from the data file', () => {
+    expect(page).toContain('id="sample-note"');
+    expect(script).toMatch(/const SMALL_SAMPLE_HOURS = \d+;/);
+    expect(script).toContain('row.hours < SMALL_SAMPLE_HOURS');
+    for (const p of data.points) {
+      for (const r of p.rows) {
+        if (r.hours) expect(r.span.from <= r.span.to).toBe(true);
+      }
+    }
+  });
 });
