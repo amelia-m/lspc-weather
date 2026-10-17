@@ -235,7 +235,8 @@ maintainer asked why the text stopped short of the chart panels: its
 paragraphs keep a readable measure, about 68 characters a line. They
 keep it; instead, at 1,280 px and wider the method notes sit in a column
 beside the charts (about 50 characters a line), and below them on a
-narrower screen. Checked at 1,500, 1,280, 1,100, 390 and 320 px: no
+narrower screen; the charts' one- or two-sentence subtitles run the
+panel's full width. Checked at 1,500, 1,280, 1,100, 390 and 320 px: no
 sideways scroll, the charts redrawn to their column's width. While it was an
 artifact, on 2026-10-16 the maintainer saw a blank page at its link. The served files
 were read back the same day: `index.html` is the repository's page,
