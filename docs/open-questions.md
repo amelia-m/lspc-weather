@@ -629,6 +629,10 @@ Exercised since:
     answer, so these are most likely the sandbox proxy's own failures on
     slow or dropped requests, as on the first load; a check from a GitHub
     runner, outside the proxy, would tell them apart.
+  - **Checked daily since:** `.github/workflows/live-site.yml` runs this
+    walk on a GitHub runner, outside the proxy, daily and after every
+    deploy (CLAUDE.md). Its first runs will also say whether the
+    first-request failures above happen away from the sandbox.
 
 ## The Student profile models no canopy type
 
