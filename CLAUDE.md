@@ -582,6 +582,14 @@ and changes nothing on the dashboard. When the window ends, archive the
 records under `data/parity/`, summarise them with
 `scripts/surfaceWindSummary.ts` into `docs/surface-wind-sources.md`, and
 delete the workflow.
+`.github/workflows/ceiling-data-refresh.yml` (Mondays 07:41Z, and on
+dispatch) fetches the NDFD ceilings and KPMV's reports from the newest
+kept record's day to the last whole UTC day, commits them under
+`data/parity/` with the ceiling-error page's rebuilt data file to `main`,
+and dispatches the deploy. It fails, committing nothing, when a fetch
+brings nothing newer or the rebuilt file holds less than the published
+one (`src/domain/ceilingRefresh.ts`); a run on another branch commits
+nothing. Its rules and why are in docs/ceiling-heights.md, "The chart".
 
 usairnet's page is read by `src/domain/usairnet.ts`, tested against station
 blocks saved from the live pages (`tests/fixtures/usairnet/`). Its first

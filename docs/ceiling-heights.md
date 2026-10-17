@@ -260,22 +260,125 @@ fix it. A browser at claude.ai is the fallback if it recurs.
 The data file is `public/ceiling-errors/ceiling-errors.json`, written by
 `scripts/ceilingChartData.ts` from the same archives and the same
 functions as `scripts/ceilingSummary.ts` (`summarizeCeilings`,
-`diffDistribution`), so the chart and the tables above agree. To add
-data:
+`diffDistribution`), so the chart and the tables above agree.
 
-1. Fetch a later window of ceilings at both points and KPMV's reports
-   for it: `PARTS=cig SITES="DZ:40.8703:-96.1085,PMV:40.9484:-95.9174"
-   python3 scripts/cloudCoverFetch.py <start> <end> ceiling-<…>.jsonl.gz`,
-   and `PARTS=metar python3 scripts/cloudCoverFetch.py <start> <end>
-   cloud-cover-<…>.jsonl.gz` (no SITES, so the records keep the drop
-   zone archive's shape). Keep both under `data/parity/`.
-2. `npx tsx scripts/ceilingChartData.ts --ceiling <every ceiling file>
-   --cover <every cloud-cover file> --out public/ceiling-errors/ceiling-errors.json`.
-   Each flag takes any number of files; a line in two of them counts
-   once, so overlapping windows are safe.
-3. Merge it to `main`: the Pages deploy publishes the new file beside
-   the page. The page also has a file picker that shows a newer
-   `ceiling-errors.json` in one browser without a deploy.
+**Kept current by a workflow, since 2026-10-17.**
+`.github/workflows/ceiling-data-refresh.yml` runs every Monday at 07:41Z
+and on dispatch. It fetches the NDFD ceilings at both grid points and
+KPMV's reports for the days since the newest record already kept, keeps
+both under `data/parity/`, rebuilds the data file from every archive and
+the keeper's snapshots on `forecast-archive`, commits them to `main` and
+dispatches the Pages deploy. It dispatches the deploy itself because a
+push made with the workflow token starts no other workflow, as in
+`parity-summary.yml`. The steps that need more than a shell line are
+`scripts/ceilingRefresh.ts`; the rules are `src/domain/ceilingRefresh.ts`,
+pure, and tested in `tests/ceilingRefresh.test.ts`. Each test was seen to
+fail with the behaviour it names broken (21 breaks, one at a time,
+2026-10-17).
+
+- **Which files.** `--ceiling` takes every
+  `ceiling-<start>-to-<end>.jsonl.gz` under `data/parity/`, and
+  `--cover` every `cloud-cover-…` and `metar-…` file named for a window
+  the same way (`chartInputs`). The pattern leaves out
+  `cloud-cover-stations-*`, whose METARs all carry a `site` the chart
+  skips (5.5 MB read for nothing), and the reports and logs beside them.
+  A test holds the published file's `sources` to exactly this list, so a
+  file rebuilt by hand from fewer archives fails `npm test`.
+- **Which days.** Each part starts on the UTC day of its newest record
+  already kept: the newest NDFD issuance for the ceilings, the newest
+  KPMV report for the METARs. It is read from the records, not the file
+  names. A name says what was asked for, not what came back:
+  `metar-2026-10-15-to-2026-10-17.jsonl.gz` holds reports to 2026-10-16
+  23:55Z. Starting on that day re-reads at most one day, and a line found
+  in two files counts once, so overlapping windows are harmless; starting
+  after a name's end could skip the rest of a day fetched part-way, for
+  good. Both parts end on the last whole UTC day before the run. NOAA
+  writes two ceiling files an hour, at :16 and :46 (48 for October 16,
+  about 16 MB each, in the archive's listing read 2026-10-17), and the
+  fetch takes the last one in each issue hour (00, 06, 12, 18Z). A fetch
+  made between the two would take the :16 file, and a later fetch of the
+  same day the :46, so that day would count two issuances for one hour.
+  Fetching whole days only, each day is read in its final form, and the
+  day re-read in the overlap gives the same lines: on 2026-10-17 the
+  re-read of
+  October 16 gave its 240 ceiling lines and 72 reports exactly as kept.
+  A part whose newest record is already on the last whole day is not
+  fetched. With neither to fetch, the run stops there and commits
+  nothing. A missed week is caught up by the next run, whose window is
+  then two weeks.
+- **When a fetch fails or brings nothing.** `cloudCoverFetch.py` exits
+  non-zero when a request still fails after its retries (about ten
+  minutes of them), and the run fails. Each fetch writes outside the
+  repository and moves into `data/parity/` only when it holds a record
+  newer than the newest kept. A window of whole days with none means the
+  source failed, and the run fails. A day of the window with nothing at
+  all is a warning on the run's page, not a failure: the next window
+  starts after it, so failing on it would stop every later run on a gap
+  no rerun can fill. The rebuilt file must then hold at least what the
+  published one does (`shrinkage`): every source it named, as many kept
+  snapshots, reports and issuances, reports to as late a time, and as
+  many hours in every row of every point and of the chances. Adding
+  reports or forecasts only adds hours, so a fall means a file went
+  missing or came back short; the run fails and names each shortfall.
+  `npm test` runs on the result before anything is committed. A run that
+  fails commits nothing.
+- **Only on `main`.** Only a run on `main` commits and deploys, and the
+  schedule always runs there. A run dispatched on another branch fetches
+  and rebuilds from that branch's files and scripts, as a trial, and
+  keeps what it made as an artifact for seven days; it commits and
+  dispatches nothing. Before pushing, the commit is rebased onto `main`
+  as it then is, so a commit made while the fetch ran does not reject
+  the push; a conflict (the data file rebuilt by hand meanwhile) fails
+  the run.
+- **Repository growth.** A week is about 7 KB of ceilings
+  (`ceiling-2026-10-10-to-2026-10-17.jsonl.gz`, 28 issuances at two
+  points, 1,680 lines, is 6.9 KB) and about 8 KB of reports
+  (`metar-2026-10-10-to-2026-10-15.jsonl.gz`, 410 reports, is 6.4 KB):
+  about 15 KB a week, under 1 MB a year, against a repository GitHub
+  gave as 15.7 MB (the API's `size`, read 2026-10-17). The data file
+  changes in its long lines of values and curves: adding 17 hours on
+  2026-10-17 changed 134 of its lines, a 15 KB diff (2.3 KB gzipped),
+  while the file grew by 96 bytes, since only hours with a ceiling on
+  both sides add values. So one commit of each a
+  week is kept as it is. The weekly files are not merged into one
+  archive: each stays as its fetch returned it, and the names in
+  `sources` say what each build read.
+
+To do the same by hand: fetch with `PARTS=cig
+SITES="DZ:40.8703:-96.1085,PMV:40.9484:-95.9174" python3
+scripts/cloudCoverFetch.py <start> <end>
+data/parity/ceiling-<start>-to-<end>.jsonl.gz` and `PARTS=metar python3
+scripts/cloudCoverFetch.py <start> <end>
+data/parity/metar-<start>-to-<end>.jsonl.gz` (no SITES, so the records
+keep the drop-zone archive's shape), with the days
+`npx tsx scripts/ceilingRefresh.ts window` prints; then run
+`scripts/ceilingChartData.ts` on the files
+`npx tsx scripts/ceilingRefresh.ts inputs ceiling` and `… inputs cover`
+list, with `--kept` as below, and merge to `main`. The page also has a
+file picker that shows a newer `ceiling-errors.json` in one browser
+without a deploy.
+
+**Checked from the sandbox, 2026-10-17, before the workflow first ran
+on GitHub.** Every `run:` step of the workflow was run in a scratch copy
+of the repository, on a branch ref, with the setup actions skipped, the
+forecast archive extracted in place of the worktree step, and the window
+step given a clock of 2026-10-18 05:00Z. On the real clock it found both
+parts current (newest issuance 2026-10-16 18:47Z, newest report 23:55Z
+that day) and stopped, as it should a day after a hand fetch. With the
+later clock it fetched October 16 to 17: 7 NDFD files, 420 records, 180
+of them newer than the newest kept; 126 reports, 54 newer. The rebuilt
+file read 41 kept snapshots (published: 25) and 13,989 reports to
+2026-10-17 17:55Z (13,935 to 2026-10-16 23:55Z); the drop zone's rows
+held 4,661, 4,656 and 4,317 hours (4,643, 4,638, 4,302), the kept
+source's 99, 93 and 74 (81, 75, 56), the chances 98, 92 and 74 (80, 74,
+56). The shrinkage check passed and `npm test` passed on it. The
+failure paths were run too: the two files swapped, the check named 23
+shortfalls and exited 1; a fetch with nothing newer, and an empty one,
+each exited 1. `actionlint` 1.7.7 found nothing in the workflow
+(without shellcheck, which is not installed here). Not run: anything on
+GitHub, so the commit, rebase, push and deploy dispatch are untried. The
+files fetched in the check were not committed, since they held part of
+October 17, which a run on `main` would not fetch.
 
 ### The forecasts the card read, kept hourly
 
@@ -302,14 +405,16 @@ npx tsx scripts/ceilingChartData.ts \
 ```
 
 That is the file as published on 2026-10-17 (its `sources` field lists
-what it was built from); a later run adds its new files to these.
+what it was built from). The weekly refresh runs the same command with
+every dated archive under `data/parity/` (`chartInputs`, above), so each
+run adds its new files to these.
 
 `--kept` takes files or folders. KPMV's reports for the kept window are
 `data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz` (`PARTS=metar`,
 fetched 2026-10-15 at 16:45Z, 410 reports to 16:35Z) and
 `data/parity/metar-2026-10-15-to-2026-10-17.jsonl.gz` (fetched 2026-10-17
-at 00:11Z, 144 reports to 2026-10-16 23:55Z); a later run needs a later
-METAR fetch beside them. The NDFD archive for the same days, at both
+at 00:11Z, 144 reports to 2026-10-16 23:55Z); the weekly refresh
+fetches each later window beside them. The NDFD archive for the same days, at both
 points, is `data/parity/ceiling-2026-10-10-to-2026-10-17.jsonl.gz`
 (`PARTS=cig`, 28 files, issuances 2026-10-10 00Z to 10-16 18Z, fetched
 2026-10-17); the chart's data file reads it beside the first, so its

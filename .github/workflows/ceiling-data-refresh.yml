@@ -1,0 +1,161 @@
+name: Ceiling data refresh
+
+# Weekly, and on demand: bring the ceiling-error page's data file
+# (public/ceiling-errors/ceiling-errors.json, docs/ceiling-heights.md,
+# "The chart") up to the last whole day. It fetches the NDFD ceilings at
+# both grid points and KPMV's reports since the newest record already kept
+# under data/parity/, keeps both there, rebuilds the data file from every
+# archive and the forecast keeper's snapshots on `forecast-archive`, and
+# commits them to main. A push made with the workflow token does not start
+# other workflows, so this one dispatches the Pages deploy itself, as
+# parity-summary.yml does.
+#
+# The rules are src/domain/ceilingRefresh.ts (pure, tested) and their
+# reasons are in docs/ceiling-heights.md. In short: the window starts on the
+# newest kept record's day, so no hours are skipped and the overlap counts
+# once; it ends on the last whole UTC day, so no day is fetched half-done; a
+# fetch that brings nothing newer fails the run; and a rebuilt file that
+# holds less than the published one fails the run. Nothing is committed from
+# a failed run.
+#
+# Only a run on main commits. A run dispatched on another branch fetches and
+# rebuilds from that branch's files and scripts, as a trial, and keeps what
+# it made as an artifact; it commits nothing and dispatches nothing.
+on:
+  schedule:
+    # Mondays, so the window ends on Sunday. Not on the hour (CLAUDE.md:
+    # most schedules start at minute 0 and runs there are delayed).
+    - cron: '41 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  # To dispatch the Pages deploy.
+  actions: write
+
+concurrency:
+  group: ceiling-data-refresh
+  cancel-in-progress: false
+
+env:
+  # The two grid points the chart reads the NDFD ceiling at: the drop zone
+  # (src/config/site.ts) and KPMV's coordinates, the FAA's.
+  CEILING_SITES: 'DZ:40.8703:-96.1085,PMV:40.9484:-95.9174'
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    # A week of ceilings is 28 files of about 16 MB; a missed week doubles it.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Whole history, so the commit can be rebased onto a main that
+          # moved during the run.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # ecCodes decodes the NDFD GRIB2 files; the script imports it whatever
+      # PARTS says (cloud-cover-fetch.yml installs it the same way).
+      - run: pip install eccodes eccodeslib
+
+      - name: Find the days to fetch
+        id: window
+        run: npx tsx scripts/ceilingRefresh.ts window >> "$GITHUB_OUTPUT"
+
+      # Each fetch writes outside the repository first and moves in only
+      # once it holds something newer, so a failed or empty fetch leaves
+      # data/parity/ as it was. cloudCoverFetch.py exits non-zero when a
+      # request still fails after its retries (about ten minutes of them).
+      - name: Fetch NDFD ceilings at both points
+        if: steps.window.outputs.fetch_ceiling == 'true'
+        env:
+          START: ${{ steps.window.outputs.ceiling_start }}
+          END: ${{ steps.window.outputs.end }}
+          SINCE: ${{ steps.window.outputs.ceiling_newest }}
+        run: |
+          set -euo pipefail
+          name="ceiling-$START-to-$END.jsonl.gz"
+          if [ -e "data/parity/$name" ]; then echo "::error::data/parity/$name already exists"; exit 1; fi
+          PARTS=cig SITES="$CEILING_SITES" python scripts/cloudCoverFetch.py "$START" "$END" "$RUNNER_TEMP/$name"
+          npx tsx scripts/ceilingRefresh.ts fetched ceiling "$RUNNER_TEMP/$name" --since "$SINCE" --start "$START" --end "$END"
+          mv "$RUNNER_TEMP/$name" "data/parity/$name"
+
+      - name: Fetch KPMV's reports
+        if: steps.window.outputs.fetch_metar == 'true'
+        env:
+          START: ${{ steps.window.outputs.metar_start }}
+          END: ${{ steps.window.outputs.end }}
+          SINCE: ${{ steps.window.outputs.metar_newest }}
+        # No SITES, so the records keep the drop-zone archive's shape (no
+        # `site`), which is what the chart reads.
+        run: |
+          set -euo pipefail
+          name="metar-$START-to-$END.jsonl.gz"
+          if [ -e "data/parity/$name" ]; then echo "::error::data/parity/$name already exists"; exit 1; fi
+          PARTS=metar python scripts/cloudCoverFetch.py "$START" "$END" "$RUNNER_TEMP/$name"
+          npx tsx scripts/ceilingRefresh.ts fetched metar "$RUNNER_TEMP/$name" --since "$SINCE" --start "$START" --end "$END"
+          mv "$RUNNER_TEMP/$name" "data/parity/$name"
+
+      # The keeper's snapshots in a worktree of their own, as
+      # scripts/forecastKeepLoop.sh does, so main's checkout is untouched.
+      - name: Check out the kept forecasts
+        if: steps.window.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          git fetch --quiet --depth 1 origin forecast-archive
+          git worktree add --quiet --detach "$RUNNER_TEMP/forecast-archive" FETCH_HEAD
+          echo "$(find "$RUNNER_TEMP/forecast-archive/data" -name '*.json.gz' | wc -l) kept snapshots"
+
+      - name: Rebuild the data file
+        if: steps.window.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          mapfile -t ceiling < <(npx tsx scripts/ceilingRefresh.ts inputs ceiling)
+          mapfile -t cover < <(npx tsx scripts/ceilingRefresh.ts inputs cover)
+          npx tsx scripts/ceilingChartData.ts --ceiling "${ceiling[@]}" --cover "${cover[@]}" \
+            --kept "$RUNNER_TEMP/forecast-archive/data" --out "$RUNNER_TEMP/ceiling-errors.json"
+          npx tsx scripts/ceilingRefresh.ts check public/ceiling-errors/ceiling-errors.json "$RUNNER_TEMP/ceiling-errors.json"
+          cp "$RUNNER_TEMP/ceiling-errors.json" public/ceiling-errors/ceiling-errors.json
+
+      # The page's tests hold it and its data file to each other; the deploy
+      # runs them too, but by then the file would be on main.
+      - name: Test
+        if: steps.window.outputs.skip != 'true'
+        run: npm test
+
+      - name: Keep a branch trial's output
+        if: steps.window.outputs.skip != 'true' && github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ceiling-data-refresh-${{ github.run_id }}
+          path: |
+            data/parity/ceiling-*.jsonl.gz
+            data/parity/metar-*.jsonl.gz
+            public/ceiling-errors/ceiling-errors.json
+          retention-days: 7
+
+      - name: Commit and deploy
+        if: steps.window.outputs.skip != 'true' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          END: ${{ steps.window.outputs.end }}
+        run: |
+          set -euo pipefail
+          git config user.name "ceiling-data-refresh workflow"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/parity/ceiling-*.jsonl.gz data/parity/metar-*.jsonl.gz public/ceiling-errors/ceiling-errors.json
+          git commit -m "Ceiling data to $END" \
+            -m "Written by .github/workflows/ceiling-data-refresh.yml: NDFD ceilings and KPMV's reports fetched with scripts/cloudCoverFetch.py, the chart's data file rebuilt by scripts/ceilingChartData.ts."
+          # main may have moved while the fetch ran; a conflict (someone
+          # rebuilt the file by hand meanwhile) fails here, loudly.
+          git fetch --quiet origin main
+          git rebase origin/main
+          git push origin HEAD:main
+          gh workflow run deploy.yml --ref main
