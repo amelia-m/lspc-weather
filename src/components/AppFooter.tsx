@@ -22,8 +22,8 @@ export function AppFooter(): JSX.Element {
       <br />
       {/* A static page beside the app (public/ceiling-errors/), not a route:
           it reads its own data file and draws its own charts. */}
-      <a href={CEILING_ERRORS_URL}>Ceiling forecast errors</a> — the NWS forecast ceiling against
-      KPMV&rsquo;s reports, hour by hour.
+      <a href={CEILING_ERRORS_URL}>Ceiling forecast errors</a> — the NWS forecast ceiling, and the
+      rain and thunder chances, against KPMV&rsquo;s reports, hour by hour.
       <br />
       <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
         Source on GitHub

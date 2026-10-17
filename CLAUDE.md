@@ -536,7 +536,8 @@ forecasts said (the NWS gridpoint fields the card reads,
 to the `forecast-archive` branch, one gzipped file an hour
 (`scripts/forecastKeep.ts`). Both serve only the future, and no archive
 holds the hourly rain and thunder chances or the outlook as the card asks
-for them. It never touches `main`, so it starts no deploy. Since
+for them; the ceiling-error page scores the kept chances against KPMV's
+reports (`src/domain/chances.ts`, docs/forecast-chances.md). It never touches `main`, so it starts no deploy. Since
 2026-10-16 it is a job that loops (`scripts/forecastKeepLoop.sh`, a
 snapshot at minute 23 of each hour, pushed as taken; five or six a run)
 and queues its own successor before it starts, so the chain does not

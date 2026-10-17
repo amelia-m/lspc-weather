@@ -92,9 +92,10 @@ export interface DecodedTaf {
 
 const WIND = /^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/;
 const SKY = /^(SKC|CLR|NSC|NCD|FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)?(CB|TCU)?$/;
-const WX =
+/** A present-weather group; METARs use the same codes (chances.ts reads them). */
+export const WX =
   /^(\+|-|VC)?(MI|PR|BC|DR|BL|SH|TS|FZ)?((?:DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS)+)$/;
-const WX_DESCRIPTOR_ONLY = /^(\+|-|VC)?(TS|SH|FZ)$/;
+export const WX_DESCRIPTOR_ONLY = /^(\+|-|VC)?(TS|SH|FZ)$/;
 const VIS_SM = /^(M|P)?(\d{1,2})(?:\/(\d{1,2}))?SM$/;
 const VIS_M = /^(\d{4})$/;
 const WIND_SHEAR = /^WS\d{3}\/\d{3}\d{2,3}KT$/;

@@ -101,6 +101,9 @@ p { margin: 0; max-width: 68ch; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .legend i { flex: 0 0 auto; }
 .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend i.ring { border-radius: 50%; box-sizing: border-box; border: 2px solid var(--ink-2); background: var(--surface); }
+.legend i.dot { border-radius: 50%; background: var(--accent); }
+.panel details { box-shadow: none; padding: 0; }
 .legend .side { color: var(--muted); font-weight: 600; }
 .chart { position: relative; min-width: 0; }
 .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
@@ -139,7 +142,7 @@ a { color: var(--accent); }
   <header>
     <p class="eyebrow">Brown's Airport (NE69) · NWS ceiling forecast against KPMV's reports</p>
     <h1>Ceiling forecast errors</h1>
-    <p class="lede">How far the National Weather Service's forecast ceiling sat from the one the Blair AWOS (KPMV) reported, hour by hour. Heights are feet above ground; the bands are the FAA flight-category ceiling limits. Counts and spreads, not a grade.</p>
+    <p class="lede">How far the National Weather Service's forecast ceiling sat from the one the Blair AWOS (KPMV) reported, hour by hour. Heights are feet above ground; the bands are the FAA flight-category ceiling limits. Below them, the hourly rain and thunder chances the dashboard read, against what KPMV reported. Counts and spreads, not a grade.</p>
     <p class="meta" id="meta">Loading data…</p>
   </header>
 
@@ -192,6 +195,27 @@ a { color: var(--accent); }
     <summary>Table view</summary>
     <div class="tables" id="tables"></div>
   </details>
+
+  <section class="panel" id="chances-panel" aria-labelledby="h4-chance" hidden>
+    <div class="panel-head">
+      <div>
+        <h2 id="h4-chance">Rain and thunder chances</h2>
+        <p class="sub">The hourly chance the card read, kept since 2026-10-13, against whether it happened at KPMV that hour. Hours are grouped by the chance; the ring is the group's average chance, the dot the share of its hours it happened in.</p>
+      </div>
+    </div>
+    <div class="controls" role="group" aria-label="Which chance">
+      <div class="control"><span id="l-el">Chance of</span><div class="seg" id="c-el" aria-labelledby="l-el"></div></div>
+      <div class="control"><span id="l-clead">Forecast issued</span><div class="seg" id="c-clead" aria-labelledby="l-clead"></div></div>
+    </div>
+    <div class="facts" id="c-facts" aria-live="polite"></div>
+    <p class="sample-note" id="c-note" aria-live="polite" hidden></p>
+    <div class="legend" id="lg-chance"></div>
+    <div class="chart" id="ch-chance"></div>
+    <details>
+      <summary>Table view</summary>
+      <div class="tables" id="t-chance"></div>
+    </details>
+  </section>
   </div>
 
   <section class="notes" aria-labelledby="h-notes">
@@ -199,6 +223,7 @@ a { color: var(--accent); }
     <p>Each hour pairs KPMV's report nearest the top of the hour (within 10 minutes) with the newest NWS ceiling issued at least 0, 6 or 24 hours before it, from NOAA's NDFD archive, which matched api.weather.gov's <code>ceilingHeight</code> value for value when checked. A ceiling is the lowest broken, overcast or vertical-visibility base. Both sides are held to 12,000 ft, the most an AWOS reports. Percentiles are nearest rank; the median averages the middle two. In the spread chart each dot is an hour, and each cloud is a smoothed curve through them (a Gaussian kernel density, Silverman's bandwidth, never narrower than 50 ft or, as a ratio, about a 7% step), scaled to its own peak so shapes compare rather than heights; a band with fewer than 5 hours shows only its dots. The axis runs from the 5th to the 95th percentile of the points shown, and points past it are counted at the edge.</p>
     <p>"Drop zone, as the card read it" is api.weather.gov's own <code>ceilingHeight</code> for the drop zone, saved by an hourly job from 2026-10-13 and issued at the forecast's update time. Until 2026-10-16 GitHub ran that job every 3 to 6 hours rather than hourly, so for those first days its "latest" row is older than the card's own forecast at most hours; since then it keeps one every hour. It holds days, not a season. An hour is left out of a row when the forecast that row needs for it would come more than 6 hours after the last one a source's fetch holds, so reports fetched for a later window are never scored against the forecast a fetch happened to end on. Gaps between kept forecasts are not cut; the lead range above the charts shows how old the forecasts were.</p>
     <p>Grouped by the forecast's band, the rows are what a reader of the forecast faced. Grouped by the reported band, the rows lean by construction: a 300 ft report can be missed upward by thousands of feet but downward by 300 at most.</p>
+    <p>The rain and thunder chances are api.weather.gov's hourly <code>probabilityOfPrecipitation</code> and <code>probabilityOfThunder</code> from the same kept forecasts, picked for each hour as the ceilings are; no archive holds them. NWS's chance of precipitation is the chance of at least 0.01 in. at the point, so rain counts as happening in an hour when one of KPMV's reports in it gave a <code>P</code> group of 0.01 in. or more (its gauge's amount since the last report at :55, so the hour read ends five minutes early). Thunder counts when a report gave <code>TS</code> at the station; <code>VCTS</code>, in the vicinity, is counted beside it but not as thunder. An hour counts only when its report at :55 is on record. The chance of thunder is scored against the station alone, which is this page's choice: NWS's own definition of it was not read.</p>
     <p>To add data, fetch a later window and regenerate the file this page reads, then merge it to <code>main</code>, which redeploys the site: <code>npx tsx scripts/ceilingChartData.ts --ceiling &lt;ceiling archives…&gt; --cover &lt;cloud-cover archives…&gt; --kept &lt;forecast-archive checkout&gt;/data --out public/ceiling-errors/ceiling-errors.json</code>. Each flag takes any number of files, and a record in two of them counts once. The method, and every figure's source, is in <a href="https://github.com/amelia-m/lspc-weather/blob/main/docs/ceiling-heights.md">docs/ceiling-heights.md</a>.</p>
     <div class="file">
       <label for="f-load">View a newer data file in this browser:</label>

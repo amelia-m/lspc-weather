@@ -200,7 +200,11 @@ file: hours by size of the difference (a diverging bar, forecast below
 the report to the left), the spread in ft or as forecast ÷ reported on
 a doubling scale, and the other side's bands for each band. Its controls
 choose the grid point, the issuance and which side's band groups the
-hours, and a table view repeats every figure. Since 2026-10-16, at the
+hours, and a table view repeats every figure. Since 2026-10-17 a
+fourth section, with controls of its own, scores the kept forecasts'
+hourly rain and thunder chances against KPMV's reports
+(docs/forecast-chances.md); the data file carries them as `chances`,
+written whenever `--kept` is given. Since 2026-10-16, at the
 maintainer's request, the spread is a raincloud per band in place of a
 box plot: a density curve scaled to its own peak, the 10th to 90th
 percentile line, middle half and median on its base, and every hour as a
@@ -211,7 +215,7 @@ no curve. The curves are `densityCurve` (`src/domain/ceilingHeights.ts`,
 tested): a Gaussian kernel at Silverman's bandwidth, never narrower than
 50 ft, or in log2 of the ratio 0.1, since the reports come in 100 ft
 steps and a narrower kernel draws each step as a spike. The data file
-(version 2, about 290 KB) carries each band's values and curves; the
+(version 2, about 340 KB) carries each band's values and curves; the
 page computes only its axis, from the 5th to the 95th percentile of all
 the points shown, pooled (a wider one squeezed the low bands to a
 sliver), and counts the points past it at the edges. Curves are sampled
