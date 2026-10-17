@@ -103,7 +103,10 @@ the latest issuance, 80 hours, October 13 16Z to October 16 23Z:
   and 3.3 hours.
 
 That is four days and one rain spell, so the page carries its
-small-sample note. Rain in the low groups not happening, and in the high
+small-sample note. The deployed page was loaded in the sandbox's browser
+after the merge (2026-10-17, CLAUDE.md, "The deployed site in a
+browser"): the section drew at 1280 and 390 px with these figures, no
+script error and no sideways scroll. Rain in the low groups not happening, and in the high
 groups happening, says nothing yet about whether a 30% chance comes true
 about 30% of the time. That needs weeks of hours in each group.
 
