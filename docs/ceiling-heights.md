@@ -289,10 +289,17 @@ an NDFD file's are at its issue time (`keptCeilingRecords`,
 ```
 git fetch origin forecast-archive
 git worktree add --detach <dir> origin/forecast-archive
-npx tsx scripts/ceilingChartData.ts --ceiling … --cover … \
-  data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz --kept <dir>/data \
-  --out public/ceiling-errors/ceiling-errors.json
+npx tsx scripts/ceilingChartData.ts \
+  --ceiling data/parity/ceiling-2026-04-01-to-2026-10-09.jsonl.gz \
+    data/parity/ceiling-2026-10-10-to-2026-10-17.jsonl.gz \
+  --cover data/parity/cloud-cover-2026-04-01-to-2026-10-09.jsonl.gz \
+    data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz \
+    data/parity/metar-2026-10-15-to-2026-10-17.jsonl.gz \
+  --kept <dir>/data --out public/ceiling-errors/ceiling-errors.json
 ```
+
+That is the file as published on 2026-10-17 (its `sources` field lists
+what it was built from); a later run adds its new files to these.
 
 `--kept` takes files or folders. KPMV's reports for the kept window are
 `data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz` (`PARTS=metar`,
@@ -351,28 +358,37 @@ which hours: two days of October against six months.
 **Over the same hours, 2026-10-17.** `scripts/ceilingSameHours.ts` scores
 both drop-zone sources by the same rules against the same reports and
 matches them hour for hour (its output is
-`data/parity/ceiling-same-hours-2026-10-13-to-2026-10-17.md`). At the
-latest issuance the kept source had 81 hours (October 13 16Z to 17
-00Z), and the NDFD archive scored all 81 of them too: the same forecast
-ceiling in 59, and with a ceiling on all three sides (46 hours) a median
-NDFD − kept of 0 ft. Against the report the median was +500 ft from NDFD
-and +300 from the kept source. Where they differ, the kept source mostly
-had a later update than NDFD's four issuances a day: through 14Z to 18Z
-on October 15 it said 400 to 600 ft against NDFD's 800 to 1,200, with
-the report at 300 to 1,100. At 6 and 24 hours ahead the same: 56 of 75
-and 41 of 56 hours alike, median NDFD − kept 0. So the kept source looks
-unlike the six-month rows because of the days it covers, not because it
-is another forecast; over the same days the NDFD rows read much as it
-does.
+`data/parity/ceiling-same-hours-2026-10-13-to-2026-10-17.md`, with the
+issuance each source was read from at each hour). At the latest
+issuance the kept source had 81 hours (October 13 16Z to 17 00Z), and
+the NDFD archive scored all 81 of them too: the same forecast ceiling in
+59, and with a ceiling on all three sides (46 hours) a median NDFD −
+kept of 0 ft. Against the report the median was +500 ft from NDFD and
++300 from the kept source. Of the 22 hours where they differ, the kept
+source was read from the later issuance in 19: the API's forecast
+updates between NDFD's four issuances a day, and the keeper took it
+then. Through 14Z to 18Z on October 15 it said 400 to 600 ft (updated
+13:57Z) against NDFD's 800 to 1,200 (12:46Z), with the report at 300 to
+1,100. The other 3 are October 13 20Z and 21Z and October 15 08Z, when
+the keeper ran only every 3 to 6 hours and its snapshot was older than
+NDFD's issuance. At 6 and 24 hours ahead the sources agree as often
+(56 of 75 and 41 of 56 hours alike, median NDFD − kept 0), but there
+neither is mostly the later: the kept source in 11 of 19 and 9 of 15
+differing hours. So the kept source looks unlike the six-month rows
+because of the days it covers, not because it is another forecast; over
+the same days the NDFD rows read much as it does.
 
 **The page says so.** Since 2026-10-17 a plain line above the charts
-names a row's hours and dates whenever it holds fewer than 100
-(`SMALL_SAMPLE_HOURS` in `public/ceiling-errors/chart.js`, with each
-row's first and last hour, `span`, from the data file): a few days are
-often one or two spells whose hours are not independent, so the shares
-describe those days. It is context in the page's neutral colours, not a
-grade. Until 2026-10-16 GitHub ran the keeper every 3 to 6 hours; since
-then hourly.
+names a row's hours and dates when they fall within 14 calendar days or
+fewer (`sampleNote` in `public/ceiling-errors/note.js`, from each row's
+first and last hour, `span`, in the data file): a few days are a few
+weather spells at most, whose hours are not independent of each other,
+so the shares describe those days. It is the days, not the hours, that
+make a row a few spells, so a row of scattered hours over months gets no
+note. Two weeks is the page's own line, not a published one; the note
+sets no colour and grades nothing, and a row with no hours gets none.
+Until 2026-10-16 GitHub ran the keeper every 3 to 6 hours; since then
+hourly.
 
 ## The NWS ceiling at KPMV's own grid point
 

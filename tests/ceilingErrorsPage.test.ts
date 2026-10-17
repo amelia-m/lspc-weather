@@ -5,6 +5,7 @@ import { AppFooter, CEILING_ERRORS_URL } from '../src/components/AppFooter';
 // Raw imports: the typecheck has no Node types for the tests.
 import page from '../public/ceiling-errors/index.html?raw';
 import script from '../public/ceiling-errors/chart.js?raw';
+import noteScript from '../public/ceiling-errors/note.js?raw';
 import dataText from '../public/ceiling-errors/ceiling-errors.json?raw';
 
 // The ceiling-error charts are a static page beside the app, with the data
@@ -20,7 +21,7 @@ describe('the ceiling-error page', () => {
   });
 
   it('reads the data file beside it, of the version the file is', () => {
-    expect(page).toContain('<script src="chart.js"></script>');
+    expect(page).toContain('<script src="note.js"></script>\n<script src="chart.js"></script>');
     expect(script).toContain("fetch('ceiling-errors.json')");
     expect(script).toContain(`const DATA_VERSION = ${data.version};`);
   });
@@ -35,7 +36,7 @@ describe('the ceiling-error page', () => {
     // No script in the page itself, and no address outside a plain link (the
     // SVG namespace is a name, never fetched).
     expect(page).not.toMatch(/<script>/);
-    const outside = (page + script)
+    const outside = (page + script + noteScript)
       .replace(/<a href="https:\/\/[^"]+">/g, '')
       .replaceAll('http://www.w3.org/2000/svg', '')
       .match(/https?:\/\/[^\s"'`)<]+/g);
@@ -56,9 +57,29 @@ describe('the ceiling-error page', () => {
   });
 
   it('says when a row holds only a few days, naming them from the data file', () => {
-    expect(page).toContain('id="sample-note"');
-    expect(script).toMatch(/const SMALL_SAMPLE_HOURS = \d+;/);
-    expect(script).toContain('row.hours < SMALL_SAMPLE_HOURS');
+    type Row = { hours: number; span: { from: string; to: string } | null };
+    // note.js is a plain script with no reference to the page; run as written.
+    const sampleNote = new Function(`${noteScript}; return sampleNote;`)() as (r: Row) => string | null;
+    const row = (hours: number, from: string, to: string): Row => ({ hours, span: { from, to } });
+    expect(page).toContain('id="sample-note" aria-live="polite"');
+    expect(script).toContain('sampleNote(row)');
+    expect(sampleNote(row(81, '2026-10-13T16:00Z', '2026-10-17T00:00Z'))).toMatch(
+      /^These 81 hours fall within 5 days, 2026-10-13 to 2026-10-17: a few weather spells at most/,
+    );
+    expect(sampleNote(row(1, '2026-10-13T16:00Z', '2026-10-13T16:00Z'))).toMatch(/^This hour falls on one day, 2026-10-13:/);
+    // Fourteen calendar days get the note, fifteen do not, however few the
+    // hours: it is the days that make a row a few spells.
+    expect(sampleNote(row(14, '2026-04-01T23:00Z', '2026-04-14T01:00Z'))).not.toBeNull();
+    expect(sampleNote(row(14, '2026-04-01T23:00Z', '2026-04-15T01:00Z'))).toBeNull();
+    // A row with no hours has no days to name.
+    expect(sampleNote({ hours: 0, span: null })).toBeNull();
+    expect(sampleNote(row(0, '2026-10-13T16:00Z', '2026-10-13T16:00Z'))).toBeNull();
+    // In the data file: the kept rows get it, the six-month NDFD rows do not.
+    const notes = Object.fromEntries(
+      data.points.map((p: { site: string; rows: Row[] }) => [p.site, p.rows.map((r) => sampleNote(r) != null)]),
+    );
+    expect(notes.KEPT).toEqual([true, true, true]);
+    expect(notes.DZ).toEqual([false, false, false]);
     for (const p of data.points) {
       for (const r of p.rows) {
         if (r.hours) expect(r.span.from <= r.span.to).toBe(true);

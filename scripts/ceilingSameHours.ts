@@ -13,8 +13,11 @@
  *     --cover data/parity/metar-2026-10-10-to-2026-10-15.jsonl.gz data/parity/metar-2026-10-15-to-2026-10-17.jsonl.gz \
  *     --kept <forecast-archive checkout>/data
  *
- * Prints Markdown: every hour both sources scored with a ceiling on all
- * three sides, then a summary per issuance row. Reads and joins only; the
+ * Prints Markdown, per issuance row: a summary (hours in common, hours
+ * alike, the medians over the hours with a ceiling on all three sides, and
+ * where the two differ, which had the later issuance), and for the first
+ * row ("latest issuance") a table of every common hour, 'none' included,
+ * with the issuance each source was read from. Reads and joins only; the
  * scoring is src/domain/ceilingHeights.ts.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -51,11 +54,11 @@ const walk = (p: string): void => {
   else if (/\.json(\.gz)?$/.test(p)) found.push(p);
 };
 args.kept.forEach(walk);
+// A folder and a file in it named together count the file once.
+const keptFiles = [...new Set(found)].sort();
 
 const ndfd: CeilingForecast[] = parseCeilingLines(lines(args.ceiling)).filter((r) => r.site === 'DZ');
-const kept: CeilingForecast[] = found
-  .sort()
-  .flatMap((f) => keptCeilingRecords(JSON.parse(read(f)) as KeptGridpointSnapshot, 'KEPT'));
+const kept: CeilingForecast[] = keptFiles.flatMap((f) => keptCeilingRecords(JSON.parse(read(f)) as KeptGridpointSnapshot, 'KEPT'));
 const metars: MetarRecord[] = [];
 for (const r of parseCloudCoverLines(lines(args.cover))) if (r.site == null && r.src === 'metar') metars.push(r);
 
@@ -66,11 +69,19 @@ const out: string[] = [];
 a.forEach((rowA, i) => {
   const rowB = b[i];
   const byHour = new Map(rowB.pairs.map((p) => [p.valid, p]));
-  const common = rowA.pairs.filter((p) => byHour.has(p.valid)).map((p) => ({ valid: p.valid, ndfd: p.forecast, kept: byHour.get(p.valid)!.forecast, reported: p.reported }));
+  const common = rowA.pairs
+    .filter((p) => byHour.has(p.valid))
+    .map((p) => {
+      const k = byHour.get(p.valid)!;
+      return { valid: p.valid, ndfd: p.forecast, kept: k.forecast, reported: p.reported, ndfdIssued: p.issued, keptIssued: k.issued };
+    });
   const allCeiling = common.filter((c) => c.ndfd !== 'none' && c.kept !== 'none' && c.reported !== 'none') as {
     valid: string; ndfd: number; kept: number; reported: number;
   }[];
   const same = common.filter((c) => c.ndfd === c.kept).length;
+  const differ = common.filter((c) => c.ndfd !== c.kept);
+  const keptLater = differ.filter((c) => Date.parse(c.keptIssued) > Date.parse(c.ndfdIssued)).length;
+  const ndfdLater = differ.filter((c) => Date.parse(c.ndfdIssued) > Date.parse(c.keptIssued)).length;
   const med = (xs: number[]) => (xs.length ? Math.round(median(xs) as number) : null);
   out.push(`### ${rowA.label}`, '');
   out.push(
@@ -78,12 +89,16 @@ a.forEach((rowA, i) => {
       `the same forecast ceiling in ${same}. With a ceiling on all three sides: ${allCeiling.length}; ` +
       `median forecast − reported ${med(allCeiling.map((c) => c.ndfd - c.reported))} ft from NDFD, ` +
       `${med(allCeiling.map((c) => c.kept - c.reported))} ft from the kept source; ` +
-      `median NDFD − kept ${med(allCeiling.map((c) => c.ndfd - c.kept))} ft.`,
+      `median NDFD − kept ${med(allCeiling.map((c) => c.ndfd - c.kept))} ft. ` +
+      `Of the ${differ.length} hours that differ, the kept source was read from the later issuance in ${keptLater}, NDFD in ${ndfdLater}.`,
     '',
   );
   if (i === 0 && common.length) {
-    out.push('| Hour (UTC) | NDFD (ft) | Kept (ft) | Reported (ft) |', '|---|---|---|---|');
-    for (const c of common) out.push(`| ${c.valid.slice(5, 16).replace('T', ' ')} | ${fmt(c.ndfd)} | ${fmt(c.kept)} | ${fmt(c.reported)} |`);
+    const hm = (t: string) => new Date(t).toISOString().slice(5, 16).replace('T', ' ');
+    out.push('| Hour (UTC) | NDFD (ft) | Kept (ft) | Reported (ft) | NDFD issued | Kept issued |', '|---|---|---|---|---|---|');
+    for (const c of common) {
+      out.push(`| ${hm(c.valid)} | ${fmt(c.ndfd)} | ${fmt(c.kept)} | ${fmt(c.reported)} | ${hm(c.ndfdIssued)} | ${hm(c.keptIssued)} |`);
+    }
     out.push('');
   }
 });
