@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-10-17T02:14:57.742Z",
+ "generatedAt": "2026-10-17T02:26:35.924Z",
  "sources": {
   "ceiling": [
    "ceiling-2026-04-01-to-2026-10-09.jsonl.gz",
@@ -1181,12 +1181,8 @@
       "hours": 80,
       "events": 9,
       "chanceSum": 1374,
-      "leadH": {"min":0.04833333333333333,"max":6.409722222222222},
-      "span": {
-       "from": "2026-10-13T16:00Z",
-       "to": "2026-10-16T23:00Z"
-      },
       "nearMiss": 2,
+      "leadH": {"min":0.04833333333333333,"max":6.409722222222222},
       "bins": [
        {"lo":0,"hi":0,"hours":15,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":34,"events":0,"chanceSum":150},
@@ -1199,7 +1195,11 @@
        {"lo":70,"hi":79,"hours":2,"events":2,"chanceSum":156},
        {"lo":80,"hi":89,"hours":2,"events":2,"chanceSum":165},
        {"lo":90,"hi":100,"hours":3,"events":3,"chanceSum":284}
-      ]
+      ],
+      "span": {
+       "from": "2026-10-13T16:00Z",
+       "to": "2026-10-16T23:00Z"
+      }
      },
      {
       "label": "NWS, 6 h or more ahead",
@@ -1207,12 +1207,8 @@
       "hours": 74,
       "events": 9,
       "chanceSum": 1485,
-      "leadH": {"min":6.048333333333333,"max":12.409722222222221},
-      "span": {
-       "from": "2026-10-13T22:00Z",
-       "to": "2026-10-16T23:00Z"
-      },
       "nearMiss": 2,
+      "leadH": {"min":6.048333333333333,"max":12.409722222222221},
       "bins": [
        {"lo":0,"hi":0,"hours":17,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":20,"events":0,"chanceSum":72},
@@ -1225,7 +1221,11 @@
        {"lo":70,"hi":79,"hours":2,"events":2,"chanceSum":147},
        {"lo":80,"hi":89,"hours":2,"events":2,"chanceSum":165},
        {"lo":90,"hi":100,"hours":3,"events":3,"chanceSum":283}
-      ]
+      ],
+      "span": {
+       "from": "2026-10-13T22:00Z",
+       "to": "2026-10-16T23:00Z"
+      }
      },
      {
       "label": "NWS, 24 h or more ahead",
@@ -1233,12 +1233,8 @@
       "hours": 56,
       "events": 9,
       "chanceSum": 1391,
-      "leadH": {"min":24.048333333333332,"max":30.40972222222222},
-      "span": {
-       "from": "2026-10-14T16:00Z",
-       "to": "2026-10-16T23:00Z"
-      },
       "nearMiss": 2,
+      "leadH": {"min":24.048333333333332,"max":30.40972222222222},
       "bins": [
        {"lo":0,"hi":0,"hours":16,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":11,"events":0,"chanceSum":38},
@@ -1251,7 +1247,11 @@
        {"lo":70,"hi":79,"hours":0,"events":0,"chanceSum":0},
        {"lo":80,"hi":89,"hours":4,"events":3,"chanceSum":334},
        {"lo":90,"hi":100,"hours":1,"events":1,"chanceSum":95}
-      ]
+      ],
+      "span": {
+       "from": "2026-10-14T16:00Z",
+       "to": "2026-10-16T23:00Z"
+      }
      }
     ]
    },
@@ -1267,12 +1267,8 @@
       "hours": 80,
       "events": 0,
       "chanceSum": 422,
-      "leadH": {"min":0.04833333333333333,"max":6.409722222222222},
-      "span": {
-       "from": "2026-10-13T16:00Z",
-       "to": "2026-10-16T23:00Z"
-      },
       "nearMiss": 0,
+      "leadH": {"min":0.04833333333333333,"max":6.409722222222222},
       "bins": [
        {"lo":0,"hi":0,"hours":23,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":44,"events":0,"chanceSum":186},
@@ -1285,7 +1281,11 @@
        {"lo":70,"hi":79,"hours":0,"events":0,"chanceSum":0},
        {"lo":80,"hi":89,"hours":0,"events":0,"chanceSum":0},
        {"lo":90,"hi":100,"hours":0,"events":0,"chanceSum":0}
-      ]
+      ],
+      "span": {
+       "from": "2026-10-13T16:00Z",
+       "to": "2026-10-16T23:00Z"
+      }
      },
      {
       "label": "NWS, 6 h or more ahead",
@@ -1293,12 +1293,8 @@
       "hours": 74,
       "events": 0,
       "chanceSum": 530,
-      "leadH": {"min":6.048333333333333,"max":12.409722222222221},
-      "span": {
-       "from": "2026-10-13T22:00Z",
-       "to": "2026-10-16T23:00Z"
-      },
       "nearMiss": 0,
+      "leadH": {"min":6.048333333333333,"max":12.409722222222221},
       "bins": [
        {"lo":0,"hi":0,"hours":24,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":32,"events":0,"chanceSum":160},
@@ -1311,7 +1307,11 @@
        {"lo":70,"hi":79,"hours":0,"events":0,"chanceSum":0},
        {"lo":80,"hi":89,"hours":0,"events":0,"chanceSum":0},
        {"lo":90,"hi":100,"hours":0,"events":0,"chanceSum":0}
-      ]
+      ],
+      "span": {
+       "from": "2026-10-13T22:00Z",
+       "to": "2026-10-16T23:00Z"
+      }
      },
      {
       "label": "NWS, 24 h or more ahead",
@@ -1319,12 +1319,8 @@
       "hours": 56,
       "events": 0,
       "chanceSum": 325,
-      "leadH": {"min":24.048333333333332,"max":30.40972222222222},
-      "span": {
-       "from": "2026-10-14T16:00Z",
-       "to": "2026-10-16T23:00Z"
-      },
       "nearMiss": 0,
+      "leadH": {"min":24.048333333333332,"max":30.40972222222222},
       "bins": [
        {"lo":0,"hi":0,"hours":21,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":23,"events":0,"chanceSum":95},
@@ -1337,7 +1333,11 @@
        {"lo":70,"hi":79,"hours":0,"events":0,"chanceSum":0},
        {"lo":80,"hi":89,"hours":0,"events":0,"chanceSum":0},
        {"lo":90,"hi":100,"hours":0,"events":0,"chanceSum":0}
-      ]
+      ],
+      "span": {
+       "from": "2026-10-14T16:00Z",
+       "to": "2026-10-16T23:00Z"
+      }
      }
     ]
    }

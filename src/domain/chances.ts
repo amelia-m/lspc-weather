@@ -10,9 +10,8 @@
  * beside the hours it happened in. Nothing here grades the forecast, and
  * the app shows none of it on the dashboard.
  */
-import { END_REACH_H, type KeptGridpointSnapshot } from './ceilingHeights';
+import { byValidHour, END_REACH_H, keptHours, pastReach, type KeptGridpointSnapshot } from './ceilingHeights';
 import { NWS_ISSUANCES, type MetarRecord } from './cloudCoverSources';
-import { parseValidTime } from './normalize';
 import { WX, WX_DESCRIPTOR_ONLY } from './taf';
 
 const MS_H = 3_600_000;
@@ -28,42 +27,29 @@ export interface ChanceForecast {
   chance: number;
 }
 
-/**
- * One element's chances in a kept snapshot, one record per hour, issued at
- * the gridpoint's `updateTime`, as keptCeilingRecords reads the ceiling.
- * The API runs equal hours together (`P2DT21H` at 0 for 69 hours, read
- * 2026-10-17), so a period is its value for each of its hours. A null
- * value is no forecast and gives no record.
- */
+/** One element's chances in a kept snapshot, one record per hour
+ *  (keptHours). A null value is no forecast and gives no record. */
 export function keptChanceRecords(snap: KeptGridpointSnapshot, element: ChanceElement): ChanceForecast[] {
-  const gp = snap.nwsGridpoint;
-  if (!gp || 'error' in gp || !gp.updateTime) return [];
-  const prop = gp.properties[element];
-  if (!prop) return [];
-  if (prop.uom != null && prop.uom !== 'wmoUnit:percent') {
-    throw new Error(`keptChanceRecords: ${element} in ${prop.uom}`);
+  const kept = keptHours(snap, element);
+  if (!kept) return [];
+  if (kept.uom != null && kept.uom !== 'wmoUnit:percent') {
+    throw new Error(`keptChanceRecords: ${element} in ${kept.uom}`);
   }
-  const out: ChanceForecast[] = [];
-  for (const { validTime, value } of prop.values) {
-    const span = parseValidTime(validTime);
-    if (!span || value == null) continue;
-    for (let h = 0; h < span.hours; h++) {
-      out.push({ issued: gp.updateTime, valid: new Date(span.start + h * MS_H).toISOString(), chance: value });
-    }
-  }
-  return out;
+  return kept.hours.flatMap(({ valid, value }) => (value == null ? [] : [{ issued: kept.issued, valid, chance: value }]));
 }
 
-/** What KPMV's reports in one clock hour say happened. */
+/** What KPMV's reports in one hour say happened. The hour is the one
+ *  ending with its :55 report, five minutes ahead of the clock hour it is
+ *  scored as: KPMV's `P` group is the amount since its last :55 report
+ *  (docs/forecast-chances.md), so a report at :56 to :59 opens the next. */
 export interface ReportedHour {
-  /** The hour's start, ms. */
+  /** The clock hour's start, ms. */
   t: number;
   /**
    * At least 0.01 in. of precipitation, the amount NWS's chance of
-   * precipitation is a chance of. KPMV's `P` group is the amount since its
-   * last :55 report, so the hour read is the one ending at :55, five
-   * minutes ahead of the clock hour (docs/forecast-chances.md). Null when
-   * a report's gauge could not say (`P////`) and none measured any.
+   * precipitation is a chance of. Null when a report's gauge could not
+   * say (`P////`, or `PNO`, the gauge not available) and none measured
+   * any.
    */
   measurable: boolean | null;
   /** Any precipitation reported at the station: a precipitation code in
@@ -78,6 +64,8 @@ export interface ReportedHour {
 }
 
 const PRECIP_CODES = /DZ|RA|SN|SG|IC|PL|GR|GS|UP/;
+// Drifting or blowing snow is snow lifted by the wind, not falling.
+const LIFTED = new Set(['DR', 'BL']);
 const P_GROUP = /^P(\d{4}|\/{4})$/;
 
 /** One report's weather groups and `P` group. Intensity written before
@@ -100,35 +88,37 @@ function readReport(raw: string) {
       continue;
     }
     if (isTs) ts = true;
-    if (m && PRECIP_CODES.test(m[3])) precip = true;
+    if (m && !LIFTED.has(m[2]) && PRECIP_CODES.test(m[3])) precip = true;
   }
   const rtoks = rmk.split(/\s+/);
   const p = rtoks.map((x) => P_GROUP.exec(x)).find(Boolean);
-  const amount = p ? (p[1] === '////' ? null : Number(p[1]) / 100) : 0;
+  const amount = p ? (p[1] === '////' ? null : Number(p[1]) / 100) : rtoks.includes('PNO') ? null : 0;
   return { precip: precip || p != null, ts, vcts, amount, tsno: rtoks.includes('TSNO') };
 }
 
 /**
- * KPMV's reports grouped by clock hour. An hour counts only when it holds
- * a report at :45 or later, the hourly one that carries the hour's whole
- * `P` amount: KPMV reports at :15, :35 and :55 (4,460 of each from April
- * to October 9, 2026), and without the :55 one the hour's rain is not
- * all on record.
+ * KPMV's reports grouped by the hour ending at :55. An hour counts only
+ * when its :55 report, the hourly one carrying the hour's whole `P`
+ * amount, is on record: KPMV reports at :15, :35 and :55 (about 4,460 of
+ * each from April to October 9, 2026; 57 reports at any other minute from
+ * April to October 16), and
+ * without the :55 one the hour's rain is not all there.
  */
 export function reportedHours(metars: readonly MetarRecord[]): ReportedHour[] {
   // A report seen twice (overlapping fetches) changes nothing: every
   // reading below asks whether any report in the hour said so.
-  const byHour = new Map<number, { min: number; r: ReturnType<typeof readReport> }[]>();
+  const byHour = new Map<number, { hourly: boolean; r: ReturnType<typeof readReport> }[]>();
   for (const m of metars) {
     const at = Date.parse(m.obsAt);
-    const t = Math.floor(at / MS_H) * MS_H;
+    const min = Math.floor((at % MS_H) / 60_000);
+    const t = Math.floor(at / MS_H) * MS_H + (min > 55 ? MS_H : 0);
     const list = byHour.get(t) ?? [];
-    list.push({ min: (at - t) / 60_000, r: readReport(m.raw) });
+    list.push({ hourly: min === 55, r: readReport(m.raw) });
     byHour.set(t, list);
   }
   const out: ReportedHour[] = [];
   for (const [t, list] of byHour) {
-    if (!list.some((x) => x.min >= 45)) continue;
+    if (!list.some((x) => x.hourly)) continue;
     const rs = list.map((x) => x.r);
     const measured = rs.some((r) => r.amount != null && r.amount >= 0.01);
     const ts = rs.some((r) => r.ts);
@@ -143,7 +133,9 @@ export function reportedHours(metars: readonly MetarRecord[]): ReportedHour[] {
   return out.sort((a, b) => a.t - b.t);
 }
 
-/** The chance bins: 0 on its own (most hours), then tens. Inclusive. */
+/** The chance groups: 0 on its own (most hours), then tens. `hi` is the
+ *  label's; a chance belongs to the last group whose `lo` it reaches, so a
+ *  fractional one (none seen) still has a group. */
 export const CHANCE_BINS: readonly { lo: number; hi: number }[] = [
   { lo: 0, hi: 0 },
   { lo: 1, hi: 9 },
@@ -164,62 +156,61 @@ export interface ChanceBin {
 export interface ChanceRow {
   label: string;
   minLeadH: number;
+  /** Totals of the bins'. */
   hours: number;
   events: number;
   chanceSum: number;
+  /** Hours counted without the event but with something short of it
+   *  (CHANCE_NEAR). */
+  nearMiss: number;
   leadH: { min: number; max: number } | null;
   bins: ChanceBin[];
   /** Every hour counted, in time order. */
-  pairs: { valid: string; issued: string; chance: number; event: boolean }[];
+  pairs: { valid: string; issued: string; chance: number; event: boolean; near: boolean }[];
 }
 
 /**
  * One element's chances against what happened, one row per NWS_ISSUANCES
  * entry, picking the newest issuance at least the row's lead before the
- * hour's start, as summarizeCeilings does, and leaving out hours past the
- * reach of what was gathered (END_REACH_H). `event` reads an hour as
- * happened, not, or unknown (null: the hour is left out).
+ * hour's start and leaving out hours past the reach of what was gathered,
+ * by the same rules as summarizeCeilings (byValidHour, pastReach). An
+ * hour whose outcome is unknown (`event` null) is left out.
  */
 export function summarizeChances(
   forecasts: readonly ChanceForecast[],
   hours: readonly ReportedHour[],
-  event: (h: ReportedHour) => boolean | null,
+  element: ChanceElement,
   endReachH = END_REACH_H,
 ): ChanceRow[] {
-  const byHour = new Map<number, ChanceForecast[]>();
-  for (const r of forecasts) {
-    const t = Date.parse(r.valid);
-    const list = byHour.get(t) ?? [];
-    list.push(r);
-    byHour.set(t, list);
-  }
-  for (const rs of byHour.values()) rs.sort((a, b) => Date.parse(b.issued) - Date.parse(a.issued));
-  const lastIssued = forecasts.reduce((m, r) => Math.max(m, Date.parse(r.issued)), -Infinity);
-
+  const { byHour, lastIssued } = byValidHour(forecasts);
+  const event = CHANCE_EVENT[element];
+  const near = CHANCE_NEAR[element];
   return NWS_ISSUANCES.map(({ minLeadH, label }) => {
     const bins: ChanceBin[] = CHANCE_BINS.map((b) => ({ ...b, hours: 0, events: 0, chanceSum: 0 }));
     const pairs: ChanceRow['pairs'] = [];
     const leads: number[] = [];
     for (const h of hours) {
-      if (h.t - minLeadH * MS_H > lastIssued + endReachH * MS_H) continue;
+      if (pastReach(h.t, minLeadH, lastIssued, endReachH)) continue;
       const happened = event(h);
       if (happened == null) continue;
       const pick = byHour.get(h.t)?.find((r) => h.t - Date.parse(r.issued) >= minLeadH * MS_H);
       if (!pick) continue;
-      const bin = bins.find((b) => pick.chance >= b.lo && pick.chance <= b.hi);
-      if (!bin) throw new Error(`summarizeChances: a chance of ${pick.chance}%`);
+      if (!(pick.chance >= 0 && pick.chance <= 100)) throw new Error(`summarizeChances: a chance of ${pick.chance}%`);
+      const bin = bins.filter((b) => pick.chance >= b.lo).pop()!;
       bin.hours++;
       bin.chanceSum += pick.chance;
       if (happened) bin.events++;
-      pairs.push({ valid: new Date(h.t).toISOString(), issued: pick.issued, chance: pick.chance, event: happened });
+      pairs.push({ valid: new Date(h.t).toISOString(), issued: pick.issued, chance: pick.chance, event: happened, near: !happened && near(h) });
       leads.push((h.t - Date.parse(pick.issued)) / MS_H);
     }
+    const total = (k: 'hours' | 'events' | 'chanceSum') => bins.reduce((a, b) => a + b[k], 0);
     return {
       label,
       minLeadH,
-      hours: pairs.length,
-      events: pairs.filter((p) => p.event).length,
-      chanceSum: bins.reduce((s, b) => s + b.chanceSum, 0),
+      hours: total('hours'),
+      events: total('events'),
+      chanceSum: total('chanceSum'),
+      nearMiss: pairs.filter((p) => p.near).length,
       leadH: leads.length ? { min: Math.min(...leads), max: Math.max(...leads) } : null,
       bins,
       pairs,
@@ -233,4 +224,11 @@ export function summarizeChances(
 export const CHANCE_EVENT: Record<ChanceElement, (h: ReportedHour) => boolean | null> = {
   probabilityOfPrecipitation: (h) => h.measurable,
   probabilityOfThunder: (h) => h.ts,
+};
+
+/** Something short of the event, counted beside it: precipitation under
+ *  0.01 in., or thunder only in the vicinity. */
+export const CHANCE_NEAR: Record<ChanceElement, (h: ReportedHour) => boolean> = {
+  probabilityOfPrecipitation: (h) => h.precip,
+  probabilityOfThunder: (h) => h.vcts,
 };

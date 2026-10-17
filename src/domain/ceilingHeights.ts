@@ -54,11 +54,20 @@ export interface NdfdCeilingRecord extends CeilingForecast {
   gridKm: number;
 }
 
+const MS_H = 3_600_000;
+
 /** One gridpoint property as the API serves it and the keeper keeps it. */
 export type KeptSeries = { uom?: string; values: { validTime: string; value: number | null }[] } | null;
 
+/** The kept gridpoint properties read here and in chances.ts. */
+export interface KeptProperties {
+  ceilingHeight?: KeptSeries;
+  probabilityOfPrecipitation?: KeptSeries;
+  probabilityOfThunder?: KeptSeries;
+}
+
 /** The part of a kept snapshot (scripts/forecastKeep.ts, the
- *  `forecast-archive` branch) this reads, here and in chances.ts: the
+ *  `forecast-archive` branch) this reads: the
  *  gridpoint as the card fetched it, or `{ error }` when that fetch
  *  failed. The keeper copies a property the API left out as null. */
 export interface KeptGridpointSnapshot {
@@ -67,43 +76,57 @@ export interface KeptGridpointSnapshot {
     | {
         url: string;
         updateTime?: string;
-        properties: {
-          ceilingHeight?: KeptSeries;
-          probabilityOfPrecipitation?: KeptSeries;
-          probabilityOfThunder?: KeptSeries;
-        };
+        properties: KeptProperties;
       }
     | { error: string }
     | null;
 }
 
 /**
- * The ceiling forecast in a kept snapshot, one record per hour, issued at
- * the gridpoint's `updateTime`: the hour the forecast was made, as an NDFD
- * file's issue time is, so the lead reads alike in both. The API serves no
- * ceiling as null (its NDFD value is NDFD_NO_CEILING, read 2026-10-13), so
- * null becomes that code. Hours before `updateTime` are in the snapshot
- * too; summarizeCeilings never picks an issuance made after its hour.
+ * One property of a kept snapshot, hour by hour, issued at the gridpoint's
+ * `updateTime`: the hour the forecast was made, as an NDFD file's issue
+ * time is, so the lead reads alike in both. The API runs equal hours
+ * together (`P2DT21H` at 0% rain chance for 69 hours, read 2026-10-17), so
+ * a period gives its value to each of its hours. Hours before `updateTime`
+ * are in the snapshot too; no summary picks an issuance made after its
+ * hour. Null when the fetch failed or the property is missing.
  */
-export function keptCeilingRecords(snap: KeptGridpointSnapshot, site: string): CeilingForecast[] {
+export function keptHours(
+  snap: KeptGridpointSnapshot,
+  key: keyof KeptProperties,
+): { issued: string; uom: string | undefined; hours: { valid: string; value: number | null }[] } | null {
   const gp = snap.nwsGridpoint;
-  if (!gp || 'error' in gp || !gp.updateTime) return [];
-  const prop = gp.properties.ceilingHeight;
-  if (!prop) return [];
-  const uom = prop.uom ?? 'wmoUnit:m';
-  const toM = uom === 'wmoUnit:m' ? 1 : uom === 'wmoUnit:ft' ? 0.3048 : null;
-  if (toM == null) throw new Error(`keptCeilingRecords: ceilingHeight in ${uom}`);
-  const out: CeilingForecast[] = [];
+  if (!gp || 'error' in gp || !gp.updateTime) return null;
+  const prop = gp.properties[key];
+  if (!prop) return null;
+  const hours: { valid: string; value: number | null }[] = [];
   for (const { validTime, value } of prop.values) {
     const span = parseValidTime(validTime);
     if (!span) continue;
-    const cig = value == null ? NDFD_NO_CEILING : value * toM;
     for (let h = 0; h < span.hours; h++) {
-      const valid = new Date(span.start + h * 3_600_000).toISOString().replace(/:00\.000Z$/, 'Z');
-      out.push({ issued: gp.updateTime as string, valid, cig, site });
+      hours.push({ valid: new Date(span.start + h * MS_H).toISOString().replace(/:00\.000Z$/, 'Z'), value });
     }
   }
-  return out;
+  return { issued: gp.updateTime, uom: prop.uom, hours };
+}
+
+/**
+ * The ceiling forecast in a kept snapshot, one record per hour (keptHours).
+ * The API serves no ceiling as null (its NDFD value is NDFD_NO_CEILING,
+ * read 2026-10-13), so null becomes that code.
+ */
+export function keptCeilingRecords(snap: KeptGridpointSnapshot, site: string): CeilingForecast[] {
+  const kept = keptHours(snap, 'ceilingHeight');
+  if (!kept) return [];
+  const uom = kept.uom ?? 'wmoUnit:m';
+  const toM = uom === 'wmoUnit:m' ? 1 : uom === 'wmoUnit:ft' ? 0.3048 : null;
+  if (toM == null) throw new Error(`keptCeilingRecords: ceilingHeight in ${uom}`);
+  return kept.hours.map(({ valid, value }) => ({
+    issued: kept.issued,
+    valid,
+    cig: value == null ? NDFD_NO_CEILING : value * toM,
+    site,
+  }));
 }
 
 /** The grid's "no ceiling", which api.weather.gov serves as null. */
@@ -163,7 +186,6 @@ function ceilingReports(metars: readonly MetarRecord[], topFt: number): CeilingR
     .sort((a, b) => a.t - b.t);
 }
 
-const MS_H = 3_600_000;
 
 /** How far past a source's last issuance its records still count, beyond
  *  each row's own lead. Past that, an hour is outside the window the
@@ -218,6 +240,32 @@ const mediansOf = (d: Record<FlightCategory, DiffDistribution>): CeilingRow['dif
   Object.fromEntries(FLIGHT_BANDS.map((b) => [b, { n: d[b].n, median: d[b].diffFt?.[2] ?? null }])) as CeilingRow['diffByBand'];
 
 /**
+ * Forecast records by the hour they are for, newest issuance first, and
+ * the latest issue time of all: what summarizeCeilings and
+ * summarizeChances pick each hour's issuance from. An issuance made after
+ * its hour is never picked: every row asks for one at least 0 h before it.
+ */
+export function byValidHour<T extends { issued: string; valid: string }>(
+  forecasts: readonly T[],
+): { byHour: Map<number, T[]>; lastIssued: number } {
+  const byHour = new Map<number, T[]>();
+  for (const r of forecasts) {
+    const t = Date.parse(r.valid);
+    const list = byHour.get(t);
+    if (list) list.push(r);
+    else byHour.set(t, [r]);
+  }
+  for (const rs of byHour.values()) rs.sort((a, b) => Date.parse(b.issued) - Date.parse(a.issued));
+  const lastIssued = forecasts.reduce((m, r) => Math.max(m, Date.parse(r.issued)), -Infinity);
+  return { byHour, lastIssued };
+}
+
+/** Whether hour `t` is past the end of what was gathered, for a row
+ *  needing an issuance `minLeadH` before it: see END_REACH_H. */
+export const pastReach = (t: number, minLeadH: number, lastIssued: number, endReachH: number): boolean =>
+  t - minLeadH * MS_H > lastIssued + endReachH * MS_H;
+
+/**
  * The NWS ceiling against the reports, one row per NWS_ISSUANCES entry
  * (the newest issuance at least so many hours before the hour, picked by
  * time as the cloud-cover summary picks them). One place's records: the
@@ -234,18 +282,8 @@ export function summarizeCeilings(
   const sites = new Set(forecasts.map((r) => r.site));
   if (sites.size > 1) throw new Error(`summarizeCeilings: forecasts from ${sites.size} sites; filter to one first`);
   const reports = ceilingReports(metars, topFt);
-  const byHour = new Map<number, CeilingForecast[]>();
-  for (const r of forecasts) {
-    // An issuance made after its hour is never picked: every row asks for
-    // one at least 0 h before it.
-    const t = Date.parse(r.valid);
-    const list = byHour.get(t);
-    if (list) list.push(r);
-    else byHour.set(t, [r]);
-  }
-  for (const rs of byHour.values()) rs.sort((a, b) => Date.parse(b.issued) - Date.parse(a.issued));
+  const { byHour, lastIssued } = byValidHour(forecasts);
   const hours = [...byHour.keys()].sort((a, b) => a - b);
-  const lastIssued = forecasts.reduce((m, r) => Math.max(m, Date.parse(r.issued)), -Infinity);
   // Each hour's report, found once for the three rows.
   const reportAt = new Map(hours.map((t) => [t, reportNear(reports, t)]));
 
@@ -258,8 +296,7 @@ export function summarizeCeilings(
     let sameBand = 0;
     const pairs: CeilingRow['pairs'] = [];
     for (const t of hours) {
-      // Past the end of what was gathered, for this row's lead: see END_REACH_H.
-      if (t - minLeadH * MS_H > lastIssued + endReachH * MS_H) continue;
+      if (pastReach(t, minLeadH, lastIssued, endReachH)) continue;
       const rep = reportAt.get(t);
       if (rep?.ceiling == null) continue;
       // The newest issuance far enough ahead that has a value there: one

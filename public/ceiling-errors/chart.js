@@ -51,7 +51,9 @@
 
   // Buttons are kept while their options stay the same, so a click does not
   // take keyboard focus away from the control it was made on.
-  function seg(id, options, key) {
+  // `draw` redraws what the control changes: the ceiling charts, or the
+  // chances section, not both.
+  function seg(id, options, key, draw = renderCeilings) {
     const box = $(id);
     const sig = JSON.stringify(options);
     if (box.dataset.sig !== sig) {
@@ -59,7 +61,7 @@
       box.replaceChildren();
       for (const [value, label] of options) {
         const b = el('button', { type: 'button' }, label);
-        b.addEventListener('click', () => { state[key] = value; save(); render(); });
+        b.addEventListener('click', () => { state[key] = value; save(); draw(); });
         box.append(b);
       }
     }
@@ -413,6 +415,11 @@
   function render() {
     if (!data) return;
     tokens = new Map();
+    renderCeilings();
+    renderChances();
+  }
+
+  function renderCeilings() {
     const { point, row } = current();
     seg('c-site', data.points.map((p) => [p.site, p.short]), 'site');
     seg('c-lead', point.rows.map((r, i) => [i, leadLabel(r)]), 'lead');
@@ -439,24 +446,27 @@
     drawSpread(row);
     drawBands(row);
     drawTables(row);
-    renderChances();
   }
 
   // The rain and thunder chances: one row per chance group with any hours,
   // the group's average chance as a ring and the share of its hours it
   // happened in as a dot, on one 0 to 100% axis. A file without them
-  // (made with no kept forecasts) hides the section.
+  // (made with no kept forecasts) hides the section and empties it, so a
+  // file opened later does not show the one before's chances.
   function renderChances() {
     const panel = $('chances-panel');
     const c = data.chances;
     panel.hidden = !c;
-    if (!c) return;
+    if (!c) {
+      for (const id of ['c-facts', 'lg-chance', 'ch-chance', 't-chance']) $(id).replaceChildren();
+      return;
+    }
     let elem = c.elements.find((e) => e.key === state.el);
     if (!elem) { elem = c.elements[0]; state.el = elem.key; }
     if (!elem.rows[state.clead]) state.clead = 0;
     const row = elem.rows[state.clead];
-    seg('c-el', c.elements.map((e) => [e.key, e.name]), 'el');
-    seg('c-clead', elem.rows.map((r, i) => [i, leadLabel(r)]), 'clead');
+    seg('c-el', c.elements.map((e) => [e.key, e.name]), 'el', renderChances);
+    seg('c-clead', elem.rows.map((r, i) => [i, leadLabel(r)]), 'clead', renderChances);
     const facts = $('c-facts');
     facts.replaceChildren();
     const fact = (b, t) => { const s = el('span'); s.append(el('b', {}, b), document.createTextNode(' ' + t)); facts.append(s); };
