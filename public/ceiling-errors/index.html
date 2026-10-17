@@ -14,7 +14,7 @@
      Standalone: no build step touches it, and it loads nothing from another
      host. docs/ceiling-heights.md, "The chart". -->
 <style>
-/* Layout: one reading column; a control row scopes three stacked chart panels, then the table view and the method. */
+/* Layout: a control row scopes three stacked chart panels and the table view; the method notes sit below them, or beside them on a wide screen. */
 :root {
   --page: #f6f6f3;
   --surface: #fcfcfb;
@@ -63,13 +63,18 @@ body {
   padding-block: 28px 48px;
 }
 main { max-width: 860px; margin: 0 auto; display: grid; gap: 20px; }
+.layout, .charts { display: grid; gap: 20px; min-width: 0; }
+/* Wide enough for the notes beside the charts, at about 50 characters a line. */
+@media (min-width: 1280px) {
+  main { max-width: 1240px; }
+  .layout { grid-template-columns: minmax(0, 860px) minmax(0, 1fr); gap: 32px; align-items: start; }
+}
 header { display: grid; gap: 6px; }
 .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
 h1 { font-size: clamp(26px, 5vw, 34px); line-height: 1.15; font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
 h2 { font-size: 17px; font-weight: 650; margin: 0; text-wrap: balance; }
-/* Text runs the full column, aligned with the chart panels (the maintainer,
-   2026-10-17: a 68-character measure left it short of their edge). */
-p { margin: 0; }
+/* A readable measure, about 68 characters a line. */
+p { margin: 0; max-width: 68ch; }
 .lede { color: var(--ink-2); }
 .meta { font-size: 13px; color: var(--muted); }
 .controls { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: end; }
@@ -136,6 +141,8 @@ a { color: var(--accent); }
     <p class="meta" id="meta">Loading data…</p>
   </header>
 
+  <div class="layout">
+  <div class="charts">
   <div class="controls" role="group" aria-label="What to show">
     <div class="control"><span id="l-site">Forecast read at</span><div class="seg" id="c-site" aria-labelledby="l-site"></div></div>
     <div class="control"><span id="l-lead">Forecast issued</span><div class="seg" id="c-lead" aria-labelledby="l-lead"></div></div>
@@ -182,6 +189,7 @@ a { color: var(--accent); }
     <summary>Table view</summary>
     <div class="tables" id="tables"></div>
   </details>
+  </div>
 
   <section class="notes" aria-labelledby="h-notes">
     <h2 id="h-notes">How these are counted, and adding data</h2>
@@ -195,6 +203,7 @@ a { color: var(--accent); }
     </div>
     <p class="status" id="f-status"></p>
   </section>
+  </div>
 </main>
 
 <script src="chart.js"></script>

@@ -230,9 +230,13 @@ sideways, and the first chart's axis labels ran together, both fixed
 then. Deployed the same day: the page, `chart.js` and the data file
 answered 200 from amelia-m.github.io (fetched with curl, which the
 sandbox can do; its browser still cannot load the live site), and the
-deployed dashboard's script carries the footer link. On 2026-10-17, at
-the maintainer's request, the page's text lost its 68-character measure
-and runs the full column, so it ends where the chart panels do. While it was an
+deployed dashboard's script carries the footer link. On 2026-10-17 the
+maintainer asked why the text stopped short of the chart panels: its
+paragraphs keep a readable measure, about 68 characters a line. They
+keep it; instead, at 1,280 px and wider the method notes sit in a column
+beside the charts (about 50 characters a line), and below them on a
+narrower screen. Checked at 1,500, 1,280, 1,100, 390 and 320 px: no
+sideways scroll, the charts redrawn to their column's width. While it was an
 artifact, on 2026-10-16 the maintainer saw a blank page at its link. The served files
 were read back the same day: `index.html` is the repository's page,
 byte for byte, inside the artifact's wrapper, with `ceiling-errors.json`
