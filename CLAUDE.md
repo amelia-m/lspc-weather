@@ -172,8 +172,10 @@ precisely because they were colour and text rather than flags.
   out". Set against KPMV's measured wind over 156 logged hours to
   2026-10-08, the 10 m row was nearer in 104, his in 23, tied in 29; both
   ran high, his by more, most at night (same doc, "Which Surface row is
-  nearer the measured wind"). That is a point about heights, not a fault in
-  his tool.
+  nearer the measured wind"). At the landing area over 79 hours to
+  2026-10-17 the result held: 51, 11 and 17 (`scripts/surfaceRows.ts`,
+  same doc, "Again, at the landing area"). That is a point about heights,
+  not a fault in his tool.
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; from 2026-09-23 the app sampled the same
   pressure levels the tool does below 18,000 ft (`OPEN_METEO_PRESSURE_LEVELS`,

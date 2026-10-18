@@ -420,5 +420,38 @@ each on its valid hour (the run time rounded to the hour, checked against
 where the record has it, else `ourKt` rounded; his `theirKt`), and set both
 against the mean of KPMV's reports within 30 minutes of the hour from IEM's
 archive (`mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=PMV&data=sknt`,
-report types 3 and 4). It was run by hand from the scratchpad, not from a
-script in this repository.
+report types 3 and 4). It was run by hand from the scratchpad, and is now
+`scripts/surfaceRows.ts` (the arithmetic in `src/domain/surfaceRows.ts`,
+tested), which reproduces the table above figure for figure from the same
+logs.
+
+### Again, at the landing area (2026-10-18)
+
+Run with the script over every Schulze record the logs held to 2026-10-17
+(the archive to 10-05, and the 315 records of the `parity-*` artifacts
+from 10-04 to 10-17, archived as
+`data/parity/schulze-logs-2026-10-04-to-2026-10-17.jsonl.gz` before they
+expire) against KPMV's reports in
+`data/parity/kpmv-wind-2026-09-23-to-2026-10-17.csv.gz`. Output, with the
+old-point table again: `data/parity/surface-rows-2026-10-18.md`. The hours
+from the commit that moved the DZ point (2026-10-08 04:17Z) on:
+
+| hours | n | KPMV median | this app: bias, mean abs error | Schulze: bias, mean abs error | nearer (this app, Schulze, tied) |
+|---|---|---|---|---|---|
+| all | 79 | 8.3 kt | +1.3, 2.2 kt | +3.6, 3.7 kt | 51, 11, 17 |
+| night, 7 PM to 7 AM | 30 | 6.8 kt | +1.3, 2.1 kt | +4.5, 4.8 kt | 23, 2, 5 |
+| day, 7 AM to 7 PM | 49 | 10.0 kt | +1.3, 2.2 kt | +3.0, 3.1 kt | 28, 9, 12 |
+| 9 AM to 6 PM | 40 | 10.8 kt | +1.6, 2.2 kt | +2.9, 3.0 kt | 22, 7, 11 |
+
+The same pattern as at the old point, on windier days (a KPMV median of
+8.3 kt against 4.7): both rows above the measured wind, the 10 m row by
+about 1.3 kt and Schulze's by about 3.6, the gap widest at night. The
+landing-area hours are those the comparison workflows logged, about nine a
+day, so 79 hours over ten days of October. Over all 235 hours the 10 m row
+was nearer in 155, his in 34, tied in 46. The same caveats hold: KPMV is
+11.5 mi off on different ground, and this is one autumn.
+
+To take it again, download the unexpired `parity-*` artifacts (as
+`.github/workflows/parity-summary.yml` does), archive their Schulze lines
+under `data/parity/`, fetch KPMV's reports for the span from IEM, and run
+the script with every archive.
