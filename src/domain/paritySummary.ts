@@ -561,7 +561,8 @@ export function validHourOf(r: SchulzeRecord): number {
 
 const DAY_MS = 86_400_000;
 
-const localHour = (ms: number): number =>
+/** The hour of the day at the DZ, 0 to 23 (also read by surfaceRows.ts). */
+export const localHour = (ms: number): number =>
   Number(
     new Intl.DateTimeFormat('en-US', { timeZone: SITE.timeZone, hour: 'numeric', hourCycle: 'h23' }).format(
       new Date(ms),
@@ -581,7 +582,7 @@ const localHour = (ms: number): number =>
  * in twenty is a knot off what the card showed. Null where either side is
  * missing.
  */
-function groundKt(r: SchulzeRecord): { ours: number; theirs: number } | null {
+export function groundKt(r: SchulzeRecord): { ours: number; theirs: number } | null {
   const ours = r.ground?.ourShownKt ?? (r.ground?.ourKt != null ? Math.round(r.ground.ourKt) : null);
   const theirs = r.ground?.theirKt;
   return ours == null || theirs == null ? null : { ours, theirs };

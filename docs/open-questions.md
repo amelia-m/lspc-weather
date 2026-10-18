@@ -468,9 +468,10 @@ the new files. Two choices for the maintainer to confirm or change:
 Mondays at 07:41Z, and committing a ceiling and a METAR file every week
 (about 15 KB) rather than merging them into fewer archives.
 
-A Claude session has a check-in scheduled for 2026-10-19 at 09:30Z, two
-hours after the first scheduled run, to read that run and its deploy and
-record the result here.
+A Claude session scheduled a check-in for 2026-10-19 at 09:30Z, about
+two hours after the run starts, to read that run and its deploy and
+record the result here. If nothing below says what happened, it did not
+run, and the run is still worth reading.
 
 ## Viewing the deployed site from the sandbox
 
