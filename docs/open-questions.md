@@ -177,9 +177,15 @@ measured from 1,165 ft, as the "As Schulze" view is; his own list's pin
 for the club is still in the south-west field (1,132 ft on Open-Meteo's
 terrain). Logs before 2026-10-08 were taken at the old point.
 
-## To do: re-run the Surface rows against the measured wind
+## Surface rows against the measured wind: scripted, run again
 
-On 2026-10-08 both forecast Surface rows were set by hand against KPMV's
+Done 2026-10-18: the comparison below is now `scripts/surfaceRows.ts`, and
+over 79 hours at the landing area it found what the old point did
+(`docs/markschulze-altitude-reference.md`, "Again, at the landing area").
+Still worth re-running in other seasons; the logs it needs expire after 14
+days unless their Schulze lines are archived under `data/parity/` first.
+
+What it replaced: on 2026-10-08 both forecast Surface rows were set by hand against KPMV's
 measured wind over the 156 hours the logs held (the 10 m row nearer in 104,
 Schulze's in 23, tied in 29; `docs/markschulze-altitude-reference.md`,
 "Which Surface row is nearer the measured wind", which also says how).
@@ -461,6 +467,10 @@ file, that a Pages deploy followed, and that the page's `sources` name
 the new files. Two choices for the maintainer to confirm or change:
 Mondays at 07:41Z, and committing a ceiling and a METAR file every week
 (about 15 KB) rather than merging them into fewer archives.
+
+A Claude session has a check-in scheduled for 2026-10-19 at 09:30Z, two
+hours after the first scheduled run, to read that run and its deploy and
+record the result here.
 
 ## Viewing the deployed site from the sandbox
 
