@@ -3,58 +3,6 @@
 Live backlog. Closed items should be deleted rather than marked done — the
 repository history is the record.
 
-## Merged branches waiting to be deleted
-
-The sandbox cannot delete a remote branch (see CLAUDE.md, "What can and cannot
-be verified from a sandbox"), so these need the maintainer, on GitHub or from
-their own checkout.
-
-**Git state does not say whether a branch is in use, and this entry got that
-wrong once.** These `claude/*` branches are not one-per-PR: a session keeps one
-and reuses it, opening a PR, merging it, and pushing the next piece of work to
-the same branch. So between merges a live branch sits at exactly the state a
-dead one does — no commits outside `main`, no file absent from it. On
-2026-10-17 that reading led this entry to list
-`claude/fervent-feynman-zm42xw` as deletable; it had merged eight PRs that
-day (#167–#174), the last at 18:29Z, and pushed again afterwards. **It is in
-active use. Do not delete it.**
-
-What the two tests actually tell you:
-
-- `git diff origin/<branch> origin/main --diff-filter=D --name-only` empty —
-  the branch holds no file `main` lacks. Good for "is anything here unique",
-  useless for "is anyone using it".
-- The PR list for the branch as head, and the date of its last push — that is
-  what shows whether a session is still on it.
-
-Safe to delete, both dormant and holding nothing unique:
-
-- **`claude/bold-thompson-c28git`** (`f53cf6c`, last pushed 2026-09-23) —
-  this session's branch, squash-merged as `a4dfacf` (PR #54).
-  `git diff f53cf6c a4dfacf` is empty, so the squash took it byte for byte.
-  One PR, none since. Its local copy is already deleted.
-- **`claude/skydiver-weather-dashboard-gqved3`** (`1bc617f`, last pushed
-  2026-09-22) — an earlier session's reusable branch (PRs #49–#53, 2026-08-17
-  to 2026-09-22). Its tip is content-identical to `b52fe7a` on `main`. Dormant
-  26 days, but it is the same reuse pattern, so check it has not been picked up
-  again before deleting.
-
-**`forecast-archive` is not in this list and must not be deleted.** It is the
-forecast keeper's data branch, 41 commits and 41 files deliberately absent from
-`main`; it never merges by design.
-
-To re-check, both halves together:
-
-```
-for b in $(git ls-remote --heads origin | awk '{print $2}' | sed 's#refs/heads/##'); do
-  printf "%-44s unique-files=%s last-push=%s\n" "$b" \
-    "$(git diff origin/$b origin/main --diff-filter=D --name-only | wc -l)" \
-    "$(git log -1 --format=%ad --date=short origin/$b)"
-done
-# then, for any candidate, the PRs it was head of:
-gh api "/repos/amelia-m/lspc-weather/pulls?state=all&head=amelia-m:<branch>&per_page=5"
-```
-
 ## Needs a human with a document
 
 These cannot be settled from the code.

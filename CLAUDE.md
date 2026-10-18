@@ -397,9 +397,21 @@ heads/<branch>` answers 403 "Write access to this GitHub API path is not
 permitted through this proxy". The GitHub MCP server has `create_branch` and
 `list_branches` but no delete, so there is no third route. All three checked
 2026-10-17 and again 2026-10-18: the 403 is a policy denial, not a transient
-failure, and retrying does not change it. Deleting a local branch works. So a merged branch can only be tidied up by the maintainer, on
-GitHub or from their own checkout; `docs/open-questions.md` carries the list
-waiting for that.
+failure, and retrying does not change it. Deleting a local branch works. So a
+merged branch can only be tidied up by the maintainer, on GitHub or from their
+own checkout — put the list in `docs/open-questions.md` and leave it to them.
+
+**And a merged-looking branch is not an unused one.** These `claude/*`
+branches are not one per PR: a session keeps one and reuses it, opening a PR,
+merging it, then pushing the next piece of work to the same branch. Between
+merges a live branch sits at exactly the state a dead one does — no commits
+outside `main`, no file absent from it. On 2026-10-17 that reading put
+`claude/fervent-feynman-zm42xw` on a deletable list hours after it had merged
+eight PRs (#167-#174). `git diff origin/<branch> origin/main --diff-filter=D
+--name-only` answers "is anything here unique", not "is anyone using it"; only
+the branch's PR list (`gh api
+"/repos/<owner>/<repo>/pulls?state=all&head=<owner>:<branch>"`) and its last
+push date answer the second. Check both before proposing a deletion.
 
 Two habits worth keeping. `NODE_USE_ENV_PROXY=1` plus
 `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` makes Node's fetch go through the
