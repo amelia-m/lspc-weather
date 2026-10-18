@@ -433,8 +433,10 @@ from 10-04 to 10-17, archived as
 `data/parity/schulze-logs-2026-10-04-to-2026-10-17.jsonl.gz` before they
 expire) against KPMV's reports in
 `data/parity/kpmv-wind-2026-09-23-to-2026-10-17.csv.gz`. Output, with the
-old-point table again: `data/parity/surface-rows-2026-10-18.md`. The hours
-from the commit that moved the DZ point (2026-10-08 04:17Z) on:
+old-point table again: `data/parity/surface-rows-2026-10-18.md`. The
+script tables the hours by the point each record says it was read at (its
+`dz`, logged from 2026-10-08; a record without one is the old point), so
+no hour pools runs from both. The hours at the landing area:
 
 | hours | n | KPMV median | this app: bias, mean abs error | Schulze: bias, mean abs error | nearer (this app, Schulze, tied) |
 |---|---|---|---|---|---|

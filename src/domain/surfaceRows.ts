@@ -11,65 +11,49 @@
  * the Surface wind card reads the observation; this says how far each
  * forecast row sat from it, not which a jumper should use.
  */
+import { groundKt, localHour, median, validHourOf, type SchulzeRecord } from './paritySummary';
 
-/** The fields of a Schulze comparison record (scripts/schulzeCompare.live.ts,
- *  one `@@parity` line a run) this reads. */
-export interface SchulzeGroundRecord {
-  kind: string;
-  /** When the comparison ran. */
-  at: string;
-  /** The hour this app's table showed, "05Z". */
-  appHour?: string;
-  /** Present when both tables were for the same valid hour. */
-  aligned?: unknown;
-  ground?: { ourKt?: number | null; ourShownKt?: number | null; theirKt?: number | null };
-}
-
-/** One valid hour with both rows: each side's median over that hour's runs. */
+/** One valid hour with both rows at one point: each side's median over
+ *  that hour's runs there. */
 export interface GroundHour {
   t: number;
+  /** Where both sides were read: the record's `dz`, or `OLD_POINT` for
+   *  records from before it was logged (2026-10-08). */
+  point: string;
   ours: number;
   theirs: number;
   runs: number;
 }
 
-const MS_H = 3_600_000;
-
-function median(xs: readonly number[]): number {
-  const s = [...xs].sort((a, b) => a - b);
-  const m = s.length >> 1;
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
+/** The point records without `dz` were taken at (SchulzeRecord.dz). */
+export const OLD_POINT = '40.8675,-96.11';
 
 /**
- * The comparison records as valid hours. A record counts when both tables
- * were for the same hour (`aligned`) and it carries both ground figures.
- * Its valid hour is the run time rounded to the hour, which is the hour this
- * card snaps to; a record whose `appHour` names another hour is left out
- * rather than guessed at. This side is the figure as the card shows it,
- * whole knots (`ourShownKt`, or `ourKt` rounded where an older record has
- * no shown figure); KPMV reports whole knots too.
+ * The comparison records as valid hours, by the point they were read at, so
+ * one hour's median never pools runs from two points. A record counts when
+ * both tables were for the same hour (`aligned`) and it carries both ground
+ * figures, read as the #parity summary reads them (`groundKt`: the card's
+ * whole knots; KPMV reports whole knots too) on the hour the summary gives
+ * it (`validHourOf`: the hour this card showed).
  */
-export function groundHours(records: readonly SchulzeGroundRecord[]): GroundHour[] {
-  const byHour = new Map<number, { ours: number[]; theirs: number[] }>();
+export function groundHours(records: readonly SchulzeRecord[]): GroundHour[] {
+  const byHour = new Map<string, { t: number; point: string; ours: number[]; theirs: number[] }>();
   for (const r of records) {
-    if (r.kind !== 'schulze' || !r.aligned || !r.ground) continue;
-    const ours = r.ground.ourShownKt ?? (r.ground.ourKt == null ? null : Math.round(r.ground.ourKt));
-    const theirs = r.ground.theirKt;
-    if (ours == null || theirs == null) continue;
-    const at = Date.parse(r.at);
-    if (!Number.isFinite(at)) continue;
-    const t = Math.round(at / MS_H) * MS_H;
-    const hh = `${String(new Date(t).getUTCHours()).padStart(2, '0')}Z`;
-    if (r.appHour && r.appHour !== hh) continue;
-    const h = byHour.get(t) ?? { ours: [], theirs: [] };
-    h.ours.push(ours);
-    h.theirs.push(theirs);
-    byHour.set(t, h);
+    if (r.kind !== 'schulze' || !r.aligned) continue;
+    const g = groundKt(r);
+    if (!g) continue;
+    const t = validHourOf(r);
+    if (!Number.isFinite(t)) continue;
+    const point = r.dz ?? OLD_POINT;
+    const key = `${t} ${point}`;
+    const h = byHour.get(key) ?? { t, point, ours: [], theirs: [] };
+    h.ours.push(g.ours);
+    h.theirs.push(g.theirs);
+    byHour.set(key, h);
   }
-  return [...byHour]
-    .map(([t, h]) => ({ t, ours: median(h.ours), theirs: median(h.theirs), runs: h.ours.length }))
-    .sort((a, b) => a.t - b.t);
+  return [...byHour.values()]
+    .map((h) => ({ t: h.t, point: h.point, ours: median(h.ours)!, theirs: median(h.theirs)!, runs: h.ours.length }))
+    .sort((a, b) => a.t - b.t || a.point.localeCompare(b.point));
 }
 
 /** One KPMV wind report: when, and the speed in knots. */
@@ -79,7 +63,8 @@ export interface WindReport {
 }
 
 /** The mean of KPMV's reports within 30 minutes of `t`, or null when there
- *  are none: KPMV reports every 20 minutes, so an hour normally has three. */
+ *  are none: KPMV reports every 20 minutes, so an hour normally has three.
+ *  A scan per hour: a few hundred hours against a few thousand reports. */
 export function measuredAt(reports: readonly WindReport[], t: number): number | null {
   const near = reports.filter((r) => Math.abs(r.t - t) <= 30 * 60_000).map((r) => r.kt);
   return near.length ? near.reduce((a, b) => a + b, 0) / near.length : null;
@@ -112,20 +97,10 @@ export const SURFACE_ROW_GROUPS: readonly { label: string; keep: (localHour: num
   { label: '9 AM to 6 PM', keep: (h) => h >= 9 && h < 18 },
 ];
 
-/** The hour of the day at `zone`, 0 to 23. */
-export function localHour(ms: number, zone: string): number {
-  const h = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', hourCycle: 'h23' }).format(ms);
-  return Number(h) % 24;
-}
-
-export function surfaceRowsTable(
-  hours: readonly GroundHour[],
-  reports: readonly WindReport[],
-  zone: string,
-): SurfaceRowsRow[] {
+export function surfaceRowsTable(hours: readonly GroundHour[], reports: readonly WindReport[]): SurfaceRowsRow[] {
   const paired = hours.flatMap((h) => {
     const m = measuredAt(reports, h.t);
-    return m == null ? [] : [{ ...h, measured: m, local: localHour(h.t, zone) }];
+    return m == null ? [] : [{ ...h, measured: m, local: localHour(h.t) }];
   });
   const stats = (d: number[]): SideStats | null =>
     d.length ? { bias: d.reduce((a, b) => a + b, 0) / d.length, mae: d.reduce((a, b) => a + Math.abs(b), 0) / d.length } : null;
@@ -142,7 +117,7 @@ export function surfaceRowsTable(
     return {
       label,
       n: rows.length,
-      measuredMedian: rows.length ? median(rows.map((p) => p.measured)) : null,
+      measuredMedian: median(rows.map((p) => p.measured)),
       ours: stats(rows.map((p) => p.ours - p.measured)),
       theirs: stats(rows.map((p) => p.theirs - p.measured)),
       nearer,
