@@ -394,8 +394,10 @@ Not covered by `npm test`, so do not imply a green suite covers them:
 success: `git push origin --delete <branch>` prints "Everything up-to-date"
 and exits 0 while the ref stays, and `gh api -X DELETE /repos/.../git/refs/
 heads/<branch>` answers 403 "Write access to this GitHub API path is not
-permitted through this proxy" (both tried 2026-10-17). Deleting a local
-branch works. So a merged branch can only be tidied up by the maintainer, on
+permitted through this proxy". The GitHub MCP server has `create_branch` and
+`list_branches` but no delete, so there is no third route. All three checked
+2026-10-17 and again 2026-10-18: the 403 is a policy denial, not a transient
+failure, and retrying does not change it. Deleting a local branch works. So a merged branch can only be tidied up by the maintainer, on
 GitHub or from their own checkout; `docs/open-questions.md` carries the list
 waiting for that.
 
