@@ -27,10 +27,12 @@ permissions:
   contents: read
   issues: write
 
-# Queued, not cancelled: a check started by a deploy must not end a daily
-# check partway, nor the other way round.
+# One group per trigger. GitHub keeps one waiting run per group and a newer
+# one cancels it, so in a single group a deploy's check would cancel a
+# waiting daily check (or the reverse). A newer deploy check replacing a
+# waiting older one is right: it checks the newer site.
 concurrency:
-  group: live-site
+  group: live-site-${{ github.event_name }}
   cancel-in-progress: false
 
 jobs:

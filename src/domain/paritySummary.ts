@@ -816,22 +816,30 @@ function fieldTable(runs: readonly UsairnetRecord[]): UsairnetField[] {
   return [...fieldMap.entries()].map(([name, c]) => ({ name, n: c.n, agree: c.agree, spread: spreadOf(c.deltas) }));
 }
 
-/** Parse the `@@parity` lines out of a log, ignoring everything else. A line
- *  that is not valid JSON is skipped rather than failing the summary: one bad
- *  run must not blank the page. */
-export function parseParityLines(text: string): ParityRecord[] {
-  const out: ParityRecord[] = [];
-  for (const line of text.split('\n')) {
-    const i = line.indexOf('@@parity ');
+/** Each `@@parity` line of a log with its record, the line from the marker
+ *  on. A line that is not valid JSON, or not a comparison record, is
+ *  skipped rather than failing the summary: one bad run must not blank the
+ *  page. */
+function parityLineRecords(text: string): { record: ParityRecord; line: string }[] {
+  const out: { record: ParityRecord; line: string }[] = [];
+  for (const raw of text.split('\n')) {
+    const i = raw.indexOf('@@parity ');
     if (i < 0) continue;
     try {
-      const obj = JSON.parse(line.slice(i + '@@parity '.length)) as ParityRecord;
-      if ((obj.kind === 'schulze' || obj.kind === 'usairnet') && typeof obj.at === 'string') out.push(obj);
+      const obj = JSON.parse(raw.slice(i + '@@parity '.length)) as ParityRecord;
+      if ((obj.kind === 'schulze' || obj.kind === 'usairnet') && typeof obj.at === 'string') {
+        out.push({ record: obj, line: raw.slice(i).trimEnd() });
+      }
     } catch {
       // not ours, or truncated: skip
     }
   }
   return out;
+}
+
+/** Parse the `@@parity` lines out of a log, ignoring everything else. */
+export function parseParityLines(text: string): ParityRecord[] {
+  return parityLineRecords(text).map((x) => x.record);
 }
 
 /** The key a record is counted once by: its kind and the time its run
@@ -849,14 +857,20 @@ export const parityRecordKey = (r: { kind: string; at: string }): string => `${r
 export function unarchivedLines(fresh: string, archived: string): string[] {
   const kept = new Set(parseParityLines(archived).map(parityRecordKey));
   const out = new Map<string, { at: string; line: string }>();
-  for (const line of fresh.split('\n')) {
-    const i = line.indexOf('@@parity ');
-    if (i < 0) continue;
-    const [r] = parseParityLines(line);
-    if (!r) continue;
-    const key = parityRecordKey(r);
+  for (const { record, line } of parityLineRecords(fresh)) {
+    const key = parityRecordKey(record);
     if (kept.has(key) || out.has(key)) continue;
-    out.set(key, { at: r.at, line: line.slice(i).trimEnd() });
+    out.set(key, { at: record.at, line });
   }
-  return [...out.values()].sort((a, b) => a.at.localeCompare(b.at)).map((x) => x.line);
+  return byRunTime([...out.values()]);
 }
+
+/** An archive file's lines with new ones merged in, oldest first, so a
+ *  second run on the same day keeps the file in order. */
+export function mergeArchiveLines(existing: string, added: readonly string[]): string[] {
+  const all = [...parityLineRecords(existing), ...parityLineRecords(added.join('\n'))];
+  return byRunTime(all.map(({ record, line }) => ({ at: record.at, line })));
+}
+
+const byRunTime = (xs: { at: string; line: string }[]): string[] =>
+  [...xs].sort((a, b) => a.at.localeCompare(b.at)).map((x) => x.line);

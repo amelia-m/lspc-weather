@@ -11,12 +11,19 @@
  *     --archives data/parity/*logs-*.jsonl.gz --out data/parity/parity-logs-<day>.jsonl.gz
  *
  * An archive file named in --out that already exists (a second run the same
- * day) keeps its lines and takes the new ones after them. Prints how many
- * records it added; writes nothing when there are none.
+ * day) keeps its lines, and the new ones are merged in by run time.
+ *
+ * Comparison-log archives are named `*logs-*.jsonl.gz` (logs-to-2026-10-05,
+ * schulze-logs-…, parity-logs-<day>): the summary workflow reads those
+ * and no other file under data/parity/, which also holds large forecast
+ * archives. An archive named otherwise is invisible to both the page and
+ * this script.
+ *
+ * Prints how many records it added; writes nothing when there are none.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { gunzipSync, gzipSync } from 'node:zlib';
-import { unarchivedLines } from '../src/domain/paritySummary';
+import { mergeArchiveLines, unarchivedLines } from '../src/domain/paritySummary';
 
 const args: Record<string, string[]> = {};
 let flag = '';
@@ -35,11 +42,12 @@ const read = (f: string): string => {
   return (f.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8');
 };
 
+// The out file is read once, as an archive like the others and as the
+// lines it keeps.
 const existing = existsSync(out) ? read(out) : '';
-const archived = [...new Set([...(args.archives ?? []), ...(existsSync(out) ? [out] : [])])].map(read).join('\n');
+const archived = [...new Set(args.archives ?? [])].filter((f) => f !== out).map(read).join('\n') + '\n' + existing;
 const added = unarchivedLines(args.fresh.map(read).join('\n'), archived);
 if (added.length) {
-  const kept = existing.split('\n').filter((l) => l.trim());
-  writeFileSync(out, gzipSync([...kept, ...added].join('\n') + '\n', { level: 9 }));
+  writeFileSync(out, gzipSync(mergeArchiveLines(existing, added).join('\n') + '\n', { level: 9 }));
 }
 console.log(`${added.length} records added to ${out}`);

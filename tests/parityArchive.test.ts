@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { unarchivedLines } from '../src/domain/paritySummary';
+import { mergeArchiveLines, unarchivedLines } from '../src/domain/paritySummary';
 
 const line = (kind: string, at: string, extra = '') => `@@parity {"kind":"${kind}","at":"${at}"${extra}}`;
 
@@ -27,5 +27,16 @@ describe('unarchivedLines', () => {
 
   it('leaves out what the summary would skip', () => {
     expect(unarchivedLines(['@@parity {not json', line('other', '2026-10-19T06:04:00Z')].join('\n'), '')).toEqual([]);
+  });
+});
+
+describe('mergeArchiveLines', () => {
+  it('merges a later run’s lines into an existing archive by run time', () => {
+    const existing = [line('usairnet', '2026-10-05T20:51:00Z'), line('schulze', '2026-10-19T16:32:00Z')].join('\n') + '\n';
+    expect(mergeArchiveLines(existing, [line('usairnet', '2026-10-15T08:13:00Z')])).toEqual([
+      line('usairnet', '2026-10-05T20:51:00Z'),
+      line('usairnet', '2026-10-15T08:13:00Z'),
+      line('schulze', '2026-10-19T16:32:00Z'),
+    ]);
   });
 });
