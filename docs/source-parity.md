@@ -123,7 +123,9 @@ the change was made to move exactly those numbers.
    usairnet records from 10-05 02:00Z to 20:51Z were lost: their
    artifacts had expired before anything kept them. The summary came out
    the same with and without the new archive while the artifacts were
-   still there.
+   still there. The workflow's first run on `main` with the step (run
+   39306224631, 2026-10-19 18:52Z) added the 4 records logged since the
+   backfill to the same day's file and committed it with the summary.
 3. `.github/workflows/parity-summary.yml` runs when the daily sky-parity
    run finishes, and on demand, so the page takes in a day's comparison
    runs at once: it downloads every unexpired artifact,
