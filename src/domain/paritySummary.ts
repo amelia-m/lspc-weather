@@ -833,3 +833,30 @@ export function parseParityLines(text: string): ParityRecord[] {
   }
   return out;
 }
+
+/** The key a record is counted once by: its kind and the time its run
+ *  started. A re-run uploads the same lines again (scripts/paritySummary.ts
+ *  drops the second), and the archive must hold one copy. */
+export const parityRecordKey = (r: { kind: string; at: string }): string => `${r.kind}|${r.at}`;
+
+/**
+ * The `@@parity` lines in `fresh` whose record no line in `archived` holds,
+ * one per record, oldest first, each as `@@parity {json}`: what
+ * parity-summary.yml adds to data/parity/ before the artifacts that carried
+ * them expire (fourteen days). Lines the summary would skip (not JSON, not a
+ * comparison record) are left out here too.
+ */
+export function unarchivedLines(fresh: string, archived: string): string[] {
+  const kept = new Set(parseParityLines(archived).map(parityRecordKey));
+  const out = new Map<string, { at: string; line: string }>();
+  for (const line of fresh.split('\n')) {
+    const i = line.indexOf('@@parity ');
+    if (i < 0) continue;
+    const [r] = parseParityLines(line);
+    if (!r) continue;
+    const key = parityRecordKey(r);
+    if (kept.has(key) || out.has(key)) continue;
+    out.set(key, { at: r.at, line: line.slice(i).trimEnd() });
+  }
+  return [...out.values()].sort((a, b) => a.at.localeCompare(b.at)).map((x) => x.line);
+}

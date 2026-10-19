@@ -112,7 +112,18 @@ the change was made to move exactly those numbers.
    runs on `main`. Every line logged to the end of the
    sampler, 4,391 of them, is archived in
    `data/parity/logs-to-2026-10-05.jsonl.gz`, so its figures outlive the
-   artifacts.
+   artifacts. Since 2026-10-19 the summary workflow archives the rest as
+   it goes: each day, every record in the unexpired artifacts that no
+   archive holds yet goes into `data/parity/parity-logs-<day>.jsonl.gz`
+   (`scripts/parityArchive.ts`; one record per kind and run time, as the
+   summary counts them), committed with the summary. The first, on
+   2026-10-19, took 120 records (107 usairnet, 13 Schulze) from 10-05
+   20:51Z on; the Schulze records from 10-04 were already in
+   `data/parity/schulze-logs-2026-10-04-to-2026-10-17.jsonl.gz`. The
+   usairnet records from 10-05 02:00Z to 20:51Z were lost: their
+   artifacts had expired before anything kept them. The summary came out
+   the same with and without the new archive while the artifacts were
+   still there.
 3. `.github/workflows/parity-summary.yml` runs when the daily sky-parity
    run finishes, and on demand, so the page takes in a day's comparison
    runs at once: it downloads every unexpired artifact,

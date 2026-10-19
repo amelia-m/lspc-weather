@@ -28,7 +28,7 @@
  *
  * Pure: records in, summary out. No clock is read; every time is in a record.
  */
-import { spreadOf, type Spread } from './paritySummary';
+import { median, spreadOf, type Spread } from './paritySummary';
 
 /** One wind value as a source served it, valid at `t` (ISO). Knots and
  *  degrees true; null where the source served nothing. `gust` null means no
@@ -500,13 +500,6 @@ export function compareWindResponses(pairs: readonly (readonly [readonly WindAt[
 
 const minutes = (ms: number): number => Math.round((ms / 60_000) * 10) / 10;
 
-function medianOf(xs: readonly number[]): number | null {
-  if (xs.length === 0) return null;
-  const s = [...xs].sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-}
-
 /** A one-degree flap: the same valid time, nothing but the direction
  *  changed, by exactly one degree. */
 const isFlap = (a: WindAt, b: WindAt): boolean => a.t === b.t && dirOnlyByOne(a, b);
@@ -514,7 +507,7 @@ const isFlap = (a: WindAt, b: WindAt): boolean => a.t === b.t && dirOnlyByOne(a,
 function intervalOf(times: readonly number[]): Interval {
   const gaps = times.slice(1).map((t, i) => minutes(t - times[i]));
   return {
-    median: medianOf(gaps),
+    median: median(gaps),
     min: gaps.length ? Math.min(...gaps) : null,
     max: gaps.length ? Math.max(...gaps) : null,
   };
@@ -643,7 +636,7 @@ function stalenessOf(records: readonly SurfaceWindRecord[], source: SourceName):
     source,
     basis,
     n: ages.length,
-    medianMin: medianOf(ages),
+    medianMin: median(ages),
     minMin: ages.length ? Math.min(...ages) : null,
     maxMin: ages.length ? Math.max(...ages) : null,
   };

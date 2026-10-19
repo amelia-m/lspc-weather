@@ -522,7 +522,11 @@ image not drawn, the parity summary or the ceiling page's data not loaded.
 Another host's failed request and console errors are printed as notes,
 since the app retries them. A page failing its first load is loaded once
 more before it counts, and a failure on `main` opens one issue labelled
-`live-site`. It runs from the sandbox too (the script's header has the
+`live-site`. The deploy workflow starts it when it finishes
+(`check-live` in `deploy.yml`): a `workflow_run` trigger missed every deploy
+another workflow dispatched with its token, the daily `#parity` and
+weekly ceiling deploys (seen 2026-10-18 and 10-19), and fired only after
+deploys from a push. It runs from the sandbox too (the script's header has the
 environment), against the live site or a local build: on 2026-10-17 it
 failed the live `#citations` at 320 px, before the fix deployed, and passed
 every page of a local build with the fix.
@@ -569,7 +573,10 @@ summary runs when the daily sky-parity run finishes and also reads
 that ran the usairnet comparison every two minutes and the Schulze one every
 four from 2026-09-30 to 2026-10-05 (before that, throttled cron lines from
 2026-09-24 to 26, then the Schulze one every five minutes and the usairnet
-one every fifteen to 28). The archive is what keeps its figures once the artifacts expire,
+one every fifteen to 28). Since 2026-10-19 the summary workflow also
+archives every record not yet archived, daily, as
+`data/parity/parity-logs-<day>.jsonl.gz` (`scripts/parityArchive.ts`), so
+no comparison drops off after its fourteen days. The archive is what keeps its figures once the artifacts expire,
 above all the arrival timings (`arrivalLags`), which only two-minute samples
 can give; the script drops records seen twice, so the overlap counts once.
 What it found is in `docs/source-parity.md`, "What the sampler found". To

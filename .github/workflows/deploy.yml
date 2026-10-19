@@ -47,3 +47,21 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Start the live-site check on the site just deployed. It is started from
+  # here rather than by a workflow_run trigger in live-site.yml: a deploy
+  # dispatched by another workflow's token (parity-summary.yml daily,
+  # ceiling-data-refresh.yml weekly) raised no workflow_run event, so those
+  # deploys went unchecked until the next daily run (2026-10-18 16:12Z and
+  # 2026-10-19 14:58Z; every deploy from a push was followed). A dispatch
+  # made with the token does start a run.
+  check-live:
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run live-site.yml --repo "${{ github.repository }}" --ref main -f after_deploy=true
