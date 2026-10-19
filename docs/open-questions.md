@@ -490,6 +490,20 @@ What the check-ins found on 2026-10-19:
   Actions tab (or `gh workflow run ceiling-data-refresh.yml --ref main`)
   covers the same days; a scheduled run that then starts later finds both
   parts current and commits nothing.
+- **Then it ran,** at 14:57Z, 7 h 16 min late (run 39273713027, every
+  step green, a minute long), so it was not started by hand. One commit
+  to `main`, "Ceiling data to 2026-10-18" (`b46f05d`), with
+  `ceiling-2026-10-16-to-2026-10-18.jsonl.gz`,
+  `metar-2026-10-16-to-2026-10-18.jsonl.gz` and the data file. The file's
+  `sources` name both new files; KPMV's reports run to 10-18 23:55Z
+  (14,079, from 13,935); the drop-zone rows grew from 4,643 to 4,691
+  hours, the kept source's from 81 to 129, the chances' from 80 to 128;
+  86 kept snapshots, from 25. The deploy it dispatched succeeded and the
+  live site served the new file. The live-site check did not follow that
+  deploy: deploys dispatched by a workflow's token raise no `workflow_run`
+  event, so the check now starts from `deploy.yml` instead (CLAUDE.md,
+  `live-site.yml`). The first scheduled run is settled; the two choices
+  above still wait on the maintainer.
 
 ## Viewing the deployed site from the sandbox
 

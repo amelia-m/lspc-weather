@@ -13,6 +13,13 @@ name: Parity summary
 # workflows, so this one dispatches the Pages deploy itself when the summary
 # changed. The arithmetic is in src/domain/paritySummary.ts, pure and tested;
 # nothing here grades a source.
+#
+# Since 2026-10-19 it also keeps the logs: every record in the downloaded
+# artifacts that no archive under data/parity/ holds yet goes into
+# data/parity/parity-logs-<day>.jsonl.gz (scripts/parityArchive.ts),
+# committed with the summary, so the page and later analyses keep each day
+# after its artifact expires. Before that, everything after the sampler's
+# archive (2026-10-05) was dropping off a day at a time.
 on:
   # When the daily sky-parity run finishes, so its lines are always in:
   # a fixed time after it would race a late or slow run.
@@ -65,11 +72,23 @@ jobs:
               && count=$((count + 1)) || echo "could not fetch $name"
           done < artifacts.txt
           echo "downloaded $count artifacts"
-          for f in data/parity/*.jsonl.gz; do
+          # The comparison-log archives only (logs-to-*, schulze-logs-*,
+          # parity-logs-*); data/parity/ also holds forecast archives the
+          # summary has no use for, one of them 5.5 MB.
+          for f in data/parity/*logs-*.jsonl.gz; do
             [ -e "$f" ] || continue
             gunzip -c "$f" > "logs/archive-$(basename "$f" .gz)"
           done
           ls logs | head -50
+      - name: Archive the records no archive holds yet
+        shell: bash
+        run: |
+          shopt -s nullglob
+          fresh=()
+          for f in logs/*.jsonl; do [[ "$(basename "$f")" == archive-* ]] || fresh+=("$f"); done
+          [ ${#fresh[@]} -gt 0 ] || { echo "no artifacts to archive"; exit 0; }
+          npx tsx scripts/parityArchive.ts --fresh "${fresh[@]}" \
+            --archives data/parity/*logs-*.jsonl.gz --out "data/parity/parity-logs-$(date -u +%Y-%m-%d).jsonl.gz"
       - name: Combine into the summary
         shell: bash
         run: |
@@ -77,19 +96,21 @@ jobs:
           shopt -s nullglob
           npx tsx scripts/paritySummary.ts logs/*.jsonl > public/parity/summary.json
           head -c 600 public/parity/summary.json; echo
-      - name: Commit the summary and deploy if it changed
+      - name: Commit the summary and archive, and deploy if the summary changed
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          if git diff --quiet -- public/parity/summary.json; then
-            echo "summary unchanged; nothing to commit"
+          git add public/parity/summary.json data/parity/parity-logs-*.jsonl.gz
+          if git diff --cached --quiet; then
+            echo "summary and archive unchanged; nothing to commit"
             exit 0
           fi
+          summary_changed=$(git diff --cached --quiet -- public/parity/summary.json && echo no || echo yes)
           git config user.name "parity-summary workflow"
           git config user.email "actions@users.noreply.github.com"
-          git add public/parity/summary.json
           git commit -m "Update the source-parity summary ($(date -u +%Y-%m-%d))" \
-            -m "Written by .github/workflows/parity-summary.yml from the comparison logs. The #parity page reads this file."
+            -m "Written by .github/workflows/parity-summary.yml from the comparison logs: the summary the #parity page reads, and the records not yet archived (data/parity/parity-logs-*)."
           git push origin HEAD:main
-          gh workflow run deploy.yml --ref main
+          # The archive is not part of the site; only a new summary needs a deploy.
+          if [ "$summary_changed" = yes ]; then gh workflow run deploy.yml --ref main; fi

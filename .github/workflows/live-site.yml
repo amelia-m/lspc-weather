@@ -13,26 +13,28 @@ name: Live site check
 on:
   schedule:
     - cron: '17 15 * * *' # 10:17 CDT / 09:17 CST, after the morning's deploys
-  workflow_run:
-    workflows: ['Deploy to GitHub Pages']
-    types: [completed]
+  # After every deploy: deploy.yml starts this when it succeeds, with
+  # after_deploy set (a workflow_run trigger missed the deploys other
+  # workflows dispatch; see deploy.yml).
   workflow_dispatch:
+    inputs:
+      after_deploy:
+        description: 'Started by a deploy: wait for the CDN first'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   issues: write
 
-# Queued, not cancelled: a run started by a failed deploy is skipped at the
-# job, and cancelling for it would end a daily check partway.
+# Queued, not cancelled: a check started by a deploy must not end a daily
+# check partway, nor the other way round.
 concurrency:
   group: live-site
   cancel-in-progress: false
 
 jobs:
   check:
-    # After a deploy only when it succeeded: a failed deploy left the old site
-    # up, which the daily run checks anyway.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +56,7 @@ jobs:
       # Pages can serve the previous build for a minute or two after a deploy
       # finishes.
       - name: Let a fresh deploy reach the CDN
-        if: github.event_name == 'workflow_run'
+        if: inputs.after_deploy
         run: sleep 120
       - name: Check the live site
         shell: bash

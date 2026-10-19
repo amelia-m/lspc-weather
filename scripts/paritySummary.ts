@@ -11,7 +11,7 @@
  * file only reads files and prints JSON.
  */
 import { readFileSync } from 'node:fs';
-import { parseParityLines, summarizeParity, type ParityRecord } from '../src/domain/paritySummary';
+import { parityRecordKey, parseParityLines, summarizeParity, type ParityRecord } from '../src/domain/paritySummary';
 
 const records: ParityRecord[] = [];
 for (const file of process.argv.slice(2)) {
@@ -21,7 +21,7 @@ for (const file of process.argv.slice(2)) {
 // same lines again, and a duplicate would double-count it.
 const seen = new Set<string>();
 const unique = records.filter((r) => {
-  const key = `${r.kind}|${r.at}`;
+  const key = parityRecordKey(r);
   if (seen.has(key)) return false;
   seen.add(key);
   return true;
