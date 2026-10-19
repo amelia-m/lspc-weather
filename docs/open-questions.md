@@ -473,6 +473,24 @@ two hours after the run starts, to read that run and its deploy and
 record the result here. If nothing below says what happened, it did not
 run, and the run is still worth reading.
 
+What the check-ins found on 2026-10-19:
+
+- **09:31Z:** no run of the workflow at all, 1 h 50 min after its 07:41Z
+  slot. The forecast keeper had every hourly snapshot from 10-17 00:23Z to
+  10-19 09:23Z (58 of 58), so its cancelled runs in the run list were
+  queued runs replaced by newer ones, not lost hours.
+- **14:01Z:** still no run, 6 h 20 min after the slot. Not a failure: on
+  GitHub's schedule this repository's other jobs started late the same
+  days: the 13:00Z sky-parity run at 16:10Z on 10-18 and 15:59Z on 10-17
+  (and not by 14:01Z on 10-19), the 15:17Z live-site check at 18:05Z on
+  10-18, today's 12:34Z comparison at 13:29Z, and the forecast keeper's
+  cron line every 3 to 6 hours before it became a loop. The
+  workflow was not dispatched by hand: a run commits to `main`, which the
+  maintainer agreed to on the schedule, not otherwise. Starting it from the
+  Actions tab (or `gh workflow run ceiling-data-refresh.yml --ref main`)
+  covers the same days; a scheduled run that then starts later finds both
+  parts current and commits nothing.
+
 ## Viewing the deployed site from the sandbox
 
 Settled 2026-10-17, with nothing for the maintainer to do. Chromium here
