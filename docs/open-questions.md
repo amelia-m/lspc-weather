@@ -464,9 +464,12 @@ first scheduled run is the next Monday at 07:41Z, or start one from the
 Actions tab. Worth a look then: that the run made one commit, "Ceiling
 data to <day>", holding a `ceiling-` and a `metar-` file and the data
 file, that a Pages deploy followed, and that the page's `sources` name
-the new files. Two choices for the maintainer to confirm or change:
-Mondays at 07:41Z, and committing a ceiling and a METAR file every week
-(about 15 KB) rather than merging them into fewer archives.
+the new files. Committing a ceiling and a METAR file every week
+(about 15 KB) rather than merging them into fewer archives was settled
+by the maintainer on 2026-10-20: the whole repository's growth, measured
+that day (docs/ceiling-heights.md, "Repository growth"), is nowhere near
+a risk. The schedule, Mondays at 07:41Z, stays as it is unless they
+change it.
 
 A Claude session scheduled a check-in for 2026-10-19 at 09:30Z, about
 two hours after the run starts, to read that run and its deploy and
