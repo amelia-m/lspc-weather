@@ -245,7 +245,7 @@ describe(`sky decode parity for ${station}`, () => {
       const squash = (x: string): string => x.replace(/\s+/g, ' ').replace(/^TAF /, '').trim();
       const same = theirs?.rawTAF != null && squash(theirs.rawTAF) === squash(shown.raw);
       if (shown.passedOver?.length) {
-        say(`[taf]  passed over ${shown.passedOver.map((p) => `${p.station} (${'endedMs' in p ? `ended ${new Date(p.endedMs).toISOString()}` : p.noForecast})`).join(', ')}`);
+        say(`[taf]  passed over ${shown.passedOver.map((p) => `${p.station} (${'failed' in p ? `failed: ${p.failed}` : 'endedMs' in p ? `ended ${new Date(p.endedMs).toISOString()}` : p.noForecast})`).join(', ')}`);
       }
       say(`[taf]  card shows ${shown.station}, issued ${shown.issuedMs != null ? new Date(shown.issuedMs).toISOString() : '?'}`);
       say(`[taf]  aviationweather has ${theirs ? `${theirs.icaoId}, issued ${theirs.issueTime ?? '?'}` : 'no TAF for that station'}`);

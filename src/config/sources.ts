@@ -28,6 +28,12 @@ export interface DataSource {
  *  flying, centred and marked on Brown's. `lat`/`lon` are not saved. */
 const TRAFFIC_MAP_QUERY = `lat=${SITE.dz.lat}&lon=${SITE.dz.lon}&zoom=10&baseMap=VFR_Sectional`;
 
+/** One station's TAF on aviationweather.gov: the page a TAF read through
+ *  the relay came from, and where a reader can check it. */
+export function awcTafFor(station: string): { label: string; url: string } {
+  return { label: `AWC TAF · ${station}`, url: `https://aviationweather.gov/data/taf/?ids=${station}` };
+}
+
 export const DATA_SOURCES = {
   /** Current observation from the Iowa Environmental Mesonet, read first
    *  because it carries each report within minutes (see src/domain/iem.ts).
@@ -145,10 +151,7 @@ export const DATA_SOURCES = {
    *  the source when it reads Offutt's through the TAF relay
    *  (src/config/tafRelay.ts). AWC's TAF page reads
    *  `ids` (or `id`) from the query string (its own script, read 2026-09-30). */
-  awcTafPrimary: {
-    label: `AWC TAF · ${SITE.tafStations[0].id}`,
-    url: `https://aviationweather.gov/data/taf/?ids=${SITE.tafStations[0].id}`,
-  },
+  awcTafPrimary: awcTafFor(SITE.tafStations[0].id),
   /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source.
    *
    *  The label names no station even though the fetch uses SITE.fdWindsStation

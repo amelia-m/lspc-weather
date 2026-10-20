@@ -26,7 +26,9 @@ interface TafChainDeps {
  * forecast (`tafStanding`), recorded in `passedOver` so the card can say why
  * it shows a farther station. A TAF whose end cannot be read is kept: the
  * card prints its text either way. A fetch error also falls through so one
- * bad request doesn't blank the card. If nothing succeeded and ANY station
+ * bad request doesn't blank the card, and is recorded in `passedOver` too:
+ * a broken relay would otherwise show only as Omaha's TAF on a card and a
+ * Data health row that both look fine. If nothing succeeded and ANY station
  * errored, the last error propagates — "KOFF has no product (as always) and
  * the rest failed" must read as a failure, not as "no TAF anywhere".
  */
@@ -52,6 +54,7 @@ export async function fetchTafChain(
       return passedOver.length ? { ...taf, passedOver } : taf;
     } catch (err) {
       lastErr = err;
+      passedOver.push({ station: s.id, failed: err instanceof Error ? err.message : String(err) });
     }
   }
   if (lastErr) throw lastErr;

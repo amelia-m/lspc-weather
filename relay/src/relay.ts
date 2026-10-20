@@ -18,17 +18,25 @@
  *
  * aviationweather.gov asks callers to set their own user agent, keep requests
  * "limited in scope and frequency", and stay under 100 a minute. The answer
- * is kept for `CACHE_SECONDS` in Cloudflare's cache, so however many
- * dashboards are open, each Cloudflare location asks upstream at most once
- * in that time. A TAF is issued every six hours or so and amended between,
- * so five minutes costs little freshness.
+ * is kept for `CACHE_SECONDS` in the Worker's memory (`RelayMemo`), and the
+ * upstream fetch asks Cloudflare to cache it as long (`cacheTtlByStatus`).
+ * Neither is a promise: Cloudflare runs many copies of a Worker and keeps
+ * none of them for a set time, and its docs give working cache operations
+ * (`caches.default`) only to Workers on custom domains, not workers.dev,
+ * where this one runs (read 2026-10-20), and do not say whether the fetch
+ * option works there. At this club's scale it does not need to: each open
+ * dashboard asks every 10 minutes, far under the limit with no cache at all.
+ * A TAF is issued every six hours or so and amended between, so five
+ * minutes costs little freshness.
  *
  * The body is aviationweather.gov's JSON, unchanged (an array of TAFs with
  * `rawTAF` and `issueTime`); the app reads it with `tafFromAwcJson`.
  */
 
-export const UPSTREAM = 'https://aviationweather.gov/api/data/taf?ids=KOFF&format=json';
-export const PATH = '/taf/KOFF';
+import { PATH, STATION } from './station';
+
+export { PATH };
+export const UPSTREAM = `https://aviationweather.gov/api/data/taf?ids=${STATION}&format=json`;
 export const ALLOWED_ORIGINS: readonly string[] = [
   'https://amelia-m.github.io',
   // `npm run dev` and `vite preview`, for a check before a deploy.
@@ -36,13 +44,22 @@ export const ALLOWED_ORIGINS: readonly string[] = [
   'http://localhost:4173',
 ];
 export const CACHE_SECONDS = 300;
+/** Give up on aviationweather.gov after this long and answer 502, so a
+ *  stalled upstream does not hold the reader's request until the app's own
+ *  12-second timeout, after which it would retry and ask upstream again. */
+export const UPSTREAM_TIMEOUT_MS = 8_000;
 const USER_AGENT = 'lspc-weather TAF relay (https://github.com/amelia-m/lspc-weather)';
 
+/** The last good answer, kept in the Worker's memory between requests. */
+export interface RelayMemo {
+  body: string | null;
+  at: number;
+}
+
 export interface RelayDeps {
-  fetch: (url: string, init: RequestInit) => Promise<Response>;
-  /** Cloudflare's per-location cache (`caches.default`), or null where there
-   *  is none (the tests). */
-  cache: Cache | null;
+  fetch: (url: string, init: RequestInit & { cf?: Record<string, unknown> }) => Promise<Response>;
+  memo: RelayMemo;
+  now: () => number;
 }
 
 function corsHeaders(origin: string | null): Record<string, string> {
@@ -77,24 +94,28 @@ export async function handle(request: Request, deps: RelayDeps): Promise<Respons
   }
   if (request.method !== 'GET') return json(405, JSON.stringify({ error: 'GET only' }), origin);
 
-  const cached = await deps.cache?.match(UPSTREAM);
-  if (cached) return json(200, await cached.text(), origin);
+  const now = deps.now();
+  if (deps.memo.body != null && now - deps.memo.at < CACHE_SECONDS * 1000) {
+    return json(200, deps.memo.body, origin);
+  }
 
   let upstream: Response;
   try {
-    upstream = await deps.fetch(UPSTREAM, { headers: { 'user-agent': USER_AGENT, accept: 'application/json' } });
+    upstream = await deps.fetch(UPSTREAM, {
+      headers: { 'user-agent': USER_AGENT, accept: 'application/json' },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+      cf: { cacheTtlByStatus: { '200-299': CACHE_SECONDS, '300-599': 0 } },
+    });
   } catch (err) {
     return json(502, JSON.stringify({ error: `aviationweather.gov unreachable: ${String(err)}` }), origin);
   }
   // 204 is aviationweather.gov's "valid request, no data": no TAF in its
   // window, as over Offutt's weekend gaps. An empty list says the same.
-  const body = upstream.status === 204 ? '[]' : await upstream.text();
-  if (!upstream.ok) {
+  if (upstream.status !== 204 && !upstream.ok) {
     return json(502, JSON.stringify({ error: `aviationweather.gov answered ${upstream.status}` }), origin);
   }
-  await deps.cache?.put(
-    UPSTREAM,
-    new Response(body, { headers: { 'cache-control': `public, max-age=${CACHE_SECONDS}` } }),
-  );
+  const body = upstream.status === 204 ? '[]' : await upstream.text();
+  deps.memo.body = body;
+  deps.memo.at = now;
   return json(200, body, origin);
 }

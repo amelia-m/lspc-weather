@@ -20,12 +20,23 @@ piece.
   (`ALLOWED_ORIGINS`). Another site's page gets a 403. A request with no
   Origin header (a script, curl) is answered. Outside a browser an Origin
   can be forged, so refusing those would only stop honest checks.
-- **Light on aviationweather.gov.** It sends its own user agent and keeps
-  the answer five minutes in Cloudflare's cache, so each Cloudflare
-  location asks upstream at most once in five minutes, however many
-  dashboards are open. aviationweather.gov's guidelines (read 2026-10-20)
-  ask for a custom user agent, "limited in scope and frequency", and at
-  most 100 requests a minute.
+- **Light on aviationweather.gov.** Its guidelines (read 2026-10-20) ask
+  for a custom user agent, requests "limited in scope and frequency", and
+  at most 100 a minute.
+  - The relay sends its own user agent.
+  - It keeps a good answer five minutes in its memory, and asks Cloudflare
+    to cache the upstream answer as long.
+  - It gives up on aviationweather.gov after 8 seconds and answers 502.
+    The app's own fetch waits 12 and then retries, so a stalled upstream
+    would otherwise draw a second request.
+  - Neither cache is a promise. Cloudflare runs many copies of a Worker
+    and keeps none for a set time. Its Cache API page (read 2026-10-20)
+    gives working cache operations to "Workers deployed to custom domains",
+    which leaves out workers.dev, where this one runs, so the relay does
+    not use that API. The docs read do not say whether fetch's cache
+    option works on workers.dev.
+  - At this club's scale none of that matters: each open dashboard asks
+    every 10 minutes, far under the limit with no cache at all.
 - **Within the free plan.** Workers Free allows 100,000 requests a day
   (Cloudflare's Workers limits page, read 2026-10-20). The card asks every
   10 minutes per open page, 144 a day, so the plan covers about 690 pages
@@ -35,7 +46,9 @@ piece.
 ## What the app does with it
 
 `src/config/tafRelay.ts` holds the Worker's address, `TAF_RELAY_URL`,
-null until the relay is deployed. Once it is set:
+null until the relay is deployed (a trailing slash is dropped). The station
+the relay serves is written once, in `relay/src/station.ts`, which both the
+Worker and the app read. Once the address is set:
 
 - the card reads Offutt's TAF through the relay (`fetchTafFrom`,
   src/api/nws.ts; `tafFromAwcJson`, src/domain/normalize.ts) and names
@@ -46,13 +59,22 @@ null until the relay is deployed. Once it is set:
 
 When Offutt has no TAF in force, as over its weekend and holiday gaps, the
 chain moves on to Omaha's and the card says why (src/api/tafChain.ts).
+When the relay fails (a 502, the free plan's daily limit, the Worker
+deleted), the card says "Offutt AFB (KOFF)'s TAF could not be fetched",
+with the error, and the source log records it. Data health stays green,
+since a TAF is shown, so the card is where a broken relay shows.
 
 ## Checked before deploying (2026-10-20)
 
-- `npm test`: the relay's handler with a stand-in fetch and cache
-  (tests/tafRelay.test.ts): the origin check, one path, GET only, the
-  cache, aviationweather.gov's 204, a failure answered 502 and not
-  cached. Each test was proven by breaking what it names.
+- `npm test` runs the relay's handler with a stand-in fetch and clock
+  (tests/tafRelay.test.ts). It covers:
+  - the origin check, the one path, and GET only;
+  - the user agent and the deadline;
+  - the five-minute memory, to the millisecond;
+  - aviationweather.gov's 204;
+  - a failure answered 502 and not kept.
+
+  Each test was proven by breaking what it names.
 - In Cloudflare's runtime, `npx wrangler@4.151.3 dev` in `relay/`, against
   live aviationweather.gov:
   - `/taf/KOFF` from the site's origin answered 200 with the TAF and
@@ -63,6 +85,10 @@ chain moves on to Omaha's and the card says why (src/api/tafChain.ts).
   the entry module as an entry point and refused the exported constants.
   So `src/index.ts` exports only the handler, and the logic is in
   `src/relay.ts`.
+  Run again after the review fixes, the first request took more than 8
+  seconds through the sandbox's proxy and got the 502. The next,
+  straight after, got the TAF. From Cloudflare, aviationweather.gov is
+  not behind that proxy.
 - A production build with `TAF_RELAY_URL` set to the local Worker, in
   Chromium at 1280, 390 and 320 px on live data:
   - the policy listed the relay's origin, and nothing blocked the request;

@@ -211,13 +211,14 @@ describe('fetchTafChain', () => {
     expect(fetchOne).toHaveBeenCalledTimes(2);
   });
 
-  it('falls through a station whose fetch errors', async () => {
+  it('falls through a station whose fetch errors, and records why', async () => {
     const fetchOne = vi.fn(async (id: string) => {
-      if (id === 'KOFF') throw new HttpError(404, 'x');
+      if (id === 'KOFF') throw new Error('relay answered 502');
       return taf(id);
     });
     const out = await fetchTafChain(STATIONS, { fetchOne });
     expect(out?.station).toBe('KOMA');
+    expect(out?.passedOver).toEqual([{ station: 'KOFF', failed: 'relay answered 502' }]);
   });
 
   it('throws when nothing succeeded and any station errored', async () => {
