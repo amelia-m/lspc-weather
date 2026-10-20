@@ -337,10 +337,22 @@ fail with the behaviour it names broken (21 breaks, one at a time,
   about 15 KB a week, under 1 MB a year, against a repository GitHub
   gave as 15.7 MB (the API's `size`, read 2026-10-17; 15,715 KB again
   on 2026-10-20). The first scheduled run, 2026-10-19, covered two days
-  and added 6.1 KB. For scale, the `forecast-archive` branch held 0.39 MB
-  in 96 files on 2026-10-20, kept since 2026-10-13, about
-  20 MB a year: the faster grower, and still far below GitHub's
-  1 GB recommended repository size. The data file
+  and added 6.1 KB. Measured on 2026-10-20 in a full mirror clone, by
+  the packed size of the objects each commit range adds (`git rev-list
+  --objects … | git cat-file --batch-check='%(objectsize:disk)'`), the
+  whole repository, every branch, was 16.0 MB. What grows it on its own:
+  the `forecast-archive` branch, 4.2 KB a snapshot over the 74 hourly
+  snapshots from 2026-10-17 (before then it ran every few hours), about
+  37 MB a year; and the workflows' commits to `main` (the parity summary
+  and archive, this refresh), 0.12 MB in the week to 2026-10-20, about
+  6 MB a year. That is about 43 MB a year, or 23 years to reach the
+  1 GB GitHub recommends a repository stay under (its "about large
+  files" page as remembered: docs.github.com is not reachable from the
+  sandbox, so not read here). The week to 2026-10-20
+  as a whole, the sessions' own commits included, added 1.4 MB (about
+  14 years at that rate). What moves it is one-off data: the week to
+  2026-10-13 added 10.9 MB, nearly all a 5 MB station cloud-cover
+  archive committed twice and a 3 MB photo of the waiver sign. The data file
   changes in its long lines of values and curves: adding 17 hours on
   2026-10-17 changed 134 of its lines, a 15 KB diff (2.3 KB gzipped),
   while the file grew by 96 bytes, since only hours with a ceiling on
