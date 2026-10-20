@@ -9,6 +9,7 @@ import {
   type TafWind,
 } from '../domain/taf';
 import { SITE } from '../config/site';
+import { TAF_RELAY_URL } from '../config/tafRelay';
 import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
@@ -71,9 +72,13 @@ function skyLines(layers: SkyLayer[] | null): JSX.Element[] {
 export function TafPanel({
   taf,
   status,
+  relay = TAF_RELAY_URL != null,
 }: {
   taf: TafForecast | null;
   status: SourceStatus;
+  /** Whether Offutt's TAF is read through the relay; a prop so the tests
+   *  can render both wordings. */
+  relay?: boolean;
 }): JSX.Element {
   const { dz, tafStations } = SITE;
   const primary = tafStations[0];
@@ -97,7 +102,7 @@ export function TafPanel({
     <Panel
       title="TAF (forecast)"
       subtitle={taf ? `${st.id} · ~${miles} mi ${bearing} of DZ` : 'nearest available'}
-      sources={[DATA_SOURCES.taf]}
+      sources={[taf?.via === 'aviationweather' ? DATA_SOURCES.awcTafPrimary : DATA_SOURCES.taf]}
     >
       <p className="muted small">
         Terminal Aerodrome Forecast for {st.name} ({st.id}), ~{miles} mi {bearing} of the drop zone
@@ -114,8 +119,10 @@ export function TafPanel({
       ))}
       {taf && taf.station !== primary.id && !taf.passedOver?.some((p) => p.station === primary.id) && (
         <p className="muted small">
-          {primary.name} ({primary.id}) is nearer, but its TAF is issued by the USAF and the NWS
-          feed this page reads does not carry it. Read{' '}
+          {relay
+            ? `${primary.name} (${primary.id}) is nearer, but aviationweather.gov had no TAF for it, or could not be reached, when this was fetched.`
+            : `${primary.name} (${primary.id}) is nearer, but its TAF is issued by the USAF and the NWS feed this page reads does not carry it.`}{' '}
+          Read{' '}
           {primary.id}&rsquo;s TAF at{' '}
           <a href={DATA_SOURCES.awcTafPrimary.url} target="_blank" rel="noopener noreferrer">
             aviationweather.gov

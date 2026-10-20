@@ -1192,3 +1192,20 @@ export function normalizeOpenMeteoDaily(data: RawOpenMeteoDaily): DailyPoint[] {
     })
     .filter((p): p is DailyPoint => p != null);
 }
+
+/** A station's TAF from aviationweather.gov's JSON (`/api/data/taf?format=json`),
+ *  as the TAF relay passes it on unchanged: an array of TAFs, each with the
+ *  full text in `rawTAF` ("TAF KOFF 201000Z 2010/2116 …") and the issue time
+ *  in `issueTime`. Read 2026-10-20; an empty array is no TAF in its window.
+ *  The text goes through `parseTaf`, the same reading as the NWS feed's. */
+export function tafFromAwcJson(body: unknown, station: string): TafForecast | null {
+  if (!Array.isArray(body)) return null;
+  const entry = body.find(
+    (e): e is { icaoId: string; rawTAF?: unknown; issueTime?: unknown } =>
+      typeof e === 'object' && e != null && (e as { icaoId?: unknown }).icaoId === station,
+  );
+  if (!entry || typeof entry.rawTAF !== 'string') return null;
+  const issued = typeof entry.issueTime === 'string' ? entry.issueTime : undefined;
+  const taf = parseTaf(entry.rawTAF, station, issued);
+  return taf ? { ...taf, via: 'aviationweather' } : null;
+}
