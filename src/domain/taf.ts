@@ -368,14 +368,24 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
   return { station, amendment, validFromMs, validToMs, periods, undecoded };
 }
 
-/** When a TAF's valid period ends, or null when its header gives none (an
- *  undecodable header, NIL or CNL). Offutt's TAF is not issued over weekends
- *  and holidays: one read on 2026-10-13 was issued Saturday 10Z, valid to
- *  Sunday 16Z, with the next issue Tuesday 10Z. So a TAF can come back from
- *  a feed for days after it stopped saying anything about now, and the
- *  chain needs this to pass over it (docs/open-questions.md, "KOFF's TAF"). */
-export function tafValidToMs(raw: string, issuedMs: number | null): number | null {
-  return decodeTaf(raw, issuedMs)?.validToMs ?? null;
+/** Where a TAF stands at `nowMs`: in force, ended, or a TAF that carries no
+ *  forecast at all (`CNL`, a cancellation, which keeps its valid group; `NIL`,
+ *  none issued). Offutt's TAF is not issued over weekends and holidays: one
+ *  read on 2026-10-13 was issued Saturday 10Z, valid to Sunday 16Z, with the
+ *  next issue Tuesday 10Z. So a feed can serve a TAF for days after it
+ *  stopped saying anything about now, and the chain and the card need this
+ *  to say so (docs/open-questions.md, "KOFF's TAF"). A TAF whose end cannot
+ *  be read is in force: its text is printed either way. */
+export type TafStanding =
+  | { state: 'in-force' }
+  | { state: 'ended'; atMs: number }
+  | { state: 'no-forecast'; word: 'CNL' | 'NIL' };
+
+export function tafStanding(raw: string, issuedMs: number | null, nowMs: number): TafStanding {
+  const word = /(?:^|\s)(CNL|NIL)(?=\s|=|$)/.exec(raw)?.[1] as 'CNL' | 'NIL' | undefined;
+  if (word) return { state: 'no-forecast', word };
+  const end = decodeTaf(raw, issuedMs)?.validToMs ?? null;
+  return end != null && end <= nowMs ? { state: 'ended', atMs: end } : { state: 'in-force' };
 }
 
 /**

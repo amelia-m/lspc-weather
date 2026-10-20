@@ -246,7 +246,7 @@ describe('fetchTafChain', () => {
     it('is passed over for the next station, and the result says so', async () => {
       const out = await fetchTafChain(STATIONS, { fetchOne, now: () => Date.parse('2026-10-12T15:00:00Z') });
       expect(out?.station).toBe('KOMA');
-      expect(out?.passedOver).toEqual([{ station: 'KOFF', validToMs: endMs }]);
+      expect(out?.passedOver).toEqual([{ station: 'KOFF', endedMs: endMs }]);
     });
 
     it('is passed over from the moment it ends, and kept until then', async () => {
@@ -263,6 +263,23 @@ describe('fetchTafChain', () => {
         fetchTafChain(STATIONS, { fetchOne: ended, now: () => Date.parse('2026-10-12T15:00:00Z') }),
       ).resolves.toBeNull();
     });
+  });
+
+  it('passes over a cancellation, which keeps its valid group, and a NIL TAF', async () => {
+    const issuedMs = Date.parse('2026-10-20T15:30:00Z');
+    const fetchOne = vi.fn(async (id: string) =>
+      id === 'KOFF'
+        ? { station: id, raw: 'KOFF 201530Z AMD 2015/2112 CNL', issuedMs, validRaw: '2015/2112' }
+        : id === 'KOMA'
+          ? { station: id, raw: 'KOMA 201530Z NIL', issuedMs, validRaw: null }
+          : taf(id),
+    );
+    const out = await fetchTafChain(STATIONS, { fetchOne, now: () => issuedMs + 60_000 });
+    expect(out?.station).toBe('KLNK');
+    expect(out?.passedOver).toEqual([
+      { station: 'KOFF', noForecast: 'CNL' },
+      { station: 'KOMA', noForecast: 'NIL' },
+    ]);
   });
 
   it('keeps a TAF whose end cannot be read', async () => {

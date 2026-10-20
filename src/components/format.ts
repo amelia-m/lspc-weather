@@ -32,6 +32,18 @@ export const fmtClock = (ms: number): string =>
     timeZone: SITE.timeZone,
   });
 
+/** "Sun, Oct 11, 11:00 AM": the date as well, for a time that can be days
+ *  back, where a weekday alone could name the wrong week. */
+export const fmtDateClock = (ms: number): string =>
+  new Date(ms).toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: SITE.timeZone,
+  });
+
 export const fmtAgo = (ms: number | null): string => {
   if (ms == null) return '—';
   const mins = Math.round((Date.now() - ms) / 60000);

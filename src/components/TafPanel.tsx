@@ -14,7 +14,8 @@ import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
-import { fmtClock } from './format';
+import { fmtClock, fmtDateClock } from './format';
+import { useNow } from '../hooks/useNow';
 
 /** What each kind of change group means, in the words a reader can check
  *  against AC 00-45H chapter 5. The label is the row's first column; the
@@ -82,6 +83,14 @@ export function TafPanel({
   const miles = Math.round(haversineMiles(dz.lat, dz.lon, st.lat, st.lon));
   const bearing = compass(initialBearingDeg(dz.lat, dz.lon, st.lat, st.lon));
   const decoded = taf ? decodeTaf(taf.raw, taf.issuedMs) : null;
+  // The chain passes over an ended TAF when it fetches, but a TAF can end
+  // while it is on screen, and a failed refresh keeps the last one.
+  const now = useNow(60_000);
+  const endedMs = decoded?.validToMs != null && decoded.validToMs <= now ? decoded.validToMs : null;
+  const nameOf = (id: string): string => {
+    const s = tafStations.find((t) => t.id === id);
+    return s ? `${s.name} (${id})` : id;
+  };
   const kindsUsed = new Set(decoded?.periods.map((p) => p.change) ?? []);
 
   return (
@@ -94,20 +103,19 @@ export function TafPanel({
         Terminal Aerodrome Forecast for {st.name} ({st.id}), ~{miles} mi {bearing} of the drop zone
         (KPMV issues no TAF). Regional guidance, not field-specific to NE69.
       </p>
-      {taf?.passedOver?.map((p) => {
-        const s = tafStations.find((t) => t.id === p.station);
-        return (
-          <p className="muted small" key={p.station}>
-            {s ? `${s.name} (${p.station})` : p.station}&rsquo;s latest TAF ended at{' '}
-            {fmtClock(p.validToMs)}, and the feed has no newer one, so this is the next
-            station&rsquo;s.
-          </p>
-        );
-      })}
+      {taf?.passedOver?.map((p) => (
+        <p className="muted small" key={p.station}>
+          {'endedMs' in p
+            ? `${nameOf(p.station)}’s latest TAF ended at ${fmtDateClock(p.endedMs)}, and the feed has no newer one.`
+            : p.noForecast === 'CNL'
+              ? `${nameOf(p.station)}’s latest TAF is a cancellation (CNL).`
+              : `${nameOf(p.station)}’s latest TAF carries no forecast (NIL).`}
+        </p>
+      ))}
       {taf && taf.station !== primary.id && !taf.passedOver?.some((p) => p.station === primary.id) && (
         <p className="muted small">
           {primary.name} ({primary.id}) is nearer, but its TAF is issued by the USAF and the NWS
-          feed this page reads does not carry it, so this is the next-nearest station. Read{' '}
+          feed this page reads does not carry it. Read{' '}
           {primary.id}&rsquo;s TAF at{' '}
           <a href={DATA_SOURCES.awcTafPrimary.url} target="_blank" rel="noopener noreferrer">
             aviationweather.gov
@@ -131,6 +139,12 @@ export function TafPanel({
             <dt>Valid</dt>
             <dd>{taf.validRaw ? `${taf.validRaw} (UTC day/hr)` : '—'}</dd>
           </dl>
+          {endedMs != null && (
+            <p className="small">
+              This TAF&rsquo;s valid period ended at {fmtDateClock(endedMs)}, and no newer one has
+              been fetched since.
+            </p>
+          )}
           <pre className="metar-raw">{taf.raw}</pre>
           {decoded && decoded.periods.length > 0 && (
             <>

@@ -270,7 +270,8 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
         if (taf) {
-          logSource('taf', 'success', `TAF from ${taf.station}`);
+          const passed = taf.passedOver?.map((p) => `${p.station} ${'endedMs' in p ? 'ended' : p.noForecast}`);
+          logSource('taf', 'success', `TAF from ${taf.station}${passed?.length ? ` (passed over ${passed.join(', ')})` : ''}`);
           updateSource('taf', okStatus());
         } else {
           // The whole chain came back with nothing in force: no product, or

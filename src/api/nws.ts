@@ -10,14 +10,13 @@ import {
   type RawNwsObservation,
   type RawNwsProduct,
 } from '../domain/normalize';
-import { tafValidToMs } from '../domain/taf';
+import { fetchTafChain, type TafStationRef } from './tafChain';
 import { interpolateWindsAloft } from '../domain/windsAloft';
 import type {
   CurrentConditions,
   DailyPoint,
   HourlyPoint,
   TafForecast,
-  TafPassedOver,
   WindsAloftForecast,
 } from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
@@ -179,59 +178,14 @@ export async function fetchTaf(
   return null;
 }
 
-export interface TafStationRef {
-  id: string;
-  nwsProductLocation: string;
-}
-
-/** Injectable dependencies so the fallback logic is unit-testable. */
-interface TafChainDeps {
-  fetchOne: (station: string, productLocation: string) => Promise<TafForecast | null>;
-  now?: () => number;
-}
-
-/**
- * Try each TAF station in preference order and return the first TAF still
- * in force (its `station` field says which one the card is showing). A
- * station yielding no product is normal (see fetchTaf) and falls through; so
- * does one whose latest TAF has ended (`tafValidToMs`), recorded in
- * `passedOver` so the card can say why it shows a farther station. A TAF
- * whose end cannot be read is kept: the card prints its text either way. A
- * fetch error also falls through so one bad request doesn't blank the card. If
- * nothing succeeded and ANY station errored, the last error propagates —
- * "KOFF has no product (as always) and the rest failed" must read as a
- * failure, not as "no TAF anywhere".
- */
-export async function fetchTafChain(
-  stations: readonly TafStationRef[],
-  deps: TafChainDeps = { fetchOne: fetchTaf },
-): Promise<TafForecast | null> {
-  let lastErr: unknown = null;
-  const passedOver: TafPassedOver[] = [];
-  for (const s of stations) {
-    try {
-      const taf = await deps.fetchOne(s.id, s.nwsProductLocation);
-      if (!taf) continue;
-      const endMs = tafValidToMs(taf.raw, taf.issuedMs);
-      if (endMs != null && endMs <= (deps.now ?? Date.now)()) {
-        passedOver.push({ station: taf.station, validToMs: endMs });
-        continue;
-      }
-      return passedOver.length ? { ...taf, passedOver } : taf;
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  if (lastErr) throw lastErr;
-  return null;
-}
+export { fetchTafChain, type TafStationRef };
 
 /** Entry point for the app: fixture in dev, live fallback chain otherwise. */
 export async function fetchTafAny(stations: readonly TafStationRef[]): Promise<TafForecast | null> {
   if (USE_FIXTURES) {
     return parseTaf(TAF_FIXTURE.productText ?? '', stations[0].id, TAF_FIXTURE.issuanceTime);
   }
-  return fetchTafChain(stations);
+  return fetchTafChain(stations, { fetchOne: fetchTaf });
 }
 
 /** NOAA winds-aloft (FD) product type codes, 6-hour issuance first. The
