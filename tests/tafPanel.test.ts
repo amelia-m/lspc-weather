@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { TafPanel } from '../src/components/TafPanel';
 import { parseTaf } from '../src/domain/normalize';
-import type { SourceStatus } from '../src/domain/types';
+import type { SourceStatus, TafPassedOver } from '../src/domain/types';
 import { KLNK_2026_09_23_1120, KOMA_2026_09_24_0521 } from './support/tafProducts';
 
 const idle: SourceStatus = { ok: true, fetchedAt: null, stale: false, error: null, pending: false };
@@ -106,16 +106,49 @@ describe('TafPanel without a decodable forecast', () => {
 
 describe('TafPanel when a nearer station’s TAF had ended', () => {
   const taf = parseTaf(KOMA_2026_09_24_0521.productText!, 'KOMA', KOMA_2026_09_24_0521.issuanceTime);
-  const passedOver = [{ station: 'KOFF', validToMs: Date.parse('2026-10-11T16:00:00Z') }];
-  const html = renderToStaticMarkup(createElement(TafPanel, { taf: { ...taf!, passedOver }, status: idle }));
+  const show = (passedOver: TafPassedOver[]): string =>
+    renderToStaticMarkup(createElement(TafPanel, { taf: { ...taf!, passedOver }, status: idle }));
+  const html = show([{ station: 'KOFF', endedMs: Date.parse('2026-10-11T16:00:00Z') }]);
 
-  it('says whose TAF ended, when, and why this station is shown', () => {
-    expect(html).toContain('Offutt AFB (KOFF)’s latest TAF ended at Sun 11:00 AM');
-    expect(html).toContain('the feed has no newer one, so this is the next');
+  it('says whose TAF ended, and when, with the date', () => {
+    expect(html).toContain('Offutt AFB (KOFF)’s latest TAF ended at Sun, Oct 11, 11:00 AM, and the feed has no newer one.');
+  });
+
+  it('says so of a cancellation or a NIL TAF', () => {
+    const both = show([
+      { station: 'KOFF', noForecast: 'CNL' },
+      { station: 'KOMA', noForecast: 'NIL' },
+    ]);
+    expect(both).toContain('Offutt AFB (KOFF)’s latest TAF is a cancellation (CNL).');
+    expect(both).toContain('Omaha Eppley Airfield (KOMA)’s latest TAF carries no forecast (NIL).');
   });
 
   it('drops the note that the nearer station is not carried, which an ended TAF shows is untrue', () => {
     expect(html).not.toContain('does not carry it');
     expect(render(KOMA_2026_09_24_0521, 'KOMA')).toContain('does not carry it');
+  });
+
+  it('never calls the station shown the next-nearest, which a passed-over station can make untrue', () => {
+    expect(show([{ station: 'KOMA', endedMs: 0 }])).not.toContain('next');
+  });
+});
+
+describe('TafPanel when the TAF on screen has ended', () => {
+  afterEach(() => vi.useRealTimers());
+  // KOMA's TAF of 2026-09-24 05:21Z is valid 2406/2506Z.
+  const at = (iso: string): string => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.parse(iso));
+    return render(KOMA_2026_09_24_0521, 'KOMA');
+  };
+
+  it('says so, with the time it ended, once its valid period is over', () => {
+    expect(at('2026-09-25T06:00:00Z')).toContain(
+      'This TAF’s valid period ended at Fri, Sep 25, 1:00 AM, and no newer one has been fetched since.',
+    );
+  });
+
+  it('says nothing of it while the TAF is in force', () => {
+    expect(at('2026-09-25T05:59:00Z')).not.toContain('valid period ended');
   });
 });

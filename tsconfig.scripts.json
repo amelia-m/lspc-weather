@@ -14,5 +14,5 @@
     "noUnusedParameters": true,
     "types": ["node"]
   },
-  "include": ["scripts", "src/domain", "src/config"]
+  "include": ["scripts", "src/domain", "src/config", "src/api/tafChain.ts"]
 }

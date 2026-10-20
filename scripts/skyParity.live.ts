@@ -30,7 +30,8 @@ import {
   type RawNwsObservation,
 } from '../src/domain/normalize';
 import { observedFlightCategory } from '../src/domain/flightCategory';
-import { decodeTaf, tafValidToMs, type TafPeriod } from '../src/domain/taf';
+import { decodeTaf, type TafPeriod } from '../src/domain/taf';
+import { fetchTafChain } from '../src/api/tafChain';
 import type { SkyLayer } from '../src/domain/types';
 
 const station = SITE.metarStation.id;
@@ -202,9 +203,11 @@ describe(`sky decode parity for ${station}`, () => {
         'application/json',
       );
       const awc = (await awcRes.json()) as Array<{ icaoId: string; rawTAF?: string; issueTime?: string }>;
-      let shown: { station: string; raw: string; issuedMs: number | null } | null = null;
-      for (const t of SITE.tafStations) {
-        const loc = encodeURIComponent(t.nwsProductLocation);
+      // The card's own chain (fetchTafChain), so this checks the TAF a reader
+      // is shown, ended and cancelled ones passed over, with this script's
+      // requests in place of the app's.
+      const fetchOne = async (id: string, productLocation: string) => {
+        const loc = encodeURIComponent(productLocation);
         for (const url of [
           `https://api.weather.gov/products/types/TAF/locations/${loc}`,
           `https://api.weather.gov/products?type=TAF&location=${loc}&limit=1`,
@@ -219,19 +222,14 @@ describe(`sky decode parity for ${station}`, () => {
               productText?: string;
               issuanceTime?: string;
             };
-            const taf = parseTaf(product.productText ?? '', t.id, product.issuanceTime ?? latest.issuanceTime);
-            // Passed over once ended, as the card's chain does (fetchTafChain).
-            const endMs = taf ? tafValidToMs(taf.raw, taf.issuedMs) : null;
-            if (taf && !(endMs != null && endMs <= Date.now())) {
-              shown = { station: taf.station, raw: taf.raw, issuedMs: taf.issuedMs };
-            }
-            break;
+            return parseTaf(product.productText ?? '', id, product.issuanceTime ?? latest.issuanceTime);
           } catch {
             // try the other list form, then the next station
           }
         }
-        if (shown) break;
-      }
+        return null;
+      };
+      const shown = await fetchTafChain(SITE.tafStations, { fetchOne });
       if (!shown) {
         say('[taf]  the NWS products feed listed no current TAF for any station in the chain');
         return;
@@ -242,6 +240,9 @@ describe(`sky decode parity for ${station}`, () => {
       // 2026-09-24 run read "same text: NO" on identical forecasts for it.
       const squash = (x: string): string => x.replace(/\s+/g, ' ').replace(/^TAF /, '').trim();
       const same = theirs?.rawTAF != null && squash(theirs.rawTAF) === squash(shown.raw);
+      if (shown.passedOver?.length) {
+        say(`[taf]  passed over ${shown.passedOver.map((p) => `${p.station} (${'endedMs' in p ? `ended ${new Date(p.endedMs).toISOString()}` : p.noForecast})`).join(', ')}`);
+      }
       say(`[taf]  card shows ${shown.station}, issued ${shown.issuedMs != null ? new Date(shown.issuedMs).toISOString() : '?'}`);
       say(`[taf]  aviationweather has ${theirs ? `${theirs.icaoId}, issued ${theirs.issueTime ?? '?'}` : 'no TAF for that station'}`);
       say(`[taf]  same text: ${same ? 'yes' : 'NO'}`);

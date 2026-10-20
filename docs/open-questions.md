@@ -603,12 +603,15 @@ terms before choosing the workflow route.
 
 Either route needed the chain to pass over a TAF past its valid time
 (Offutt's weekend gap), and since 2026-10-20 it does, at the maintainer's
-word: `fetchTafChain` moves to the next station when the latest TAF's
-valid period has ended (`tafValidToMs`, src/domain/taf.ts), and the card
-names the station passed over and when its TAF ended. A TAF whose end
-cannot be read is kept. The sky-parity script's own copy of the chain
-follows the same rule. A cancelled (`CNL`) or `NIL` TAF has no valid
-period and is still shown as it stands.
+word: `fetchTafChain` (src/api/tafChain.ts) moves to the next station
+when the latest TAF has ended or carries no forecast (`tafStanding`,
+src/domain/taf.ts: a cancellation, `CNL`, which keeps its valid group,
+or `NIL`), and the card names each station passed over and why, with
+the date an ended TAF ended. A TAF whose end cannot be read is kept. A
+TAF that ends while on screen, or is kept by a failed refresh, says so
+on the card until a newer one is fetched. The sky-parity script runs the
+same chain with its own requests; on 2026-10-20 it showed KOMA, issued
+11:20Z, the same text aviationweather.gov had.
 
 ## Live-site smoke test
 
