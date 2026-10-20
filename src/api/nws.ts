@@ -6,11 +6,13 @@ import {
   parseFdTiming,
   parseFdWinds,
   parseTaf,
+  tafFromAwcJson,
   type RawGridpoint,
   type RawNwsObservation,
   type RawNwsProduct,
 } from '../domain/normalize';
 import { fetchTafChain, type TafStationRef } from './tafChain';
+import { tafRelayUrlFor } from '../config/tafRelay';
 import { interpolateWindsAloft } from '../domain/windsAloft';
 import type {
   CurrentConditions,
@@ -185,7 +187,18 @@ export async function fetchTafAny(stations: readonly TafStationRef[]): Promise<T
   if (USE_FIXTURES) {
     return parseTaf(TAF_FIXTURE.productText ?? '', stations[0].id, TAF_FIXTURE.issuanceTime);
   }
-  return fetchTafChain(stations, { fetchOne: fetchTaf });
+  return fetchTafChain(stations, { fetchOne: fetchTafFrom });
+}
+
+/** One station's TAF: through the TAF relay when it serves the station
+ *  (Offutt's, which api.weather.gov does not carry), else from the NWS
+ *  products feed. An error from the relay propagates like any fetch error,
+ *  so the chain moves to the next station and Data health shows it. */
+async function fetchTafFrom(station: string, productLocation: string): Promise<TafForecast | null> {
+  const relay = tafRelayUrlFor(station);
+  if (relay != null) return tafFromAwcJson(await fetchJson<unknown>(relay), station);
+  const taf = await fetchTaf(station, productLocation);
+  return taf ? { ...taf, via: 'nws' } : null;
 }
 
 /** NOAA winds-aloft (FD) product type codes, 6-hour issuance first. The

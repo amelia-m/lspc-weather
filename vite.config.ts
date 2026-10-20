@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { connectSources } from './src/config/tafRelay';
 
 // Content-Security-Policy for the production build. GitHub Pages cannot set
 // response headers, so the policy ships as a <meta> tag injected at build time
@@ -11,14 +12,15 @@ import react from '@vitejs/plugin-react';
 // - img-src allows radar.weather.gov for the radar loop image, and
 //   tiles.arcgis.com for FAA's VFR sectional tiles on the Sectional card.
 // - connect-src covers the live APIs (NWS, Open-Meteo, and the Iowa
-//   Environmental Mesonet for the observation) and 'self', for the parity
-//   summary the #parity page fetches from beside the site.
+//   Environmental Mesonet for the observation), the TAF relay once it is
+//   set (src/config/tafRelay.ts, `connectSources`), and 'self', for the
+//   parity summary the #parity page fetches from beside the site.
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https://radar.weather.gov https://tiles.arcgis.com",
-  "connect-src 'self' https://api.weather.gov https://api.open-meteo.com https://mesonet.agron.iastate.edu",
+  `connect-src 'self' ${connectSources().join(' ')}`,
   "base-uri 'self'",
   "form-action 'none'",
   "object-src 'none'",

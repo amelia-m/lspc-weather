@@ -148,6 +148,10 @@ export interface TafForecast {
   issuedMs: number | null;
   /** Raw valid-period token, e.g. "2718/2824" (UTC day/hour). */
   validRaw: string | null;
+  /** Where the text came from: api.weather.gov's products feed, or
+   *  aviationweather.gov through the TAF relay (relay/, src/config/tafRelay.ts),
+   *  so the card can name and link the source it read. */
+  via?: 'nws' | 'aviationweather';
   /** Stations before this one in the chain whose latest TAF had ended or
    *  carried no forecast when this one was fetched (fetchTafChain), so the
    *  card can say why it shows this one. */

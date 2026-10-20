@@ -1,0 +1,8 @@
+# The TAF relay (src/index.ts). Deployed by Cloudflare Workers Builds from
+# this directory; setup in docs/taf-relay.md. The name must match the
+# Worker's name in the Cloudflare dashboard, or the build fails, and it is
+# the first part of the Worker's address:
+# https://lspc-taf-relay.<account subdomain>.workers.dev
+name = "lspc-taf-relay"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"

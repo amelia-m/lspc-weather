@@ -38,9 +38,11 @@ export interface SiteConfig {
    *  Offutt is closest, but its TAF is issued by the USAF and the NWS
    *  text-product feed, the only TAF source a browser here can read, does
    *  not carry it: no product under any lookup on 2026-09-27 or 2026-09-30.
-   *  It stays first so the card picks it up if that ever changes (two small
-   *  requests a refresh), the civilian stations follow, and the card links
-   *  Offutt's TAF on aviationweather.gov (DATA_SOURCES.awcTafPrimary). */
+   *  It stays first: once the TAF relay is set (src/config/tafRelay.ts) the
+   *  card reads Offutt's through it, and until then it asks the NWS feed in
+   *  case that ever changes (two small requests a refresh). The civilian
+   *  stations follow, and the card links Offutt's TAF on aviationweather.gov
+   *  (DATA_SOURCES.awcTafPrimary). */
   tafStations: Array<{
     id: string; // ICAO
     name: string;

@@ -25,6 +25,7 @@ import {
   normalizeNwsObservation,
   parseSkyGroups,
   parseTaf,
+  tafFromAwcJson,
   toSkyCover,
   type RawMetar,
   type RawNwsObservation,
@@ -32,6 +33,7 @@ import {
 import { observedFlightCategory } from '../src/domain/flightCategory';
 import { decodeTaf, type TafPeriod } from '../src/domain/taf';
 import { fetchTafChain } from '../src/api/tafChain';
+import { tafRelayUrlFor } from '../src/config/tafRelay';
 import type { SkyLayer } from '../src/domain/types';
 
 const station = SITE.metarStation.id;
@@ -207,6 +209,8 @@ describe(`sky decode parity for ${station}`, () => {
       // is shown, ended and cancelled ones passed over, with this script's
       // requests in place of the app's.
       const fetchOne = async (id: string, productLocation: string) => {
+        const relay = tafRelayUrlFor(id);
+        if (relay != null) return tafFromAwcJson(await (await get(relay, 'application/json')).json(), id);
         const loc = encodeURIComponent(productLocation);
         for (const url of [
           `https://api.weather.gov/products/types/TAF/locations/${loc}`,

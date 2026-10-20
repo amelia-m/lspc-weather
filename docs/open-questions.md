@@ -613,6 +613,14 @@ before, connect_rejected). Read that day:
   minutes per open page, 144 requests a day, so the free plan covers
   about 690 pages open all day. The paid plan is $5 a month.
 
+The relay is written (2026-10-20, at the maintainer's word): `relay/`, a
+Cloudflare Worker, checked in Cloudflare's runtime locally and end to end
+in a browser; docs/taf-relay.md has what it does, how it was checked, and
+the setup. **Waiting on the maintainer:** create the Cloudflare account,
+connect the repository and deploy (docs/taf-relay.md, "Setting it up"),
+then give a session the Worker's address to set `TAF_RELAY_URL`
+(src/config/tafRelay.ts). Until then the card is as before.
+
 Either route needed the chain to pass over a TAF past its valid time
 (Offutt's weekend gap), and since 2026-10-20 it does, at the maintainer's
 word: `fetchTafChain` (src/api/tafChain.ts) moves to the next station

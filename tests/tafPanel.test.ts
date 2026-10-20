@@ -152,3 +152,22 @@ describe('TafPanel when the TAF on screen has ended', () => {
     expect(at('2026-09-25T05:59:00Z')).not.toContain('valid period ended');
   });
 });
+
+describe('TafPanel with the TAF relay', () => {
+  const omaha = parseTaf(KOMA_2026_09_24_0521.productText!, 'KOMA', KOMA_2026_09_24_0521.issuanceTime)!;
+
+  it('says Offutt’s TAF was missing or unreachable, not that no feed carries it, once the relay is set', () => {
+    const html = renderToStaticMarkup(createElement(TafPanel, { taf: omaha, status: idle, relay: true }));
+    expect(html).toContain('Offutt AFB (KOFF) is nearer, but aviationweather.gov had no TAF for it, or could not be reached, when this was fetched.');
+    expect(html).not.toContain('does not carry it');
+  });
+
+  it('names and links aviationweather.gov as the source of a TAF read through it', () => {
+    const offutt = { ...omaha, station: 'KOFF', via: 'aviationweather' as const };
+    const html = renderToStaticMarkup(createElement(TafPanel, { taf: offutt, status: idle, relay: true }));
+    expect(html).toContain('href="https://aviationweather.gov/data/taf/?ids=KOFF"');
+    expect(html).toContain('AWC TAF · KOFF');
+    expect(html).not.toContain('NWS TAF');
+    expect(render(KOMA_2026_09_24_0521, 'KOMA')).toContain('NWS TAF');
+  });
+});
