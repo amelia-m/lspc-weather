@@ -311,7 +311,9 @@ GitHub's artifact downloads redirect. Since 2026-10-08 it also has
 map tiles (`tile.openstreetmap.org`, `*.tile.openstreetmap.de`,
 `server.arcgisonline.com`, `services.arcgisonline.com`),
 `earthdata.nasa.gov` and `heywhatsthat.com` (the receiver panorama in
-`docs/adsb-receiver.md`). Reachable is not readable: `globe.adsb.fi`,
+`docs/adsb-receiver.md`), and since 2026-10-20 `docs.github.com` and
+`developers.cloudflare.com` (GitHub's Actions limits and terms, and the
+Workers free tier, for the KOFF TAF relay in `docs/open-questions.md`). Reachable is not readable: `globe.adsb.fi`,
 `api.adsb.one` and `airplanes.live` answer a script with Cloudflare's 403
 (airplanes.live's API asks for an emailed request first). The comparison artifacts can now be
 read from here with `curl -sL
