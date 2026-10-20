@@ -583,23 +583,35 @@ sends `access-control-allow-origin: *` (with `max-age=300`, read
 the TAF to a data branch the page reads from there, with no new account
 and no Pages deploy per copy, about 5 to 15 minutes behind.
 
-On 2026-10-20 the maintainer judged the relay a small cost, and asked
-what GitHub limits a looping workflow. Not read from here: the
-sandbox's egress policy refuses docs.github.com (connect_rejected, not
-on the allowlist, 2026-10-20) and github.com/site/terms answered 403,
-so this is as remembered. Adding `docs.github.com` to the environment's
-allowlist would let a session read the Actions limits and terms, and
-`developers.cloudflare.com` the Workers free tier, before either route
-is built. Free runners are unmetered for a
-public repository; a job stops at 6 hours (why the keeper's runs end
-at 355 minutes and queue a successor); scheduled runs go late, which
-this repository has measured. The real limit is GitHub's Actions terms,
-which as remembered bar using runners for "serverless computing" or for
-work unrelated to building, testing, deploying or publishing the
-repository's project. A job polling for a TAF all day, to serve a page,
-reads closer to that than a forecast archive for scoring does, and the
-keeper and the samplers already sit in the same grey area. Read the
-terms before choosing the workflow route.
+On 2026-10-20 the maintainer judged the relay a small cost, asked what
+GitHub limits a looping workflow, and added `docs.github.com` and
+`developers.cloudflare.com` to the sandbox's allowlist (both refused
+before, connect_rejected). Read that day:
+
+- GitHub, "Actions limits" (docs.github.com/en/actions/reference/limits):
+  a job on a GitHub-hosted runner stops at 6 hours (why the keeper's
+  runs end at 355 minutes and queue a successor); a workflow run at 35
+  days; 20 concurrent jobs on the Free plan; GITHUB_TOKEN 1,000 API
+  requests an hour per repository. "Billing and usage": Actions "is free
+  for standard GitHub-hosted runners in public repositories".
+- GitHub, "Terms for Additional Products and Features", Actions: not
+  for "Any activity that places a burden on our servers, where that
+  burden is disproportionate to the benefits provided to users (for
+  example, don't use Actions as a content delivery network or as part of
+  a serverless application, but a low benefit Action could be ok if it's
+  also low burden)", nor, on GitHub-hosted runners, "any other activity
+  unrelated to the production, testing, deployment, or publication of
+  the software project". A workflow polling for a TAF all day to serve a
+  page is the serverless-application case those words name, so the
+  workflow route is out on the terms, not on the limits. (The keeper and
+  the samplers gather data the repository's pages are built from, which
+  reads as publication; that was not settled here.)
+- Cloudflare, Workers "Limits" (page last updated 2026-10-12) and
+  "Pricing": the Workers Free plan allows 100,000 requests a day,
+  resetting at midnight UTC (past it, Error 1027), and 10 ms of CPU per
+  request, with network waits not counted. The card asks every 10
+  minutes per open page, 144 requests a day, so the free plan covers
+  about 690 pages open all day. The paid plan is $5 a month.
 
 Either route needed the chain to pass over a TAF past its valid time
 (Offutt's weekend gap), and since 2026-10-20 it does, at the maintainer's
