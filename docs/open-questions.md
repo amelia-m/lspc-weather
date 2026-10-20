@@ -583,6 +583,27 @@ sends `access-control-allow-origin: *` (with `max-age=300`, read
 the TAF to a data branch the page reads from there, with no new account
 and no Pages deploy per copy, about 5 to 15 minutes behind.
 
+On 2026-10-20 the maintainer judged the relay a small cost, and asked
+what GitHub limits a looping workflow. Not read from here: the
+sandbox's egress policy refuses docs.github.com (connect_rejected, not
+on the allowlist, 2026-10-20) and github.com/site/terms answered 403,
+so this is as remembered. Adding `docs.github.com` to the environment's
+allowlist would let a session read the Actions limits and terms, and
+`developers.cloudflare.com` the Workers free tier, before either route
+is built. Free runners are unmetered for a
+public repository; a job stops at 6 hours (why the keeper's runs end
+at 355 minutes and queue a successor); scheduled runs go late, which
+this repository has measured. The real limit is GitHub's Actions terms,
+which as remembered bar using runners for "serverless computing" or for
+work unrelated to building, testing, deploying or publishing the
+repository's project. A job polling for a TAF all day, to serve a page,
+reads closer to that than a forecast archive for scoring does, and the
+keeper and the samplers already sit in the same grey area. Read the
+terms before choosing the workflow route. If the relay is chosen, a
+TAF past its valid time (Offutt's weekend gap) must still fall back to
+KOMA, which the chain does not do today: it falls back only on no
+product.
+
 ## Live-site smoke test
 
 Run against live data on 2026-09-22 (first time the app had ever been exercised
