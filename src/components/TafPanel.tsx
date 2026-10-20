@@ -10,12 +10,12 @@ import {
 } from '../domain/taf';
 import { SITE } from '../config/site';
 import { TAF_RELAY_URL } from '../config/tafRelay';
-import { DATA_SOURCES } from '../config/sources';
+import { awcTafFor, DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
-import { fmtClock, fmtDateClock } from './format';
+import { fmtClock, fmtDateClock, shortError } from './format';
 import { useNow } from '../hooks/useNow';
 
 /** What each kind of change group means, in the words a reader can check
@@ -102,7 +102,7 @@ export function TafPanel({
     <Panel
       title="TAF (forecast)"
       subtitle={taf ? `${st.id} · ~${miles} mi ${bearing} of DZ` : 'nearest available'}
-      sources={[taf?.via === 'aviationweather' ? DATA_SOURCES.awcTafPrimary : DATA_SOURCES.taf]}
+      sources={[taf?.via === 'aviationweather' ? awcTafFor(taf.station) : DATA_SOURCES.taf]}
     >
       <p className="muted small">
         Terminal Aerodrome Forecast for {st.name} ({st.id}), ~{miles} mi {bearing} of the drop zone
@@ -110,7 +110,9 @@ export function TafPanel({
       </p>
       {taf?.passedOver?.map((p) => (
         <p className="muted small" key={p.station}>
-          {'endedMs' in p
+          {'failed' in p
+            ? `${nameOf(p.station)}’s TAF could not be fetched (${shortError(p.failed)}).`
+            : 'endedMs' in p
             ? `${nameOf(p.station)}’s latest TAF ended at ${fmtDateClock(p.endedMs)}, and the feed has no newer one.`
             : p.noForecast === 'CNL'
               ? `${nameOf(p.station)}’s latest TAF is a cancellation (CNL).`

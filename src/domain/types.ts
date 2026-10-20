@@ -152,8 +152,8 @@ export interface TafForecast {
    *  aviationweather.gov through the TAF relay (relay/, src/config/tafRelay.ts),
    *  so the card can name and link the source it read. */
   via?: 'nws' | 'aviationweather';
-  /** Stations before this one in the chain whose latest TAF had ended or
-   *  carried no forecast when this one was fetched (fetchTafChain), so the
+  /** Stations before this one in the chain whose latest TAF had ended,
+   *  carried no forecast, or could not be fetched (fetchTafChain), so the
    *  card can say why it shows this one. */
   passedOver?: TafPassedOver[];
 }
@@ -161,7 +161,9 @@ export interface TafForecast {
 /** A station the TAF chain skipped, and why (`tafStanding`). */
 export type TafPassedOver =
   | { station: string; endedMs: number }
-  | { station: string; noForecast: 'CNL' | 'NIL' };
+  | { station: string; noForecast: 'CNL' | 'NIL' }
+  /** The fetch failed: the error's message. */
+  | { station: string; failed: string };
 
 /** Where the winds-aloft levels came from: Open-Meteo (its 10 to 180 m
  *  winds and pressure levels) or the NOAA FD text-product fallback. */

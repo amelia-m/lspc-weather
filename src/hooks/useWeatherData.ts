@@ -270,18 +270,18 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
         if (taf) {
-          const passed = taf.passedOver?.map((p) => `${p.station} ${'endedMs' in p ? 'ended' : p.noForecast}`);
+          const passed = taf.passedOver?.map(
+            (p) => `${p.station} ${'failed' in p ? `failed: ${p.failed}` : 'endedMs' in p ? 'ended' : p.noForecast}`,
+          );
           logSource('taf', 'success', `TAF from ${taf.station}${passed?.length ? ` (passed over ${passed.join(', ')})` : ''}`);
           updateSource('taf', okStatus());
         } else {
           // The whole chain came back with nothing in force: no product, or
           // only TAFs that had ended. A feed gap, not a success. Mark it so
           // Data health shows the gap and the quick retry / next poll keeps
-          // trying.
-          const err = new Error(
-            `NWS product feed listed no current TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`,
-          );
-          logSource('taf', 'failure', 'No current TAF in NWS feed', err);
+          // trying. No feed is named: Offutt's may come from the relay.
+          const err = new Error(`No current TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`);
+          logSource('taf', 'failure', 'No current TAF', err);
           markStale('taf', err);
         }
       })

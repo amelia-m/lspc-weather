@@ -3,22 +3,22 @@
  * (relay/, docs/taf-relay.md). Null until then: the card reads every TAF
  * from api.weather.gov, which has no Offutt TAF, and shows Omaha's.
  *
- * Set it to the Worker's address with no trailing slash, for example
- * 'https://lspc-taf-relay.example.workers.dev'. The build's
- * Content-Security-Policy takes its origin from here (`connectSources`), so
- * this is the one line to change.
+ * Set it to the Worker's address, for example
+ * 'https://lspc-taf-relay.example.workers.dev' (a trailing slash is
+ * dropped). The build's Content-Security-Policy takes its origin from here
+ * (`connectSources`), so this is the one line to change.
  *
- * No imports: vite.config.ts reads this file to build the policy.
+ * vite.config.ts reads this file to build the policy, so it imports only
+ * the relay's station file, which carries no Worker types.
  */
+import { PATH, STATION } from '../../relay/src/station';
+
 export const TAF_RELAY_URL: string | null = null;
 
-/** The stations the relay serves (relay/src/index.ts, `PATH`). */
-export const TAF_RELAY_STATIONS: readonly string[] = ['KOFF'];
-
 /** The relay's URL for a station, or null when there is no relay or it does
- *  not serve that station. */
+ *  not serve that station (relay/src/station.ts). */
 export function tafRelayUrlFor(station: string, base: string | null = TAF_RELAY_URL): string | null {
-  return base != null && TAF_RELAY_STATIONS.includes(station) ? `${base}/taf/${station}` : null;
+  return base != null && station === STATION ? `${base.replace(/\/+$/, '')}${PATH}` : null;
 }
 
 /** The connect-src origins the app's policy allows: the live APIs, plus the

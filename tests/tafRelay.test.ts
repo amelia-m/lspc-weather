@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ALLOWED_ORIGINS, CACHE_SECONDS, PATH, UPSTREAM, handle, type RelayDeps } from '../relay/src/relay';
+import { ALLOWED_ORIGINS, CACHE_SECONDS, PATH, UPSTREAM, UPSTREAM_TIMEOUT_MS, handle, type RelayDeps } from '../relay/src/relay';
 import { connectSources, tafRelayUrlFor } from '../src/config/tafRelay';
 import { tafFromAwcJson } from '../src/domain/normalize';
 import { decodeTaf } from '../src/domain/taf';
@@ -16,18 +16,12 @@ const AWC_KOFF = [
 const SITE_ORIGIN = 'https://amelia-m.github.io';
 const BASE = 'https://lspc-taf-relay.example.workers.dev';
 
-/** A stand-in for Cloudflare's per-location cache. */
-function memoryCache(): Cache {
-  const m = new Map<string, Response>();
-  return {
-    match: async (k: RequestInfo | URL) => m.get(String(k))?.clone(),
-    put: async (k: RequestInfo | URL, r: Response) => void m.set(String(k), r),
-  } as unknown as Cache;
-}
+const T0 = Date.parse('2026-10-20T18:00:00Z');
 
-function deps(answer: () => Response | Promise<Response>, cache: Cache | null = null) {
-  const fetch = vi.fn(async () => answer());
-  return { fetch, cache } satisfies RelayDeps;
+function deps(answer: () => Response | Promise<Response>) {
+  const fetch = vi.fn<RelayDeps['fetch']>(async () => answer());
+  const clock = { t: T0 };
+  return { fetch, memo: { body: null, at: 0 }, now: () => clock.t, clock } satisfies RelayDeps & { clock: { t: number } };
 }
 
 const req = (path: string, init: { origin?: string; method?: string } = {}) =>
@@ -44,8 +38,13 @@ describe('the TAF relay', () => {
     expect(res.headers.get('access-control-allow-origin')).toBe(SITE_ORIGIN);
     expect(res.headers.get('cache-control')).toBe(`public, max-age=${CACHE_SECONDS}`);
     expect(await res.json()).toEqual(AWC_KOFF);
-    // One fixed URL, with its own user agent, as aviationweather.gov asks.
-    expect(d.fetch).toHaveBeenCalledWith(UPSTREAM, expect.objectContaining({ headers: expect.objectContaining({ 'user-agent': expect.stringMatching(/lspc-weather/) }) }));
+    // One fixed URL, with its own user agent, as aviationweather.gov asks,
+    // and a deadline of its own.
+    const [url, init] = d.fetch.mock.calls[0];
+    expect(url).toBe(UPSTREAM);
+    expect(new Headers(init.headers).get('user-agent')).toMatch(/lspc-weather/);
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(UPSTREAM_TIMEOUT_MS).toBeLessThan(12_000);
   });
 
   it('refuses another site’s page, and fetches nothing for it', async () => {
@@ -80,13 +79,19 @@ describe('the TAF relay', () => {
     expect(ALLOWED_ORIGINS).toEqual([SITE_ORIGIN, 'http://localhost:5173', 'http://localhost:4173']);
   });
 
-  it('asks upstream once per cache period however many readers ask', async () => {
-    const d = deps(() => Response.json(AWC_KOFF), memoryCache());
+  it('asks upstream once per cache period however many readers ask, then again', async () => {
+    const d = deps(() => Response.json(AWC_KOFF));
     for (let i = 0; i < 3; i++) {
       const res = await handle(req(PATH, { origin: SITE_ORIGIN }), d);
       expect(await res.json()).toEqual(AWC_KOFF);
     }
     expect(d.fetch).toHaveBeenCalledTimes(1);
+    d.clock.t = T0 + CACHE_SECONDS * 1000 - 1;
+    await handle(req(PATH), d);
+    expect(d.fetch).toHaveBeenCalledTimes(1);
+    d.clock.t = T0 + CACHE_SECONDS * 1000;
+    await handle(req(PATH), d);
+    expect(d.fetch).toHaveBeenCalledTimes(2);
   });
 
   it('reads aviationweather.gov’s 204, no data, as an empty list', async () => {
@@ -96,13 +101,16 @@ describe('the TAF relay', () => {
   });
 
   it('answers 502 when aviationweather.gov fails, and keeps no failure in the cache', async () => {
-    const cache = memoryCache();
     let n = 0;
-    const d = deps(() => (n++ === 0 ? new Response('busy', { status: 429 }) : Response.json(AWC_KOFF)), cache);
+    const d = deps(() => (n++ === 0 ? new Response('busy', { status: 429 }) : Response.json(AWC_KOFF)));
     const first = await handle(req(PATH, { origin: SITE_ORIGIN }), d);
     expect(first.status).toBe(502);
     expect(first.headers.get('access-control-allow-origin')).toBe(SITE_ORIGIN);
-    expect((await handle(req(PATH, { origin: SITE_ORIGIN }), d)).status).toBe(200);
+    // The next reader gets a fresh answer, not the failure kept.
+    const second = await handle(req(PATH, { origin: SITE_ORIGIN }), d);
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual(AWC_KOFF);
+    expect(d.fetch).toHaveBeenCalledTimes(2);
     const down = deps(() => Promise.reject(new TypeError('fetch failed')));
     expect((await handle(req(PATH), down)).status).toBe(502);
   });
@@ -136,6 +144,8 @@ describe('the relay setting', () => {
     expect(tafRelayUrlFor('KOFF', null)).toBeNull();
     expect(tafRelayUrlFor('KOFF', BASE)).toBe(`${BASE}${PATH}`);
     expect(tafRelayUrlFor('KOMA', BASE)).toBeNull();
+    // An address pasted with its trailing slash still reaches the one path.
+    expect(tafRelayUrlFor('KOFF', `${BASE}/`)).toBe(`${BASE}${PATH}`);
   });
 
   it('adds the relay’s origin to the page’s connect-src, and only once it is set', () => {

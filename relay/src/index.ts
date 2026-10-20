@@ -5,11 +5,14 @@
  * map entry 'CACHE_SECONDS'", wrangler 4.151.3, 2026-10-20). The logic and
  * its constants are in relay.ts, where the tests import them.
  */
-import { handle } from './relay';
+import { handle, type RelayMemo } from './relay';
+
+// Lives as long as this copy of the Worker does; see relay.ts on why that
+// is a saving and not a promise.
+const memo: RelayMemo = { body: null, at: 0 };
 
 export default {
   fetch(request: Request): Promise<Response> {
-    const cache = (globalThis as unknown as { caches?: { default?: Cache } }).caches?.default ?? null;
-    return handle(request, { fetch: (u, init) => fetch(u, init), cache });
+    return handle(request, { fetch: (u, init) => fetch(u, init), memo, now: Date.now });
   },
 };

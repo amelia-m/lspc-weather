@@ -123,6 +123,12 @@ describe('TafPanel when a nearer station’s TAF had ended', () => {
     expect(both).toContain('Omaha Eppley Airfield (KOMA)’s latest TAF carries no forecast (NIL).');
   });
 
+  it('says a station’s TAF could not be fetched, with the error cut to its host', () => {
+    const failed = show([{ station: 'KOFF', failed: 'HTTP 502 from https://lspc-taf-relay.example.workers.dev/taf/KOFF' }]);
+    expect(failed).toContain('Offutt AFB (KOFF)’s TAF could not be fetched (HTTP 502 from lspc-taf-relay.example.workers.dev).');
+    expect(failed).not.toContain('does not carry it');
+  });
+
   it('drops the note that the nearer station is not carried, which an ended TAF shows is untrue', () => {
     expect(html).not.toContain('does not carry it');
     expect(render(KOMA_2026_09_24_0521, 'KOMA')).toContain('does not carry it');

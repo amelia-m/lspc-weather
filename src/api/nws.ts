@@ -192,8 +192,9 @@ export async function fetchTafAny(stations: readonly TafStationRef[]): Promise<T
 
 /** One station's TAF: through the TAF relay when it serves the station
  *  (Offutt's, which api.weather.gov does not carry), else from the NWS
- *  products feed. An error from the relay propagates like any fetch error,
- *  so the chain moves to the next station and Data health shows it. */
+ *  products feed. An error from the relay propagates like any fetch error:
+ *  the chain moves to the next station and lists the failure in
+ *  `passedOver`, which the card prints and the source log records. */
 async function fetchTafFrom(station: string, productLocation: string): Promise<TafForecast | null> {
   const relay = tafRelayUrlFor(station);
   if (relay != null) return tafFromAwcJson(await fetchJson<unknown>(relay), station);
