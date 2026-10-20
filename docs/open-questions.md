@@ -567,6 +567,19 @@ repo has seen GitHub schedules run late. Keyed services (CheckWX and the
 like) would put the key in the public page. Until one is chosen, the card
 shows the next station, KOMA, and links Offutt's TAF.
 
+Read again 2026-10-20. aviationweather.gov's API and NOAA's raw file
+still send no CORS header, and both held the TAF issued Monday 19
+October 18Z, valid to Tuesday 24Z: a weekday issue, as expected. The
+gap read on 10-13 ran from Saturday 13Z to Tuesday 10Z, over a weekend
+and the Columbus Day holiday (Monday 12 October), so for days a jumper
+might be at the DZ Offutt's TAF can stand unamended, while KOMA's is
+issued and amended every day. Offutt is about 20 mi from the DZ, KOMA
+about 32 and KLNK about 34. A third way in: `raw.githubusercontent.com`
+sends `access-control-allow-origin: *` (with `max-age=300`, read
+2026-10-20), so a looping workflow like the forecast keeper could push
+the TAF to a data branch the page reads from there, with no new account
+and no Pages deploy per copy, about 5 to 15 minutes behind.
+
 ## Live-site smoke test
 
 Run against live data on 2026-09-22 (first time the app had ever been exercised
