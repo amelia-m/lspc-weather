@@ -368,6 +368,16 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
   return { station, amendment, validFromMs, validToMs, periods, undecoded };
 }
 
+/** When a TAF's valid period ends, or null when its header gives none (an
+ *  undecodable header, NIL or CNL). Offutt's TAF is not issued over weekends
+ *  and holidays: one read on 2026-10-13 was issued Saturday 10Z, valid to
+ *  Sunday 16Z, with the next issue Tuesday 10Z. So a TAF can come back from
+ *  a feed for days after it stopped saying anything about now, and the
+ *  chain needs this to pass over it (docs/open-questions.md, "KOFF's TAF"). */
+export function tafValidToMs(raw: string, issuedMs: number | null): number | null {
+  return decodeTaf(raw, issuedMs)?.validToMs ?? null;
+}
+
 /**
  * The conditions prevailing at a row: the last BASE or FM period before it,
  * with every BECMG between the two laid over it, since a BECMG's stated

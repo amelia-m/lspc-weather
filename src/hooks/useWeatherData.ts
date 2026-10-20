@@ -273,13 +273,14 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
           logSource('taf', 'success', `TAF from ${taf.station}`);
           updateSource('taf', okStatus());
         } else {
-          // The whole chain came back product-less: an NWS feed gap, not a
-          // success. Mark it so Data health shows the gap and the quick
-          // retry / next poll keeps trying.
+          // The whole chain came back with nothing in force: no product, or
+          // only TAFs that had ended. A feed gap, not a success. Mark it so
+          // Data health shows the gap and the quick retry / next poll keeps
+          // trying.
           const err = new Error(
-            `NWS product feed listed no TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`,
+            `NWS product feed listed no current TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`,
           );
-          logSource('taf', 'failure', 'No TAF in NWS feed', err);
+          logSource('taf', 'failure', 'No current TAF in NWS feed', err);
           markStale('taf', err);
         }
       })
