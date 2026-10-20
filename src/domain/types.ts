@@ -148,6 +148,15 @@ export interface TafForecast {
   issuedMs: number | null;
   /** Raw valid-period token, e.g. "2718/2824" (UTC day/hour). */
   validRaw: string | null;
+  /** Nearer stations whose latest TAF had already ended when this one was
+   *  fetched (fetchTafChain), so the card can say why it shows this one. */
+  passedOver?: TafPassedOver[];
+}
+
+/** A station the TAF chain skipped because its latest TAF had ended. */
+export interface TafPassedOver {
+  station: string;
+  validToMs: number;
 }
 
 /** Where the winds-aloft levels came from: Open-Meteo (its 10 to 180 m

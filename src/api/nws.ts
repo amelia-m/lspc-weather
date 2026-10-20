@@ -10,12 +10,14 @@ import {
   type RawNwsObservation,
   type RawNwsProduct,
 } from '../domain/normalize';
+import { tafValidToMs } from '../domain/taf';
 import { interpolateWindsAloft } from '../domain/windsAloft';
 import type {
   CurrentConditions,
   DailyPoint,
   HourlyPoint,
   TafForecast,
+  TafPassedOver,
   WindsAloftForecast,
 } from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
@@ -182,16 +184,20 @@ export interface TafStationRef {
   nwsProductLocation: string;
 }
 
-/** Injectable dependency so the fallback logic is unit-testable. */
+/** Injectable dependencies so the fallback logic is unit-testable. */
 interface TafChainDeps {
   fetchOne: (station: string, productLocation: string) => Promise<TafForecast | null>;
+  now?: () => number;
 }
 
 /**
- * Try each TAF station in preference order and return the first available
- * TAF (its `station` field says which one the card is showing). A station
- * yielding no product is normal (see fetchTaf) and falls through; a fetch
- * error also falls through so one bad request doesn't blank the card. If
+ * Try each TAF station in preference order and return the first TAF still
+ * in force (its `station` field says which one the card is showing). A
+ * station yielding no product is normal (see fetchTaf) and falls through; so
+ * does one whose latest TAF has ended (`tafValidToMs`), recorded in
+ * `passedOver` so the card can say why it shows a farther station. A TAF
+ * whose end cannot be read is kept: the card prints its text either way. A
+ * fetch error also falls through so one bad request doesn't blank the card. If
  * nothing succeeded and ANY station errored, the last error propagates —
  * "KOFF has no product (as always) and the rest failed" must read as a
  * failure, not as "no TAF anywhere".
@@ -201,10 +207,17 @@ export async function fetchTafChain(
   deps: TafChainDeps = { fetchOne: fetchTaf },
 ): Promise<TafForecast | null> {
   let lastErr: unknown = null;
+  const passedOver: TafPassedOver[] = [];
   for (const s of stations) {
     try {
       const taf = await deps.fetchOne(s.id, s.nwsProductLocation);
-      if (taf) return taf;
+      if (!taf) continue;
+      const endMs = tafValidToMs(taf.raw, taf.issuedMs);
+      if (endMs != null && endMs <= (deps.now ?? Date.now)()) {
+        passedOver.push({ station: taf.station, validToMs: endMs });
+        continue;
+      }
+      return passedOver.length ? { ...taf, passedOver } : taf;
     } catch (err) {
       lastErr = err;
     }

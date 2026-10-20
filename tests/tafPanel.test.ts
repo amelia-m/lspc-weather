@@ -103,3 +103,19 @@ describe('TafPanel without a decodable forecast', () => {
     expect(koff).not.toContain('does not carry it');
   });
 });
+
+describe('TafPanel when a nearer station’s TAF had ended', () => {
+  const taf = parseTaf(KOMA_2026_09_24_0521.productText!, 'KOMA', KOMA_2026_09_24_0521.issuanceTime);
+  const passedOver = [{ station: 'KOFF', validToMs: Date.parse('2026-10-11T16:00:00Z') }];
+  const html = renderToStaticMarkup(createElement(TafPanel, { taf: { ...taf!, passedOver }, status: idle }));
+
+  it('says whose TAF ended, when, and why this station is shown', () => {
+    expect(html).toContain('Offutt AFB (KOFF)’s latest TAF ended at Sun 11:00 AM');
+    expect(html).toContain('the feed has no newer one, so this is the next');
+  });
+
+  it('drops the note that the nearer station is not carried, which an ended TAF shows is untrue', () => {
+    expect(html).not.toContain('does not carry it');
+    expect(render(KOMA_2026_09_24_0521, 'KOMA')).toContain('does not carry it');
+  });
+});

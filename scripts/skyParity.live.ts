@@ -30,7 +30,7 @@ import {
   type RawNwsObservation,
 } from '../src/domain/normalize';
 import { observedFlightCategory } from '../src/domain/flightCategory';
-import { decodeTaf, type TafPeriod } from '../src/domain/taf';
+import { decodeTaf, tafValidToMs, type TafPeriod } from '../src/domain/taf';
 import type { SkyLayer } from '../src/domain/types';
 
 const station = SITE.metarStation.id;
@@ -220,7 +220,11 @@ describe(`sky decode parity for ${station}`, () => {
               issuanceTime?: string;
             };
             const taf = parseTaf(product.productText ?? '', t.id, product.issuanceTime ?? latest.issuanceTime);
-            if (taf) shown = { station: taf.station, raw: taf.raw, issuedMs: taf.issuedMs };
+            // Passed over once ended, as the card's chain does (fetchTafChain).
+            const endMs = taf ? tafValidToMs(taf.raw, taf.issuedMs) : null;
+            if (taf && !(endMs != null && endMs <= Date.now())) {
+              shown = { station: taf.station, raw: taf.raw, issuedMs: taf.issuedMs };
+            }
             break;
           } catch {
             // try the other list form, then the next station
@@ -229,7 +233,7 @@ describe(`sky decode parity for ${station}`, () => {
         if (shown) break;
       }
       if (!shown) {
-        say('[taf]  the NWS products feed listed no TAF for any station in the chain');
+        say('[taf]  the NWS products feed listed no current TAF for any station in the chain');
         return;
       }
       const theirs = awc.find((x) => x.icaoId === shown!.station);

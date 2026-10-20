@@ -94,7 +94,17 @@ export function TafPanel({
         Terminal Aerodrome Forecast for {st.name} ({st.id}), ~{miles} mi {bearing} of the drop zone
         (KPMV issues no TAF). Regional guidance, not field-specific to NE69.
       </p>
-      {taf && taf.station !== primary.id && (
+      {taf?.passedOver?.map((p) => {
+        const s = tafStations.find((t) => t.id === p.station);
+        return (
+          <p className="muted small" key={p.station}>
+            {s ? `${s.name} (${p.station})` : p.station}&rsquo;s latest TAF ended at{' '}
+            {fmtClock(p.validToMs)}, and the feed has no newer one, so this is the next
+            station&rsquo;s.
+          </p>
+        );
+      })}
+      {taf && taf.station !== primary.id && !taf.passedOver?.some((p) => p.station === primary.id) && (
         <p className="muted small">
           {primary.name} ({primary.id}) is nearer, but its TAF is issued by the USAF and the NWS
           feed this page reads does not carry it, so this is the next-nearest station. Read{' '}
@@ -111,7 +121,7 @@ export function TafPanel({
             ? `TAF unavailable — ${status.error}. Retrying automatically; the raw TAF is on the AWC link below.`
             : status.pending
               ? 'Fetching TAF…'
-              : `No TAF available from ${tafStations.map((s) => s.id).join(', ')}.`}
+              : `No current TAF available from ${tafStations.map((s) => s.id).join(', ')}.`}
         </p>
       ) : (
         <>

@@ -235,6 +235,43 @@ describe('fetchTafChain', () => {
     await expect(fetchTafChain(STATIONS, { fetchOne })).resolves.toBeNull();
   });
 
+  describe('a TAF whose valid period has ended', () => {
+    // Offutt's weekend gap as read on 2026-10-13: issued Saturday 10 October
+    // 10Z, valid to Sunday 16Z, next issue Tuesday 10Z.
+    const issuedMs = Date.parse('2026-10-10T10:00:00Z');
+    const endMs = Date.parse('2026-10-11T16:00:00Z');
+    const offutt = { station: 'KOFF', raw: 'KOFF 101000Z 1010/1116 17010KT 9999 FEW050', issuedMs, validRaw: '1010/1116' };
+    const fetchOne = vi.fn(async (id: string) => (id === 'KOFF' ? offutt : taf(id)));
+
+    it('is passed over for the next station, and the result says so', async () => {
+      const out = await fetchTafChain(STATIONS, { fetchOne, now: () => Date.parse('2026-10-12T15:00:00Z') });
+      expect(out?.station).toBe('KOMA');
+      expect(out?.passedOver).toEqual([{ station: 'KOFF', validToMs: endMs }]);
+    });
+
+    it('is passed over from the moment it ends, and kept until then', async () => {
+      const at = await fetchTafChain(STATIONS, { fetchOne, now: () => endMs });
+      expect(at?.station).toBe('KOMA');
+      const before = await fetchTafChain(STATIONS, { fetchOne, now: () => endMs - 1 });
+      expect(before?.station).toBe('KOFF');
+      expect(before?.passedOver).toBeUndefined();
+    });
+
+    it('gives null, not an ended TAF, when every station has only ended ones', async () => {
+      const ended = vi.fn(async (id: string) => ({ ...offutt, station: id, raw: offutt.raw.replace('KOFF', id) }));
+      await expect(
+        fetchTafChain(STATIONS, { fetchOne: ended, now: () => Date.parse('2026-10-12T15:00:00Z') }),
+      ).resolves.toBeNull();
+    });
+  });
+
+  it('keeps a TAF whose end cannot be read', async () => {
+    // `taf()` has no valid-period group, so its end is unknown.
+    const fetchOne = vi.fn(async (id: string) => taf(id));
+    const out = await fetchTafChain(STATIONS, { fetchOne, now: () => Date.parse('2030-01-01T00:00:00Z') });
+    expect(out?.station).toBe('KOFF');
+  });
+
   it('throws only when every station errors', async () => {
     const fetchOne = vi.fn(async () => {
       throw new HttpError(500, 'x');

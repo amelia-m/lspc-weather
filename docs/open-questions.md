@@ -599,10 +599,16 @@ work unrelated to building, testing, deploying or publishing the
 repository's project. A job polling for a TAF all day, to serve a page,
 reads closer to that than a forecast archive for scoring does, and the
 keeper and the samplers already sit in the same grey area. Read the
-terms before choosing the workflow route. If the relay is chosen, a
-TAF past its valid time (Offutt's weekend gap) must still fall back to
-KOMA, which the chain does not do today: it falls back only on no
-product.
+terms before choosing the workflow route.
+
+Either route needed the chain to pass over a TAF past its valid time
+(Offutt's weekend gap), and since 2026-10-20 it does, at the maintainer's
+word: `fetchTafChain` moves to the next station when the latest TAF's
+valid period has ended (`tafValidToMs`, src/domain/taf.ts), and the card
+names the station passed over and when its TAF ended. A TAF whose end
+cannot be read is kept. The sky-parity script's own copy of the chain
+follows the same rule. A cancelled (`CNL`) or `NIL` TAF has no valid
+period and is still shown as it stands.
 
 ## Live-site smoke test
 
