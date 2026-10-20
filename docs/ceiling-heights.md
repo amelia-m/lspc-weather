@@ -335,7 +335,12 @@ fail with the behaviour it names broken (21 breaks, one at a time,
   points, 1,680 lines, is 6.9 KB) and about 8 KB of reports
   (`metar-2026-10-10-to-2026-10-15.jsonl.gz`, 410 reports, is 6.4 KB):
   about 15 KB a week, under 1 MB a year, against a repository GitHub
-  gave as 15.7 MB (the API's `size`, read 2026-10-17). The data file
+  gave as 15.7 MB (the API's `size`, read 2026-10-17; 15,715 KB again
+  on 2026-10-20). The first scheduled run, 2026-10-19, covered two days
+  and added 6.1 KB. For scale, the `forecast-archive` branch held 0.39 MB
+  in 96 files on 2026-10-20, kept since 2026-10-13, about
+  20 MB a year: the faster grower, and still far below GitHub's
+  1 GB recommended repository size. The data file
   changes in its long lines of values and curves: adding 17 hours on
   2026-10-17 changed 134 of its lines, a 15 KB diff (2.3 KB gzipped),
   while the file grew by 96 bytes, since only hours with a ceiling on
