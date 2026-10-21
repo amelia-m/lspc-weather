@@ -31,6 +31,7 @@ import {
   type RawOpenMeteo,
 } from '../src/domain/normalize';
 import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
+import { openMeteoRunMeta, type OpenMeteoRunMeta } from '../src/domain/surfaceWindSources';
 
 interface Schulze {
   validtime: string;
@@ -60,6 +61,26 @@ async function schulze(hourOffset: number): Promise<Schulze | null> {
     if (!res.ok) return null;
     const text = await res.text();
     return text.trimStart().startsWith('{') ? (JSON.parse(text) as Schulze) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The Open-Meteo models this app's winds-aloft request can be served from
+ *  here: on 2026-09-24 Schulze's raw 700 hPa level matched `best_match`,
+ *  `gfs_seamless` and `ncep_hrrr_conus` exactly (docs/open-questions.md,
+ *  "Which forecast run the winds-aloft request is served"). Their metadata
+ *  is logged with each comparison (`omRuns`, src/domain/runAge.ts). */
+const RUN_DOMAINS = ['ncep_hrrr_conus', 'ncep_gfs025'] as const;
+
+/** One model's metadata, or null when it cannot be read: the comparison
+ *  goes on without it. */
+async function runMeta(domain: string): Promise<OpenMeteoRunMeta | null> {
+  try {
+    const res = await fetch(`https://api.open-meteo.com/data/${domain}/static/meta.json`, {
+      signal: AbortSignal.timeout(10_000),
+    });
+    return res.ok ? openMeteoRunMeta((await res.json()) as Parameters<typeof openMeteoRunMeta>[0]) : null;
   } catch {
     return null;
   }
@@ -102,6 +123,9 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
 
   // The app's own request and normaliser, with a plain fetch in place of the
   // app's (which would read the fixture under vitest's DEV flag).
+  // Read beside the request, so it says which runs were available when the
+  // request was served.
+  const runsP = Promise.all(RUN_DOMAINS.map(async (d) => [d, await runMeta(d)] as const));
   let raw: RawOpenMeteo;
   try {
     const res = await fetch(openMeteoWindsUrl(dz.lat, dz.lon), { signal: AbortSignal.timeout(20_000) });
@@ -185,6 +209,7 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     // point's.
     dz: `${SITE.dz.lat},${SITE.dz.lon}`,
     unaligned,
+    omRuns: Object.fromEntries(await runsP),
   };
   if (ms == null) {
     say([...out, 'No Schulze table for the same hour; nothing compared.', record({ ...base, aligned: null })]);
