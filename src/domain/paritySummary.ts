@@ -16,7 +16,7 @@
  * exactly the kind of outlier a mean would smear across every row.
  */
 import { SITE } from '../config/site';
-import type { OpenMeteoRunMeta } from './surfaceWindSources';
+import type { RunsSeen } from './runAge';
 
 /** One run of the Schulze comparison. `aligned` is null when no Schulze table
  *  matched the app's hour; `error` set means nothing was compared. */
@@ -53,12 +53,12 @@ export interface SchulzeRecord {
    *  signal. null when it could not be judged. */
   rawMismatch?: boolean | null;
   /** Open-Meteo's metadata for the models the request can be served from
-   *  (`RUN_DOMAINS`, scripts/schulzeCompare.live.ts), read just before the
-   *  request: when each one's latest run became available. From 2026-10-21,
-   *  to test whether `rawMismatch` clusters in the minutes after a new run
-   *  arrives (src/domain/runAge.ts). null for a domain whose metadata could
-   *  not be read. */
-  omRuns?: Record<string, OpenMeteoRunMeta | null>;
+   *  (`RUN_DOMAINS`, scripts/schulzeCompare.live.ts), read several times
+   *  while the request was made: the newest run seen, when it became
+   *  available, and whether the servers disagreed (`RunsSeen`). From
+   *  2026-10-21, to test whether `rawMismatch` follows a new run's arrival
+   *  (src/domain/runAge.ts). null for a domain no read could get. */
+  omRuns?: Record<string, RunsSeen | null>;
   /** The point both sides were read at, "lat,lon", from 2026-10-08; absent
    *  on records taken at the earlier point (40.8675,-96.11). */
   dz?: string;

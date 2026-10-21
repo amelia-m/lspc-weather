@@ -16,26 +16,55 @@
  * availability time, whatever the minute of the clock. If they do not, the
  * cause is elsewhere: the tool's next-hour request, say.
  *
- * Counts only: how many comparisons fell in each band of minutes since the
- * latest run, and how many of those were flagged. The flag is itself a
+ * Two ways to look, both counts only:
+ * - by minutes since the newest run any read saw became available
+ *   (`mismatchByRunAge`);
+ * - by whether the metadata reads made during the comparison disagreed,
+ *   which is the copying caught in the act (`mismatchBySplit`).
+ *
+ * One server's availability time can lag another's by minutes, or by a
+ * whole run while the copying goes on, so a single read can put a
+ * copying-caused mismatch an hour from the run that caused it. Hence
+ * several reads, and the newest run among them. The flag is itself a
  * heuristic (two raw levels within 150 ft more than 5° or 2 kt apart), not
  * a run identifier.
  */
 import type { SchulzeRecord } from './paritySummary';
+import type { OpenMeteoRunMeta } from './surfaceWindSources';
 
-/** Minutes since a run became available: the first quarter hour, when the
- *  servers may still differ, then wider bands. */
+/** One model's metadata as several reads at once saw it. */
+export interface RunsSeen extends OpenMeteoRunMeta {
+  /** Reads that answered. */
+  reads: number;
+  /** Distinct (initialisation, availability) pairs among them: more than
+   *  one means the servers answering held different copies. */
+  variants: number;
+}
+
+/** The newest run among the reads (latest initialisation, then latest
+ *  availability), with how many reads answered and how many versions they
+ *  held; null when none answered. */
+export function runsSeen(reads: readonly (OpenMeteoRunMeta | null)[]): RunsSeen | null {
+  const ok = reads.filter((r): r is OpenMeteoRunMeta => r != null);
+  if (ok.length === 0) return null;
+  const key = (r: OpenMeteoRunMeta) => `${r.init ?? ''}|${r.avail ?? ''}`;
+  const newest = [...ok].sort((a, b) => key(b).localeCompare(key(a)))[0];
+  return { ...newest, reads: ok.length, variants: new Set(ok.map(key)).size };
+}
+
+/** Minutes since a run became available. The first band starts below zero:
+ *  the reads are made while the comparison runs, so a run that arrived in
+ *  those seconds has a small negative age and belongs with the newest. */
 export const RUN_AGE_BANDS: readonly { fromMin: number; toMin: number }[] = [
-  { fromMin: 0, toMin: 15 },
+  { fromMin: -Infinity, toMin: 15 },
   { fromMin: 15, toMin: 30 },
   { fromMin: 30, toMin: 60 },
   { fromMin: 60, toMin: Infinity },
 ];
 
-/** Minutes from `domain`'s latest availability time to the comparison's
- *  start, or null when the record has no usable metadata for it. A negative
- *  age (the metadata newer than the run's own clock) is returned as is and
- *  falls in no band. */
+/** Minutes from `domain`'s newest availability time seen to the
+ *  comparison's start, or null when the record has no usable metadata for
+ *  it. Negative when the run arrived while the comparison ran. */
 export function runAgeMinutes(r: SchulzeRecord, domain: string): number | null {
   const avail = r.omRuns?.[domain]?.avail;
   if (avail == null) return null;
@@ -61,6 +90,29 @@ export function mismatchByRunAge(records: readonly SchulzeRecord[], domain: stri
     if (age == null) continue;
     const row = rows.find((b) => age >= b.fromMin && age < b.toMin);
     if (!row) continue;
+    row.n += 1;
+    if (r.rawMismatch) row.mismatched += 1;
+  }
+  return rows;
+}
+
+export interface SplitRow {
+  /** Whether the reads during the comparison held different versions. */
+  serversDisagreed: boolean;
+  n: number;
+  mismatched: number;
+}
+
+/** Judged comparisons by whether `domain`'s metadata reads disagreed (two
+ *  or more answered and `variants` > 1) or agreed. Records with fewer than
+ *  two answering reads cannot say, and are left out. */
+export function mismatchBySplit(records: readonly SchulzeRecord[], domain: string): SplitRow[] {
+  const rows = [false, true].map((serversDisagreed) => ({ serversDisagreed, n: 0, mismatched: 0 }));
+  for (const r of records) {
+    if (r.kind !== 'schulze' || typeof r.rawMismatch !== 'boolean') continue;
+    const seen = r.omRuns?.[domain];
+    if (seen == null || seen.reads < 2) continue;
+    const row = rows[seen.variants > 1 ? 1 : 0];
     row.n += 1;
     if (r.rawMismatch) row.mismatched += 1;
   }

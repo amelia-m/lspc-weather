@@ -246,24 +246,39 @@ moment apart landing on different servers would look exactly like this.
 Logging that metadata beside each Schulze comparison would test it.
 
 **Logged since 2026-10-21.** Each Schulze comparison records the
-metadata of `ncep_hrrr_conus` and `ncep_gfs025` (`omRuns`,
-`RUN_DOMAINS` in scripts/schulzeCompare.live.ts), read beside the app's
-request. `mismatchByRunAge` (src/domain/runAge.ts, tested) counts the
-judged comparisons by minutes since each model's latest availability
-time (0 to 15, 15 to 30, 30 to 60, 60 and more) and how many in each were
-flagged. If the copying explains the mismatches, they sit in the first
-band whatever the minute of the clock. The comparisons run eight times a
-day plus the daily sky-parity run, so a reading needs a few weeks.
+metadata of `ncep_hrrr_conus` and `ncep_gfs025` (`omRuns`, `RUN_DOMAINS`
+in scripts/schulzeCompare.live.ts). Open-Meteo's GFS & HRRR page lists
+"GFS Pressure Variables" at 0.25°, which is why GFS is the 0.25° domain
+(read 2026-10-21). Each model's metadata is read three times at once,
+started with the app's request. The record keeps the newest run any read
+saw, how many reads answered, and how many versions they held
+(`runsSeen`). A failed comparison's record carries it too.
 
-A first sign from the sandbox the same day: eight reads of HRRR's
-`meta.json` a second apart, at about 18:02Z, all gave the same run
-(initialised 16Z, modified 17:28:03Z) but two availability times,
-17:39:33Z in four and 17:37:20Z in one. Three more got no answer, the
-sandbox proxy's slow connections to Open-Meteo (CLAUDE.md). The run's
-availability time differs by the server answering, so a run reaches
-Open-Meteo's servers at different moments, as the copying explanation
-needs. A record's `avail` is the time on whichever server answered, and
-can be a couple of minutes off another's.
+`scripts/runAge.ts` prints two counts (src/domain/runAge.ts, tested):
+- **By minutes since the newest run became available.** The first band
+  takes runs that arrived while the comparison ran.
+- **By whether the reads disagreed:** the copying caught in the act.
+
+If the copying explains the mismatches, they sit in the first band, and
+above all where the reads disagreed, whatever the minute of the clock.
+The comparisons run eight times a day plus the daily sky-parity run, and
+the archive keeps them (`parity-logs-<day>`), so a reading needs a few
+weeks:
+
+    npx tsx scripts/runAge.ts --logs data/parity/parity-logs-*.jsonl.gz
+
+The archive's Schulze records set the flag 296 times to October 17 (13
+flagged), so there is something to count.
+
+**Why several reads.** Eight reads of HRRR's `meta.json` from the
+sandbox at about 18:02Z on 2026-10-21, a second apart, all gave the same
+run (initialised 16Z, modified 17:28:03Z), but with two availability
+times: 17:39:33Z in four and 17:37:20Z in one. The other three got no
+answer, the sandbox proxy's slow connections to Open-Meteo (CLAUDE.md).
+So a run reaches Open-Meteo's servers at different moments, as the
+copying explanation needs. One read gives only the time on whichever
+server answered, which can lag by minutes, or by a whole run while the
+copying goes on.
 
 ## Surface wind: which forecast source
 
