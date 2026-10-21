@@ -1,6 +1,6 @@
-import type { ObservationSource, SkyDecodeCheck, SourceKey, TafForecast, WeatherSnapshot } from './types';
+import type { ObservationSource, SkyDecodeCheck, SourceKey, TafForecast, TafPassedOver, WeatherSnapshot } from './types';
 import { SITE } from '../config/site';
-import { TAF_RELAY_URL } from '../config/tafRelay';
+import { STATION as RELAY_STATION } from '../../relay/src/station';
 
 /** Which provider a source is currently served from, and whether that is the
  *  primary source or a fallback (e.g. Open-Meteo unreachable → NOAA FD). */
@@ -48,30 +48,35 @@ export function describeObservationFeed(
   return { detail: `${FEED_LABEL[source]} · ${vs}`, fallback: source === 'nws' };
 }
 
+/** Why the TAF chain passed over a station, in a few words, for the Data
+ *  health chip and the source log. `relay` says whether the relay is set:
+ *  then the station it serves was asked of aviationweather.gov, and the
+ *  rest, like every station without it, of the NWS feed. "Fetch failed" is
+ *  the request to that feed failing, so with the relay set it is the relay
+ *  or aviationweather.gov behind it. */
+export function passedOverReason(p: TafPassedOver, relay: boolean): string {
+  if ('failed' in p) return `${p.station} fetch failed`;
+  if ('endedMs' in p) return `${p.station} TAF ended`;
+  if ('noForecast' in p) return `${p.station} TAF ${p.noForecast}`;
+  return relay && p.station === RELAY_STATION ? `no ${p.station} TAF on aviationweather.gov` : `${p.station} not in the NWS feed`;
+}
+
 /**
- * The TAF chip: the station shown and, when it is not the nearest, why the
- * nearer ones were passed over. Amber whenever it is not the nearest, as
+ * The TAF chip: the station shown and, when it is not the nearest, why each
+ * nearer one was passed over. Amber whenever it is not the nearest, as
  * before; what the reasons add is that a fault reads differently from the
  * ordinary cases. Without the relay Offutt's TAF is never in the NWS feed,
  * so "KOMA · KOFF not in the NWS feed" is the everyday chip. With it,
- * "KOFF fetch failed" is the relay down and "KOFF TAF ended" or "no KOFF
- * TAF on aviationweather.gov" is Offutt's weekend gap. Until 2026-10-21 the
- * chip said only "KOMA" in every one of these.
+ * "KOFF fetch failed" is the relay or aviationweather.gov failing, and
+ * "KOFF TAF ended" or "no KOFF TAF on aviationweather.gov" Offutt's weekend
+ * gap. Until 2026-10-21 the chip said only "KOMA" in every one of these.
  */
-export function describeTafSource(taf: TafForecast, relay: boolean = TAF_RELAY_URL != null): SourceProvenance {
+export function describeTafSource(taf: TafForecast, relay: boolean): SourceProvenance {
   const primary = SITE.tafStations[0].id;
   if (taf.station === primary) {
     return { detail: taf.via === 'aviationweather' ? `${primary} · aviationweather.gov via the relay` : primary, fallback: false };
   }
-  const passed = taf.passedOver ?? [];
-  const reasons = passed.map((p) =>
-    'failed' in p ? `${p.station} fetch failed` : 'endedMs' in p ? `${p.station} TAF ended` : `${p.station} TAF ${p.noForecast}`,
-  );
-  // A station that answered with nothing is not in passedOver: for the
-  // nearest, say which feed had nothing.
-  if (!passed.some((p) => p.station === primary)) {
-    reasons.unshift(relay ? `no ${primary} TAF on aviationweather.gov` : `${primary} not in the NWS feed`);
-  }
+  const reasons = (taf.passedOver ?? []).map((p) => passedOverReason(p, relay));
   return { detail: [taf.station, ...reasons].join(' · '), fallback: true };
 }
 
@@ -86,6 +91,9 @@ export function describeTafSource(taf: TafForecast, relay: boolean = TAF_RELAY_U
  *  unit-tested without rendering. */
 export function deriveProvenance(
   snapshot: WeatherSnapshot,
+  /** Whether the TAF relay is set (src/config/tafRelay.ts), for the TAF
+   *  chip's wording; passed in so this stays a function of its inputs. */
+  tafRelay: boolean,
 ): Partial<Record<SourceKey, SourceProvenance>> {
   const prov: Partial<Record<SourceKey, SourceProvenance>> = {};
 
@@ -112,7 +120,7 @@ export function deriveProvenance(
     prov.metar = feed ?? sky;
   }
 
-  if (snapshot.taf) prov.taf = describeTafSource(snapshot.taf);
+  if (snapshot.taf) prov.taf = describeTafSource(snapshot.taf, tafRelay);
 
   return prov;
 }

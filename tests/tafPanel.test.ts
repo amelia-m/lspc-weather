@@ -129,6 +129,17 @@ describe('TafPanel when a nearer station’s TAF had ended', () => {
     expect(failed).not.toContain('does not carry it');
   });
 
+  it('gives the nearest station’s “no TAF” its own note, and another station’s a line', () => {
+    const html = show([
+      { station: 'KOFF', none: true },
+      { station: 'KOMA', none: true },
+    ]);
+    expect(html).toContain('does not carry it');
+    expect(html).toContain('Omaha Eppley Airfield (KOMA) had no TAF in its feed.');
+    expect(html).not.toContain('Offutt AFB (KOFF) had no TAF');
+    expect(html).not.toContain('NIL');
+  });
+
   it('drops the note that the nearer station is not carried, which an ended TAF shows is untrue', () => {
     expect(html).not.toContain('does not carry it');
     expect(render(KOMA_2026_09_24_0521, 'KOMA')).toContain('does not carry it');
@@ -164,7 +175,7 @@ describe('TafPanel with the TAF relay', () => {
 
   it('says Offutt’s TAF was missing or unreachable, not that no feed carries it, once the relay is set', () => {
     const html = renderToStaticMarkup(createElement(TafPanel, { taf: omaha, status: idle, relay: true }));
-    expect(html).toContain('Offutt AFB (KOFF) is nearer, but aviationweather.gov had no TAF for it, or could not be reached, when this was fetched.');
+    expect(html).toContain('Offutt AFB (KOFF) is nearer, but aviationweather.gov had no TAF for it when this was fetched.');
     expect(html).not.toContain('does not carry it');
   });
 

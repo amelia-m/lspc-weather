@@ -21,7 +21,7 @@ describe('deriveProvenance', () => {
       windsAloftSource: 'open-meteo',
       dailySource: 'open-meteo',
       taf: { station: 'KOFF', raw: '', issuedMs: null, validRaw: null },
-    });
+    }, false);
     expect(prov.windsAloft).toEqual({ detail: 'Open-Meteo 10–180 m and pressure levels', fallback: false });
     expect(prov.daily).toEqual({ detail: 'Open-Meteo (10-day)', fallback: false });
     expect(prov.taf).toEqual({ detail: 'KOFF', fallback: false });
@@ -32,8 +32,8 @@ describe('deriveProvenance', () => {
       ...EMPTY,
       windsAloftSource: 'nws-fd',
       dailySource: 'nws-gridpoint',
-      taf: { station: 'KOMA', raw: '', issuedMs: null, validRaw: null },
-    });
+      taf: { station: 'KOMA', raw: '', issuedMs: null, validRaw: null, passedOver: [{ station: 'KOFF', none: true }] },
+    }, false);
     expect(prov.windsAloft?.fallback).toBe(true);
     expect(prov.windsAloft?.detail).toContain('NOAA FD');
     expect(prov.daily?.fallback).toBe(true);
@@ -44,7 +44,7 @@ describe('deriveProvenance', () => {
   });
 
   it('omits sources that have not loaded (single-provider or null)', () => {
-    const prov = deriveProvenance(EMPTY);
+    const prov = deriveProvenance(EMPTY, false);
     expect(prov.windsAloft).toBeUndefined();
     expect(prov.daily).toBeUndefined();
     expect(prov.taf).toBeUndefined();
@@ -60,7 +60,7 @@ describe('deriveProvenance', () => {
    * read "Clear" with nothing on screen to say why. */
   it('shows the METAR sky-decode comparison, amber unless the decodes agree', () => {
     const current = normalizeNwsObservation(OBSERVATION_FIXTURE, 'KPMV');
-    expect(deriveProvenance({ ...EMPTY, current })).toMatchObject({
+    expect(deriveProvenance({ ...EMPTY, current }, false)).toMatchObject({
       metar: { fallback: false, detail: expect.stringContaining('decode agrees') },
     });
     const gap = normalizeNwsObservation(
@@ -73,7 +73,7 @@ describe('deriveProvenance', () => {
       },
       'KPMV',
     );
-    expect(deriveProvenance({ ...EMPTY, current: gap })).toMatchObject({
+    expect(deriveProvenance({ ...EMPTY, current: gap }, false)).toMatchObject({
       metar: { fallback: true, detail: expect.stringContaining('decode had none') },
     });
     // Text with no sky group but a decode is the API's ordinary shape for many
@@ -85,12 +85,12 @@ describe('deriveProvenance', () => {
         { properties: { ...OBSERVATION_FIXTURE.properties, rawMessage } },
         'KPMV',
       );
-      expect(deriveProvenance({ ...EMPTY, current: textless })).toMatchObject({
+      expect(deriveProvenance({ ...EMPTY, current: textless }, false)).toMatchObject({
         metar: { fallback: false, detail: expect.stringContaining('no sky group in the METAR text') },
       });
     }
     // The aviationweather path has one decode and nothing to compare.
-    expect(deriveProvenance({ ...EMPTY, current: { ...current, skyDecode: undefined } }).metar).toBeUndefined();
+    expect(deriveProvenance({ ...EMPTY, current: { ...current, skyDecode: undefined } }, false).metar).toBeUndefined();
   });
 
   /* Which feed served the observation, and how far behind the other feed's
@@ -101,10 +101,10 @@ describe('deriveProvenance', () => {
     const t0 = Date.parse('2026-09-27T20:15:00Z');
     const current = { ...normalizeNwsObservation(OBSERVATION_FIXTURE, 'KPMV')!, observedAt: t1 };
     expect(
-      deriveProvenance({ ...EMPTY, current: { ...current, source: 'iem' }, currentOtherObservedAt: t0 }).metar,
+      deriveProvenance({ ...EMPTY, current: { ...current, source: 'iem' }, currentOtherObservedAt: t0 }, false).metar,
     ).toEqual({ detail: 'IEM · NWS 20 min older · sky from METAR text · decode agrees', fallback: false });
     expect(
-      deriveProvenance({ ...EMPTY, current: { ...current, source: 'nws' }, currentOtherObservedAt: t0 }).metar,
+      deriveProvenance({ ...EMPTY, current: { ...current, source: 'nws' }, currentOtherObservedAt: t0 }, false).metar,
     ).toMatchObject({ detail: expect.stringMatching(/^NWS · IEM 20 min older · /), fallback: true });
     // The sky's amber survives a primary feed.
     expect(
@@ -112,7 +112,7 @@ describe('deriveProvenance', () => {
         ...EMPTY,
         current: { ...current, source: 'iem', skyDecode: 'decode-differs' },
         currentOtherObservedAt: t1,
-      }).metar,
+      }, false).metar,
     ).toMatchObject({ detail: expect.stringContaining('IEM · NWS same report'), fallback: true });
     // A feed with no sky comparison still gets its chip.
     expect(
@@ -120,7 +120,7 @@ describe('deriveProvenance', () => {
         ...EMPTY,
         current: { ...current, source: 'iem', skyDecode: undefined },
         currentOtherObservedAt: t0,
-      }).metar,
+      }, false).metar,
     ).toEqual({ detail: 'IEM · NWS 20 min older', fallback: false });
   });
 });
@@ -134,6 +134,8 @@ describe('describeObservationFeed', () => {
 
 describe('describeTafSource', () => {
   const omaha = { station: 'KOMA', raw: '', issuedMs: null, validRaw: null, via: 'nws' as const };
+  type Passed = NonNullable<Parameters<typeof describeTafSource>[0]['passedOver']>;
+  const say = (passedOver: Passed, relay = true) => describeTafSource({ ...omaha, passedOver }, relay);
 
   it('names Offutt’s TAF read through the relay, and is not amber', () => {
     expect(describeTafSource({ ...omaha, station: 'KOFF', via: 'aviationweather' }, true)).toEqual({
@@ -142,14 +144,17 @@ describe('describeTafSource', () => {
     });
   });
 
-  it('tells a broken relay apart from Offutt’s ordinary gaps, amber in each', () => {
-    const say = (passedOver: NonNullable<Parameters<typeof describeTafSource>[0]['passedOver']>) =>
-      describeTafSource({ ...omaha, passedOver }, true);
+  it('tells a failed fetch apart from Offutt’s ordinary gaps, amber in each', () => {
     expect(say([{ station: 'KOFF', failed: 'HTTP 502' }])).toEqual({ detail: 'KOMA · KOFF fetch failed', fallback: true });
     expect(say([{ station: 'KOFF', endedMs: 0 }]).detail).toBe('KOMA · KOFF TAF ended');
     expect(say([{ station: 'KOFF', noForecast: 'CNL' }]).detail).toBe('KOMA · KOFF TAF CNL');
-    // Offutt answered with no TAF at all: aviationweather.gov had none.
-    expect(describeTafSource(omaha, true)).toEqual({ detail: 'KOMA · no KOFF TAF on aviationweather.gov', fallback: true });
+    expect(say([{ station: 'KOFF', none: true }])).toEqual({ detail: 'KOMA · no KOFF TAF on aviationweather.gov', fallback: true });
+  });
+
+  it('says which feed had no TAF: the relay only for the station it serves', () => {
+    expect(say([{ station: 'KOFF', none: true }], false).detail).toBe('KOMA · KOFF not in the NWS feed');
+    const lincoln = { ...omaha, station: 'KLNK', passedOver: [{ station: 'KOFF', none: true }, { station: 'KOMA', none: true }] as Passed };
+    expect(describeTafSource(lincoln, true).detail).toBe('KLNK · no KOFF TAF on aviationweather.gov · KOMA not in the NWS feed');
   });
 
   it('lists every station passed over, in the chain’s order', () => {
@@ -159,12 +164,8 @@ describe('describeTafSource', () => {
       passedOver: [
         { station: 'KOFF', failed: 'HTTP 502' },
         { station: 'KOMA', endedMs: 0 },
-      ],
+      ] as Passed,
     };
     expect(describeTafSource(lincoln, true).detail).toBe('KLNK · KOFF fetch failed · KOMA TAF ended');
-    // Offutt had nothing, then Omaha's had ended.
-    expect(describeTafSource({ ...lincoln, passedOver: [{ station: 'KOMA', endedMs: 0 }] }, false).detail).toBe(
-      'KLNK · KOFF not in the NWS feed · KOMA TAF ended',
-    );
   });
 });
