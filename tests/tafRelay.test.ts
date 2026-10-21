@@ -131,11 +131,15 @@ describe('tafFromAwcJson', () => {
     expect(decodeTaf(taf!.raw, taf!.issuedMs)?.validToMs).toBe(Date.parse('2026-10-21T16:00:00Z'));
   });
 
-  it('gives null for no TAF, another station’s, or an answer of another shape', () => {
+  it('gives null only when the answer has no TAF for the station', () => {
     expect(tafFromAwcJson([], 'KOFF')).toBeNull();
     expect(tafFromAwcJson(AWC_KOFF, 'KOMA')).toBeNull();
-    expect(tafFromAwcJson({ error: 'x' }, 'KOFF')).toBeNull();
-    expect(tafFromAwcJson([{ icaoId: 'KOFF' }], 'KOFF')).toBeNull();
+  });
+
+  it('throws on an answer it cannot read, so the chain calls it a failure and not Offutt’s gap', () => {
+    expect(() => tafFromAwcJson({ error: 'x' }, 'KOFF')).toThrow(/not a list/);
+    expect(() => tafFromAwcJson([{ icaoId: 'KOFF' }], 'KOFF')).toThrow(/no TAF text/);
+    expect(() => tafFromAwcJson([{ icaoId: 'KOFF', rawTAF: 'garbage' }], 'KOFF')).toThrow(/could not be read/);
   });
 });
 

@@ -23,8 +23,8 @@ interface TafChainDeps {
  * in force (its `station` field says which one the card is showing). A
  * station yielding no product is normal (see fetchTaf, src/api/nws.ts) and
  * falls through; so does one whose latest TAF has ended or carries no
- * forecast (`tafStanding`), recorded in `passedOver` so the card can say why
- * it shows a farther station. A TAF whose end cannot be read is kept: the
+ * forecast (`tafStanding`). Each is recorded in `passedOver`, so the card
+ * and Data health can say why they show a farther station. A TAF whose end cannot be read is kept: the
  * card prints its text either way. A fetch error also falls through so one
  * bad request doesn't blank the card, and is recorded in `passedOver` too:
  * a broken relay would otherwise show only as Omaha's TAF on a card and a
@@ -41,7 +41,10 @@ export async function fetchTafChain(
   for (const s of stations) {
     try {
       const taf = await deps.fetchOne(s.id, s.nwsProductLocation);
-      if (!taf) continue;
+      if (!taf) {
+        passedOver.push({ station: s.id, none: true });
+        continue;
+      }
       const standing = tafStanding(taf.raw, taf.issuedMs, (deps.now ?? Date.now)());
       if (standing.state === 'ended') {
         passedOver.push({ station: taf.station, endedMs: standing.atMs });

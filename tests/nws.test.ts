@@ -204,10 +204,11 @@ describe('fetchTafChain', () => {
     expect(fetchOne).toHaveBeenCalledTimes(1);
   });
 
-  it('falls through a station with no product to the next one', async () => {
+  it('falls through a station with no product to the next one, and records it', async () => {
     const fetchOne = vi.fn(async (id: string) => (id === 'KOFF' ? null : taf(id)));
     const out = await fetchTafChain(STATIONS, { fetchOne });
     expect(out?.station).toBe('KOMA');
+    expect(out?.passedOver).toEqual([{ station: 'KOFF', none: true }]);
     expect(fetchOne).toHaveBeenCalledTimes(2);
   });
 

@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { passedOverReason } from '../domain/sourceProvenance';
+import { TAF_RELAY_URL } from '../config/tafRelay';
 import {
   fetchDailyFromGridpoint,
   fetchHourly,
@@ -270,8 +272,9 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
         if (taf) {
-          const passed = taf.passedOver?.map(
-            (p) => `${p.station} ${'failed' in p ? `failed: ${p.failed}` : 'endedMs' in p ? 'ended' : p.noForecast}`,
+          const relay = TAF_RELAY_URL != null;
+          const passed = taf.passedOver?.map((p) =>
+            'failed' in p ? `${passedOverReason(p, relay)}: ${p.failed}` : passedOverReason(p, relay),
           );
           logSource('taf', 'success', `TAF from ${taf.station}${passed?.length ? ` (passed over ${passed.join(', ')})` : ''}`);
           updateSource('taf', okStatus());

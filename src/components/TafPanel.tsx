@@ -125,9 +125,13 @@ export function TafPanel({
         Terminal Aerodrome Forecast for {st.name} ({st.id}), ~{miles} mi {bearing} of the drop zone
         (KPMV issues no TAF). Regional guidance, not field-specific to NE69.
       </p>
-      {taf?.passedOver?.map((p) => (
+      {/* The nearest station's "no TAF" has its own note below, with the
+          link to read it elsewhere. */}
+      {taf?.passedOver?.filter((p) => !('none' in p && p.station === primary.id)).map((p) => (
         <p className="muted small" key={p.station}>
-          {'failed' in p
+          {'none' in p
+            ? `${nameOf(p.station)} had no TAF in its feed.`
+            : 'failed' in p
             ? `${nameOf(p.station)}’s TAF could not be fetched (${shortError(p.failed)}).`
             : 'endedMs' in p
             ? `${nameOf(p.station)}’s latest TAF ended at ${fmtDateClock(p.endedMs)}, and the feed has no newer one.`
@@ -136,10 +140,13 @@ export function TafPanel({
               : `${nameOf(p.station)}’s latest TAF carries no forecast (NIL).`}
         </p>
       ))}
-      {taf && taf.station !== primary.id && !taf.passedOver?.some((p) => p.station === primary.id) && (
+      {/* Shown when the nearest station answered with no TAF, the everyday
+          case without the relay; not when it was passed over for a reason
+          of its own, which the notes above give. */}
+      {taf && taf.station !== primary.id && !taf.passedOver?.some((p) => p.station === primary.id && !('none' in p)) && (
         <p className="muted small">
           {relay
-            ? `${primary.name} (${primary.id}) is nearer, but aviationweather.gov had no TAF for it, or could not be reached, when this was fetched.`
+            ? `${primary.name} (${primary.id}) is nearer, but aviationweather.gov had no TAF for it when this was fetched.`
             : `${primary.name} (${primary.id}) is nearer, but its TAF is issued by the USAF and the NWS feed this page reads does not carry it.`}{' '}
           Read{' '}
           {primary.id}&rsquo;s TAF at{' '}

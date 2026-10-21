@@ -152,9 +152,10 @@ export interface TafForecast {
    *  aviationweather.gov through the TAF relay (relay/, src/config/tafRelay.ts),
    *  so the card can name and link the source it read. */
   via?: 'nws' | 'aviationweather';
-  /** Stations before this one in the chain whose latest TAF had ended,
-   *  carried no forecast, or could not be fetched (fetchTafChain), so the
-   *  card can say why it shows this one. */
+  /** Stations before this one in the chain, each with why it was passed
+   *  over: no TAF in its feed, a TAF that had ended or carried no forecast,
+   *  or a fetch that failed (fetchTafChain). The card, Data health and the
+   *  source log say why from it (`passedOverReason`). */
   passedOver?: TafPassedOver[];
 }
 
@@ -163,7 +164,11 @@ export type TafPassedOver =
   | { station: string; endedMs: number }
   | { station: string; noForecast: 'CNL' | 'NIL' }
   /** The fetch failed: the error's message. */
-  | { station: string; failed: string };
+  | { station: string; failed: string }
+  /** The station's feed answered with no TAF for it: api.weather.gov has
+   *  never had Offutt's, and aviationweather.gov has none in its window over
+   *  Offutt's weekend gaps. */
+  | { station: string; none: true };
 
 /** Where the winds-aloft levels came from: Open-Meteo (its 10 to 180 m
  *  winds and pressure levels) or the NOAA FD text-product fallback. */

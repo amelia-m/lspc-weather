@@ -1197,15 +1197,20 @@ export function normalizeOpenMeteoDaily(data: RawOpenMeteoDaily): DailyPoint[] {
  *  as the TAF relay passes it on unchanged: an array of TAFs, each with the
  *  full text in `rawTAF` ("TAF KOFF 201000Z 2010/2116 …") and the issue time
  *  in `issueTime`. Read 2026-10-20; an empty array is no TAF in its window.
- *  The text goes through `parseTaf`, the same reading as the NWS feed's. */
+ *  The text goes through `parseTaf`, the same reading as the NWS feed's.
+ *  Null only for that: no entry for the station. An answer it cannot read
+ *  (not a list, or a station entry with no TAF text it can parse) throws,
+ *  so the chain records a failure and does not call it Offutt's gap. */
 export function tafFromAwcJson(body: unknown, station: string): TafForecast | null {
-  if (!Array.isArray(body)) return null;
+  if (!Array.isArray(body)) throw new Error('aviationweather.gov answer is not a list of TAFs');
   const entry = body.find(
     (e): e is { icaoId: string; rawTAF?: unknown; issueTime?: unknown } =>
       typeof e === 'object' && e != null && (e as { icaoId?: unknown }).icaoId === station,
   );
-  if (!entry || typeof entry.rawTAF !== 'string') return null;
+  if (!entry) return null;
+  if (typeof entry.rawTAF !== 'string') throw new Error(`aviationweather.gov ${station} entry has no TAF text`);
   const issued = typeof entry.issueTime === 'string' ? entry.issueTime : undefined;
   const taf = parseTaf(entry.rawTAF, station, issued);
-  return taf ? { ...taf, via: 'aviationweather' } : null;
+  if (!taf) throw new Error(`aviationweather.gov ${station} TAF text could not be read`);
+  return { ...taf, via: 'aviationweather' };
 }

@@ -87,12 +87,20 @@ When the relay fails (a 502, the free plan's daily limit, the Worker
 deleted), the card says "Offutt AFB (KOFF)'s TAF could not be fetched",
 with the error, and the source log records it. On Data health the TAF
 row's status stays green, since a TAF is shown, but its chip is amber and
-says why (`describeTafSource`, src/domain/sourceProvenance.ts, since
-2026-10-21): "KOMA · KOFF fetch failed" is the relay down. "KOMA · KOFF TAF
-ended", "KOMA · KOFF TAF CNL" or "KOMA · no KOFF TAF on aviationweather.gov"
-are Offutt's own gaps. Before the relay is set, the everyday chip is "KOMA
-· KOFF not in the NWS feed". Until then the chip said only "KOMA" in every
-case, so a broken relay would have looked like any other day. Checked in a
+says why (`describeTafSource` and `passedOverReason`,
+src/domain/sourceProvenance.ts, since 2026-10-21):
+- "KOMA · KOFF fetch failed" is the request failing: the relay, or
+  aviationweather.gov behind it. An answer the app cannot read counts as a
+  failure too (`tafFromAwcJson` throws on it) and is not taken for a gap.
+- "KOMA · KOFF TAF ended", "KOMA · KOFF TAF CNL" and "KOMA · no KOFF TAF on
+  aviationweather.gov" are Offutt's own gaps.
+- Before the relay is set, the everyday chip is "KOMA · KOFF not in the NWS
+  feed".
+
+The chain records every station it passes over, a station with no TAF
+included, so the chip, the card and the source log read the same reasons
+rather than each working them out. Until then the chip said only "KOMA" in
+every case, so a broken relay would have looked like any other day. Checked in a
 production build on live data at 1280, 390 and 320 px: the no-relay chip
 wrapped onto three lines at 320 px, and no page scrolled sideways.
 
