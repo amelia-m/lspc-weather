@@ -1,5 +1,6 @@
-import type { ObservationSource, SkyDecodeCheck, SourceKey, WeatherSnapshot } from './types';
+import type { ObservationSource, SkyDecodeCheck, SourceKey, TafForecast, WeatherSnapshot } from './types';
 import { SITE } from '../config/site';
+import { TAF_RELAY_URL } from '../config/tafRelay';
 
 /** Which provider a source is currently served from, and whether that is the
  *  primary source or a fallback (e.g. Open-Meteo unreachable → NOAA FD). */
@@ -47,6 +48,33 @@ export function describeObservationFeed(
   return { detail: `${FEED_LABEL[source]} · ${vs}`, fallback: source === 'nws' };
 }
 
+/**
+ * The TAF chip: the station shown and, when it is not the nearest, why the
+ * nearer ones were passed over. Amber whenever it is not the nearest, as
+ * before; what the reasons add is that a fault reads differently from the
+ * ordinary cases. Without the relay Offutt's TAF is never in the NWS feed,
+ * so "KOMA · KOFF not in the NWS feed" is the everyday chip. With it,
+ * "KOFF fetch failed" is the relay down and "KOFF TAF ended" or "no KOFF
+ * TAF on aviationweather.gov" is Offutt's weekend gap. Until 2026-10-21 the
+ * chip said only "KOMA" in every one of these.
+ */
+export function describeTafSource(taf: TafForecast, relay: boolean = TAF_RELAY_URL != null): SourceProvenance {
+  const primary = SITE.tafStations[0].id;
+  if (taf.station === primary) {
+    return { detail: taf.via === 'aviationweather' ? `${primary} · aviationweather.gov via the relay` : primary, fallback: false };
+  }
+  const passed = taf.passedOver ?? [];
+  const reasons = passed.map((p) =>
+    'failed' in p ? `${p.station} fetch failed` : 'endedMs' in p ? `${p.station} TAF ended` : `${p.station} TAF ${p.noForecast}`,
+  );
+  // A station that answered with nothing is not in passedOver: for the
+  // nearest, say which feed had nothing.
+  if (!passed.some((p) => p.station === primary)) {
+    reasons.unshift(relay ? `no ${primary} TAF on aviationweather.gov` : `${primary} not in the NWS feed`);
+  }
+  return { detail: [taf.station, ...reasons].join(' · '), fallback: true };
+}
+
 /** Describe which provider each fallback-capable source is currently served
  *  from, so Data health can show primary vs fallback. The NWS forecast has a
  *  single provider and no chip. The METAR comes from one of two feeds (IEM,
@@ -84,10 +112,7 @@ export function deriveProvenance(
     prov.metar = feed ?? sky;
   }
 
-  if (snapshot.taf) {
-    const primaryTaf = SITE.tafStations[0].id;
-    prov.taf = { detail: snapshot.taf.station, fallback: snapshot.taf.station !== primaryTaf };
-  }
+  if (snapshot.taf) prov.taf = describeTafSource(snapshot.taf);
 
   return prov;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveProvenance, describeObservationFeed } from '../src/domain/sourceProvenance';
+import { deriveProvenance, describeObservationFeed, describeTafSource } from '../src/domain/sourceProvenance';
 import { normalizeNwsObservation } from '../src/domain/normalize';
 import { OBSERVATION_FIXTURE } from '../src/api/fixtures/observation';
 import type { WeatherSnapshot } from '../src/domain/types';
@@ -38,8 +38,9 @@ describe('deriveProvenance', () => {
     expect(prov.windsAloft?.detail).toContain('NOAA FD');
     expect(prov.daily?.fallback).toBe(true);
     expect(prov.daily?.detail).toContain('NWS gridpoint');
-    // A non-primary TAF station (not the first configured) is a fallback.
-    expect(prov.taf).toEqual({ detail: 'KOMA', fallback: true });
+    // A non-primary TAF station (not the first configured) is a fallback,
+    // and says why: with no relay set, Offutt's is not in the NWS feed.
+    expect(prov.taf).toEqual({ detail: 'KOMA · KOFF not in the NWS feed', fallback: true });
   });
 
   it('omits sources that have not loaded (single-provider or null)', () => {
@@ -128,5 +129,42 @@ describe('describeObservationFeed', () => {
   it('says when the other feed had nothing', () => {
     expect(describeObservationFeed('nws', 0, null)).toEqual({ detail: 'NWS · IEM had no report', fallback: true });
     expect(describeObservationFeed('iem', 0, undefined)).toEqual({ detail: 'IEM · NWS had no report', fallback: false });
+  });
+});
+
+describe('describeTafSource', () => {
+  const omaha = { station: 'KOMA', raw: '', issuedMs: null, validRaw: null, via: 'nws' as const };
+
+  it('names Offutt’s TAF read through the relay, and is not amber', () => {
+    expect(describeTafSource({ ...omaha, station: 'KOFF', via: 'aviationweather' }, true)).toEqual({
+      detail: 'KOFF · aviationweather.gov via the relay',
+      fallback: false,
+    });
+  });
+
+  it('tells a broken relay apart from Offutt’s ordinary gaps, amber in each', () => {
+    const say = (passedOver: NonNullable<Parameters<typeof describeTafSource>[0]['passedOver']>) =>
+      describeTafSource({ ...omaha, passedOver }, true);
+    expect(say([{ station: 'KOFF', failed: 'HTTP 502' }])).toEqual({ detail: 'KOMA · KOFF fetch failed', fallback: true });
+    expect(say([{ station: 'KOFF', endedMs: 0 }]).detail).toBe('KOMA · KOFF TAF ended');
+    expect(say([{ station: 'KOFF', noForecast: 'CNL' }]).detail).toBe('KOMA · KOFF TAF CNL');
+    // Offutt answered with no TAF at all: aviationweather.gov had none.
+    expect(describeTafSource(omaha, true)).toEqual({ detail: 'KOMA · no KOFF TAF on aviationweather.gov', fallback: true });
+  });
+
+  it('lists every station passed over, in the chain’s order', () => {
+    const lincoln = {
+      ...omaha,
+      station: 'KLNK',
+      passedOver: [
+        { station: 'KOFF', failed: 'HTTP 502' },
+        { station: 'KOMA', endedMs: 0 },
+      ],
+    };
+    expect(describeTafSource(lincoln, true).detail).toBe('KLNK · KOFF fetch failed · KOMA TAF ended');
+    // Offutt had nothing, then Omaha's had ended.
+    expect(describeTafSource({ ...lincoln, passedOver: [{ station: 'KOMA', endedMs: 0 }] }, false).detail).toBe(
+      'KLNK · KOFF not in the NWS feed · KOMA TAF ended',
+    );
   });
 });
