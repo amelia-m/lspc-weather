@@ -148,12 +148,14 @@ function comparePeriod(p: TafPeriod, f: AwcFcst): string[] {
   if (ourClouds.join(' ') !== theirClouds.join(' ')) {
     out.push(`clouds ${ourClouds.join(' ') || '(none)'} vs ${theirClouds.join(' ') || '(none)'}`);
   }
-  // QNH: theirs is hPa, rounded to whole, so ours converted must sit within
-  // half a hectopascal of it.
+  // QNH: theirs is whole hPa, so ours converted must round to it. A
+  // hectopascal is about three hundredths of an inch, so this catches a
+  // misread figure but not every off-by-one-hundredth: 30.17 and 30.18 both
+  // round to 1022.
   const theirQnh = present(f.altim) ? f.altim : null;
   if (p.qnhInHg != null || theirQnh != null) {
-    const oursHpa = p.qnhInHg != null ? p.qnhInHg * HPA_PER_INHG : null;
-    if (oursHpa == null || theirQnh == null || Math.abs(oursHpa - theirQnh) > 0.51) {
+    const oursHpa = p.qnhInHg != null ? Math.round(p.qnhInHg * HPA_PER_INHG) : null;
+    if (oursHpa == null || theirQnh == null || oursHpa !== theirQnh) {
       out.push(`QNH ${p.qnhInHg ?? '(none)'} inHg vs ${theirQnh ?? '(none)'} hPa`);
     }
   }
@@ -164,13 +166,14 @@ const HPA_PER_INHG = 33.8639;
 
 /** The TX/TN groups, which the app keeps for the whole forecast and
  *  aviationweather.gov on the period they are written in, as comparable
- *  lines: kind, °C and time. */
+ *  lines: kind, °C and time, sorted, since nothing says the two lists keep
+ *  the same order. */
 function tempLines(ours: DecodedTaf, theirs: AwcFcst[]): { ours: string[]; theirs: string[] } {
   return {
-    ours: ours.temperatures.map((t) => `${t.kind} ${t.tempC} ${t.atMs != null ? t.atMs / 1000 : '?'}`),
-    theirs: theirs.flatMap((f) =>
-      (f.temp ?? []).map((t) => `${t.maxOrMin === 'MAX' ? 'max' : 'min'} ${t.surfaceTemp} ${t.validTime ?? '?'}`),
-    ),
+    ours: ours.temperatures.map((t) => `${t.kind} ${t.tempC} ${t.atMs != null ? t.atMs / 1000 : '?'}`).sort(),
+    theirs: theirs
+      .flatMap((f) => (f.temp ?? []).map((t) => `${t.maxOrMin === 'MAX' ? 'max' : 'min'} ${t.surfaceTemp} ${t.validTime ?? '?'}`))
+      .sort(),
   };
 }
 

@@ -188,9 +188,13 @@ describe('TafPanel on a joint-use airport’s TAF', () => {
   const show = (tempUnit: 'F' | 'C') =>
     renderToStaticMarkup(createElement(TafPanel, { taf: offutt, status: idle, relay: true, tempUnit }));
 
-  it('says the altimeter and temperature groups in words, with their times, and cites the handbook', () => {
+  it('puts each period’s QNH in its own row, and says the temperatures in words, citing the handbook', () => {
     const html = show('F');
-    expect(html).toContain('Lowest altimeter setting (QNH) forecast: 30.17 inHg (prevailing, from Tue 5:00 AM).');
+    expect(html).toContain('<th>QNH</th>');
+    expect(html).toContain('<td>30.17 inHg</td>');
+    expect(html).toContain('QNH: the lowest altimeter setting forecast for the row’s period, inches of mercury.');
+    // The row's text is its own groups; the forecast-wide TX/TN are not in it.
+    expect(html).toContain('<tr title="16009KT 9999 FEW130 QNH3017INS">');
     expect(html).toContain('Maximum temperature 68°F at Tue 3:00 PM.');
     expect(html).toContain('Minimum temperature 45°F at Tue 5:00 AM.');
     expect(html).toContain('FAA-H-8083-28B.pdf');
@@ -204,6 +208,7 @@ describe('TafPanel on a joint-use airport’s TAF', () => {
   it('adds nothing to an NWS TAF, which has none of these groups', () => {
     const html = render(KOMA_2026_09_24_0521, 'KOMA');
     expect(html).not.toContain('QNH');
+    expect(html).not.toContain('Maximum temperature');
     expect(html).not.toContain('FAA-H-8083-28B');
   });
 });

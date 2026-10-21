@@ -62,16 +62,24 @@ altimeter setting (`QNH3012INS`) and the forecast's maximum and minimum
 temperatures with their times (`TX26/2121Z TN11/2211Z`). The FAA's
 Aviation Weather Handbook (FAA-H-8083-28B, 27.4.2.10.4, read
 2026-10-21) describes them as the joint-use airport format. Since
-2026-10-21 the card decodes them and says them in words under the table:
-"Lowest altimeter setting (QNH) forecast: 30.12 inHg (prevailing, from
-Wed 1:00 PM) … Maximum temperature 79°F at Wed 4:00 PM.", in the page's
-°F/°C setting, citing the handbook. The daily sky-parity check holds them
-to aviationweather.gov's decode. It passed on that day's Offutt TAF, and
-failed when the decoder was broken on purpose (QNH 0.03 inHg off, the
-temperature times an hour late). A production build in Chromium, with the
-relay's answer stood in by today's aviationweather.gov JSON, showed the
-line at 1280, 390 and 320 px with no sideways scroll. Offutt's in-period
-wind remark (`WND 18006KT AFT 2122`) is still listed under "Not decoded".
+2026-10-21 the card decodes them:
+- **QNH:** a column of the table, shown only when the TAF has one, so
+  each value sits in its own row, with that row's label and times.
+- **Temperatures:** said in words under the table, "Maximum temperature
+  79°F at Wed 4:00 PM.", in the page's °F/°C setting, citing the handbook.
+  The TX/TN groups are taken out before the periods are read, so no row's
+  text carries them.
+
+The daily sky-parity check holds them to aviationweather.gov's decode. QNH
+must round to its whole hectopascal, which catches a misread figure but
+not every slip of one hundredth: 30.17 and 30.18 inHg both round to
+1022 hPa. The temperatures are compared as sorted lists. The check passed
+on that day's Offutt TAF, and failed when the decoder was broken on
+purpose (QNH 0.03 inHg off, the temperature times an hour late). A
+production build in Chromium, with the relay's answer stood in by that
+day's aviationweather.gov JSON, showed the column and the line at 1280,
+390 and 320 px, and no page scrolled sideways. Offutt's in-period wind
+remark (`WND 18006KT AFT 2122`) is still listed under "Not decoded".
 
 When Offutt has no TAF in force, as over its weekend and holiday gaps, the
 chain moves on to Omaha's and the card says why (src/api/tafChain.ts).

@@ -213,13 +213,7 @@ function windowOf(token: string, refMs: number | null): [number | null, number |
 
 /** Read one period's element groups from the cursor until the next change
  *  group or the end. Unrecognised tokens go to `undecoded`. */
-function readElements(
-  c: Cursor,
-  p: TafPeriod,
-  undecoded: string[],
-  temps: TafTemperature[],
-  issuedMs: number | null,
-): void {
+function readElements(c: Cursor, p: TafPeriod, undecoded: string[]): void {
   const wx: string[] = [];
   const sky: SkyLayer[] = [];
   while (c.i < c.tokens.length) {
@@ -300,21 +294,11 @@ function readElements(
       p.windShear = t;
       continue;
     }
+    // One QNH per period; a second is listed rather than silently
+    // replacing the first.
     const qnh = QNH.exec(t);
-    if (qnh) {
+    if (qnh && p.qnhInHg == null) {
       p.qnhInHg = Number(qnh[1]) / 100;
-      continue;
-    }
-    // A TX/TN group belongs to the whole forecast, not the period it is
-    // written in: Offutt's come after the last change group.
-    const tt = TEMP_GROUP.exec(t);
-    if (tt) {
-      temps.push({
-        kind: tt[1] === 'TX' ? 'max' : 'min',
-        tempC: (tt[2] === 'M' ? -1 : 1) * Number(tt[3]),
-        atMs: resolveTafTime(Number(tt[4]), Number(tt[5]), 0, issuedMs),
-        raw: t,
-      });
       continue;
     }
     undecoded.push(t);
@@ -333,7 +317,22 @@ function readElements(
  * `CNL` forecast decodes to no periods.
  */
 export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | null {
-  const tokens = raw.replace(/=\s*$/, '').trim().split(/\s+/).filter(Boolean);
+  const all = raw.replace(/=\s*$/, '').trim().split(/\s+/).filter(Boolean);
+  // TX/TN groups belong to the whole forecast, not the period they are
+  // written in (Offutt's follow the last change group), so they are taken
+  // out before the periods are read and no period's text carries them.
+  const temperatures: TafTemperature[] = [];
+  const tokens = all.filter((t) => {
+    const tt = TEMP_GROUP.exec(t);
+    if (!tt) return true;
+    temperatures.push({
+      kind: tt[1] === 'TX' ? 'max' : 'min',
+      tempC: (tt[2] === 'M' ? -1 : 1) * Number(tt[3]),
+      atMs: resolveTafTime(Number(tt[4]), Number(tt[5]), 0, issuedMs),
+      raw: t,
+    });
+    return false;
+  });
   const c: Cursor = { tokens, i: 0 };
   if (tokens[c.i] === 'TAF') c.i += 1;
   let amendment: string | null = null;
@@ -363,13 +362,12 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
 
   const periods: TafPeriod[] = [];
   const undecoded: string[] = [];
-  const temperatures: TafTemperature[] = [];
 
   const base = emptyPeriod('BASE');
   base.fromMs = validFromMs;
   base.toMs = validToMs;
   let start = c.i;
-  readElements(c, base, undecoded, temperatures, issuedMs);
+  readElements(c, base, undecoded);
   base.raw = tokens.slice(start, c.i).join(' ');
   periods.push(base);
 
@@ -386,7 +384,7 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
       // The previous prevailing period ends where this one starts.
       const prev = [...periods].reverse().find((q) => q.change === 'BASE' || q.change === 'FM');
       if (prev) prev.toMs = p.fromMs;
-      readElements(c, p, undecoded, temperatures, issuedMs);
+      readElements(c, p, undecoded);
       p.raw = tokens.slice(start, c.i).join(' ');
       periods.push(p);
       continue;
@@ -415,7 +413,7 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
           if (prev && (prev.change === 'BASE' || prev.change === 'FM')) prev.toMs = p.fromMs;
         }
       }
-      readElements(c, p, undecoded, temperatures, issuedMs);
+      readElements(c, p, undecoded);
       p.raw = tokens.slice(start, c.i).join(' ');
       periods.push(p);
       continue;
