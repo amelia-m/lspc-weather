@@ -73,7 +73,21 @@ export interface TafPeriod {
   ceilingFtAgl: number | null;
   /** Low-level wind shear group, e.g. "WS020/21040KT", kept as text. */
   windShear: string | null;
+  /** `QNH3017INS`: the lowest altimeter setting forecast for the period, in
+   *  inches of mercury. Military and joint-use TAFs (Offutt's) carry it; NWS
+   *  TAFs do not. null = not stated. See `QNH`. */
+  qnhInHg: number | null;
   /** The group's own text, for showing beside the decode. */
+  raw: string;
+}
+
+/** A `TX`/`TN` group: the maximum or minimum temperature forecast, whole °C,
+ *  and when it is expected. */
+export interface TafTemperature {
+  kind: 'max' | 'min';
+  tempC: number;
+  /** null when no issuance time was given to resolve the day. */
+  atMs: number | null;
   raw: string;
 }
 
@@ -84,9 +98,14 @@ export interface DecodedTaf {
   validFromMs: number | null;
   validToMs: number | null;
   periods: TafPeriod[];
+  /** The `TX`/`TN` groups, in the order given; empty when there are none,
+   *  as in every NWS TAF. */
+  temperatures: TafTemperature[];
   /** Tokens no rule recognised, so a reader can see what the decode dropped
-   *  rather than trust a silent gap. Temperature and altimeter groups land
-   *  here too; the card does not use them. */
+   *  rather than trust a silent gap. Since 2026-10-21 the joint-use
+   *  altimeter and temperature groups are decoded (`QNH`, `TEMP_GROUP`);
+   *  Offutt's in-period remarks (`WND … AFT …`, `LAST NO AMDS …`) still land
+   *  here. */
   undecoded: string[];
 }
 
@@ -99,6 +118,19 @@ export const WX_DESCRIPTOR_ONLY = /^(\+|-|VC)?(TS|SH|FZ)$/;
 const VIS_SM = /^(M|P)?(\d{1,2})(?:\/(\d{1,2}))?SM$/;
 const VIS_M = /^(\d{4})$/;
 const WIND_SHEAR = /^WS\d{3}\/\d{3}\d{2,3}KT$/;
+/**
+ * The groups a joint-use (joint civilian/military) airport's TAF adds to the
+ * NWS format, as the FAA's Aviation Weather Handbook describes them
+ * (FAA-H-8083-28B, 27.4.2.10.4, read 2026-10-21): "a forecast of the lowest
+ * barometric altimeter setting (QNH) during the forecast period in inches of
+ * mercury" (`QNH3005INS`), and of "the maximum temperature (in whole degrees
+ * Celsius) and expected time of occurrence" (`TX28/0420Z`), and the minimum
+ * (`TN22/0410Z`). Offutt's TAF carries all three. An `M` before the figure
+ * is read as minus, as in a METAR's temperature group; the handbook's
+ * examples are all above zero, so that reading is not from it.
+ */
+const QNH = /^QNH(\d{4})INS$/;
+const TEMP_GROUP = /^(TX|TN)(M?)(\d{2})\/(\d{2})(\d{2})Z$/;
 const CEILING: readonly SkyCover[] = ['BKN', 'OVC', 'VV'];
 const KT_PER_MPS = 1.943844;
 
@@ -159,6 +191,7 @@ function emptyPeriod(change: TafChange): TafPeriod {
     skyLayers: null,
     ceilingFtAgl: null,
     windShear: null,
+    qnhInHg: null,
     raw: '',
   };
 }
@@ -180,7 +213,13 @@ function windowOf(token: string, refMs: number | null): [number | null, number |
 
 /** Read one period's element groups from the cursor until the next change
  *  group or the end. Unrecognised tokens go to `undecoded`. */
-function readElements(c: Cursor, p: TafPeriod, undecoded: string[]): void {
+function readElements(
+  c: Cursor,
+  p: TafPeriod,
+  undecoded: string[],
+  temps: TafTemperature[],
+  issuedMs: number | null,
+): void {
   const wx: string[] = [];
   const sky: SkyLayer[] = [];
   while (c.i < c.tokens.length) {
@@ -261,6 +300,23 @@ function readElements(c: Cursor, p: TafPeriod, undecoded: string[]): void {
       p.windShear = t;
       continue;
     }
+    const qnh = QNH.exec(t);
+    if (qnh) {
+      p.qnhInHg = Number(qnh[1]) / 100;
+      continue;
+    }
+    // A TX/TN group belongs to the whole forecast, not the period it is
+    // written in: Offutt's come after the last change group.
+    const tt = TEMP_GROUP.exec(t);
+    if (tt) {
+      temps.push({
+        kind: tt[1] === 'TX' ? 'max' : 'min',
+        tempC: (tt[2] === 'M' ? -1 : 1) * Number(tt[3]),
+        atMs: resolveTafTime(Number(tt[4]), Number(tt[5]), 0, issuedMs),
+        raw: t,
+      });
+      continue;
+    }
     undecoded.push(t);
   }
   if (wx.length > 0) p.wxString = wx.join(' ');
@@ -298,7 +354,7 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
   const valid = windowOf(tokens[c.i] ?? '', issuedMs);
   if (!valid) {
     if (tokens[c.i] === 'NIL' || tokens[c.i] === 'CNL') {
-      return { station, amendment, validFromMs: null, validToMs: null, periods: [], undecoded: [] };
+      return { station, amendment, validFromMs: null, validToMs: null, periods: [], temperatures: [], undecoded: [] };
     }
     return null;
   }
@@ -307,12 +363,13 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
 
   const periods: TafPeriod[] = [];
   const undecoded: string[] = [];
+  const temperatures: TafTemperature[] = [];
 
   const base = emptyPeriod('BASE');
   base.fromMs = validFromMs;
   base.toMs = validToMs;
   let start = c.i;
-  readElements(c, base, undecoded);
+  readElements(c, base, undecoded, temperatures, issuedMs);
   base.raw = tokens.slice(start, c.i).join(' ');
   periods.push(base);
 
@@ -329,7 +386,7 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
       // The previous prevailing period ends where this one starts.
       const prev = [...periods].reverse().find((q) => q.change === 'BASE' || q.change === 'FM');
       if (prev) prev.toMs = p.fromMs;
-      readElements(c, p, undecoded);
+      readElements(c, p, undecoded, temperatures, issuedMs);
       p.raw = tokens.slice(start, c.i).join(' ');
       periods.push(p);
       continue;
@@ -358,14 +415,14 @@ export function decodeTaf(raw: string, issuedMs: number | null): DecodedTaf | nu
           if (prev && (prev.change === 'BASE' || prev.change === 'FM')) prev.toMs = p.fromMs;
         }
       }
-      readElements(c, p, undecoded);
+      readElements(c, p, undecoded, temperatures, issuedMs);
       p.raw = tokens.slice(start, c.i).join(' ');
       periods.push(p);
       continue;
     }
     undecoded.push(t);
   }
-  return { station, amendment, validFromMs, validToMs, periods, undecoded };
+  return { station, amendment, validFromMs, validToMs, periods, temperatures, undecoded };
 }
 
 /** Where a TAF stands at `nowMs`: in force, ended, or a TAF that carries no

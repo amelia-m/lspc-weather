@@ -344,7 +344,7 @@ export default function App(): JSX.Element {
     wingLoading: <WingLoadingPanel />,
     radar: <RadarPanel />,
     sectional: <SectionalPanel />,
-    taf: <TafPanel taf={snapshot.taf} status={status.taf} />,
+    taf: <TafPanel taf={snapshot.taf} status={status.taf} tempUnit={temp.tempUnit} />,
     pilotLinks: <PilotLinksPanel />,
     nearbyMetars: <NearbyMetarsPanel />,
   };

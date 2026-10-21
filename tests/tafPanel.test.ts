@@ -177,3 +177,33 @@ describe('TafPanel with the TAF relay', () => {
     expect(render(KOMA_2026_09_24_0521, 'KOMA')).toContain('NWS TAF');
   });
 });
+
+describe('TafPanel on a joint-use airport’s TAF', () => {
+  const offutt = {
+    station: 'KOFF',
+    raw: 'TAF KOFF 201000Z 2010/2116 16009KT 9999 FEW130 QNH3017INS TX20/2020Z TN07/2010Z',
+    issuedMs: Date.parse('2026-10-20T10:00:00Z'),
+    validRaw: '2010/2116',
+  };
+  const show = (tempUnit: 'F' | 'C') =>
+    renderToStaticMarkup(createElement(TafPanel, { taf: offutt, status: idle, relay: true, tempUnit }));
+
+  it('says the altimeter and temperature groups in words, with their times, and cites the handbook', () => {
+    const html = show('F');
+    expect(html).toContain('Lowest altimeter setting (QNH) forecast: 30.17 inHg (prevailing, from Tue 5:00 AM).');
+    expect(html).toContain('Maximum temperature 68°F at Tue 3:00 PM.');
+    expect(html).toContain('Minimum temperature 45°F at Tue 5:00 AM.');
+    expect(html).toContain('FAA-H-8083-28B.pdf');
+    expect(html).not.toContain('Not decoded');
+  });
+
+  it('follows the page’s °F/°C setting', () => {
+    expect(show('C')).toContain('Maximum temperature 20°C at Tue 3:00 PM.');
+  });
+
+  it('adds nothing to an NWS TAF, which has none of these groups', () => {
+    const html = render(KOMA_2026_09_24_0521, 'KOMA');
+    expect(html).not.toContain('QNH');
+    expect(html).not.toContain('FAA-H-8083-28B');
+  });
+});

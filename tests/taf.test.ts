@@ -118,13 +118,14 @@ describe('decodeTaf on the change groups NWS offices rarely write here', () => {
     expect(prob.ceilingFtAgl).toBe(800);
   });
 
-  it('reads a variable wind, NSW and SKC on a BECMG, and leaves the temperature groups undecoded', () => {
+  it('reads a variable wind, NSW and SKC on a BECMG, and the temperature groups as the forecast’s', () => {
     const becmg = d.periods[3];
     expect(becmg.wind).toEqual({ directionDeg: null, variable: true, speedKt: 3, gustKt: null });
     expect(becmg.wxString).toBe('NSW');
     expect(becmg.skyLayers).toEqual([{ cover: 'SKC', baseFtAgl: null }]);
     expect(becmg.ceilingFtAgl).toBeNull();
-    expect(d.undecoded).toEqual(['TX25/0318Z', 'TN12/0309Z']);
+    expect(d.temperatures.map((t) => t.raw)).toEqual(['TX25/0318Z', 'TN12/0309Z']);
+    expect(d.undecoded).toEqual([]);
   });
 
   it('ends the base period where the BECMG window starts, as a FM group would', () => {
@@ -153,20 +154,16 @@ describe('decodeTaf on the KOFF TAF aviationweather.gov served on 2026-09-24', (
     expect(d.periods[1].toMs).toBe(utc(9, 24, 10));
   });
 
-  it('converts metre visibilities and leaves the QNH and temperature groups undecoded', () => {
+  it('converts metre visibilities and reads each period’s QNH and the forecast’s temperatures', () => {
     expect(d.periods[2].visibilitySm).toBe(5.59); // 9000 m
     expect(d.periods[4].visibilitySm).toBe(2.98); // 4800 m
     expect(d.periods[1].wxString).toBe('VCSH');
-    expect(d.undecoded).toEqual([
-      'QNH3025INS',
-      'QNH3025INS',
-      'QNH3021INS',
-      'QNH3016INS',
-      'QNH3019INS',
-      'QNH3018INS',
-      'TX19/2420Z',
-      'TN15/2411Z',
+    expect(d.periods.map((p) => p.qnhInHg)).toEqual([30.25, 30.25, 30.21, 30.16, 30.19, 30.18]);
+    expect(d.temperatures.map((t) => [t.kind, t.tempC])).toEqual([
+      ['max', 19],
+      ['min', 15],
     ]);
+    expect(d.undecoded).toEqual([]);
   });
 });
 
@@ -186,8 +183,9 @@ describe('decodeTaf on a KOFF TAF with USAF in-period remarks', () => {
     expect(d.periods[0].visibilityPlus).toBe(true);
   });
 
-  it('lists the remark undecoded, beside the QNH groups', () => {
-    expect(d.undecoded.slice(0, 4)).toEqual(['QNH3019INS', 'WND', '14006KT', 'AFT']);
+  it('lists the remark undecoded, and reads the QNH beside it', () => {
+    expect(d.undecoded).toEqual(['WND', '14006KT', 'AFT', '0306']);
+    expect(d.periods[0].qnhInHg).toBe(30.19);
     expect(d.undecoded).toContain('0306');
   });
 
@@ -279,5 +277,49 @@ describe('resolveTafTime', () => {
 
   it('is null without a reference time', () => {
     expect(resolveTafTime(24, 6, 0, null)).toBeNull();
+  });
+});
+
+describe('decodeTaf: the groups a joint-use airport’s TAF adds', () => {
+  // Offutt's TAF of 2026-10-20 10Z, as aviationweather.gov served it.
+  const OFFUTT = 'TAF KOFF 201000Z 2010/2116 16009KT 9999 FEW130 QNH3017INS TX20/2020Z TN07/2010Z';
+  const issued = Date.parse('2026-10-20T10:00:00Z');
+
+  it('reads the lowest altimeter setting into its period, and TX/TN as the forecast’s temperatures', () => {
+    const d = decodeTaf(OFFUTT, issued)!;
+    expect(d.periods).toHaveLength(1);
+    expect(d.periods[0].qnhInHg).toBe(30.17);
+    expect(d.temperatures).toEqual([
+      { kind: 'max', tempC: 20, atMs: Date.parse('2026-10-20T20:00:00Z'), raw: 'TX20/2020Z' },
+      { kind: 'min', tempC: 7, atMs: Date.parse('2026-10-20T10:00:00Z'), raw: 'TN07/2010Z' },
+    ]);
+    // Nothing left over: these were the card's "Not decoded" line.
+    expect(d.undecoded).toEqual([]);
+  });
+
+  it('decodes the FAA handbook’s own example, a QNH in a BECMG group and TX/TN after it', () => {
+    // FAA-H-8083-28B, 27.4.2.10.4 (read 2026-10-21), with a base group added
+    // before the handbook's BECMG so it is a whole TAF.
+    const d = decodeTaf(
+      'KXXX 041100Z 0412/0512 18005KT 9999 SKC QNH3008INS BECMG 0511/0512 16005KT 9999 NSW SKC QNH3006INS TX28/0420Z TN22/0410Z',
+      Date.parse('2026-10-04T11:00:00Z'),
+    )!;
+    expect(d.periods.map((p) => [p.change, p.qnhInHg])).toEqual([
+      ['BASE', 30.08],
+      ['BECMG', 30.06],
+    ]);
+    expect(d.temperatures.map((t) => [t.kind, t.tempC, new Date(t.atMs!).toISOString()])).toEqual([
+      ['max', 28, '2026-10-04T20:00:00.000Z'],
+      ['min', 22, '2026-10-04T10:00:00.000Z'],
+    ]);
+    expect(d.undecoded).toEqual([]);
+  });
+
+  it('reads an M before a temperature as minus, and leaves an NWS TAF with none', () => {
+    const d = decodeTaf('KOFF 201000Z 2010/2116 16009KT 9999 FEW130 TNM03/2110Z', issued)!;
+    expect(d.temperatures[0]).toMatchObject({ kind: 'min', tempC: -3 });
+    const nws = decodeTaf('KOMA 240521Z 2406/2506 13009KT P6SM FEW050 BKN150', Date.parse('2026-09-24T05:21:00Z'))!;
+    expect(nws.temperatures).toEqual([]);
+    expect(nws.periods[0].qnhInHg).toBeNull();
   });
 });
