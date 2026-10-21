@@ -212,6 +212,17 @@ describe('fetchTafChain', () => {
     expect(fetchOne).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps the HTTP status of a failed fetch', async () => {
+    const fetchOne = vi.fn(async (id: string) => {
+      if (id === 'KOFF') throw new HttpError(502, 'https://relay.example/taf/KOFF');
+      return taf(id);
+    });
+    const out = await fetchTafChain(STATIONS, { fetchOne });
+    expect(out?.passedOver).toEqual([
+      { station: 'KOFF', failed: 'HTTP 502 for https://relay.example/taf/KOFF', status: 502 },
+    ]);
+  });
+
   it('falls through a station whose fetch errors, and records why', async () => {
     const fetchOne = vi.fn(async (id: string) => {
       if (id === 'KOFF') throw new Error('relay answered 502');

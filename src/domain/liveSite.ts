@@ -13,6 +13,7 @@
  * first request failed on most loads from the sandbox and filled on the
  * retry; docs/open-questions.md, "Live-site smoke test").
  */
+import { passedOverReason } from './sourceProvenance';
 
 /** One source on the Data health card, as its list item showed it. */
 export interface SourceRow {
@@ -55,7 +56,9 @@ export interface LoadVerdict {
 
 export interface JudgeOptions {
   /** The station the TAF relay serves, when the relay is set
-   *  (src/config/tafRelay.ts); null or absent when it is not. */
+   *  (src/config/tafRelay.ts) and answers the page's origin; null or absent
+   *  otherwise, as for a local build on another port, whose requests the
+   *  relay refuses by design. */
   relayStation?: string | null;
 }
 
@@ -75,15 +78,20 @@ export function judgeLoad(o: LoadObservation, opts: JudgeOptions = {}): LoadVerd
     // A stale or idle source can be the station or the forecast office
     // being late, not the site; it is shown, not counted.
     else if (s.state !== 'ok') notes.push(`${s.name}: ${s.meta || s.state}`);
-    // A TAF row stays "ok" while the card shows a farther station's TAF, so
-    // its chip is where a failed fetch shows (`passedOverReason`,
-    // src/domain/sourceProvenance.ts). The relay is the site's own: its
-    // failure is a fault, so a broken relay opens an issue rather than
-    // waiting to be noticed. Another station's failed fetch is the NWS
-    // feed's, a note like a late source.
-    if (s.detail?.includes('fetch failed')) {
-      const relayFailed = opts.relayStation != null && s.detail.includes(`${opts.relayStation} fetch failed`);
-      (relayFailed ? faults : notes).push(`${s.name}: ${s.detail}${relayFailed ? ' (the TAF relay)' : ''}`);
+    // The TAF row stays "ok" while the card shows a farther station's TAF,
+    // so its chip is where a failed fetch shows, in `passedOverReason`'s
+    // words (src/domain/sourceProvenance.ts), which build the text looked
+    // for here. The relay is the site's own: its failure is a fault, so a
+    // broken relay opens an issue rather than waiting to be noticed.
+    // aviationweather.gov failing behind it ("upstream failed") and another
+    // station's failed fetch are other hosts', notes like a late source.
+    // Only on a row that is otherwise ok, so one failure is not told twice.
+    if (s.name.startsWith('TAF') && s.state === 'ok' && s.detail) {
+      const relayFailed =
+        opts.relayStation != null &&
+        s.detail.includes(passedOverReason({ station: opts.relayStation, failed: '' }, true));
+      if (relayFailed) faults.push(`${s.name}: ${s.detail} (the TAF relay)`);
+      else if (/fetch failed|upstream failed/.test(s.detail)) notes.push(`${s.name}: ${s.detail}`);
     }
   }
   for (const c of o.checks) if (!c.ok) faults.push(`${c.name}${c.detail ? `: ${c.detail}` : ''}`);

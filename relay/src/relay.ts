@@ -33,16 +33,10 @@
  * `rawTAF` and `issueTime`); the app reads it with `tafFromAwcJson`.
  */
 
-import { PATH, STATION } from './station';
+import { ALLOWED_ORIGINS, PATH, STATION } from './station';
 
-export { PATH };
+export { ALLOWED_ORIGINS, PATH };
 export const UPSTREAM = `https://aviationweather.gov/api/data/taf?ids=${STATION}&format=json`;
-export const ALLOWED_ORIGINS: readonly string[] = [
-  'https://amelia-m.github.io',
-  // `npm run dev` and `vite preview`, for a check before a deploy.
-  'http://localhost:5173',
-  'http://localhost:4173',
-];
 export const CACHE_SECONDS = 300;
 /** Give up on aviationweather.gov after this long and answer 502, so a
  *  stalled upstream does not hold the reader's request until the app's own

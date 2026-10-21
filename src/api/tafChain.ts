@@ -57,7 +57,14 @@ export async function fetchTafChain(
       return passedOver.length ? { ...taf, passedOver } : taf;
     } catch (err) {
       lastErr = err;
-      passedOver.push({ station: s.id, failed: err instanceof Error ? err.message : String(err) });
+      // The status is read off the error rather than by its class: this
+      // module stays free of src/api/http.ts so the scripts can import it.
+      const status = (err as { status?: unknown })?.status;
+      passedOver.push({
+        station: s.id,
+        failed: err instanceof Error ? err.message : String(err),
+        ...(typeof status === 'number' ? { status } : {}),
+      });
     }
   }
   if (lastErr) throw lastErr;

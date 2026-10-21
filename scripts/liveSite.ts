@@ -22,8 +22,8 @@
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
 import { judgeLoad, pagePasses, type LoadObservation, type LoadVerdict, type SourceRow } from '../src/domain/liveSite';
-import { TAF_RELAY_URL } from '../src/config/tafRelay';
-import { STATION as RELAY_STATION } from '../relay/src/station';
+import { tafRelayUrlFor } from '../src/config/tafRelay';
+import { ALLOWED_ORIGINS as RELAY_ORIGINS, STATION as RELAY_STATION } from '../relay/src/station';
 
 const BASE = process.env.LIVE_SITE_URL ?? 'https://amelia-m.github.io/lspc-weather/';
 const PAGES: { name: string; path: string }[] = [
@@ -171,13 +171,18 @@ async function observe(
   }
 }
 
+// The relay's failure counts only when it is set and serves the origin
+// being checked: a local build on another port is refused by design.
+const relayStation =
+  tafRelayUrlFor(RELAY_STATION) != null && RELAY_ORIGINS.includes(new URL(BASE).origin) ? RELAY_STATION : null;
+
 let failed = 0;
 for (const page of PAGES) {
   for (const width of WIDTHS) {
     const verdicts: LoadVerdict[] = [];
     // A second load only when the first had a fault (pagePasses).
     for (let attempt = 0; attempt < 2 && !pagePasses(verdicts); attempt++) {
-      verdicts.push(judgeLoad(await load(page, width), { relayStation: TAF_RELAY_URL != null ? RELAY_STATION : null }));
+      verdicts.push(judgeLoad(await load(page, width), { relayStation }));
     }
     const pass = pagePasses(verdicts);
     if (!pass) failed++;
