@@ -108,7 +108,12 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    Workers starts on the Free plan by default. Turn on two-factor
    authentication: this account can change what the dashboard shows.
    Which email to use is about handover (below), not security. The
-   address is not public; only the workers.dev name is.
+   address is not public; only the workers.dev name is. Cloudflare also
+   offers "Sign in with GitHub" (seen by the maintainer on 2026-10-21).
+   That ties nothing new together: Workers Builds deploys whatever reaches
+   `main`, so the GitHub account already decides what the relay serves.
+   Signing in with it is separate from step 3's connection of the
+   repository, which is still needed.
 2. **The workers.dev subdomain.** The first time you open Workers & Pages,
    Cloudflare asks for an account subdomain. It becomes part of the relay's
    address, `https://lspc-taf-relay.<subdomain>.workers.dev`, which anyone
