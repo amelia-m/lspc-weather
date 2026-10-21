@@ -280,6 +280,14 @@ export const READING_LOG: SourceReading[] = [
   },
   {
     kind: 'cited',
+    section: 'FAA-H-8083-28B, Aviation Weather Handbook, 27.4.2.10.4',
+    citations: ['faaJointUseTaf'],
+    lastRead: '2026-10-21',
+    edition: 'FAA-H-8083-28B, signed April 2, 2026',
+    how: 'the linked PDF on faa.gov, pages 27-17 and 27-18',
+  },
+  {
+    kind: 'cited',
     section: 'FAA AC 00-45H, Aviation Weather Services, Table 3-3',
     citations: ['faaSkyCover'],
     lastRead: '2026-10-10',

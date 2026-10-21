@@ -31,7 +31,7 @@ import {
   type RawNwsObservation,
 } from '../src/domain/normalize';
 import { observedFlightCategory } from '../src/domain/flightCategory';
-import { decodeTaf, type TafPeriod } from '../src/domain/taf';
+import { decodeTaf, type DecodedTaf, type TafPeriod } from '../src/domain/taf';
 import { fetchTafChain } from '../src/api/tafChain';
 import { tafRelayUrlFor } from '../src/config/tafRelay';
 import type { SkyLayer } from '../src/domain/types';
@@ -78,6 +78,11 @@ interface AwcFcst {
   visib?: number | string | null;
   wxString?: string | null;
   clouds?: Array<{ cover?: string; base?: number | null; type?: string | null }>;
+  /** The period's QNH, hPa, rounded to whole (1020 for QNH3012INS,
+   *  2026-10-21). */
+  altim?: number | null;
+  /** TX/TN groups, on the period they are written in. */
+  temp?: Array<{ validTime?: number; surfaceTemp?: number; maxOrMin?: string }>;
 }
 interface AwcTaf {
   icaoId: string;
@@ -143,7 +148,30 @@ function comparePeriod(p: TafPeriod, f: AwcFcst): string[] {
   if (ourClouds.join(' ') !== theirClouds.join(' ')) {
     out.push(`clouds ${ourClouds.join(' ') || '(none)'} vs ${theirClouds.join(' ') || '(none)'}`);
   }
+  // QNH: theirs is hPa, rounded to whole, so ours converted must sit within
+  // half a hectopascal of it.
+  const theirQnh = present(f.altim) ? f.altim : null;
+  if (p.qnhInHg != null || theirQnh != null) {
+    const oursHpa = p.qnhInHg != null ? p.qnhInHg * HPA_PER_INHG : null;
+    if (oursHpa == null || theirQnh == null || Math.abs(oursHpa - theirQnh) > 0.51) {
+      out.push(`QNH ${p.qnhInHg ?? '(none)'} inHg vs ${theirQnh ?? '(none)'} hPa`);
+    }
+  }
   return out;
+}
+
+const HPA_PER_INHG = 33.8639;
+
+/** The TX/TN groups, which the app keeps for the whole forecast and
+ *  aviationweather.gov on the period they are written in, as comparable
+ *  lines: kind, °C and time. */
+function tempLines(ours: DecodedTaf, theirs: AwcFcst[]): { ours: string[]; theirs: string[] } {
+  return {
+    ours: ours.temperatures.map((t) => `${t.kind} ${t.tempC} ${t.atMs != null ? t.atMs / 1000 : '?'}`),
+    theirs: theirs.flatMap((f) =>
+      (f.temp ?? []).map((t) => `${t.maxOrMin === 'MAX' ? 'max' : 'min'} ${t.surfaceTemp} ${t.validTime ?? '?'}`),
+    ),
+  };
 }
 
 describe(`sky decode parity for ${station}`, () => {
@@ -266,7 +294,8 @@ describe(`sky decode parity for ${station}`, () => {
     // same text through two parsers, so a feed lag on the NWS side cannot
     // make them differ. Every station in the chain that has a TAF is
     // checked. Any difference in change type, times, wind, visibility,
-    // weather or cloud layers fails the run, the way the sky parse does.
+    // weather, cloud layers, QNH or the TX/TN temperatures fails the run,
+    // the way the sky parse does.
     const ids = SITE.tafStations.map((t) => t.id).join(',');
     const res = await get(
       `https://aviationweather.gov/api/data/taf?ids=${ids}&format=json`,
@@ -299,6 +328,10 @@ describe(`sky decode parity for ${station}`, () => {
       ours.periods.forEach((p, i) => {
         for (const d of comparePeriod(p, theirs[i])) problems.push(`${t.icaoId} period ${i} (${p.raw}): ${d}`);
       });
+      const temps = tempLines(ours, theirs);
+      if (temps.ours.join(', ') !== temps.theirs.join(', ')) {
+        problems.push(`${t.icaoId} temperatures: ${temps.ours.join(', ') || '(none)'} vs ${temps.theirs.join(', ') || '(none)'}`);
+      }
     }
     for (const line of problems) say(`[taf]  DIFF ${line}`);
     if (problems.length > 0) say(`[taf]  first fcst as served: ${JSON.stringify(tafs[0]?.fcsts?.[0])}`);

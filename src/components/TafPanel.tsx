@@ -1,5 +1,5 @@
 import type { SkyLayer, SourceStatus, TafForecast } from '../domain/types';
-import { compass } from '../domain/units';
+import { compass, fmtTemp, type TempUnit } from '../domain/units';
 import { haversineMiles, initialBearingDeg } from '../domain/geo';
 import {
   decodeTaf,
@@ -73,9 +73,12 @@ export function TafPanel({
   taf,
   status,
   relay = TAF_RELAY_URL != null,
+  tempUnit = 'F',
 }: {
   taf: TafForecast | null;
   status: SourceStatus;
+  /** The page's °F/°C setting, for the forecast's TX/TN temperatures. */
+  tempUnit?: TempUnit;
   /** Whether Offutt's TAF is read through the relay; a prop so the tests
    *  can render both wordings. */
   relay?: boolean;
@@ -97,6 +100,25 @@ export function TafPanel({
     return s ? `${s.name} (${id})` : id;
   };
   const kindsUsed = new Set(decoded?.periods.map((p) => p.change) ?? []);
+  // The groups a joint-use airport's TAF adds (Offutt's; no NWS TAF has
+  // them), said in words: each period's lowest altimeter setting, then the
+  // forecast's maximum and minimum temperatures with their times.
+  const jointUse: string[] = [];
+  if (decoded) {
+    const qnh = decoded.periods.flatMap((p) =>
+      p.qnhInHg != null
+        ? [
+            `${p.qnhInHg.toFixed(2)} inHg (${GROUP_WORDS[p.change].label.toLowerCase()}${p.fromMs != null ? `, from ${fmtClock(p.fromMs)}` : ''})`,
+          ]
+        : [],
+    );
+    if (qnh.length > 0) jointUse.push(`Lowest altimeter setting (QNH) forecast: ${qnh.join(', ')}.`);
+    for (const t of decoded.temperatures) {
+      jointUse.push(
+        `${t.kind === 'max' ? 'Maximum' : 'Minimum'} temperature ${fmtTemp(t.tempC, tempUnit)}${t.atMs != null ? ` at ${fmtClock(t.atMs)}` : ''}.`,
+      );
+    }
+  }
 
   return (
     <Panel
@@ -205,6 +227,12 @@ export function TafPanel({
                 Category is the FAA classification of the row&rsquo;s ceiling and visibility, a
                 description of the weather and not a jump rule. Source:{' '}
                 <SourceLink citation={CITATIONS.aimFlightCategory} />
+                {jointUse.length > 0 && (
+                  <>
+                    {' '}
+                    {jointUse.join(' ')} Source: <SourceLink citation={CITATIONS.faaJointUseTaf} />
+                  </>
+                )}
                 {decoded.undecoded.length > 0 && (
                   <>
                     {' '}

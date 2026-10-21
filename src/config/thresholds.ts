@@ -177,6 +177,17 @@ export const CITATIONS = {
     url: 'https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_00-45H_Chg_2.pdf',
     note: 'Read on 2026-10-10 in the linked PDF (AC 00-45H Change 2, 3/6/19), page 3-15. Table 3-3 also says any layer amount under 1/8 is reported as FEW, and that CLR at an automated station means no layers at or below 12,000 ft.',
   },
+  /** The groups a joint-use (joint civilian/military) airport's TAF adds:
+   *  the lowest altimeter setting (QNH) and the maximum and minimum
+   *  temperatures with their times. Backs the TAF card's decode of Offutt's
+   *  (src/domain/taf.ts, `QNH`, `TEMP_GROUP`), a reading of the forecast's
+   *  own words, not a flag. */
+  faaJointUseTaf: {
+    source: 'FAA-H-8083-28B, Aviation Weather Handbook',
+    ref: '27.4.2.10.4, TAFs for Joint-Use (Joint Civilian/Military) Airports: QNH lowest altimeter setting in inches of mercury; TX/TN maximum and minimum temperature in whole °C with their times',
+    url: 'https://www.faa.gov/sites/faa.gov/files/FAA-H-8083-28B.pdf',
+    note: 'Read on 2026-10-21 in the linked PDF (FAA-H-8083-28B, signed April 2, 2026), pages 27-17 and 27-18. The handbook says its guidance is not legally binding in its own right. Its examples are all above 0 °C, so the decode’s reading of an M before a temperature as minus is not from it.',
+  },
   /** Density altitude and its effect on climb performance. Backs the standing
    *  note on the density-altitude card, not a flag: the claim (a loaded jump
    *  plane climbs worse in high DA) is FAA-sourced and true at any DA, but the
