@@ -186,7 +186,6 @@ describe('decodeTaf on a KOFF TAF with USAF in-period remarks', () => {
   it('lists the remark undecoded, and reads the QNH beside it', () => {
     expect(d.undecoded).toEqual(['WND', '14006KT', 'AFT', '0306']);
     expect(d.periods[0].qnhInHg).toBe(30.19);
-    expect(d.undecoded).toContain('0306');
   });
 
   it('leaves the times in a "last amendment" remark undecoded too', () => {
@@ -313,6 +312,17 @@ describe('decodeTaf: the groups a joint-use airport’s TAF adds', () => {
       ['min', 22, '2026-10-04T10:00:00.000Z'],
     ]);
     expect(d.undecoded).toEqual([]);
+  });
+
+  it('keeps the TX/TN groups out of the period they are written in', () => {
+    const d = decodeTaf(OFFUTT, issued)!;
+    expect(d.periods[0].raw).toBe('16009KT 9999 FEW130 QNH3017INS');
+  });
+
+  it('lists a second QNH in one period rather than replacing the first', () => {
+    const d = decodeTaf('KOFF 201000Z 2010/2116 16009KT 9999 FEW130 QNH3017INS QNH3009INS', issued)!;
+    expect(d.periods[0].qnhInHg).toBe(30.17);
+    expect(d.undecoded).toEqual(['QNH3009INS']);
   });
 
   it('reads an M before a temperature as minus, and leaves an NWS TAF with none', () => {

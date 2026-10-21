@@ -101,18 +101,13 @@ export function TafPanel({
   };
   const kindsUsed = new Set(decoded?.periods.map((p) => p.change) ?? []);
   // The groups a joint-use airport's TAF adds (Offutt's; no NWS TAF has
-  // them), said in words: each period's lowest altimeter setting, then the
-  // forecast's maximum and minimum temperatures with their times.
+  // them): each period's lowest altimeter setting, as a column of the table
+  // so it sits beside its own row's label and times, and the forecast's
+  // maximum and minimum temperatures, said in words under it.
+  const hasQnh = decoded?.periods.some((p) => p.qnhInHg != null) ?? false;
   const jointUse: string[] = [];
   if (decoded) {
-    const qnh = decoded.periods.flatMap((p) =>
-      p.qnhInHg != null
-        ? [
-            `${p.qnhInHg.toFixed(2)} inHg (${GROUP_WORDS[p.change].label.toLowerCase()}${p.fromMs != null ? `, from ${fmtClock(p.fromMs)}` : ''})`,
-          ]
-        : [],
-    );
-    if (qnh.length > 0) jointUse.push(`Lowest altimeter setting (QNH) forecast: ${qnh.join(', ')}.`);
+    if (hasQnh) jointUse.push('QNH: the lowest altimeter setting forecast for the row’s period, inches of mercury.');
     for (const t of decoded.temperatures) {
       jointUse.push(
         `${t.kind === 'max' ? 'Maximum' : 'Minimum'} temperature ${fmtTemp(t.tempC, tempUnit)}${t.atMs != null ? ` at ${fmtClock(t.atMs)}` : ''}.`,
@@ -194,6 +189,7 @@ export function TafPanel({
                       <th>Sky</th>
                       <th>Weather</th>
                       <th>Category</th>
+                      {hasQnh && <th>QNH</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -212,6 +208,7 @@ export function TafPanel({
                           <td className="taf-wrap">{skyLines(p.skyLayers)}</td>
                           <td className="taf-wrap">{p.wxString != null ? describeWx(p.wxString) : ''}</td>
                           <td>{cat ? <FlightCategoryPill category={cat} /> : '—'}</td>
+                          {hasQnh && <td>{p.qnhInHg != null ? `${p.qnhInHg.toFixed(2)} inHg` : ''}</td>}
                         </tr>
                       );
                     })}
