@@ -528,8 +528,10 @@ deploy and on dispatch, it loads the deployed site in a browser, every page
 at 1280, 390 and 320 px on live data (`scripts/liveSite.ts`), and fails
 when a reader would meet a fault, as `src/domain/liveSite.ts` counts one:
 a script error, the crash screen, a page wider than the viewport, a site
-file not served, a Data health source in error or still loading, the radar
-image not drawn, the parity summary or the ceiling page's data not loaded.
+file not served, a Data health source in error or still loading, the TAF
+relay's fetch failing once the relay is set (read from the TAF row's chip,
+since 2026-10-21), the radar image not drawn, the parity summary or the
+ceiling page's data not loaded.
 Another host's failed request and console errors are printed as notes,
 since the app retries them. A page failing its first load is loaded once
 more before it counts, and a failure on `main` opens one issue labelled

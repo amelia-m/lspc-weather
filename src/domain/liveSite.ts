@@ -21,6 +21,9 @@ export interface SourceRow {
   state: 'ok' | 'stale' | 'error' | 'pending' | 'idle';
   /** The item's right-hand text: "2 min ago", "stale", "error: …". */
   meta: string;
+  /** The provenance chip's text, when the row has one: "fallback KOMA ·
+   *  KOFF fetch failed". */
+  detail?: string;
 }
 
 /** What one load of one page at one width showed. */
@@ -50,7 +53,13 @@ export interface LoadVerdict {
   notes: string[];
 }
 
-export function judgeLoad(o: LoadObservation): LoadVerdict {
+export interface JudgeOptions {
+  /** The station the TAF relay serves, when the relay is set
+   *  (src/config/tafRelay.ts); null or absent when it is not. */
+  relayStation?: string | null;
+}
+
+export function judgeLoad(o: LoadObservation, opts: JudgeOptions = {}): LoadVerdict {
   const faults: string[] = [];
   const notes: string[] = [];
   for (const e of o.pageErrors) faults.push(`script error: ${e}`);
@@ -66,6 +75,16 @@ export function judgeLoad(o: LoadObservation): LoadVerdict {
     // A stale or idle source can be the station or the forecast office
     // being late, not the site; it is shown, not counted.
     else if (s.state !== 'ok') notes.push(`${s.name}: ${s.meta || s.state}`);
+    // A TAF row stays "ok" while the card shows a farther station's TAF, so
+    // its chip is where a failed fetch shows (`passedOverReason`,
+    // src/domain/sourceProvenance.ts). The relay is the site's own: its
+    // failure is a fault, so a broken relay opens an issue rather than
+    // waiting to be noticed. Another station's failed fetch is the NWS
+    // feed's, a note like a late source.
+    if (s.detail?.includes('fetch failed')) {
+      const relayFailed = opts.relayStation != null && s.detail.includes(`${opts.relayStation} fetch failed`);
+      (relayFailed ? faults : notes).push(`${s.name}: ${s.detail}${relayFailed ? ' (the TAF relay)' : ''}`);
+    }
   }
   for (const c of o.checks) if (!c.ok) faults.push(`${c.name}${c.detail ? `: ${c.detail}` : ''}`);
   for (const f of o.otherFailures) notes.push(`other host: ${f}`);
