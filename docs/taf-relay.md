@@ -107,6 +107,8 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
 1. **Create a Cloudflare account** at <https://dash.cloudflare.com/sign-up>.
    Workers starts on the Free plan by default. Turn on two-factor
    authentication: this account can change what the dashboard shows.
+   Which email to use is about handover (below), not security. The
+   address is not public; only the workers.dev name is.
 2. **The workers.dev subdomain.** The first time you open Workers & Pages,
    Cloudflare asks for an account subdomain. It becomes part of the relay's
    address, `https://lspc-taf-relay.<subdomain>.workers.dev`, which anyone
@@ -145,3 +147,26 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
 
 To turn it off, set `TAF_RELAY_URL` back to null (the card returns to
 Omaha's), then delete the Worker in the dashboard.
+
+## Handing it over
+
+The relay holds no data and no secrets. Everything it is lives in
+`relay/`, so whoever takes it on does not need this Cloudflare account:
+
+1. They set up their own account with the steps above and deploy from the
+   repository: this one, or their fork or clone of it.
+2. Their Worker has a new address,
+   `https://lspc-taf-relay.<their subdomain>.workers.dev`.
+   `TAF_RELAY_URL` (src/config/tafRelay.ts) changes to it, which also
+   moves the build's security policy.
+3. If the dashboard moves too, its new origin goes into `ALLOWED_ORIGINS`
+   in `relay/src/relay.ts`. A fork on GitHub Pages is served from
+   `https://<their user>.github.io`; under a custom domain, that domain.
+   Without it the Worker refuses the dashboard's requests with a 403, and
+   the card says Offutt's TAF could not be fetched.
+4. Once the new address is live, the old Worker can be deleted.
+
+Between steps 2 and 4 both Workers answer, so the switch costs no gap. If
+the account was opened with a personal email, nothing needs to move but
+the address. A club-owned address, or a second member added to the
+account, only saves rebuilding it, which takes the few minutes above.
