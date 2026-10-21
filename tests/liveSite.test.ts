@@ -61,6 +61,21 @@ describe('judgeLoad', () => {
     ]);
   });
 
+  it('counts a failed TAF relay as a fault once the relay is set, and another station’s failed fetch as a note', () => {
+    const taf = (detail: string) => ({ ...clean, sources: [{ name: 'TAF', state: 'ok' as const, meta: 'just now', detail }] });
+    const relayDown = taf('fallback KOMA · KOFF fetch failed');
+    expect(judgeLoad(relayDown, { relayStation: 'KOFF' }).faults).toEqual([
+      'TAF: fallback KOMA · KOFF fetch failed (the TAF relay)',
+    ]);
+    // Before the relay is set, Offutt's fetch is the NWS feed's.
+    expect(judgeLoad(relayDown).faults).toEqual([]);
+    expect(judgeLoad(relayDown).notes).toEqual(['TAF: fallback KOMA · KOFF fetch failed']);
+    const omahaDown = taf('fallback KLNK · no KOFF TAF on aviationweather.gov · KOMA fetch failed');
+    expect(judgeLoad(omahaDown, { relayStation: 'KOFF' }).faults).toEqual([]);
+    // Offutt's own gaps are not faults at all.
+    expect(judgeLoad(taf('fallback KOMA · KOFF TAF ended'), { relayStation: 'KOFF' })).toEqual({ faults: [], notes: [] });
+  });
+
   it('reads a page without the Data health card as having no sources to judge', () => {
     expect(judgeLoad({ ...clean, sources: null }).faults).toEqual([]);
   });

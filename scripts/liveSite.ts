@@ -22,6 +22,8 @@
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
 import { judgeLoad, pagePasses, type LoadObservation, type LoadVerdict, type SourceRow } from '../src/domain/liveSite';
+import { TAF_RELAY_URL } from '../src/config/tafRelay';
+import { STATION as RELAY_STATION } from '../relay/src/station';
 
 const BASE = process.env.LIVE_SITE_URL ?? 'https://amelia-m.github.io/lspc-weather/';
 const PAGES: { name: string; path: string }[] = [
@@ -127,6 +129,13 @@ async function observe(
       name: (li.querySelector('.source-name')?.textContent ?? '').trim().split('\n')[0],
       state: (li.className.split(' ').find((c: string) => c !== 'source') ?? 'idle') as SourceRow['state'],
       meta: (li.querySelector('.source-meta')?.textContent ?? '').trim(),
+      // The chip's label and its text run together in textContent
+      // ("fallbackKOMA · …"), so a space goes between them.
+      detail:
+        (li.querySelector('.source-detail')?.textContent ?? '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .replace(/^(primary|fallback)(?=\S)/, '$1 ') || undefined,
     }));
     const radar = document.querySelector<HTMLImageElement>('img.radar-img');
     return {
@@ -167,7 +176,9 @@ for (const page of PAGES) {
   for (const width of WIDTHS) {
     const verdicts: LoadVerdict[] = [];
     // A second load only when the first had a fault (pagePasses).
-    for (let attempt = 0; attempt < 2 && !pagePasses(verdicts); attempt++) verdicts.push(judgeLoad(await load(page, width)));
+    for (let attempt = 0; attempt < 2 && !pagePasses(verdicts); attempt++) {
+      verdicts.push(judgeLoad(await load(page, width), { relayStation: TAF_RELAY_URL != null ? RELAY_STATION : null }));
+    }
     const pass = pagePasses(verdicts);
     if (!pass) failed++;
     console.log(`${pass ? 'ok  ' : 'FAIL'} ${page.name} at ${width} px${verdicts.length > 1 ? ` (${verdicts.length} loads)` : ''}`);

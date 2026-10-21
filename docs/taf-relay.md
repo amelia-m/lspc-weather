@@ -104,6 +104,16 @@ every case, so a broken relay would have looked like any other day. Checked in a
 production build on live data at 1280, 390 and 320 px: the no-relay chip
 wrapped onto three lines at 320 px, and no page scrolled sideways.
 
+Once the relay is set, the daily live-site check (`judgeLoad`,
+src/domain/liveSite.ts) counts "KOFF fetch failed" on that chip as a fault,
+since the relay is the site's own. A page must fail on two loads in a row
+before it counts, and a failure on `main` opens a `live-site` issue, so a
+relay that stays down is reported within a day. Another station's failed
+fetch is a note, like a late feed. The scraper's reading of the chips was
+checked on the deployed site on 2026-10-21 ("fallback KOMA · KOFF not in the
+NWS feed"), and the whole check passed on every page at every width from
+the sandbox.
+
 ## Checked before deploying (2026-10-20)
 
 - `npm test` runs the relay's handler with a stand-in fetch and clock
