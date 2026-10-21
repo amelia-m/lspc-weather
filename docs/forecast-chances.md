@@ -110,6 +110,23 @@ script error and no sideways scroll. Rain in the low groups not happening, and i
 groups happening, says nothing yet about whether a 30% chance comes true
 about 30% of the time. That needs weeks of hours in each group.
 
+## Second reading, 2026-10-21
+
+The first weekly refresh (2026-10-19, `b46f05d`) added reports to
+2026-10-18 23:55Z and the snapshots kept since. At the latest issuance
+the hours went from 80 to 128, October 13 16Z to October 18 23Z, at 6
+hours ahead from 74 to 122, at 24 hours ahead from 56 to 104.
+
+Every row's totals stayed exactly as they were: rain 9 hours, chances
+adding to 13.7, 14.8 and 13.9 hours; thunder 0 hours, chances adding to
+4.2, 5.3 and 3.25 (the first reading's "3.3" rounds the same 325
+hundredths). Each of the 48 added hours was forecast at 0% for both rain
+and thunder, at every lead, and none had either. The 0% group at the
+latest issuance went from 15 hours to 63. So the reading adds dry hours
+forecast dry and nothing else: no group above 0% gained an hour, and the
+small-sample note stands. Read from the published data file, comparing
+it with the first version (`ab43e7e`); nothing was recomputed.
+
 ## Adding data
 
 The chances come from the kept snapshots and KPMV's reports. A later
