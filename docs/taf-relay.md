@@ -119,7 +119,10 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    address, `https://lspc-taf-relay.<subdomain>.workers.dev`, which anyone
    reading the page source can see, so pick a neutral name.
 3. **Connect the repository.** Go to Workers & Pages, then Create
-   application, then GitHub, and authorize Cloudflare's GitHub app. When
+   application, then GitHub. (The dashboard's account home, as seen by the
+   maintainer on 2026-10-21, has no "Workers & Pages" entry at the top of
+   its sidebar: Workers sits under Build, then Compute, and the home page
+   has a "Create app" button. The docs' names lag the dashboard's.) Then and authorize Cloudflare's GitHub app. When
    GitHub asks which repositories, choose "Only select repositories" and
    pick `amelia-m/lspc-weather`.
 4. **Configure the build:**
