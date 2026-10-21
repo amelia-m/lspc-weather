@@ -145,7 +145,11 @@ describe('describeTafSource', () => {
   });
 
   it('tells a failed fetch apart from Offutt’s ordinary gaps, amber in each', () => {
-    expect(say([{ station: 'KOFF', failed: 'HTTP 502' }])).toEqual({ detail: 'KOMA · KOFF fetch failed', fallback: true });
+    expect(say([{ station: 'KOFF', failed: 'HTTP 500', status: 500 }])).toEqual({ detail: 'KOMA · KOFF fetch failed', fallback: true });
+    // The relay's 502 is aviationweather.gov failing behind it.
+    expect(say([{ station: 'KOFF', failed: 'HTTP 502', status: 502 }]).detail).toBe('KOMA · KOFF upstream failed (502)');
+    // Without the relay, a 502 is the NWS feed's, and not "upstream".
+    expect(say([{ station: 'KOFF', failed: 'HTTP 502', status: 502 }], false).detail).toBe('KOMA · KOFF fetch failed');
     expect(say([{ station: 'KOFF', endedMs: 0 }]).detail).toBe('KOMA · KOFF TAF ended');
     expect(say([{ station: 'KOFF', noForecast: 'CNL' }]).detail).toBe('KOMA · KOFF TAF CNL');
     expect(say([{ station: 'KOFF', none: true }])).toEqual({ detail: 'KOMA · no KOFF TAF on aviationweather.gov', fallback: true });

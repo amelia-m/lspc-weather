@@ -49,13 +49,19 @@ export function describeObservationFeed(
 }
 
 /** Why the TAF chain passed over a station, in a few words, for the Data
- *  health chip and the source log. `relay` says whether the relay is set:
- *  then the station it serves was asked of aviationweather.gov, and the
- *  rest, like every station without it, of the NWS feed. "Fetch failed" is
- *  the request to that feed failing, so with the relay set it is the relay
- *  or aviationweather.gov behind it. */
+ *  health chip, the source log and the live-site check. `relay` says
+ *  whether the relay is set: then the station it serves was asked of the
+ *  relay, and the rest, like every station without it, of the NWS feed.
+ *  The relay answers 502 when aviationweather.gov behind it fails or is
+ *  slow (relay/src/relay.ts), which is another host's outage, so that reads
+ *  "upstream failed"; any other failure of the relay request is the relay's
+ *  own and reads "fetch failed", which the live-site check counts as a
+ *  fault (`judgeLoad`). */
 export function passedOverReason(p: TafPassedOver, relay: boolean): string {
-  if ('failed' in p) return `${p.station} fetch failed`;
+  if ('failed' in p) {
+    const viaRelay = relay && p.station === RELAY_STATION;
+    return viaRelay && p.status === 502 ? `${p.station} upstream failed (502)` : `${p.station} fetch failed`;
+  }
   if ('endedMs' in p) return `${p.station} TAF ended`;
   if ('noForecast' in p) return `${p.station} TAF ${p.noForecast}`;
   return relay && p.station === RELAY_STATION ? `no ${p.station} TAF on aviationweather.gov` : `${p.station} not in the NWS feed`;

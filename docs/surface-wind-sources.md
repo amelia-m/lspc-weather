@@ -353,8 +353,14 @@ Taken partway through, to see what the sample holds; the full reading is
 still due when the window ends on 2026-10-30. All 258 `surfacewind-*`
 artifacts to 2026-10-21 22:55Z (3,096 runs from 2026-10-09 03:43Z),
 downloaded from the Actions API and run through
-`scripts/surfaceWindSummary.ts`. Not archived under `data/parity/`: the
-wrap-up archives the whole window, and the artifacts keep until November.
+`scripts/surfaceWindSummary.ts`. They are kept, one line per run in time
+order, in `data/parity/surfacewind-2026-10-09-to-2026-10-21.jsonl.gz`
+(242 KB), which gives the same summary:
+
+    npx tsx scripts/surfaceWindSummary.ts <(zcat data/parity/surfacewind-2026-10-09-to-2026-10-21.jsonl.gz)
+
+The name keeps it out of the parity summary's `*logs-*` archives. The
+wrap-up can add the runs after 2026-10-21 22:55Z beside it.
 
 - **The sample.** 742 distinct KPMV reports over 13 days, 25 to 38 in each
   local hour, so the early gaps in coverage (above) left no hour thin, and

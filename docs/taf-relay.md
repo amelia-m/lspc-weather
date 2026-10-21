@@ -108,8 +108,14 @@ Once the relay is set, the daily live-site check (`judgeLoad`,
 src/domain/liveSite.ts) counts "KOFF fetch failed" on that chip as a fault,
 since the relay is the site's own. A page must fail on two loads in a row
 before it counts, and a failure on `main` opens a `live-site` issue, so a
-relay that stays down is reported within a day. Another station's failed
-fetch is a note, like a late feed. The scraper's reading of the chips was
+relay that stays down is reported within a day. The relay answers 502 when
+aviationweather.gov behind it fails or is slow; the chain keeps the status,
+and the chip reads "KOFF upstream failed (502)". That is another host's
+outage, a note, as is another station's failed fetch. The fault counts
+only when the page checked is one the relay answers (`ALLOWED_ORIGINS`,
+relay/src/station.ts): a local build on another port is refused by design.
+The check reads the relay setting from its checkout, so a run on a branch
+whose setting differs from the deployed site's judges by the branch's. The scraper's reading of the chips was
 checked on the deployed site on 2026-10-21 ("fallback KOMA · KOFF not in the
 NWS feed"), and the whole check passed on every page at every width from
 the sandbox.
