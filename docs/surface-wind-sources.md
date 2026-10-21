@@ -347,6 +347,43 @@ change in between, so the cause is GitHub's scheduling. The summary should
 count samples by hour of day before ranking sources, so the uncovered
 hours of the first five days do not weigh as if they were sampled.
 
+## A preview, 2026-10-21
+
+Taken partway through, to see what the sample holds; the full reading is
+still due when the window ends on 2026-10-30. All 258 `surfacewind-*`
+artifacts to 2026-10-21 22:55Z (3,096 runs from 2026-10-09 03:43Z),
+downloaded from the Actions API and run through
+`scripts/surfaceWindSummary.ts`. Not archived under `data/parity/`: the
+wrap-up archives the whole window, and the artifacts keep until November.
+
+- **The sample.** 742 distinct KPMV reports over 13 days, 25 to 38 in each
+  local hour, so the early gaps in coverage (above) left no hour thin, and
+  weighting by hour would move little. Speeds: 11 calm, 184 at 1 to 5 kt,
+  358 at 6 to 10, 150 at 11 to 15, 39 at 16 or more; 229 reports with a
+  gust.
+- **Speed, forecast minus measured.** Every source's median miss is 2 kt.
+  The NWS gridpoint runs low (signed mean −0.75 kt, p90 4) and Open-Meteo
+  high (+0.8 hourly, +0.76 at 15 minutes and current; p90 4.3 to 4.5).
+- **Direction.** Median miss 10° (NWS) to 12° (Open-Meteo), p90 about 30°.
+- **Gusts, where KPMV reported one** (229). Both sources' median miss is
+  about 4 kt, but Open-Meteo's run higher: signed mean +4.4 kt and p90 10.4,
+  against NWS's +2.1 and 7. Both also give a gust in the 513 reports with
+  none, which says nothing either way: the METAR reports a gust only when
+  there is one to report.
+- **What the cadence rows confirm.** Open-Meteo's `current` is the
+  15-minute step at its time, and its hourly value the 15-minute step on
+  the hour, in all 3,073 runs. Its hourly gust is never above the preceding
+  hour's largest 15-minute gust and was below it at 171 of 284 hours (by up
+  to 6.8 kt). That is the earlier finding, now on 284 hours. The default
+  model was HRRR in all 3,068 comparable runs.
+- **Freshness.** The KPMV report was a median 14.7 minutes old when
+  fetched, the NWS gridpoint's update time 66 minutes.
+
+So far, then, none of the four is clearly the nearer forecast of the
+measured speed. NWS runs a little low, Open-Meteo a little high, and
+Open-Meteo overshoots gusts more. Counts and spreads only, never a grade.
+Nothing on the dashboard changed.
+
 ## Status
 
 Measurement only. Nothing on the dashboard changed. The open question is
