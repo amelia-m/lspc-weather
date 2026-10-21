@@ -32,6 +32,7 @@ import {
 } from '../src/domain/normalize';
 import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
 import { openMeteoRunMeta, type OpenMeteoRunMeta } from '../src/domain/surfaceWindSources';
+import { runsSeen, type RunsSeen } from '../src/domain/runAge';
 
 interface Schulze {
   validtime: string;
@@ -67,15 +68,21 @@ async function schulze(hourOffset: number): Promise<Schulze | null> {
 }
 
 /** The Open-Meteo models this app's winds-aloft request can be served from
- *  here: on 2026-09-24 Schulze's raw 700 hPa level matched `best_match`,
+ *  here. On 2026-09-24 Schulze's raw 700 hPa level matched `best_match`,
  *  `gfs_seamless` and `ncep_hrrr_conus` exactly (docs/open-questions.md,
- *  "Which forecast run the winds-aloft request is served"). Their metadata
- *  is logged with each comparison (`omRuns`, src/domain/runAge.ts). */
+ *  "Which forecast run the winds-aloft request is served"). Open-Meteo's
+ *  GFS & HRRR page lists "GFS Pressure Variables" at 0.25°, the
+ *  `ncep_gfs025` domain, beside the 0.11° surface grid (read 2026-10-21). */
 const RUN_DOMAINS = ['ncep_hrrr_conus', 'ncep_gfs025'] as const;
 
-/** One model's metadata, or null when it cannot be read: the comparison
- *  goes on without it. */
-async function runMeta(domain: string): Promise<OpenMeteoRunMeta | null> {
+/** Reads of each model's metadata, made at once. Open-Meteo's servers can
+ *  hold a run at different moments while it is copied (one HRRR run read as
+ *  available at 17:37:20Z and 17:39:33Z a second apart on 2026-10-21), so
+ *  one read says only what one server had; several can show that they
+ *  disagreed, which is the copying itself. */
+const RUN_META_READS = 3;
+
+async function runMetaOnce(domain: string): Promise<OpenMeteoRunMeta | null> {
   try {
     const res = await fetch(`https://api.open-meteo.com/data/${domain}/static/meta.json`, {
       signal: AbortSignal.timeout(10_000),
@@ -84,6 +91,12 @@ async function runMeta(domain: string): Promise<OpenMeteoRunMeta | null> {
   } catch {
     return null;
   }
+}
+
+/** One model's metadata across `RUN_META_READS` reads (`runsSeen`), or null
+ *  when none could be read: the comparison goes on without it. */
+async function runMeta(domain: string): Promise<RunsSeen | null> {
+  return runsSeen(await Promise.all(Array.from({ length: RUN_META_READS }, () => runMetaOnce(domain))));
 }
 
 const say = (lines: string[]): void => {
@@ -123,16 +136,16 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
 
   // The app's own request and normaliser, with a plain fetch in place of the
   // app's (which would read the fixture under vitest's DEV flag).
-  // Read beside the request, so it says which runs were available when the
-  // request was served.
-  const runsP = Promise.all(RUN_DOMAINS.map(async (d) => [d, await runMeta(d)] as const));
+  // Started with the request, so it says which runs the servers held while
+  // the request was served. Awaited by every record, the failures too.
+  const runsP = Promise.all(RUN_DOMAINS.map(async (d) => [d, await runMeta(d)] as const)).then(Object.fromEntries);
   let raw: RawOpenMeteo;
   try {
     const res = await fetch(openMeteoWindsUrl(dz.lat, dz.lon), { signal: AbortSignal.timeout(20_000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     raw = (await res.json()) as RawOpenMeteo;
   } catch (e) {
-    say([...out, `Open-Meteo could not be read: ${(e as Error).message}`, record({ kind: 'schulze', at: new Date(now).toISOString(), error: `open-meteo: ${(e as Error).message}` })]);
+    say([...out, `Open-Meteo could not be read: ${(e as Error).message}`, record({ kind: 'schulze', at: new Date(now).toISOString(), error: `open-meteo: ${(e as Error).message}`, omRuns: await runsP })]);
     return;
   }
   const { samples, validMs, schulze: hisWay } = normalizeOpenMeteo(coerceOpenMeteoTimes(raw), now);
@@ -143,7 +156,7 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   const asSchulzeLevels =
     hisWay.groundFtMsl != null ? interpolateAsSchulze(hisWay.levels, hisWay.groundFtMsl, WINDS_ALOFT_LEVELS_AGL) : [];
   if (validMs == null || levels.length === 0) {
-    say([...out, 'Open-Meteo answered with no usable hour.', record({ kind: 'schulze', at: new Date(now).toISOString(), error: 'open-meteo: no usable hour' })]);
+    say([...out, 'Open-Meteo answered with no usable hour.', record({ kind: 'schulze', at: new Date(now).toISOString(), error: 'open-meteo: no usable hour', omRuns: await runsP })]);
     return;
   }
   const appHour = new Date(validMs).getUTCHours();
@@ -209,7 +222,7 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     // point's.
     dz: `${SITE.dz.lat},${SITE.dz.lon}`,
     unaligned,
-    omRuns: Object.fromEntries(await runsP),
+    omRuns: await runsP,
   };
   if (ms == null) {
     say([...out, 'No Schulze table for the same hour; nothing compared.', record({ ...base, aligned: null })]);
