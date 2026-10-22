@@ -354,10 +354,11 @@ function ChecklistPanel({
       {/* One verdict for the claim, then one answer per question: the two are
           different rulings, and one line under three questions muddled them. */}
       <div className="cite-answer">
-        {earlier && (
+        {earlier.length > 0 && (
           <p className="muted small">
-            You answered an earlier wording of this entry. Those answers are kept in this browser and
-            go with the report, marked as given to the earlier wording; they are not shown below.
+            You answered an earlier wording of this entry ({earlier.map((w) => w.value).join('; ')}).
+            Those answers are kept in this browser and go with the report under that figure; they are
+            not shown below.
           </p>
         )}
         <p className="cite-answer-head">Your verdict on the claim:</p>

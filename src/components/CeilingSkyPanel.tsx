@@ -109,11 +109,7 @@ export function CeilingSkyPanel({
           into or through cloud and sets flight visibility and distance from cloud: below 10,000 ft
           MSL, 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft
           MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile horizontal.{' '}
-          {thresholds &&
-            `The visibility flag ${visibilityFigure(
-              thresholds.published?.visibilityCautionSm ?? thresholds.visibilityCautionSm,
-              thresholds.visibilityCautionSm,
-            )} `}
+          {thresholds && `The visibility flag ${visibilityFigure(thresholds)} `}
           Source:{' '}
           <SourceLink citation={CITATIONS.far10517} />
         </p>
