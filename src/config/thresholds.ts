@@ -1,6 +1,6 @@
 import type { Citation, JumperClass } from '../domain/types';
 import { mphToKt } from '../domain/units';
-import { repoDoc } from './site';
+import { repoDoc, SITE } from './site';
 import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
 
 /**
@@ -446,7 +446,7 @@ export interface Thresholds {
     bandIs: string;
     citation: Citation;
   };
-  /** Visibility, statute miles (105.17 floor below 10k MSL is 3 SM). */
+  /** Visibility, statute miles: the 105.17 row in use (`VISIBILITY_ROW`). */
   visibilityCautionSm: number;
   /** The profile's own value of each limit Settings can edit, recorded by
    *  `withOverrides` so everything that cites a limit can tell a figure the
@@ -602,6 +602,49 @@ export function limitLines(
   ];
 }
 
+/**
+ * Which 14 CFR 105.17 row the visibility flag holds the METAR's surface
+ * visibility to. The section sets flight visibility by altitude: 3 SM below
+ * 10,000 ft MSL, 5 SM at or above it (read through the eCFR 2026-09-23).
+ * Brown's is at 1,182 ft MSL, so an exit above about 8,800 ft AGL, a
+ * 10,000 ft AGL exit among them, is in the 5 SM row, and the freefall drops
+ * into the 3 SM row.
+ *
+ * Which row a surface reading should be held to is not this code's call: the
+ * reading is at the ground and the rule's measure is flight visibility at
+ * altitude. It is open for the S&TA and the pilot in command (#citations,
+ * A8; docs/open-questions.md, item 1). Both rows are written out here, the
+ * wording with them, so the answer is this one constant: the flag's figure,
+ * its guidance, and the #citations entry all follow it.
+ */
+export type VisibilityRow = 'below-10000-msl' | 'at-or-above-10000-msl';
+
+const EXIT_ROW_FROM_FT_AGL = (10_000 - SITE.dz.elevationFt).toLocaleString('en-US');
+
+export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; guidance: string; ask: string }> = {
+  'below-10000-msl': {
+    sm: 3,
+    guidance:
+      '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.',
+    ask: 'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the pilot in command.',
+  },
+  'at-or-above-10000-msl': {
+    sm: 5,
+    guidance: `14 CFR 105.17 requires at least 5 SM flight visibility at or above 10,000 ft MSL, the row an exit from this DZ above about ${EXIT_ROW_FROM_FT_AGL} ft AGL is in, and 3 SM below 10,000 ft MSL. This flag holds the reading to the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.`,
+    ask: 'The flag fires at 5 SM on the METAR’s surface visibility, the row an exit from this DZ is in. The reg’s measure is flight visibility at altitude, not at the surface. Is holding a surface reading to the exit’s row right? That is a judgement for the S&TA and the pilot in command.',
+  },
+};
+
+/** The row in use. Until the S&TA or pilot answers A8, the lower one: the
+ *  row a surface reading can be held to without claiming it says more. */
+export const VISIBILITY_ROW: VisibilityRow = 'below-10000-msl';
+
+/** The row a flag at `sm` holds the reading to, for its wording; the row in
+ *  use when `sm` is neither (a figure edited in Settings has its own note). */
+export function visibilityRowFor(sm: number): (typeof VISIBILITY_ROWS)[VisibilityRow] {
+  return Object.values(VISIBILITY_ROWS).find((r) => r.sm === sm) ?? VISIBILITY_ROWS[VISIBILITY_ROW];
+}
+
 const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
 
 /** Licensed profile: nobody publishes a surface-wind limit for licensed
@@ -650,7 +693,7 @@ const STUDENT: Thresholds = {
     bandIs: 'the 14 mph figure for ram-air canopies rounded down to whole knots',
     citation: CITATIONS.uspaStudentWinds,
   },
-  visibilityCautionSm: 3,
+  visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm,
 };
 
 /**
@@ -683,7 +726,7 @@ const LICENSED: Thresholds = {
   // unless the reader sets their own in Settings (`takesOwnLimits`).
   windLimitCitation: null,
   takesOwnLimits: true,
-  visibilityCautionSm: 3,
+  visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm,
 };
 
 /** Kept for tests / back-compat. */

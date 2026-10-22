@@ -17,6 +17,8 @@ import {
   withOverrides,
 } from '../src/config/thresholds';
 import type { Thresholds } from '../src/config/thresholds';
+import { VISIBILITY_ROW, VISIBILITY_ROWS } from '../src/config/thresholds';
+import { CHECKLIST } from '../src/config/citationsChecklist';
 import type { SpeedUnit } from '../src/domain/units';
 import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
 import { normalizeMetar, normalizeNwsObservation } from '../src/domain/normalize';
@@ -660,9 +662,8 @@ describe('guidance matches the section as read', () => {
     expect(vis?.guidance).toMatch(/3 SM/);
     expect(vis?.guidance).toMatch(/5 SM/);
     expect(vis?.guidance).toMatch(/10,000 ft MSL/);
-    // And still fires at the lower row: the reading is surface visibility, and
-    // the reg's measure is flight visibility at altitude.
-    expect(DEFAULT_THRESHOLDS.student.visibilityCautionSm).toBe(3);
+    // At the row in use (VISIBILITY_ROW): which one is open on #citations, A8.
+    expect(DEFAULT_THRESHOLDS.student.visibilityCautionSm).toBe(VISIBILITY_ROWS[VISIBILITY_ROW].sm);
   });
 
   it('says whose light 105.19 requires, and from when', () => {
@@ -836,12 +837,14 @@ describe('a limit edited in Settings is not presented as the published one', () 
   });
 
   it('says a visibility flag fires at an edited figure', () => {
-    const hazy = normalizeMetar({ ...METAR_FIXTURE[0], visib: 4 });
+    // Above the row in use, whichever it is, and below the edited figure.
+    const row = VISIBILITY_ROWS[VISIBILITY_ROW].sm;
+    const hazy = normalizeMetar({ ...METAR_FIXTURE[0], visib: row + 1 });
     const vis = (t: Thresholds) =>
       evaluateAdvisories(snapshot({ current: hazy }), t, now, 'kt').find((a) => a.id === 'visibility');
     expect(vis(withOverrides(DEFAULT_THRESHOLDS.student))).toBeUndefined();
-    expect(vis(withOverrides(DEFAULT_THRESHOLDS.student, { visibilityCautionSm: 5 }))?.guidance).toContain(
-      'This flag fires below 5 SM, as edited in Settings, in place of the 3 SM row it otherwise uses.',
+    expect(vis(withOverrides(DEFAULT_THRESHOLDS.student, { visibilityCautionSm: row + 2 }))?.guidance).toContain(
+      `This flag fires below ${row + 2} SM, as edited in Settings, in place of the ${row} SM row it otherwise uses.`,
     );
   });
 
@@ -890,8 +893,9 @@ describe('a limit edited in Settings is not presented as the published one', () 
     // Settings is open on Licensed only; there the visibility caution is
     // the one published figure to edit.
     const licensed = DEFAULT_THRESHOLDS.licensed;
-    expect(settings(withOverrides(licensed, { visibilityCautionSm: 5 }), licensed)).toContain('· published 3');
-    expect(settings(withOverrides(licensed), licensed)).not.toContain('published 3');
+    const row = VISIBILITY_ROWS[VISIBILITY_ROW].sm;
+    expect(settings(withOverrides(licensed, { visibilityCautionSm: row + 2 }), licensed)).toContain(`· published ${row}`);
+    expect(settings(withOverrides(licensed), licensed)).not.toContain(`published ${row}`);
   });
 
   it('treats an override equal to the published value as unedited', () => {
@@ -932,3 +936,41 @@ describe('isEdited', () => {
   });
 });
 
+
+/* Both 105.17 rows are written out (VISIBILITY_ROWS), so answering A8 on
+ * #citations is one constant. These hold each row's flag whichever is in use. */
+describe('the 105.17 row the visibility flag uses', () => {
+  const flagAt = (visib: number, rowSm: number) =>
+    evaluateAdvisories(
+      snapshot({ current: normalizeMetar({ ...METAR_FIXTURE[0], visib }) }),
+      { ...DEFAULT_THRESHOLDS.student, visibilityCautionSm: rowSm },
+      now,
+    ).find((a) => a.id === 'visibility');
+
+  it('at the 3 SM row, flags below 3 SM only, and names both rows', () => {
+    expect(flagAt(4, 3)).toBeUndefined();
+    const v = flagAt(2, 3);
+    expect(v?.guidance).toBe(VISIBILITY_ROWS['below-10000-msl'].guidance);
+    expect(v?.guidance).toMatch(/3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it/);
+  });
+
+  it('at the 5 SM row, flags below 5 SM, says it holds the reading to that row, and where an exit enters it', () => {
+    expect(flagAt(5, 5)).toBeUndefined();
+    const v = flagAt(4, 5);
+    expect(v?.guidance).toBe(VISIBILITY_ROWS['at-or-above-10000-msl'].guidance);
+    expect(v?.guidance).toContain('This flag holds the reading to the 5 SM row.');
+    // 10,000 ft MSL less the DZ's 1,182 ft: derived, not written down.
+    expect(v?.guidance).toContain('above about 8,818 ft AGL');
+    expect(v?.guidance).toMatch(/3 SM below 10,000 ft MSL/);
+  });
+
+  it('uses the row in use in both profiles and on #citations', () => {
+    const row = VISIBILITY_ROWS[VISIBILITY_ROW];
+    expect(DEFAULT_THRESHOLDS.student.visibilityCautionSm).toBe(row.sm);
+    expect(DEFAULT_THRESHOLDS.licensed.visibilityCautionSm).toBe(row.sm);
+    const a8 = CHECKLIST.find((e) => e.id === 'A8')!;
+    expect(a8.claim).toBe(row.guidance);
+    expect(a8.value).toBe(`Flag fires below ${row.sm} SM`);
+    expect(a8.asks).toEqual([row.ask]);
+  });
+});

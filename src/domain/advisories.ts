@@ -1,5 +1,5 @@
 import type { Advisory, AdvisoryLevel, HourlyPoint, WeatherSnapshot } from './types';
-import { CITATIONS, hasWindLimit, isEdited, isOwnLimit, type Thresholds } from '../config/thresholds';
+import { CITATIONS, hasWindLimit, isEdited, isOwnLimit, visibilityRowFor, type Thresholds } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
 import { SITE } from '../config/site';
@@ -116,22 +116,25 @@ export function evaluateAdvisories(
       });
     }
 
-    // --- Visibility (105.17 floor below 10k MSL is 3 SM) ---
-    // The trigger is the section's lower row. Its upper row — 5 SM at or above
-    // 10,000 ft MSL — is the one an exit from this DZ is in, and the guidance
-    // prints it, but the reading is the METAR's surface visibility and the
-    // reg's measure is flight visibility at altitude, so the flag holds a
-    // surface figure only to the row it can honestly be held to.
+    // --- Visibility (14 CFR 105.17) ---
+    // The trigger is one of the section's two rows (`VISIBILITY_ROW`,
+    // src/config/thresholds.ts): 3 SM below 10,000 ft MSL, or 5 SM at or
+    // above it, the row an exit from this DZ is in. The reading is the
+    // METAR's surface visibility and the reg's measure is flight visibility
+    // at altitude; which row a surface reading should be held to is the open
+    // question there. The guidance names both rows either way, and says
+    // which one the flag uses.
     if (current.visibilitySm != null && current.visibilitySm < thresholds.visibilityCautionSm) {
+      const row = visibilityRowFor(thresholds.published?.visibilityCautionSm ?? thresholds.visibilityCautionSm);
       out.push({
         id: 'visibility',
         level: 'caution',
         metric: 'Visibility',
         value: `${round(current.visibilitySm, 1)} SM`,
         guidance:
-          '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.' +
+          row.guidance +
           (isEdited(thresholds, 'visibilityCautionSm')
-            ? ` This flag fires below ${round(thresholds.visibilityCautionSm, 1)} SM, as edited in Settings, in place of the ${round(thresholds.published?.visibilityCautionSm ?? 3, 1)} SM row it otherwise uses.`
+            ? ` This flag fires below ${round(thresholds.visibilityCautionSm, 1)} SM, as edited in Settings, in place of the ${round(row.sm, 1)} SM row it otherwise uses.`
             : ''),
         citation: CITATIONS.far10517,
       });
