@@ -350,7 +350,10 @@ which the NDFD rows only bracket. Since 2026-10-15 the ceiling-error
 chart reads their `ceilingHeight` (docs/ceiling-heights.md, "The
 forecasts the card read, kept hourly"), and since 2026-10-17 the same
 page scores their hourly rain and thunder chances against KPMV's reports
-(docs/forecast-chances.md).
+(docs/forecast-chances.md). Since 2026-10-22 their wind, gust,
+direction, temperature, visibility and rainfall have a first reading
+against KPMV's reports too (docs/kept-forecasts-vs-kpmv.md, by hand, not
+on a page).
 
 **The keeper does not run hourly.** Its schedule is `23 * * * *`, but by
 2026-10-15 15:07Z GitHub had started it 10 times in about 47 hours, 3 to
