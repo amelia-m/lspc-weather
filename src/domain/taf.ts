@@ -158,7 +158,9 @@ export function resolveTafTime(
   return Date.UTC(year, month, day, hour, minute);
 }
 
-function windOf(token: string): TafWind | null {
+/** A wind group, `18012G20KT`, `VRB03KT` or `00000KT` (knots or m/s), as
+ *  TAFs and METARs both write it. keptForecasts.ts reads KPMV's with it. */
+export function windOf(token: string): TafWind | null {
   const m = WIND.exec(token);
   if (!m) return null;
   const toKt = (n: string): number => (m[4] === 'MPS' ? Math.round(Number(n) * KT_PER_MPS) : Number(n));
@@ -170,6 +172,20 @@ function windOf(token: string): TafWind | null {
     speedKt,
     gustKt: m[3] != null ? toKt(m[3]) : null,
   };
+}
+
+/** A visibility in statute miles: `6SM`, `1/2SM`, `P6SM` (more than),
+ *  `M1/4SM` (less than, read as the figure), or a whole number then a
+ *  fraction across two tokens (`1 1/2SM`, `next` the second). `tokens` is
+ *  how many it took. keptForecasts.ts reads KPMV's with it. */
+export function visibilityOf(token: string, next?: string): { sm: number; plus: boolean; tokens: 1 | 2 } | null {
+  const vis = VIS_SM.exec(token);
+  if (vis) {
+    const whole = Number(vis[2]);
+    return { sm: vis[3] != null ? whole / Number(vis[3]) : whole, plus: vis[1] === 'P', tokens: 1 };
+  }
+  const frac = next != null && /^\d$/.test(token) ? /^(\d)\/(\d)SM$/.exec(next) : null;
+  return frac ? { sm: Number(token) + Number(frac[1]) / Number(frac[2]), plus: false, tokens: 2 } : null;
 }
 
 function ceilingOf(layers: SkyLayer[]): number | null {
@@ -250,19 +266,11 @@ function readElements(c: Cursor, p: TafPeriod, undecoded: string[]): void {
     // "1 1/2SM": a whole-mile token followed by the fraction token. The whole
     // number on its own is not a visibility, so it is only consumed when the
     // fraction follows.
-    const vis = VIS_SM.exec(t);
+    const vis = visibilityOf(t, c.tokens[c.i]);
     if (vis) {
-      const whole = Number(vis[2]);
-      const value = vis[3] != null ? whole / Number(vis[3]) : whole;
-      p.visibilitySm = round(value, 2);
-      p.visibilityPlus = vis[1] === 'P';
-      continue;
-    }
-    if (/^\d$/.test(t) && c.i < c.tokens.length && /^\d\/\dSM$/.test(c.tokens[c.i])) {
-      const frac = /^(\d)\/(\d)SM$/.exec(c.tokens[c.i])!;
-      c.i += 1;
-      p.visibilitySm = round(Number(t) + Number(frac[1]) / Number(frac[2]), 2);
-      p.visibilityPlus = false;
+      c.i += vis.tokens - 1;
+      p.visibilitySm = round(vis.sm, 2);
+      p.visibilityPlus = vis.plus;
       continue;
     }
     // ICAO-format TAFs (military fields issue them) give visibility in metres;

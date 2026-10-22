@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { KeptGridpointSnapshot, KeptProperties } from '../src/domain/ceilingHeights';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import {
-  angleDiff,
   asReported,
   keptInstantRecords,
   metarVisibilitySm,
   pairInstants,
+  prepareInstants,
   readInstant,
   summarizeInstants,
   summarizeRain,
@@ -61,6 +61,13 @@ describe('keptInstantRecords', () => {
     expect(keptInstantRecords(s, 'windGust')).toEqual([]);
   });
 
+  it('gives no record for an hour the API left null', () => {
+    const s = snap(T - 2 * H, {}, {
+      temperature: { uom: 'wmoUnit:degC', values: [{ validTime: vt(T, 2), value: null }, { validTime: vt(T + 2 * H), value: 4 }] },
+    });
+    expect(keptInstantRecords(s, 'temperature').map((r) => [r.valid, r.value])).toEqual([[iso(T + 2 * H).replace(':00.000Z', 'Z'), 4]]);
+  });
+
   it('refuses a unit it does not convert', () => {
     const s = snap(T - 2 * H, {}, { windSpeed: { uom: 'wmoUnit:m_s-1', values: [{ validTime: vt(T), value: 4 }] } });
     expect(() => keptInstantRecords(s, 'windSpeed')).toThrow(/m_s-1/);
@@ -91,14 +98,7 @@ describe('reading a report', () => {
     expect(metarVisibilitySm('KPMV 151555Z AUTO 02004KT OVC003 12/12 A3001')).toBeNull();
   });
 
-  it('measures direction differences the short way round', () => {
-    expect(angleDiff(350, 10)).toBe(-20);
-    expect(angleDiff(10, 350)).toBe(20);
-    expect(angleDiff(0, 180)).toBe(180);
-    expect(angleDiff(150, 140)).toBe(10);
-  });
-
-  it('reads the forecast visibility as a report would: whole miles from 3 SM, quarters below', () => {
+  it('rounds the forecast visibility to the nearest whole mile from 3 SM, quarter below', () => {
     // 16,080 m: a hair under 10 SM, which unrounded counted as "under 10".
     expect(asReported(16080 / 1609.344)).toBe(10);
     expect(asReported(9.29)).toBe(9);
@@ -110,22 +110,29 @@ describe('reading a report', () => {
 
 describe('pairInstants', () => {
   const metars = [metar(T - 5 * 60_000, '14006KT 10SM CLR 14/06'), metar(T + H - 25 * 60_000, '14006KT 10SM CLR 14/06')];
+  const pairs = (snaps: KeptGridpointSnapshot[], ms: MetarRecord[], lead: number, reach: number) =>
+    pairInstants(prepareInstants(snaps, ms), lead, reach);
 
   it('picks the newest issuance at least the row’s lead before the hour, and the report within 10 minutes of it', () => {
     const snaps = [snap(T - 30 * H, { kt: 2 }), snap(T - 8 * H, { kt: 4 }), snap(T - 1 * H, { kt: 6 })];
-    const at = (lead: number) => pairInstants(snaps, metars, lead, 48).find((p) => p.t === T);
+    const at = (lead: number) => pairs(snaps, metars, lead, 48).find((p) => p.t === T);
     expect(at(0)?.fc.windSpeed).toBeCloseTo(6);
     expect(at(6)?.fc.windSpeed).toBeCloseTo(4);
     expect(at(24)?.fc.windSpeed).toBeCloseTo(2);
     expect(at(0)?.obs.t).toBe(T - 5 * 60_000);
   });
 
-  it('leaves out an hour with no report near its start, and one past the reach of what was gathered', () => {
-    const snaps = [snap(T - 1 * H, { kt: 6 })];
+  it('leaves out an hour with no report within 10 minutes of its start', () => {
     // T+H's nearest report is 25 minutes before it.
-    expect(pairInstants(snaps, metars, 0, 48).map((p) => p.t)).toEqual([T]);
-    // At 24 h ahead, T is far past the one issuance's reach.
-    expect(pairInstants(snaps, metars, 24, 6)).toEqual([]);
+    expect(pairs([snap(T - 1 * H, { kt: 6 })], metars, 0, 48).map((p) => p.t)).toEqual([T]);
+  });
+
+  it('leaves out an hour past the reach of what was gathered', () => {
+    // Issued T−1h, reaching an hour past that: T is in reach, T+H is not,
+    // though the snapshot has a value and a report sits at its start.
+    const both = [metar(T - 5 * 60_000, '14006KT 10SM CLR 14/06'), metar(T + H - 5 * 60_000, '14006KT 10SM CLR 14/06')];
+    expect(pairs([snap(T - 1 * H, { kt: 6 })], both, 0, 48).map((p) => p.t)).toEqual([T, T + H]);
+    expect(pairs([snap(T - 1 * H, { kt: 6 })], both, 0, 1).map((p) => p.t)).toEqual([T]);
   });
 });
 
@@ -167,21 +174,41 @@ describe('summarizeInstants', () => {
 });
 
 describe('summarizeRain', () => {
-  // A six-hour period from T, and the station's :55 reports through it.
-  const qpf = (updateMs: number, mm: number): KeptGridpointSnapshot =>
-    snap(updateMs, {}, { quantitativePrecipitation: { uom: 'wmoUnit:mm', values: [{ validTime: vt(T, 6), value: mm }] } });
+  // A six-hour period from T (12Z), and the station's :55 reports through it.
+  const P = Date.parse('2026-10-20T12:00:00Z');
+  const qpf = (updateMs: number, mm: number, values?: { validTime: string; value: number }[]): KeptGridpointSnapshot =>
+    snap(updateMs, {}, { quantitativePrecipitation: { uom: 'wmoUnit:mm', values: values ?? [{ validTime: vt(P, 6), value: mm }] } });
   const hourly = (amounts: (string | null)[]) =>
-    amounts.flatMap((p, i) => (p === null ? [] : [metar(T + i * H + 55 * 60_000, '02004KT 5SM RA OVC010 12/12', p)]));
+    amounts.flatMap((p, i) => (p === null ? [] : [metar(P + i * H + 55 * 60_000, '02004KT 5SM RA OVC010 12/12', p)]));
 
   it('sets the period total against the hourly amounts added up', () => {
-    const rows = summarizeRain([qpf(T - 2 * H, 10.16), qpf(T - 8 * H, 2.54)], hourly(['P0010', '', 'P0005', '', '', 'P0001']));
-    expect(rows[0].periods).toEqual([{ start: iso(T), issued: iso(T - 2 * H).replace('.000Z', '+00:00'), fc: 0.4, obs: 0.16 }]);
+    const rows = summarizeRain([qpf(P - 2 * H, 10.16), qpf(P - 8 * H, 2.54)], hourly(['P0010', '', 'P0005', '', '', 'P0001']), 48);
+    expect(rows[0].periods).toEqual([{ start: iso(P), issued: iso(P - 2 * H).replace('.000Z', '+00:00'), fc: 0.4, obs: 0.16 }]);
     expect(rows[1].periods[0].fc).toBe(0.1);
     expect(rows[2].periods).toEqual([]);
   });
 
   it('leaves out a period with an hour it cannot add', () => {
-    expect(summarizeRain([qpf(T - 2 * H, 1)], hourly(['', '', null, '', '', '']))[0].periods).toEqual([]);
-    expect(summarizeRain([qpf(T - 2 * H, 1)], hourly(['', 'P////', '', '', '', '']))[0].periods).toEqual([]);
+    expect(summarizeRain([qpf(P - 2 * H, 1)], hourly(['', '', null, '', '', '']), 48)[0].periods).toEqual([]);
+    expect(summarizeRain([qpf(P - 2 * H, 1)], hourly(['', 'P////', '', '', '', '']), 48)[0].periods).toEqual([]);
+  });
+
+  it('scores only the six-hour periods on 00, 06, 12 and 18Z', () => {
+    // The API also serves shorter ones, 13Z for five hours among them,
+    // which would overlap the 12Z period.
+    const odd = qpf(P - 2 * H, 0, [
+      { validTime: vt(P + H, 5), value: 5 },
+      { validTime: vt(P + 6 * H, 3), value: 5 },
+    ]);
+    expect(summarizeRain([odd], hourly(['', '', '', '', '', '', '', '', '']), 48)[0].periods).toEqual([]);
+  });
+
+  it('leaves out a period past the reach of what was gathered', () => {
+    // At 24 h ahead the 12Z period needs an issuance by P−24h; the one kept
+    // is P−30h, so with a reach of 5 hours past it the period is out, with
+    // 48 in.
+    const rows = summarizeRain([qpf(P - 30 * H, 1)], hourly(['', '', '', '', '', '']), 5);
+    expect(rows[2].periods).toEqual([]);
+    expect(summarizeRain([qpf(P - 30 * H, 1)], hourly(['', '', '', '', '', '']), 48)[2].periods).toHaveLength(1);
   });
 });

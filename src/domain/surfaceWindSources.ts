@@ -430,7 +430,8 @@ export interface SurfaceWindSummary {
   nwsUpdates: { updateTime: string; firstSeenAt: string; hourlyUpdateTime: string | null }[];
 }
 
-const angular = (a: number, b: number): number => ((((a - b + 540) % 360) + 360) % 360) - 180;
+/** a − b in degrees, the short way round: −180 to under 180. */
+export const angular = (a: number, b: number): number => ((((a - b + 540) % 360) + 360) % 360) - 180;
 const sameWind = (a: WindAt | null, b: WindAt | null): boolean =>
   a != null && b != null && a.dir === b.dir && a.spd === b.spd && a.gust === b.gust;
 /** Same speed and gust, directions exactly one degree apart (across north

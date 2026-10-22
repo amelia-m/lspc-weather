@@ -60,10 +60,12 @@ export interface ReportedHour {
   ts: boolean | null;
   /** `VCTS`: thunderstorm in the vicinity, not at the station. */
   vcts: boolean;
-  /** The hour's amount, in.: the largest `P` group read over the hour (its
-   *  :55 report's, which runs from the :55 report before, unless a special
-   *  after it measured more); 0 with none, and a trace, `P0000`, is 0.
-   *  Null when the :55 report's gauge could not say. */
+  /** The hour's amount, in.: the largest `P` group read over the hour
+   *  ending with its :55 report. That is the :55 report's, since every
+   *  report from the :55 before measures from it and no amount fell within
+   *  an hour in the archive; a special earlier in the hour gives its amount
+   *  only if the :55 report's is smaller. 0 with none, and a trace,
+   *  `P0000`, is 0. Null when the :55 report's gauge could not say. */
   amount: number | null;
 }
 
@@ -145,8 +147,8 @@ export function reportedHours(metars: readonly MetarRecord[]): ReportedHour[] {
       precip: wx.some((r) => r.precip) || amounts.some((r) => r.pGroup),
       ts: ts ? true : wx.some((r) => r.tsno) ? null : false,
       vcts: wx.some((r) => r.vcts),
-      // The largest in the hour: a special after the last :55 measures from
-      // it too, and an amount never fell within an hour in the archive.
+      // The largest in the hour: every report in it measures from the :55
+      // before, and an amount never fell within an hour in the archive.
       amount:
         list.find((x) => x.hourly)!.r.amount == null
           ? null
