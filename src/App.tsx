@@ -61,7 +61,7 @@ import { ParityPage, type ParityState } from './components/ParityPage';
 import type { ParitySummary } from './domain/paritySummary';
 import { UnitToggle } from './components/common/UnitToggle';
 import { deriveProvenance } from './domain/sourceProvenance';
-import { TAF_RELAY_URL } from './config/tafRelay';
+import { TAF_RELAY_SET } from './config/tafRelay';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 
 const PROFILE_KEY = 'lspc:windProfile';
@@ -272,7 +272,7 @@ export default function App(): JSX.Element {
     safeLocalSet(WINDS_METHOD_KEY, windsMethod);
   }, [windsMethod]);
   const winds = useWindsHour(snapshot, windsMethod);
-  const provenance = useMemo(() => deriveProvenance(snapshot, TAF_RELAY_URL != null), [snapshot]);
+  const provenance = useMemo(() => deriveProvenance(snapshot, TAF_RELAY_SET), [snapshot]);
 
   // Every hook above runs in both views, so switching routes cannot change hook
   // order. The weather polling keeps running behind the citations page, which is

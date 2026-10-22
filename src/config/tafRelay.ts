@@ -15,6 +15,10 @@ import { PATH, STATION } from '../../relay/src/station';
 
 export const TAF_RELAY_URL: string | null = null;
 
+/** Whether the relay is set: what the card, Data health, the source log
+ *  and the checks ask of the setting. */
+export const TAF_RELAY_SET = TAF_RELAY_URL != null;
+
 /** The relay's URL for a station, or null when there is no relay or it does
  *  not serve that station (relay/src/station.ts). */
 export function tafRelayUrlFor(station: string, base: string | null = TAF_RELAY_URL): string | null {

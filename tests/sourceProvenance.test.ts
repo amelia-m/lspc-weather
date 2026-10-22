@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveProvenance, describeObservationFeed, describeTafSource } from '../src/domain/sourceProvenance';
+import { deriveProvenance, describeObservationFeed, describeTafSource, TAF_RELAY_FAILED } from '../src/domain/sourceProvenance';
 import { normalizeNwsObservation } from '../src/domain/normalize';
 import { OBSERVATION_FIXTURE } from '../src/api/fixtures/observation';
 import type { WeatherSnapshot } from '../src/domain/types';
@@ -138,14 +138,18 @@ describe('describeTafSource', () => {
   const say = (passedOver: Passed, relay = true) => describeTafSource({ ...omaha, passedOver }, relay);
 
   it('names Offutt’s TAF read through the relay, and is not amber', () => {
-    expect(describeTafSource({ ...omaha, station: 'KOFF', via: 'aviationweather' }, true)).toEqual({
+    expect(describeTafSource({ ...omaha, station: 'KOFF', via: 'aviationweather' }, true)).toMatchObject({
       detail: 'KOFF · aviationweather.gov via the relay',
       fallback: false,
     });
   });
 
   it('tells a failed fetch apart from Offutt’s ordinary gaps, amber in each', () => {
-    expect(say([{ station: 'KOFF', failed: 'HTTP 500', status: 500 }])).toEqual({ detail: 'KOMA · KOFF fetch failed', fallback: true });
+    expect(say([{ station: 'KOFF', failed: 'HTTP 500', status: 500 }])).toEqual({
+      detail: 'KOMA · KOFF fetch failed',
+      fallback: true,
+      flags: [TAF_RELAY_FAILED],
+    });
     // The relay's 502 is aviationweather.gov failing behind it.
     expect(say([{ station: 'KOFF', failed: 'HTTP 502', status: 502 }]).detail).toBe('KOMA · KOFF upstream failed (502)');
     // Without the relay, a 502 is the NWS feed's, and not "upstream".
@@ -159,6 +163,20 @@ describe('describeTafSource', () => {
     expect(say([{ station: 'KOFF', none: true }], false).detail).toBe('KOMA · KOFF not in the NWS feed');
     const lincoln = { ...omaha, station: 'KLNK', passedOver: [{ station: 'KOFF', none: true }, { station: 'KOMA', none: true }] as Passed };
     expect(describeTafSource(lincoln, true).detail).toBe('KLNK · no KOFF TAF on aviationweather.gov · KOMA not in the NWS feed');
+  });
+
+  it('flags the relay’s own failure for the live-site check, and not aviationweather.gov’s', () => {
+    expect(say([{ station: 'KOFF', failed: 'HTTP 404', status: 404 }]).flags).toEqual([TAF_RELAY_FAILED]);
+    expect(say([{ station: 'KOFF', failed: 'Failed to fetch' }]).flags).toEqual([TAF_RELAY_FAILED]);
+    expect(say([{ station: 'KOFF', failed: 'HTTP 502', status: 502 }]).flags).toBeUndefined();
+    expect(say([{ station: 'KOFF', failed: 'HTTP 404', status: 404 }], false).flags).toBeUndefined();
+    expect(say([{ station: 'KOMA', failed: 'HTTP 500', status: 500 }]).flags).toBeUndefined();
+  });
+
+  it('names aviationweather.gov as the source of Offutt’s TAF read through the relay', () => {
+    const offutt = describeTafSource({ ...omaha, station: 'KOFF', via: 'aviationweather' }, true);
+    expect(offutt.source?.url).toBe('https://aviationweather.gov/data/taf/?ids=KOFF');
+    expect(describeTafSource({ ...omaha, station: 'KOFF', via: 'nws' }, false).source).toBeUndefined();
   });
 
   it('lists every station passed over, in the chain’s order', () => {

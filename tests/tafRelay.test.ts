@@ -94,6 +94,26 @@ describe('the TAF relay', () => {
     expect(d.fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('tells the browser to keep a remembered answer only for what is left of its five minutes', async () => {
+    const d = deps(() => Response.json(AWC_KOFF));
+    await handle(req(PATH), d);
+    d.clock.t = T0 + 200_000;
+    const later = await handle(req(PATH), d);
+    expect(later.headers.get('cache-control')).toBe(`public, max-age=${CACHE_SECONDS - 200}`);
+  });
+
+  it('answers 502, and keeps nothing, when aviationweather.gov’s answer is not a list of TAFs', async () => {
+    for (const bad of [() => new Response('<html>busy</html>'), () => Response.json({ error: 'x' })]) {
+      const d = deps(bad);
+      const res = await handle(req(PATH), d);
+      expect(res.status).toBe(502);
+      expect(d.memo.body).toBeNull();
+    }
+    // A body that fails part-way through reading is aviationweather.gov's failure too.
+    const broken = deps(() => ({ status: 200, ok: true, text: () => Promise.reject(new TypeError('terminated')) }) as unknown as Response);
+    expect((await handle(req(PATH), broken)).status).toBe(502);
+  });
+
   it('reads aviationweather.gov’s 204, no data, as an empty list', async () => {
     const res = await handle(req(PATH), deps(() => new Response(null, { status: 204 })));
     expect(res.status).toBe(200);

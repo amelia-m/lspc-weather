@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { judgeLoad, pagePasses, type LoadObservation } from '../src/domain/liveSite';
+import { TAF_RELAY_FAILED } from '../src/domain/sourceProvenance';
 
 const clean: LoadObservation = {
   page: 'jumpers',
@@ -61,39 +62,35 @@ describe('judgeLoad', () => {
     ]);
   });
 
-  it('counts a failed TAF relay as a fault once the relay is set, and another host’s failure as a note', () => {
-    const taf = (detail: string, state: 'ok' | 'error' = 'ok') => ({
+  it('counts the relay’s own failure as a fault, by its flag, only where the relay serves the page', () => {
+    const taf = (detail: string, flags: string[] = [], state: 'ok' | 'error' = 'ok') => ({
       ...clean,
-      sources: [{ name: 'TAF', state, meta: state === 'ok' ? 'just now' : 'error: x', detail }],
+      sources: [{ name: 'TAF', state, meta: state === 'ok' ? 'just now' : 'error: x', detail, flags }],
     });
-    const relayDown = taf('fallback KOMA · KOFF fetch failed');
-    expect(judgeLoad(relayDown, { relayStation: 'KOFF' }).faults).toEqual([
+    const relayDown = taf('fallback KOMA · KOFF fetch failed', [TAF_RELAY_FAILED]);
+    expect(judgeLoad(relayDown, { relayServesOrigin: true }).faults).toEqual([
       'TAF: fallback KOMA · KOFF fetch failed (the TAF relay)',
     ]);
-    // Before the relay is set, or for an origin it does not serve, it is a note.
+    // Without the relay, or for an origin it refuses by design, a note.
     expect(judgeLoad(relayDown)).toEqual({ faults: [], notes: ['TAF: fallback KOMA · KOFF fetch failed'] });
+    // The words alone are not the fact: no flag, no fault.
+    expect(judgeLoad(taf('fallback KOMA · KOFF fetch failed'), { relayServesOrigin: true }).faults).toEqual([]);
     // aviationweather.gov failing behind the relay is another host's outage.
-    const upstream = taf('fallback KOMA · KOFF upstream failed (502)');
-    expect(judgeLoad(upstream, { relayStation: 'KOFF' })).toEqual({
+    expect(judgeLoad(taf('fallback KOMA · KOFF upstream failed (502)'), { relayServesOrigin: true })).toEqual({
       faults: [],
       notes: ['TAF: fallback KOMA · KOFF upstream failed (502)'],
     });
-    const omahaDown = taf('fallback KLNK · no KOFF TAF on aviationweather.gov · KOMA fetch failed');
-    expect(judgeLoad(omahaDown, { relayStation: 'KOFF' }).faults).toEqual([]);
     // Offutt's own gaps are nothing at all.
-    expect(judgeLoad(taf('fallback KOMA · KOFF TAF ended'), { relayStation: 'KOFF' })).toEqual({ faults: [], notes: [] });
+    expect(judgeLoad(taf('fallback KOMA · KOFF TAF ended'), { relayServesOrigin: true })).toEqual({ faults: [], notes: [] });
   });
 
-  it('reads the chip on the TAF row only, and not on a row already in error', () => {
+  it('does not tell a row already in error twice', () => {
     const v = judgeLoad(
       {
         ...clean,
-        sources: [
-          { name: 'TAF', state: 'error', meta: 'error: HTTP 500', detail: 'fallback KOMA · KOFF fetch failed' },
-          { name: 'Winds aloft', state: 'ok', meta: 'just now', detail: 'fallback KOFF fetch failed' },
-        ],
+        sources: [{ name: 'TAF', state: 'error', meta: 'error: HTTP 500', detail: 'fallback KOMA · KOFF fetch failed', flags: [TAF_RELAY_FAILED] }],
       },
-      { relayStation: 'KOFF' },
+      { relayServesOrigin: true },
     );
     expect(v.faults).toEqual(['TAF: error: HTTP 500']);
     expect(v.notes).toEqual([]);

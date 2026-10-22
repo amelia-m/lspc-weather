@@ -1,13 +1,26 @@
 import type { ObservationSource, SkyDecodeCheck, SourceKey, TafForecast, TafPassedOver, WeatherSnapshot } from './types';
 import { SITE } from '../config/site';
 import { STATION as RELAY_STATION } from '../../relay/src/station';
+import { awcTafFor } from '../config/sources';
 
 /** Which provider a source is currently served from, and whether that is the
  *  primary source or a fallback (e.g. Open-Meteo unreachable → NOAA FD). */
 export interface SourceProvenance {
   detail: string;
   fallback: boolean;
+  /** The page a reader can check this source on, when it is not the row's
+   *  usual one: Offutt's TAF read through the relay is aviationweather.gov's,
+   *  not the NWS feed's. */
+  source?: { label: string; url: string };
+  /** Facts the Data health row carries for the live-site check as a data
+   *  attribute, so the check reads the fact and not the chip's words. */
+  flags?: readonly string[];
 }
+
+/** The TAF relay itself failed: not aviationweather.gov behind it, which the
+ *  relay answers with 502 (`passedOverReason`). The live-site check counts
+ *  it as a fault (`judgeLoad`, src/domain/liveSite.ts). */
+export const TAF_RELAY_FAILED = 'taf-relay-failed';
 
 /** Amber ("fallback") when the feed's decode was missing or disagreed: the
  *  state a reader should glance at the raw METAR for. Both feeds serve a
@@ -67,6 +80,12 @@ export function passedOverReason(p: TafPassedOver, relay: boolean): string {
   return relay && p.station === RELAY_STATION ? `no ${p.station} TAF on aviationweather.gov` : `${p.station} not in the NWS feed`;
 }
 
+/** The passed-over list in full, for the source log and the sky-parity
+ *  report: each reason, and a failure's message after it. */
+export function describePassedOver(list: readonly TafPassedOver[], relay: boolean): string {
+  return list.map((p) => ('failed' in p ? `${passedOverReason(p, relay)}: ${p.failed}` : passedOverReason(p, relay))).join(', ');
+}
+
 /**
  * The TAF chip: the station shown and, when it is not the nearest, why each
  * nearer one was passed over. Amber whenever it is not the nearest, as
@@ -80,10 +99,18 @@ export function passedOverReason(p: TafPassedOver, relay: boolean): string {
 export function describeTafSource(taf: TafForecast, relay: boolean): SourceProvenance {
   const primary = SITE.tafStations[0].id;
   if (taf.station === primary) {
-    return { detail: taf.via === 'aviationweather' ? `${primary} · aviationweather.gov via the relay` : primary, fallback: false };
+    return taf.via === 'aviationweather'
+      ? { detail: `${primary} · aviationweather.gov via the relay`, fallback: false, source: awcTafFor(primary) }
+      : { detail: primary, fallback: false };
   }
-  const reasons = (taf.passedOver ?? []).map((p) => passedOverReason(p, relay));
-  return { detail: [taf.station, ...reasons].join(' · '), fallback: true };
+  const passed = taf.passedOver ?? [];
+  const relayFailed =
+    relay && passed.some((p) => p.station === RELAY_STATION && 'failed' in p && p.status !== 502);
+  return {
+    detail: [taf.station, ...passed.map((p) => passedOverReason(p, relay))].join(' · '),
+    fallback: true,
+    ...(relayFailed ? { flags: [TAF_RELAY_FAILED] } : {}),
+  };
 }
 
 /** Describe which provider each fallback-capable source is currently served

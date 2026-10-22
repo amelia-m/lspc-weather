@@ -197,7 +197,11 @@ export async function fetchTafAny(stations: readonly TafStationRef[]): Promise<T
  *  `passedOver`, which the card prints and the source log records. */
 async function fetchTafFrom(station: string, productLocation: string): Promise<TafForecast | null> {
   const relay = tafRelayUrlFor(station);
-  if (relay != null) return tafFromAwcJson(await fetchJson<unknown>(relay), station);
+  // Once: the relay answers 502 after its own 8-second wait on
+  // aviationweather.gov (relay/src/relay.ts), and fetchJson's retry of a
+  // 5xx would send a second request upstream and hold the card twice as
+  // long. The chain moves on to the next station instead.
+  if (relay != null) return tafFromAwcJson(await fetchJson<unknown>(relay, { retries: 0 }), station);
   const taf = await fetchTaf(station, productLocation);
   return taf ? { ...taf, via: 'nws' } : null;
 }
