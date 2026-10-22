@@ -16,6 +16,16 @@ These cannot be settled from the code.
    #citations page). Whether a surface reading should be held to the 5 SM row
    is a call for the S&TA and the PIC, not for this code.
 
+   **Both are ready (2026-10-22).** `VISIBILITY_ROW` in
+   `src/config/thresholds.ts` picks the row, and `VISIBILITY_ROWS` holds each
+   row's figure, guidance and #citations question. The flag, both profiles,
+   the edited-in-Settings note and the A8 entry all follow it. To use the
+   5 SM row, change the one line to `'at-or-above-10000-msl'`; the 5 SM
+   guidance says the flag holds the surface reading to the exit's row and
+   gives where an exit enters it (above about 8,818 ft AGL, derived from the
+   DZ's elevation). With either value every test and gate passes: checked by
+   flipping it on 2026-10-22.
+
 2. **The claims still need an instructor, not another reading.** Every USPA,
    CFR and FAA citation has now been read at its source — the SIM at uspa.org
    on 2026-09-22; 14 CFR 105.17 and 105.19, AIM 7-1-7 and FAA-P-8740-2 on

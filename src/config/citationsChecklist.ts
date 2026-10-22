@@ -1,5 +1,5 @@
 import type { Citation } from '../domain/types';
-import { CITATIONS } from './thresholds';
+import { CITATIONS, VISIBILITY_ROW, VISIBILITY_ROWS } from './thresholds';
 import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
 
 /** Where and when the SIM parts quoted below were read: every quote of the
@@ -236,9 +236,9 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A8',
     title: 'Flight visibility and clearance from cloud',
-    claim:
-      '14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it — an exit above 10,000 ft MSL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.',
-    value: 'Flag fires below 3 SM',
+    // The flag's own wording and figure, for the row in use (VISIBILITY_ROW).
+    claim: VISIBILITY_ROWS[VISIBILITY_ROW].guidance,
+    value: `Flag fires below ${VISIBILITY_ROWS[VISIBILITY_ROW].sm} SM`,
     where:
       'Visibility flag in Conditions to note; the overcast flag, which gives the reported bases and the 105.17 rows below cloud; and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
     sources: [CITATIONS.far10517],
@@ -250,9 +250,7 @@ export const CHECKLIST: ChecklistEntry[] = [
         'Brown’s Airport is at 1,182 ft MSL, so a 10,000 ft AGL exit is above 10,000 ft MSL, in the 5 SM / 1 mile row; the freefall passes into the 3 SM row on the way down.',
       ],
     },
-    asks: [
-      'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the pilot in command.',
-    ],
+    asks: [VISIBILITY_ROWS[VISIBILITY_ROW].ask],
   },
   {
     id: 'A9',

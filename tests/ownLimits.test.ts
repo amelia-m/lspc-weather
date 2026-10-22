@@ -6,7 +6,7 @@ import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
 import { SettingsPanel } from '../src/components/SettingsPanel';
 import { HourlyLegend } from '../src/components/common/HourlyChart';
-import {
+import { VISIBILITY_ROW, VISIBILITY_ROWS,
   DEFAULT_THRESHOLDS,
   editableRange,
   editedLimits,
@@ -172,7 +172,9 @@ describe('the Set your own thresholds panel', () => {
     // check does; the visibility minimum is on the field's own step.
     const wind = editableRange(licensed, 'windCautionKt');
     expect(p.match(new RegExp(`min="${wind.min}" max="${wind.max}" placeholder="none"`, 'g'))).toHaveLength(2);
-    expect(p).toContain(`step="0.5" min="${editableRange(licensed, 'visibilityCautionSm').min}" value="3"`);
+    expect(p).toContain(
+      `step="0.5" min="${editableRange(licensed, 'visibilityCautionSm').min}" value="${VISIBILITY_ROWS[VISIBILITY_ROW].sm}"`,
+    );
     expect(editableRange(licensed, 'visibilityCautionSm').min % 0.5).toBe(0);
     expect(p).not.toContain('may be retired');
   });

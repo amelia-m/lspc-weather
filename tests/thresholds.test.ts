@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Citation } from '../src/domain/types';
 import { fmtLimitSpeed } from '../src/domain/units';
-import {
+import { VISIBILITY_ROW, VISIBILITY_ROWS,
   CITATIONS,
   DEFAULT_LICENSE,
   LICENSES,
@@ -227,7 +227,9 @@ describe('wind-limit profiles', () => {
     // not every number. The USPA student figure, the posted waiver wind and
     // gust limits and the 14 CFR 105.17 visibility floor all stay.
     expect(resolveThresholds('student').windCautionKt).toBe(12);
-    expect(resolveThresholds('student').visibilityCautionSm).toBe(3);
+    // One of the two rows 14 CFR 105.17 publishes, whichever is in use.
+    expect(resolveThresholds('student').visibilityCautionSm).toBe(VISIBILITY_ROWS[VISIBILITY_ROW].sm);
+    expect([3, 5]).toContain(VISIBILITY_ROWS[VISIBILITY_ROW].sm);
     for (const tier of WAIVER_TIERS) {
       const t = resolveThresholds(tier.id);
       expect(t.windCautionKt).toBeCloseTo(tier.windMph * 0.868976, 5);
