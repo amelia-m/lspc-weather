@@ -12,7 +12,7 @@ import {
   type RawNwsProduct,
 } from '../domain/normalize';
 import { fetchTafChain, type TafStationRef } from './tafChain';
-import { tafRelayUrlFor } from '../config/tafRelay';
+import { TAF_RELAY_URL, tafRelayUrlFor } from '../config/tafRelay';
 import { interpolateWindsAloft } from '../domain/windsAloft';
 import type {
   CurrentConditions,
@@ -195,13 +195,29 @@ export async function fetchTafAny(stations: readonly TafStationRef[]): Promise<T
  *  products feed. An error from the relay propagates like any fetch error:
  *  the chain moves to the next station and lists the failure in
  *  `passedOver`, which the card prints and the source log records. */
-async function fetchTafFrom(station: string, productLocation: string): Promise<TafForecast | null> {
-  const relay = tafRelayUrlFor(station);
-  // Once: the relay answers 502 after its own 8-second wait on
-  // aviationweather.gov (relay/src/relay.ts), and fetchJson's retry of a
-  // 5xx would send a second request upstream and hold the card twice as
-  // long. The chain moves on to the next station instead.
-  if (relay != null) return tafFromAwcJson(await fetchJson<unknown>(relay, { retries: 0 }), station);
+export async function fetchTafFrom(
+  station: string,
+  productLocation: string,
+  /** The relay's address; the setting, except in the tests. */
+  relayBase: string | null = TAF_RELAY_URL,
+): Promise<TafForecast | null> {
+  const relay = tafRelayUrlFor(station, relayBase);
+  if (relay != null) {
+    // Not again after a 502: the relay answers it after its own 8-second
+    // wait on aviationweather.gov (relay/src/relay.ts), and a retry would
+    // send a second request upstream and hold the card twice as long. Any
+    // other failure (a dropped connection, Cloudflare's own 5xx) gets the
+    // one retry every other request gets, so a blip is not read as the
+    // relay down.
+    let body: unknown;
+    try {
+      body = await fetchJson<unknown>(relay, { retries: 0 });
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 502) throw err;
+      body = await fetchJson<unknown>(relay, { retries: 0 });
+    }
+    return tafFromAwcJson(body, station);
+  }
   const taf = await fetchTaf(station, productLocation);
   return taf ? { ...taf, via: 'nws' } : null;
 }

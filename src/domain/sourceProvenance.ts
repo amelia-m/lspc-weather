@@ -73,7 +73,9 @@ export function describeObservationFeed(
 export function passedOverReason(p: TafPassedOver, relay: boolean): string {
   if ('failed' in p) {
     const viaRelay = relay && p.station === RELAY_STATION;
-    return viaRelay && p.status === 502 ? `${p.station} upstream failed (502)` : `${p.station} fetch failed`;
+    if (viaRelay && p.status === 502) return `${p.station} upstream failed (502)`;
+    if (viaRelay && p.upstream) return `${p.station} upstream answer unreadable`;
+    return `${p.station} fetch failed`;
   }
   if ('endedMs' in p) return `${p.station} TAF ended`;
   if ('noForecast' in p) return `${p.station} TAF ${p.noForecast}`;
@@ -92,9 +94,10 @@ export function describePassedOver(list: readonly TafPassedOver[], relay: boolea
  * before; what the reasons add is that a fault reads differently from the
  * ordinary cases. Without the relay Offutt's TAF is never in the NWS feed,
  * so "KOMA · KOFF not in the NWS feed" is the everyday chip. With it,
- * "KOFF fetch failed" is the relay or aviationweather.gov failing, and
- * "KOFF TAF ended" or "no KOFF TAF on aviationweather.gov" Offutt's weekend
- * gap. Until 2026-10-21 the chip said only "KOMA" in every one of these.
+ * "KOFF fetch failed" is the relay itself failing (flagged for the
+ * live-site check), "KOFF upstream failed (502)" or "upstream answer
+ * unreadable" aviationweather.gov behind it, and "KOFF TAF ended" or "no
+ * KOFF TAF on aviationweather.gov" Offutt's weekend gap. Until 2026-10-21 the chip said only "KOMA" in every one of these.
  */
 export function describeTafSource(taf: TafForecast, relay: boolean): SourceProvenance {
   const primary = SITE.tafStations[0].id;
@@ -105,7 +108,7 @@ export function describeTafSource(taf: TafForecast, relay: boolean): SourceProve
   }
   const passed = taf.passedOver ?? [];
   const relayFailed =
-    relay && passed.some((p) => p.station === RELAY_STATION && 'failed' in p && p.status !== 502);
+    relay && passed.some((p) => p.station === RELAY_STATION && 'failed' in p && p.status !== 502 && !p.upstream);
   return {
     detail: [taf.station, ...passed.map((p) => passedOverReason(p, relay))].join(' · '),
     fallback: true,

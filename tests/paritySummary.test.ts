@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
+import { uniqueParityRecords,
   arrivalLags,
   groundByLocalDay,
   groundByLocalHour,
@@ -540,5 +540,16 @@ describe('overCauses', () => {
     const s = summarizeParity(runs, Date.parse('2026-10-09T00:00:00Z')).schulze;
     expect(s.overCauses!.spd).toEqual({ surfaceOnly: 1, newerRun: 1, sameRunAloft: 0, unjudgedAloft: 0 });
     expect(s.runsWithRowOver3Kt).toBe(2);
+  });
+});
+
+describe('uniqueParityRecords', () => {
+  it('keeps one record per kind and run time, the first seen, as the summary does', () => {
+    const a = '@@parity {"kind":"schulze","at":"2026-10-21T18:00:00Z","minute":0}';
+    const b = '@@parity {"kind":"schulze","at":"2026-10-21T18:00:00Z","minute":0,"v":2}   ';
+    const c = '@@parity {"kind":"usairnet","at":"2026-10-21T18:00:00Z"}';
+    const out = uniqueParityRecords([a + '\n' + c, b]);
+    expect(out).toHaveLength(2);
+    expect(out[0]).not.toHaveProperty('v');
   });
 });

@@ -32,7 +32,7 @@
  */
 
 import { flightCategory, type FlightCategory } from './flightCategory';
-import type { SkyCover, SkyLayer } from './types';
+import type { SkyCover, SkyLayer , TafPassedOver } from './types';
 import { M_PER_SM, round } from './units';
 
 export type TafChange = 'BASE' | 'FM' | 'TEMPO' | 'BECMG' | 'PROB';
@@ -556,4 +556,13 @@ export function describeWx(wxString: string): string {
       return [intensity, descriptor, phenomena].filter(Boolean).join(' ');
     })
     .join(', ');
+}
+
+/** Whether the TAF on screen should go after a refresh found no station
+ *  with a TAF in force: when its own station was just found ended or
+ *  cancelled (CNL, NIL). Kept, it would read as current with nothing on the
+ *  card to say otherwise. When its station only failed to fetch, it stays,
+ *  as any stale source does, and the card's ended check still covers it. */
+export function tafOnScreenGone(station: string, passedOver: readonly TafPassedOver[]): boolean {
+  return passedOver.some((p) => p.station === station && ('endedMs' in p || 'noForecast' in p));
 }

@@ -5,6 +5,7 @@ import {
   fetchGridpoint,
   fetchTaf,
   fetchTafChain,
+  fetchTafFrom,
   fetchWindsAloftFd,
   type ResolvedGridpoint,
 } from '../src/api/nws';
@@ -524,5 +525,32 @@ describe('fetchDailyFromGridpoint', () => {
     const daily = await fetchDailyFromGridpoint(40.8675, -96.11, 'America/Chicago');
     expect(fetchMock).not.toHaveBeenCalled();
     expect(daily.length).toBeGreaterThan(0);
+  });
+});
+
+describe('fetchTafFrom through the relay', () => {
+  const BASE = 'https://relay.example';
+  const okRes = (body: unknown) => ({ ok: true, status: 200, json: async () => body });
+  const OFFUTT = [{ icaoId: 'KOFF', issueTime: '2026-10-20T10:00:00.000Z', rawTAF: 'TAF KOFF 201000Z 2010/2116 16009KT 9999 FEW130' }];
+
+  it('asks once after the relay’s 502, which is aviationweather.gov failing behind it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(errRes(502));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchTafFrom('KOFF', 'OFF', BASE)).rejects.toMatchObject({ status: 502 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks again after any other failure, so a blip is not read as the relay down', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(errRes(503)).mockResolvedValueOnce(okRes(OFFUTT));
+    vi.stubGlobal('fetch', fetchMock);
+    const taf = await fetchTafFrom('KOFF', 'OFF', BASE);
+    expect(taf).toMatchObject({ station: 'KOFF', via: 'aviationweather' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/taf/KOFF`);
+  });
+
+  it('marks an answer it cannot read as aviationweather.gov’s, not the relay’s', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okRes({ error: 'x' })));
+    await expect(fetchTafFrom('KOFF', 'OFF', BASE)).rejects.toMatchObject({ upstream: true });
   });
 });

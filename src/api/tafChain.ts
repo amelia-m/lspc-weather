@@ -73,11 +73,12 @@ export async function fetchTafChain(
       lastErr = err;
       // The status is read off the error rather than by its class: this
       // module stays free of src/api/http.ts so the scripts can import it.
-      const status = (err as { status?: unknown })?.status;
+      const { status, upstream } = (err ?? {}) as { status?: unknown; upstream?: unknown };
       passedOver.push({
         station: s.id,
         failed: err instanceof Error ? err.message : String(err),
         ...(typeof status === 'number' ? { status } : {}),
+        ...(upstream === true ? { upstream: true as const } : {}),
       });
     }
   }

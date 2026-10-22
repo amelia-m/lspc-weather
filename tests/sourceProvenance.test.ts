@@ -169,6 +169,10 @@ describe('describeTafSource', () => {
     expect(say([{ station: 'KOFF', failed: 'HTTP 404', status: 404 }]).flags).toEqual([TAF_RELAY_FAILED]);
     expect(say([{ station: 'KOFF', failed: 'Failed to fetch' }]).flags).toEqual([TAF_RELAY_FAILED]);
     expect(say([{ station: 'KOFF', failed: 'HTTP 502', status: 502 }]).flags).toBeUndefined();
+    // aviationweather.gov's content the app could not read is upstream's too.
+    const unreadable = say([{ station: 'KOFF', failed: 'not a list', upstream: true }]);
+    expect(unreadable).toMatchObject({ detail: 'KOMA · KOFF upstream answer unreadable' });
+    expect(unreadable.flags).toBeUndefined();
     expect(say([{ station: 'KOFF', failed: 'HTTP 404', status: 404 }], false).flags).toBeUndefined();
     expect(say([{ station: 'KOMA', failed: 'HTTP 500', status: 500 }]).flags).toBeUndefined();
   });

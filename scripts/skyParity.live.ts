@@ -32,7 +32,7 @@ import {
 } from '../src/domain/normalize';
 import { observedFlightCategory } from '../src/domain/flightCategory';
 import { decodeTaf, type DecodedTaf, type TafPeriod } from '../src/domain/taf';
-import { fetchTafChain } from '../src/api/tafChain';
+import { fetchTafChain, NoCurrentTafError } from '../src/api/tafChain';
 import { TAF_RELAY_SET, tafRelayUrlFor } from '../src/config/tafRelay';
 import { describePassedOver } from '../src/domain/sourceProvenance';
 import type { SkyLayer } from '../src/domain/types';
@@ -287,7 +287,9 @@ describe(`sky decode parity for ${station}`, () => {
         say(`[taf]  theirs: ${squash(theirs.rawTAF).slice(0, 200)}`);
       }
     } catch (err) {
-      say(`[taf]  not compared: ${err instanceof Error ? err.message : String(err)}`);
+      say(
+        `[taf]  not compared: ${err instanceof NoCurrentTafError ? `${err.message}: ${describePassedOver(err.passedOver, TAF_RELAY_SET)}` : err instanceof Error ? err.message : String(err)}`,
+      );
     }
   });
 

@@ -10,7 +10,8 @@ import {
 } from '../domain/taf';
 import { SITE } from '../config/site';
 import { TAF_RELAY_SET } from '../config/tafRelay';
-import { awcTafFor, DATA_SOURCES } from '../config/sources';
+import { DATA_SOURCES } from '../config/sources';
+import { describeTafSource } from '../domain/sourceProvenance';
 import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
@@ -119,7 +120,7 @@ export function TafPanel({
     <Panel
       title="TAF (forecast)"
       subtitle={taf ? `${st.id} · ~${miles} mi ${bearing} of DZ` : 'nearest available'}
-      sources={[taf?.via === 'aviationweather' ? awcTafFor(taf.station) : DATA_SOURCES.taf]}
+      sources={[(taf && describeTafSource(taf, relay).source) || DATA_SOURCES.taf]}
     >
       <p className="muted small">
         Terminal Aerodrome Forecast for {st.name} ({st.id}), ~{miles} mi {bearing} of the drop zone

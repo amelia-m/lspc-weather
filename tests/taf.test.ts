@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseTaf } from '../src/domain/normalize';
-import { decodeTaf, periodFlightCategory, prevailingFor, resolveTafTime, type DecodedTaf } from '../src/domain/taf';
+import { decodeTaf, periodFlightCategory, prevailingFor, resolveTafTime, tafOnScreenGone, type DecodedTaf } from '../src/domain/taf';
 import { KLNK_2026_09_23_1120, KOMA_2026_09_24_0521 } from './support/tafProducts';
 
 const utc = (m: number, d: number, h: number, min = 0): number => Date.UTC(2026, m - 1, d, h, min);
@@ -331,5 +331,14 @@ describe('decodeTaf: the groups a joint-use airport’s TAF adds', () => {
     const nws = decodeTaf('KOMA 240521Z 2406/2506 13009KT P6SM FEW050 BKN150', Date.parse('2026-09-24T05:21:00Z'))!;
     expect(nws.temperatures).toEqual([]);
     expect(nws.periods[0].qnhInHg).toBeNull();
+  });
+});
+
+describe('tafOnScreenGone', () => {
+  it('drops the TAF on screen when its own station was found ended or cancelled, and keeps it when it only failed', () => {
+    expect(tafOnScreenGone('KOMA', [{ station: 'KOFF', none: true }, { station: 'KOMA', noForecast: 'CNL' }])).toBe(true);
+    expect(tafOnScreenGone('KOMA', [{ station: 'KOMA', endedMs: 0 }])).toBe(true);
+    expect(tafOnScreenGone('KOMA', [{ station: 'KOMA', failed: 'HTTP 500', status: 500 }])).toBe(false);
+    expect(tafOnScreenGone('KOMA', [{ station: 'KLNK', noForecast: 'NIL' }])).toBe(false);
   });
 });

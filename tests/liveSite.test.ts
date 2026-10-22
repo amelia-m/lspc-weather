@@ -84,6 +84,14 @@ describe('judgeLoad', () => {
     expect(judgeLoad(taf('fallback KOMA · KOFF TAF ended'), { relayServesOrigin: true })).toEqual({ faults: [], notes: [] });
   });
 
+  it('reads the chip on the TAF row only', () => {
+    const v = judgeLoad(
+      { ...clean, sources: [{ name: 'Winds aloft', state: 'ok', meta: 'just now', detail: 'fallback KOFF fetch failed', flags: [TAF_RELAY_FAILED] }] },
+      { relayServesOrigin: true },
+    );
+    expect(v).toEqual({ faults: [], notes: [] });
+  });
+
   it('does not tell a row already in error twice', () => {
     const v = judgeLoad(
       {

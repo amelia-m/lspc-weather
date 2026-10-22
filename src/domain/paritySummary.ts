@@ -855,6 +855,17 @@ export function parseParityLines(text: string): ParityRecord[] {
  *  drops the second), and the archive must hold one copy. */
 export const parityRecordKey = (r: { kind: string; at: string }): string => `${r.kind}|${r.at}`;
 
+/** The records in several files' text, one per `parityRecordKey`, the first
+ *  seen kept, as the summary and the archive keep them. For the scripts that
+ *  read the archive and artifacts together (surfaceRows, runAge). */
+export function uniqueParityRecords(texts: readonly string[]): ParityRecord[] {
+  const byKey = new Map<string, ParityRecord>();
+  for (const text of texts) {
+    for (const r of parseParityLines(text)) if (!byKey.has(parityRecordKey(r))) byKey.set(parityRecordKey(r), r);
+  }
+  return [...byKey.values()];
+}
+
 /**
  * The `@@parity` lines in `fresh` whose record no line in `archived` holds,
  * one per record, oldest first, each as `@@parity {json}`: what

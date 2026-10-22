@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { describePassedOver } from '../domain/sourceProvenance';
+import { describePassedOver, passedOverReason } from '../domain/sourceProvenance';
 import { NoCurrentTafError } from '../api/tafChain';
+import { tafOnScreenGone } from '../domain/taf';
 import { TAF_RELAY_SET } from '../config/tafRelay';
 import {
   fetchDailyFromGridpoint,
@@ -288,12 +289,17 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         }
       })
       .catch((e) => {
-        // With every reason, so Data health says which station failed or
-        // had ended, not only that none was current.
-        const err =
-          e instanceof NoCurrentTafError ? new Error(`${e.message}: ${describePassedOver(e.passedOver, TAF_RELAY_SET)}`) : e;
-        logSource('taf', 'failure', 'TAF fetch failed', err);
-        markStale('taf', err);
+        if (e instanceof NoCurrentTafError) {
+          setSnapshot((prev) => (prev.taf && tafOnScreenGone(prev.taf.station, e.passedOver) ? { ...prev, taf: null } : prev));
+          // Data health and the card get each station's reason in a few
+          // words; the source log also gets each failure's message.
+          const reasons = e.passedOver.map((p) => passedOverReason(p, TAF_RELAY_SET)).join(', ');
+          logSource('taf', 'failure', 'No current TAF', new Error(describePassedOver(e.passedOver, TAF_RELAY_SET)));
+          markStale('taf', new Error(`No current TAF: ${reasons}`));
+          return;
+        }
+        logSource('taf', 'failure', 'TAF fetch failed', e);
+        markStale('taf', e);
       });
 
     const dailyP = fetchDailyForecast(dz.lat, dz.lon)
