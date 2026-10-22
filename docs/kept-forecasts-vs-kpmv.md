@@ -45,16 +45,25 @@ practice that is the :55 report before it.
   threshold anything acts on. Both sides report direction to 10°.
 - **Visibility.** KPMV reports nothing above 10 SM, so both sides are
   capped there. Read unrounded, the forecast's metres made nearly every hour
-  "under 10 SM": 16,080 m is 9.99 SM. So the forecast is read as a report
-  would be: whole miles from 3 SM, quarters below (`asReported`). KPMV's
-  reports in the window read 10, 7, 5, 4, 3, 2 1/2 and 2 SM.
+  "under 10 SM": 16,080 m is 9.99 SM. So the forecast is rounded to the
+  nearest whole mile from 3 SM and the nearest quarter below (`asReported`).
+  That is this comparison's choice: how an automated station rounds its own
+  reading was not read. KPMV's reports in the window read 10, 7, 5, 4, 3,
+  2 1/2 and 2 SM. Rounding down instead would move 35 more hours at the
+  latest issuance (32 and 39 at the other leads) to "forecast under
+  10 SM". The forecast had those hours between 9.5 and 10 SM, and KPMV
+  reported 10 SM in every one.
 - **Rainfall.** The gridpoint's `quantitativePrecipitation` is a total over
   six-hour periods, so it is not spread over hours as the instant fields
-  are. Each period is set against KPMV's hourly amounts added up over its
-  clock hours. The hourly amount is the hour's largest `P` group, the :55
-  report's unless a special after it measured more (`reportedHours`'
-  `amount`, the hour rule of docs/forecast-chances.md). A period with an
-  hour it cannot add (no :55 report, or `P////`/`PNO`) is left out.
+  are. Only the periods of six hours starting at 00, 06, 12 and 18Z are
+  scored. The API also serves shorter ones (07Z for five hours, 15Z for
+  three, a three-hour tail), which would overlap them. Each period is set
+  against KPMV's hourly amounts added up over its clock hours. The hourly
+  amount is the largest `P` group in the hour ending with its :55 report
+  (`reportedHours`' `amount`, the hour rule of docs/forecast-chances.md).
+  In practice that is the :55 report's own. A period is left out when:
+  - it is past the reach of what was gathered, as the hours are;
+  - it has an hour it cannot add: no :55 report, or `P////`/`PNO`.
 
 ## First reading, 2026-10-22
 
@@ -107,16 +116,21 @@ can show. The forecast sat clockwise of the report on average, by 7 to
 latest issuance, nearer a degree at 24 hours ahead, most at night.
 
 **Visibility.** Only one spell, the rain of October 15. KPMV reported
-under 10 SM in 11 hours. Ten of them were on October 15, 07Z to 19Z,
-down to 2 SM, and the forecast had those hours under 10 SM too (latest
-issuance). The eleventh was 4 SM in haze at 23:55Z on October 20, the
-only report under 10 SM that evening, with the forecast at 10. The latest
-issuance put 10 more hours under 10 SM that KPMV reported at 10, most of
-them at 9 SM:
+under 10 SM in 11 paired hours.
 
-- October 15, 09Z and 10Z (the rain's start, reported 10 SM);
-- October 15, 20Z to 23Z (its end);
-- dawn hours on other days.
+- Ten were on October 15, the hours 08Z to 19Z (reports 07:55 to
+  18:55Z), down to 2 SM. The latest issuance had those hours under 10 SM
+  too.
+- The eleventh was 4 SM in haze at 23:55Z on October 20, the only report
+  under 10 SM that evening, with the forecast at 10.
+
+The latest issuance put 10 more hours under 10 SM that KPMV reported at
+10, most of them at 9 SM:
+
+- October 14, 04Z (11 pm CDT);
+- October 15, 09Z and 10Z (as the rain began) and 20Z to 23Z (after it
+  ended);
+- October 22, 11Z to 13Z (6 to 8 am CDT).
 
 Across the 21 hours either side was under 10 SM, the forecast was a median
 1 SM off.
@@ -126,15 +140,17 @@ Across the 21 hours either side was under 10 SM, the forecast was a median
 
 | period (UTC) | latest issuance | 6 h or more ahead | 24 h or more ahead | measured |
 |---|---|---|---|---|
-| Oct 14 00–06Z | 0.09 | 0.15 | 0 | 0 |
-| Oct 14 06–12Z | 0.04 | 0.04 | 0 | 0 |
+| Oct 14 00–06Z | 0.09 | 0.15 | — | 0 |
+| Oct 14 06–12Z | 0.04 | 0.04 | — | 0 |
 | Oct 15 06–12Z | 0.26 | 0.15 | 0.19 | 0.13 |
 | Oct 15 12–18Z | 0.41 | 0.41 | 0.20 | 0.44 |
 | Oct 15 18–24Z | 0.08 | 0.08 | 0.08 | 0.03 |
 
-All other periods were 0 on both sides. Over the 36, 35 and 32 periods
-each row could pair, the forecast added up to 0.88, 0.83 and 0.47 in.
-against 0.60 measured.
+A dash is a period the row could not pair. The 24-hour row's first is
+October 14 18Z, a day after the first kept snapshot. All other periods
+were 0 on both sides. The rows paired 36, 35 and 32 periods. Over them
+the forecast added up to 0.88, 0.83 and 0.47 in., against 0.60
+measured.
 
 **How far this goes.** Nine and a half days, one rain spell, one
 low-visibility spell, and October weather. The night-time leans in wind

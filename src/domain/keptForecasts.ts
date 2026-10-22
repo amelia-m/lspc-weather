@@ -10,7 +10,8 @@
  */
 import { byValidHour, END_REACH_H, keptHours, pastReach, type KeptGridpointSnapshot } from './ceilingHeights';
 import { NWS_ISSUANCES, reportNear, type MetarRecord } from './cloudCoverSources';
-import { metarWindGroup } from './surfaceWindSources';
+import { angular, metarWindGroup } from './surfaceWindSources';
+import { visibilityOf, windOf } from './taf';
 import { parseValidTime, tempsFromRaw } from './normalize';
 import { reportedHours } from './chances';
 import { spreadOf, type Spread } from './paritySummary';
@@ -65,38 +66,26 @@ export interface Instant {
   visSm: number | null;
 }
 
-/** The visibility group, whole, fraction or both ("1 1/4SM"). */
+/** The body's visibility group (taf.ts's reader, which METARs share). */
 export function metarVisibilitySm(raw: string): number | null {
   const toks = raw.split(' RMK ')[0].split(/\s+/);
-  const i = toks.findIndex((t) => /^M?(\d+|\d+\/\d+)SM$/.test(t));
-  if (i < 0) return null;
-  const num = (s: string): number => {
-    const [a, b] = s.split('/');
-    return b == null ? Number(a) : Number(a) / Number(b);
-  };
-  const part = toks[i].replace(/^M/, '').replace(/SM$/, '');
-  const whole = i > 0 && /^\d+$/.test(toks[i - 1]) && part.includes('/') ? Number(toks[i - 1]) : 0;
-  return whole + num(part);
+  for (let i = 0; i < toks.length; i++) {
+    const v = visibilityOf(toks[i].replace(/^M(?=\d)/, ''), toks[i + 1]);
+    if (v) return v.sm;
+  }
+  return null;
 }
 
 export function readInstant(m: MetarRecord): Instant {
-  const w = metarWindGroup(m.raw);
-  const wm = w ? /^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?KT$/.exec(w) : null;
-  const spd = wm ? Number(wm[2]) : null;
+  const w = windOf(metarWindGroup(m.raw) ?? '');
   return {
     t: Date.parse(m.obsAt),
-    spd,
-    gust: wm?.[3] != null ? Number(wm[3]) : null,
-    dir: wm && wm[1] !== 'VRB' && spd !== 0 ? Number(wm[1]) : null,
+    spd: w?.speedKt ?? null,
+    gust: w?.gustKt ?? null,
+    dir: w?.directionDeg ?? null,
     tempC: tempsFromRaw(m.raw)?.tempC ?? null,
     visSm: metarVisibilitySm(m.raw),
   };
-}
-
-/** a − b in degrees, in (−180, 180]. */
-export function angleDiff(a: number, b: number): number {
-  const d = (((a - b) % 360) + 540) % 360 - 180;
-  return d === -180 ? 180 : d;
 }
 
 /** One paired hour: the forecast picked for it and the report nearest it. */
@@ -107,23 +96,34 @@ export interface InstantPair {
   obs: Instant;
 }
 
+/** What every lead row reads, built once: each report, filed under the
+ *  hour it is within REPORT_WINDOW_MIN of (rounding its time to the hour
+ *  finds the only one), and each element's records by valid hour. */
+export function prepareInstants(snaps: readonly KeptGridpointSnapshot[], metars: readonly MetarRecord[]) {
+  const reportsByHour = new Map<number, Instant[]>();
+  for (const r of metars.map(readInstant)) {
+    const h = Math.round(r.t / MS_H) * MS_H;
+    reportsByHour.set(h, [...(reportsByHour.get(h) ?? []), r]);
+  }
+  const per = INSTANT_ELEMENTS.map((el) => ({ el, ...byValidHour(snaps.flatMap((s) => keptInstantRecords(s, el))) }));
+  const hours = [...new Set(per.flatMap((p) => [...p.byHour.keys()]))].sort((a, b) => a - b);
+  return { reportsByHour, per, hours };
+}
+
 /** The pairs for one lead row: the newest issuance at least `minLeadH`
  *  before the hour, per element (an element an issuance left null gives
  *  way to the one before it), and the report within REPORT_WINDOW_MIN of
  *  the hour's start, as the ceilings are paired. Hours past the reach of
  *  what was gathered are left out (pastReach, END_REACH_H). */
 export function pairInstants(
-  snaps: readonly KeptGridpointSnapshot[],
-  metars: readonly MetarRecord[],
+  prepared: ReturnType<typeof prepareInstants>,
   minLeadH: number,
   endReachH = END_REACH_H,
 ): InstantPair[] {
-  const reports = metars.map(readInstant).sort((a, b) => a.t - b.t);
-  const per = INSTANT_ELEMENTS.map((el) => ({ el, ...byValidHour(snaps.flatMap((s) => keptInstantRecords(s, el))) }));
-  const hours = [...new Set(per.flatMap((p) => [...p.byHour.keys()]))].sort((a, b) => a - b);
+  const { reportsByHour, per, hours } = prepared;
   const out: InstantPair[] = [];
   for (const t of hours) {
-    const obs = reportNear(reports, t);
+    const obs = reportNear((reportsByHour.get(t) ?? []).sort((a, b) => a.t - b.t), t);
     if (!obs) continue;
     const fc: InstantPair['fc'] = {};
     let issued: string | null = null;
@@ -146,11 +146,14 @@ export function pairInstants(
  *  read capped there. */
 export const VIS_CAP_SM = 10;
 
-/** The forecast's visibility as a report would read it: whole miles from
- *  3 SM, quarters below. The API serves metres (16,080 m, 9.99 SM), and
- *  unrounded nearly every hour under 10 SM was a hair under it. KPMV's
- *  reports in the 2026-10-13 to 10-22 window read 10, 7, 5, 4, 3, 2 1/2 and
- *  2 SM, all on those steps. */
+/** The forecast's visibility rounded to a step a report could show, this
+ *  comparison's choice: the nearest whole mile from 3 SM (KPMV's reports in
+ *  the 2026-10-13 to 10-22 window read 10, 7, 5, 4, 3, 2 1/2 and 2 SM),
+ *  the nearest quarter below. The API serves metres (16,080 m, 9.99 SM),
+ *  and unrounded nearly every hour was "under 10 SM" by a hair. How an
+ *  automated station rounds its own reading was not read, so this is not
+ *  offered as the station's rule; docs/kept-forecasts-vs-kpmv.md gives
+ *  how much rounding down instead would move. */
 export function asReported(sm: number): number {
   return sm >= 2.875 ? Math.round(sm) : Math.round(sm * 4) / 4;
 }
@@ -211,8 +214,9 @@ export function summarizeInstants(
   metars: readonly MetarRecord[],
   endReachH = END_REACH_H,
 ): InstantRow[] {
+  const prepared = prepareInstants(snaps, metars);
   return NWS_ISSUANCES.map(({ minLeadH, label }) => {
-    const pairs = pairInstants(snaps, metars, minLeadH, endReachH);
+    const pairs = pairInstants(prepared, minLeadH, endReachH);
     const speed: { t: number; d: number; fc: number; obs: number }[] = [];
     const gustRep: number[] = [];
     const gustNone: number[] = [];
@@ -237,7 +241,7 @@ export function summarizeInstants(
         else gustNone.push(g - obs.spd);
       }
       if (fc.windDirection != null && obs.dir != null && obs.spd != null) {
-        (obs.spd < 10 ? dirLight : dirStrong).push(angleDiff(fc.windDirection, obs.dir));
+        (obs.spd < 10 ? dirLight : dirStrong).push(angular(fc.windDirection, obs.dir));
       }
       if (fc.temperature != null && obs.tempC != null) temp.push({ t: p.t, d: fc.temperature - obs.tempC });
       if (fc.visibility != null && obs.visSm != null) {
@@ -290,12 +294,14 @@ export interface RainPeriod {
  * which runs from the :55 report before). A period is not spread over its
  * hours as the instant fields are: its value is the period's total. Each
  * lead row picks, per period, the newest issuance at least `minLeadH`
- * before the period's start; a period with any hour unknown (no :55
- * report, or a gauge that could not say) is left out.
+ * before the period's start, and leaves out a period past the reach of
+ * what was gathered (pastReach) or with any hour unknown (no :55 report,
+ * or a gauge that could not say).
  */
 export function summarizeRain(
   snaps: readonly KeptGridpointSnapshot[],
   metars: readonly MetarRecord[],
+  endReachH = END_REACH_H,
 ): { label: string; minLeadH: number; periods: RainPeriod[]; fcTotal: number; obsTotal: number }[] {
   const amountAt = new Map(reportedHours(metars).map((h) => [h.t, h.amount]));
   const records: { issued: string; valid: string; hours: number; mm: number }[] = [];
@@ -307,14 +313,18 @@ export function summarizeRain(
     if (q.uom !== 'wmoUnit:mm') throw new Error(`summarizeRain: quantitativePrecipitation in ${q.uom ?? 'no unit'}`);
     for (const { validTime, value } of q.values) {
       const span = parseValidTime(validTime);
-      if (!span || value == null) continue;
+      // Only the six-hour periods on 00, 06, 12 and 18Z: the API also
+      // serves shorter ones (07Z for five hours, 15Z for three, a three-hour
+      // tail), which would be scored as six-hour totals or overlap one.
+      if (!span || value == null || span.hours !== 6 || new Date(span.start).getUTCHours() % 6 !== 0) continue;
       records.push({ issued: gp.updateTime, valid: new Date(span.start).toISOString(), hours: span.hours, mm: value });
     }
   }
-  const { byHour } = byValidHour(records);
+  const { byHour, lastIssued } = byValidHour(records);
   return NWS_ISSUANCES.map(({ minLeadH, label }) => {
     const periods: RainPeriod[] = [];
     for (const [t, rs] of [...byHour].sort((a, b) => a[0] - b[0])) {
+      if (pastReach(t, minLeadH, lastIssued, endReachH)) continue;
       const pick = rs.find((r) => t - Date.parse(r.issued) >= minLeadH * MS_H);
       if (!pick) continue;
       let obs = 0;
