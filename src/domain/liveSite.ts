@@ -86,9 +86,9 @@ export function judgeLoad(o: LoadObservation, opts: JudgeOptions = {}): LoadVerd
     // is a fault, so a broken relay opens an issue rather than waiting to be
     // noticed. aviationweather.gov failing behind it ("upstream failed") and
     // another station's failed fetch are other hosts', notes like a late
-    // source. Only on a row that is otherwise ok, so one failure is not told
-    // twice.
-    if (s.state === 'ok') {
+    // source. Only on the TAF row, and only when it is otherwise ok, so one
+    // failure is not told twice.
+    if (s.name.startsWith('TAF') && s.state === 'ok') {
       if (opts.relayServesOrigin && s.flags?.includes(TAF_RELAY_FAILED)) {
         faults.push(`${s.name}: ${s.detail ?? 'relay failed'} (the TAF relay)`);
       } else if (s.detail && /fetch failed|upstream failed/.test(s.detail)) {

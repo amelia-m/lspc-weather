@@ -163,9 +163,11 @@ export interface TafForecast {
 export type TafPassedOver =
   | { station: string; endedMs: number }
   | { station: string; noForecast: 'CNL' | 'NIL' }
-  /** The fetch failed: the error's message, and its HTTP status when it
-   *  had one (502 from the relay is aviationweather.gov failing behind it). */
-  | { station: string; failed: string; status?: number }
+  /** The fetch failed: the error's message, its HTTP status when it had
+   *  one (502 from the relay is aviationweather.gov failing behind it), and
+   *  `upstream` when the answer arrived but its content, aviationweather.gov's,
+   *  could not be read (`tafFromAwcJson`). */
+  | { station: string; failed: string; status?: number; upstream?: true }
   /** The station's feed answered with no TAF for it: api.weather.gov has
    *  never had Offutt's, and aviationweather.gov has none in its window over
    *  Offutt's weekend gaps. */

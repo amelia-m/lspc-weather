@@ -20,7 +20,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { parityRecordKey, parseParityLines, type SchulzeRecord } from '../src/domain/paritySummary';
+import { uniqueParityRecords, type SchulzeRecord } from '../src/domain/paritySummary';
 import { groundHours, OLD_POINT, surfaceRowsTable, type WindReport } from '../src/domain/surfaceRows';
 
 const args: Record<string, string[]> = {};
@@ -38,14 +38,10 @@ const read = (f: string): string => {
   return (f.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8');
 };
 
-// One record per kind and run time (parityRecordKey), so a record in two
-// files (the archive and an artifact it was drawn from) counts once even
-// where its two lines differ by trailing whitespace.
-const byKey = new Map<string, SchulzeRecord>();
-for (const f of args.logs) {
-  for (const r of parseParityLines(read(f))) if (r.kind === 'schulze') byKey.set(parityRecordKey(r), r);
-}
-const records = [...byKey.values()];
+// One record per kind and run time, the first seen kept, as the summary
+// counts them (uniqueParityRecords): the same run can come from an artifact
+// and from the archive, where its line may differ by trailing whitespace.
+const records = uniqueParityRecords(args.logs.map(read)).filter((r): r is SchulzeRecord => r.kind === 'schulze');
 
 // One report per time, so two IEM files that overlap count each once.
 const byTime = new Map<number, number>();

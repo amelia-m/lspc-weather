@@ -30,11 +30,15 @@ piece.
     aviationweather.gov's own. (Until 2026-10-22 it also asked Cloudflare's
     fetch cache to keep the answer, which could add its age to the
     memory's; it no longer does.)
-  - It gives up on aviationweather.gov after 8 seconds and answers 502, and
-    the app asks the relay once, without the retry its other requests get,
-    so a stalled upstream draws one request, not two.
+  - It gives up on aviationweather.gov after 8 seconds and answers 502.
+    After a 502 the app does not ask again, so a stalled upstream draws one
+    request, not two; after any other failure it retries once, as its
+    other requests do, so a dropped connection is not read as the relay
+    down (`fetchTafFrom`, src/api/nws.ts).
   - Every way aviationweather.gov can fail answers 502, a body that is not
-    a list of TAFs included; that is neither kept nor passed on.
+    a list of TAFs included; that is neither kept nor passed on. A list
+    whose Offutt entry the app cannot read is marked as aviationweather.gov's
+    ("KOFF upstream answer unreadable"), not the relay's.
   - The memory is not a promise. Cloudflare runs many copies of a Worker
     and keeps none for a set time. Its Cache API page (read 2026-10-20)
     gives working cache operations to "Workers deployed to custom domains",
@@ -129,7 +133,8 @@ aviationweather.gov, whatever the reason Offutt's was passed over. Data
 health links the source the TAF was read from (aviationweather.gov through
 the relay). When no station has a TAF in force, Data health's error and the
 source log give each station's reason (`NoCurrentTafError`,
-src/api/tafChain.ts).
+src/api/tafChain.ts), and a TAF still on screen goes if its own station was
+just found ended or cancelled (`tafOnScreenGone`, src/domain/taf.ts).
 
 The scraper's reading of the chips was
 checked on the deployed site on 2026-10-21 ("fallback KOMA · KOFF not in the
