@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  answerKey,
   countAnswered,
   emptyAnswers,
   formatAnswers,
@@ -11,7 +12,7 @@ import {
 import { clearAnswers, loadAnswers, saveAnswers } from '../src/api/citationAnswers';
 import type { ChecklistEntry } from '../src/config/citationsChecklist';
 import { CHECKLIST } from '../src/config/citationsChecklist';
-import { CITATIONS } from '../src/config/thresholds';
+import { CITATIONS, VISIBILITY_ROW } from '../src/config/thresholds';
 
 const REPO = 'https://github.com/amelia-m/lspc-weather';
 
@@ -93,6 +94,42 @@ describe('countAnswered', () => {
     const asks = CHECKLIST.reduce((n, e) => n + e.asks.length, 0);
     expect(total).toBe(CHECKLIST.length + asks);
     expect(CHECKLIST.every((e) => e.asks.length > 0)).toBe(true);
+  });
+});
+
+/* An entry whose wording follows a setting (A8, with VISIBILITY_ROW) moves
+ * its answers to a new key when the wording changes: a verdict on the 3 SM
+ * question must not be shown, counted or sent as one on the 5 SM question. */
+describe('answerKey', () => {
+  const moved = { ...entry('A1', ['New question?']), answerKey: 'A1@new' };
+  const old: Answers = {
+    ...emptyAnswers(),
+    claims: { A1: 'correct' },
+    questions: { [questionKey('A1', 0)]: { answer: 'yes' } },
+  };
+
+  it('leaves answers given to the old wording out of the count and the report', () => {
+    expect(countAnswered(old, [moved])).toEqual({ answered: 0, total: 2 });
+    expect(formatAnswers(old, [moved])).toContain('(no answers yet)');
+  });
+
+  it('counts and reports answers under the new key, headed by the entry id', () => {
+    const now: Answers = {
+      ...emptyAnswers(),
+      claims: { 'A1@new': 'wrong-section' },
+      questions: { [questionKey('A1@new', 0)]: { answer: 'no' } },
+    };
+    expect(countAnswered(now, [moved])).toEqual({ answered: 2, total: 2 });
+    const text = formatAnswers(now, [moved]);
+    expect(text).toContain('### A1 · Entry A1');
+    expect(text).toContain('Verdict: Wrong section');
+    expect(text).toContain('- Q1: No');
+  });
+
+  it('is the id for an entry with none, and A8 keeps its id only on the 3 SM row', () => {
+    expect(answerKey(entry('A2', []))).toBe('A2');
+    const a8 = CHECKLIST.find((e) => e.id === 'A8')!;
+    expect(answerKey(a8) === 'A8').toBe(VISIBILITY_ROW === 'below-10000-msl');
   });
 });
 

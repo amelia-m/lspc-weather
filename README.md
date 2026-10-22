@@ -196,8 +196,9 @@ Advisory thresholds and their sources live in
 
 **Every number that fires a flag comes from a published document** — the
 student ground-wind limit and the opening altitudes from the USPA SIM/BSR, the
-3 SM visibility floor and cloud clearance from 14 CFR 105.17, the flight
-categories from FAA AIM 7-1-7, the sunset trigger from 14 CFR 105.19, and the
+visibility floor (its 3 SM or 5 SM row, `VISIBILITY_ROW`) and cloud clearance
+from 14 CFR 105.17, the flight categories from FAA AIM 7-1-7, the sunset
+trigger from 14 CFR 105.19, and the
 waivered wind and gust ceilings from the club's posted policy
 ([`docs/lspc-waivered-wind-limits.md`](docs/lspc-waivered-wind-limits.md)).
 Density altitude cites FAA-P-8740-2 for the claim on its card and the

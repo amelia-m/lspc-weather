@@ -3,7 +3,7 @@ import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { ceilingState, type CeilingState } from '../domain/normalize';
 import { DATA_SOURCES } from '../config/sources';
-import { CITATIONS } from '../config/thresholds';
+import { CITATIONS, VISIBILITY_ROW, VISIBILITY_ROWS } from '../config/thresholds';
 import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
 import { CLOUD_COMPARISON } from '../config/cloudComparison';
 import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
@@ -97,12 +97,14 @@ export function CeilingSkyPanel({
         // section never mentions VFR (read 2026-09-23) — the pilot's VFR
         // minimums are 91.155, which this app does not cite. Both altitude
         // rows are printed because an exit from this DZ is above 10,000 ft
-        // MSL, where the figures are the higher ones.
+        // MSL, where the figures are the higher ones; which row the flag
+        // uses is `VISIBILITY_ROW`.
         <p className="muted small">
           {CATEGORY_LABEL[category]}: reduced ceiling/visibility. 14 CFR 105.17 bars parachute ops
           into or through cloud and sets flight visibility and distance from cloud: below 10,000 ft
           MSL, 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft
-          MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile horizontal. Source:{' '}
+          MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile horizontal. The visibility flag
+          holds the surface reading to the {VISIBILITY_ROWS[VISIBILITY_ROW].sm} SM row. Source:{' '}
           <SourceLink citation={CITATIONS.far10517} />
         </p>
       )}

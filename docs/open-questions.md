@@ -18,12 +18,16 @@ These cannot be settled from the code.
 
    **Both are ready (2026-10-22).** `VISIBILITY_ROW` in
    `src/config/thresholds.ts` picks the row, and `VISIBILITY_ROWS` holds each
-   row's figure, guidance and #citations question. The flag, both profiles,
-   the edited-in-Settings note and the A8 entry all follow it. To use the
-   5 SM row, change the one line to `'at-or-above-10000-msl'`; the 5 SM
-   guidance says the flag holds the surface reading to the exit's row and
-   gives where an exit enters it (above about 8,818 ft AGL, derived from the
-   DZ's elevation). With either value every test and gate passes: checked by
+   row's figure and #citations question. The flag, both profiles, the
+   edited-in-Settings note, the Ceiling & sky and Settings copy and the A8
+   entry all follow it. To use the 5 SM row, change the one line to
+   `'at-or-above-10000-msl'`. The flag's guidance gives both rows and where
+   an exit from this DZ enters the higher one (at or above 8,818 ft AGL,
+   derived from the DZ's elevation), then says which row it holds the
+   surface reading to. A8's answers given on the 3 SM row stay with that
+   wording: on the 5 SM row the entry stores its answers under a new key
+   (`answerKey`), so a verdict on the old question is not shown against the
+   new one. With either value every test and gate passes: checked by
    flipping it on 2026-10-22.
 
 2. **The claims still need an instructor, not another reading.** Every USPA,

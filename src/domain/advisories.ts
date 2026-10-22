@@ -1,5 +1,5 @@
 import type { Advisory, AdvisoryLevel, HourlyPoint, WeatherSnapshot } from './types';
-import { CITATIONS, hasWindLimit, isEdited, isOwnLimit, visibilityRowFor, type Thresholds } from '../config/thresholds';
+import { CITATIONS, hasWindLimit, isEdited, isOwnLimit, visibilityGuidance, type Thresholds } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
 import { SITE } from '../config/site';
@@ -122,20 +122,18 @@ export function evaluateAdvisories(
     // above it, the row an exit from this DZ is in. The reading is the
     // METAR's surface visibility and the reg's measure is flight visibility
     // at altitude; which row a surface reading should be held to is the open
-    // question there. The guidance names both rows either way, and says
-    // which one the flag uses.
+    // question there. The guidance names both rows, then the one figure the
+    // flag fires at: the row, or a figure edited in Settings.
     if (current.visibilitySm != null && current.visibilitySm < thresholds.visibilityCautionSm) {
-      const row = visibilityRowFor(thresholds.published?.visibilityCautionSm ?? thresholds.visibilityCautionSm);
       out.push({
         id: 'visibility',
         level: 'caution',
         metric: 'Visibility',
         value: `${round(current.visibilitySm, 1)} SM`,
-        guidance:
-          row.guidance +
-          (isEdited(thresholds, 'visibilityCautionSm')
-            ? ` This flag fires below ${round(thresholds.visibilityCautionSm, 1)} SM, as edited in Settings, in place of the ${round(row.sm, 1)} SM row it otherwise uses.`
-            : ''),
+        guidance: visibilityGuidance(
+          thresholds.published?.visibilityCautionSm ?? thresholds.visibilityCautionSm,
+          thresholds.visibilityCautionSm,
+        ),
         citation: CITATIONS.far10517,
       });
     }
