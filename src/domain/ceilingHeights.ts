@@ -59,11 +59,18 @@ const MS_H = 3_600_000;
 /** One gridpoint property as the API serves it and the keeper keeps it. */
 export type KeptSeries = { uom?: string; values: { validTime: string; value: number | null }[] } | null;
 
-/** The kept gridpoint properties read here and in chances.ts. */
+/** The kept gridpoint properties read here, in chances.ts and in
+ *  keptForecasts.ts. */
 export interface KeptProperties {
   ceilingHeight?: KeptSeries;
   probabilityOfPrecipitation?: KeptSeries;
   probabilityOfThunder?: KeptSeries;
+  windSpeed?: KeptSeries;
+  windGust?: KeptSeries;
+  windDirection?: KeptSeries;
+  temperature?: KeptSeries;
+  visibility?: KeptSeries;
+  quantitativePrecipitation?: KeptSeries;
 }
 
 /** The part of a kept snapshot (scripts/forecastKeep.ts, the

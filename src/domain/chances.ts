@@ -60,6 +60,11 @@ export interface ReportedHour {
   ts: boolean | null;
   /** `VCTS`: thunderstorm in the vicinity, not at the station. */
   vcts: boolean;
+  /** The hour's amount, in.: the largest `P` group read over the hour (its
+   *  :55 report's, which runs from the :55 report before, unless a special
+   *  after it measured more); 0 with none, and a trace, `P0000`, is 0.
+   *  Null when the :55 report's gauge could not say. */
+  amount: number | null;
 }
 
 const PRECIP_CODES = /DZ|RA|SN|SG|IC|PL|GR|GS|UP/;
@@ -140,6 +145,12 @@ export function reportedHours(metars: readonly MetarRecord[]): ReportedHour[] {
       precip: wx.some((r) => r.precip) || amounts.some((r) => r.pGroup),
       ts: ts ? true : wx.some((r) => r.tsno) ? null : false,
       vcts: wx.some((r) => r.vcts),
+      // The largest in the hour: a special after the last :55 measures from
+      // it too, and an amount never fell within an hour in the archive.
+      amount:
+        list.find((x) => x.hourly)!.r.amount == null
+          ? null
+          : Math.max(...amounts.flatMap((r) => (r.amount == null ? [] : [r.amount]))),
     });
   }
   return out.sort((a, b) => a.t - b.t);

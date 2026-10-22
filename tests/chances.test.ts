@@ -93,6 +93,11 @@ describe('reportedHours', () => {
     expect(hours.map((h) => new Date(h.t).getUTCHours())).toEqual([9, 10, 11, 12, 13, 14, 17, 18, 19, 20, 21]);
   });
 
+  it('gives each hour its amount, unknown where the hourly report could not say', () => {
+    const amounts = Object.fromEntries(hours.map((h) => [new Date(h.t).getUTCHours(), h.amount]));
+    expect(amounts).toEqual({ 9: 0, 10: 0.06, 11: 0, 12: 0, 13: null, 14: 0, 17: 0, 18: 0.02, 19: null, 20: 0, 21: 0 });
+  });
+
   it('reads the P amount over the hour ending with its :55 report, so a report after :55 opens the next', () => {
     expect(hourOf(hours, 17)).toMatchObject({ measurable: false, precip: true });
     expect(hourOf(hours, 18)).toMatchObject({ measurable: true, precip: true });
@@ -133,7 +138,7 @@ describe('summarizeChances', () => {
     valid: iso(validT),
     chance,
   });
-  const hour = (t: number, measurable: boolean | null): ReportedHour => ({ t, measurable, precip: !!measurable, ts: false, vcts: false });
+  const hour = (t: number, measurable: boolean | null): ReportedHour => ({ t, measurable, precip: !!measurable, ts: false, vcts: false, amount: null });
 
   it('reads each hour from the newest issuance at least the row’s lead before it, and counts by bin', () => {
     const rows = summarizeChances(
@@ -168,7 +173,7 @@ describe('summarizeChances', () => {
 
 describe('summarizeChances, near misses and odd values', () => {
   const at = (t: number, chance: number): ChanceForecast => ({ issued: iso(t - H), valid: iso(t), chance });
-  const h = (t: number, o: Partial<ReportedHour>): ReportedHour => ({ t, measurable: false, precip: false, ts: false, vcts: false, ...o });
+  const h = (t: number, o: Partial<ReportedHour>): ReportedHour => ({ t, measurable: false, precip: false, ts: false, vcts: false, amount: 0, ...o });
   const hours = [h(T, { precip: true }), h(T + H, { measurable: true, precip: true }), h(T + 2 * H, { vcts: true })];
 
   it('counts each element’s near misses from its own reading', () => {
