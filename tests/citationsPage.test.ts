@@ -140,11 +140,14 @@ describe('CitationsPage with an entry whose answers moved', () => {
 
     stored({ A8: 'correct' }, { 'A8:0': { answer: 'yes' } });
     expect(checked()).toBe('');
+    // Not shown as an answer, but not dropped unseen either.
+    expect(renderToStaticMarkup(createElement(Page))).toContain('You answered an earlier wording of this entry.');
 
     stored({ 'A8@new': 'correct' }, { 'A8@new:0': { answer: 'yes' } });
     const now = checked();
     expect(now).toContain('name="claim-A8" checked="" value="correct"');
     // The form's names stay on the entry id.
     expect(now).toContain('name="q-A8:0" checked="" value="yes"');
+    expect(renderToStaticMarkup(createElement(Page))).not.toContain('earlier wording');
   });
 });

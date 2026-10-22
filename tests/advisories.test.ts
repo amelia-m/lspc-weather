@@ -687,7 +687,7 @@ describe('guidance matches the section as read', () => {
       rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'BKN020'),
       clouds: [{ cover: 'BKN', base: 2000 }],
     });
-    const html = markup(createElement(CeilingSkyPanel, { current, hourly: [] }));
+    const html = markup(createElement(CeilingSkyPanel, { current, hourly: [], thresholds: DEFAULT_THRESHOLDS.student }));
     expect(html).not.toMatch(/VFR flight conditions/);
     expect(html).toMatch(/into or through cloud/);
     expect(html).toMatch(/5 SM/);
@@ -697,6 +697,15 @@ describe('guidance matches the section as read', () => {
     expect(html.replace(/<!-- -->/g, '')).toContain(
       `The visibility flag holds the surface reading to the ${VISIBILITY_ROWS[VISIBILITY_ROW].sm} SM row.`,
     );
+    // A figure edited in Settings is named as one, as the flag names it; and
+    // with no thresholds given the card names no figure rather than guess.
+    const row = VISIBILITY_ROWS[VISIBILITY_ROW].sm;
+    const edited = withOverrides(DEFAULT_THRESHOLDS.licensed, { visibilityCautionSm: row + 1 });
+    const editedHtml = markup(createElement(CeilingSkyPanel, { current, hourly: [], thresholds: edited }));
+    expect(editedHtml.replace(/<!-- -->/g, '')).toContain(
+      `The visibility flag fires below ${row + 1} SM, as edited in Settings, in place of the ${row} SM row it otherwise uses.`,
+    );
+    expect(markup(createElement(CeilingSkyPanel, { current, hourly: [] }))).not.toContain('The visibility flag');
   });
 });
 
@@ -966,13 +975,13 @@ describe('the 105.17 row the visibility flag uses', () => {
     expect(flag(4, at(3))).toBeUndefined();
     const v = flag(2, at(3));
     expect(v?.guidance).toMatch(/3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it/);
-    expect(v?.guidance).toContain('This flag holds the reading to the 3 SM row.');
+    expect(v?.guidance).toContain('This flag holds the surface reading to the 3 SM row.');
   });
 
   it('at the 5 SM row, flags below 5 SM, says it holds the reading to that row, and where an exit enters it', () => {
     expect(flag(5, at(5))).toBeUndefined();
     const v = flag(4, at(5));
-    expect(v?.guidance).toContain('This flag holds the reading to the 5 SM row.');
+    expect(v?.guidance).toContain('This flag holds the surface reading to the 5 SM row.');
     // 10,000 ft MSL less the DZ's 1,182 ft: derived, not written down.
     expect(v?.guidance).toContain('at or above 8,818 ft AGL is in the 5 SM row');
   });
@@ -983,12 +992,12 @@ describe('the 105.17 row the visibility flag uses', () => {
       expect(g).toBe(
         `${VISIBILITY_RULE} This flag fires below ${row + 2} SM, as edited in Settings, in place of the ${row} SM row it otherwise uses.`,
       );
-      expect(g).not.toContain('holds the reading');
+      expect(g).not.toContain('holds the surface reading');
     }
   });
 
-  it('claims no row for a published figure that is neither', () => {
-    expect(visibilityGuidance(4, 4)).toBe(`${VISIBILITY_RULE} This flag fires below 4 SM.`);
+  it('prints an edited figure to a tenth, as Settings shows it', () => {
+    expect(flag(2, at(3, 2.333))?.guidance).toContain('This flag fires below 2.3 SM, as edited in Settings');
   });
 
   it('uses the row in use in both profiles and on #citations', () => {

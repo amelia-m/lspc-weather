@@ -256,8 +256,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [VISIBILITY_ROWS[VISIBILITY_ROW].ask],
-    // Answers given on the 3 SM row keep the key they were stored under.
-    answerKey: VISIBILITY_ROW === 'below-10000-msl' ? undefined : `A8@${VISIBILITY_ROWS[VISIBILITY_ROW].sm}sm`,
+    answerKey: VISIBILITY_ROWS[VISIBILITY_ROW].answerKey,
   },
   {
     id: 'A9',

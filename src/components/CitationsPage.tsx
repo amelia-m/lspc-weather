@@ -10,6 +10,7 @@ import {
   QUESTION_ANSWER_LABEL,
   answerKey,
   countAnswered,
+  earlierAnswers,
   emptyAnswers,
   formatAnswers,
   issueUrl,
@@ -315,6 +316,7 @@ function ChecklistPanel({
   onQuestion: (index: number, patch: { answer?: QuestionAnswer; note?: string }) => void;
 }): JSX.Element {
   const verdict = answers.claims[answerKey(item)];
+  const earlier = earlierAnswers(answers, item);
   return (
     <Panel title={`${item.id} · ${item.title}`}>
       <p className="cite-quote">{item.claim}</p>
@@ -352,6 +354,12 @@ function ChecklistPanel({
       {/* One verdict for the claim, then one answer per question: the two are
           different rulings, and one line under three questions muddled them. */}
       <div className="cite-answer">
+        {earlier && (
+          <p className="muted small">
+            You answered an earlier wording of this entry. Those answers are kept in this browser and
+            go with the report, marked as given to the earlier wording; they are not shown below.
+          </p>
+        )}
         <p className="cite-answer-head">Your verdict on the claim:</p>
         <div className="cite-choices" role="radiogroup" aria-label={`Verdict on ${item.id}`}>
           {CLAIM_VERDICTS.map((v) => (

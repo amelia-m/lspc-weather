@@ -292,7 +292,12 @@ export default function App(): JSX.Element {
       />
     ),
     ceilingSky: (
-      <CeilingSkyPanel current={snapshot.current} hourly={snapshot.hourly} omClouds={snapshot.openMeteoClouds ?? null} />
+      <CeilingSkyPanel
+        current={snapshot.current}
+        hourly={snapshot.hourly}
+        omClouds={snapshot.openMeteoClouds ?? null}
+        thresholds={advisoryThresholds}
+      />
     ),
     windsAloft: (
       <WindsAloftPanel
