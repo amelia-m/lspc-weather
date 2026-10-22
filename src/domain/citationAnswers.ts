@@ -54,6 +54,10 @@ export const emptyAnswers = (): Answers => ({ reviewer: '', date: '', claims: {}
 
 export const questionKey = (entryId: string, index: number): string => `${entryId}:${index}`;
 
+/** The key an entry's answers are stored under: its id, unless its wording
+ *  follows a setting and has changed since (`ChecklistEntry.answerKey`). */
+export const answerKey = (entry: Pick<ChecklistEntry, 'id' | 'answerKey'>): string => entry.answerKey ?? entry.id;
+
 /** Rebuild an Answers from whatever storage held, dropping anything that is
  *  not the shape above. Storage is user-writable and survives releases that
  *  may rename a verdict, and one bad record must not blank a reviewer's page. */
@@ -90,10 +94,10 @@ export function countAnswered(
   let total = 0;
   for (const entry of checklist) {
     total += 1;
-    if (answers.claims[entry.id] !== undefined) answered += 1;
+    if (answers.claims[answerKey(entry)] !== undefined) answered += 1;
     entry.asks.forEach((_, i) => {
       total += 1;
-      const q = answers.questions[questionKey(entry.id, i)];
+      const q = answers.questions[questionKey(answerKey(entry), i)];
       if (q?.answer !== undefined || (q?.note ?? '').trim() !== '') answered += 1;
     });
   }
@@ -109,9 +113,9 @@ export function formatAnswers(answers: Answers, checklist: readonly ChecklistEnt
   lines.push(`Citations review by ${who}, ${when}.`, '');
   let any = false;
   for (const entry of checklist) {
-    const verdict = answers.claims[entry.id];
+    const verdict = answers.claims[answerKey(entry)];
     const qs = entry.asks
-      .map((ask, i) => ({ ask, i, r: answers.questions[questionKey(entry.id, i)] }))
+      .map((ask, i) => ({ ask, i, r: answers.questions[questionKey(answerKey(entry), i)] }))
       .filter(({ r }) => r !== undefined && (r.answer !== undefined || (r.note ?? '').trim() !== ''));
     if (verdict === undefined && qs.length === 0) continue;
     any = true;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CitationsPage } from '../src/components/CitationsPage';
@@ -109,5 +109,42 @@ describe('reader-facing text spells out pilot in command', () => {
       const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
       expect(code, path).not.toMatch(/\bPIC\b/);
     }
+  });
+});
+
+/* The page reads a moved entry's answers by its answer key (A8 on the 5 SM
+ * row), so a verdict stored against the old wording is not shown checked. */
+describe('CitationsPage with an entry whose answers moved', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.doUnmock('../src/config/citationsChecklist');
+    vi.resetModules();
+  });
+
+  it('shows the answers stored under the new key, not the old', async () => {
+    vi.resetModules();
+    vi.doMock('../src/config/citationsChecklist', async (orig) => {
+      const real = await orig<typeof import('../src/config/citationsChecklist')>();
+      const a8 = real.CHECKLIST.find((e) => e.id === 'A8')!;
+      return { ...real, CHECKLIST: [{ ...a8, answerKey: 'A8@new' }] };
+    });
+    const stored = (claims: Record<string, string>, questions: Record<string, unknown>) =>
+      vi.stubGlobal('localStorage', {
+        getItem: () => JSON.stringify({ reviewer: '', date: '', claims, questions }),
+        setItem: () => {},
+        removeItem: () => {},
+      });
+    const { CitationsPage: Page } = await import('../src/components/CitationsPage');
+    const checked = () =>
+      (renderToStaticMarkup(createElement(Page)).match(/<input[^>]*checked=""[^>]*>/g) ?? []).join('\n');
+
+    stored({ A8: 'correct' }, { 'A8:0': { answer: 'yes' } });
+    expect(checked()).toBe('');
+
+    stored({ 'A8@new': 'correct' }, { 'A8@new:0': { answer: 'yes' } });
+    const now = checked();
+    expect(now).toContain('name="claim-A8" checked="" value="correct"');
+    // The form's names stay on the entry id.
+    expect(now).toContain('name="q-A8:0" checked="" value="yes"');
   });
 });

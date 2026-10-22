@@ -8,6 +8,7 @@ import {
   CLAIM_VERDICT_LABEL,
   QUESTION_ANSWERS,
   QUESTION_ANSWER_LABEL,
+  answerKey,
   countAnswered,
   emptyAnswers,
   formatAnswers,
@@ -205,8 +206,8 @@ export function CitationsPage(): JSX.Element {
           key={item.id}
           item={item}
           answers={answers}
-          onClaim={(v) => setClaim(item.id, v)}
-          onQuestion={(i, patch) => setQuestion(item.id, i, patch)}
+          onClaim={(v) => setClaim(answerKey(item), v)}
+          onQuestion={(i, patch) => setQuestion(answerKey(item), i, patch)}
         />
       ))}
 
@@ -313,7 +314,7 @@ function ChecklistPanel({
   onClaim: (verdict: ClaimVerdict) => void;
   onQuestion: (index: number, patch: { answer?: QuestionAnswer; note?: string }) => void;
 }): JSX.Element {
-  const verdict = answers.claims[item.id];
+  const verdict = answers.claims[answerKey(item)];
   return (
     <Panel title={`${item.id} · ${item.title}`}>
       <p className="cite-quote">{item.claim}</p>
@@ -371,8 +372,9 @@ function ChecklistPanel({
             <p className="cite-answer-head">Please confirm:</p>
             <ol className="cite-question">
               {item.asks.map((ask, i) => {
+                // Stored under the answer key; the form's names stay on the id.
+                const response = answers.questions[questionKey(answerKey(item), i)];
                 const key = questionKey(item.id, i);
-                const response = answers.questions[key];
                 return (
                   <li key={key}>
                     <p className="cite-question-text" id={`q-${key}-text`}>

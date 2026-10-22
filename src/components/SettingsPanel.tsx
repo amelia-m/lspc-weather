@@ -5,6 +5,8 @@ import {
   isOwnLimit,
   editableRange,
   isOwnLimitKey,
+  VISIBILITY_ROW,
+  VISIBILITY_ROWS,
   type EditableLimit,
   type Thresholds,
 } from '../config/thresholds';
@@ -72,8 +74,8 @@ export function SettingsPanel({
               What you set here appears in the charts, the Surface wind card and the flags under
               &ldquo;Conditions to note&rdquo; above, each marked as yours. No published source sets a
               ground-wind limit or gust ceiling for licensed jumpers; leave either empty for none. The
-              visibility row, unedited, is 14 CFR 105.17&rsquo;s figure. Saved in this browser; winds and
-              gusts in knots (1 kt ≈ 1.15 mph).
+              visibility row, unedited, is 14 CFR 105.17&rsquo;s {VISIBILITY_ROWS[VISIBILITY_ROW].sm} SM
+              row. Saved in this browser; winds and gusts in knots (1 kt ≈ 1.15 mph).
             </p>
             <div className="settings-grid">
               {FIELDS.filter((f) => isEditable(base, f.key)).map((f) => {

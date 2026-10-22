@@ -1,5 +1,5 @@
 import type { Citation } from '../domain/types';
-import { CITATIONS, VISIBILITY_ROW, VISIBILITY_ROWS } from './thresholds';
+import { CITATIONS, VISIBILITY_ROW, VISIBILITY_ROWS, visibilityGuidance } from './thresholds';
 import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
 
 /** Where and when the SIM parts quoted below were read: every quote of the
@@ -49,6 +49,11 @@ export interface ChecklistEntry {
   /** What the reader is asked to confirm or decide — the things a document
    *  could not settle, because they are about how this DZ applies a rule. */
   asks: string[];
+  /** The key the reviewer's answers are stored under, when it is not `id`.
+   *  An entry whose claim and questions follow a setting (A8, with
+   *  `VISIBILITY_ROW`) takes a new key when the setting changes, so a
+   *  verdict given to the old wording is not shown against the new. */
+  answerKey?: string;
 }
 
 /** Ordered by what a jumper could act on. */
@@ -237,7 +242,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A8',
     title: 'Flight visibility and clearance from cloud',
     // The flag's own wording and figure, for the row in use (VISIBILITY_ROW).
-    claim: VISIBILITY_ROWS[VISIBILITY_ROW].guidance,
+    claim: visibilityGuidance(VISIBILITY_ROWS[VISIBILITY_ROW].sm, VISIBILITY_ROWS[VISIBILITY_ROW].sm),
     value: `Flag fires below ${VISIBILITY_ROWS[VISIBILITY_ROW].sm} SM`,
     where:
       'Visibility flag in Conditions to note; the overcast flag, which gives the reported bases and the 105.17 rows below cloud; and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
@@ -251,6 +256,8 @@ export const CHECKLIST: ChecklistEntry[] = [
       ],
     },
     asks: [VISIBILITY_ROWS[VISIBILITY_ROW].ask],
+    // Answers given on the 3 SM row keep the key they were stored under.
+    answerKey: VISIBILITY_ROW === 'below-10000-msl' ? undefined : `A8@${VISIBILITY_ROWS[VISIBILITY_ROW].sm}sm`,
   },
   {
     id: 'A9',
