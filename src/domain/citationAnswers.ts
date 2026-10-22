@@ -88,24 +88,28 @@ export function sanitizeAnswers(value: unknown): Answers {
 const isAnswered = (r: QuestionResponse | undefined): r is QuestionResponse =>
   r !== undefined && (r.answer !== undefined || (r.note ?? '').trim() !== '');
 
-/** What a reviewer gave an entry's wording before its answers moved to a new
- *  key (`ChecklistEntry.answerKey`): still in this browser, and still their
+/** What a reviewer gave an entry's other wordings (`otherWordings`), each
+ *  while it was the one in use: still in this browser, and still their
  *  ruling on that wording, so the page and the report say it is there rather
- *  than drop it unseen. It answers nothing on the current wording. Null when
- *  there is none. Its questions are by number only: their text has changed. */
+ *  than drop it unseen. It answers nothing on the current wording. Its
+ *  questions are by number only: their text was the other wording's. */
 export function earlierAnswers(
   answers: Answers,
-  entry: Pick<ChecklistEntry, 'id' | 'answerKey'>,
-): { verdict?: ClaimVerdict; questions: { index: number; response: QuestionResponse }[] } | null {
-  if (entry.answerKey === undefined || entry.answerKey === entry.id) return null;
-  const verdict = answers.claims[entry.id];
-  const prefix = `${entry.id}:`;
-  const questions = Object.entries(answers.questions)
-    .filter(([key, r]) => key.startsWith(prefix) && /^\d+$/.test(key.slice(prefix.length)) && isAnswered(r))
-    .map(([key, response]) => ({ index: Number(key.slice(prefix.length)), response }))
-    .sort((a, b) => a.index - b.index);
-  if (verdict === undefined && questions.length === 0) return null;
-  return { ...(verdict !== undefined ? { verdict } : {}), questions };
+  entry: Pick<ChecklistEntry, 'id' | 'answerKey' | 'otherWordings'>,
+): { value: string; verdict?: ClaimVerdict; questions: { index: number; response: QuestionResponse }[] }[] {
+  const current = answerKey(entry);
+  return (entry.otherWordings ?? [])
+    .filter((w) => w.answerKey !== current)
+    .map((w) => {
+      const prefix = `${w.answerKey}:`;
+      const verdict = answers.claims[w.answerKey];
+      const questions = Object.entries(answers.questions)
+        .filter(([key, r]) => key.startsWith(prefix) && /^\d+$/.test(key.slice(prefix.length)) && isAnswered(r))
+        .map(([key, response]) => ({ index: Number(key.slice(prefix.length)), response }))
+        .sort((x, y) => x.index - y.index);
+      return { value: w.value, ...(verdict !== undefined ? { verdict } : {}), questions };
+    })
+    .filter((w) => w.verdict !== undefined || w.questions.length > 0);
 }
 
 const responseLine = (index: number, r: QuestionResponse): string => {
@@ -146,21 +150,21 @@ export function formatAnswers(answers: Answers, checklist: readonly ChecklistEnt
       .map((ask, i) => ({ ask, i, r: answers.questions[questionKey(answerKey(entry), i)] }))
       .filter((q): q is { ask: string; i: number; r: QuestionResponse } => isAnswered(q.r));
     const earlier = earlierAnswers(answers, entry);
-    if (verdict === undefined && qs.length === 0 && earlier === null) continue;
+    if (verdict === undefined && qs.length === 0 && earlier.length === 0) continue;
     any = true;
     lines.push(`### ${entry.id} · ${entry.title}`);
-    // The claim is not repeated, so the figure is: it says which wording was
-    // answered where the wording follows a setting (A8: which 105.17 row).
-    if (entry.value !== undefined) lines.push(`Figure: ${entry.value}`);
+    // The claim is not repeated, so where the wording follows a setting the
+    // figure is: it says which wording was answered (A8: which 105.17 row).
+    if (entry.otherWordings !== undefined && entry.value !== undefined) lines.push(`Figure: ${entry.value}`);
     lines.push(`Verdict: ${verdict !== undefined ? CLAIM_VERDICT_LABEL[verdict] : '(not given)'}`);
     for (const { ask, i, r } of qs) {
       lines.push(responseLine(i, r));
       lines.push(`  > ${ask}`);
     }
-    if (earlier) {
-      lines.push('Given to an earlier wording of this entry, before it changed:');
-      if (earlier.verdict !== undefined) lines.push(`- Verdict: ${CLAIM_VERDICT_LABEL[earlier.verdict]}`);
-      for (const { index, response } of earlier.questions) lines.push(responseLine(index, response));
+    for (const w of earlier) {
+      lines.push(`Given to an earlier wording of this entry (${w.value}):`);
+      if (w.verdict !== undefined) lines.push(`- Verdict: ${CLAIM_VERDICT_LABEL[w.verdict]}`);
+      for (const { index, response } of w.questions) lines.push(responseLine(index, response));
     }
     lines.push('');
   }

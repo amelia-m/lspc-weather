@@ -996,8 +996,26 @@ describe('the 105.17 row the visibility flag uses', () => {
     }
   });
 
-  it('prints an edited figure to a tenth, as Settings shows it', () => {
-    expect(flag(2, at(3, 2.333))?.guidance).toContain('This flag fires below 2.3 SM, as edited in Settings');
+  it('prints an edited figure as typed, so it never reads as the row it replaced', () => {
+    // Rounded to a tenth, 3.04 read "fires below 3 SM" while a 3 SM report flagged.
+    expect(flag(3, at(3, 3.04))?.guidance).toContain(
+      'This flag fires below 3.04 SM, as edited in Settings, in place of the 3 SM row it otherwise uses.',
+    );
+  });
+
+  it('calls a published figure a row only if 105.17 has one at it', () => {
+    expect(visibilityGuidance({ visibilityCautionSm: 4 })).toBe(`${VISIBILITY_RULE} This flag fires below 4 SM.`);
+    const fourPublished = withOverrides({ ...DEFAULT_THRESHOLDS.licensed, visibilityCautionSm: 4 }, { visibilityCautionSm: 6 });
+    expect(visibilityGuidance(fourPublished)).toBe(
+      `${VISIBILITY_RULE} This flag fires below 6 SM, as edited in Settings, in place of 4 SM it otherwise uses.`,
+    );
+  });
+
+  it("stores each row's A8 answers under a key of its own", () => {
+    const keys = Object.values(VISIBILITY_ROWS).map((r) => r.answerKey);
+    expect(new Set(keys).size).toBe(keys.length);
+    // The 3 SM row keeps the id the answers given before there were two rows are under.
+    expect(VISIBILITY_ROWS['below-10000-msl'].answerKey).toBe('A8');
   });
 
   it('uses the row in use in both profiles and on #citations', () => {
@@ -1005,7 +1023,7 @@ describe('the 105.17 row the visibility flag uses', () => {
     expect(DEFAULT_THRESHOLDS.student.visibilityCautionSm).toBe(row.sm);
     expect(DEFAULT_THRESHOLDS.licensed.visibilityCautionSm).toBe(row.sm);
     const a8 = CHECKLIST.find((e) => e.id === 'A8')!;
-    expect(a8.claim).toBe(visibilityGuidance(row.sm, row.sm));
+    expect(a8.claim).toBe(visibilityGuidance({ visibilityCautionSm: row.sm }));
     expect(a8.value).toBe(`Flag fires below ${row.sm} SM`);
     expect(a8.asks).toEqual([row.ask]);
   });

@@ -51,10 +51,18 @@ export interface ChecklistEntry {
   asks: string[];
   /** The key the reviewer's answers are stored under, when it is not `id`.
    *  An entry whose claim and questions follow a setting (A8, with
-   *  `VISIBILITY_ROW`) takes a new key when the setting changes, so a
-   *  verdict given to the old wording is not shown against the new. */
+   *  `VISIBILITY_ROW`) has a key per wording, so a verdict given to one
+   *  wording is not shown against another. */
   answerKey?: string;
+  /** That entry's other wordings: answers given to one while it was in use
+   *  are still the reviewer's ruling on it, so the page and the report keep
+   *  them, under its figure, rather than drop them unseen. */
+  otherWordings?: { answerKey: string; value: string }[];
 }
+
+/** A8's figure on a 105.17 row: the entry's `value`, and the label its
+ *  answers to another row are reported under. */
+const visibilityRowValue = (sm: number): string => `Flag fires below ${sm} SM`;
 
 /** Ordered by what a jumper could act on. */
 export const CHECKLIST: ChecklistEntry[] = [
@@ -242,8 +250,8 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A8',
     title: 'Flight visibility and clearance from cloud',
     // The flag's own wording and figure, for the row in use (VISIBILITY_ROW).
-    claim: visibilityGuidance(VISIBILITY_ROWS[VISIBILITY_ROW].sm, VISIBILITY_ROWS[VISIBILITY_ROW].sm),
-    value: `Flag fires below ${VISIBILITY_ROWS[VISIBILITY_ROW].sm} SM`,
+    claim: visibilityGuidance({ visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm }),
+    value: visibilityRowValue(VISIBILITY_ROWS[VISIBILITY_ROW].sm),
     where:
       'Visibility flag in Conditions to note; the overcast flag, which gives the reported bases and the 105.17 rows below cloud; and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
     sources: [CITATIONS.far10517],
@@ -257,6 +265,9 @@ export const CHECKLIST: ChecklistEntry[] = [
     },
     asks: [VISIBILITY_ROWS[VISIBILITY_ROW].ask],
     answerKey: VISIBILITY_ROWS[VISIBILITY_ROW].answerKey,
+    otherWordings: Object.entries(VISIBILITY_ROWS)
+      .filter(([row]) => row !== VISIBILITY_ROW)
+      .map(([, r]) => ({ answerKey: r.answerKey, value: visibilityRowValue(r.sm) })),
   },
   {
     id: 'A9',

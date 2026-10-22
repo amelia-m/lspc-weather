@@ -126,7 +126,12 @@ describe('CitationsPage with an entry whose answers moved', () => {
     vi.doMock('../src/config/citationsChecklist', async (orig) => {
       const real = await orig<typeof import('../src/config/citationsChecklist')>();
       const a8 = real.CHECKLIST.find((e) => e.id === 'A8')!;
-      return { ...real, CHECKLIST: [{ ...a8, answerKey: 'A8@new' }] };
+      return {
+        ...real,
+        CHECKLIST: [
+          { ...a8, answerKey: 'A8@new', otherWordings: [{ answerKey: 'A8', value: 'Flag fires below 3 SM' }] },
+        ],
+      };
     });
     const stored = (claims: Record<string, string>, questions: Record<string, unknown>) =>
       vi.stubGlobal('localStorage', {
@@ -141,7 +146,9 @@ describe('CitationsPage with an entry whose answers moved', () => {
     stored({ A8: 'correct' }, { 'A8:0': { answer: 'yes' } });
     expect(checked()).toBe('');
     // Not shown as an answer, but not dropped unseen either.
-    expect(renderToStaticMarkup(createElement(Page))).toContain('You answered an earlier wording of this entry.');
+    expect(renderToStaticMarkup(createElement(Page))).toContain(
+      'You answered an earlier wording of this entry (Flag fires below 3 SM).',
+    );
 
     stored({ 'A8@new': 'correct' }, { 'A8@new:0': { answer: 'yes' } });
     const now = checked();

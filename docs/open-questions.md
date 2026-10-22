@@ -29,11 +29,12 @@ These cannot be settled from the code.
    included. A8's answers given on the 3 SM row stay with that wording: on
    the 5 SM row the entry stores its answers under a new key (`answerKey`
    in `VISIBILITY_ROWS`), so a verdict on the old question is not shown
-   against the new one. The old answers are not dropped: the page says they
-   are there, and the report sends them marked as given to the earlier
-   wording, with each entry's figure ("Flag fires below 5 SM") so a report
-   says which row it answered. With either value every test and gate
-   passes: checked by flipping it on 2026-10-22.
+   against the new one. The old answers are not dropped, whichever way the
+   row moves: the page says they are there, and the report sends them under
+   the figure they were given to ("Flag fires below 3 SM"), after A8's
+   current figure, so a report says which row each ruling answered. With
+   either value every test and gate passes: checked by flipping it on
+   2026-10-22.
 
 2. **The claims still need an instructor, not another reading.** Every USPA,
    CFR and FAA citation has now been read at its source — the SIM at uspa.org

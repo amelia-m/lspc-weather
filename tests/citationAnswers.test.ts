@@ -98,34 +98,52 @@ describe('countAnswered', () => {
   });
 });
 
-/* An entry whose wording follows a setting (A8, with VISIBILITY_ROW) moves
- * its answers to a new key when the wording changes: a verdict on the 3 SM
- * question must not be shown, counted or sent as one on the 5 SM question. */
+/* An entry whose wording follows a setting (A8, with VISIBILITY_ROW) has a
+ * key per wording: a verdict on the 3 SM question must not be shown, counted
+ * or sent as one on the 5 SM question, nor dropped unseen when the row moves,
+ * in either direction. */
 describe('answerKey', () => {
-  const moved = { ...entry('A1', ['New question?']), answerKey: 'A1@new' };
+  const moved: ChecklistEntry = {
+    ...entry('A1', ['New question?']),
+    value: 'New figure',
+    answerKey: 'A1@new',
+    otherWordings: [{ answerKey: 'A1', value: 'Old figure' }],
+  };
   const old: Answers = {
     ...emptyAnswers(),
     claims: { A1: 'correct' },
     questions: { [questionKey('A1', 0)]: { answer: 'yes' } },
   };
 
-  it('counts answers given to the old wording as none, and reports them as given to it', () => {
+  it('counts answers given to the old wording as none, and reports them under its figure', () => {
     expect(countAnswered(old, [moved])).toEqual({ answered: 0, total: 2 });
-    expect(earlierAnswers(old, moved)).toEqual({ verdict: 'correct', questions: [{ index: 0, response: { answer: 'yes' } }] });
+    expect(earlierAnswers(old, moved)).toEqual([
+      { value: 'Old figure', verdict: 'correct', questions: [{ index: 0, response: { answer: 'yes' } }] },
+    ]);
     const text = formatAnswers(old, [moved]);
     expect(text).toContain(
-      'Verdict: (not given)\nGiven to an earlier wording of this entry, before it changed:\n- Verdict: Correct\n- Q1: Yes',
+      'Figure: New figure\nVerdict: (not given)\nGiven to an earlier wording of this entry (Old figure):\n- Verdict: Correct\n- Q1: Yes',
     );
     // Not as an answer to the question on the page now.
     expect(text).not.toContain('New question?');
   });
 
-  it('finds no earlier answers for an entry that has not moved', () => {
-    expect(earlierAnswers(old, entry('A1', ['First question?']))).toBeNull();
-    expect(earlierAnswers(emptyAnswers(), moved)).toBeNull();
+  it('keeps them when the wording moves back to the entry id', () => {
+    const back: ChecklistEntry = {
+      ...entry('A1', ['Old question?']),
+      otherWordings: [{ answerKey: 'A1@new', value: 'New figure' }],
+    };
+    const given: Answers = { ...emptyAnswers(), claims: { 'A1@new': 'wrong-section' } };
+    expect(countAnswered(given, [back])).toEqual({ answered: 0, total: 2 });
+    expect(formatAnswers(given, [back])).toContain('Given to an earlier wording of this entry (New figure):\n- Verdict: Wrong section');
   });
 
-  it('counts and reports answers under the new key, headed by the entry id', () => {
+  it('finds no earlier answers for an entry with one wording, or none given', () => {
+    expect(earlierAnswers(old, entry('A1', ['First question?']))).toEqual([]);
+    expect(earlierAnswers(emptyAnswers(), moved)).toEqual([]);
+  });
+
+  it('counts and reports answers under the new key, headed by the entry id and its figure', () => {
     const now: Answers = {
       ...emptyAnswers(),
       claims: { 'A1@new': 'wrong-section' },
@@ -133,23 +151,21 @@ describe('answerKey', () => {
     };
     expect(countAnswered(now, [moved])).toEqual({ answered: 2, total: 2 });
     const text = formatAnswers(now, [moved]);
-    expect(text).toContain('### A1 · Entry A1');
-    expect(text).toContain('Verdict: Wrong section');
+    expect(text).toContain('### A1 · Entry A1\nFigure: New figure\nVerdict: Wrong section');
     expect(text).toContain('- Q1: No');
     expect(text).not.toContain('earlier wording');
-  });
-
-  it('names the figure an entry was answered on', () => {
-    const answered: Answers = { ...emptyAnswers(), claims: { 'A1@new': 'correct' } };
-    expect(formatAnswers(answered, [{ ...moved, value: 'Flag fires below 5 SM' }])).toContain(
-      '### A1 · Entry A1\nFigure: Flag fires below 5 SM\nVerdict: Correct',
+    // An entry with one wording carries no figure line.
+    expect(formatAnswers({ ...emptyAnswers(), claims: { A1: 'correct' } }, [{ ...entry('A1', []), value: 'x' }])).not.toContain(
+      'Figure:',
     );
   });
 
-  it('is the id for an entry with none, and A8 keeps its id only on the 3 SM row', () => {
+  it('is the id for an entry with none; A8 keeps its id on the 3 SM row and lists the other row', () => {
     expect(answerKey(entry('A2', []))).toBe('A2');
     const a8 = CHECKLIST.find((e) => e.id === 'A8')!;
     expect(answerKey(a8) === 'A8').toBe(VISIBILITY_ROW === 'below-10000-msl');
+    expect(a8.otherWordings).toHaveLength(1);
+    expect(a8.otherWordings![0].answerKey).not.toBe(answerKey(a8));
   });
 });
 

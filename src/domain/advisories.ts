@@ -130,10 +130,7 @@ export function evaluateAdvisories(
         level: 'caution',
         metric: 'Visibility',
         value: `${round(current.visibilitySm, 1)} SM`,
-        guidance: visibilityGuidance(
-          thresholds.published?.visibilityCautionSm ?? thresholds.visibilityCautionSm,
-          thresholds.visibilityCautionSm,
-        ),
+        guidance: visibilityGuidance(thresholds),
         citation: CITATIONS.far10517,
       });
     }

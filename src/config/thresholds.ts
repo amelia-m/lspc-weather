@@ -630,12 +630,15 @@ export const VISIBILITY_RULE = `14 CFR 105.17 requires at least 3 SM flight visi
 /** Each row's figure, and A8's question on #citations while the flag uses
  *  it. `answerKey` is where A8's answers are stored on that row
  *  (`ChecklistEntry.answerKey`): the two questions ask opposite things, so
- *  an answer to one must not show against the other. The 3 SM row keeps A8's
- *  own id, which the answers given before there were two rows are under. */
-export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; ask: string; answerKey?: string }> = {
+ *  an answer to one must not show against the other. A key names stored
+ *  data, so it is written out rather than derived from the figure: it must
+ *  not move if the figure were edited. The 3 SM row keeps A8's own id, which
+ *  the answers given before there were two rows are under. */
+export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; ask: string; answerKey: string }> = {
   'below-10000-msl': {
     sm: 3,
     ask: 'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the pilot in command.',
+    answerKey: 'A8',
   },
   'at-or-above-10000-msl': {
     sm: 5,
@@ -650,19 +653,25 @@ export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; ask: string; a
 export const VISIBILITY_ROW: VisibilityRow = 'below-10000-msl';
 
 /** Which figure the visibility flag fires at, as a predicate for "the flag"
- *  or "this flag": the profile's row (`publishedSm`, always a 105.17 row),
- *  or a figure edited in Settings on Licensed (`firesSm`). To a tenth, as
- *  Settings shows it: storage keeps whatever was typed. */
-export function visibilityFigure(publishedSm: number, firesSm: number): string {
-  const sm = (v: number): number => Math.round(v * 10) / 10;
-  return firesSm !== publishedSm
-    ? `fires below ${sm(firesSm)} SM, as edited in Settings, in place of the ${sm(publishedSm)} SM row it otherwise uses.`
-    : `holds the surface reading to the ${sm(publishedSm)} SM row.`;
+ *  or "this flag", read from the thresholds the flag uses: the profile's
+ *  published figure, or one edited in Settings on Licensed. The edited
+ *  figure prints as typed: rounded, an edit of 3.04 would read "below 3 SM"
+ *  while a 3 SM report raised the flag. A published figure is called a row
+ *  only if it is one of the section's. */
+export function visibilityFigure(t: Pick<Thresholds, 'visibilityCautionSm' | 'published'>): string {
+  const firesSm = t.visibilityCautionSm;
+  const publishedSm = t.published?.visibilityCautionSm ?? firesSm;
+  const isRow = Object.values(VISIBILITY_ROWS).some((r) => r.sm === publishedSm);
+  const published = isRow ? `the ${publishedSm} SM row` : `${publishedSm} SM`;
+  if (firesSm !== publishedSm) {
+    return `fires below ${firesSm} SM, as edited in Settings, in place of ${published} it otherwise uses.`;
+  }
+  return isRow ? `holds the surface reading to ${published}.` : `fires below ${published}.`;
 }
 
 /** The flag's guidance: the rule, then the figure it fires at. */
-export function visibilityGuidance(publishedSm: number, firesSm: number): string {
-  return `${VISIBILITY_RULE} This flag ${visibilityFigure(publishedSm, firesSm)}`;
+export function visibilityGuidance(t: Pick<Thresholds, 'visibilityCautionSm' | 'published'>): string {
+  return `${VISIBILITY_RULE} This flag ${visibilityFigure(t)}`;
 }
 
 const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
