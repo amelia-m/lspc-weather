@@ -85,6 +85,35 @@ export function sanitizeAnswers(value: unknown): Answers {
   return out;
 }
 
+const isAnswered = (r: QuestionResponse | undefined): r is QuestionResponse =>
+  r !== undefined && (r.answer !== undefined || (r.note ?? '').trim() !== '');
+
+/** What a reviewer gave an entry's wording before its answers moved to a new
+ *  key (`ChecklistEntry.answerKey`): still in this browser, and still their
+ *  ruling on that wording, so the page and the report say it is there rather
+ *  than drop it unseen. It answers nothing on the current wording. Null when
+ *  there is none. Its questions are by number only: their text has changed. */
+export function earlierAnswers(
+  answers: Answers,
+  entry: Pick<ChecklistEntry, 'id' | 'answerKey'>,
+): { verdict?: ClaimVerdict; questions: { index: number; response: QuestionResponse }[] } | null {
+  if (entry.answerKey === undefined || entry.answerKey === entry.id) return null;
+  const verdict = answers.claims[entry.id];
+  const prefix = `${entry.id}:`;
+  const questions = Object.entries(answers.questions)
+    .filter(([key, r]) => key.startsWith(prefix) && /^\d+$/.test(key.slice(prefix.length)) && isAnswered(r))
+    .map(([key, response]) => ({ index: Number(key.slice(prefix.length)), response }))
+    .sort((a, b) => a.index - b.index);
+  if (verdict === undefined && questions.length === 0) return null;
+  return { ...(verdict !== undefined ? { verdict } : {}), questions };
+}
+
+const responseLine = (index: number, r: QuestionResponse): string => {
+  const head = r.answer !== undefined ? QUESTION_ANSWER_LABEL[r.answer] : '(no answer)';
+  const note = (r.note ?? '').trim();
+  return `- Q${index + 1}: ${head}${note ? ` — ${note}` : ''}`;
+};
+
 /** How many of the checklist's verdicts and questions have an answer. */
 export function countAnswered(
   answers: Answers,
@@ -97,8 +126,7 @@ export function countAnswered(
     if (answers.claims[answerKey(entry)] !== undefined) answered += 1;
     entry.asks.forEach((_, i) => {
       total += 1;
-      const q = answers.questions[questionKey(answerKey(entry), i)];
-      if (q?.answer !== undefined || (q?.note ?? '').trim() !== '') answered += 1;
+      if (isAnswered(answers.questions[questionKey(answerKey(entry), i)])) answered += 1;
     });
   }
   return { answered, total };
@@ -116,16 +144,23 @@ export function formatAnswers(answers: Answers, checklist: readonly ChecklistEnt
     const verdict = answers.claims[answerKey(entry)];
     const qs = entry.asks
       .map((ask, i) => ({ ask, i, r: answers.questions[questionKey(answerKey(entry), i)] }))
-      .filter(({ r }) => r !== undefined && (r.answer !== undefined || (r.note ?? '').trim() !== ''));
-    if (verdict === undefined && qs.length === 0) continue;
+      .filter((q): q is { ask: string; i: number; r: QuestionResponse } => isAnswered(q.r));
+    const earlier = earlierAnswers(answers, entry);
+    if (verdict === undefined && qs.length === 0 && earlier === null) continue;
     any = true;
     lines.push(`### ${entry.id} · ${entry.title}`);
+    // The claim is not repeated, so the figure is: it says which wording was
+    // answered where the wording follows a setting (A8: which 105.17 row).
+    if (entry.value !== undefined) lines.push(`Figure: ${entry.value}`);
     lines.push(`Verdict: ${verdict !== undefined ? CLAIM_VERDICT_LABEL[verdict] : '(not given)'}`);
     for (const { ask, i, r } of qs) {
-      const head = r?.answer !== undefined ? QUESTION_ANSWER_LABEL[r.answer] : '(no answer)';
-      const note = (r?.note ?? '').trim();
-      lines.push(`- Q${i + 1}: ${head}${note ? ` — ${note}` : ''}`);
+      lines.push(responseLine(i, r));
       lines.push(`  > ${ask}`);
+    }
+    if (earlier) {
+      lines.push('Given to an earlier wording of this entry, before it changed:');
+      if (earlier.verdict !== undefined) lines.push(`- Verdict: ${CLAIM_VERDICT_LABEL[earlier.verdict]}`);
+      for (const { index, response } of earlier.questions) lines.push(responseLine(index, response));
     }
     lines.push('');
   }

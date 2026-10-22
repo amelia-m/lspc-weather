@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   answerKey,
   countAnswered,
+  earlierAnswers,
   emptyAnswers,
   formatAnswers,
   issueUrl,
@@ -108,9 +109,20 @@ describe('answerKey', () => {
     questions: { [questionKey('A1', 0)]: { answer: 'yes' } },
   };
 
-  it('leaves answers given to the old wording out of the count and the report', () => {
+  it('counts answers given to the old wording as none, and reports them as given to it', () => {
     expect(countAnswered(old, [moved])).toEqual({ answered: 0, total: 2 });
-    expect(formatAnswers(old, [moved])).toContain('(no answers yet)');
+    expect(earlierAnswers(old, moved)).toEqual({ verdict: 'correct', questions: [{ index: 0, response: { answer: 'yes' } }] });
+    const text = formatAnswers(old, [moved]);
+    expect(text).toContain(
+      'Verdict: (not given)\nGiven to an earlier wording of this entry, before it changed:\n- Verdict: Correct\n- Q1: Yes',
+    );
+    // Not as an answer to the question on the page now.
+    expect(text).not.toContain('New question?');
+  });
+
+  it('finds no earlier answers for an entry that has not moved', () => {
+    expect(earlierAnswers(old, entry('A1', ['First question?']))).toBeNull();
+    expect(earlierAnswers(emptyAnswers(), moved)).toBeNull();
   });
 
   it('counts and reports answers under the new key, headed by the entry id', () => {
@@ -124,6 +136,14 @@ describe('answerKey', () => {
     expect(text).toContain('### A1 · Entry A1');
     expect(text).toContain('Verdict: Wrong section');
     expect(text).toContain('- Q1: No');
+    expect(text).not.toContain('earlier wording');
+  });
+
+  it('names the figure an entry was answered on', () => {
+    const answered: Answers = { ...emptyAnswers(), claims: { 'A1@new': 'correct' } };
+    expect(formatAnswers(answered, [{ ...moved, value: 'Flag fires below 5 SM' }])).toContain(
+      '### A1 · Entry A1\nFigure: Flag fires below 5 SM\nVerdict: Correct',
+    );
   });
 
   it('is the id for an entry with none, and A8 keeps its id only on the 3 SM row', () => {

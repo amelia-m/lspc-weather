@@ -7,8 +7,9 @@ repository history is the record.
 
 These cannot be settled from the code.
 
-1. **Which 105.17 visibility row the flag should use.** The visibility flag
-   fires below 3 SM, the section's row for jumps below 10,000 ft MSL. Brown's
+1. **Which 105.17 visibility row the flag should use.** Until this is
+   answered the visibility flag fires below 3 SM, the section's row for jumps
+   below 10,000 ft MSL. Brown's
    is at 1,182 ft MSL, so a 10,000 ft AGL exit is in the other row: 5 SM and
    1 mile from cloud. The reading is the METAR's surface visibility and the
    reg's measure is flight visibility at altitude, so the flag stays on the
@@ -24,11 +25,15 @@ These cannot be settled from the code.
    `'at-or-above-10000-msl'`. The flag's guidance gives both rows and where
    an exit from this DZ enters the higher one (at or above 8,818 ft AGL,
    derived from the DZ's elevation), then says which row it holds the
-   surface reading to. A8's answers given on the 3 SM row stay with that
-   wording: on the 5 SM row the entry stores its answers under a new key
-   (`answerKey`), so a verdict on the old question is not shown against the
-   new one. With either value every test and gate passes: checked by
-   flipping it on 2026-10-22.
+   surface reading to; the Ceiling & sky note says the same, a Settings edit
+   included. A8's answers given on the 3 SM row stay with that wording: on
+   the 5 SM row the entry stores its answers under a new key (`answerKey`
+   in `VISIBILITY_ROWS`), so a verdict on the old question is not shown
+   against the new one. The old answers are not dropped: the page says they
+   are there, and the report sends them marked as given to the earlier
+   wording, with each entry's figure ("Flag fires below 5 SM") so a report
+   says which row it answered. With either value every test and gate
+   passes: checked by flipping it on 2026-10-22.
 
 2. **The claims still need an instructor, not another reading.** Every USPA,
    CFR and FAA citation has now been read at its source — the SIM at uspa.org

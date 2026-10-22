@@ -130,8 +130,8 @@ export const CITATIONS = {
    *  1,000 ft / 1 mile. Brown's is at 1,182 ft MSL, so a 10,000 ft AGL exit is
    *  in the 5 SM row and the freefall drops into the 3 SM row on the way down.
    *
-   *  The visibility flag fires at the row `VISIBILITY_ROW` picks (3 SM, the
-   *  lower row, until the S&TA or pilot answers A8 on #citations), unless the
+   *  The visibility flag fires at the row `VISIBILITY_ROW` picks, which
+   *  waits on the S&TA's or pilot's answer to A8 on #citations, unless the
    *  reader edits it in Settings, and says which. The METAR reports surface
    *  visibility and the reg's measure is flight visibility at altitude, so
    *  which row a surface reading should be held to is the open question;
@@ -627,7 +627,12 @@ const EXIT_ROW_FROM_FT_AGL = (10_000 - SITE.dz.elevationFt).toLocaleString('en-U
  *  says which (`visibilityGuidance`). */
 export const VISIBILITY_RULE = `14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it; an exit from this DZ at or above ${EXIT_ROW_FROM_FT_AGL} ft AGL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.`;
 
-export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; ask: string }> = {
+/** Each row's figure, and A8's question on #citations while the flag uses
+ *  it. `answerKey` is where A8's answers are stored on that row
+ *  (`ChecklistEntry.answerKey`): the two questions ask opposite things, so
+ *  an answer to one must not show against the other. The 3 SM row keeps A8's
+ *  own id, which the answers given before there were two rows are under. */
+export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; ask: string; answerKey?: string }> = {
   'below-10000-msl': {
     sm: 3,
     ask: 'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the pilot in command.',
@@ -635,24 +640,29 @@ export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; ask: string }>
   'at-or-above-10000-msl': {
     sm: 5,
     ask: 'The flag fires at 5 SM on the METAR’s surface visibility, the row an exit from this DZ is in. The reg’s measure is flight visibility at altitude, not at the surface. Is holding a surface reading to the exit’s row right? That is a judgement for the S&TA and the pilot in command.',
+    answerKey: 'A8@5sm',
   },
 };
 
-/** The row in use. Until the S&TA or pilot answers A8, the lower one: the
- *  row a surface reading can be held to without claiming it says more. */
+/** The row in use: the answer to A8, once the S&TA or pilot gives it. Until
+ *  then 'below-10000-msl', the row a surface reading can be held to without
+ *  claiming it says more than it does. */
 export const VISIBILITY_ROW: VisibilityRow = 'below-10000-msl';
 
-/** The flag's guidance: the rule, then the one figure the flag fires at.
- *  `publishedSm` is the profile's figure (a 105.17 row); `firesSm` is what
- *  the flag fires at, which Settings can move on Licensed. */
+/** Which figure the visibility flag fires at, as a predicate for "the flag"
+ *  or "this flag": the profile's row (`publishedSm`, always a 105.17 row),
+ *  or a figure edited in Settings on Licensed (`firesSm`). To a tenth, as
+ *  Settings shows it: storage keeps whatever was typed. */
+export function visibilityFigure(publishedSm: number, firesSm: number): string {
+  const sm = (v: number): number => Math.round(v * 10) / 10;
+  return firesSm !== publishedSm
+    ? `fires below ${sm(firesSm)} SM, as edited in Settings, in place of the ${sm(publishedSm)} SM row it otherwise uses.`
+    : `holds the surface reading to the ${sm(publishedSm)} SM row.`;
+}
+
+/** The flag's guidance: the rule, then the figure it fires at. */
 export function visibilityGuidance(publishedSm: number, firesSm: number): string {
-  const isRow = Object.values(VISIBILITY_ROWS).some((r) => r.sm === publishedSm);
-  if (firesSm !== publishedSm) {
-    return `${VISIBILITY_RULE} This flag fires below ${firesSm} SM, as edited in Settings, in place of the ${publishedSm} SM row it otherwise uses.`;
-  }
-  return isRow
-    ? `${VISIBILITY_RULE} This flag holds the reading to the ${publishedSm} SM row.`
-    : `${VISIBILITY_RULE} This flag fires below ${publishedSm} SM.`;
+  return `${VISIBILITY_RULE} This flag ${visibilityFigure(publishedSm, firesSm)}`;
 }
 
 const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
