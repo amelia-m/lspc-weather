@@ -53,11 +53,11 @@ export function DataFreshness({
           {(Object.keys(LABELS) as SourceKey[]).map((k) => {
             const prov = provenance?.[k];
             return (
-              <li key={k} className={statusClass(status[k])}>
+              <li key={k} className={statusClass(status[k])} data-flags={prov?.flags?.join(' ') || undefined}>
                 <span className="source-dot" aria-hidden />
                 <span className="source-info">
                   <span className="source-name">
-                    <a href={SOURCE_LINKS[k].url} target="_blank" rel="noopener noreferrer">
+                    <a href={(prov?.source ?? SOURCE_LINKS[k]).url} target="_blank" rel="noopener noreferrer">
                       {LABELS[k]}
                     </a>
                   </span>

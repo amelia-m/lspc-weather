@@ -8,11 +8,11 @@
  *     --logs data/parity/logs-to-2026-10-05.jsonl.gz data/parity/schulze-logs-2026-10-04-to-2026-10-17.jsonl.gz \
  *     --kpmv data/parity/kpmv-wind-2026-09-23-to-2026-10-17.csv.gz
  *
- * --logs takes any files of comparison lines (`@@parity {json}` or bare
- * JSON, gzipped or not): the archive under data/parity/, and the parity-*
+ * --logs takes any files of comparison lines (`@@parity {json}`, gzipped
+ * or not; other lines are skipped): the archive under data/parity/, and the parity-*
  * artifacts the comparison workflows upload (kept 14 days; archive the
- * Schulze lines under data/parity/ before they expire). A line in two files
- * counts once. --kpmv takes IEM's ASOS CSV for KPMV, routine and special
+ * Schulze lines under data/parity/ before they expire). A record in two
+ * files counts once. --kpmv takes IEM's ASOS CSV for KPMV, routine and special
  * reports, wind speed only:
  *   https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=PMV&data=sknt&tz=Etc/UTC&format=onlycomma&latlon=no&missing=M&report_type=3&report_type=4&year1=…
  * The hours are tabled by the point each record was read at (its `dz`;
@@ -20,7 +20,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { parseParityLines, type SchulzeRecord } from '../src/domain/paritySummary';
+import { parityRecordKey, parseParityLines, type SchulzeRecord } from '../src/domain/paritySummary';
 import { groundHours, OLD_POINT, surfaceRowsTable, type WindReport } from '../src/domain/surfaceRows';
 
 const args: Record<string, string[]> = {};
@@ -38,11 +38,14 @@ const read = (f: string): string => {
   return (f.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8');
 };
 
-// Every distinct line once, so a record in two files (the archive and an
-// artifact it was drawn from) counts once.
-const lines = new Set<string>();
-for (const f of args.logs) for (const line of read(f).split('\n')) if (line.includes('@@parity ')) lines.add(line.slice(line.indexOf('@@parity ')));
-const records = parseParityLines([...lines].join('\n')).filter((r): r is SchulzeRecord => r.kind === 'schulze');
+// One record per kind and run time (parityRecordKey), so a record in two
+// files (the archive and an artifact it was drawn from) counts once even
+// where its two lines differ by trailing whitespace.
+const byKey = new Map<string, SchulzeRecord>();
+for (const f of args.logs) {
+  for (const r of parseParityLines(read(f))) if (r.kind === 'schulze') byKey.set(parityRecordKey(r), r);
+}
+const records = [...byKey.values()];
 
 // One report per time, so two IEM files that overlap count each once.
 const byTime = new Map<number, number>();

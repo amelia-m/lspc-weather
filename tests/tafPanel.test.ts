@@ -142,6 +142,9 @@ describe('TafPanel when a nearer station’s TAF had ended', () => {
 
   it('drops the note that the nearer station is not carried, which an ended TAF shows is untrue', () => {
     expect(html).not.toContain('does not carry it');
+    // The way to Offutt's own TAF stays, since the card could not show it.
+    expect(html).toContain('Read KOFF’s TAF at');
+    expect(html).toContain('href="https://aviationweather.gov/data/taf/?ids=KOFF"');
     expect(render(KOMA_2026_09_24_0521, 'KOMA')).toContain('does not carry it');
   });
 

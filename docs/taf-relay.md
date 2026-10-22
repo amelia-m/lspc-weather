@@ -24,17 +24,22 @@ piece.
   for a custom user agent, requests "limited in scope and frequency", and
   at most 100 a minute.
   - The relay sends its own user agent.
-  - It keeps a good answer five minutes in its memory, and asks Cloudflare
-    to cache the upstream answer as long.
-  - It gives up on aviationweather.gov after 8 seconds and answers 502.
-    The app's own fetch waits 12 and then retries, so a stalled upstream
-    would otherwise draw a second request.
-  - Neither cache is a promise. Cloudflare runs many copies of a Worker
+  - It keeps a good answer five minutes in its memory, and tells the
+    browser to keep it only for what is left of those five minutes, so a
+    TAF reaches the card at most five minutes older than
+    aviationweather.gov's own. (Until 2026-10-22 it also asked Cloudflare's
+    fetch cache to keep the answer, which could add its age to the
+    memory's; it no longer does.)
+  - It gives up on aviationweather.gov after 8 seconds and answers 502, and
+    the app asks the relay once, without the retry its other requests get,
+    so a stalled upstream draws one request, not two.
+  - Every way aviationweather.gov can fail answers 502, a body that is not
+    a list of TAFs included; that is neither kept nor passed on.
+  - The memory is not a promise. Cloudflare runs many copies of a Worker
     and keeps none for a set time. Its Cache API page (read 2026-10-20)
     gives working cache operations to "Workers deployed to custom domains",
     which leaves out workers.dev, where this one runs, so the relay does
-    not use that API. The docs read do not say whether fetch's cache
-    option works on workers.dev.
+    not use that API.
   - At this club's scale none of that matters: each open dashboard asks
     every 10 minutes, far under the limit with no cache at all.
 - **Within the free plan.** Workers Free allows 100,000 requests a day
@@ -105,8 +110,10 @@ production build on live data at 1280, 390 and 320 px: the no-relay chip
 wrapped onto three lines at 320 px, and no page scrolled sideways.
 
 Once the relay is set, the daily live-site check (`judgeLoad`,
-src/domain/liveSite.ts) counts "KOFF fetch failed" on that chip as a fault,
-since the relay is the site's own. A page must fail on two loads in a row
+src/domain/liveSite.ts) counts the relay's own failure as a fault, since
+the relay is the site's own. It reads the fact from the TAF row's
+`data-flags` (`TAF_RELAY_FAILED`, set from the chain's record), not from the
+chip's words, which can change. A page must fail on two loads in a row
 before it counts, and a failure on `main` opens a `live-site` issue, so a
 relay that stays down is reported within a day. The relay answers 502 when
 aviationweather.gov behind it fails or is slow; the chain keeps the status,
@@ -115,7 +122,16 @@ outage, a note, as is another station's failed fetch. The fault counts
 only when the page checked is one the relay answers (`ALLOWED_ORIGINS`,
 relay/src/station.ts): a local build on another port is refused by design.
 The check reads the relay setting from its checkout, so a run on a branch
-whose setting differs from the deployed site's judges by the branch's. The scraper's reading of the chips was
+whose setting differs from the deployed site's judges by the branch's.
+
+When the card shows another station, it always links Offutt's TAF on
+aviationweather.gov, whatever the reason Offutt's was passed over. Data
+health links the source the TAF was read from (aviationweather.gov through
+the relay). When no station has a TAF in force, Data health's error and the
+source log give each station's reason (`NoCurrentTafError`,
+src/api/tafChain.ts).
+
+The scraper's reading of the chips was
 checked on the deployed site on 2026-10-21 ("fallback KOMA · KOFF not in the
 NWS feed"), and the whole check passed on every page at every width from
 the sandbox.

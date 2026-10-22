@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import { DataFreshness } from '../src/components/DataFreshness';
 import type { SourceKey, SourceStatus } from '../src/domain/types';
+import { TAF_RELAY_FAILED } from '../src/domain/sourceProvenance';
 
 /* Both cards used to render their own <section class="panel"> and header by
  * hand. Going through Panel must not change what the stylesheet sees: the
@@ -39,6 +40,28 @@ describe('cards that go through Panel', () => {
     // h2 then the button, with nothing wrapping the button.
     expect(html).toMatch(/<\/h2><button class="refresh-btn"/);
     expect(html).not.toMatch(/<span class="panel-sub"><button/);
+  });
+
+  it('carries a row’s flags for the live-site check, and links the source the row was read from', () => {
+    const html = renderToStaticMarkup(
+      createElement(DataFreshness, {
+        status,
+        lastUpdated: null,
+        onRefresh: () => {},
+        provenance: {
+          taf: {
+            detail: 'KOMA · KOFF fetch failed',
+            fallback: true,
+            flags: [TAF_RELAY_FAILED],
+            source: { label: 'AWC TAF · KOFF', url: 'https://aviationweather.gov/data/taf/?ids=KOFF' },
+          },
+        },
+      }),
+    );
+    expect(html).toContain(`data-flags="${TAF_RELAY_FAILED}"`);
+    expect(html).toContain('href="https://aviationweather.gov/data/taf/?ids=KOFF"');
+    // A row with no flags carries no attribute.
+    expect(html.match(/data-flags=/g)).toHaveLength(1);
   });
 });
 

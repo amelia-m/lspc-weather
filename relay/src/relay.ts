@@ -17,17 +17,19 @@
  * URL, and the cache below.
  *
  * aviationweather.gov asks callers to set their own user agent, keep requests
- * "limited in scope and frequency", and stay under 100 a minute. The answer
- * is kept for `CACHE_SECONDS` in the Worker's memory (`RelayMemo`), and the
- * upstream fetch asks Cloudflare to cache it as long (`cacheTtlByStatus`).
- * Neither is a promise: Cloudflare runs many copies of a Worker and keeps
- * none of them for a set time, and its docs give working cache operations
- * (`caches.default`) only to Workers on custom domains, not workers.dev,
- * where this one runs (read 2026-10-20), and do not say whether the fetch
- * option works there. At this club's scale it does not need to: each open
- * dashboard asks every 10 minutes, far under the limit with no cache at all.
- * A TAF is issued every six hours or so and amended between, so five
- * minutes costs little freshness.
+ * "limited in scope and frequency", and stay under 100 a minute. A good
+ * answer is kept for `CACHE_SECONDS` in the Worker's memory (`RelayMemo`),
+ * and the reader's browser is told to keep it only for what is left of
+ * that, so a TAF reaches the card at most five minutes older than
+ * aviationweather.gov's own. That is not a promise of fewer requests:
+ * Cloudflare runs many copies of a Worker and keeps none of them for a set
+ * time. Its docs give working cache operations (`caches.default`) only to
+ * Workers on custom domains, not workers.dev, where this one runs (read
+ * 2026-10-20), so no Cloudflare cache is used: a second layer would only
+ * add its own age to the memory's. At this club's scale it does not need
+ * one: each open dashboard asks every 10 minutes, far under the limit with
+ * no cache at all. A TAF is issued every six hours or so and amended
+ * between, so five minutes costs little freshness.
  *
  * The body is aviationweather.gov's JSON, unchanged (an array of TAFs with
  * `rawTAF` and `issueTime`); the app reads it with `tafFromAwcJson`.
@@ -51,7 +53,7 @@ export interface RelayMemo {
 }
 
 export interface RelayDeps {
-  fetch: (url: string, init: RequestInit & { cf?: Record<string, unknown> }) => Promise<Response>;
+  fetch: (url: string, init: RequestInit) => Promise<Response>;
   memo: RelayMemo;
   now: () => number;
 }
@@ -62,16 +64,19 @@ function corsHeaders(origin: string | null): Record<string, string> {
     : { vary: 'Origin' };
 }
 
-function json(status: number, body: string, origin: string | null): Response {
+function json(status: number, body: string, origin: string | null, maxAgeS = 0): Response {
   return new Response(body, {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': `public, max-age=${status === 200 ? CACHE_SECONDS : 0}`,
+      'cache-control': `public, max-age=${maxAgeS}`,
       ...corsHeaders(origin),
     },
   });
 }
+
+const upstreamFailed = (why: string, origin: string | null): Response =>
+  json(502, JSON.stringify({ error: `aviationweather.gov ${why}` }), origin);
 
 export async function handle(request: Request, deps: RelayDeps): Promise<Response> {
   const origin = request.headers.get('origin');
@@ -89,27 +94,35 @@ export async function handle(request: Request, deps: RelayDeps): Promise<Respons
   if (request.method !== 'GET') return json(405, JSON.stringify({ error: 'GET only' }), origin);
 
   const now = deps.now();
-  if (deps.memo.body != null && now - deps.memo.at < CACHE_SECONDS * 1000) {
-    return json(200, deps.memo.body, origin);
+  const memoAgeS = (now - deps.memo.at) / 1000;
+  if (deps.memo.body != null && memoAgeS < CACHE_SECONDS) {
+    return json(200, deps.memo.body, origin, Math.floor(CACHE_SECONDS - memoAgeS));
   }
 
-  let upstream: Response;
+  // Every way aviationweather.gov can fail answers 502, the one status the
+  // app reads as "upstream failed" rather than the relay's own fault
+  // (passedOverReason, src/domain/sourceProvenance.ts). That covers a body
+  // that is not a list of TAFs, which is neither cached nor passed on.
+  let body: string;
   try {
-    upstream = await deps.fetch(UPSTREAM, {
+    const upstream = await deps.fetch(UPSTREAM, {
       headers: { 'user-agent': USER_AGENT, accept: 'application/json' },
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      cf: { cacheTtlByStatus: { '200-299': CACHE_SECONDS, '300-599': 0 } },
     });
+    // 204 is aviationweather.gov's "valid request, no data": no TAF in its
+    // window, as over Offutt's weekend gaps. An empty list says the same.
+    if (upstream.status === 204) body = '[]';
+    else if (!upstream.ok) return upstreamFailed(`answered ${upstream.status}`, origin);
+    else body = await upstream.text();
   } catch (err) {
-    return json(502, JSON.stringify({ error: `aviationweather.gov unreachable: ${String(err)}` }), origin);
+    return upstreamFailed(`unreachable: ${String(err)}`, origin);
   }
-  // 204 is aviationweather.gov's "valid request, no data": no TAF in its
-  // window, as over Offutt's weekend gaps. An empty list says the same.
-  if (upstream.status !== 204 && !upstream.ok) {
-    return json(502, JSON.stringify({ error: `aviationweather.gov answered ${upstream.status}` }), origin);
+  try {
+    if (!Array.isArray(JSON.parse(body))) return upstreamFailed('answered something other than a list of TAFs', origin);
+  } catch {
+    return upstreamFailed('answered something other than JSON', origin);
   }
-  const body = upstream.status === 204 ? '[]' : await upstream.text();
   deps.memo.body = body;
   deps.memo.at = now;
-  return json(200, body, origin);
+  return json(200, body, origin, CACHE_SECONDS);
 }

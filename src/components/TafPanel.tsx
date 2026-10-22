@@ -9,7 +9,7 @@ import {
   type TafWind,
 } from '../domain/taf';
 import { SITE } from '../config/site';
-import { TAF_RELAY_URL } from '../config/tafRelay';
+import { TAF_RELAY_SET } from '../config/tafRelay';
 import { awcTafFor, DATA_SOURCES } from '../config/sources';
 import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
@@ -72,7 +72,7 @@ function skyLines(layers: SkyLayer[] | null): JSX.Element[] {
 export function TafPanel({
   taf,
   status,
-  relay = TAF_RELAY_URL != null,
+  relay = TAF_RELAY_SET,
   tempUnit = 'F',
 }: {
   taf: TafForecast | null;
@@ -140,16 +140,20 @@ export function TafPanel({
               : `${nameOf(p.station)}’s latest TAF carries no forecast (NIL).`}
         </p>
       ))}
-      {/* Shown when the nearest station answered with no TAF, the everyday
-          case without the relay; not when it was passed over for a reason
-          of its own, which the notes above give. */}
-      {taf && taf.station !== primary.id && !taf.passedOver?.some((p) => p.station === primary.id && !('none' in p)) && (
+      {/* Whenever the card shows a farther station, a way to Offutt's own
+          TAF. The sentence before it says why only when the nearest station
+          answered with no TAF, the everyday case without the relay; a
+          reason of its own (failed, ended, CNL) is in the notes above. */}
+      {taf && taf.station !== primary.id && (
         <p className="muted small">
-          {relay
-            ? `${primary.name} (${primary.id}) is nearer, but aviationweather.gov had no TAF for it when this was fetched.`
-            : `${primary.name} (${primary.id}) is nearer, but its TAF is issued by the USAF and the NWS feed this page reads does not carry it.`}{' '}
-          Read{' '}
-          {primary.id}&rsquo;s TAF at{' '}
+          {!taf.passedOver?.some((p) => p.station === primary.id && !('none' in p)) && (
+            <>
+              {relay
+                ? `${primary.name} (${primary.id}) is nearer, but aviationweather.gov had no TAF for it when this was fetched.`
+                : `${primary.name} (${primary.id}) is nearer, but its TAF is issued by the USAF and the NWS feed this page reads does not carry it.`}{' '}
+            </>
+          )}
+          Read {primary.id}&rsquo;s TAF at{' '}
           <a href={DATA_SOURCES.awcTafPrimary.url} target="_blank" rel="noopener noreferrer">
             aviationweather.gov
           </a>

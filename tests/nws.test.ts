@@ -9,6 +9,7 @@ import {
   type ResolvedGridpoint,
 } from '../src/api/nws';
 import type { RawGridpoint } from '../src/domain/normalize';
+import { NoCurrentTafError } from '../src/api/tafChain';
 
 /** Minimal Response stand-ins for the global fetch stub. */
 const jsonRes = (body: unknown): unknown => ({
@@ -240,7 +241,15 @@ describe('fetchTafChain', () => {
       if (id === 'KOMA') throw new HttpError(500, 'x');
       return null;
     });
-    await expect(fetchTafChain(STATIONS, { fetchOne })).rejects.toBeInstanceOf(HttpError);
+    const err = await fetchTafChain(STATIONS, { fetchOne }).catch((e) => e);
+    expect(err).toBeInstanceOf(NoCurrentTafError);
+    expect(err.cause).toBeInstanceOf(HttpError);
+    // Every reason, not only the last error.
+    expect(err.passedOver).toEqual([
+      { station: 'KOFF', none: true },
+      { station: 'KOMA', failed: 'HTTP 500 for x', status: 500 },
+      { station: 'KLNK', none: true },
+    ]);
   });
 
   it('returns null only when every station is genuinely product-less', async () => {
@@ -270,11 +279,13 @@ describe('fetchTafChain', () => {
       expect(before?.passedOver).toBeUndefined();
     });
 
-    it('gives null, not an ended TAF, when every station has only ended ones', async () => {
+    it('throws with every reason, not an ended TAF, when every station has only ended ones', async () => {
       const ended = vi.fn(async (id: string) => ({ ...offutt, station: id, raw: offutt.raw.replace('KOFF', id) }));
-      await expect(
-        fetchTafChain(STATIONS, { fetchOne: ended, now: () => Date.parse('2026-10-12T15:00:00Z') }),
-      ).resolves.toBeNull();
+      const err = await fetchTafChain(STATIONS, { fetchOne: ended, now: () => Date.parse('2026-10-12T15:00:00Z') }).catch(
+        (e) => e,
+      );
+      expect(err).toBeInstanceOf(NoCurrentTafError);
+      expect(err.passedOver.map((p: { station: string }) => p.station)).toEqual(['KOFF', 'KOMA', 'KLNK']);
     });
   });
 
@@ -306,7 +317,7 @@ describe('fetchTafChain', () => {
     const fetchOne = vi.fn(async () => {
       throw new HttpError(500, 'x');
     });
-    await expect(fetchTafChain(STATIONS, { fetchOne })).rejects.toBeInstanceOf(HttpError);
+    await expect(fetchTafChain(STATIONS, { fetchOne })).rejects.toBeInstanceOf(NoCurrentTafError);
     expect(fetchOne).toHaveBeenCalledTimes(3);
   });
 });

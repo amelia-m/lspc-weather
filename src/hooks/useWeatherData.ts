@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { passedOverReason } from '../domain/sourceProvenance';
-import { TAF_RELAY_URL } from '../config/tafRelay';
+import { describePassedOver } from '../domain/sourceProvenance';
+import { NoCurrentTafError } from '../api/tafChain';
+import { TAF_RELAY_SET } from '../config/tafRelay';
 import {
   fetchDailyFromGridpoint,
   fetchHourly,
@@ -272,25 +273,27 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
       .then((taf) => {
         setSnapshot((prev) => ({ ...prev, taf }));
         if (taf) {
-          const relay = TAF_RELAY_URL != null;
-          const passed = taf.passedOver?.map((p) =>
-            'failed' in p ? `${passedOverReason(p, relay)}: ${p.failed}` : passedOverReason(p, relay),
-          );
-          logSource('taf', 'success', `TAF from ${taf.station}${passed?.length ? ` (passed over ${passed.join(', ')})` : ''}`);
+          const passed = taf.passedOver?.length ? ` (passed over ${describePassedOver(taf.passedOver, TAF_RELAY_SET)})` : '';
+          logSource('taf', 'success', `TAF from ${taf.station}${passed}`);
           updateSource('taf', okStatus());
         } else {
-          // The whole chain came back with nothing in force: no product, or
-          // only TAFs that had ended. A feed gap, not a success. Mark it so
-          // Data health shows the gap and the quick retry / next poll keeps
-          // trying. No feed is named: Offutt's may come from the relay.
+          // Every station in the chain had no TAF at all (a TAF that had
+          // ended or failed throws NoCurrentTafError instead, below). A feed
+          // gap, not a success. Mark it so Data health shows the gap and the
+          // quick retry / next poll keeps trying. No feed is named: Offutt's
+          // may come from the relay.
           const err = new Error(`No current TAF for ${SITE.tafStations.map((s) => s.id).join('/')}`);
           logSource('taf', 'failure', 'No current TAF', err);
           markStale('taf', err);
         }
       })
       .catch((e) => {
-        logSource('taf', 'failure', 'TAF fetch failed', e);
-        markStale('taf', e);
+        // With every reason, so Data health says which station failed or
+        // had ended, not only that none was current.
+        const err =
+          e instanceof NoCurrentTafError ? new Error(`${e.message}: ${describePassedOver(e.passedOver, TAF_RELAY_SET)}`) : e;
+        logSource('taf', 'failure', 'TAF fetch failed', err);
+        markStale('taf', err);
       });
 
     const dailyP = fetchDailyForecast(dz.lat, dz.lon)

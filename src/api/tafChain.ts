@@ -28,10 +28,24 @@ interface TafChainDeps {
  * card prints its text either way. A fetch error also falls through so one
  * bad request doesn't blank the card, and is recorded in `passedOver` too:
  * a broken relay would otherwise show only as Omaha's TAF on a card and a
- * Data health row that both look fine. If nothing succeeded and ANY station
- * errored, the last error propagates — "KOFF has no product (as always) and
- * the rest failed" must read as a failure, not as "no TAF anywhere".
+ * Data health row that both look fine. If no station has a TAF in force,
+ * the chain returns null only when every one simply had none; otherwise it
+ * throws `NoCurrentTafError` with every reason, so "KOFF has no product (as
+ * always) and the rest failed" reads as a failure, not as "no TAF
+ * anywhere", and Data health and the source log can say which station
+ * failed or had ended.
  */
+export class NoCurrentTafError extends Error {
+  constructor(
+    readonly passedOver: TafPassedOver[],
+    /** The last fetch error, when there was one. */
+    readonly cause?: unknown,
+  ) {
+    super(`No current TAF from ${passedOver.map((p) => p.station).join('/')}`);
+    this.name = 'NoCurrentTafError';
+  }
+}
+
 export async function fetchTafChain(
   stations: readonly TafStationRef[],
   deps: TafChainDeps,
@@ -67,6 +81,6 @@ export async function fetchTafChain(
       });
     }
   }
-  if (lastErr) throw lastErr;
+  if (lastErr || passedOver.some((p) => !('none' in p))) throw new NoCurrentTafError(passedOver, lastErr ?? undefined);
   return null;
 }

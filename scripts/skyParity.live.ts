@@ -33,8 +33,8 @@ import {
 import { observedFlightCategory } from '../src/domain/flightCategory';
 import { decodeTaf, type DecodedTaf, type TafPeriod } from '../src/domain/taf';
 import { fetchTafChain } from '../src/api/tafChain';
-import { TAF_RELAY_URL, tafRelayUrlFor } from '../src/config/tafRelay';
-import { passedOverReason } from '../src/domain/sourceProvenance';
+import { TAF_RELAY_SET, tafRelayUrlFor } from '../src/config/tafRelay';
+import { describePassedOver } from '../src/domain/sourceProvenance';
 import type { SkyLayer } from '../src/domain/types';
 
 const station = SITE.metarStation.id;
@@ -277,8 +277,7 @@ describe(`sky decode parity for ${station}`, () => {
       const squash = (x: string): string => x.replace(/\s+/g, ' ').replace(/^TAF /, '').trim();
       const same = theirs?.rawTAF != null && squash(theirs.rawTAF) === squash(shown.raw);
       if (shown.passedOver?.length) {
-        const relay = TAF_RELAY_URL != null;
-        say(`[taf]  passed over: ${shown.passedOver.map((p) => ('failed' in p ? `${passedOverReason(p, relay)}: ${p.failed}` : passedOverReason(p, relay))).join(', ')}`);
+        say(`[taf]  passed over: ${describePassedOver(shown.passedOver, TAF_RELAY_SET)}`);
       }
       say(`[taf]  card shows ${shown.station}, issued ${shown.issuedMs != null ? new Date(shown.issuedMs).toISOString() : '?'}`);
       say(`[taf]  aviationweather has ${theirs ? `${theirs.icaoId}, issued ${theirs.issueTime ?? '?'}` : 'no TAF for that station'}`);
