@@ -159,9 +159,9 @@ precisely because they were colour and text rather than flags.
   app's ten-minute refresh from its disk cache, pinned to one edge copy
   while other edges served a newer forecast. Replayed on 13 days of
   samples, that put the dashboard behind the newest known forecast at
-  14.4% of refreshes; revalidating with the guard, 6.0%. Without the
-  guard, edges holding older copies would step it back about once or
-  twice a day. A cache-busting query parameter is not a way past the
+  10.9% of refreshes (mean 7.2 min); revalidating with the guard, 6.0%
+  (3.9 min). Without the guard, edges holding older copies would step it
+  back about once a day. A cache-busting query parameter is not a way past the
   edges: the API answers it with a 400. See docs/nws-gridpoint-age.md.
 - **Offutt's TAF comes through a relay of the maintainer's, once it is
   set** (`relay/`, a Cloudflare Worker; `TAF_RELAY_URL` in

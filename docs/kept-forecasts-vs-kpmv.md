@@ -39,36 +39,7 @@ practice that is the :55 report before it.
   - in hours the station reported one, forecast gust against reported gust;
   - in hours it reported none, forecast gust against the reported steady
     wind.
-- **Gust, closer** (asked 2026-10-23: consistently high, or scattered
-both ways?). Consistently high, by an amount that varied. Where KPMV
-reported a gust, the forecast's was above it in 45 of 53 hours at the
-latest issuance, the same in 5 and below in 3, by 1 to 4 kt
-(`gustSide`). At 6 and 24 hours ahead: 50, 2 and 1 of 53, and 46, 4 and
-2 of 52.
-
-- **How far above, latest issuance:** 1 to 3 kt in 20 hours, 4 to 6 kt
-  in 16, 7 to 11 kt in 9.
-- **By day, not by size.** The gusting hours bunch into a few windy days:
-  22 on October 16, 11 on October 18, 8 on October 17, 7 on October 15.
-  Three of those days the forecast ran about 4 to 5 kt high on average
-  (October 15, 16 and 18). On October 17 it ran 0.6 kt high (−2 to +2).
-  By the reported gust's size it hardly moved: a mean of +3.4 kt under
-  18 kt, +3.7 at 18 to 22, +3.2 at 23 or more.
-- **The steady wind was right in those hours; the gap over it was not.**
-  The forecast speed was +0.2 kt from the reported speed on average in
-  these 53 hours. The forecast put its gust 10.2 kt over its own speed,
-  where KPMV's gusts were 6.9 kt over its reported speed.
-
-Part of the gap may be what each figure is. A report's gust covers the
-minutes before that report. The forecast's hour figure may be the hour's
-peak, but NWS's definition of its gust element was not read, so that is
-unconfirmed. The surface-wind sampler, pairing differently, found the
-same side with less size: +2.1 kt over 229 gusting reports
-(docs/surface-wind-sources.md). Fifty-three hours over a handful of windy
-days is a small sample, so the size of the gap is not settled. The side
-it falls on was the same at all three leads.
-
-**Direction.** Calm and `VRB` reports have no direction and are not
+- **Direction.** Calm and `VRB` reports have no direction and are not
   counted. The rest are split at a reported 10 kt, since a light wind's
   direction is the least settled. The split is a reading aid, not a
   threshold anything acts on. Both sides report direction to 10°.
@@ -136,6 +107,35 @@ reports, signed mean −0.75 kt (docs/surface-wind-sources.md).
 In the other three quarters of hours the forecast still gave a gust,
 about 4.5 kt over the steady wind the station reported. The METAR's rule
 for reporting one is not this app's to judge from here.
+
+**Gust, closer** (asked 2026-10-23: consistently high, or scattered
+both ways?). Consistently high, by an amount that varied. Where KPMV
+reported a gust, the forecast's was above it in 45 of 53 hours at the
+latest issuance, the same in 5 and below in 3, by 1 to 4 kt
+(`gustSide`). At 6 and 24 hours ahead: 50, 2 and 1 of 53, and 46, 4 and
+2 of 52.
+
+- **How far above, latest issuance:** 1 to 3 kt in 20 hours, 4 to 6 kt
+  in 16, 7 to 11 kt in 9.
+- **By day, not by size.** The gusting hours bunch into a few windy days:
+  22 on October 16, 11 on October 18, 8 on October 17, 7 on October 15.
+  Three of those days the forecast ran about 4 to 5 kt high on average
+  (October 15, 16 and 18). On October 17 it ran 0.6 kt high (−2 to +2).
+  By the reported gust's size it hardly moved: a mean of +3.4 kt under
+  18 kt, +3.7 at 18 to 22, +3.2 at 23 or more.
+- **The steady wind was right in those hours; the gap over it was not.**
+  The forecast speed was +0.2 kt from the reported speed on average in
+  these 53 hours. The forecast put its gust 10.2 kt over its own speed,
+  where KPMV's gusts were 6.9 kt over its reported speed.
+
+Part of the gap may be what each figure is. A report's gust covers the
+minutes before that report. The forecast's hour figure may be the hour's
+peak, but NWS's definition of its gust element was not read, so that is
+unconfirmed. The surface-wind sampler, pairing differently, found the
+same side with less size: +2.1 kt over 229 gusting reports
+(docs/surface-wind-sources.md). Fifty-three hours over a handful of windy
+days is a small sample, so the size of the gap is not settled. The side
+it falls on was the same at all three leads.
 
 **Direction.** Median miss 10° at every lead, the smallest a 10° figure
 can show. The forecast sat clockwise of the report on average, by 7 to

@@ -50,19 +50,22 @@ down to their copy's expiry, a browser holds the one edge copy it got
 until that copy expires, while other edges may already serve a newer
 forecast.
 
-**Replayed on the log**, every other run, as the app refreshes every ten
-minutes ("newest known" is the latest `updateTime` either product had
-served by then, a lower bound on what NWS held):
+**Replayed on the log** at the app's ten-minute refresh: at each
+ten-minute tick of the wall clock, the first run within five minutes
+after it. The log has gaps, so 1,437 of 1,844 ticks had one. "Newest
+known" is the latest `updateTime` either product had served by then, a
+lower bound on what NWS held.
 
 | client | refreshes behind the newest known | mean behind | when behind, median | stepped back to an older forecast |
 |---|---|---|---|---|
-| browser default (keeps its copy to `Expires`) | 223 of 1,548 (14.4%) | 10.5 min | 65 min | 0 |
-| asks every time, shows what answered | 121 (7.8%) | 5.4 min | 55 min | 21 |
-| asks every time, keeps the newer copy | 93 (6.0%) | 4.1 min | 57 min | 0 |
+| browser default (keeps its copy to `Expires`) | 156 of 1,437 (10.9%) | 7.2 min | 51 min | 0 |
+| asks every time, shows what answered | 103 (7.2%) | 4.5 min | 46 min | 13 |
+| asks every time, keeps the newer copy | 86 (6.0%) | 3.9 min | 46 min | 0 |
 
-So the browser's cache more than doubled how often the dashboard showed
-an older forecast than NWS was already serving. Asking every time without
-the guard would step back to an older forecast about once or twice a day.
+So the browser's cache added nearly half again to how often the
+dashboard showed an older forecast than NWS was already serving, and
+nearly doubled the mean lag. Asking every time without the guard would
+step back to an older forecast about once a day.
 
 ## The change
 
@@ -73,7 +76,10 @@ the guard would step back to an older forecast about once or twice a day.
   a 304 when nothing changed.
 - The newer of that answer and the copy already shown is kept, per URL
   (`newerGridpoint`, `src/domain/gridpointFreshness.ts`, tested in
-  `tests/gridpointFreshness.test.ts`). The hourly chart and the daily
+  `tests/gridpointFreshness.test.ts`). A held copy dated in the future
+  gives way, so one bad `updateTime` cannot pin the page. Callers asking
+  at once (the hourly chart and the daily fallback, or a Refresh during
+  a slow refresh) share one request. The hourly chart and the daily
   fallback both go through it.
 
 Checked in Chromium on a production build served locally against live

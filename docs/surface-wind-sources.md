@@ -214,7 +214,7 @@ values not served before.
 could keep a gridpoint after a newer one reaches the edges. Measured on
 2026-10-23 (docs/nws-gridpoint-age.md): Chromium answered the app's
 refresh from its disk cache, and a replay of this sampler's 13-day log put
-the dashboard behind the newest known forecast at 14.4% of refreshes. The
+the dashboard behind the newest known forecast at 10.9% of refreshes. The
 gridpoint is now fetched with `cache: 'no-cache'`, keeping the newer copy,
 which the replay puts at 6.0%.
 
