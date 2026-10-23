@@ -42,9 +42,9 @@ const isAbort = (err: unknown): boolean =>
 
 export async function fetchJson<T>(
   url: string,
-  opts: { timeoutMs?: number; headers?: Record<string, string>; retries?: number } = {},
+  opts: { timeoutMs?: number; headers?: Record<string, string>; retries?: number; cache?: RequestCache } = {},
 ): Promise<T> {
-  const { timeoutMs = 12_000, headers = {}, retries = 1 } = opts;
+  const { timeoutMs = 12_000, headers = {}, retries = 1, cache } = opts;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
@@ -54,9 +54,12 @@ export async function fetchJson<T>(
       // for a User-Agent, but browsers forbid setting it from fetch(), and a
       // custom request header would trigger a CORS preflight the API may not
       // satisfy. Accept (safelisted) keeps the request CORS-"simple".
+      // `cache` is a request mode, not a header, so it keeps the request
+      // CORS-simple: the browser adds its own conditional headers.
       const res = await fetch(url, {
         signal: controller.signal,
         headers: { Accept: 'application/json', ...headers },
+        ...(cache ? { cache } : {}),
       });
       if (!res.ok) throw new HttpError(res.status, url);
       return (await res.json()) as T;

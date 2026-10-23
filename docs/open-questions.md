@@ -310,13 +310,29 @@ and could not settle accuracy: see `docs/surface-wind-sources.md`. It needs
 weeks of reports across windy, gusty and calm conditions. A sampler
 (`.github/workflows/surface-wind-sample.yml`, every five minutes) runs to
 2026-10-30T02:00Z for that; its records then need archiving and summarising
-(`docs/surface-wind-sources.md`, "The longer sample, running"). Also seen there and not acted on: the NWS gridpoint is
-served from caches that keep a copy up to an hour, and the app's fetch does
-not bypass them; and Open-Meteo's hourly gust at the DZ always equalled the
+(`docs/surface-wind-sources.md`, "The longer sample, running"). Also seen
+there: the NWS gridpoint is served from caches that keep a copy up to an
+hour, and the browser kept its own (measured and changed 2026-10-23,
+docs/nws-gridpoint-age.md); and, not acted on, Open-Meteo's hourly gust at the DZ always equalled the
 15-minute step on the hour, so it behaved as the last quarter hour's maximum
 rather than the hour's its docs describe (below the hour's largest 15-minute
 gust at one of four hours, by 2.5 kt).
 Nothing on the dashboard changed.
+
+## A note on the card about the forecast gust? (maintainer's call)
+
+The kept forecasts' gust ran above KPMV's reported gust in 45 of 53
+gusting hours at the latest issuance, and on that side at every lead.
+How far varied: about 4 to 5 kt on three windy days, under 1 kt on a
+fourth (docs/kept-forecasts-vs-kpmv.md, "Gust, closer"). The forecast
+wind flags read that gust against the published limits and the reader's
+own, so a forecast flag may name afternoons the station does not report
+as gusty. Changing the flag would be a threshold of the app's own, which
+it does not take (CLAUDE.md). The option is a standing note on the
+Surface wind card or the hourly chart, giving the comparison's figures.
+The maintainer, 2026-10-23: "depends how consistent the difference is".
+The side was consistent; the size was not, and 53 hours over a few windy
+days will not settle it. Revisit when the keeper has more windy days.
 
 ## Forecasts kept for later
 

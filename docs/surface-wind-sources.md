@@ -210,11 +210,13 @@ values not served before.
   hourly product's `generatedAt` alternated between values in the same way.
 - `Last-Modified` was the same instant as `updateTime`.
 
-**Inferred, not measured:** a browser following that `max-age` could keep a
-gridpoint up to an hour after an update reaches NWS's origin, on top of the
-edge caches' hour. The app's `fetchJson` does not ask the browser to bypass
-its cache. Nothing here was run in a browser (see CLAUDE.md on what the
-sandbox cannot check).
+**Inferred here, measured since:** a browser following that `max-age`
+could keep a gridpoint after a newer one reaches the edges. Measured on
+2026-10-23 (docs/nws-gridpoint-age.md): Chromium answered the app's
+refresh from its disk cache, and a replay of this sampler's 13-day log put
+the dashboard behind the newest known forecast at 14.4% of refreshes. The
+gridpoint is now fetched with `cache: 'no-cache'`, keeping the newer copy,
+which the replay puts at 6.0%.
 
 ## Against the METAR
 
