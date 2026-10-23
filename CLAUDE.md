@@ -441,6 +441,19 @@ Two habits worth keeping. `NODE_USE_ENV_PROXY=1` plus
 proxy, which is what let the live paths run at all. And some hosts refuse a bare
 request: `markschulze.net` 403s without a `Referer`.
 
+NOAA's NDFD archive (`noaa-ndfd-pds.s3.amazonaws.com/wmo/<element>/`) is
+the NWS gridpoint's past, and it is large but quick from here. A header's
+third letter is the region: `U` is CONUS (`YWUZ98`, gust, 3-day), `A` Puerto
+Rico (`YWAZ88`), so list by the full header, not the folder. The CONUS
+3-day files come every half hour and run 30 to 57 MB (sky about 32 MB, gust
+about 50); the comparisons take the last in each of 00, 06, 12 and 18Z,
+120 files a month. Read 2026-10-23, `scripts/cloudCoverFetch.py` with
+`WORKERS=6` fetched and decoded a month of gust (about 6 GB) in about a
+minute and a half from the sandbox, so six months need no runner. Which
+NDFD elements match the API value for value is in docs/open-questions.md,
+"Forecasts kept for later" (2026-10-13): search the docs before calling
+anything there unchecked.
+
 Open-Meteo's daily request limit is per address, and the sandbox's address is
 shared, so the sandbox can be refused for a day by requests that are not this
 repo's: "Daily API request limit exceeded. Please try again tomorrow." It
@@ -495,6 +508,16 @@ each reader's browser calls Open-Meteo from its own address.
   a rationale in `useWeatherData.ts`, and the card text in `WindsAloftPanel`.
   After changing what a function guarantees, grep for its name and read every
   hit.
+- **Before writing that something was not checked, search the docs for
+  it.** On 2026-10-23 an open question said the NDFD gust's match to the
+  API was "not yet checked"; it had been, 42 of 42 hours, ten days before,
+  three hundred lines further down the same file.
+- **Open-Meteo's data carry its credit wherever they are shown**, the
+  repository included: a new doc quoting its figures gets the credit
+  under its title, a figure drawn from it gets a credit line
+  (`histogramGridSvg`'s `credit`), and an archive of it is listed in
+  `data/parity/README.md`. Its licence asks for a link "next to any
+  location Open-Meteo data are displayed" (docs/open-meteo-terms.md).
 - Derive values rather than writing them down twice. The station's distance and
   bearing come from its coordinates via `src/domain/geo.ts`; a hand-written
   `distanceMi: 12` had already drifted from the real 11.54.
@@ -617,7 +640,10 @@ for them; the ceiling-error page scores the kept chances against KPMV's
 reports (`src/domain/chances.ts`, docs/forecast-chances.md), and
 `scripts/keptForecastsVsKpmv.ts` sets the kept wind, gust, direction,
 temperature, visibility and rainfall against them by hand
-(`src/domain/keptForecasts.ts`, docs/kept-forecasts-vs-kpmv.md). The keeper never touches `main`, so it starts no deploy. Since
+(`src/domain/keptForecasts.ts`, docs/kept-forecasts-vs-kpmv.md). NOAA's NDFD archive holds the
+gust back to April, and `scripts/nwsGustArchive.ts` sets six months of it
+against KPMV the same way (`src/domain/ndfdGust.ts`,
+docs/nws-gust-archive.md, by hand). The keeper never touches `main`, so it starts no deploy. Since
 2026-10-16 it is a job that loops (`scripts/forecastKeepLoop.sh`, a
 snapshot at minute 23 of each hour, pushed as taken; five or six a run)
 and queues its own successor before it starts, so the chain does not
