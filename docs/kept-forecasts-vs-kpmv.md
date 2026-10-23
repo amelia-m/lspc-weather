@@ -218,8 +218,9 @@ alone did not:
   (median miss 10° both under and over 10 kt, but p90 30° under against
   20° over, in the table).
 
-Rerun it as the keeper adds days. One command rebuilds the page's data
-file and both figures:
+The weekly ceiling data refresh rebuilds the page's data file and both
+figures as the keeper adds days (since 2026-10-23). By hand, one command
+does the same:
 
 ```
 npx tsx scripts/windErrorsData.ts --kept <dir>/data \

@@ -630,10 +630,10 @@ KPMV", draws forecast minus reported surface wind as histograms: the kept
 NWS forecasts by lead, and the surface-wind sample's Open-Meteo forms and
 NWS hour by source (`src/domain/windErrors.ts`,
 `src/components/WindErrorsPage.tsx`). Its data file,
-`public/wind-errors/summary.json`, and the docs' figures are rebuilt by
-hand with `scripts/windErrorsData.ts`, committed to `main` like any change,
-so the push deploys them; nothing rebuilds them on a schedule yet
-(docs/open-questions.md).
+`public/wind-errors/summary.json`, and the docs' figures are rebuilt
+weekly by the ceiling data refresh below (`scripts/windErrorsData.ts`,
+held to the published file by `windErrorsShrinkage`), and can be rebuilt
+by hand with the same script.
 `.github/workflows/surface-wind-sample.yml` is that pattern again, temporary:
 it runs `scripts/surfaceWindCompare.live.ts` every five minutes
 (`scripts/surfaceWindLoop.sh`) until 2026-10-30T02:00Z, uploads
@@ -661,10 +661,11 @@ The comparison's "different runs" rule is shared with it (`rawGap`,
 dispatch) fetches the NDFD ceilings and KPMV's reports from the newest
 kept record's day to the last whole UTC day, commits them under
 `data/parity/` with the ceiling-error page's rebuilt data file to `main`,
+and since 2026-10-23 the `#wind-errors` page's file and figures with it,
 and dispatches the deploy. It fails, committing nothing, when a fetch
-brings nothing newer or the rebuilt file holds less than the published
-one (`src/domain/ceilingRefresh.ts`); a run on another branch commits
-nothing. Its rules and why are in docs/ceiling-heights.md, "The chart".
+brings nothing newer or either rebuilt file holds less than the published
+one (`src/domain/ceilingRefresh.ts`, `windErrorsShrinkage`); a run on
+another branch commits nothing. Its rules and why are in docs/ceiling-heights.md, "The chart".
 
 usairnet's page is read by `src/domain/usairnet.ts`, tested against station
 blocks saved from the live pages (`tests/fixtures/usairnet/`). Its first
