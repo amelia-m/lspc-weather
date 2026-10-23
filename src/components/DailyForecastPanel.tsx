@@ -262,6 +262,13 @@ function DayDetail({
               </thead>
               <tbody>
                 {points.map((h) => {
+                  // A dash past the gridpoint's ceiling and visibility, which run
+                  // about a day and a half; their sky cover and wind run a week.
+                  // Within reach the API serves "no ceiling" as a null value, so
+                  // a null ceiling there is a clear sky, read as VFR with the
+                  // visibility. That holds only while the two elements end
+                  // together: they did in all 190 kept snapshots to 2026-10-23
+                  // (docs/ceiling-heights.md, "The hourly table's flight category").
                   const cat = flightCategory(h.ceilingFtAgl, h.visibilitySm);
                   return (
                     <tr key={h.time}>
