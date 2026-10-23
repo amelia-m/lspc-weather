@@ -16,15 +16,13 @@
  * (scripts/histogramGrid.ts). Exits with an error, writing nothing, when
  * either set pairs nothing: a wrong folder should not publish an empty page.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { gunzipSync } from 'node:zlib';
 import { NWS_ISSUANCES } from '../src/domain/cloudCoverSources';
 import { pairInstants, prepareInstants } from '../src/domain/keptForecasts';
-import { parseSurfaceWindLines } from '../src/domain/surfaceWindSources';
-import { nwsKeptSection, surfaceSampleSection, type WindErrorsData } from '../src/domain/windErrors';
+import { nwsKeptSection, spanDay, surfaceSampleSection, type WindErrorsData } from '../src/domain/windErrors';
 import { histogramGridSvg } from './histogramGrid';
-import { loadKeptSnapshots, loadKpmvReports } from './keptInputs';
+import { loadKeptSnapshots, loadKpmvReports, loadSurfaceWindRecords } from './keptInputs';
 
 const args = process.argv.slice(2);
 const flag = (name: string): string[] => {
@@ -51,11 +49,7 @@ const nws = nwsKeptSection(
     pairs: pairInstants(prepared, minLeadH),
   })),
 );
-const read = (f: string): string => {
-  const buf = readFileSync(f);
-  return (f.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8');
-};
-const surface = surfaceSampleSection(sample.flatMap((f) => parseSurfaceWindLines(read(f))));
+const surface = surfaceSampleSection(loadSurfaceWindRecords(sample));
 for (const s of [nws, surface]) {
   if (s.rows.every((r) => r.panels[0].n === 0)) {
     console.error(`${s.id}: nothing paired; check the inputs (is --kept the snapshots' data folder?)`);
@@ -70,14 +64,13 @@ console.log(`wrote ${out}`);
 
 if (figures) {
   mkdirSync(figures, { recursive: true });
-  const day = (iso: string | null) => (iso ?? '').slice(0, 10);
   const leads = NWS_ISSUANCES.map((i) => i.minLeadH).join(', ').replace(/, (\d+)$/, ' and $1');
   const files: [string, string][] = [
     [
       'kept-wind-errors.svg',
       histogramGridSvg({
         section: nws,
-        title: `Kept NWS forecasts minus KPMV's reports, ${day(nws.first)} to ${day(nws.last)}`,
+        title: `Kept NWS forecasts minus KPMV's reports, ${spanDay(nws.first)} to ${spanDay(nws.last)}`,
         desc: 'Histograms of forecast minus reported wind speed, gust and direction at three issuance leads. Hours counted per bin; the dashed line is zero.',
         subtitle: [
           'Hours per bin. Right of the dashed line the forecast was above the report, left of it below.',
@@ -90,13 +83,13 @@ if (figures) {
       'surface-wind-errors.svg',
       histogramGridSvg({
         section: surface,
-        title: `Surface-wind sample: forecasts minus KPMV's reports, ${day(surface.first)} to ${day(surface.last)}`,
+        title: `Surface-wind sample: forecasts minus KPMV's reports, ${spanDay(surface.first)} to ${spanDay(surface.last)}`,
         desc: "Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's hourly, 15-minute and current 10 m wind and the NWS hour, each KPMV report once. The dashed line is zero.",
         subtitle: [
           'Reports per bin. Right of the dashed line the forecast was above the report, left of it below.',
           'Each forecast as it stood while the report was the newest. Rows: Open-Meteo’s three forms, then NWS on the same reports.',
         ],
-        note: 'Open-Meteo to a tenth of a knot, binned to the knot. Direction only where the report gave one. Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.',
+        note: 'Every row to a tenth of a knot, binned to the knot; a tenth either side of zero counts on neither side. Direction only where the report gave one. Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.',
       }),
     ],
   ];

@@ -617,14 +617,7 @@ for them; the ceiling-error page scores the kept chances against KPMV's
 reports (`src/domain/chances.ts`, docs/forecast-chances.md), and
 `scripts/keptForecastsVsKpmv.ts` sets the kept wind, gust, direction,
 temperature, visibility and rainfall against them by hand
-(`src/domain/keptForecasts.ts`, docs/kept-forecasts-vs-kpmv.md). The
-in-app page at `#wind-errors`, "How far the wind forecasts were from
-KPMV", draws the wind differences as histograms, the kept NWS forecasts
-by lead and the surface-wind sample's Open-Meteo forms and NWS hour by
-source (`src/domain/windErrors.ts`, `src/components/WindErrorsPage.tsx`).
-Its data file, `public/wind-errors/summary.json`, and the docs' figures
-are rebuilt by hand with `scripts/windErrorsData.ts`; nothing refreshes
-them on a schedule yet (docs/open-questions.md). It never touches `main`, so it starts no deploy. Since
+(`src/domain/keptForecasts.ts`, docs/kept-forecasts-vs-kpmv.md). The keeper never touches `main`, so it starts no deploy. Since
 2026-10-16 it is a job that loops (`scripts/forecastKeepLoop.sh`, a
 snapshot at minute 23 of each hour, pushed as taken; five or six a run)
 and queues its own successor before it starts, so the chain does not
@@ -632,14 +625,25 @@ wait on GitHub's schedule; a three-hourly schedule restarts it if a
 dispatch fails. As a cron line per snapshot it ran every 3 to 6 hours.
 To stop it, disable the workflow in the Actions tab: a run dispatched
 only by the last one would otherwise follow it for good.
+The in-app page at `#wind-errors`, "How far the wind forecasts were from
+KPMV", draws forecast minus reported surface wind as histograms: the kept
+NWS forecasts by lead, and the surface-wind sample's Open-Meteo forms and
+NWS hour by source (`src/domain/windErrors.ts`,
+`src/components/WindErrorsPage.tsx`). Its data file,
+`public/wind-errors/summary.json`, and the docs' figures are rebuilt by
+hand with `scripts/windErrorsData.ts`, committed to `main` like any change,
+so the push deploys them; nothing rebuilds them on a schedule yet
+(docs/open-questions.md).
 `.github/workflows/surface-wind-sample.yml` is that pattern again, temporary:
 it runs `scripts/surfaceWindCompare.live.ts` every five minutes
 (`scripts/surfaceWindLoop.sh`) until 2026-10-30T02:00Z, uploads
-`surfacewind-*` artifacts kept 30 days that the parity summary never reads,
-and changes nothing on the dashboard. When the window ends, archive the
-records under `data/parity/`, summarise them with
-`scripts/surfaceWindSummary.ts` into `docs/surface-wind-sources.md`, and
-delete the workflow.
+`surfacewind-*` artifacts kept 30 days that the parity summary never reads.
+It changes nothing the dashboard shows, but its archived records feed the
+`#wind-errors` page. When the window ends, archive the records under
+`data/parity/`, summarise them with `scripts/surfaceWindSummary.ts` into
+`docs/surface-wind-sources.md`, rebuild the page's data file and figures
+with `scripts/windErrorsData.ts` on the whole window, and delete the
+workflow.
 `.github/workflows/run-split-sample.yml` is the same pattern, temporary, until
 2026-10-27T06:00Z: every four minutes `scripts/runSplit.live.ts` asks Mark
 Schulze's tool for both its hour in progress and its next hour and sets each

@@ -7,6 +7,8 @@ import { DailyForecastPanel } from '../src/components/DailyForecastPanel';
 import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
 import { DriftPanel } from '../src/components/DriftPanel';
 import { ParityPage } from '../src/components/ParityPage';
+import { WindErrorsPage } from '../src/components/WindErrorsPage';
+import { surfaceSampleSection } from '../src/domain/windErrors';
 import { summarizeParity } from '../src/domain/paritySummary';
 import { DATA_SOURCES } from '../src/config/sources';
 
@@ -144,5 +146,19 @@ describe('the Open-Meteo credit', () => {
     for (const html of [parity('loading'), parity('missing'), parity('error')]) {
       expect(html).not.toContain('Weather data by Open-Meteo.com');
     }
+  });
+});
+
+describe('Open-Meteo on #wind-errors', () => {
+  it('credits it, links the licence, and says what the page does with it, when it draws Open-Meteo data', () => {
+    const page = (sections: ReturnType<typeof surfaceSampleSection>[]) =>
+      renderToStaticMarkup(
+        createElement(WindErrorsPage, { data: { generatedAt: '2026-10-23T12:00:00.000Z', sections }, state: 'ready' }),
+      );
+    const html = page([surfaceSampleSection([])]);
+    expect(html).toContain(DATA_SOURCES.openMeteo.url);
+    expect(html).toContain(LICENCE);
+    expect(html).toContain('This page shows it reworked: each value less KPMV');
+    expect(page([])).not.toContain(DATA_SOURCES.openMeteo.url);
   });
 });

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1032 762" width="1032" height="762" role="img" aria-labelledby="t d">
-<title id="t">Kept NWS forecasts minus KPMV's reports, 2026-10-13 to 2026-10-22</title>
+<title id="t">Kept NWS forecasts minus KPMV's reports, Oct 13, 2026 to Oct 22, 2026</title>
 <desc id="d">Histograms of forecast minus reported wind speed, gust and direction at three issuance leads. Hours counted per bin; the dashed line is zero.</desc>
 <style>
   svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --base:#c3c2b7; --bar:#2a78d6;
@@ -19,7 +19,7 @@
   .bar { fill: var(--bar); }
 </style>
 <rect class="bg" width="100%" height="100%"/>
-<text class="h" x="44" y="24">Kept NWS forecasts minus KPMV's reports, 2026-10-13 to 2026-10-22</text>
+<text class="h" x="44" y="24">Kept NWS forecasts minus KPMV's reports, Oct 13, 2026 to Oct 22, 2026</text>
 <text class="s" x="44" y="42">Hours per bin. Right of the dashed line the forecast was above the report, left of it below.</text>
 <text class="s" x="44" y="58">Rows: the newest issuance at least 0, 6 and 24 hours before the hour.</text>
 <text class="h" x="44" y="80">Wind speed</text>

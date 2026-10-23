@@ -19,7 +19,8 @@
 import type { InstantPair } from './keptForecasts';
 import { windDiffs } from './keptForecasts';
 import { median } from './paritySummary';
-import { angular, pairsVsMetar, type ForecastSource, type SurfaceWindRecord } from './surfaceWindSources';
+import { SITE } from '../config/site';
+import { angular, orderedRuns, pairsVsMetar, type ForecastSource, type SurfaceWindRecord } from './surfaceWindSources';
 
 export type WindQuantity = 'speed' | 'gust' | 'dir';
 
@@ -51,7 +52,9 @@ export interface Histogram extends HistSpec {
   /** Rounded to a tenth. Null with no values. */
   median: number | null;
   mean: number | null;
-  /** Values above zero (forecast above the report) and below. */
+  /** Values in a bin right of zero (forecast above the report) and left of
+   *  it, as the bars are drawn: a difference that rounds to the zero bin
+   *  (Open-Meteo's −0.4 kt) is counted on neither side. */
   above: number;
   below: number;
   /** Count per bin, from `lo` to `hi`. */
@@ -68,8 +71,12 @@ export function histogram(values: readonly number[], spec: HistSpec): Histogram 
   const nb = Math.round((spec.hi - spec.lo) / spec.bin) + 1;
   const counts = new Array<number>(nb).fill(0);
   let outside = 0;
+  let above = 0;
+  let below = 0;
   for (const d of values) {
     const v = Math.sign(d) * Math.round(Math.abs(d) / spec.bin) * spec.bin;
+    if (v > 0) above += 1;
+    else if (v < 0) below += 1;
     const i = Math.round((v - spec.lo) / spec.bin);
     if (i < 0 || i >= nb) outside += 1;
     else counts[i] += 1;
@@ -80,12 +87,31 @@ export function histogram(values: readonly number[], spec: HistSpec): Histogram 
     n: values.length,
     median: med == null ? null : r1(med),
     mean: values.length ? r1(values.reduce((a, b) => a + b, 0) / values.length) : null,
-    above: values.filter((d) => d > 0).length,
-    below: values.filter((d) => d < 0).length,
+    above,
+    below,
     counts,
     outside,
   };
 }
+
+/** A difference as the charts label it: a plus for above, a minus sign for
+ *  below, a dash for none. */
+export const signed = (x: number | null): string => (x == null ? '—' : x > 0 ? `+${x}` : x < 0 ? `−${-x}` : '0');
+
+/** The y gridline step for a chart whose tallest bar is `max`. */
+export const yStep = (max: number): number =>
+  max <= 10 ? 2 : max <= 25 ? 5 : max <= 60 ? 10 : max <= 150 ? 25 : 50;
+
+/** The line printed above each chart, on the page and in the docs. */
+export const histogramLine = (h: Histogram): string =>
+  `n ${h.n} · median ${signed(h.median)} ${h.unit} · mean ${signed(h.mean)} ${h.unit} · ${h.above} above, ${h.below} below`;
+
+/** A section's dates, in the drop zone's time zone, on the page and in the
+ *  docs alike. */
+export const spanDay = (iso: string | null): string =>
+  iso == null
+    ? '—'
+    : new Date(iso).toLocaleDateString('en-US', { timeZone: SITE.timeZone, month: 'short', day: 'numeric', year: 'numeric' });
 
 export interface WindErrorRow {
   label: string;
@@ -150,13 +176,15 @@ export const SAMPLE_ROWS: readonly { source: ForecastSource; label: string }[] =
 ];
 
 /** The surface-wind sample's forecasts against each report, as its summary
- *  pairs them (`pairsVsMetar`). Open-Meteo serves speed to a tenth of a knot,
- *  so speed and gust differences are kept to the tenth and binned to the
- *  knot; direction is whole degrees. */
+ *  pairs them (`orderedRuns`, `pairsVsMetar`). Kept to the tenth, as the
+ *  summary keeps them, for every row: Open-Meteo serves tenths of a knot and
+ *  the sampler's NWS hour is converted from km/h; binned to the knot, so a
+ *  tenth either side of zero sits in the zero bar. Direction whole degrees. */
 export function surfaceSampleSection(records: readonly SurfaceWindRecord[]): WindErrorSection {
+  const runs = orderedRuns(records);
   const times: number[] = [];
   const rows = SAMPLE_ROWS.map(({ source, label }) => {
-    const { pairs } = pairsVsMetar(records, source);
+    const { pairs } = pairsVsMetar(runs, source);
     times.push(...pairs.map((p) => Date.parse(p.obsAt)));
     return rowOf(
       label,

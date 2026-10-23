@@ -62,7 +62,8 @@ export const DATA_SOURCES = {
    *  4.0: credit, a link to the licence, a note of what was changed, and a
    *  link to Open-Meteo beside wherever its data are shown. Each card that
    *  shows them links this, licence included, in its "Data:" footer; what
-   *  this app changes is OpenMeteoCredit, on the page footer and #parity. */
+   *  this app changes is OpenMeteoCredit, on the page footer, #parity and
+   *  #wind-errors, each saying what that page does with the data. */
   openMeteo: {
     label: 'Open-Meteo',
     url: 'https://open-meteo.com/',

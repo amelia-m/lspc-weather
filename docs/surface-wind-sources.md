@@ -409,7 +409,7 @@ KPMV", beside the kept NWS forecasts (docs/kept-forecasts-vs-kpmv.md).
   −2 and 0 kt, median −1 kt. Both are spread about as wide (median miss
   2 kt each, p90 4 to 4.5 kt); neither is tighter.
 - **Gust, where KPMV reported one** (229 reports, 224 for `current`).
-  Open-Meteo sits right of zero in 191 to 197 of them, and its tail runs
+  Open-Meteo sits right of zero in 186 to 191 of them, and its tail runs
   out to +17 kt; the NWS hour sits right in 164, closer in (median +3 kt
   to Open-Meteo's +3.7 to +4) but with a tail of 47 below, down to −13 kt.
 - **Direction.** All four peak at a small clockwise offset (median +6° to
@@ -433,5 +433,7 @@ figures with the whole window.
 
 ## Status
 
-Measurement only. Nothing on the dashboard changed. The open question is
+Measurement only: nothing the dashboard's cards show changed. Since
+2026-10-23 the archived records also feed the `#wind-errors` page, which
+draws the histograms above. The open question is
 in `docs/open-questions.md`, "Surface wind: which forecast source".

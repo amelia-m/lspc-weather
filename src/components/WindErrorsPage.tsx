@@ -1,5 +1,13 @@
 import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
-import type { Histogram, WindErrorSection, WindErrorsData } from '../domain/windErrors';
+import {
+  histogramLine,
+  signed,
+  spanDay,
+  yStep,
+  type Histogram,
+  type WindErrorSection,
+  type WindErrorsData,
+} from '../domain/windErrors';
 import type { SiteJsonState } from '../hooks/useSiteJson';
 import { Panel } from './common/Panel';
 import { OpenMeteoCredit } from './OpenMeteoCredit';
@@ -18,13 +26,6 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
  * for a jump, and nothing on the dashboard reads any of it.
  */
 
-const fmtDay = (iso: string | null): string =>
-  iso == null
-    ? '—'
-    : new Date(iso).toLocaleDateString('en-US', { timeZone: SITE.timeZone, month: 'short', day: 'numeric' });
-
-const signed = (x: number | null): string => (x == null ? '—' : x > 0 ? `+${x}` : x < 0 ? `−${-x}` : '0');
-
 /** One histogram as its own small chart, so the panels reflow to one column
  *  on a phone. Forecast minus reported along the bottom, zero dashed; each
  *  bar titled with its count, so a hover or a long press names it. */
@@ -33,7 +34,7 @@ function HistogramChart({ h, unitWord }: { h: Histogram; unitWord: string }): JS
   const PH = 120;
   const top0 = 6;
   const max = Math.max(1, ...h.counts);
-  const step = max <= 10 ? 2 : max <= 25 ? 5 : max <= 60 ? 10 : max <= 150 ? 25 : 50;
+  const step = yStep(max);
   const top = Math.ceil(max / step) * step;
   const L = 28;
   const pw = W - L - 4;
@@ -46,7 +47,7 @@ function HistogramChart({ h, unitWord }: { h: Histogram; unitWord: string }): JS
   const gridlines: number[] = [];
   for (let c = step; c <= top; c += step) gridlines.push(c);
   const base = top0 + PH;
-  const summary = `n ${h.n} · median ${signed(h.median)} ${h.unit} · mean ${signed(h.mean)} ${h.unit} · ${h.above} above, ${h.below} below`;
+  const summary = histogramLine(h);
   return (
     <figure className="werr-fig">
       <figcaption className="werr-cap">{summary}</figcaption>
@@ -97,7 +98,7 @@ function HistogramChart({ h, unitWord }: { h: Histogram; unitWord: string }): JS
 function SectionPanel({ s, intro }: { s: WindErrorSection; intro: JSX.Element }): JSX.Element {
   const unitWord = s.unitWord;
   return (
-    <Panel title={s.title} subtitle={`${fmtDay(s.first)} to ${fmtDay(s.last)} · ${unitWord}s per bin`}>
+    <Panel title={s.title} subtitle={`${spanDay(s.first)} to ${spanDay(s.last)} · ${unitWord}s per bin`}>
       {intro}
       {s.rows.map((row) => (
         <section key={row.label} className="werr-row">
@@ -173,8 +174,9 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
             <p className="muted small">
               A sample taken every five minutes: each KPMV report once, against each forecast as it stood
               while that report was the newest. Open-Meteo&rsquo;s hourly, 15-minute and current 10 m wind,
-              then the NWS hour on the same reports for reference. Open-Meteo gives speed to a tenth of a
-              knot, binned here to the knot. How it was taken:{' '}
+              then the NWS hour on the same reports for reference. Every row here is kept to a tenth of a
+              knot, as the sample&rsquo;s summary keeps it, and binned to the knot, so a tenth either side
+              of zero sits in the zero bar and counts on neither side. How it was taken:{' '}
               <a href={repoDoc('docs/surface-wind-sources.md')} target="_blank" rel="noopener noreferrer">
                 docs/surface-wind-sources.md
               </a>
@@ -183,7 +185,7 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
           }
         />
       )}
-      {data && <p className="muted small">Figures written {fmtDay(data.generatedAt)}.</p>}
+      {data && <p className="muted small">Figures written {spanDay(data.generatedAt)}.</p>}
 
       <footer className="app-foot">
         <a href="#">← Back to the dashboard</a>
