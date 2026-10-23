@@ -161,6 +161,7 @@ describe('summarizeInstants', () => {
     expect(latest.speedMeans).toEqual({ fc: 8, obs: 6 });
     // One hour gave a gust (15 against 20); two did not (15 against 6 and 0).
     expect(latest.gustReported).toEqual({ hours: 1, of: 3 });
+    expect(latest.gustSide).toEqual({ above: 0, equal: 0, below: 1 });
     expect(latest.gustWhenReported?.mean).toBe(-5);
     expect(latest.gustWhenNone?.mean).toBe(12);
     // 200 against 190 at 12 kt, against 210 at 6 kt; calm gives none.

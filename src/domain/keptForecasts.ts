@@ -179,6 +179,9 @@ export interface InstantRow {
   gustWhenNone: Spread | null;
   /** Hours the report gave a gust, of those with a forecast gust. */
   gustReported: { hours: number; of: number };
+  /** Where a gust was reported: hours the forecast gust was above it, the
+   *  same, and below. The mean alone hid that it was almost never below. */
+  gustSide: { above: number; equal: number; below: number };
   /** Degrees, forecast minus reported, split by the reported speed: a
    *  light wind's direction is the least settled. Calm and VRB reports
    *  give none. */
@@ -269,6 +272,11 @@ export function summarizeInstants(
       gustWhenReported: spreadOf(gustRep),
       gustWhenNone: spreadOf(gustNone),
       gustReported: { hours: gustRep.length, of: gustRep.length + gustNone.length },
+      gustSide: {
+        above: gustRep.filter((d) => d > 0).length,
+        equal: gustRep.filter((d) => d === 0).length,
+        below: gustRep.filter((d) => d < 0).length,
+      },
       direction: { under10kt: spreadOf(dirLight), from10kt: spreadOf(dirStrong) },
       temperature: spreadOf(temp.map((x) => x.d)),
       temperatureByUtcHour: byUtcHour(temp),
