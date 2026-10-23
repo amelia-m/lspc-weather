@@ -10,6 +10,7 @@ import {
   readInstant,
   summarizeInstants,
   summarizeRain,
+  windDiffs,
 } from '../src/domain/keptForecasts';
 
 const H = 3_600_000;
@@ -171,6 +172,31 @@ describe('summarizeInstants', () => {
     // 4.6 SM reads as 5: under 10 in all three hours, against 10, 5 and 10.
     expect(latest.visibility).toMatchObject({ hours: 3, reportedUnder: 1, forecastUnder: 3, bothUnder: 1 });
     expect(latest.visibility.spread?.mean).toBe(-3.33);
+  });
+});
+
+describe('windDiffs', () => {
+  const pair = (body: string, fc: { windSpeed?: number; windGust?: number; windDirection?: number }) => ({
+    t: T,
+    issued: iso(T - H),
+    fc,
+    obs: readInstant(metar(T - 5 * 60_000, `${body} 10SM CLR 10/05`)),
+  });
+
+  it('reads speed in whole knots, and the gust against the reported gust where there is one', () => {
+    expect(windDiffs(pair('19012G20KT', { windSpeed: 9.6, windGust: 15.4, windDirection: 200 }))).toEqual({
+      speed: -2,
+      gust: -5,
+      gustOverSpeed: null,
+      dir: 10,
+      reportedSpd: 12,
+    });
+  });
+
+  it('sets the gust against the steady wind where none was reported, and gives calm and VRB no direction', () => {
+    expect(windDiffs(pair('21006KT', { windGust: 15 }))).toMatchObject({ gust: null, gustOverSpeed: 9, speed: null });
+    expect(windDiffs(pair('VRB03KT', { windDirection: 200 })).dir).toBeNull();
+    expect(windDiffs(pair('00000KT', { windSpeed: 2, windDirection: 200 }))).toMatchObject({ speed: 2, dir: null });
   });
 });
 
