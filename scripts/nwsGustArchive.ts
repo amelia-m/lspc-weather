@@ -5,10 +5,12 @@
  *   PARTS=wspd,wgust,wdir python3 scripts/cloudCoverFetch.py <start> <end> data/parity/ndfd-wind-<start>-to-<end>.jsonl.gz
  *   npx tsx scripts/nwsGustArchive.ts --ndfd data/parity/ndfd-wgust-*.jsonl.gz data/parity/ndfd-wind-*.jsonl.gz \
  *     --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
- *               data/parity/cloud-cover-2*.jsonl.gz [--from <ISO> --to <ISO>]
+ *               data/parity/cloud-cover-2*.jsonl.gz [--from <ISO> --to <ISO>] [--misses <n>]
  *
  * --from and --to keep only the hours between them, both included: the
- * kept forecasts' window, to set this reading beside that one.
+ * kept forecasts' window, to set this reading beside that one. --misses
+ * lists the n gusting hours with the largest miss at the latest issuance,
+ * each with KPMV's reports within 75 minutes.
  * Prints the summary as text, then as JSON. The arithmetic is
  * src/domain/ndfdGust.ts (pure, tested); this file only reads and prints.
  * The limit counted against is the Student profile's surface-wind caution,
@@ -19,7 +21,14 @@
  */
 import { DEFAULT_THRESHOLDS } from '../src/config/thresholds';
 import { SITE } from '../src/config/site';
-import { pairGusts, pairNdfdWind, summarizeGusts, summarizeNdfdWind, type GroupMean } from '../src/domain/ndfdGust';
+import {
+  largestMisses,
+  pairGusts,
+  pairNdfdWind,
+  summarizeGusts,
+  summarizeNdfdWind,
+  type GroupMean,
+} from '../src/domain/ndfdGust';
 import { loadKpmvReports, loadNdfdWind } from './keptInputs';
 
 const args = process.argv.slice(2);
@@ -34,6 +43,7 @@ const gustFiles = flag('--ndfd');
 const reportFiles = flag('--reports');
 const [from] = flag('--from');
 const [to] = flag('--to');
+const [misses] = flag('--misses');
 for (const [name, v] of [['--from', from], ['--to', to]] as const) {
   if (v != null && Number.isNaN(Date.parse(v))) {
     console.error(`${name} ${v}: not a time`);
@@ -99,4 +109,15 @@ for (const w of windSummary) {
   console.log(`  speed by UTC block: ${w.speedByUtcBlock.map((b) => `${b.key} ${signed(b.mean)} (${b.n})`).join(', ')}`);
 }
 console.log('');
+if (misses) {
+  const local = (t: number) =>
+    new Date(t).toLocaleString('en-US', { timeZone: SITE.timeZone, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  for (const p of largestMisses(rows[0].pairs, Number(misses))) {
+    console.log(
+      `${new Date(p.t).toISOString().slice(0, 16)}Z (${local(p.t)}): forecast gust ${p.fc} kt, wind ${p.fcWind} kt (issued ${p.issued}); reported ${p.obs.spd}G${p.obs.gust}, ${signed(p.gustDiff)} kt`,
+    );
+    for (const m of metars.filter((m) => Math.abs(Date.parse(m.obsAt) - p.t) <= 75 * 60_000)) console.log(`    ${m.raw}`);
+  }
+  console.log('');
+}
 console.log(JSON.stringify({ gust: summary, wind: windSummary }));

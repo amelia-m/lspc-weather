@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  largestMisses,
   pairGusts,
   pairNdfdWind,
   parseNdfdWindLines,
@@ -266,5 +267,22 @@ describe('summarizeNdfdWind', () => {
       { key: '06–11Z', n: 1, mean: -2 },
       { key: '18–23Z', n: 2, mean: 3.5 },
     ]);
+  });
+});
+
+describe('largestMisses', () => {
+  it('takes the largest misses either way, largest first, earlier first on a tie, gusting hours only', () => {
+    const p = (h: string, d: number | null) => ({
+      t: Date.parse(`2026-07-01T${h}:00Z`),
+      issued: '2026-07-01T00:47Z',
+      leadH: 3,
+      fc: 10,
+      fcWind: 5,
+      obs: { t: 0, spd: 10, gust: d == null ? null : 10 - d, dir: 180, tempC: null, visSm: null },
+      gustDiff: d,
+      overSteady: d == null ? 0 : null,
+    });
+    const top = largestMisses([p('01', 3), p('02', -24), p('03', null), p('04', 24), p('05', -5)], 3);
+    expect(top.map((x) => x.gustDiff)).toEqual([-24, 24, -5]);
   });
 });

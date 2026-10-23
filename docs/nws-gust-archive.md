@@ -72,6 +72,7 @@ way.
 | hours paired | 4,789 | 4,784 | 4,766 |
 | hours KPMV reported a gust | 964 | 959 | 954 |
 | forecast gust above / same / below the reported gust | 605 / 93 / 266 | 607 / 92 / 260 | 556 / 81 / 317 |
+| share below (forecast under the reported gust) | 27.6% | 27.1% | 33.2% |
 | mean, forecast minus reported | +1.5 kt | +1.49 kt | +0.95 kt |
 | median / p90 / largest miss | 3 / 8 / 24 kt | 3 / 8 / 25 kt | 3 / 8 / 24 kt |
 | no gust reported: forecast gust over the steady wind, mean | +5.9 kt (3,825 h) | +5.9 kt | +6.0 kt |
@@ -179,6 +180,92 @@ so the step's first run on a runner is the refresh of 2026-10-26.
 The figure is this reading's, to 2026-10-22, kept as it is; the page is
 the current view.
 
+## How a gust gets into KPMV's report
+
+Asked 2026-10-23: when a METAR gives no gust, was the wind steady? Read
+that day, as served by faa.gov and weather.gov:
+
+- **The definition.** AC 00-45H Change 2, 3.1.5.5.1, and FAA Order JO
+  7900.5E Change 1 (effective 2021-07-01), 7.2b: "Gusts are defined as
+  rapid fluctuations in wind speed with a variation of 10 kts or more
+  between peaks and lulls", judged over "the most recent 10 minutes"; the
+  gust coded is the maximum instantaneous speed. The speed it is appended
+  to is the 2-minute average.
+- **ASOS's algorithm** (ASOS User's Guide, March 1998, 3.2.2.2a): 5-second
+  averages of 1-second winds. A gust is stored when the 2-minute average
+  is 9 kt or more and the greatest 5-second speed in the last minute
+  beats it by 5 kt or more; it is reported when the highest stored gust in
+  the last 10 minutes is 3 kt or more over the current 2-minute average,
+  that average is over 2 kt, and the gust is 10 kt or more over the
+  lowest 5-second speed in the 10 minutes. The lowest gust ASOS reports is
+  14 kt.
+- **KPMV is an AWOS, not an ASOS.** The AWOS standard, AC 150/5220-16E
+  (2017), gives no gust algorithm of its own: it says FMH-1 and Order
+  7900.5 apply, and the AIM (7-1, read the same day) that AWOS "wind
+  speed, direction and gusts ... are exactly the same as for manual
+  observations". The AWOS operator instructions 7900.5 names (1994) were
+  not read.
+- **What KPMV's reports show.** Of its 14,363 reports from 2026-04-01 to
+  2026-10-22, 2,904 carry a gust. The gust was 3 kt or more over the
+  reported speed in every one, and under 10 kt over it in 2,610 (90%):
+  3 kt in 153, 4 in 372, 5 in 615, 6 in 547, 7 in 451, 8 in 310, 9 in
+  162. Nine gusts were under 14 kt, and five under 10 kt (`17006G09KT`,
+  `01003G08KT`), which the 10-kt rule cannot give, since a lull cannot go
+  below zero. So KPMV's station applies an algorithm much like ASOS's (3
+  kt over the mean, nearly always 14 kt or more), not exactly the
+  published definition, and which one was not read.
+
+So **a report with no gust does not mean the wind was steady.** It means
+the station's rule found no peak 10 kt over a lull in the last 10
+minutes (under ASOS's algorithm, also none while the mean was under
+9 kt). A wind averaging 15 kt with peaks of 22 and lulls of 13 is
+reported as `15KT`. The forecast's gust is given every hour, so in the
+3,825 hours here with no reported gust it sat about 6 kt over the steady
+wind, and part of that is the two answering different questions, not
+the forecast missing.
+
+## The largest misses
+
+The ten largest misses at the latest issuance were all the forecast
+under the reported gust, by 16 to 24 kt, and all ten came with
+thunderstorms in KPMV's own reports (`TS`, `+TSRA`, lightning all
+around), usually with a wind shift, a pressure jump and a temperature drop
+in the same 20 minutes: a storm's outflow. The forecast gust in those
+hours was 4 to 25 kt; a day ahead it was much the same. `--misses 10`
+prints them with the reports around each.
+
+- **2026-06-06 03Z and 04Z (10 and 11 pm CDT on June 5), −23 and −24 kt.**
+  KPMV went from `09007KT` and 26 °C at 02:35Z to `21025G33KT 4SM +TSRA`
+  and 23 °C at 02:55Z, the pressure up 0.04 in., and `25011G33KT +TSRA`
+  at 03:55Z, 0.24 in. of rain in that hour. The forecast gust was 9 to
+  10 kt.
+  The NWS's storm reports for the night (read 2026-10-23 from the Iowa
+  Environmental Mesonet's archive of Omaha's local storm reports,
+  `data/parity/lsr-oax-2026-06-06-and-06-13.json.gz`) put a severe storm
+  over Plattsmouth itself: large trees down and a broken window from
+  wind-driven hail at 03:02–03:04Z, 1.75 in. hail 2 mi WNW, flash
+  flooding downtown at 03:15Z (and "at least 2.87 in." of rain there by
+  03:04Z), and gusts of 58 to 69 mph reported 11 to 45 mi around between
+  02:54 and 04:51Z (64 mph by a weather station 2 mi S of Glenwood,
+  11 mi). KPMV's 33 kt (38 mph) is what its reports caught of that.
+- **2026-06-13 14Z (9 am CDT), −24 kt.** `15007KT 7SM TS` at 13:35Z, then
+  `32020G33KT 3SM +TSRA` at 13:55Z: the wind swung 170°, the pressure
+  rose 0.09 in. and the temperature fell about 2 °C in 20 minutes.
+  Forecast gust 9 kt. The storm reports run from the northwest to the
+  southeast through the morning: wind damage at Mead (35 mi) at 13:01Z,
+  58 to 70 mph gusts at Valley and Elkhorn (26 to 36 mi) at 13:19–13:30Z,
+  quarter-size hail at Bellevue (14 mi) at 13:40Z, gutter damage at Red
+  Oak at 14:35Z.
+
+A gridded forecast does not place a single storm's outflow at a station
+at a given hour, and the NWS gust forecast in these hours was the day's
+ordinary breeze. Whether the forecast's thunder chance or its weather
+grids flagged these hours was not checked here. The largest misses the
+other way were 12 to 13 kt (forecast 21 to 27 kt against reported gusts
+of 9 to 15): on June 9 at night, with lightning only in the distance in
+KPMV's reports, June 17 at noon and September 26 at 9 am, under a low
+overcast.
+
 ## What this says for the card note
 
 The question was whether the forecast gust's difference from the station
@@ -199,5 +286,5 @@ decision stays the maintainer's (docs/open-questions.md). Nothing on the
 dashboard changed, and nothing reads these figures.
 
 KPMV is 11.5 miles from the drop zone, and the grid point is the drop
-zone's, so part of every difference is the distance. The METAR's rule for
-reporting a gust was not read for this.
+zone's, so part of every difference is the distance. How KPMV decides
+to report a gust is above, "How a gust gets into KPMV's report".
