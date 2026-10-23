@@ -141,6 +141,31 @@ export function pairInstants(
   return out;
 }
 
+/** One pair's wind differences, forecast minus reported, read as the
+ *  summary reads them (and the figure, scripts/keptWindErrorsPlot.ts):
+ *  speed in whole knots, as a METAR reports and the card prints; the gust
+ *  against the reported gust where the station gave one, else against the
+ *  reported steady wind; direction the short way round, only where the
+ *  report gave one (calm and VRB give none). Null where a side is missing. */
+export function windDiffs(p: InstantPair): {
+  speed: number | null;
+  gust: number | null;
+  gustOverSpeed: number | null;
+  dir: number | null;
+  reportedSpd: number | null;
+} {
+  const { fc, obs } = p;
+  const has = obs.spd != null;
+  const gust = fc.windGust != null && has ? Math.round(fc.windGust) : null;
+  return {
+    speed: fc.windSpeed != null && has ? Math.round(fc.windSpeed) - obs.spd! : null,
+    gust: gust != null && obs.gust != null ? gust - obs.gust : null,
+    gustOverSpeed: gust != null && obs.gust == null ? gust - obs.spd! : null,
+    dir: fc.windDirection != null && obs.dir != null && has ? angular(fc.windDirection, obs.dir) : null,
+    reportedSpd: obs.spd,
+  };
+}
+
 /** Visibility at or above which KPMV's reports stop: 10 SM. The forecast
  *  runs past it (16,093 m is 10 SM; 15 km and more are served), so both are
  *  read capped there. */
@@ -234,18 +259,11 @@ export function summarizeInstants(
     for (const p of pairs) {
       leads.push((p.t - Date.parse(p.issued)) / MS_H);
       const { fc, obs } = p;
-      if (fc.windSpeed != null && obs.spd != null) {
-        const f = Math.round(fc.windSpeed);
-        speed.push({ t: p.t, d: f - obs.spd, fc: f, obs: obs.spd });
-      }
-      if (fc.windGust != null && obs.spd != null) {
-        const g = Math.round(fc.windGust);
-        if (obs.gust != null) gustRep.push(g - obs.gust);
-        else gustNone.push(g - obs.spd);
-      }
-      if (fc.windDirection != null && obs.dir != null && obs.spd != null) {
-        (obs.spd < 10 ? dirLight : dirStrong).push(angular(fc.windDirection, obs.dir));
-      }
+      const w = windDiffs(p);
+      if (w.speed != null) speed.push({ t: p.t, d: w.speed, fc: w.speed + obs.spd!, obs: obs.spd! });
+      if (w.gust != null) gustRep.push(w.gust);
+      if (w.gustOverSpeed != null) gustNone.push(w.gustOverSpeed);
+      if (w.dir != null) (obs.spd! < 10 ? dirLight : dirStrong).push(w.dir);
       if (fc.temperature != null && obs.tempC != null) temp.push({ t: p.t, d: fc.temperature - obs.tempC });
       if (fc.visibility != null && obs.visSm != null) {
         const f = Math.min(asReported(fc.visibility), VIS_CAP_SM);

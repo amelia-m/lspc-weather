@@ -14,13 +14,9 @@
  * tested); this file only reads files and prints. Spreads and counts, never
  * a grade.
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-import { gunzipSync } from 'node:zlib';
-import type { KeptGridpointSnapshot } from '../src/domain/ceilingHeights';
-import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import { summarizeInstants, summarizeRain } from '../src/domain/keptForecasts';
 import type { Spread } from '../src/domain/paritySummary';
+import { loadKeptSnapshots, loadKpmvReports } from './keptInputs';
 
 const [keptDir, ...metarFiles] = process.argv.slice(2);
 if (!keptDir || metarFiles.length === 0) {
@@ -28,28 +24,8 @@ if (!keptDir || metarFiles.length === 0) {
   process.exit(2);
 }
 
-const read = (f: string): string => {
-  const buf = readFileSync(f);
-  return (f.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8');
-};
-const walk = (d: string): string[] =>
-  readdirSync(d).flatMap((n) => {
-    const p = join(d, n);
-    return statSync(p).isDirectory() ? walk(p) : p.endsWith('.json.gz') ? [p] : [];
-  });
-
-const snaps: KeptGridpointSnapshot[] = walk(keptDir).map((f) => JSON.parse(read(f)) as KeptGridpointSnapshot);
-// Overlapping METAR files repeat reports; each is kept once.
-const byKey = new Map<string, MetarRecord>();
-for (const f of metarFiles) {
-  for (const line of read(f).split('\n')) {
-    if (!line.trim()) continue;
-    const r = JSON.parse(line) as MetarRecord;
-    if (r.src !== 'metar' || (r.site != null && r.site !== 'KPMV')) continue;
-    byKey.set(`${r.obsAt}|${r.raw}`, r);
-  }
-}
-const metars = [...byKey.values()].sort((a, b) => a.obsAt.localeCompare(b.obsAt));
+const snaps = loadKeptSnapshots(keptDir);
+const metars = loadKpmvReports(metarFiles);
 
 const instants = summarizeInstants(snaps, metars);
 const rain = summarizeRain(snaps, metars);

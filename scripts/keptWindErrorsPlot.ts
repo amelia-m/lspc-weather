@@ -11,44 +11,22 @@
  * light and dark by `prefers-color-scheme`, each bar titled with its count
  * so a hover names it. Counts, never a grade.
  */
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { gunzipSync } from 'node:zlib';
-import type { KeptGridpointSnapshot } from '../src/domain/ceilingHeights';
-import { NWS_ISSUANCES, type MetarRecord } from '../src/domain/cloudCoverSources';
-import { pairInstants, prepareInstants, type InstantPair } from '../src/domain/keptForecasts';
-import { angular } from '../src/domain/surfaceWindSources';
+import { writeFileSync } from 'node:fs';
+import { NWS_ISSUANCES } from '../src/domain/cloudCoverSources';
+import { pairInstants, prepareInstants, windDiffs, type InstantPair } from '../src/domain/keptForecasts';
+import { median } from '../src/domain/paritySummary';
+import { loadKeptSnapshots, loadKpmvReports } from './keptInputs';
 
 const [keptDir, outPath, ...metarFiles] = process.argv.slice(2);
 if (!keptDir || !outPath || metarFiles.length === 0) {
   console.error('usage: keptWindErrorsPlot.ts <kept snapshots dir> <out.svg> <metar jsonl[.gz]>...');
   process.exit(2);
 }
-const read = (f: string): string => {
-  const buf = readFileSync(f);
-  return (f.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8');
-};
-const walk = (d: string): string[] =>
-  readdirSync(d).flatMap((n) => {
-    const p = join(d, n);
-    return statSync(p).isDirectory() ? walk(p) : p.endsWith('.json.gz') ? [p] : [];
-  });
-const snaps = walk(keptDir).map((f) => JSON.parse(read(f)) as KeptGridpointSnapshot);
-const byKey = new Map<string, MetarRecord>();
-for (const f of metarFiles) {
-  for (const line of read(f).split('\n')) {
-    if (!line.trim()) continue;
-    const r = JSON.parse(line) as MetarRecord;
-    if (r.src === 'metar' && (r.site == null || r.site === 'KPMV')) byKey.set(`${r.obsAt}|${r.raw}`, r);
-  }
-}
-const metars = [...byKey.values()];
-const prepared = prepareInstants(snaps, metars);
+const prepared = prepareInstants(loadKeptSnapshots(keptDir), loadKpmvReports(metarFiles));
 
-/** The three quantities drawn, each read as the comparison reads it: speeds
- *  in whole knots, as a METAR reports and the card prints them; the gust
- *  only where the station reported one; direction only where the report
- *  gave one (not calm, not VRB), the short way round. */
+/** The three quantities drawn, each read as the summary reads it
+ *  (`windDiffs`): speed in whole knots, the gust only where the station
+ *  reported one, direction only where the report gave one. */
 const PANELS: {
   title: string;
   unit: string;
@@ -63,7 +41,7 @@ const PANELS: {
     bin: 1,
     lo: -8,
     hi: 8,
-    diff: (p) => (p.fc.windSpeed != null && p.obs.spd != null ? Math.round(p.fc.windSpeed) - p.obs.spd : null),
+    diff: (p) => windDiffs(p).speed,
   },
   {
     title: 'Gust, where KPMV reported one',
@@ -71,7 +49,7 @@ const PANELS: {
     bin: 1,
     lo: -6,
     hi: 14,
-    diff: (p) => (p.fc.windGust != null && p.obs.gust != null ? Math.round(p.fc.windGust) - p.obs.gust : null),
+    diff: (p) => windDiffs(p).gust,
   },
   {
     title: 'Direction',
@@ -79,7 +57,7 @@ const PANELS: {
     bin: 10,
     lo: -100,
     hi: 100,
-    diff: (p) => (p.fc.windDirection != null && p.obs.dir != null ? angular(p.fc.windDirection, p.obs.dir) : null),
+    diff: (p) => windDiffs(p).dir,
   },
 ];
 
@@ -100,6 +78,10 @@ const r1 = (x: number) => Math.round(x * 10) / 10;
 
 const parts: string[] = [];
 const rows = NWS_ISSUANCES.map(({ minLeadH, label }) => ({ minLeadH, label, pairs: pairInstants(prepared, minLeadH) }));
+if (rows.every((r) => r.pairs.length === 0)) {
+  console.error('no hour paired: is the first argument the snapshots folder (…/data), and do the reports cover its days?');
+  process.exit(1);
+}
 rows.forEach((row, ri) => {
   PANELS.forEach((panel, ci) => {
     const x0 = ML + ci * (PW + GX);
@@ -109,7 +91,10 @@ rows.forEach((row, ri) => {
     const counts = new Array<number>(nb).fill(0);
     let outside = 0;
     for (const d of ds) {
-      const i = Math.round((d - panel.lo) / panel.bin);
+      // Each bin centred on a multiple of its width, a halfway value rounded
+      // away from zero on both sides, so neither side gains it.
+      const v = Math.sign(d) * Math.round(Math.abs(d) / panel.bin) * panel.bin;
+      const i = Math.round((v - panel.lo) / panel.bin);
       if (i < 0 || i >= nb) outside += 1;
       else counts[i] += 1;
     }
@@ -119,15 +104,14 @@ rows.forEach((row, ri) => {
     const bw = PW / nb;
     const xOf = (v: number) => x0 + ((v - panel.lo) / panel.bin + 0.5) * bw;
     const yOf = (c: number) => y0 + PH - (c / top) * PH;
-    const sorted = [...ds].sort((a, b) => a - b);
-    const median = sorted.length ? sorted[Math.floor((sorted.length - 1) / 2)] : 0;
+    const mid = r1(median(ds) ?? 0);
     const mean = ds.length ? ds.reduce((a, b) => a + b, 0) / ds.length : 0;
     const above = ds.filter((d) => d > 0).length;
     const below = ds.filter((d) => d < 0).length;
 
     if (ri === 0) parts.push(`<text class="h" x="${x0}" y="${MT - 32}">${esc(panel.title)}</text>`);
     parts.push(
-      `<text class="s" x="${x0}" y="${y0 - 10}">n ${ds.length} · median ${signed(median)} ${panel.unit} · mean ${signed(r1(mean))} ${panel.unit} · ${above} above, ${below} below</text>`,
+      `<text class="s" x="${x0}" y="${y0 - 10}">n ${ds.length} · median ${signed(mid)} ${panel.unit} · mean ${signed(r1(mean))} ${panel.unit} · ${above} above, ${below} below</text>`,
     );
     for (let c = step; c <= top; c += step) {
       parts.push(`<line class="grid" x1="${x0}" x2="${x0 + PW}" y1="${yOf(c)}" y2="${yOf(c)}"/>`);
@@ -188,7 +172,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
 <rect class="bg" width="100%" height="100%"/>
 <text class="h" x="${ML}" y="24">Kept NWS forecasts minus KPMV's reports, ${first} to ${last}</text>
 <text class="s" x="${ML}" y="42">Hours per bin. Right of the dashed line the forecast was above the report, left of it below.</text>
-<text class="s" x="${ML}" y="58">Rows: the newest issuance at least 0, 6 and 24 hours before the hour.</text>
+<text class="s" x="${ML}" y="58">Rows: the newest issuance at least ${NWS_ISSUANCES.map((i) => i.minLeadH).join(', ').replace(/, (\d+)$/, ' and $1')} hours before the hour.</text>
 ${parts.join('\n')}
 <text class="note" x="${ML}" y="${H - 14}">Speeds in whole knots, as a METAR reports. Direction only where the report gave one (not calm or variable). Source: docs/kept-forecasts-vs-kpmv.md, scripts/keptWindErrorsPlot.ts.</text>
 </svg>

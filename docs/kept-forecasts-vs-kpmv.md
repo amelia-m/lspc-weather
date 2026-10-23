@@ -197,10 +197,13 @@ The same pairs as the tables above, as histograms of forecast minus reported,
 one row per lead (`scripts/keptWindErrorsPlot.ts`, which uses the
 comparison's own pairing). The figure shows what the means alone did not:
 
-- **Speed** is a hump just left of zero, not a shift of the whole thing.
-  At the latest issuance the forecast was below the report in 129 hours,
-  above it in 56 and level in 38, nearly all within 4 kt either way. At 24
-  hours ahead the hump sits a knot further left (130 below, 33 above).
+- **Speed** is one hump, centred a knot below the report (median −1 kt,
+  the tallest bin −1 kt) rather than a few large misses pulling the mean
+  down. At the latest issuance the forecast was below the report in 129
+  hours, above it in 56 and level in 38, nearly all within 4 kt either
+  way. At 24 hours ahead the median and the tallest bin are the same; the
+  mean moves 0.4 kt further below (−1.2 kt), and fewer hours are above
+  (130 below, 33 above).
 - **Gust** sits almost wholly right of zero at every lead (45, 50 and 46
   of 52 or 53 hours above), but spread from 0 to +12 kt with no single
   peak. That is the "consistent side, varying size" of "Gust, closer"
