@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1032 976" width="1032" height="976" role="img" aria-labelledby="t d">
-<title id="t">Surface-wind sample: forecasts minus KPMV's reports, 2026-10-09 to 2026-10-21</title>
+<title id="t">Surface-wind sample: forecasts minus KPMV's reports, Oct 8, 2026 to Oct 21, 2026</title>
 <desc id="d">Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's hourly, 15-minute and current 10 m wind and the NWS hour, each KPMV report once. The dashed line is zero.</desc>
 <style>
   svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --base:#c3c2b7; --bar:#2a78d6;
@@ -19,11 +19,11 @@
   .bar { fill: var(--bar); }
 </style>
 <rect class="bg" width="100%" height="100%"/>
-<text class="h" x="44" y="24">Surface-wind sample: forecasts minus KPMV's reports, 2026-10-09 to 2026-10-21</text>
+<text class="h" x="44" y="24">Surface-wind sample: forecasts minus KPMV's reports, Oct 8, 2026 to Oct 21, 2026</text>
 <text class="s" x="44" y="42">Reports per bin. Right of the dashed line the forecast was above the report, left of it below.</text>
 <text class="s" x="44" y="58">Each forecast as it stood while the report was the newest. Rows: Open-Meteo’s three forms, then NWS on the same reports.</text>
 <text class="h" x="44" y="80">Wind speed</text>
-<text class="s" x="44" y="102">n 742 · median +0.8 kt · mean +0.8 kt · 444 above, 283 below</text>
+<text class="s" x="44" y="102">n 742 · median +0.8 kt · mean +0.8 kt · 403 above, 243 below</text>
 <line class="grid" x1="44" x2="344" y1="224.5" y2="224.5"/>
 <text class="t" x="38" y="228.5" text-anchor="end">25</text>
 <line class="grid" x1="44" x2="344" y1="187" y2="187"/>
@@ -58,7 +58,7 @@
 <text class="t" x="308.2857142857143" y="278" text-anchor="middle">+8</text>
 <text class="lead" x="12" y="187" transform="rotate(-90 12 187)" text-anchor="middle">Open-Meteo hourly</text>
 <text class="h" x="380" y="80">Gust, where KPMV reported one</text>
-<text class="s" x="380" y="102">n 229 · median +4 kt · mean +4.4 kt · 197 above, 32 below</text>
+<text class="s" x="380" y="102">n 229 · median +4 kt · mean +4.4 kt · 186 above, 25 below</text>
 <line class="grid" x1="380" x2="680" y1="232" y2="232"/>
 <text class="t" x="374" y="236" text-anchor="end">5</text>
 <line class="grid" x1="380" x2="680" y1="202" y2="202"/>
@@ -101,7 +101,7 @@
 <text class="t" x="620.909090909091" y="278" text-anchor="middle">+12</text>
 <text class="t" x="657.2727272727273" y="278" text-anchor="middle">+16</text>
 <text class="h" x="716" y="80">Direction</text>
-<text class="s" x="716" y="102">n 731 · median +7 ° · mean +6.5 ° · 496 above, 220 below</text>
+<text class="s" x="716" y="102">n 731 · median +7 ° · mean +6.5 ° · 410 above, 171 below</text>
 <line class="grid" x1="716" x2="1016" y1="232" y2="232"/>
 <text class="t" x="710" y="236" text-anchor="end">50</text>
 <line class="grid" x1="716" x2="1016" y1="202" y2="202"/>
@@ -137,7 +137,7 @@
 <text class="t" x="937.4285714285714" y="278" text-anchor="middle">+50</text>
 <text class="t" x="1008.8571428571429" y="278" text-anchor="middle">+100</text>
 <text class="t" x="1016" y="292" text-anchor="end">3 beyond the axis</text>
-<text class="s" x="44" y="316">n 742 · median +0.8 kt · mean +0.8 kt · 434 above, 295 below</text>
+<text class="s" x="44" y="316">n 742 · median +0.8 kt · mean +0.8 kt · 396 above, 250 below</text>
 <line class="grid" x1="44" x2="344" y1="446" y2="446"/>
 <text class="t" x="38" y="450" text-anchor="end">25</text>
 <line class="grid" x1="44" x2="344" y1="416" y2="416"/>
@@ -173,7 +173,7 @@
 <text class="t" x="251.14285714285717" y="492" text-anchor="middle">+4</text>
 <text class="t" x="308.2857142857143" y="492" text-anchor="middle">+8</text>
 <text class="lead" x="12" y="401" transform="rotate(-90 12 401)" text-anchor="middle">Open-Meteo 15-minute</text>
-<text class="s" x="380" y="316">n 229 · median +3.7 kt · mean +4.3 kt · 197 above, 31 below</text>
+<text class="s" x="380" y="316">n 229 · median +3.7 kt · mean +4.3 kt · 191 above, 25 below</text>
 <line class="grid" x1="380" x2="680" y1="446" y2="446"/>
 <text class="t" x="374" y="450" text-anchor="end">5</text>
 <line class="grid" x1="380" x2="680" y1="416" y2="416"/>
@@ -218,7 +218,7 @@
 <text class="t" x="584.5454545454545" y="492" text-anchor="middle">+8</text>
 <text class="t" x="620.909090909091" y="492" text-anchor="middle">+12</text>
 <text class="t" x="657.2727272727273" y="492" text-anchor="middle">+16</text>
-<text class="s" x="716" y="316">n 731 · median +7 ° · mean +6.4 ° · 507 above, 207 below</text>
+<text class="s" x="716" y="316">n 731 · median +7 ° · mean +6.4 ° · 421 above, 154 below</text>
 <line class="grid" x1="716" x2="1016" y1="446" y2="446"/>
 <text class="t" x="710" y="450" text-anchor="end">50</text>
 <line class="grid" x1="716" x2="1016" y1="416" y2="416"/>
@@ -252,7 +252,7 @@
 <text class="t" x="937.4285714285714" y="492" text-anchor="middle">+50</text>
 <text class="t" x="1008.8571428571429" y="492" text-anchor="middle">+100</text>
 <text class="t" x="1016" y="506" text-anchor="end">4 beyond the axis</text>
-<text class="s" x="44" y="530">n 726 · median +0.8 kt · mean +0.8 kt · 428 above, 277 below</text>
+<text class="s" x="44" y="530">n 726 · median +0.8 kt · mean +0.8 kt · 393 above, 235 below</text>
 <line class="grid" x1="44" x2="344" y1="660" y2="660"/>
 <text class="t" x="38" y="664" text-anchor="end">25</text>
 <line class="grid" x1="44" x2="344" y1="630" y2="630"/>
@@ -289,7 +289,7 @@
 <text class="t" x="251.14285714285717" y="706" text-anchor="middle">+4</text>
 <text class="t" x="308.2857142857143" y="706" text-anchor="middle">+8</text>
 <text class="lead" x="12" y="615" transform="rotate(-90 12 615)" text-anchor="middle">Open-Meteo current</text>
-<text class="s" x="380" y="530">n 224 · median +4 kt · mean +4.3 kt · 191 above, 32 below</text>
+<text class="s" x="380" y="530">n 224 · median +4 kt · mean +4.3 kt · 186 above, 27 below</text>
 <line class="grid" x1="380" x2="680" y1="660" y2="660"/>
 <text class="t" x="374" y="664" text-anchor="end">5</text>
 <line class="grid" x1="380" x2="680" y1="630" y2="630"/>
@@ -334,7 +334,7 @@
 <text class="t" x="584.5454545454545" y="706" text-anchor="middle">+8</text>
 <text class="t" x="620.909090909091" y="706" text-anchor="middle">+12</text>
 <text class="t" x="657.2727272727273" y="706" text-anchor="middle">+16</text>
-<text class="s" x="716" y="530">n 715 · median +6 ° · mean +6.6 ° · 500 above, 201 below</text>
+<text class="s" x="716" y="530">n 715 · median +6 ° · mean +6.6 ° · 419 above, 146 below</text>
 <line class="grid" x1="716" x2="1016" y1="652.5" y2="652.5"/>
 <text class="t" x="710" y="656.5" text-anchor="end">50</text>
 <line class="grid" x1="716" x2="1016" y1="615" y2="615"/>
@@ -485,5 +485,5 @@
 <text class="t" x="937.4285714285714" y="920" text-anchor="middle">+50</text>
 <text class="t" x="1008.8571428571429" y="920" text-anchor="middle">+100</text>
 <text class="t" x="1016" y="934" text-anchor="end">1 beyond the axis</text>
-<text class="note" x="44" y="962">Open-Meteo to a tenth of a knot, binned to the knot. Direction only where the report gave one. Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.</text>
+<text class="note" x="44" y="962">Every row to a tenth of a knot, binned to the knot; a tenth either side of zero counts on neither side. Direction only where the report gave one. Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.</text>
 </svg>

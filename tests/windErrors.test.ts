@@ -29,6 +29,10 @@ describe('histogram', () => {
     expect(histogram([0.5, -0.5], SPEED).counts).toEqual([0, 0, 1, 0, 1, 0, 0]);
   });
 
+  it('counts the sides as the bars are drawn: a value that rounds into the zero bar is on neither', () => {
+    expect(histogram([0.4, -0.4, 0.6, -0.6], SPEED)).toMatchObject({ above: 1, below: 1 });
+  });
+
   it('counts values past the axis as beyond it, and gives no median or mean for none', () => {
     expect(histogram([4, -40, 1], SPEED).outside).toBe(2);
     expect(histogram([], SPEED)).toMatchObject({ n: 0, median: null, mean: null, outside: 0 });
@@ -92,10 +96,14 @@ describe('surfaceSampleSection', () => {
   it('pairs each report once, as the sample’s summary does, and keeps Open-Meteo’s tenths', () => {
     const hourly = [w('10:00', 200, 9.4, 18.2), w('11:00', 210, 6, 11)];
     const records = [
-      run('10:00', '09:55', w('09:55', 190, 8, 15), hourly),
-      // The same report again: counted once.
-      run('10:05', '09:55', w('09:55', 190, 8, 15), hourly),
+      // Out of order and repeated, as overlapping log files give them: read
+      // in time order, each run once, as the summary reads them.
       run('11:00', '10:55', w('10:55', null, 0), hourly),
+      // The same report at a later run, when the forecast had moved, listed
+      // first: the earliest run that had the report is the one paired.
+      run('10:05', '09:55', w('09:55', 190, 8, 15), [w('10:00', 260, 20, 30), w('11:00', 210, 6, 11)]),
+      run('10:00', '09:55', w('09:55', 190, 8, 15), hourly),
+      run('10:00', '09:55', w('09:55', 190, 8, 15), hourly),
     ];
     const s = surfaceSampleSection(records);
     const omHourly = s.rows.find((r) => r.label === 'Open-Meteo hourly')!;

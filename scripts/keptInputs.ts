@@ -1,14 +1,16 @@
 /**
  * Reading the inputs the kept-forecast scripts share
  * (scripts/keptForecastsVsKpmv.ts, scripts/windErrorsData.ts): the
- * forecast keeper's snapshots and KPMV's reports, so the tables and the
- * figure are always built from the same set.
+ * forecast keeper's snapshots, KPMV's reports and the surface-wind
+ * sampler's records, so the tables and the figures are built from the
+ * same sets.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import type { KeptGridpointSnapshot } from '../src/domain/ceilingHeights';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
+import { parseSurfaceWindLines, type SurfaceWindRecord } from '../src/domain/surfaceWindSources';
 
 const read = (f: string): string => {
   const buf = readFileSync(f);
@@ -19,6 +21,12 @@ const walk = (d: string): string[] =>
     const p = join(d, n);
     return statSync(p).isDirectory() ? walk(p) : p.endsWith('.json.gz') ? [p] : [];
   });
+
+/** The surface-wind sampler's records from its logs (`.jsonl` or `.gz`),
+ *  as read; `orderedRuns` puts them in order and drops repeats. */
+export function loadSurfaceWindRecords(files: readonly string[]): SurfaceWindRecord[] {
+  return files.flatMap((f) => parseSurfaceWindLines(read(f)));
+}
 
 /** Every kept snapshot (`.json.gz`) under a folder, searched recursively. */
 export function loadKeptSnapshots(dir: string): KeptGridpointSnapshot[] {

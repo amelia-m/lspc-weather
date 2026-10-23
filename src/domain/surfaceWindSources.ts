@@ -658,7 +658,8 @@ function stalenessOf(records: readonly SurfaceWindRecord[], source: SourceName):
  * any run's does, whichever report that run had.
  *
  * The pairs themselves, for the summary below and the #wind-errors page
- * (src/domain/windErrors.ts), so both count the same reports.
+ * (src/domain/windErrors.ts), so both count the same reports. Give it
+ * `orderedRuns`: which run a report pairs with depends on the order.
  */
 export function pairsVsMetar(
   records: readonly SurfaceWindRecord[],
@@ -735,12 +736,19 @@ function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource
 
 /** Everything above, over a set of records in any order (sorted here by run
  *  time; a run logged twice counts once). */
-export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): SurfaceWindSummary {
+/** The runs in time order, each once, a run with an unreadable time left
+ *  out: what the summary and the #wind-errors page both read, since
+ *  `pairsVsMetar` pairs a report with the first run that had it. */
+export function orderedRuns(input: readonly SurfaceWindRecord[]): SurfaceWindRecord[] {
   const seen = new Set<string>();
-  const records = [...input]
+  return [...input]
     .filter((r) => Number.isFinite(Date.parse(r.at)))
     .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
     .filter((r) => (seen.has(r.at) ? false : (seen.add(r.at), true)));
+}
+
+export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): SurfaceWindSummary {
+  const records = orderedRuns(input);
   const sources: SourceName[] = ['metar', ...FORECAST_SOURCES];
 
   let curSame = 0;

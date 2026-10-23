@@ -9,17 +9,9 @@
  * Each bar is titled with its count, so a hover names it. Counts, never a
  * grade.
  */
-import type { Histogram, WindErrorSection } from '../src/domain/windErrors';
+import { histogramLine, signed, yStep, type WindErrorSection } from '../src/domain/windErrors';
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-export const signed = (x: number): string => (x > 0 ? `+${x}` : x < 0 ? `−${-x}` : '0');
-
-/** The y step for a panel whose tallest bar is `max`. */
-export const yStep = (max: number): number => (max <= 10 ? 2 : max <= 25 ? 5 : max <= 60 ? 10 : max <= 150 ? 25 : 50);
-
-/** The line above each panel. */
-export const panelLine = (h: Histogram): string =>
-  `n ${h.n} · median ${h.median == null ? '—' : signed(h.median)} ${h.unit} · mean ${h.mean == null ? '—' : signed(h.mean)} ${h.unit} · ${h.above} above, ${h.below} below`;
 
 export function histogramGridSvg(o: {
   section: WindErrorSection;
@@ -52,7 +44,7 @@ export function histogramGridSvg(o: {
       const xOf = (v: number) => x0 + ((v - h.lo) / h.bin + 0.5) * bw;
       const yOf = (c: number) => y0 + PH - (c / top) * PH;
       if (ri === 0) parts.push(`<text class="h" x="${x0}" y="${MT - 32}">${esc(h.title)}</text>`);
-      parts.push(`<text class="s" x="${x0}" y="${y0 - 10}">${esc(panelLine(h))}</text>`);
+      parts.push(`<text class="s" x="${x0}" y="${y0 - 10}">${esc(histogramLine(h))}</text>`);
       for (let c = step; c <= top; c += step) {
         parts.push(`<line class="grid" x1="${x0}" x2="${x0 + PW}" y1="${yOf(c)}" y2="${yOf(c)}"/>`);
         parts.push(`<text class="t" x="${x0 - 6}" y="${yOf(c) + 4}" text-anchor="end">${c}</text>`);
