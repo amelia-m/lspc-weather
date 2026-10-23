@@ -67,6 +67,7 @@ for (const r of instants) {
   out.push(`speed (kt, forecast − reported): ${sp(r.speed, 'kt')}; means ${r.speedMeans?.fc} vs ${r.speedMeans?.obs}`);
   out.push(`  by UTC hour: ${r.speedByUtcHour.map((h) => `${h.hour}:${h.mean}`).join(' ')}`);
   out.push(`gust, reported (${r.gustReported.hours} of ${r.gustReported.of} hours): ${sp(r.gustWhenReported, 'kt')}`);
+  out.push(`  forecast above / equal / below: ${r.gustSide.above} / ${r.gustSide.equal} / ${r.gustSide.below}`);
   out.push(`gust, none reported, forecast gust − reported speed: ${sp(r.gustWhenNone, 'kt')}`);
   out.push(`direction, reported under 10 kt: ${sp(r.direction.under10kt, '°')}`);
   out.push(`direction, reported 10 kt or more: ${sp(r.direction.from10kt, '°')}`);
