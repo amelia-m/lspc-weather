@@ -14,6 +14,7 @@ import {
 import { fetchTafChain, type TafStationRef } from './tafChain';
 import { TAF_RELAY_URL, tafRelayUrlFor } from '../config/tafRelay';
 import { interpolateWindsAloft } from '../domain/windsAloft';
+import { newerGridpoint } from '../domain/gridpointFreshness';
 import type {
   CurrentConditions,
   DailyPoint,
@@ -66,9 +67,34 @@ interface GridpointDeps {
   clearCache: (lat: number, lon: number) => void;
 }
 
+/** The newest gridpoint shown so far, per URL, for fetchFreshGrid. */
+const heldGrids = new Map<string, RawGridpoint>();
+
+/** For tests: forget the copies held by fetchFreshGrid. */
+export function resetHeldGrids(): void {
+  heldGrids.clear();
+}
+
+/**
+ * The gridpoint, asked of NWS on every refresh, never older than the copy
+ * already shown (docs/nws-gridpoint-age.md). NWS sends it with a `max-age`
+ * of up to an hour, counted down to its edge copy's expiry, and a browser
+ * left to its default answers the app's ten-minute refresh from that copy
+ * without asking (seen in Chromium on 2026-10-23). The edges hold copies
+ * of different ages, so a browser pinned to one stayed behind a newer
+ * forecast another edge already served. `no-cache` revalidates instead: a
+ * 304 when nothing changed. A request can still reach an older edge copy,
+ * so the newer of that and the held copy is kept (newerGridpoint).
+ */
+export async function fetchFreshGrid(url: string): Promise<RawGridpoint> {
+  const grid = newerGridpoint(heldGrids.get(url) ?? null, await fetchJson<RawGridpoint>(url, { cache: 'no-cache' }));
+  heldGrids.set(url, grid);
+  return grid;
+}
+
 const defaultGridpointDeps: GridpointDeps = {
   resolve: resolveGridpointUrl,
-  fetchGrid: (url) => fetchJson<RawGridpoint>(url),
+  fetchGrid: fetchFreshGrid,
   clearCache: clearGridpointCache,
 };
 

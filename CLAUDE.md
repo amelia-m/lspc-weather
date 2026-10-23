@@ -153,6 +153,16 @@ precisely because they were colour and text rather than flags.
   records read 2026-10-09). `mesonet.agron.iastate.edu` is on the sandbox
   allowlist since 2026-09-29, so the IEM path runs from here (the usairnet
   comparison reads both feeds and logs which served).
+- **The NWS gridpoint is fetched with `cache: 'no-cache'`, and the newer
+  copy is kept** (`fetchFreshGrid`, `newerGridpoint`, since 2026-10-23).
+  NWS sends it with a `max-age` up to an hour, and Chromium answered the
+  app's ten-minute refresh from its disk cache, pinned to one edge copy
+  while other edges served a newer forecast. Replayed on 13 days of
+  samples, that put the dashboard behind the newest known forecast at
+  14.4% of refreshes; revalidating with the guard, 6.0%. Without the
+  guard, edges holding older copies would step it back about once or
+  twice a day. A cache-busting query parameter is not a way past the
+  edges: the API answers it with a 400. See docs/nws-gridpoint-age.md.
 - **Offutt's TAF comes through a relay of the maintainer's, once it is
   set** (`relay/`, a Cloudflare Worker; `TAF_RELAY_URL` in
   `src/config/tafRelay.ts`, null until deployed; docs/taf-relay.md). The

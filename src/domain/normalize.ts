@@ -519,6 +519,8 @@ interface GridProp {
 }
 export interface RawGridpoint {
   properties: {
+    /** When the forecast was made (ISO 8601); newerGridpoint compares it. */
+    updateTime?: string;
     skyCover?: GridProp;
     ceilingHeight?: GridProp;
     visibility?: GridProp;
