@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { DEFAULT_THRESHOLDS } from '../src/config/thresholds';
 import { SITE } from '../src/config/site';
-import { pairGusts, summarizeGusts, type GroupMean } from '../src/domain/ndfdGust';
+import { pairGusts, pairNdfdWind, summarizeGusts, summarizeNdfdWind, type GroupMean } from '../src/domain/ndfdGust';
 import { loadKpmvReports, loadNdfdWind } from './keptInputs';
 
 const args = process.argv.slice(2);
@@ -95,4 +95,14 @@ for (const s of summary) {
   );
   console.log('');
 }
-console.log(JSON.stringify(summary));
+// Speed and direction, as the kept reading's table gives them.
+const windRows = pairNdfdWind(wind, metars).map((r) => ({ ...r, pairs: r.pairs.filter((p) => inWindow(p.t)) }));
+const windSummary = summarizeNdfdWind(windRows);
+for (const w of windSummary) {
+  console.log(
+    `== ${w.label}, speed and direction: ${w.hours} hours; speed mean ${signed(w.speed?.mean ?? null)} kt, median miss ${w.speed?.medianAbs}, p90 ${w.speed?.p90Abs}; direction mean ${signed(w.dir?.mean ?? null)}°, median miss ${w.dir?.medianAbs}° (${w.dir?.n} hours)`,
+  );
+  console.log(`  speed by UTC block: ${w.speedByUtcBlock.map((b) => `${b.key} ${signed(b.mean)} (${b.n})`).join(', ')}`);
+}
+console.log('');
+console.log(JSON.stringify({ gust: summary, wind: windSummary }));

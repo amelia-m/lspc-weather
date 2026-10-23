@@ -29,6 +29,17 @@ April, so this sets six months of it against KPMV.
   a month at a time from the sandbox (about 6 GB and a minute and a half a
   month); 36,857 records in
   `data/parity/ndfd-wgust-2026-04-01-to-2026-10-22.jsonl.gz`.
+- **The wind speed and direction**, added the same evening (`PARTS=wspd,wdir`;
+  headers `YCUZ98`, `wmo/wspd/`, and `YBUZ98`, `wmo/wdir/`; about 57 and
+  33 MB a file, about four minutes a month from the sandbox): the same 819
+  issuances, 36,857 speed and 36,858 direction records in
+  `data/parity/ndfd-wind-2026-04-01-to-2026-10-22.jsonl.gz`. The API's
+  `windSpeed` and `windDirection` matched the archive at 42 of 42 hours
+  on 2026-10-13 too. One more file was cut short in the archive:
+  `YCUZ98_KWBN_202610070647` (speed, 2026-10-07 06:47Z), 45 hours kept
+  and marked. A direction file is sometimes stamped a minute before its
+  speed file (00:46Z against 00:47Z), so each element is picked on its
+  own, as the kept reading picks them.
 - **The reports:** KPMV's, 14,363 from 2026-04-01 to 2026-10-22, from the
   archives already kept (the drop-zone cloud-cover archive to 10-09, the
   weekly refresh's `metar-*`, and the kept-forecast window's).
@@ -42,7 +53,7 @@ April, so this sets six months of it against KPMV.
   four files a day, 0.9 to 12.2 hours at the latest issuance; the
   dashboard reads an API that updates about hourly.
 
-`npx tsx scripts/nwsGustArchive.ts --gust data/parity/ndfd-wgust-*.jsonl.gz --reports <the report archives>`
+`npx tsx scripts/nwsGustArchive.ts --ndfd data/parity/ndfd-wgust-*.jsonl.gz data/parity/ndfd-wind-*.jsonl.gz --reports <the report archives>`
 prints it all, `--from`/`--to` for a window.
 
 ## First, the archive against the kept reading
@@ -98,21 +109,66 @@ and 51/37/21). By six-hour block of UTC the mean stayed between +1.3 and
 
 **Against the Student profile's limit.** The forecast wind flag reads
 the higher of the forecast wind and gust against the profile's caution,
-BSR 2-1 H's 14 mph read as 12 kt. Only the gust was fetched here. In the
-kept forecasts the gust was never under the wind in whole knots: 34,149
-hour-values in 186 snapshots, 2026-10-13 to 10-23, equal in 149. Over
-those days, then, the gust decided the flag; over the six months that
-was not checked, and an hour with the wind over the gust would make the
-flag fire more often than counted here, not less. At the latest issuance
-the forecast gust was at or over 12 kt in 2,477 of 4,789 hours. KPMV's report near the hour was at or over
+BSR 2-1 H's 14 mph read as 12 kt, and so does this count. Over the six
+months the forecast gust was never under the forecast wind in whole
+knots: 0 of 4,789 hours at the latest issuance, 0 of 4,784 and 0 of 4,766
+at the other leads (and 0 of 34,149 hour-values in the kept forecasts,
+2026-10-13 to 10-23). So the gust decided it. At the latest issuance
+the forecast was at or over 12 kt in 2,477 of 4,789 hours. KPMV's report near the hour was at or over
 12 kt (the higher of its wind and gust, as the report's flag reads it) in
 1,014 of those, and in 41 more the report was at or over 12 kt with the
 forecast gust under it: 1,055 hours the report reached the figure. So
-over these months the forecast gust was at the figure in about 2.3 hours
+over these months the forecast was at the figure in about 2.3 hours
 for each hour the report reached it, and under it in about one in 25 of
-those (41 of 1,055). A report covers only the minutes before it; the station
+those (41 of 1,055). At 6 and 24 hours ahead: 2,451 and 2,402 hours, the
+report too in 1,001 and 985, the report alone in 49 and 59. A report covers only the minutes before it; the station
 may reach the figure at other minutes of the hour, so "reached" here
 counts less than the station did.
+
+## The wind speed and direction, six months
+
+The same pairing for the speed and direction (`pairNdfdWind`,
+`summarizeNdfdWind`), first over the kept window, where it gives the
+kept reading again (speed −0.74 kt at the latest issuance against the
+kept −0.78; the blocks −0.74, −1.48, −0.82 and 0 kt against −0.76, −1.45,
+−0.80 and −0.17; direction +10.3° against +11.8° and +7.2° by speed),
+then over the six months:
+
+| | latest issuance | 6 h or more ahead | 24 h or more ahead |
+|---|---|---|---|
+| hours | 4,791 | 4,786 | 4,768 |
+| speed, mean / median miss / p90 | +0.13 / 2 / 5 kt | +0.12 / 2 / 5 kt | +0.02 / 2 / 5 kt |
+| speed, 00–05Z (7 pm–1 am CDT) | +0.19 | +0.15 | +0.10 |
+| speed, 06–11Z (1–7 am) | −0.48 | −0.41 | −0.59 |
+| speed, 12–17Z (7 am–1 pm) | +0.32 | +0.25 | +0.20 |
+| speed, 18–23Z (1–7 pm) | +0.49 | +0.48 | +0.38 |
+| direction, mean / median miss | +8.7° / 10° | +8.5° / 20° | +8.1° / 20° |
+
+**The speed was centred over the six months**, a few tenths low in the
+small hours and a few tenths high in the afternoon. The kept reading's
+"a little under a knot low" was the October window's: over the same days
+the archive says the same, over six months it does not. **The direction
+sat clockwise** by about 8° at every lead, as in the kept reading.
+
+The hours here (4,791) are the hours with a forecast and a report; the
+page's speed charts count the 4,789 with a speed on both sides.
+
+## On the #wind-errors page
+
+Since 2026-10-23 the page has a section for this archive, "NWS forecasts
+from NOAA’s archive, against KPMV", between the kept forecasts and
+Open-Meteo's archive, a row per lead (`nwsArchiveSection`,
+`src/domain/windErrors.ts`), read exactly as the kept section is. The
+weekly ceiling data refresh fetches each week's speed, gust and
+direction (`PARTS=wspd,wgust,wdir`, to `data/parity/ndfd-wind-*`) from the
+newest issuance kept of the three (`earliestNewest`), and rebuilds the
+page with them; a failure there, like Open-Meteo's, leaves the page's file
+as published and does not hold back the ceiling commit.
+
+![Histograms of the NWS forecast from NOAA's archive minus KPMV's reports, at three leads](img/nws-archive-wind-errors-2026-10-22.svg)
+
+The figure is this reading's, to 2026-10-22, kept as it is; the page is
+the current view.
 
 ## What this says for the card note
 

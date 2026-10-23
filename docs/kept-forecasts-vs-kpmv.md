@@ -101,6 +101,10 @@ was −0.17 kt at the latest issuance, +0.15 at 6 hours ahead and −0.40 at
 24 hours ahead. The surface-wind sampler found the same lean with a
 different pairing: NWS's forecast read when each report was newest, 742
 reports, signed mean −0.75 kt (docs/surface-wind-sources.md).
+Over six months the same forecast, read from NOAA's archive the same
+way, was centred: +0.13 kt at the latest issuance, −0.48 at 06–11Z and
++0.49 at 18–23Z, so the lean here was October's (docs/nws-gust-archive.md,
+"The wind speed and direction, six months").
 
 **Gust.** In the hours KPMV reported a gust, the forecast's was higher, by
 3 to 4 kt on average. The sampler had +2.1 kt over 229 gusting reports.
@@ -135,7 +139,11 @@ unconfirmed. The surface-wind sampler, pairing differently, found the
 same side with less size: +2.1 kt over 229 gusting reports
 (docs/surface-wind-sources.md). Fifty-three hours over a handful of windy
 days is a small sample, so the size of the gap is not settled. The side
-it falls on was the same at all three leads.
+it falls on was the same at all three leads. Six months from NOAA's
+archive, read the same way, settle more of it: above in 605 of 964
+gusting hours, below in 266, +1.5 kt on average, the size moving a lot
+from day to day and running low on the strongest gusts
+(docs/nws-gust-archive.md).
 
 **Direction.** Median miss 10° at every lead, the smallest a 10° figure
 can show. The forecast sat clockwise of the report on average, by 7 to
@@ -229,6 +237,7 @@ npx tsx scripts/windErrorsData.ts --kept <dir>/data \
   --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
             data/parity/cloud-cover-2*.jsonl.gz \
   --om data/parity/om-wind-*.jsonl.gz \
+  --ndfd data/parity/ndfd-wgust-*.jsonl.gz data/parity/ndfd-wind-*.jsonl.gz \
   --sample data/parity/surfacewind-*.jsonl.gz \
   --out public/wind-errors/summary.json --check-against public/wind-errors/summary.json \
   --figures docs/img

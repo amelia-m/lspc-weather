@@ -23,7 +23,7 @@ on:
         description: Last day, YYYY-MM-DD
         required: true
       parts:
-        description: PARTS (metar, om, ndfd, cig, omwind; comma-separated, spaces dropped)
+        description: PARTS (metar, om, ndfd, cig, omwind, wgust, wspd, wdir; comma-separated, spaces dropped)
         required: true
         default: om
       sites:

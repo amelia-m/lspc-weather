@@ -328,3 +328,40 @@ export function summarizeGusts(
     };
   });
 }
+
+export interface WindRowSummary {
+  label: string;
+  hours: number;
+  /** Forecast minus reported speed, whole knots (`windDiffs`). */
+  speed: Spread | null;
+  /** The same by six-hour block of UTC, the kept reading's blocks. */
+  speedByUtcBlock: { key: string; n: number; mean: number | null }[];
+  /** Forecast minus reported direction, the short way round, where the
+   *  report gave one. */
+  dir: Spread | null;
+}
+
+/** The archive's speed and direction against KPMV, per lead row, as the
+ *  kept reading's table gives them (docs/kept-forecasts-vs-kpmv.md), so the
+ *  two can be set side by side over the same window. */
+export function summarizeNdfdWind(rows: readonly { label: string; pairs: readonly InstantPair[] }[]): WindRowSummary[] {
+  return rows.map(({ label, pairs }) => {
+    const d = pairs.map((p) => ({ t: p.t, ...windDiffs(p) }));
+    const blocks = new Map<string, number[]>();
+    for (const x of d) {
+      if (x.speed == null) continue;
+      const b = Math.floor(new Date(x.t).getUTCHours() / 6) * 6;
+      const key = `${String(b).padStart(2, '0')}–${String(b + 5).padStart(2, '0')}Z`;
+      blocks.set(key, [...(blocks.get(key) ?? []), x.speed]);
+    }
+    return {
+      label,
+      hours: pairs.length,
+      speed: spreadOf(d.flatMap((x) => (x.speed == null ? [] : [x.speed]))),
+      speedByUtcBlock: [...blocks]
+        .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+        .map(([key, xs]) => ({ key, n: xs.length, mean: mean(xs) })),
+      dir: spreadOf(d.flatMap((x) => (x.dir == null ? [] : [x.dir]))),
+    };
+  });
+}

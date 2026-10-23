@@ -254,8 +254,9 @@ are left unlinked are in [`src/config/simGlossary.ts`](src/config/simGlossary.ts
 A page, **How far the wind forecasts were from KPMV** (`#wind-errors`), draws
 forecast minus reported surface wind as histograms: speed, gust and
 direction, for the NWS forecasts kept hourly (by how far ahead they were
-made), for Open-Meteo's own archive of its 10 m wind since April (the start
-of each run and a day earlier), and for Open-Meteo's three 10 m winds from
+made), for the same NWS forecast since April from NOAA's archive of it,
+for Open-Meteo's own archive of its 10 m wind since April (the start of
+each run and a day earlier), and for Open-Meteo's three 10 m winds from
 the surface-wind sample.
 Counts only, like the page below.
 
