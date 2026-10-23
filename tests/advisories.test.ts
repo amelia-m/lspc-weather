@@ -33,6 +33,7 @@ const hourAhead = (hoursAhead: number, over: Partial<HourlyPoint> = {}): HourlyP
   skyCoverPct: null,
   ceilingFtAgl: null,
   ceilingForecast: true,
+  visibilityForecast: true,
   visibilitySm: null,
   windSpeedKt: null,
   windGustKt: null,

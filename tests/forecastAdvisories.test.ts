@@ -19,6 +19,7 @@ const at = (utcHour: number, wind: number, gust: number | null): HourlyPoint => 
   skyCoverPct: null,
   ceilingFtAgl: null,
   ceilingForecast: true,
+  visibilityForecast: true,
   visibilitySm: null,
   windSpeedKt: wind,
   windGustKt: gust,

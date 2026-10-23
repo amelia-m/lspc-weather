@@ -66,27 +66,34 @@ export function observedFlightCategory(c: CurrentConditions): FlightCategory | n
 }
 
 /** The category when the ceiling is unknown: what visibility alone can
- *  establish (MVFR, IFR or LIFR), never VFR. */
-function withoutCeiling(visibilitySm: number | null): FlightCategory | null {
+ *  establish (MVFR, IFR or LIFR), never VFR. Shared with the TAF card's
+ *  periods (`periodFlightCategory`). */
+export function withoutCeiling(visibilitySm: number | null): FlightCategory | null {
   const byVisibility = flightCategory(null, visibilitySm);
   return byVisibility === 'VFR' ? null : byVisibility;
 }
 
 /**
- * Flight category for a forecast hour from the NWS gridpoint. Inside the
- * ceiling forecast a null ceiling is NWS's "no ceiling" and reads as
- * `flightCategory` reads it. Past it the ceiling is unknown, as for a
- * report with no sky group (`observedFlightCategory`): visibility can still
- * establish MVFR, IFR or LIFR, not VFR. The two elements have ended at the
- * same hour in every forecast read to 2026-10-23
+ * Flight category for a forecast hour from the NWS gridpoint. VFR needs both
+ * halves (AIM 7-1-7: a ceiling above 3,000 ft AND visibility over 5 miles),
+ * so it is given only where both are forecast; inside the ceiling forecast
+ * a null ceiling is NWS's "no ceiling". With one half forecast, that half
+ * can still establish MVFR, IFR or LIFR, as for a report with no sky group
+ * (`observedFlightCategory`); with neither, nothing. The two elements have
+ * ended at the same hour in every forecast read to 2026-10-23
  * (docs/ceiling-heights.md, "The hourly table's flight category"), so this
  * only changes anything if they part.
  */
 export function forecastFlightCategory(
-  h: Pick<HourlyPoint, 'ceilingFtAgl' | 'ceilingForecast' | 'visibilitySm'>,
+  h: Pick<HourlyPoint, 'ceilingFtAgl' | 'ceilingForecast' | 'visibilitySm' | 'visibilityForecast'>,
 ): FlightCategory | null {
-  if (h.ceilingForecast) return flightCategory(h.ceilingFtAgl, h.visibilitySm);
-  return withoutCeiling(h.visibilitySm);
+  const vis = h.visibilityForecast ? h.visibilitySm : null;
+  if (h.ceilingForecast && vis != null) return flightCategory(h.ceilingFtAgl, vis);
+  if (h.ceilingForecast) {
+    const byCeiling = ceilingCategory(h.ceilingFtAgl);
+    return byCeiling === 'VFR' ? null : byCeiling;
+  }
+  return withoutCeiling(vis);
 }
 
 export const CATEGORY_LABEL: Record<FlightCategory, string> = {
