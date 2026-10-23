@@ -14,19 +14,28 @@ import { SourceLinks } from './common/SourceLinks';
  * or the NWS gridpoint as Open-Meteo's.
  * #parity shows the winds comparison, and its context notes quote other
  * Open-Meteo figures, so it says that. #wind-errors shows only Open-Meteo's
- * 10 m wind, reworked into differences from KPMV's reports, so it says that.
+ * 10 m wind, reworked into differences from KPMV's reports, so it says that,
+ * naming only the sections it has (`surface`: the archive's, the sample's).
  */
-export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' | 'surface' }): JSX.Element {
+export function OpenMeteoCredit({
+  scope,
+  surface = { archive: true, sample: true },
+}: {
+  scope: 'dashboard' | 'winds' | 'surface';
+  surface?: { archive: boolean; sample: boolean };
+}): JSX.Element {
   const credit = (
     <SourceLinks sources={[{ ...DATA_SOURCES.openMeteo, label: 'Weather data by Open-Meteo.com' }]} />
   );
   if (scope === 'surface') {
+    const archive = 'the 10\u00a0m wind in the archived forecasts\u2019 charts';
+    const sample = 'the hourly, 15-minute and current 10\u00a0m wind in the surface-wind sample\u2019s charts';
+    const what = [surface.archive && archive, surface.sample && sample].filter(Boolean).join(' and ');
     return (
       <>
-        {credit}: the 10&nbsp;m wind in the archived forecasts&rsquo; charts and the hourly, 15-minute
-        and current 10&nbsp;m wind in the surface-wind sample&rsquo;s. This page shows it reworked: each
-        value less KPMV&rsquo;s reported wind (the archived forecasts first rounded to whole knots), binned
-        to the knot or to ten degrees.
+        {credit}: {what}. This page shows it reworked: each value less KPMV&rsquo;s reported wind
+        {surface.archive && ' (the archived forecasts first rounded to whole knots)'}, binned to the knot or to
+        ten degrees.
       </>
     );
   }

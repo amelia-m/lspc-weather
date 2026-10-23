@@ -143,7 +143,7 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
       </p>
       {(archive || sample) && (
         <p className="muted small">
-          <OpenMeteoCredit scope="surface" />
+          <OpenMeteoCredit scope="surface" surface={{ archive: archive != null, sample: sample != null }} />
         </p>
       )}
 

@@ -17,9 +17,10 @@ name: Ceiling data refresh
 # (data/parity/om-wind-*) for the page's Open-Meteo section.
 # A rebuild that holds less than the published file is not copied in
 # (windErrorsShrinkage), as the ceiling file's check does. The two are
-# independent: a wind-side failure (the Open-Meteo fetch or the rebuild)
-# leaves the wind files as they were, the ceiling data is still committed,
-# and the run then fails so it is seen.
+# independent: a wind-side failure (no Open-Meteo archive to start from,
+# its fetch, or the rebuild) leaves the page's file as published, the
+# ceiling data and whatever was fetched are still committed, and the run
+# then fails so it is seen.
 # The docs' wind figures are dated readings and are not redrawn here.
 #
 # The rules are src/domain/ceilingRefresh.ts (pure, tested) and their
@@ -28,7 +29,8 @@ name: Ceiling data refresh
 # once; it ends on the last whole UTC day, so no day is fetched half-done; a
 # fetch that brings nothing newer fails the run; and a rebuilt file that
 # holds less than the published one fails the run. Nothing is committed from
-# a failed run.
+# a run whose ceiling side failed; a wind-side failure fails the run after
+# the commit, as above.
 #
 # Only a run on main commits. A run dispatched on another branch fetches and
 # rebuilds from that branch's files and scripts, as a trial, and keeps what
@@ -73,8 +75,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      # ecCodes decodes the NDFD GRIB2 files; the script imports it whatever
-      # PARTS says (cloud-cover-fetch.yml installs it the same way).
+      # ecCodes decodes the NDFD GRIB2 files, which the ceiling part reads
+      # (cloud-cover-fetch.yml installs it the same way).
       - run: pip install eccodes eccodeslib
 
       - name: Find the days to fetch
@@ -212,7 +214,9 @@ jobs:
           set -euo pipefail
           git config user.name "ceiling-data-refresh workflow"
           git config user.email "actions@users.noreply.github.com"
-          # The wind files are unchanged when their fetch or rebuild failed, and then add nothing.
+          # The page's wind file is unchanged when its rebuild failed. An
+          # Open-Meteo archive this run fetched is kept even then: it is
+          # what the source served, and the next window starts after it.
           git add data/parity/ceiling-*.jsonl.gz data/parity/metar-*.jsonl.gz public/ceiling-errors/ceiling-errors.json \
             data/parity/om-wind-*.jsonl.gz public/wind-errors/summary.json
           git commit -m "Ceiling and wind data to $END" \
@@ -227,11 +231,15 @@ jobs:
       # Last, after the ceiling data is committed: a failed Open-Meteo fetch
       # or wind rebuild still fails the run, so it is not missed.
       - name: Fail if the wind side failed
-        if: steps.omwind.outcome == 'failure' || steps.wind.outcome == 'failure'
+        if: >-
+          steps.window.outputs.om_wind_missing == 'true' ||
+          steps.omwind.outcome == 'failure' || steps.wind.outcome == 'failure'
         env:
+          MISSING: ${{ steps.window.outputs.om_wind_missing }}
           OMWIND: ${{ steps.omwind.outcome }}
           WIND: ${{ steps.wind.outcome }}
         run: |
+          [ "$MISSING" = true ] && echo "::error::no Open-Meteo wind archive under data/parity/om-wind-*, so nothing was fetched for it"
           [ "$OMWIND" = failure ] && echo "::error::the Open-Meteo wind fetch failed (see its step); the next run starts from the same day"
           [ "$WIND" = failure ] && echo "::error::the #wind-errors rebuild failed (see its step); its file was left as published"
           exit 1

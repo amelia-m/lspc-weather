@@ -448,7 +448,14 @@ fetches each week's (`.github/workflows/ceiling-data-refresh.yml`).
   before ("a day earlier"). Both resolved to the same cell the dashboard's
   live request does (40.8628, −96.1168), and served every hour from
   2026-04-01 00Z to 2026-10-22 23Z, 4,920 each, with no nulls. Kept in
-  `data/parity/om-wind-2026-04-01-to-2026-10-22.jsonl.gz`.
+  `data/parity/om-wind-2026-04-01-to-2026-10-22.jsonl.gz`. The page and
+  the figure give dates in the drop zone's time, so the section starts on
+  Mar 31 there: its first paired hour, 01Z on April 1, is the evening
+  before in Central time. From the sandbox, one of the day's requests to
+  the archive came back with a body that was not JSON and the script
+  stopped; asked again a minute later it answered. The weekly run fails
+  its wind side on such an answer and starts from the same day the next
+  week.
 - **How it was paired.** As the kept NWS forecasts are
   (docs/kept-forecasts-vs-kpmv.md): KPMV's report within 10 minutes of
   each hour, the nearest one, from every archive of KPMV's reports under

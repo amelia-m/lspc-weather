@@ -277,8 +277,9 @@ published file the same way, and fetches Open-Meteo's archived 10 m wind
 for its Open-Meteo section from the newest hour kept, on the same window
 rule (`omWindNewest`: the earlier of its two runs' newest;
 docs/surface-wind-sources.md, "Open-Meteo's archive"). A wind-side
-failure, the fetch or the rebuild, leaves the wind files as they were and
-does not hold back the ceiling commit; a last step then fails the run. The steps that need more than a shell line are
+failure (no Open-Meteo archive to start from, its fetch, or the rebuild)
+leaves the page's wind file as published and does not hold back the
+ceiling commit; a last step then fails the run. The steps that need more than a shell line are
 `scripts/ceilingRefresh.ts`; the rules are `src/domain/ceilingRefresh.ts`,
 pure, and tested in `tests/ceilingRefresh.test.ts`. Each test was seen to
 fail with the behaviour it names broken (21 breaks, one at a time,

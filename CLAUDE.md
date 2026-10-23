@@ -669,8 +669,9 @@ the `#wind-errors` page's rebuilt file with them, and dispatches the deploy. It 
 brings nothing newer or either rebuilt file holds less than the published
 one (`src/domain/ceilingRefresh.ts`, `windErrorsShrinkage`); a run on
 another branch commits nothing. The wind side is independent: when the
-Open-Meteo fetch or the wind rebuild fails, the wind files are left as
-they were, the ceiling data still commits, and a last step fails the run. Its rules and why are in docs/ceiling-heights.md, "The chart".
+Open-Meteo fetch or the wind rebuild fails, the page's wind file is left
+as published, the ceiling data (and any Open-Meteo archive fetched) still
+commits, and a last step fails the run. Its rules and why are in docs/ceiling-heights.md, "The chart".
 
 usairnet's page is read by `src/domain/usairnet.ts`, tested against station
 blocks saved from the live pages (`tests/fixtures/usairnet/`). Its first

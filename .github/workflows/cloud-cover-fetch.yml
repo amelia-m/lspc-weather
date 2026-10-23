@@ -43,8 +43,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      # ecCodes decodes the NDFD part; the script imports it whatever PARTS
-      # says.
+      # ecCodes decodes the NDFD parts (ndfd, cig); the script refuses them
+      # without it, and runs the others either way.
       - run: pip install eccodes eccodeslib
       - name: Fetch
         env:
