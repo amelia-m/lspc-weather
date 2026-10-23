@@ -8,17 +8,21 @@
  *     --kept <forecast-archive>/data \
  *     --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz \
  *     --sample data/parity/surfacewind-*.jsonl.gz \
- *     --out public/wind-errors/summary.json --figures docs/img \
- *     [--check-against public/wind-errors/summary.json]
+ *     --out public/wind-errors/summary.json --check-against public/wind-errors/summary.json \
+ *     [--figures docs/img]
  *
  * --reports takes KPMV's reports for the kept window (scripts/keptInputs.ts),
- * --sample the surface-wind sampler's logs. The figures are
- * docs/img/kept-wind-errors.svg and docs/img/surface-wind-errors.svg
- * (scripts/histogramGrid.ts). Exits with an error, writing nothing, when
+ * --sample the surface-wind sampler's logs. --figures draws the docs'
+ * versions (scripts/histogramGrid.ts), named for the day of each section's
+ * last pair, `kept-wind-errors-<day>.svg` and `surface-wind-errors-<day>.svg`:
+ * a doc quotes the figures of one dated reading, so a new reading is a new
+ * file beside it, never the one the doc's text describes. The weekly
+ * refresh writes only the page's file. Exits with an error, writing nothing, when
  * either set pairs nothing (a wrong folder should not publish an empty
  * page), or, with --check-against, when the rebuild would hold less than
- * that published file (`windErrorsShrinkage`): the weekly refresh,
- * .github/workflows/ceiling-data-refresh.yml, runs it that way.
+ * that published file (`windErrorsShrinkage`) or the file is not there:
+ * the weekly refresh, .github/workflows/ceiling-data-refresh.yml, runs it
+ * that way, and so should a rebuild by hand.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -49,7 +53,9 @@ const [out] = flag('--out');
 const [figures] = flag('--figures');
 const [checkAgainst] = flag('--check-against');
 if (!kept || reports.length === 0 || sample.length === 0 || !out) {
-  console.error('usage: windErrorsData.ts --kept <dir> --reports <files> --sample <files> --out <json> [--figures <dir>]');
+  console.error(
+    'usage: windErrorsData.ts --kept <dir> --reports <files> --sample <files> --out <json> [--check-against <published json>] [--figures <dir>]',
+  );
   process.exit(2);
 }
 
@@ -69,7 +75,11 @@ for (const s of [nws, surface]) {
 }
 
 const data: WindErrorsData = { generatedAt: new Date().toISOString(), sections: [nws, surface] };
-if (checkAgainst && existsSync(checkAgainst)) {
+if (checkAgainst) {
+  if (!existsSync(checkAgainst)) {
+    console.error(`--check-against ${checkAgainst}: no such file; nothing written`);
+    process.exit(1);
+  }
   const less = windErrorsShrinkage(JSON.parse(readFileSync(checkAgainst, 'utf8')) as WindErrorsData, data);
   if (less.length) {
     console.error(`the rebuild holds less than ${checkAgainst}; nothing written:\n  ${less.join('\n  ')}`);
@@ -85,7 +95,7 @@ if (figures) {
   const leads = NWS_ISSUANCES.map((i) => i.minLeadH).join(', ').replace(/, (\d+)$/, ' and $1');
   const files: [string, string][] = [
     [
-      'kept-wind-errors.svg',
+      `kept-wind-errors-${(nws.last ?? '').slice(0, 10)}.svg`,
       histogramGridSvg({
         section: nws,
         title: `Kept NWS forecasts minus KPMV's reports, ${spanDay(nws.first)} to ${spanDay(nws.last)}`,
@@ -98,7 +108,7 @@ if (figures) {
       }),
     ],
     [
-      'surface-wind-errors.svg',
+      `surface-wind-errors-${(surface.last ?? '').slice(0, 10)}.svg`,
       histogramGridSvg({
         section: surface,
         title: `Surface-wind sample: forecasts minus KPMV's reports, ${spanDay(surface.first)} to ${spanDay(surface.last)}`,
