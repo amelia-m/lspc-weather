@@ -1,0 +1,128 @@
+name: Run-split sample (temporary)
+
+# Until 2026-10-27T06:00Z, then self-skipping: every four minutes, ask Mark
+# Schulze's Winds Aloft for both his hour in progress and his next hour, set
+# each against this app's Open-Meteo answer for the same valid hour, and set
+# two app requests a moment apart against each other
+# (scripts/runSplit.live.ts, through scripts/runSplitLoop.sh). The question
+# is why the two tables are sometimes on different forecast runs for the same
+# hour: the comparison only ever read his next hour after half past, so it
+# could not tell a cause in his next-hour request from one at a time of the
+# clock (docs/run-split.md, docs/open-questions.md).
+#
+# Measurement only: nothing here changes what the dashboard shows. The
+# records are uploaded as runsplit-* artifacts, which the #parity summary
+# (parity-*) never reads, kept 30 days; they are then archived under
+# data/parity/ and summarised with scripts/runSplitSummary.ts. Never fails.
+#
+# The surface-wind sampler's pattern (surface-wind-sample.yml): one job that
+# loops, in five one-hour slices uploaded as they finish, started every five
+# hours and queued end to end. Its schedule's minute differs from that
+# sampler's so the two do not start together.
+#
+# Delete this file once the window has ended and the records are archived.
+on:
+  schedule:
+    - cron: '17 */5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: run-split-sampler
+  cancel-in-progress: false
+
+env:
+  WINDOW_END: '2026-10-27T06:00:00Z'
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    # Five one-hour slices plus setup and uploads; GitHub's ceiling is 360.
+    timeout-minutes: 330
+    steps:
+      - name: Stop after the sampling window
+        id: window
+        shell: bash
+        run: |
+          if [ "$(date -u +%s)" -ge "$(date -u -d "$WINDOW_END" +%s)" ]; then
+            echo "past the window (ends $WINDOW_END); nothing to do"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.window.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.window.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.window.outputs.run == 'true'
+
+      - name: Sample, hour 1
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/runSplitLoop.sh 60 "runsplit-${{ github.run_id }}-${{ github.run_attempt }}-1.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-1
+          path: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-1.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 2
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/runSplitLoop.sh 60 "runsplit-${{ github.run_id }}-${{ github.run_attempt }}-2.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-2
+          path: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-2.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 3
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/runSplitLoop.sh 60 "runsplit-${{ github.run_id }}-${{ github.run_attempt }}-3.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-3
+          path: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-3.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 4
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/runSplitLoop.sh 60 "runsplit-${{ github.run_id }}-${{ github.run_attempt }}-4.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-4
+          path: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-4.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 5
+        if: always() && steps.window.outputs.run == 'true'
+        continue-on-error: true
+        run: scripts/runSplitLoop.sh 60 "runsplit-${{ github.run_id }}-${{ github.run_attempt }}-5.jsonl" "$WINDOW_END"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.window.outputs.run == 'true'
+        with:
+          name: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-5
+          path: runsplit-${{ github.run_id }}-${{ github.run_attempt }}-5.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true

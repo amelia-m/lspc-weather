@@ -300,6 +300,18 @@ copying explanation needs. One read gives only the time on whichever
 server answered, which can lag by minutes, or by a whole run while the
 copying goes on.
 
+**A sampler to separate the two, since 2026-10-23** (docs/run-split.md).
+The comparisons were too few: to 2026-10-22 the run metadata covered 9
+judged comparisons, 2 flagged. `.github/workflows/run-split-sample.yml`
+runs every four minutes until 2026-10-27T06:00Z. At every minute it asks
+the tool for both its hour in progress and its next hour, and sets each
+against the app's answer for the same valid hour. It also makes two app
+requests a moment apart, set against each other. A next-hour cause shows
+as the next-hour row high in both halves of the hour. A clock cause shows
+as both rows high in the same minutes, with the app disagreeing with
+itself there too. When the window ends, the records are archived and
+summarised, and the workflow deleted.
+
 ## Surface wind: which forecast source
 
 Open since 2026-10-09. Whether Open-Meteo's `minutely_15` or `current` 10 m
