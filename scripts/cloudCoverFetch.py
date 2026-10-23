@@ -34,6 +34,14 @@ Sources, each as read 2026-10-10:
           API's null), 9999 the grid's missing value; both are kept as
           given. The files come twice an hour; as for sky cover, the last
           in each of 00, 06, 12 and 18 Z, every step in the file.
+  wgust   NOAA's NDFD wind gust grids, the same archive and grid (WMO header
+          YWUZ98, wmo/wgust/, GRIB2 0/2/22, m/s), read 2026-10-23 for
+          docs/nws-gust-archive.md. The API's `windGust` matched the archive
+          at 42 of 42 hours at the drop zone on 2026-10-13
+          (scripts/ndfdApiCheck.py). About 50 MB a file, 48 a day; as for
+          sky cover, the last in each of 00, 06, 12 and 18 Z. Never in the
+          default; its records ('ndfd-wgust') go to their own archive,
+          data/parity/ndfd-wgust-*.
   om      Open-Meteo's cloud cover (total, low, mid, high) for the point the
           dashboard asks for, default model, from the Historical Forecast API
           (the start of each model run, stitched) and the Previous Runs API's
@@ -95,6 +103,7 @@ ISSUE_HOURS = (0, 6, 12, 18)
 NDFD_PARTS = {
     'ndfd': ('sky', 'YAUZ98', (0, 6, 1), 'ndfd', 'sky'),
     'cig': ('cig', 'YMUZ98', (0, 6, 13), 'ndfd-cig', 'cig'),
+    'wgust': ('wgust', 'YWUZ98', (0, 2, 22), 'ndfd-wgust', 'gust'),
 }
 
 
@@ -178,7 +187,16 @@ def ndfd_records(job: tuple[str, str]) -> list[dict]:
         out = []
         with open(tmp.name, 'rb') as f:
             while True:
-                h = eccodes.codes_grib_new_from_file(f)
+                try:
+                    h = eccodes.codes_grib_new_from_file(f)
+                except eccodes.PrematureEndOfFileError:
+                    # A file cut short in the archive itself: the gust's
+                    # 2026-09-28 00:47Z issuance ends inside its 48th
+                    # message, every time it is read. Keep the messages
+                    # before the break; the hours it loses fall to the
+                    # issuance before, as for a missing file.
+                    print(f'warning: {key} ends inside a message; kept {len(out)} records before it', file=sys.stderr)
+                    break
                 if h is None:
                     break
                 try:

@@ -172,6 +172,11 @@ project's repository under the maintainer's name, so it waits on the
 maintainer deciding to send it. Before writing the entry, read the README's
 list as it then stands for the format it uses.
 
+Open-Meteo's terms and licence were read on 2026-10-23
+(docs/open-meteo-terms.md). The site met them. The repository did not
+quite: its comparison docs, two figures and `data/parity/` archives held
+Open-Meteo data with no credit beside them, and each now has one.
+
 ## Settled: the DZ's coordinates now sit on the landing area
 
 Raised 2026-10-08 by the maintainer, from Mark Schulze's map: the app's
@@ -359,10 +364,22 @@ has `wmo/wspd/`, `wmo/wgust/` and `wmo/wdir/` beside `sky/` and `cig/`,
 and `wmo/wgust/2026/04/01/` holds hourly files (`YWAZ88_KWBN_…`, at :47).
 Read as the ceilings are (`scripts/cloudCoverFetch.py`, a new NDFD part),
 that would set six months of NWS gust forecasts against KPMV, the summer's
-storms included, instead of waiting for the keeper's windy days. Not yet
-checked: that the archived gust matches the API's `windGust` value for value,
-as was done for sky cover, or how the archive's issuances line up with the
-keeper's leads.
+storms included, instead of waiting for the keeper's windy days. The
+archived gust had already been checked against the API's `windGust`: 42
+of 42 hours at the drop zone on 2026-10-13 ("Forecasts kept for later",
+below); an earlier version of this note said otherwise.
+
+**Read 2026-10-23** (docs/nws-gust-archive.md): six months of it,
+2026-04-01 to 2026-10-22, 964 gusting hours at the latest issuance. Over
+the kept window it gives the kept reading again (47, 3 and 3 of 53). Over
+six months the side mostly holds (above in 605, the same in 93, below in
+266; +1.5 kt on average) but the size does not: of 111 gusty days, 54
+were within 2 kt on average, 42 more than 2 kt high and 15 more than 2 kt
+low, and on reported gusts of 23 kt or more the forecast ran low
+(−0.6 kt). At the Student profile's 12 kt, the forecast gust was at or
+over it in 2,477 hours and KPMV's report in 1,055, with 41 of those under
+in the forecast. A single figure for a card note would be right on
+average and wrong on the windiest days. Still the maintainer's call.
 
 ## Done: the #wind-errors page refreshes weekly
 

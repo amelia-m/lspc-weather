@@ -12,6 +12,7 @@ import type { KeptGridpointSnapshot } from '../src/domain/ceilingHeights';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import { parseSurfaceWindLines, type SurfaceWindRecord } from '../src/domain/surfaceWindSources';
 import { parseOmWindLines, type OmWindRecord } from '../src/domain/windErrors';
+import { parseNdfdGustLines, type NdfdGustRecord } from '../src/domain/ndfdGust';
 
 const read = (f: string): string => {
   const buf = readFileSync(f);
@@ -34,6 +35,12 @@ export function loadSurfaceWindRecords(files: readonly string[]): SurfaceWindRec
  *  record of an hour fetched twice. */
 export function loadOmWindRecords(files: readonly string[]): OmWindRecord[] {
   return files.flatMap((f) => parseOmWindLines(read(f)));
+}
+
+/** NDFD's gust records (scripts/cloudCoverFetch.py, PARTS=wgust), the
+ *  drop zone's, no-data fills dropped. */
+export function loadNdfdGustRecords(files: readonly string[]): NdfdGustRecord[] {
+  return files.flatMap((f) => parseNdfdGustLines(read(f)));
 }
 
 /** Every kept snapshot (`.json.gz`) under a folder, searched recursively. */
