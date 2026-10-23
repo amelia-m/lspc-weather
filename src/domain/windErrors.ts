@@ -2,10 +2,13 @@
  * "How far the wind forecasts were from KPMV": the data behind the
  * #wind-errors page, and the figures in the docs drawn from it.
  *
- * Two sets of pairs, each counted by the code that already counts it, so the
+ * Four sets of pairs, each counted by the code that already counts it, so the
  * page and the docs' tables agree:
  * - the NWS gridpoint forecasts the keeper saved hourly, by issuance lead
  *   (`pairInstants`, `windDiffs`; docs/kept-forecasts-vs-kpmv.md);
+ * - the same NWS forecast from NOAA's NDFD archive, back to 2026-04-01,
+ *   read the same way (`nwsArchiveSection`, `pairNdfdWind`;
+ *   docs/nws-gust-archive.md);
  * - Open-Meteo's own archive of its 10 m wind, the start of each run and the
  *   forecast made a day earlier, paired as the kept NWS forecasts are
  *   (`omArchiveSection`; docs/surface-wind-sources.md, "Open-Meteo's
@@ -141,7 +144,7 @@ export interface WindErrorRow {
 }
 
 export interface WindErrorSection {
-  id: 'nws-kept' | 'om-archive' | 'surface-sample';
+  id: 'nws-kept' | 'nws-archive' | 'om-archive' | 'surface-sample';
   title: string;
   /** What a bar counts: an hour of the kept forecasts, a report of the sample. */
   unitWord: 'hour' | 'report';
@@ -183,17 +186,32 @@ function span(times: readonly number[]): { first: string | null; last: string | 
   return { first: new Date(lo).toISOString(), last: new Date(hi).toISOString() };
 }
 
-/** The kept NWS forecasts, a row per issuance lead (the rows `pairInstants`
- *  was run for, in order). */
-export function nwsKeptSection(rows: readonly { label: string; pairs: readonly InstantPair[] }[]): WindErrorSection {
+/** An NWS section: a row per issuance lead, each pair read by `windDiffs`. */
+function nwsSection(
+  id: 'nws-kept' | 'nws-archive',
+  title: string,
+  rows: readonly { label: string; pairs: readonly InstantPair[] }[],
+): WindErrorSection {
   return {
-    id: 'nws-kept',
-    title: 'NWS forecasts kept hourly, against KPMV',
+    id,
+    title,
     unitWord: 'hour',
     ...span(rows.flatMap((r) => r.pairs.map((p) => p.t))),
     rows: rows.map((r) => rowOf(r.label, r.pairs.map((p) => windDiffs(p)))),
   };
 }
+
+/** The kept NWS forecasts, a row per issuance lead (the rows `pairInstants`
+ *  was run for, in order). */
+export const nwsKeptSection = (rows: readonly { label: string; pairs: readonly InstantPair[] }[]): WindErrorSection =>
+  nwsSection('nws-kept', 'NWS forecasts kept hourly, against KPMV', rows);
+
+/** The same NWS forecast from NOAA's NDFD archive, back to 2026-04-01, four
+ *  issuances a day, a row per lead (`pairNdfdWind`, src/domain/ndfdGust.ts;
+ *  docs/nws-gust-archive.md). Read exactly as the kept section is, so the
+ *  two compare where they overlap. */
+export const nwsArchiveSection = (rows: readonly { label: string; pairs: readonly InstantPair[] }[]): WindErrorSection =>
+  nwsSection('nws-archive', 'NWS forecasts from NOAA’s archive, against KPMV', rows);
 
 /** Open-Meteo's two archives, as scripts/cloudCoverFetch.py (PARTS=omwind)
  *  names them in its records: the Historical Forecast API, the first hours

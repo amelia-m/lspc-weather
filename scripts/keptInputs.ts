@@ -12,7 +12,7 @@ import type { KeptGridpointSnapshot } from '../src/domain/ceilingHeights';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import { parseSurfaceWindLines, type SurfaceWindRecord } from '../src/domain/surfaceWindSources';
 import { parseOmWindLines, type OmWindRecord } from '../src/domain/windErrors';
-import { parseNdfdGustLines, type NdfdGustRecord } from '../src/domain/ndfdGust';
+import { parseNdfdWindLines } from '../src/domain/ndfdGust';
 
 const read = (f: string): string => {
   const buf = readFileSync(f);
@@ -37,10 +37,11 @@ export function loadOmWindRecords(files: readonly string[]): OmWindRecord[] {
   return files.flatMap((f) => parseOmWindLines(read(f)));
 }
 
-/** NDFD's gust records (scripts/cloudCoverFetch.py, PARTS=wgust), the
- *  drop zone's, no-data fills dropped. */
-export function loadNdfdGustRecords(files: readonly string[]): NdfdGustRecord[] {
-  return files.flatMap((f) => parseNdfdGustLines(read(f)));
+/** NDFD's wind, gust and direction records from any mix of files
+ *  (data/parity/ndfd-wgust-*, ndfd-wind-*), the drop zone's. */
+export function loadNdfdWind(files: readonly string[]): ReturnType<typeof parseNdfdWindLines> {
+  const all = files.map((f) => parseNdfdWindLines(read(f)));
+  return { gust: all.flatMap((w) => w.gust), spd: all.flatMap((w) => w.spd), dir: all.flatMap((w) => w.dir) };
 }
 
 /** Every kept snapshot (`.json.gz`) under a folder, searched recursively. */

@@ -2,8 +2,8 @@
  * The NWS gust forecast from NOAA's NDFD archive against KPMV's reports
  * (docs/nws-gust-archive.md). Usage:
  *
- *   PARTS=wgust python3 scripts/cloudCoverFetch.py <start> <end> data/parity/ndfd-wgust-<start>-to-<end>.jsonl.gz
- *   npx tsx scripts/nwsGustArchive.ts --gust data/parity/ndfd-wgust-*.jsonl.gz \
+ *   PARTS=wspd,wgust,wdir python3 scripts/cloudCoverFetch.py <start> <end> data/parity/ndfd-wind-<start>-to-<end>.jsonl.gz
+ *   npx tsx scripts/nwsGustArchive.ts --ndfd data/parity/ndfd-wgust-*.jsonl.gz data/parity/ndfd-wind-*.jsonl.gz \
  *     --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
  *               data/parity/cloud-cover-2*.jsonl.gz [--from <ISO> --to <ISO>]
  *
@@ -12,9 +12,9 @@
  * Prints the summary as text, then as JSON. The arithmetic is
  * src/domain/ndfdGust.ts (pure, tested); this file only reads and prints.
  * The limit counted against is the Student profile's surface-wind caution,
- * BSR 2-1 H's 14 mph read as 12 kt. The forecast wind flag reads the higher
- * of the forecast wind and gust against it; only the gust is fetched, so
- * the count is the gust's (docs/nws-gust-archive.md). Counts and spreads,
+ * BSR 2-1 H's 14 mph read as 12 kt, read as the forecast wind flag reads
+ * it: the higher of the forecast wind and gust (the wind from the
+ * archive's speed records, where the files hold them). Counts and spreads,
  * never a grade.
  */
 import { readFileSync } from 'node:fs';
@@ -22,7 +22,7 @@ import { gunzipSync } from 'node:zlib';
 import { DEFAULT_THRESHOLDS } from '../src/config/thresholds';
 import { SITE } from '../src/config/site';
 import { pairGusts, summarizeGusts, type GroupMean } from '../src/domain/ndfdGust';
-import { loadKpmvReports, loadNdfdGustRecords } from './keptInputs';
+import { loadKpmvReports, loadNdfdWind } from './keptInputs';
 
 const args = process.argv.slice(2);
 const flag = (name: string): string[] => {
@@ -32,7 +32,7 @@ const flag = (name: string): string[] => {
   for (let j = i + 1; j < args.length && !args[j].startsWith('--'); j++) out.push(args[j]);
   return out;
 };
-const gustFiles = flag('--gust');
+const gustFiles = flag('--ndfd');
 const reportFiles = flag('--reports');
 const [from] = flag('--from');
 const [to] = flag('--to');
@@ -43,11 +43,12 @@ for (const [name, v] of [['--from', from], ['--to', to]] as const) {
   }
 }
 if (gustFiles.length === 0 || reportFiles.length === 0) {
-  console.error('usage: nwsGustArchive.ts --gust <files> --reports <files>');
+  console.error('usage: nwsGustArchive.ts --ndfd <files> --reports <files> [--from <ISO> --to <ISO>]');
   process.exit(2);
 }
 
-const records = loadNdfdGustRecords(gustFiles);
+const wind = loadNdfdWind(gustFiles);
+const records = wind.gust;
 const truncated = gustFiles.flatMap((f) =>
   (f.endsWith('.gz') ? gunzipSync(readFileSync(f)) : readFileSync(f))
     .toString('utf8')
@@ -56,7 +57,7 @@ const truncated = gustFiles.flatMap((f) =>
 );
 const metars = loadKpmvReports(reportFiles);
 const inWindow = (t: number): boolean => (from == null || t >= Date.parse(from)) && (to == null || t <= Date.parse(to));
-const rows = pairGusts(records, metars).map((r) => ({ ...r, pairs: r.pairs.filter((p) => inWindow(p.t)) }));
+const rows = pairGusts(records, metars, wind.spd).map((r) => ({ ...r, pairs: r.pairs.filter((p) => inWindow(p.t)) }));
 // A day counts toward the day-to-day spread with at least three gusting
 // hours, so one gusty report does not stand for a day.
 const summary = summarizeGusts(rows, {
@@ -66,7 +67,7 @@ const summary = summarizeGusts(rows, {
 });
 
 const issued = [...new Set(records.map((r) => r.issued))].sort();
-console.log(`${records.length} gust records, ${issued.length} issuances, ${issued[0]} to ${issued[issued.length - 1]}`);
+console.log(`${records.length} gust records, ${issued.length} issuances, ${issued[0]} to ${issued[issued.length - 1]}; ${wind.spd.length} speed records`);
 console.log(`${metars.length} KPMV reports, ${metars[0]?.obsAt} to ${metars[metars.length - 1]?.obsAt}`);
 for (const t of truncated) console.log(`cut short in the archive: ${t}`);
 console.log(from || to ? `hours from ${from ?? 'the start'} to ${to ?? 'the end'} only\n` : '');
@@ -80,8 +81,9 @@ for (const s of summary) {
   );
   console.log(`  no gust reported: forecast gust over the reported steady wind, mean ${signed(s.overSteady?.mean ?? null)} kt (${s.overSteady?.n} hours)`);
   console.log(
-    `  at ${s.atLimit.limitKt} kt: forecast gust at or over in ${s.atLimit.forecastAt} hours, KPMV too in ${s.atLimit.bothAt}; KPMV at or over with the forecast under in ${s.atLimit.reportOnly}`,
+    `  at ${s.atLimit.limitKt} kt: forecast (higher of wind and gust) at or over in ${s.atLimit.forecastAt} hours, KPMV too in ${s.atLimit.bothAt}; KPMV at or over with the forecast under in ${s.atLimit.reportOnly}`,
   );
+  console.log(`  forecast wind given in ${s.gustUnderWind.compared} hours; over the forecast gust in ${s.gustUnderWind.under}`);
   console.log(' by month:');
   s.byMonth.forEach((g) => console.log(line(g)));
   console.log(' by UTC block:');

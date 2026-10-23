@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   WIND_COLUMNS,
   histogram,
+  nwsArchiveSection,
   nwsKeptSection,
   omArchiveSection,
   parseOmWindLines,
@@ -150,6 +151,22 @@ describe('omArchiveSection', () => {
     const s = omArchiveSection([om('historical', '2026-10-20T15:00Z', 30, 40, 200), partial], reports);
     expect(s.rows[0].panels[0]).toMatchObject({ n: 1, median: 3 }); // the later speed
     expect(s.rows[0].panels[2]).toMatchObject({ n: 1, median: 10 }); // the earlier direction
+  });
+});
+
+describe('nwsArchiveSection', () => {
+  it('reads the archive’s pairs exactly as the kept section reads the kept forecasts', () => {
+    const rows = [
+      {
+        label: 'latest issuance',
+        pairs: [{ t: T, issued: '2026-10-20T12:47Z', fc: { windSpeed: 9.6, windGust: 15.4, windDirection: 200 }, obs: obs(12, 20, 190) }],
+      },
+    ];
+    const archive = nwsArchiveSection(rows);
+    const kept = nwsKeptSection(rows);
+    expect(archive).toMatchObject({ id: 'nws-archive', unitWord: 'hour' });
+    expect(archive.rows).toEqual(kept.rows);
+    expect([archive.first, archive.last]).toEqual([kept.first, kept.last]);
   });
 });
 

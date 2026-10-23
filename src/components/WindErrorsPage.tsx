@@ -15,8 +15,8 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
 /**
  * "How far the wind forecasts were from KPMV": histograms of forecast minus
  * reported wind speed, gust and direction, for the NWS forecasts the keeper
- * saved hourly (by lead), Open-Meteo's own archive of its forecasts (by
- * run) and the surface-wind sample's Open-Meteo and NWS forecasts (by
+ * saved hourly (by lead), the same forecast from NOAA's archive (by lead),
+ * Open-Meteo's own archive of its forecasts (by run) and the surface-wind sample's Open-Meteo and NWS forecasts (by
  * source).
  *
  * The data is public/wind-errors/summary.json, written by
@@ -120,6 +120,7 @@ function SectionPanel({ s, intro }: { s: WindErrorSection; intro: JSX.Element })
 
 export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; state: SiteJsonState }): JSX.Element {
   const kept = data?.sections.find((s) => s.id === 'nws-kept');
+  const nwsArchive = data?.sections.find((s) => s.id === 'nws-archive');
   const archive = data?.sections.find((s) => s.id === 'om-archive');
   const sample = data?.sections.find((s) => s.id === 'surface-sample');
   const station = `${SITE.metarStation.id}, ~${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the drop zone`;
@@ -163,6 +164,23 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
               direction only where the report gave one. How it was paired:{' '}
               <a href={repoDoc('docs/kept-forecasts-vs-kpmv.md')} target="_blank" rel="noopener noreferrer">
                 docs/kept-forecasts-vs-kpmv.md
+              </a>
+              .
+            </p>
+          }
+        />
+      )}
+      {nwsArchive && (
+        <SectionPanel
+          s={nwsArchive}
+          intro={
+            <p className="muted small">
+              The same NWS forecast, read from NOAA&rsquo;s archive of it (NDFD), which holds the months
+              before the keeper started. Four forecasts a day, so the newest one before an hour is up to
+              six hours older than the dashboard&rsquo;s. Paired and read exactly as the section above. How it
+              was fetched and read:{' '}
+              <a href={repoDoc('docs/nws-gust-archive.md')} target="_blank" rel="noopener noreferrer">
+                docs/nws-gust-archive.md
               </a>
               .
             </p>

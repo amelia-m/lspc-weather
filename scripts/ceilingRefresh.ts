@@ -12,8 +12,9 @@
  *   npx tsx scripts/ceilingRefresh.ts window [--dir data/parity] [--now <ISO>]
  *     key=value lines for $GITHUB_OUTPUT: each part's start and end, the
  *     newest record already kept, skip=true when none needs a fetch, and
- *     om_wind_missing=true when the Open-Meteo wind archive holds nothing.
- *   npx tsx scripts/ceilingRefresh.ts fetched ceiling|metar|omwind <file> --since <ISO> --start <day> --end <day>
+ *     om_wind_missing=true or ndfd_wind_missing=true when that wind
+ *     archive holds nothing.
+ *   npx tsx scripts/ceilingRefresh.ts fetched ceiling|metar|omwind|ndfdwind <file> --since <ISO> --start <day> --end <day>
  *     Exits 1 unless the file holds a record newer than --since.
  *   npx tsx scripts/ceilingRefresh.ts check <published.json> <new.json>
  *     Exits 1 if the new file holds less than the published one.
@@ -27,12 +28,14 @@ import {
   type ChartData,
   fetchCoverage,
   newest,
+  earliestNewest,
   omWindNewest,
   refreshWindow,
   shrinkage,
 } from '../src/domain/ceilingRefresh';
 import { parseCloudCoverLines } from '../src/domain/cloudCoverSources';
 import { OM_ARCHIVE_ROWS, parseOmWindLines } from '../src/domain/windErrors';
+import { parseNdfdWindLines } from '../src/domain/ndfdGust';
 
 const [cmd, ...rest] = process.argv.slice(2);
 const opts: Record<string, string> = {};
@@ -73,6 +76,19 @@ const omWindFiles = (): string[] =>
 const omWindRecords = (files: string[]) => files.flatMap((f) => parseOmWindLines(read(f)));
 const OM_RUNS = OM_ARCHIVE_ROWS.map((r) => r.run);
 
+/** NDFD's wind, gust and direction (data/parity/ndfd-wgust-*, ndfd-wind-*),
+ *  the #wind-errors page's NWS archive section; each element's issue times
+ *  apart, since the window starts at the one that lags. */
+const ndfdWindFiles = (): string[] =>
+  readdirSync(dir)
+    .filter((n) => /^ndfd-(wgust|wind)-.*\.jsonl\.gz$/.test(n))
+    .sort()
+    .map((n) => join(dir, n));
+const ndfdWindIssued = (files: string[]): string[][] => {
+  const all = files.map((f) => parseNdfdWindLines(read(f)));
+  return (['spd', 'gust', 'dir'] as const).map((k) => all.flatMap((w) => w[k].map((r) => r.issued)));
+};
+
 const inputs = () => {
   const found = chartInputs(readdirSync(dir));
   return { ceiling: found.ceiling.map((f) => join(dir, f)), cover: found.cover.map((f) => join(dir, f)) };
@@ -91,7 +107,8 @@ if (cmd === 'inputs') {
   const lastIssued = newest(issuedTimes(files.ceiling));
   const lastReport = newest(reportTimes(files.cover));
   const lastOmWind = omWindNewest(omWindRecords(omWindFiles()), OM_RUNS);
-  const w = refreshWindow({ lastIssued, lastReport, lastOmWind, now });
+  const lastNdfdWind = earliestNewest(ndfdWindIssued(ndfdWindFiles()));
+  const w = refreshWindow({ lastIssued, lastReport, lastOmWind, lastNdfdWind, now });
   const lines = [
     `end=${w.end}`,
     `ceiling_newest=${lastIssued}`,
@@ -104,29 +121,42 @@ if (cmd === 'inputs') {
     `om_wind_start=${w.omWind?.start ?? ''}`,
     `fetch_om_wind=${w.omWind != null}`,
     `om_wind_missing=${w.omWindMissing}`,
-    `skip=${w.ceiling == null && w.metar == null && w.omWind == null}`,
+    `ndfd_wind_newest=${lastNdfdWind}`,
+    `ndfd_wind_start=${w.ndfdWind?.start ?? ''}`,
+    `fetch_ndfd_wind=${w.ndfdWind != null}`,
+    `ndfd_wind_missing=${w.ndfdWindMissing}`,
+    `skip=${w.ceiling == null && w.metar == null && w.omWind == null && w.ndfdWind == null}`,
   ];
   console.log(lines.join('\n'));
   console.error(
-    `newest NDFD issuance kept ${lastIssued}, newest KPMV report ${lastReport}, newest Open-Meteo wind hour ${lastOmWind}; ` +
+    `newest NDFD issuance kept ${lastIssued}, newest KPMV report ${lastReport}, newest Open-Meteo wind hour ${lastOmWind}, ` +
+      `newest NDFD wind issuance ${lastNdfdWind}; ` +
       `ceilings ${w.ceiling ? `${w.ceiling.start} to ${w.ceiling.end}` : 'current'}, ` +
       `reports ${w.metar ? `${w.metar.start} to ${w.metar.end}` : 'current'}, ` +
-      `Open-Meteo wind ${w.omWind ? `${w.omWind.start} to ${w.omWind.end}` : 'current'}`,
+      `Open-Meteo wind ${w.omWind ? `${w.omWind.start} to ${w.omWind.end}` : 'current'}, ` +
+      `NDFD wind ${w.ndfdWind ? `${w.ndfdWind.start} to ${w.ndfdWind.end}` : 'current'}`,
   );
 } else if (cmd === 'fetched') {
   const [part, file] = pos;
   const { since, start, end } = opts;
-  if ((part !== 'ceiling' && part !== 'metar' && part !== 'omwind') || !file || !since || !start || !end) {
-    fail('usage: ceilingRefresh.ts fetched ceiling|metar|omwind <file> --since <ISO> --start <day> --end <day>');
+  if ((part !== 'ceiling' && part !== 'metar' && part !== 'omwind' && part !== 'ndfdwind') || !file || !since || !start || !end) {
+    fail('usage: ceilingRefresh.ts fetched ceiling|metar|omwind|ndfdwind <file> --since <ISO> --start <day> --end <day>');
   }
   const times =
     part === 'ceiling'
       ? issuedTimes([file])
       : part === 'metar'
         ? reportTimes([file])
-        : omWindRecords([file]).map((r) => r.valid);
+        : part === 'omwind'
+          ? omWindRecords([file]).map((r) => r.valid)
+          : ndfdWindIssued([file]).flat();
   const { newer, emptyDays } = fetchCoverage(times, since, { start, end });
-  const what = part === 'ceiling' ? 'NDFD issuances' : part === 'metar' ? 'KPMV reports' : 'Open-Meteo wind hours';
+  const what = {
+    ceiling: 'NDFD issuances',
+    metar: 'KPMV reports',
+    omwind: 'Open-Meteo wind hours',
+    ndfdwind: 'NDFD wind issuances',
+  }[part as 'ceiling' | 'metar' | 'omwind' | 'ndfdwind'];
   const distinct = part === 'metar' ? times.length : new Set(times).size;
   console.error(`${file}: ${distinct} ${what} (${times.length} records), ${newer} records newer than ${since}`);
   // GitHub shows a ::warning:: line on the run's page.
