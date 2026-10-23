@@ -7,6 +7,7 @@ import {
   fetchTafChain,
   fetchTafFrom,
   fetchWindsAloftFd,
+  resetHeldGrids,
   type ResolvedGridpoint,
 } from '../src/api/nws';
 import type { RawGridpoint } from '../src/domain/normalize';
@@ -35,6 +36,8 @@ const GRID: RawGridpoint = { properties: {} };
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  // fetchGridpoint's default path holds the newest copy per URL.
+  resetHeldGrids();
 });
 
 describe('fetchJson / HttpError', () => {

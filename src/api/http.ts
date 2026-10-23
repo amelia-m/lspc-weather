@@ -59,7 +59,7 @@ export async function fetchJson<T>(
       const res = await fetch(url, {
         signal: controller.signal,
         headers: { Accept: 'application/json', ...headers },
-        ...(cache ? { cache } : {}),
+        cache,
       });
       if (!res.ok) throw new HttpError(res.status, url);
       return (await res.json()) as T;

@@ -67,12 +67,15 @@ interface GridpointDeps {
   clearCache: (lat: number, lon: number) => void;
 }
 
-/** The newest gridpoint shown so far, per URL, for fetchFreshGrid. */
+/** The newest gridpoint shown so far, per URL, for fetchFreshGrid, and the
+ *  request in flight for each. */
 const heldGrids = new Map<string, RawGridpoint>();
+const gridsInFlight = new Map<string, Promise<RawGridpoint>>();
 
 /** For tests: forget the copies held by fetchFreshGrid. */
 export function resetHeldGrids(): void {
   heldGrids.clear();
+  gridsInFlight.clear();
 }
 
 /**
@@ -84,12 +87,23 @@ export function resetHeldGrids(): void {
  * of different ages, so a browser pinned to one stayed behind a newer
  * forecast another edge already served. `no-cache` revalidates instead: a
  * 304 when nothing changed. A request can still reach an older edge copy,
- * so the newer of that and the held copy is kept (newerGridpoint).
+ * so the newer of that and the held copy is kept (newerGridpoint), read
+ * after the answer arrives. Callers asking at once (the hourly chart and
+ * the daily fallback, or a Refresh during a slow refresh) share one
+ * request, so neither can overwrite the other's newer copy.
  */
-export async function fetchFreshGrid(url: string): Promise<RawGridpoint> {
-  const grid = newerGridpoint(heldGrids.get(url) ?? null, await fetchJson<RawGridpoint>(url, { cache: 'no-cache' }));
-  heldGrids.set(url, grid);
-  return grid;
+export function fetchFreshGrid(url: string): Promise<RawGridpoint> {
+  const pending = gridsInFlight.get(url);
+  if (pending) return pending;
+  const request = fetchJson<RawGridpoint>(url, { cache: 'no-cache' })
+    .then((fetched) => {
+      const grid = newerGridpoint(heldGrids.get(url) ?? null, fetched, Date.now());
+      heldGrids.set(url, grid);
+      return grid;
+    })
+    .finally(() => gridsInFlight.delete(url));
+  gridsInFlight.set(url, request);
+  return request;
 }
 
 const defaultGridpointDeps: GridpointDeps = {

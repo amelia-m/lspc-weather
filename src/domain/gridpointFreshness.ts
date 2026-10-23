@@ -8,7 +8,7 @@
  * five-minute samples (2026-10-09 to 10-21), 83 of 3,096 answers carried an
  * `updateTime` older than one already served. Replayed at the app's
  * ten-minute refresh, revalidating each time would have stepped back to an
- * older forecast 21 times in those 13 days; keeping the newer copy stops it.
+ * older forecast 13 times in those 13 days; keeping the newer copy stops it.
  */
 import type { RawGridpoint } from './normalize';
 
@@ -19,10 +19,13 @@ const updatedAt = (g: RawGridpoint): number => {
 
 /** The fetched copy, unless the held one was issued later. A copy whose
  *  `updateTime` cannot be read gives way to the fetched one: an unreadable
- *  time is no reason to keep showing an old forecast. */
-export function newerGridpoint(held: RawGridpoint | null, fetched: RawGridpoint): RawGridpoint {
+ *  time is no reason to keep showing an old forecast. So does a held copy
+ *  dated after `nowMs`: a forecast cannot have been made in the future,
+ *  and a copy that says so would otherwise win every refresh until the
+ *  page reloads. */
+export function newerGridpoint(held: RawGridpoint | null, fetched: RawGridpoint, nowMs: number): RawGridpoint {
   if (held == null) return fetched;
   const h = updatedAt(held);
   const f = updatedAt(fetched);
-  return Number.isFinite(h) && Number.isFinite(f) && h > f ? held : fetched;
+  return Number.isFinite(h) && Number.isFinite(f) && h > f && h <= nowMs ? held : fetched;
 }

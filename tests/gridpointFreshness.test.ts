@@ -6,23 +6,30 @@ import type { RawGridpoint } from '../src/domain/normalize';
 const grid = (updateTime?: string): RawGridpoint => ({ properties: updateTime ? { updateTime } : {} });
 const A = grid('2026-10-23T00:35:24+00:00');
 const B = grid('2026-10-23T01:41:10+00:00');
+const NOW = Date.parse('2026-10-23T03:00:00Z');
 
 describe('newerGridpoint', () => {
   it('keeps the held copy when the fetched one was issued earlier', () => {
-    expect(newerGridpoint(B, A)).toBe(B);
+    expect(newerGridpoint(B, A, NOW)).toBe(B);
   });
 
   it('takes the fetched copy when it is newer, the same, or nothing is held', () => {
-    expect(newerGridpoint(A, B)).toBe(B);
+    expect(newerGridpoint(A, B, NOW)).toBe(B);
     const sameTime = grid('2026-10-23T00:35:24+00:00');
-    expect(newerGridpoint(A, sameTime)).toBe(sameTime);
-    expect(newerGridpoint(null, A)).toBe(A);
+    expect(newerGridpoint(A, sameTime, NOW)).toBe(sameTime);
+    expect(newerGridpoint(null, A, NOW)).toBe(A);
+  });
+
+  it('lets a held copy dated in the future give way', () => {
+    // Such a copy would otherwise win every refresh until the page reloads.
+    const future = grid('2026-10-24T00:00:00+00:00');
+    expect(newerGridpoint(future, A, NOW)).toBe(A);
   });
 
   it('takes the fetched copy when either time cannot be read', () => {
     const none = grid();
-    expect(newerGridpoint(B, none)).toBe(none);
-    expect(newerGridpoint(none, A)).toBe(A);
+    expect(newerGridpoint(B, none, NOW)).toBe(none);
+    expect(newerGridpoint(none, A, NOW)).toBe(A);
   });
 });
 
@@ -51,6 +58,19 @@ describe('fetchFreshGrid', () => {
     expect(await fetchFreshGrid(url)).toBe(B);
     expect(await fetchFreshGrid(url)).toBe(B);
     expect((await fetchFreshGrid(url)).properties.updateTime).toBe('2026-10-23T02:40:00+00:00');
+  });
+
+  it('gives callers asking at once one request, so neither overwrites the other', async () => {
+    let answer: (v: unknown) => void = () => {};
+    const fetch = vi.fn().mockReturnValueOnce(new Promise((r) => (answer = r)));
+    vi.stubGlobal('fetch', fetch);
+    const url = 'https://api.weather.gov/gridpoints/OAX/77,42';
+    const hourly = fetchFreshGrid(url);
+    const daily = fetchFreshGrid(url);
+    answer({ ok: true, status: 200, json: () => Promise.resolve(B) });
+    expect(await hourly).toBe(B);
+    expect(await daily).toBe(B);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it('holds a copy per URL, so a re-gridded URL starts afresh', async () => {
