@@ -23,7 +23,8 @@
  * Pure: the sampler fetches, this compares and counts.
  */
 import type { RawWindSample } from './windsAloft';
-import { RUN_AGE_BANDS, type RunsSeen } from './runAge';
+import { RUN_AGE_BANDS, runAgeMinutes, type RunsSeen } from './runAge';
+import { angular } from './surfaceWindSources';
 
 /** A raw profile as heights above the drop zone with direction and speed. */
 export interface RawLevel {
@@ -56,11 +57,11 @@ export const MISMATCH_DIR_DEG = 5;
 export const MISMATCH_SPD_KT = 2;
 const MIN_PAIRS = 3;
 const MIN_BAD = 2;
-/** Only heights both tools sample alike: his raw levels stop at his table's
- *  top, and above it nothing of the card's is read. */
+/** The comparison's cap since 2026-09-23, kept so its counts carry on. Both
+ *  tools sample levels above it (his seven above 18,000 ft, this app's
+ *  extra levels), but no row of the card reaches it, so it is the cap that
+ *  leaves them out of the count. */
 const TOP_FT_AGL = 14_000;
-
-const angle = (a: number, b: number): number => Math.abs(((a - b + 540) % 360) - 180);
 
 /** Each of `theirs` paired with the nearest of `ours` within PAIR_WITHIN_FT. */
 export function rawGap(ours: readonly RawLevel[], theirs: readonly RawLevel[]): RawGap {
@@ -77,10 +78,13 @@ export function rawGap(ours: readonly RawLevel[], theirs: readonly RawLevel[]): 
     }
     if (!best) continue;
     pairs += 1;
-    const dDir = angle(best.dir, t.dir);
+    // A height his endpoint served without a value still counts as a pair,
+    // never as apart: the comparison's loop counted it so before the rule
+    // moved here, and it is kept so its counts read on unchanged.
+    const dDir = Math.abs(angular(best.dir, t.dir));
     const dSpd = Math.abs(best.spd - t.spd);
-    maxDir = Math.max(maxDir, dDir);
-    maxSpd = Math.max(maxSpd, dSpd);
+    if (Number.isFinite(dDir)) maxDir = Math.max(maxDir, dDir);
+    if (Number.isFinite(dSpd)) maxSpd = Math.max(maxSpd, dSpd);
     if (dDir > MISMATCH_DIR_DEG || dSpd > MISMATCH_SPD_KT) bad += 1;
   }
   return {
@@ -112,9 +116,8 @@ export function schulzeRawLevels(his: {
   directionRaw: Record<string, number>;
   speedRaw: Record<string, number>;
 }): RawLevel[] {
-  return his.altFtRaw
-    .filter((a) => his.directionRaw[a] != null && his.speedRaw[a] != null)
-    .map((a) => ({ ftAgl: a, dir: his.directionRaw[a], spd: his.speedRaw[a] }));
+  // Kept even where a value is missing (NaN), as the comparison counted it.
+  return his.altFtRaw.map((a) => ({ ftAgl: a, dir: his.directionRaw[a] ?? NaN, spd: his.speedRaw[a] ?? NaN }));
 }
 
 /** One sample's record (scripts/runSplit.live.ts). */
@@ -199,9 +202,8 @@ export function summarizeRunSplit(records: readonly RunSplitRecord[]): RunSplitS
   for (const r of recs) {
     const half = r.minute < 30 ? 'first' : 'second';
     const band = MINUTE_BANDS.filter((b) => r.minute >= b).pop() ?? 0;
-    const avail = r.omRuns?.[RUN_DOMAIN]?.avail;
-    const ageMin = avail != null ? (Date.parse(r.at) - Date.parse(avail)) / 60_000 : NaN;
-    const ageRow = Number.isFinite(ageMin) ? byRunAge.find((b) => ageMin >= b.fromMin && ageMin < b.toMin) : undefined;
+    const ageMin = runAgeMinutes(r, RUN_DOMAIN);
+    const ageRow = ageMin == null ? undefined : byRunAge.find((b) => ageMin >= b.fromMin && ageMin < b.toMin);
     for (const h of r.hours) {
       const m = h.vsFirst?.mismatch ?? null;
       add(byOffsetAndHalf.find((c) => c.offset === h.offset && c.half === half)!.cell, m);

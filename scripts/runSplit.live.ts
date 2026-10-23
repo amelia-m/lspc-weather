@@ -34,7 +34,9 @@ async function appHours(errors: string[], label: string): Promise<Map<number, Ra
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const hours = normalizeOpenMeteoHours(coerceOpenMeteoTimes((await res.json()) as RawOpenMeteo));
-    return new Map(hours.map((h) => [h.validMs ?? NaN, appRawLevels(h.samples, SITE.dz.elevationFt)]));
+    const out = new Map<number, RawLevel[]>();
+    for (const h of hours) if (h.validMs != null) out.set(h.validMs, appRawLevels(h.samples, SITE.dz.elevationFt));
+    return out;
   } catch (e) {
     errors.push(`open-meteo ${label}: ${(e as Error).message}`);
     return null;
@@ -49,9 +51,13 @@ describe.skipIf(process.env.RUN_SPLIT_SAMPLE !== '1')('run split sample (opt-in:
     // The app's first request and both of his at once; the app's second as
     // soon as its first has answered, so the two are a moment apart.
     const startFirst = Date.now();
-    const [first, s0, s1] = await Promise.all([appHours(errors, 'first'), schulze(0), schulze(1)]);
-    const startSecond = Date.now();
-    const second = await appHours(errors, 'second');
+    let startSecond = startFirst;
+    const firstP = appHours(errors, 'first');
+    const secondP = firstP.then(() => {
+      startSecond = Date.now();
+      return appHours(errors, 'second');
+    });
+    const [first, second, s0, s1] = await Promise.all([firstP, secondP, schulze(0), schulze(1)]);
     if (!s0) errors.push('schulze offset 0: unreadable');
     if (!s1) errors.push('schulze offset 1: unreadable');
 
@@ -64,16 +70,19 @@ describe.skipIf(process.env.RUN_SPLIT_SAMPLE !== '1')('run split sample (opt-in:
       minute: new Date(now).getUTCMinutes(),
       hours: ([0, 1] as const).map((offset) => {
         const s = offset === 0 ? s0 : s1;
-        // His `validtime` is the UTC hour he served; it should be the hour in
-        // progress plus the offset, and is compared at that hour only.
-        const t = hourInProgress + offset * H;
-        const his = s && Number(s.validtime) === new Date(t).getUTCHours() ? theirs(s) : null;
-        if (s && !his) errors.push(`schulze offset ${offset}: served ${s.validtime}Z`);
-        const a = first?.get(t);
-        const b = second?.get(t);
+        // His `validtime` is the UTC hour he served: the hour in progress plus
+        // the offset, or one later when his server handled the request after
+        // the hour turned. Compared at the hour he served.
+        const t = [0, 1]
+          .map((k) => hourInProgress + (offset + k) * H)
+          .find((x) => s != null && Number(s.validtime) === new Date(x).getUTCHours());
+        const his = s && t != null ? theirs(s) : null;
+        if (s && t == null) errors.push(`schulze offset ${offset}: served ${s.validtime}Z`);
+        const a = t != null ? first?.get(t) : undefined;
+        const b = t != null ? second?.get(t) : undefined;
         return {
           offset,
-          validHour: new Date(t).toISOString(),
+          validHour: t != null ? new Date(t).toISOString() : null,
           vsFirst: his && a ? rawGap(a, his) : null,
           vsSecond: his && b ? rawGap(b, his) : null,
         };

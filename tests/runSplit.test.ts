@@ -71,15 +71,18 @@ describe('the raw levels compared', () => {
     expect(levels).toEqual([{ ftAgl: 1318, dir: 200, spd: 15 }]);
   });
 
-  it('reads his raw levels as served', () => {
-    expect(
-      schulzeRawLevels({
-        altFtRaw: [1318, 3000],
-        directionRaw: { 1318: 200 },
-        speedRaw: { 1318: 15 },
-      }),
-    ).toEqual([{ ftAgl: 1318, dir: 200, spd: 15 }]);
+  it('keeps a height his endpoint served without a value: a pair, never apart', () => {
+    const his = schulzeRawLevels({
+      altFtRaw: [1000, 3000, 5000, 7000],
+      directionRaw: { 1000: 270, 3000: 270, 5000: 270 },
+      speedRaw: { 1000: 20, 3000: 20, 5000: 20 },
+    });
+    expect(his).toHaveLength(4);
+    // Three good pairs and the empty one: four pairs, none apart, as the
+    // comparison counted before the rule was shared.
+    expect(rawGap(profile(270, 20), his)).toEqual({ pairs: 4, bad: 0, maxDir: 0, maxSpd: 0, mismatch: false });
   });
+
 });
 
 const gap = (mismatch: boolean | null): RawGap => ({

@@ -37,7 +37,8 @@ Each sample does three things:
   this app's Open-Meteo answer for the same valid hour. One request holds
   both hours (`normalizeOpenMeteoHours`).
 - **Two app requests a moment apart.** The second starts as soon as the
-  first has answered, about a second later. Both are set against his
+  first has answered, about a second later, whatever his endpoint is
+  doing (`apartS` records the gap). Both are set against his
   table and against each other. If the app's two requests disagree, the
   servers answered with different runs moments apart, and his tool had no
   part in it.
@@ -55,7 +56,8 @@ Open-Meteo's responses name no run. Records are `@@parity` lines with
 **Load.** Each sample asks his endpoint twice and Open-Meteo's forecast
 twice: about 720 of each a day. That is the pace the 2026-09-30 sampler
 asked his endpoint at for five days. The three days and a bit give about
-1,200 samples, so about 100 in each half-hour cell of the table below.
+1,200 samples. Each gives one judgement for each of his two hours, so each
+cell of the table below gets about 600.
 
 ## How to read it
 
@@ -93,6 +95,7 @@ run again after its fetches and its rule moved to the shared modules, gave
 ## When the window ends
 
 Download the `runsplit-*` artifacts. Archive the records under
-`data/parity/` (not named `metar-*` or `parity-logs-*`, which other
-workflows read). Summarise them here and in docs/open-questions.md, and
+`data/parity/`. Do not name them `metar-*` or anything `*logs-*`: the
+weekly ceiling refresh reads the first, and the daily parity summary
+reads every `*logs-*.jsonl.gz`. Summarise them here and in docs/open-questions.md, and
 delete the workflow and the loop script.
