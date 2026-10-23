@@ -352,6 +352,18 @@ The maintainer, 2026-10-23: "depends how consistent the difference is".
 The side was consistent; the size was not, and 53 hours over a few windy
 days will not settle it. Revisit when the keeper has more windy days.
 
+A quicker route, found 2026-10-23: NOAA's NDFD archive, which already
+stands in for the API's sky cover and ceiling (docs/cloud-cover-sources.md),
+also holds the wind grids. Listed that day, `noaa-ndfd-pds.s3.amazonaws.com`
+has `wmo/wspd/`, `wmo/wgust/` and `wmo/wdir/` beside `sky/` and `cig/`,
+and `wmo/wgust/2026/04/01/` holds hourly files (`YWAZ88_KWBN_…`, at :47).
+Read as the ceilings are (`scripts/cloudCoverFetch.py`, a new NDFD part),
+that would set six months of NWS gust forecasts against KPMV, the summer's
+storms included, instead of waiting for the keeper's windy days. Not yet
+checked: that the archived gust matches the API's `windGust` value for value,
+as was done for sky cover, or how the archive's issuances line up with the
+keeper's leads.
+
 ## Done: the #wind-errors page refreshes weekly
 
 Since 2026-10-23 the weekly ceiling data refresh
