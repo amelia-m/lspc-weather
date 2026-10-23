@@ -363,3 +363,13 @@ export function summarizeNdfdWind(rows: readonly { label: string; pairs: readonl
     };
   });
 }
+
+/** The `n` gusting hours with the largest miss either way, largest first
+ *  (earlier first on a tie): the hours docs/nws-gust-archive.md reads
+ *  against KPMV's reports around them and the NWS storm reports. */
+export function largestMisses(pairs: readonly GustPair[], n: number): GustPair[] {
+  return pairs
+    .filter((p) => p.gustDiff != null)
+    .sort((a, b) => Math.abs(b.gustDiff!) - Math.abs(a.gustDiff!) || a.t - b.t)
+    .slice(0, n);
+}

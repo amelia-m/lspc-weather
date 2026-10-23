@@ -110,7 +110,8 @@ way, was centred: +0.13 kt at the latest issuance, −0.48 at 06–11Z and
 3 to 4 kt on average. The sampler had +2.1 kt over 229 gusting reports.
 In the other three quarters of hours the forecast still gave a gust,
 about 4.5 kt over the steady wind the station reported. The METAR's rule
-for reporting one is not this app's to judge from here.
+for reporting one is read in docs/nws-gust-archive.md, "How a gust gets
+into KPMV's report": a report with no gust is not a steady wind.
 
 **Gust, closer** (asked 2026-10-23: consistently high, or scattered
 both ways?). Consistently high, by an amount that varied. Where KPMV
