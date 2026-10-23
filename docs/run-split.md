@@ -1,5 +1,11 @@
 # Which run: a sampler to separate the two causes
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 Started 2026-10-23, at the maintainer's request. It addresses the open
 question "Which forecast run the winds-aloft request is served"
 (docs/open-questions.md).

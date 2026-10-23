@@ -485,5 +485,6 @@
 <text class="t" x="937.4285714285714" y="920" text-anchor="middle">+50</text>
 <text class="t" x="1008.8571428571429" y="920" text-anchor="middle">+100</text>
 <text class="t" x="1016" y="934" text-anchor="end">1 beyond the axis</text>
+<text class="note" x="44" y="946">Open-Meteo rows: weather data by Open-Meteo.com, CC BY 4.0 (creativecommons.org/licenses/by/4.0), reworked as differences from KPMV’s reports.</text>
 <text class="note" x="44" y="962">Every row to a tenth of a knot, binned to the knot; a tenth either side of zero counts on neither side. Direction only where the report gave one. Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.</text>
 </svg>

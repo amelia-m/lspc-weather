@@ -19,6 +19,11 @@ export function histogramGridSvg(o: {
   desc: string;
   subtitle: [string, string];
   note: string;
+  /** The data's credit, drawn on its own line above the note: Open-Meteo's
+   *  licence asks for one next to wherever its data are shown
+   *  (open-meteo.com/en/licence, read 2026-10-23), a figure in the docs
+   *  included. */
+  credit?: string;
 }): string {
   const { rows, unitWord } = o.section;
   const cols = rows[0]?.panels ?? [];
@@ -104,7 +109,7 @@ export function histogramGridSvg(o: {
 <text class="s" x="${ML}" y="42">${esc(o.subtitle[0])}</text>
 <text class="s" x="${ML}" y="58">${esc(o.subtitle[1])}</text>
 ${parts.join('\n')}
-<text class="note" x="${ML}" y="${H - 14}">${esc(o.note)}</text>
+${o.credit ? `<text class="note" x="${ML}" y="${H - 30}">${esc(o.credit)}</text>\n` : ''}<text class="note" x="${ML}" y="${H - 14}">${esc(o.note)}</text>
 </svg>
 `;
 }

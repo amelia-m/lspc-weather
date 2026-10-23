@@ -1,5 +1,11 @@
 # Cloud cover: the two forecasts against the METAR
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 Asked 2026-10-08, when the Ceiling & sky card gained Open-Meteo's cloud cover
 beside the NWS sky cover: do the two forecasts agree with each other, and
 with what KPMV reports, often enough to be worth showing both

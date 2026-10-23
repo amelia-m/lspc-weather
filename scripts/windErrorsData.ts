@@ -103,6 +103,10 @@ console.log(`wrote ${out}`);
 
 if (figures) {
   mkdirSync(figures, { recursive: true });
+  // The NWS rows of the sample's figure are NOAA's, public domain; the
+  // Open-Meteo rows need the credit (docs/open-meteo-terms.md).
+  const OM_CREDIT =
+    'Open-Meteo rows: weather data by Open-Meteo.com, CC BY 4.0 (creativecommons.org/licenses/by/4.0), reworked as differences from KPMV’s reports.';
   const leads = NWS_ISSUANCES.map((i) => i.minLeadH).join(', ').replace(/, (\d+)$/, ' and $1');
   const files: [string, string][] = [
     [
@@ -129,6 +133,7 @@ if (figures) {
           'Rows: the first hours of each model run (Historical Forecast API), and the forecast made a day earlier (Previous Runs API).',
         ],
         note: 'Speeds rounded to whole knots, as a METAR reports. Direction only where the report gave one (not calm or variable). Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.',
+        credit: OM_CREDIT,
       }),
     ],
     [
@@ -142,6 +147,7 @@ if (figures) {
           'Each forecast as it stood while the report was the newest. Rows: Open-Meteo’s three forms, then NWS on the same reports.',
         ],
         note: 'Every row to a tenth of a knot, binned to the knot; a tenth either side of zero counts on neither side. Direction only where the report gave one. Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.',
+        credit: OM_CREDIT,
       }),
     ],
   ];

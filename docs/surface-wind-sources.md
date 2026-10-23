@@ -1,5 +1,11 @@
 # Surface wind: four forecasts against the METAR
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 Asked 2026-10-09: Open-Meteo serves a 15-minute (`minutely_15`) and a
 `current` 10 m wind beside the hourly one this app already requests. Is either
 updated more often than what the app reads now, nearer what KPMV measures, or

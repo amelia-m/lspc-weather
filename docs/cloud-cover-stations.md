@@ -1,5 +1,11 @@
 # Cloud cover at AWOS and ASOS stations
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 Two questions from 2026-10-10, after the KPMV comparison
 ([cloud-cover-sources.md](cloud-cover-sources.md)) found that KPMV, an AWOS,
 never reports FEW:

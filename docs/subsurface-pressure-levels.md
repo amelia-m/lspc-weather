@@ -1,5 +1,11 @@
 # Winds at pressure levels below the ground
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 **Not model output.** Researched 2026-09-22. `normalizeOpenMeteo` drops them.
 
 A pressure surface can lie underneath the terrain. At NE69 the 1000 hPa level
