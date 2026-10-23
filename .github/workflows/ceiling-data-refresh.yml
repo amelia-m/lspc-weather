@@ -14,11 +14,13 @@ name: Ceiling data refresh
 # (public/wind-errors/summary.json) with scripts/windErrorsData.ts, from the
 # same kept snapshots and reports plus the surface-wind sample's archives,
 # and fetches Open-Meteo's archived 10 m wind since the newest hour kept
-# (data/parity/om-wind-*) for the page's Open-Meteo section.
+# (data/parity/om-wind-*) for the page's Open-Meteo section, and NOAA's
+# NDFD wind, gust and direction since the newest issuance kept
+# (data/parity/ndfd-wind-*) for its NWS archive section.
 # A rebuild that holds less than the published file is not copied in
 # (windErrorsShrinkage), as the ceiling file's check does. The two are
-# independent: a wind-side failure (no Open-Meteo archive to start from,
-# its fetch, or the rebuild) leaves the page's file as published, the
+# independent: a wind-side failure (no Open-Meteo or NDFD wind archive to
+# start from, either fetch, or the rebuild) leaves the page's file as published, the
 # ceiling data and whatever was fetched are still committed, and the run
 # then fails so it is seen.
 # The docs' wind figures are dated readings and are not redrawn here.
@@ -139,6 +141,25 @@ jobs:
           mv "$RUNNER_TEMP/$name" "data/parity/$name"
           mkdir -p "$RUNNER_TEMP/trial" && cp "data/parity/$name" "$RUNNER_TEMP/trial/"
 
+      # NDFD's wind, gust and direction: three CONUS files an issuance,
+      # about 140 MB together, four issuances a day. Wind side, as above.
+      - name: Fetch NDFD wind, gust and direction
+        id: ndfdwind
+        if: steps.window.outputs.fetch_ndfd_wind == 'true'
+        continue-on-error: true
+        env:
+          START: ${{ steps.window.outputs.ndfd_wind_start }}
+          END: ${{ steps.window.outputs.end }}
+          SINCE: ${{ steps.window.outputs.ndfd_wind_newest }}
+        run: |
+          set -euo pipefail
+          name="ndfd-wind-$START-to-$END.jsonl.gz"
+          if [ -e "data/parity/$name" ]; then echo "::error::data/parity/$name already exists"; exit 1; fi
+          PARTS=wspd,wgust,wdir python scripts/cloudCoverFetch.py "$START" "$END" "$RUNNER_TEMP/$name"
+          npx tsx scripts/ceilingRefresh.ts fetched ndfdwind "$RUNNER_TEMP/$name" --since "$SINCE" --start "$START" --end "$END"
+          mv "$RUNNER_TEMP/$name" "data/parity/$name"
+          mkdir -p "$RUNNER_TEMP/trial" && cp "data/parity/$name" "$RUNNER_TEMP/trial/"
+
       # The keeper's snapshots in a worktree of their own, as
       # scripts/forecastKeepLoop.sh does, so main's checkout is untouched.
       - name: Check out the kept forecasts
@@ -183,6 +204,7 @@ jobs:
             --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
               data/parity/cloud-cover-2*.jsonl.gz \
             --om data/parity/om-wind-*.jsonl.gz \
+            --ndfd data/parity/ndfd-wgust-*.jsonl.gz data/parity/ndfd-wind-*.jsonl.gz \
             --sample data/parity/surfacewind-*.jsonl.gz \
             --out "$RUNNER_TEMP/wind-errors/summary.json" \
             --check-against public/wind-errors/summary.json
@@ -218,9 +240,9 @@ jobs:
           # Open-Meteo archive this run fetched is kept even then: it is
           # what the source served, and the next window starts after it.
           git add data/parity/ceiling-*.jsonl.gz data/parity/metar-*.jsonl.gz public/ceiling-errors/ceiling-errors.json \
-            data/parity/om-wind-*.jsonl.gz public/wind-errors/summary.json
+            data/parity/om-wind-*.jsonl.gz data/parity/ndfd-wind-*.jsonl.gz public/wind-errors/summary.json
           git commit -m "Ceiling and wind data to $END" \
-            -m "Written by .github/workflows/ceiling-data-refresh.yml: NDFD ceilings, KPMV's reports and Open-Meteo's archived wind fetched with scripts/cloudCoverFetch.py, the chart's data file rebuilt by scripts/ceilingChartData.ts, the #wind-errors file by scripts/windErrorsData.ts."
+            -m "Written by .github/workflows/ceiling-data-refresh.yml: NDFD ceilings and wind, KPMV's reports and Open-Meteo's archived wind fetched with scripts/cloudCoverFetch.py, the chart's data file rebuilt by scripts/ceilingChartData.ts, the #wind-errors file by scripts/windErrorsData.ts."
           # main may have moved while the fetch ran; a conflict (someone
           # rebuilt the file by hand meanwhile) fails here, loudly.
           git fetch --quiet origin main
@@ -232,14 +254,18 @@ jobs:
       # or wind rebuild still fails the run, so it is not missed.
       - name: Fail if the wind side failed
         if: >-
-          steps.window.outputs.om_wind_missing == 'true' ||
-          steps.omwind.outcome == 'failure' || steps.wind.outcome == 'failure'
+          steps.window.outputs.om_wind_missing == 'true' || steps.window.outputs.ndfd_wind_missing == 'true' ||
+          steps.omwind.outcome == 'failure' || steps.ndfdwind.outcome == 'failure' || steps.wind.outcome == 'failure'
         env:
           MISSING: ${{ steps.window.outputs.om_wind_missing }}
+          NDFD_MISSING: ${{ steps.window.outputs.ndfd_wind_missing }}
           OMWIND: ${{ steps.omwind.outcome }}
+          NDFDWIND: ${{ steps.ndfdwind.outcome }}
           WIND: ${{ steps.wind.outcome }}
         run: |
           [ "$MISSING" = true ] && echo "::error::no Open-Meteo wind archive under data/parity/om-wind-*, so nothing was fetched for it"
+          [ "$NDFD_MISSING" = true ] && echo "::error::no NDFD wind archive under data/parity/ndfd-wgust-* and ndfd-wind-*, so nothing was fetched for it"
           [ "$OMWIND" = failure ] && echo "::error::the Open-Meteo wind fetch failed (see its step); the next run starts from the same day"
+          [ "$NDFDWIND" = failure ] && echo "::error::the NDFD wind fetch failed (see its step); the next run starts from the same day"
           [ "$WIND" = failure ] && echo "::error::the #wind-errors rebuild failed (see its step); its file was left as published"
           exit 1

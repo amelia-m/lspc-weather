@@ -89,26 +89,34 @@ export interface RefreshWindow {
    *  the wind side must not stop the ceiling refresh, so the workflow
    *  fetches the rest and fails the run at its end. */
   omWindMissing: boolean;
+  /** NDFD's wind, gust and direction, for the #wind-errors page's NWS
+   *  archive section (data/parity/ndfd-wgust-*, ndfd-wind-*), and whether
+   *  that archive held nothing; independent of the ceiling, as above. */
+  ndfdWind: FetchWindow | null;
+  ndfdWindMissing: boolean;
 }
 
 /**
  * The days to fetch for each part, from the newest NDFD issuance, the
- * newest KPMV report and the newest hour of Open-Meteo's archived wind
- * already kept (`omWindNewest`). A part whose newest record falls on
+ * newest KPMV report, the newest hour of Open-Meteo's archived wind
+ * (`omWindNewest`) and the newest NDFD wind issuance (`earliestNewest`
+ * over its three elements) already kept. A part whose newest record falls on
  * `end` or later is left alone this run: if that day was fetched only in
  * part, the next run starts on it again, so nothing is skipped for good.
  * With no ceiling or report records at all the archive is missing, and the
  * refresh refuses rather than fetch from an invented start. With no
- * Open-Meteo wind records it fetches none of those either, and says so
- * (`omWindMissing`) rather than refuse, so the ceiling side still runs.
+ * Open-Meteo or NDFD wind records it fetches none of those either, and
+ * says so (`omWindMissing`, `ndfdWindMissing`) rather than refuse, so the
+ * ceiling side still runs.
  */
 export function refreshWindow(input: {
   lastIssued: string | null;
   lastReport: string | null;
   lastOmWind: string | null;
+  lastNdfdWind: string | null;
   now: Date;
 }): RefreshWindow {
-  const { lastIssued, lastReport, lastOmWind, now } = input;
+  const { lastIssued, lastReport, lastOmWind, lastNdfdWind, now } = input;
   if (lastIssued == null) throw new Error('no NDFD ceiling records found: the archive under data/parity/ is missing');
   if (lastReport == null) throw new Error('no KPMV reports found: the archive under data/parity/ is missing');
   const end = utcDay(new Date(Date.parse(utcDay(now)) - 86_400_000));
@@ -119,7 +127,21 @@ export function refreshWindow(input: {
     metar: part(lastReport),
     omWind: lastOmWind == null ? null : part(lastOmWind),
     omWindMissing: lastOmWind == null,
+    ndfdWind: lastNdfdWind == null ? null : part(lastNdfdWind),
+    ndfdWindMissing: lastNdfdWind == null,
   };
+}
+
+/**
+ * The earliest of each group's newest time: the window starts there, so a
+ * group whose archive lagged the others' (one Open-Meteo run, one NDFD
+ * element) is fetched again from its own last day rather than skipped.
+ * Null when any group has none.
+ */
+export function earliestNewest(groups: readonly (readonly string[])[]): string | null {
+  const each = groups.map((g) => newest(g));
+  if (each.length === 0 || each.some((t) => t == null)) return null;
+  return each.reduce((a, b) => (Date.parse(b!) < Date.parse(a!) ? b : a));
 }
 
 /**
@@ -129,9 +151,7 @@ export function refreshWindow(input: {
  * Null when either run has no records.
  */
 export function omWindNewest(records: readonly { run: string; valid: string }[], runs: readonly string[]): string | null {
-  const each = runs.map((run) => newest(records.filter((r) => r.run === run).map((r) => r.valid)));
-  if (each.some((t) => t == null)) return null;
-  return each.reduce((a, b) => (Date.parse(b!) < Date.parse(a!) ? b : a));
+  return earliestNewest(runs.map((run) => records.filter((r) => r.run === run).map((r) => r.valid)));
 }
 
 /**

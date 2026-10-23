@@ -42,6 +42,12 @@ Sources, each as read 2026-10-10:
           sky cover, the last in each of 00, 06, 12 and 18 Z. Never in the
           default; its records ('ndfd-wgust') go to their own archive,
           data/parity/ndfd-wgust-*.
+  wspd    NOAA's NDFD wind speed (YCUZ98, wmo/wspd/, GRIB2 0/2/1, m/s) and
+  wdir    direction (YBUZ98, wmo/wdir/, 0/2/0, degrees true), read
+          2026-10-23 for the #wind-errors page's NWS archive section; the
+          API's `windSpeed` and `windDirection` matched the archive at 42
+          of 42 hours on 2026-10-13. Speed files about 57 MB, direction 33.
+          Not in the default; with wgust they go to data/parity/ndfd-wind-*.
   om      Open-Meteo's cloud cover (total, low, mid, high) for the point the
           dashboard asks for, default model, from the Historical Forecast API
           (the start of each model run, stitched) and the Previous Runs API's
@@ -104,6 +110,8 @@ NDFD_PARTS = {
     'ndfd': ('sky', 'YAUZ98', (0, 6, 1), 'ndfd', 'sky'),
     'cig': ('cig', 'YMUZ98', (0, 6, 13), 'ndfd-cig', 'cig'),
     'wgust': ('wgust', 'YWUZ98', (0, 2, 22), 'ndfd-wgust', 'gust'),
+    'wspd': ('wspd', 'YCUZ98', (0, 2, 1), 'ndfd-wspd', 'spd'),
+    'wdir': ('wdir', 'YBUZ98', (0, 2, 0), 'ndfd-wdir', 'dir'),
 }
 
 

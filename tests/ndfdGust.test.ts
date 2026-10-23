@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pairGusts, parseNdfdGustLines, summarizeGusts, type NdfdGustRecord } from '../src/domain/ndfdGust';
+import { pairGusts, pairNdfdWind, parseNdfdWindLines, summarizeGusts, type NdfdGustRecord } from '../src/domain/ndfdGust';
 import { KT_PER_MPS } from '../src/domain/units';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 
@@ -19,7 +19,7 @@ const metar = (obsAt: string, wind: string): MetarRecord => ({
   raw: `KPMV ${obsAt.replace(/[-T:]/g, '').slice(0, 6)}Z AUTO ${wind} 10SM CLR 25/15 A3001`,
 });
 
-describe('parseNdfdGustLines', () => {
+describe('parseNdfdWindLines, the gust', () => {
   it('keeps the drop zone’s gust records and drops the no-data fill, other records and other sites', () => {
     const good = rec('01T00:47', '01T02:00', 15);
     const text = [
@@ -29,7 +29,7 @@ describe('parseNdfdGustLines', () => {
       JSON.stringify({ ...good, src: 'ndfd-cig' }),
       JSON.stringify({ ...good, site: 'PMV' }),
     ].join('\n');
-    expect(parseNdfdGustLines(text)).toEqual([good]);
+    expect(parseNdfdWindLines(text).gust).toEqual([good]);
   });
 });
 
@@ -80,11 +80,12 @@ describe('pairGusts', () => {
 });
 
 describe('summarizeGusts', () => {
-  const pair = (day: string, gustDiff: number | null, fc: number, spd: number, gust: number | null) => ({
+  const pair = (day: string, gustDiff: number | null, fc: number, spd: number, gust: number | null, fcWind: number | null = null) => ({
     t: Date.parse(`2026-07-${day}Z`),
     issued: '2026-07-01T00:47Z',
     leadH: 3,
     fc,
+    fcWind,
     obs: { t: Date.parse(`2026-07-${day}Z`), spd, gust, dir: 180, tempC: null, visSm: null },
     gustDiff,
     overSteady: gust == null ? fc - spd : null,
@@ -137,7 +138,87 @@ describe('summarizeGusts', () => {
     expect(m.byMonth.map((g) => g.key)).toEqual(['2026-06']);
   });
 
+  it('reads the forecast as the flag does, the higher of its wind and gust, and counts the gust under the wind', () => {
+    // Gust 10 under the limit, wind 13 over it: the flag would fire.
+    const [w] = summarizeGusts([{ label: 'x', pairs: [pair('01T18:00', null, 10, 13, null, 13), pair('01T19:00', null, 14, 9, null, 9)] }], {
+      timeZone: 'America/Chicago',
+      limitKt: 12,
+      minDayHours: 3,
+    });
+    expect(w.atLimit).toMatchObject({ forecastAt: 2, bothAt: 1, reportOnly: 0 });
+    expect(w.gustUnderWind).toEqual({ compared: 2, under: 1 });
+  });
+
   it('counts hours at a limit: the forecast gust, and the higher of the reported wind and gust', () => {
     expect(s.atLimit).toEqual({ limitKt: 12, forecastAt: 6, bothAt: 5, reportOnly: 1, hours: 7 });
+  });
+});
+
+const spdRec = (issued: string, valid: string, kt: number) => ({
+  src: 'ndfd-wspd' as const,
+  key: `YCUZ98_KWBN_${issued}`,
+  issued: `2026-07-${issued}Z`,
+  valid: `2026-07-${valid}Z`,
+  spd: ms(kt),
+});
+const dirRec = (issued: string, valid: string, dir: number) => ({
+  src: 'ndfd-wdir' as const,
+  key: `YBUZ98_KWBN_${issued}`,
+  issued: `2026-07-${issued}Z`,
+  valid: `2026-07-${valid}Z`,
+  dir,
+});
+
+describe('parseNdfdWindLines', () => {
+  it('sorts the three elements apart from one file, dropping fills, other sites and other records', () => {
+    const lines = [
+      spdRec('01T00:47', '01T12:00', 10),
+      { ...spdRec('01T00:47', '01T13:00', 10), spd: -4630 },
+      dirRec('01T00:46', '01T12:00', 200),
+      { ...dirRec('01T00:46', '01T12:00', 200), site: 'PMV' },
+      rec('01T00:47', '01T12:00', 15),
+      { src: 'ndfd-truncated', key: 'x', issued: '2026-07-01T00:47Z', kept: 3 },
+    ].map((r) => JSON.stringify(r));
+    const w = parseNdfdWindLines(lines.join('\n'));
+    expect([w.spd.length, w.gust.length, w.dir.length]).toEqual([1, 1, 1]);
+  });
+});
+
+describe('pairNdfdWind', () => {
+  const wind = {
+    // The direction file stamped a minute before its speed file, as the
+    // archive's often are: each element is picked on its own.
+    spd: [spdRec('01T06:47', '01T12:00', 9.6), spdRec('01T00:47', '01T12:00', 20), spdRec('01T12:46', '01T18:00', 5)],
+    gust: [rec('01T06:47', '01T12:00', 15.4)],
+    dir: [dirRec('01T06:46', '01T12:00', 200), dirRec('01T00:46', '01T12:00', 90)],
+  };
+  const reports = [metar('01T11:55', '19012G20KT')];
+
+  it('picks each element’s newest issuance far enough ahead and gives the kept pairs’ shape', () => {
+    const [latest, six] = pairNdfdWind(wind, reports);
+    expect(latest.pairs).toHaveLength(1);
+    const p = latest.pairs[0];
+    expect(p.issued).toBe('2026-07-01T06:47Z');
+    expect(p.fc.windSpeed).toBeCloseTo(9.6, 6);
+    expect(p.fc.windGust).toBeCloseTo(15.4, 6);
+    expect(p.fc.windDirection).toBe(200);
+    // Six hours ahead: the 00:47 speed and 00:46 direction; no gust that early.
+    expect(six.pairs[0].fc).toMatchObject({ windDirection: 90 });
+    expect(six.pairs[0].fc.windSpeed).toBeCloseTo(20, 6);
+    expect(six.pairs[0].fc.windGust).toBeUndefined();
+  });
+
+  it('leaves out an hour with no report near it', () => {
+    const [latest] = pairNdfdWind(wind, []);
+    expect(latest.pairs).toEqual([]);
+  });
+});
+
+describe('pairGusts with the speed', () => {
+  it('gives each hour the forecast wind at the same lead, in whole knots', () => {
+    const [latest] = pairGusts([rec('01T06:47', '01T12:00', 15.4)], [metar('01T11:55', '19012G20KT')], [
+      spdRec('01T06:47', '01T12:00', 9.6),
+    ]);
+    expect(latest.pairs[0]).toMatchObject({ fc: 15, fcWind: 10 });
   });
 });

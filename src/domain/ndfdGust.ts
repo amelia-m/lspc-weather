@@ -14,11 +14,18 @@
  * and a METAR reports (`windDiffs`). The archive's gust matched the API's
  * `windGust` at 42 of 42 hours on 2026-10-13 (scripts/ndfdApiCheck.py).
  *
+ * Since 2026-10-23 the archive's wind speed and direction are read too
+ * (`parseNdfdWindLines`, `pairNdfdWind`): the speed so the Student-limit
+ * count reads the higher of the forecast wind and gust, as the forecast
+ * flag does, and all three for the #wind-errors page's NWS archive section
+ * (src/domain/windErrors.ts). The API's `windSpeed` and `windDirection`
+ * matched the archive at 42 of 42 hours on 2026-10-13 as well.
+ *
  * Counts and spreads only; nothing on the dashboard reads them.
  */
 import { byValidHour, END_REACH_H, pastReach } from './ceilingHeights';
 import { NWS_ISSUANCES, reportNear, type MetarRecord } from './cloudCoverSources';
-import { reportsByHour, windDiffs, type Instant } from './keptForecasts';
+import { reportsByHour, windDiffs, type Instant, type InstantPair } from './keptForecasts';
 import { median, spreadOf, type Spread } from './paritySummary';
 import { KT_PER_MPS } from './units';
 
@@ -37,17 +44,95 @@ export interface NdfdGustRecord {
   site?: string;
 }
 
-/** The drop zone's gust records from JSON lines. A negative gust is the
- *  grid's no-data fill (−9999 in the office's unit; the files declare no
- *  bitmap, docs/open-questions.md), not a forecast, and is dropped. */
-export function parseNdfdGustLines(text: string): NdfdGustRecord[] {
-  const out: NdfdGustRecord[] = [];
+/** One hour of the archive's wind speed (m/s) or direction (degrees
+ *  true), as scripts/cloudCoverFetch.py (PARTS=wspd,wdir) writes it. */
+export interface NdfdSpeedRecord {
+  src: 'ndfd-wspd';
+  key: string;
+  issued: string;
+  valid: string;
+  spd: number;
+  site?: string;
+}
+export interface NdfdDirRecord {
+  src: 'ndfd-wdir';
+  key: string;
+  issued: string;
+  valid: string;
+  dir: number;
+  site?: string;
+}
+
+/** The archive's three wind elements, the drop zone's, from JSON lines in
+ *  any mix (the weekly refresh writes all three to one file). A negative
+ *  value is the grid's no-data fill (−9999 in the office's unit; the files
+ *  declare no bitmap, docs/open-questions.md), not a forecast, and is
+ *  dropped, as are other records and other sites' points. */
+export function parseNdfdWindLines(text: string): {
+  gust: NdfdGustRecord[];
+  spd: NdfdSpeedRecord[];
+  dir: NdfdDirRecord[];
+} {
+  const out = { gust: [] as NdfdGustRecord[], spd: [] as NdfdSpeedRecord[], dir: [] as NdfdDirRecord[] };
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
-    const r = JSON.parse(line) as NdfdGustRecord;
-    if (r.src === 'ndfd-wgust' && r.site == null && r.gust >= 0) out.push(r);
+    const r = JSON.parse(line) as NdfdGustRecord | NdfdSpeedRecord | NdfdDirRecord;
+    if (r.site != null) continue;
+    if (r.src === 'ndfd-wgust' && r.gust >= 0) out.gust.push(r);
+    else if (r.src === 'ndfd-wspd' && r.spd >= 0) out.spd.push(r);
+    else if (r.src === 'ndfd-wdir' && r.dir >= 0) out.dir.push(r);
   }
   return out;
+}
+
+/** The newest record of an element at least `minLeadH` before hour `t`,
+ *  or null; null too past the reach of what was fetched (`pastReach`).
+ *  Each element is picked on its own: a direction file is sometimes
+ *  stamped a minute before its speed file. */
+function pick<T extends { issued: string }>(
+  el: { byHour: Map<number, T[]>; lastIssued: number },
+  t: number,
+  minLeadH: number,
+): T | null {
+  if (pastReach(t, minLeadH, el.lastIssued, END_REACH_H)) return null;
+  return el.byHour.get(t)?.find((x) => t - Date.parse(x.issued) >= minLeadH * MS_H) ?? null;
+}
+
+/**
+ * The archive's wind, gust and direction as the kept forecasts' pairs
+ * (`InstantPair`), a row per NWS_ISSUANCES lead, each element picked on
+ * its own as `pairInstants` picks them: the #wind-errors page reads these
+ * with `windDiffs`, as it reads the kept forecasts. Speeds in knots,
+ * unrounded (`windDiffs` rounds them). The issue time given is the
+ * speed's, else the gust's. Hours with no report near them are left out.
+ */
+export function pairNdfdWind(
+  wind: { gust: readonly NdfdGustRecord[]; spd: readonly NdfdSpeedRecord[]; dir: readonly NdfdDirRecord[] },
+  metars: readonly MetarRecord[],
+): { label: string; minLeadH: number; pairs: InstantPair[] }[] {
+  const spd = byValidHour(wind.spd);
+  const gust = byValidHour(wind.gust);
+  const dir = byValidHour(wind.dir);
+  const repBy = reportsByHour(metars);
+  const hours = [...new Set([...spd.byHour.keys(), ...gust.byHour.keys(), ...dir.byHour.keys()])].sort((a, b) => a - b);
+  return NWS_ISSUANCES.map(({ minLeadH, label }) => {
+    const pairs: InstantPair[] = [];
+    for (const t of hours) {
+      const obs = reportNear(repBy.get(t) ?? [], t);
+      if (!obs) continue;
+      const s = pick(spd, t, minLeadH);
+      const g = pick(gust, t, minLeadH);
+      const d = pick(dir, t, minLeadH);
+      const issued = s?.issued ?? g?.issued;
+      if (!issued) continue;
+      const fc: InstantPair['fc'] = {};
+      if (s) fc.windSpeed = s.spd * KT_PER_MPS;
+      if (g) fc.windGust = g.gust * KT_PER_MPS;
+      if (d) fc.windDirection = d.dir;
+      pairs.push({ t, issued, fc, obs });
+    }
+    return { label: label.replace('NWS, ', ''), minLeadH, pairs };
+  });
 }
 
 /** One paired hour. `fc` is the forecast gust in whole knots. */
@@ -56,6 +141,9 @@ export interface GustPair {
   issued: string;
   leadH: number;
   fc: number;
+  /** The forecast wind for the hour at the same lead, in whole knots, when
+   *  the speed was given: the forecast flag reads the higher of the two. */
+  fcWind: number | null;
   obs: Instant;
   /** Forecast minus reported gust, where KPMV reported one. */
   gustDiff: number | null;
@@ -72,7 +160,9 @@ export interface GustPair {
 export function pairGusts(
   records: readonly NdfdGustRecord[],
   metars: readonly MetarRecord[],
+  speeds: readonly NdfdSpeedRecord[] = [],
 ): { label: string; minLeadH: number; pairs: GustPair[] }[] {
+  const spd = byValidHour(speeds);
   // An issuance at or after its hour is never picked (every row asks for
   // one at least 0 h before), and a row takes one issuance an hour, so a
   // file read twice by overlapping fetches needs no weeding.
@@ -90,11 +180,13 @@ export function pairGusts(
       // Whole knots once, so the pair's figure and its differences agree.
       const fc = Math.round(r.gust * KT_PER_MPS);
       const d = windDiffs({ fc: { windGust: fc }, obs });
+      const s = pick(spd, t, minLeadH);
       pairs.push({
         t,
         issued: r.issued,
         leadH: (t - Date.parse(r.issued)) / MS_H,
         fc,
+        fcWind: s ? Math.round(s.spd * KT_PER_MPS) : null,
         obs,
         gustDiff: d.gust,
         overSteady: d.gustOverSpeed,
@@ -168,14 +260,15 @@ export interface GustSummary {
   /** Those days' means, signed: the lowest, middle and highest, and how
    *  many fell below −2 kt, within 2 kt of zero, and above +2 kt. */
   dayMeans: { n: number; min: number; median: number; max: number; under: number; near: number; over: number } | null;
-  /** At a published limit: hours the forecast gust was at or over it, how
-   *  many of those KPMV's report was at or over it too (the higher of its
-   *  wind and gust, as the report's caution flag reads it), and hours the
-   *  report was at or over it with the forecast gust under. The forecast
-   *  flag reads the higher of the forecast wind and gust; only the gust is
-   *  fetched here, so this is the flag's count only where the gust is the
-   *  higher (docs/nws-gust-archive.md says how far that was checked). */
+  /** At a published limit, as the caution flags read it: hours the
+   *  forecast was at or over it (the higher of its wind, where given, and
+   *  gust), how many of those KPMV's report was at or over it too (the
+   *  higher of its wind and gust), and hours the report was at or over it
+   *  with the forecast under. */
   atLimit: { limitKt: number; forecastAt: number; bothAt: number; reportOnly: number; hours: number };
+  /** Hours with the forecast wind given, and how many of them had it over
+   *  the forecast gust, in whole knots. */
+  gustUnderWind: { compared: number; under: number };
 }
 
 export function summarizeGusts(
@@ -192,7 +285,7 @@ export function summarizeGusts(
     let bothAt = 0;
     let reportOnly = 0;
     for (const p of pairs) {
-      const f = p.fc >= opts.limitKt;
+      const f = Math.max(p.fc, p.fcWind ?? -Infinity) >= opts.limitKt;
       const o = reported(p) >= opts.limitKt;
       if (f) forecastAt++;
       if (f && o) bothAt++;
@@ -228,6 +321,10 @@ export function summarizeGusts(
           }
         : null,
       atLimit: { limitKt: opts.limitKt, forecastAt, bothAt, reportOnly, hours: pairs.length },
+      gustUnderWind: {
+        compared: pairs.filter((p) => p.fcWind != null).length,
+        under: pairs.filter((p) => p.fcWind != null && p.fcWind > p.fc).length,
+      },
     };
   });
 }

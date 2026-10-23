@@ -4,6 +4,7 @@ import {
   type ChartData,
   fetchCoverage,
   newest,
+  earliestNewest,
   omWindNewest,
   refreshWindow,
   shrinkage,
@@ -65,43 +66,58 @@ describe('refreshWindow', () => {
   const now = new Date('2026-10-26T07:41Z');
 
   it('starts each part on the day of its newest record, not the day after, and ends on the last whole UTC day', () => {
-    const w = refreshWindow({ lastIssued: '2026-10-16T18:47Z', lastReport: '2026-10-17T00:15Z', lastOmWind: '2026-10-18T23:00Z', now });
+    const w = refreshWindow({ lastIssued: '2026-10-16T18:47Z', lastReport: '2026-10-17T00:15Z', lastOmWind: '2026-10-18T23:00Z', lastNdfdWind: '2026-10-18T18:47Z', now });
     expect(w.end).toBe('2026-10-25');
     expect(w.ceiling).toEqual({ start: '2026-10-16', end: '2026-10-25' });
     expect(w.metar).toEqual({ start: '2026-10-17', end: '2026-10-25' });
     expect(w.omWind).toEqual({ start: '2026-10-18', end: '2026-10-25' });
+    expect(w.ndfdWind).toEqual({ start: '2026-10-18', end: '2026-10-25' });
   });
 
   it('ends on the day before now at either end of a UTC day', () => {
-    const at = (t: string) => refreshWindow({ lastIssued: '2026-10-01T00:46Z', lastReport: '2026-10-01T00:15Z', lastOmWind: '2026-10-01T23:00Z', now: new Date(t) }).end;
+    const at = (t: string) => refreshWindow({ lastIssued: '2026-10-01T00:46Z', lastReport: '2026-10-01T00:15Z', lastOmWind: '2026-10-01T23:00Z', lastNdfdWind: '2026-10-01T18:47Z', now: new Date(t) }).end;
     expect(at('2026-10-26T00:00Z')).toBe('2026-10-25');
     expect(at('2026-10-26T23:59Z')).toBe('2026-10-25');
     expect(at('2026-11-01T00:30Z')).toBe('2026-10-31');
   });
 
   it('leaves a part alone once it holds a record on the last whole day, and fetches it while it holds only the day before', () => {
-    const current = refreshWindow({ lastIssued: '2026-10-25T00:46Z', lastReport: '2026-10-25T23:55Z', lastOmWind: '2026-10-25T23:00Z', now });
+    const current = refreshWindow({ lastIssued: '2026-10-25T00:46Z', lastReport: '2026-10-25T23:55Z', lastOmWind: '2026-10-25T23:00Z', lastNdfdWind: '2026-10-25T18:47Z', now });
     expect(current.ceiling).toBeNull();
     expect(current.metar).toBeNull();
     expect(current.omWind).toBeNull();
-    const behind = refreshWindow({ lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: '2026-10-24T23:00Z', now });
+    const behind = refreshWindow({ lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: '2026-10-24T23:00Z', lastNdfdWind: '2026-10-24T18:47Z', now });
     expect(behind.ceiling).toEqual({ start: '2026-10-24', end: '2026-10-25' });
     expect(behind.metar).toEqual({ start: '2026-10-24', end: '2026-10-25' });
     expect(behind.omWind).toEqual({ start: '2026-10-24', end: '2026-10-25' });
   });
 
   it('refuses when the archive holds no records', () => {
-    const kept = { lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: '2026-10-24T23:00Z', now };
+    const kept = { lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: '2026-10-24T23:00Z', lastNdfdWind: '2026-10-24T18:47Z', now };
     expect(() => refreshWindow({ ...kept, lastIssued: null })).toThrow(/NDFD.*archive/);
     expect(() => refreshWindow({ ...kept, lastReport: null })).toThrow(/KPMV.*archive/);
   });
 
   it('does not let a missing Open-Meteo archive stop the ceiling side: it fetches none and says so', () => {
-    const kept = { lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: null, now };
+    const kept = { lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: null, lastNdfdWind: null, now };
     const w = refreshWindow(kept);
     expect(w.ceiling).toEqual({ start: '2026-10-24', end: '2026-10-25' });
-    expect(w).toMatchObject({ omWind: null, omWindMissing: true });
-    expect(refreshWindow({ ...kept, lastOmWind: '2026-10-24T23:00Z' }).omWindMissing).toBe(false);
+    expect(w).toMatchObject({ omWind: null, omWindMissing: true, ndfdWind: null, ndfdWindMissing: true });
+    expect(refreshWindow({ ...kept, lastOmWind: '2026-10-24T23:00Z', lastNdfdWind: '2026-10-24T18:47Z' }).omWindMissing).toBe(false);
+  });
+});
+
+describe('earliestNewest', () => {
+  it('takes the earliest of the groups’ newest, so a lagging NDFD element is fetched again', () => {
+    expect(
+      earliestNewest([
+        ['2026-10-20T18:47Z', '2026-10-19T18:47Z'],
+        ['2026-10-22T18:46Z'],
+        ['2026-10-22T18:47Z'],
+      ]),
+    ).toBe('2026-10-20T18:47Z');
+    expect(earliestNewest([['2026-10-20T18:47Z'], []])).toBeNull();
+    expect(earliestNewest([])).toBeNull();
   });
 });
 

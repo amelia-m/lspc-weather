@@ -12,7 +12,7 @@ const data = JSON.parse(publishedText) as WindErrorsData;
 
 describe('the published #wind-errors file', () => {
   it('holds every section, each with dates in order and a row per source or lead', () => {
-    expect(data.sections.map((s) => s.id)).toEqual(['nws-kept', 'om-archive', 'surface-sample']);
+    expect(data.sections.map((s) => s.id)).toEqual(['nws-kept', 'nws-archive', 'om-archive', 'surface-sample']);
     for (const s of data.sections) {
       expect(s.rows.length).toBeGreaterThan(0);
       expect(s.first).not.toBeNull();
