@@ -23,9 +23,9 @@
  *
  * Counts and spreads only; nothing on the dashboard reads them.
  */
-import { byValidHour, END_REACH_H, pastReach } from './ceilingHeights';
-import { NWS_ISSUANCES, reportNear, type MetarRecord } from './cloudCoverSources';
-import { reportsByHour, windDiffs, type Instant, type InstantPair } from './keptForecasts';
+import { byValidHour } from './ceilingHeights';
+import { NWS_ISSUANCES, type MetarRecord } from './cloudCoverSources';
+import { pairInstants, reportsByHour, windDiffs, type Instant, type InstantPair } from './keptForecasts';
 import { median, spreadOf, type Spread } from './paritySummary';
 import { KT_PER_MPS } from './units';
 
@@ -67,17 +67,33 @@ export interface NdfdDirRecord {
  *  any mix (the weekly refresh writes all three to one file). A negative
  *  value is the grid's no-data fill (−9999 in the office's unit; the files
  *  declare no bitmap, docs/open-questions.md), not a forecast, and is
- *  dropped, as are other records and other sites' points. */
+ *  dropped, as are other records and other sites' points. The files the
+ *  archive cut short (`ndfd-truncated`, scripts/cloudCoverFetch.py) are
+ *  kept apart, so a reading can say which they were. */
 export function parseNdfdWindLines(text: string): {
   gust: NdfdGustRecord[];
   spd: NdfdSpeedRecord[];
   dir: NdfdDirRecord[];
+  truncated: { key: string; issued: string; kept: number }[];
 } {
-  const out = { gust: [] as NdfdGustRecord[], spd: [] as NdfdSpeedRecord[], dir: [] as NdfdDirRecord[] };
+  const out = {
+    gust: [] as NdfdGustRecord[],
+    spd: [] as NdfdSpeedRecord[],
+    dir: [] as NdfdDirRecord[],
+    truncated: [] as { key: string; issued: string; kept: number }[],
+  };
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
-    const r = JSON.parse(line) as NdfdGustRecord | NdfdSpeedRecord | NdfdDirRecord;
+    const r = JSON.parse(line) as
+      | NdfdGustRecord
+      | NdfdSpeedRecord
+      | NdfdDirRecord
+      | { src: 'ndfd-truncated'; key: string; issued: string; kept: number; site?: string };
     if (r.site != null) continue;
+    if (r.src === 'ndfd-truncated') {
+      out.truncated.push({ key: r.key, issued: r.issued, kept: r.kept });
+      continue;
+    }
     if (r.src === 'ndfd-wgust' && r.gust >= 0) out.gust.push(r);
     else if (r.src === 'ndfd-wspd' && r.spd >= 0) out.spd.push(r);
     else if (r.src === 'ndfd-wdir' && r.dir >= 0) out.dir.push(r);
@@ -85,54 +101,46 @@ export function parseNdfdWindLines(text: string): {
   return out;
 }
 
-/** The newest record of an element at least `minLeadH` before hour `t`,
- *  or null; null too past the reach of what was fetched (`pastReach`).
- *  Each element is picked on its own: a direction file is sometimes
- *  stamped a minute before its speed file. */
-function pick<T extends { issued: string }>(
-  el: { byHour: Map<number, T[]>; lastIssued: number },
-  t: number,
-  minLeadH: number,
-): T | null {
-  if (pastReach(t, minLeadH, el.lastIssued, END_REACH_H)) return null;
-  return el.byHour.get(t)?.find((x) => t - Date.parse(x.issued) >= minLeadH * MS_H) ?? null;
+/** A lead row's label as the rows here print it ("latest issuance"), the
+ *  same for the gust reading, the page and the docs. */
+export const nwsRowLabel = (label: string): string => label.replace('NWS, ', '');
+
+/** The six-hour block of UTC an hour falls in, as the kept reading splits
+ *  its tables ("00–05Z"). */
+export function utcBlockKey(t: number): string {
+  const b = Math.floor(new Date(t).getUTCHours() / 6) * 6;
+  return `${String(b).padStart(2, '0')}–${String(b + 5).padStart(2, '0')}Z`;
 }
 
 /**
- * The archive's wind, gust and direction as the kept forecasts' pairs
- * (`InstantPair`), a row per NWS_ISSUANCES lead, each element picked on
- * its own as `pairInstants` picks them: the #wind-errors page reads these
- * with `windDiffs`, as it reads the kept forecasts. Speeds in knots,
- * unrounded (`windDiffs` rounds them). The issue time given is the
- * speed's, else the gust's. Hours with no report near them are left out.
+ * The archive's wind, gust and direction as the kept forecasts' pairs, a
+ * row per NWS_ISSUANCES lead, by the kept reading's own `pairInstants`: each
+ * element its own newest issuance at least the lead before the hour (a
+ * direction file is sometimes stamped a minute before its speed file), its
+ * own reach (`pastReach`), and the report near the hour. So the #wind-errors
+ * page's two NWS sections are paired by the same code. Speeds in knots,
+ * unrounded (`windDiffs` rounds them). The issue time given is the gust's,
+ * else the speed's, else the direction's: the gust reading's leads are
+ * the gust's.
  */
 export function pairNdfdWind(
   wind: { gust: readonly NdfdGustRecord[]; spd: readonly NdfdSpeedRecord[]; dir: readonly NdfdDirRecord[] },
   metars: readonly MetarRecord[],
 ): { label: string; minLeadH: number; pairs: InstantPair[] }[] {
-  const spd = byValidHour(wind.spd);
-  const gust = byValidHour(wind.gust);
-  const dir = byValidHour(wind.dir);
-  const repBy = reportsByHour(metars);
-  const hours = [...new Set([...spd.byHour.keys(), ...gust.byHour.keys(), ...dir.byHour.keys()])].sort((a, b) => a - b);
-  return NWS_ISSUANCES.map(({ minLeadH, label }) => {
-    const pairs: InstantPair[] = [];
-    for (const t of hours) {
-      const obs = reportNear(repBy.get(t) ?? [], t);
-      if (!obs) continue;
-      const s = pick(spd, t, minLeadH);
-      const g = pick(gust, t, minLeadH);
-      const d = pick(dir, t, minLeadH);
-      const issued = s?.issued ?? g?.issued;
-      if (!issued) continue;
-      const fc: InstantPair['fc'] = {};
-      if (s) fc.windSpeed = s.spd * KT_PER_MPS;
-      if (g) fc.windGust = g.gust * KT_PER_MPS;
-      if (d) fc.windDirection = d.dir;
-      pairs.push({ t, issued, fc, obs });
-    }
-    return { label: label.replace('NWS, ', ''), minLeadH, pairs };
-  });
+  const as = <T extends { issued: string; valid: string }>(rs: readonly T[], value: (r: T) => number) =>
+    byValidHour(rs.map((r) => ({ issued: r.issued, valid: r.valid, value: value(r) })));
+  const per = [
+    { el: 'windGust' as const, ...as(wind.gust, (r) => r.gust * KT_PER_MPS) },
+    { el: 'windSpeed' as const, ...as(wind.spd, (r) => r.spd * KT_PER_MPS) },
+    { el: 'windDirection' as const, ...as(wind.dir, (r) => r.dir) },
+  ];
+  const hours = [...new Set(per.flatMap((p) => [...p.byHour.keys()]))].sort((a, b) => a - b);
+  const prepared = { reportsByHour: reportsByHour(metars), per, hours };
+  return NWS_ISSUANCES.map(({ minLeadH, label }) => ({
+    label: nwsRowLabel(label),
+    minLeadH,
+    pairs: pairInstants(prepared, minLeadH),
+  }));
 }
 
 /** One paired hour. `fc` is the forecast gust in whole knots. */
@@ -141,8 +149,10 @@ export interface GustPair {
   issued: string;
   leadH: number;
   fc: number;
-  /** The forecast wind for the hour at the same lead, in whole knots, when
-   *  the speed was given: the forecast flag reads the higher of the two. */
+  /** The forecast wind for the hour in the same lead row, in whole knots,
+   *  when the speed was given: each element is its own newest issuance at
+   *  the lead, so this can come from a file stamped a minute apart. The
+   *  forecast flag reads the higher of the two. */
   fcWind: number | null;
   obs: Instant;
   /** Forecast minus reported gust, where KPMV reported one. */
@@ -151,48 +161,40 @@ export interface GustPair {
   overSteady: number | null;
 }
 
-/** The pairs for each NWS_ISSUANCES row: the newest issuance at least
- *  `minLeadH` before the hour, chosen by time as the cloud-cover and
- *  ceiling comparisons choose it, and KPMV's report near the hour. Hours
- *  whose report has no wind group are left out, and so are hours past the
- *  reach of the issuances fetched (`pastReach`, END_REACH_H), whose
- *  "newest" would only be the one the fetch ended on. */
+/** The gust reading's pairs for each NWS_ISSUANCES row, from `pairNdfdWind`:
+ *  the hours with a forecast gust and a report with a wind group. Hours
+ *  with a forecast speed but no gust at the lead (none in the six months
+ *  read) are counted in `withoutGust`, not paired, so the reading says
+ *  what it left out. */
 export function pairGusts(
   records: readonly NdfdGustRecord[],
   metars: readonly MetarRecord[],
   speeds: readonly NdfdSpeedRecord[] = [],
-): { label: string; minLeadH: number; pairs: GustPair[] }[] {
-  const spd = byValidHour(speeds);
-  // An issuance at or after its hour is never picked (every row asks for
-  // one at least 0 h before), and a row takes one issuance an hour, so a
-  // file read twice by overlapping fetches needs no weeding.
-  const { byHour: fcBy, lastIssued } = byValidHour(records);
-  const repBy = reportsByHour(metars);
-  const hours = [...fcBy.keys()].sort((a, b) => a - b);
-  return NWS_ISSUANCES.map(({ minLeadH, label }) => {
-    const pairs: GustPair[] = [];
-    for (const t of hours) {
-      if (pastReach(t, minLeadH, lastIssued, END_REACH_H)) continue;
-      const r = fcBy.get(t)!.find((x) => t - Date.parse(x.issued) >= minLeadH * MS_H);
-      if (!r) continue;
-      const obs = reportNear(repBy.get(t) ?? [], t);
-      if (!obs || obs.spd == null) continue;
+): { label: string; minLeadH: number; pairs: GustPair[]; withoutGust: number }[] {
+  return pairNdfdWind({ gust: records, spd: speeds, dir: [] }, metars).map(({ label, minLeadH, pairs }) => {
+    const out: GustPair[] = [];
+    let withoutGust = 0;
+    for (const p of pairs) {
+      if (p.obs.spd == null) continue;
+      if (p.fc.windGust == null) {
+        if (p.fc.windSpeed != null) withoutGust++;
+        continue;
+      }
       // Whole knots once, so the pair's figure and its differences agree.
-      const fc = Math.round(r.gust * KT_PER_MPS);
-      const d = windDiffs({ fc: { windGust: fc }, obs });
-      const s = pick(spd, t, minLeadH);
-      pairs.push({
-        t,
-        issued: r.issued,
-        leadH: (t - Date.parse(r.issued)) / MS_H,
+      const fc = Math.round(p.fc.windGust);
+      const d = windDiffs({ fc: { windGust: fc }, obs: p.obs });
+      out.push({
+        t: p.t,
+        issued: p.issued,
+        leadH: (p.t - Date.parse(p.issued)) / MS_H,
         fc,
-        fcWind: s ? Math.round(s.spd * KT_PER_MPS) : null,
-        obs,
+        fcWind: p.fc.windSpeed == null ? null : Math.round(p.fc.windSpeed),
+        obs: p.obs,
         gustDiff: d.gust,
         overSteady: d.gustOverSpeed,
       });
     }
-    return { label: label.replace('NWS, ', ''), minLeadH, pairs };
+    return { label, minLeadH, pairs: out, withoutGust };
   });
 }
 
@@ -300,10 +302,7 @@ export function summarizeGusts(
       spread: spreadOf(ds),
       overSteady: spreadOf(pairs.flatMap((p) => (p.overSteady == null ? [] : [p.overSteady]))),
       byMonth: groups(pairs, (p) => localDay(p.t, opts.timeZone).slice(0, 7)),
-      byUtcBlock: groups(pairs, (p) => {
-        const b = Math.floor(new Date(p.t).getUTCHours() / 6) * 6;
-        return `${String(b).padStart(2, '0')}–${String(b + 5).padStart(2, '0')}Z`;
-      }),
+      byUtcBlock: groups(pairs, (p) => utcBlockKey(p.t)),
       bySize: SIZE_BANDS.map(({ key, test }) => {
         const xs = gusting.filter((p) => test(p.obs.gust!)).map((p) => p.gustDiff!);
         return { key, n: xs.length, mean: mean(xs), side: sideOf(xs) };
@@ -350,8 +349,7 @@ export function summarizeNdfdWind(rows: readonly { label: string; pairs: readonl
     const blocks = new Map<string, number[]>();
     for (const x of d) {
       if (x.speed == null) continue;
-      const b = Math.floor(new Date(x.t).getUTCHours() / 6) * 6;
-      const key = `${String(b).padStart(2, '0')}–${String(b + 5).padStart(2, '0')}Z`;
+      const key = utcBlockKey(x.t);
       blocks.set(key, [...(blocks.get(key) ?? []), x.speed]);
     }
     return {

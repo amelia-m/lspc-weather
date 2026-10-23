@@ -17,8 +17,6 @@
  * archive's speed records, where the files hold them). Counts and spreads,
  * never a grade.
  */
-import { readFileSync } from 'node:fs';
-import { gunzipSync } from 'node:zlib';
 import { DEFAULT_THRESHOLDS } from '../src/config/thresholds';
 import { SITE } from '../src/config/site';
 import { pairGusts, pairNdfdWind, summarizeGusts, summarizeNdfdWind, type GroupMean } from '../src/domain/ndfdGust';
@@ -49,12 +47,6 @@ if (gustFiles.length === 0 || reportFiles.length === 0) {
 
 const wind = loadNdfdWind(gustFiles);
 const records = wind.gust;
-const truncated = gustFiles.flatMap((f) =>
-  (f.endsWith('.gz') ? gunzipSync(readFileSync(f)) : readFileSync(f))
-    .toString('utf8')
-    .split('\n')
-    .filter((l) => l.includes('"src":"ndfd-truncated"')),
-);
 const metars = loadKpmvReports(reportFiles);
 const inWindow = (t: number): boolean => (from == null || t >= Date.parse(from)) && (to == null || t <= Date.parse(to));
 const rows = pairGusts(records, metars, wind.spd).map((r) => ({ ...r, pairs: r.pairs.filter((p) => inWindow(p.t)) }));
@@ -69,7 +61,7 @@ const summary = summarizeGusts(rows, {
 const issued = [...new Set(records.map((r) => r.issued))].sort();
 console.log(`${records.length} gust records, ${issued.length} issuances, ${issued[0]} to ${issued[issued.length - 1]}; ${wind.spd.length} speed records`);
 console.log(`${metars.length} KPMV reports, ${metars[0]?.obsAt} to ${metars[metars.length - 1]?.obsAt}`);
-for (const t of truncated) console.log(`cut short in the archive: ${t}`);
+for (const t of wind.truncated) console.log(`cut short in the archive: ${t.key}, ${t.kept} records kept`);
 console.log(from || to ? `hours from ${from ?? 'the start'} to ${to ?? 'the end'} only\n` : '');
 const signed = (x: number | null): string => (x == null ? '—' : x > 0 ? `+${x}` : `${x}`);
 const line = (g: GroupMean): string =>
@@ -84,6 +76,8 @@ for (const s of summary) {
     `  at ${s.atLimit.limitKt} kt: forecast (higher of wind and gust) at or over in ${s.atLimit.forecastAt} hours, KPMV too in ${s.atLimit.bothAt}; KPMV at or over with the forecast under in ${s.atLimit.reportOnly}`,
   );
   console.log(`  forecast wind given in ${s.gustUnderWind.compared} hours; over the forecast gust in ${s.gustUnderWind.under}`);
+  const without = rows.find((r) => r.label === s.label)?.withoutGust ?? 0;
+  console.log(`  hours with a forecast speed but no gust at this lead, left out: ${without}`);
   console.log(' by month:');
   s.byMonth.forEach((g) => console.log(line(g)));
   console.log(' by UTC block:');

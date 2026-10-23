@@ -41,7 +41,12 @@ export function loadOmWindRecords(files: readonly string[]): OmWindRecord[] {
  *  (data/parity/ndfd-wgust-*, ndfd-wind-*), the drop zone's. */
 export function loadNdfdWind(files: readonly string[]): ReturnType<typeof parseNdfdWindLines> {
   const all = files.map((f) => parseNdfdWindLines(read(f)));
-  return { gust: all.flatMap((w) => w.gust), spd: all.flatMap((w) => w.spd), dir: all.flatMap((w) => w.dir) };
+  return {
+    gust: all.flatMap((w) => w.gust),
+    spd: all.flatMap((w) => w.spd),
+    dir: all.flatMap((w) => w.dir),
+    truncated: all.flatMap((w) => w.truncated),
+  };
 }
 
 /** Every kept snapshot (`.json.gz`) under a folder, searched recursively. */

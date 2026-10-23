@@ -39,7 +39,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { NWS_ISSUANCES } from '../src/domain/cloudCoverSources';
 import { pairInstants, prepareInstants } from '../src/domain/keptForecasts';
-import { pairNdfdWind } from '../src/domain/ndfdGust';
+import { nwsRowLabel, pairNdfdWind } from '../src/domain/ndfdGust';
 import {
   nwsArchiveSection,
   nwsKeptSection,
@@ -79,7 +79,7 @@ const metars = loadKpmvReports(reports);
 const prepared = prepareInstants(loadKeptSnapshots(kept), metars);
 const nws = nwsKeptSection(
   NWS_ISSUANCES.map(({ minLeadH, label }) => ({
-    label: label.replace('NWS, ', ''),
+    label: nwsRowLabel(label),
     pairs: pairInstants(prepared, minLeadH),
   })),
 );

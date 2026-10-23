@@ -15,7 +15,12 @@
  *     om_wind_missing=true or ndfd_wind_missing=true when that wind
  *     archive holds nothing.
  *   npx tsx scripts/ceilingRefresh.ts fetched ceiling|metar|omwind|ndfdwind <file> --since <ISO> --start <day> --end <day>
- *     Exits 1 unless the file holds a record newer than --since.
+ *     Exits 1 unless the file holds a record newer than --since. For
+ *     ndfdwind each of speed, gust and direction must, against its own
+ *     newest issuance kept under --dir (--since is that of the one that
+ *     lags): a direction file stamped a minute before its speed file would
+ *     otherwise let a fetch that brought nothing new pass, and an element
+ *     that came back empty pass on the other two.
  *   npx tsx scripts/ceilingRefresh.ts check <published.json> <new.json>
  *     Exits 1 if the new file holds less than the published one.
  */
@@ -84,9 +89,10 @@ const ndfdWindFiles = (): string[] =>
     .filter((n) => /^ndfd-(wgust|wind)-.*\.jsonl\.gz$/.test(n))
     .sort()
     .map((n) => join(dir, n));
+const NDFD_ELEMENTS = ['spd', 'gust', 'dir'] as const;
 const ndfdWindIssued = (files: string[]): string[][] => {
   const all = files.map((f) => parseNdfdWindLines(read(f)));
-  return (['spd', 'gust', 'dir'] as const).map((k) => all.flatMap((w) => w[k].map((r) => r.issued)));
+  return NDFD_ELEMENTS.map((k) => all.flatMap((w) => w[k].map((r) => r.issued)));
 };
 
 const inputs = () => {
@@ -142,21 +148,33 @@ if (cmd === 'inputs') {
   if ((part !== 'ceiling' && part !== 'metar' && part !== 'omwind' && part !== 'ndfdwind') || !file || !since || !start || !end) {
     fail('usage: ceilingRefresh.ts fetched ceiling|metar|omwind|ndfdwind <file> --since <ISO> --start <day> --end <day>');
   }
+  if (part === 'ndfdwind') {
+    const fetched = ndfdWindIssued([file]);
+    const kept = ndfdWindIssued(ndfdWindFiles());
+    let failed = false;
+    NDFD_ELEMENTS.forEach((el, i) => {
+      const elSince = newest(kept[i]) ?? since;
+      const { newer, emptyDays } = fetchCoverage(fetched[i], elSince, { start, end });
+      console.error(`${file}: ${el} ${new Set(fetched[i]).size} issuances (${fetched[i].length} records), ${newer} newer than ${elSince}`);
+      for (const d of emptyDays) console.log(`::warning::no NDFD ${el} issuances for ${d} in ${file}`);
+      if (newer === 0) {
+        console.log(`::error::the NDFD ${el} fetch for ${start} to ${end} returned nothing newer than ${elSince}`);
+        failed = true;
+      }
+    });
+    if (failed) process.exit(1);
+    process.exit(0);
+  }
   const times =
     part === 'ceiling'
       ? issuedTimes([file])
       : part === 'metar'
         ? reportTimes([file])
-        : part === 'omwind'
-          ? omWindRecords([file]).map((r) => r.valid)
-          : ndfdWindIssued([file]).flat();
+        : omWindRecords([file]).map((r) => r.valid);
   const { newer, emptyDays } = fetchCoverage(times, since, { start, end });
-  const what = {
-    ceiling: 'NDFD issuances',
-    metar: 'KPMV reports',
-    omwind: 'Open-Meteo wind hours',
-    ndfdwind: 'NDFD wind issuances',
-  }[part as 'ceiling' | 'metar' | 'omwind' | 'ndfdwind'];
+  const what = { ceiling: 'NDFD issuances', metar: 'KPMV reports', omwind: 'Open-Meteo wind hours' }[
+    part as 'ceiling' | 'metar' | 'omwind'
+  ];
   const distinct = part === 'metar' ? times.length : new Set(times).size;
   console.error(`${file}: ${distinct} ${what} (${times.length} records), ${newer} records newer than ${since}`);
   // GitHub shows a ::warning:: line on the run's page.
