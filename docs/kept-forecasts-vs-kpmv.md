@@ -189,6 +189,35 @@ adds days. A grid point's forecast set against one station is also not
 the same thing as the forecast's error at that station. KPMV is 11.5
 miles from the drop zone, and the gridpoint is the drop zone's.
 
+## The spread, drawn (2026-10-23)
+
+![Histograms of forecast minus reported wind speed, gust and direction at three leads](img/kept-wind-errors.svg)
+
+The same pairs as the tables above, as histograms of forecast minus reported,
+one row per lead (`scripts/keptWindErrorsPlot.ts`, which uses the
+comparison's own pairing). The figure shows what the means alone did not:
+
+- **Speed** is a hump just left of zero, not a shift of the whole thing.
+  At the latest issuance the forecast was below the report in 129 hours,
+  above it in 56 and level in 38, nearly all within 4 kt either way. At 24
+  hours ahead the hump sits a knot further left (130 below, 33 above).
+- **Gust** sits almost wholly right of zero at every lead (45, 50 and 46
+  of 52 or 53 hours above), but spread from 0 to +12 kt with no single
+  peak. That is the "consistent side, varying size" of "Gust, closer"
+  above, drawn.
+- **Direction** peaks at +10°, one step of the 10° both sides report in,
+  with a tail clockwise to +50° and a few beyond. At the latest issuance
+  142 hours were clockwise of the report and 25 anticlockwise; the median
+  is +10° at every lead. Most of the tail is light winds
+  (median miss 10° both under and over 10 kt, but p90 30° under against
+  20° over, in the table).
+
+Rerun it as the keeper adds days:
+
+```
+npx tsx scripts/keptWindErrorsPlot.ts <dir>/data docs/img/kept-wind-errors.svg data/parity/kept-forecasts-kpmv-reports-2026-10-13-to-2026-10-22.jsonl.gz <newer reports>
+```
+
 ## Running it again
 
 ```
