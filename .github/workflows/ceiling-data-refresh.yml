@@ -10,6 +10,14 @@ name: Ceiling data refresh
 # other workflows, so this one dispatches the Pages deploy itself, as
 # parity-summary.yml does.
 #
+# Since 2026-10-23 it also rebuilds the #wind-errors page's data file
+# (public/wind-errors/summary.json) and the docs' two wind figures
+# (docs/img/*-wind-errors.svg) with scripts/windErrorsData.ts, from the
+# same kept snapshots and reports, plus the surface-wind sample's archives.
+# A rebuild that holds fewer pairs than the published file fails the run,
+# as the ceiling file's does (windErrorsShrinkage), so the two pages are
+# committed together or not at all.
+#
 # The rules are src/domain/ceilingRefresh.ts (pure, tested) and their
 # reasons are in docs/ceiling-heights.md. In short: the window starts on the
 # newest kept record's day, so no hours are skipped and the overlap counts
@@ -131,6 +139,25 @@ jobs:
           cp "$RUNNER_TEMP/ceiling-errors.json" public/ceiling-errors/ceiling-errors.json
           mkdir -p "$RUNNER_TEMP/trial" && cp "$RUNNER_TEMP/ceiling-errors.json" "$RUNNER_TEMP/trial/"
 
+      # The #wind-errors page: the kept NWS forecasts against KPMV's reports
+      # (this week's fetch and every one before, data/parity/metar-*, and
+      # the reports kept for the first window), and the surface-wind
+      # sample's archives. Built outside the repository, held to the
+      # published file, then copied in.
+      - name: Rebuild the wind-errors file
+        if: steps.window.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/wind-errors"
+          npx tsx scripts/windErrorsData.ts --kept "$RUNNER_TEMP/forecast-archive/data" \
+            --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
+            --sample data/parity/surfacewind-*.jsonl.gz \
+            --out "$RUNNER_TEMP/wind-errors/summary.json" --figures "$RUNNER_TEMP/wind-errors" \
+            --check-against public/wind-errors/summary.json
+          cp "$RUNNER_TEMP/wind-errors/summary.json" public/wind-errors/summary.json
+          cp "$RUNNER_TEMP/wind-errors/"*-wind-errors.svg docs/img/
+          mkdir -p "$RUNNER_TEMP/trial" && cp "$RUNNER_TEMP/wind-errors/"* "$RUNNER_TEMP/trial/"
+
       # The page's tests hold it and its data file to each other; the deploy
       # runs them too, but by then the file would be on main.
       - name: Test
@@ -155,9 +182,10 @@ jobs:
           set -euo pipefail
           git config user.name "ceiling-data-refresh workflow"
           git config user.email "actions@users.noreply.github.com"
-          git add data/parity/ceiling-*.jsonl.gz data/parity/metar-*.jsonl.gz public/ceiling-errors/ceiling-errors.json
-          git commit -m "Ceiling data to $END" \
-            -m "Written by .github/workflows/ceiling-data-refresh.yml: NDFD ceilings and KPMV's reports fetched with scripts/cloudCoverFetch.py, the chart's data file rebuilt by scripts/ceilingChartData.ts."
+          git add data/parity/ceiling-*.jsonl.gz data/parity/metar-*.jsonl.gz public/ceiling-errors/ceiling-errors.json \
+            public/wind-errors/summary.json docs/img/kept-wind-errors.svg docs/img/surface-wind-errors.svg
+          git commit -m "Ceiling and wind data to $END" \
+            -m "Written by .github/workflows/ceiling-data-refresh.yml: NDFD ceilings and KPMV's reports fetched with scripts/cloudCoverFetch.py, the chart's data file rebuilt by scripts/ceilingChartData.ts, the #wind-errors file and figures by scripts/windErrorsData.ts."
           # main may have moved while the fetch ran; a conflict (someone
           # rebuilt the file by hand meanwhile) fails here, loudly.
           git fetch --quiet origin main

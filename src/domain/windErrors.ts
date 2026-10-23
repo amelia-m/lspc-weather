@@ -197,3 +197,39 @@ export function surfaceSampleSection(records: readonly SurfaceWindRecord[]): Win
   });
   return { id: 'surface-sample', title: 'The surface-wind sample, against KPMV', unitWord: 'report', ...span(times), rows };
 }
+
+/**
+ * What a rebuilt file would hold less of than the published one: a section,
+ * row or chart gone, a chart with fewer pairs, or a section ending earlier.
+ * The weekly refresh (ceiling-data-refresh.yml) commits nothing when this
+ * names anything, as it does for the ceiling page's file
+ * (ceilingRefresh.ts's `shrinkage`): the kept snapshots and the reports
+ * only grow, so fewer pairs means an input went missing, not that the
+ * forecasts changed. Empty when the rebuild holds at least as much.
+ */
+export function windErrorsShrinkage(published: WindErrorsData, next: WindErrorsData): string[] {
+  const out: string[] = [];
+  for (const p of published.sections) {
+    const n = next.sections.find((s) => s.id === p.id);
+    if (n == null) {
+      out.push(`section ${p.id} is gone`);
+      continue;
+    }
+    if (p.last != null && (n.last == null || Date.parse(n.last) < Date.parse(p.last))) {
+      out.push(`${p.id}: ends ${n.last ?? 'nowhere'}, published ${p.last}`);
+    }
+    for (const row of p.rows) {
+      const nr = n.rows.find((r) => r.label === row.label);
+      if (nr == null) {
+        out.push(`${p.id}: row "${row.label}" is gone`);
+        continue;
+      }
+      for (const h of row.panels) {
+        const nh = nr.panels.find((x) => x.quantity === h.quantity);
+        if (nh == null) out.push(`${p.id}: "${row.label}" ${h.quantity} is gone`);
+        else if (nh.n < h.n) out.push(`${p.id}: "${row.label}" ${h.quantity} ${nh.n} pairs, published ${h.n}`);
+      }
+    }
+  }
+  return out;
+}

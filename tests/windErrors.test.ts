@@ -6,6 +6,7 @@ import {
   histogram,
   nwsKeptSection,
   surfaceSampleSection,
+  windErrorsShrinkage,
   type HistSpec,
   type WindErrorsData,
 } from '../src/domain/windErrors';
@@ -146,5 +147,37 @@ describe('WindErrorsPage', () => {
     expect(html).not.toMatch(/\b(good|bad|accurate|inaccurate|reliable)\b/i);
     // No Open-Meteo data on the page, so no Open-Meteo credit.
     expect(html).not.toContain('Open-Meteo.com');
+  });
+});
+
+describe('windErrorsShrinkage', () => {
+  const pair = (t: number): InstantPair => ({
+    t,
+    issued: '2026-10-20T00:00:00Z',
+    fc: { windSpeed: 9, windGust: 15, windDirection: 200 },
+    obs: obs(12, 20, 190),
+  });
+  const file = (hours: number): WindErrorsData => ({
+    generatedAt: '2026-10-23T12:00:00.000Z',
+    sections: [nwsKeptSection([{ label: 'latest issuance', pairs: Array.from({ length: hours }, (_, i) => pair(T + i * 3_600_000)) }])],
+  });
+
+  it('passes a rebuild that holds at least as much', () => {
+    expect(windErrorsShrinkage(file(3), file(3))).toEqual([]);
+    expect(windErrorsShrinkage(file(3), file(5))).toEqual([]);
+  });
+
+  it('names every chart with fewer pairs, and a section that ends earlier', () => {
+    const less = windErrorsShrinkage(file(5), file(3));
+    expect(less).toContain('nws-kept: "latest issuance" speed 3 pairs, published 5');
+    expect(less).toContain('nws-kept: "latest issuance" gust 3 pairs, published 5');
+    expect(less.some((l) => l.startsWith('nws-kept: ends 2026-10-20T17:00'))).toBe(true);
+  });
+
+  it('names a section or row that is gone', () => {
+    expect(windErrorsShrinkage(file(3), { ...file(3), sections: [] })).toEqual(['section nws-kept is gone']);
+    const renamed = file(3);
+    renamed.sections[0].rows[0].label = 'newest';
+    expect(windErrorsShrinkage(file(3), renamed)).toEqual(['nws-kept: row "latest issuance" is gone']);
   });
 });

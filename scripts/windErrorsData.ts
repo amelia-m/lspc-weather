@@ -8,19 +8,29 @@
  *     --kept <forecast-archive>/data \
  *     --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz \
  *     --sample data/parity/surfacewind-*.jsonl.gz \
- *     --out public/wind-errors/summary.json --figures docs/img
+ *     --out public/wind-errors/summary.json --figures docs/img \
+ *     [--check-against public/wind-errors/summary.json]
  *
  * --reports takes KPMV's reports for the kept window (scripts/keptInputs.ts),
  * --sample the surface-wind sampler's logs. The figures are
  * docs/img/kept-wind-errors.svg and docs/img/surface-wind-errors.svg
  * (scripts/histogramGrid.ts). Exits with an error, writing nothing, when
- * either set pairs nothing: a wrong folder should not publish an empty page.
+ * either set pairs nothing (a wrong folder should not publish an empty
+ * page), or, with --check-against, when the rebuild would hold less than
+ * that published file (`windErrorsShrinkage`): the weekly refresh,
+ * .github/workflows/ceiling-data-refresh.yml, runs it that way.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { NWS_ISSUANCES } from '../src/domain/cloudCoverSources';
 import { pairInstants, prepareInstants } from '../src/domain/keptForecasts';
-import { nwsKeptSection, spanDay, surfaceSampleSection, type WindErrorsData } from '../src/domain/windErrors';
+import {
+  nwsKeptSection,
+  spanDay,
+  surfaceSampleSection,
+  windErrorsShrinkage,
+  type WindErrorsData,
+} from '../src/domain/windErrors';
 import { histogramGridSvg } from './histogramGrid';
 import { loadKeptSnapshots, loadKpmvReports, loadSurfaceWindRecords } from './keptInputs';
 
@@ -37,6 +47,7 @@ const reports = flag('--reports');
 const sample = flag('--sample');
 const [out] = flag('--out');
 const [figures] = flag('--figures');
+const [checkAgainst] = flag('--check-against');
 if (!kept || reports.length === 0 || sample.length === 0 || !out) {
   console.error('usage: windErrorsData.ts --kept <dir> --reports <files> --sample <files> --out <json> [--figures <dir>]');
   process.exit(2);
@@ -58,6 +69,13 @@ for (const s of [nws, surface]) {
 }
 
 const data: WindErrorsData = { generatedAt: new Date().toISOString(), sections: [nws, surface] };
+if (checkAgainst && existsSync(checkAgainst)) {
+  const less = windErrorsShrinkage(JSON.parse(readFileSync(checkAgainst, 'utf8')) as WindErrorsData, data);
+  if (less.length) {
+    console.error(`the rebuild holds less than ${checkAgainst}; nothing written:\n  ${less.join('\n  ')}`);
+    process.exit(1);
+  }
+}
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, JSON.stringify(data) + '\n');
 console.log(`wrote ${out}`);

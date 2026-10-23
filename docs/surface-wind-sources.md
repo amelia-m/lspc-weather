@@ -428,8 +428,10 @@ npx tsx scripts/windErrorsData.ts --kept <dir>/data \
   --out public/wind-errors/summary.json --figures docs/img
 ```
 
-The sample runs to 2026-10-30; the wrap-up should rebuild the page and
-figures with the whole window.
+The sample runs to 2026-10-30. Once its whole window is archived under
+`data/parity/surfacewind-*`, the weekly ceiling data refresh rebuilds the
+page and figures from it; the wrap-up can also rebuild them by hand at
+once.
 
 ## Status
 
