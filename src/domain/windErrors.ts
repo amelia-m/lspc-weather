@@ -200,7 +200,8 @@ export function surfaceSampleSection(records: readonly SurfaceWindRecord[]): Win
 
 /**
  * What a rebuilt file would hold less of than the published one: a section,
- * row or chart gone, a chart with fewer pairs, or a section ending earlier.
+ * row or chart gone, a chart with fewer pairs, or a section starting later
+ * or ending earlier.
  * The weekly refresh (ceiling-data-refresh.yml) commits nothing when this
  * names anything, as it does for the ceiling page's file
  * (ceilingRefresh.ts's `shrinkage`): the kept snapshots and the reports
@@ -217,6 +218,11 @@ export function windErrorsShrinkage(published: WindErrorsData, next: WindErrorsD
     }
     if (p.last != null && (n.last == null || Date.parse(n.last) < Date.parse(p.last))) {
       out.push(`${p.id}: ends ${n.last ?? 'nowhere'}, published ${p.last}`);
+    }
+    // The start too: a week's new pairs can outnumber a lost first week, and
+    // then every count still grows.
+    if (p.first != null && (n.first == null || Date.parse(n.first) > Date.parse(p.first))) {
+      out.push(`${p.id}: starts ${n.first ?? 'nowhere'}, published ${p.first}`);
     }
     for (const row of p.rows) {
       const nr = n.rows.find((r) => r.label === row.label);

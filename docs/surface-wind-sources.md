@@ -394,7 +394,7 @@ Nothing on the dashboard changed.
 
 ## The spread, drawn (2026-10-23)
 
-![Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's three forms and the NWS hour](img/surface-wind-errors.svg)
+![Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's three forms and the NWS hour](img/surface-wind-errors-2026-10-21.svg)
 
 The preview's pairs as histograms: each KPMV report once, against each
 forecast as it stood while the report was the newest (`pairsVsMetar`,
@@ -419,19 +419,22 @@ KPMV", beside the kept NWS forecasts (docs/kept-forecasts-vs-kpmv.md).
   should: `current` is the 15-minute step at its time, and the hourly value
   the 15-minute step on the hour.
 
-Rebuilt by the same command as the NWS figures:
+The figure and the counts above are the preview's, to 2026-10-21, kept as
+they were; the `#wind-errors` page is the current view. The same command
+as the NWS figures rebuilds the page's file and draws new dated figures:
 
 ```
 npx tsx scripts/windErrorsData.ts --kept <dir>/data \
-  --reports data/parity/kept-forecasts-kpmv-reports-2026-10-13-to-2026-10-22.jsonl.gz <newer reports> \
+  --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
   --sample data/parity/surfacewind-*.jsonl.gz \
-  --out public/wind-errors/summary.json --figures docs/img
+  --out public/wind-errors/summary.json --check-against public/wind-errors/summary.json \
+  --figures docs/img
 ```
 
 The sample runs to 2026-10-30. Once its whole window is archived under
 `data/parity/surfacewind-*`, the weekly ceiling data refresh rebuilds the
-page and figures from it; the wrap-up can also rebuild them by hand at
-once.
+page from it; the wrap-up can rebuild it by hand at once, and draw the
+whole window's figure for its reading here.
 
 ## Status
 

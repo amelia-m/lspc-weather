@@ -352,9 +352,12 @@ Since 2026-10-23 the weekly ceiling data refresh
 (`.github/workflows/ceiling-data-refresh.yml`) also rebuilds the
 `#wind-errors` page's data file and the docs' two wind figures, from the
 kept snapshots, the week's KPMV reports and the surface-wind sample's
-archives, at the maintainer's request. A rebuild holding fewer pairs than
-the published file fails the run, as the ceiling file's does, so the two
-pages are committed together or not at all.
+archives, at the maintainer's request. A rebuild holding less than the
+published file (fewer pairs, a later start, an earlier end) is not copied
+in. The two pages are independent: a wind-side failure leaves the wind
+file as it was, the ceiling data is still committed, and the run then
+fails so it is seen. The docs' wind figures are dated readings, and the
+weekly run does not redraw them.
 
 ## Forecasts kept for later
 

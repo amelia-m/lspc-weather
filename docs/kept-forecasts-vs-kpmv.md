@@ -191,7 +191,7 @@ miles from the drop zone, and the gridpoint is the drop zone's.
 
 ## The spread, drawn (2026-10-23)
 
-![Histograms of forecast minus reported wind speed, gust and direction at three leads](img/kept-wind-errors.svg)
+![Histograms of forecast minus reported wind speed, gust and direction at three leads](img/kept-wind-errors-2026-10-22.svg)
 
 The same pairs as the tables above, as histograms of forecast minus reported,
 one row per lead (`scripts/windErrorsData.ts`, with the comparison's own
@@ -218,15 +218,18 @@ alone did not:
   (median miss 10° both under and over 10 kt, but p90 30° under against
   20° over, in the table).
 
-The weekly ceiling data refresh rebuilds the page's data file and both
-figures as the keeper adds days (since 2026-10-23). By hand, one command
-does the same:
+The figure and the counts above are the reading to 2026-10-22, kept as
+they were. The `#wind-errors` page is the current view: the weekly
+ceiling data refresh rebuilds its data file as the keeper adds days
+(since 2026-10-23). By hand, one command rebuilds the page's file, held to
+the published one, and draws a new dated figure for a new reading here:
 
 ```
 npx tsx scripts/windErrorsData.ts --kept <dir>/data \
-  --reports data/parity/kept-forecasts-kpmv-reports-2026-10-13-to-2026-10-22.jsonl.gz <newer reports> \
+  --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
   --sample data/parity/surfacewind-*.jsonl.gz \
-  --out public/wind-errors/summary.json --figures docs/img
+  --out public/wind-errors/summary.json --check-against public/wind-errors/summary.json \
+  --figures docs/img
 ```
 
 ## Running it again

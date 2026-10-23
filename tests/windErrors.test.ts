@@ -174,6 +174,16 @@ describe('windErrorsShrinkage', () => {
     expect(less.some((l) => l.startsWith('nws-kept: ends 2026-10-20T17:00'))).toBe(true);
   });
 
+  it('names a section that starts later, though every count grew', () => {
+    const later: WindErrorsData = {
+      ...file(5),
+      sections: [nwsKeptSection([{ label: 'latest issuance', pairs: Array.from({ length: 6 }, (_, i) => pair(T + (i + 2) * 3_600_000)) }])],
+    };
+    expect(windErrorsShrinkage(file(5), later)).toEqual([
+      `nws-kept: starts ${new Date(T + 2 * 3_600_000).toISOString()}, published ${new Date(T).toISOString()}`,
+    ]);
+  });
+
   it('names a section or row that is gone', () => {
     expect(windErrorsShrinkage(file(3), { ...file(3), sections: [] })).toEqual(['section nws-kept is gone']);
     const renamed = file(3);
