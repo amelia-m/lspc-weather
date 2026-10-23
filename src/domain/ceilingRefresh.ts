@@ -80,23 +80,45 @@ export interface RefreshWindow {
   /** Null when that part already holds a record on or after `end`. */
   ceiling: FetchWindow | null;
   metar: FetchWindow | null;
+  /** Open-Meteo's archived 10 m wind, for the #wind-errors page
+   *  (data/parity/om-wind-*, src/domain/windErrors.ts). */
+  omWind: FetchWindow | null;
 }
 
 /**
- * The days to fetch for each part, from the newest NDFD issuance and the
- * newest KPMV report already kept. A part whose newest record falls on
+ * The days to fetch for each part, from the newest NDFD issuance, the
+ * newest KPMV report and the newest hour of Open-Meteo's archived wind
+ * already kept (`omWindNewest`). A part whose newest record falls on
  * `end` or later is left alone this run: if that day was fetched only in
  * part, the next run starts on it again, so nothing is skipped for good.
  * With no records at all the archive is missing, and the refresh refuses
  * rather than fetch from an invented start.
  */
-export function refreshWindow(input: { lastIssued: string | null; lastReport: string | null; now: Date }): RefreshWindow {
-  const { lastIssued, lastReport, now } = input;
+export function refreshWindow(input: {
+  lastIssued: string | null;
+  lastReport: string | null;
+  lastOmWind: string | null;
+  now: Date;
+}): RefreshWindow {
+  const { lastIssued, lastReport, lastOmWind, now } = input;
   if (lastIssued == null) throw new Error('no NDFD ceiling records found: the archive under data/parity/ is missing');
   if (lastReport == null) throw new Error('no KPMV reports found: the archive under data/parity/ is missing');
+  if (lastOmWind == null) throw new Error('no Open-Meteo wind records found: the archive under data/parity/ is missing');
   const end = utcDay(new Date(Date.parse(utcDay(now)) - 86_400_000));
   const part = (last: string): FetchWindow | null => (utcDay(last) >= end ? null : { start: utcDay(last), end });
-  return { end, ceiling: part(lastIssued), metar: part(lastReport) };
+  return { end, ceiling: part(lastIssued), metar: part(lastReport), omWind: part(lastOmWind) };
+}
+
+/**
+ * The newest hour kept of Open-Meteo's archived wind, as the window reads
+ * it: the earlier of the two runs' newest, so a run whose archive lagged
+ * the other's is fetched again from its own last day rather than skipped.
+ * Null when either run has no records.
+ */
+export function omWindNewest(records: readonly { run: string; valid: string }[], runs: readonly string[]): string | null {
+  const each = runs.map((run) => newest(records.filter((r) => r.run === run).map((r) => r.valid)));
+  if (each.some((t) => t == null)) return null;
+  return each.reduce((a, b) => (Date.parse(b!) < Date.parse(a!) ? b : a));
 }
 
 /**

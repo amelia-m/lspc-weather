@@ -227,6 +227,8 @@ the published one, and draws a new dated figure for a new reading here:
 ```
 npx tsx scripts/windErrorsData.ts --kept <dir>/data \
   --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
+            data/parity/cloud-cover-2*.jsonl.gz \
+  --om data/parity/om-wind-*.jsonl.gz \
   --sample data/parity/surfacewind-*.jsonl.gz \
   --out public/wind-errors/summary.json --check-against public/wind-errors/summary.json \
   --figures docs/img

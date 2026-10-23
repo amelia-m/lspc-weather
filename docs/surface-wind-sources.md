@@ -420,21 +420,95 @@ KPMV", beside the kept NWS forecasts (docs/kept-forecasts-vs-kpmv.md).
   the 15-minute step on the hour.
 
 The figure and the counts above are the preview's, to 2026-10-21, kept as
-they were; the `#wind-errors` page is the current view. The same command
-as the NWS figures rebuilds the page's file and draws new dated figures:
-
-```
-npx tsx scripts/windErrorsData.ts --kept <dir>/data \
-  --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
-  --sample data/parity/surfacewind-*.jsonl.gz \
-  --out public/wind-errors/summary.json --check-against public/wind-errors/summary.json \
-  --figures docs/img
-```
+they were; the `#wind-errors` page is the current view. The command that
+rebuilds the page's file and draws new dated figures is under
+"Open-Meteo's archive" below.
 
 The sample runs to 2026-10-30. Once its whole window is archived under
 `data/parity/surfacewind-*`, the weekly ceiling data refresh rebuilds the
 page from it; the wrap-up can rebuild it by hand at once, and draw the
 whole window's figure for its reading here.
+
+## Open-Meteo's archive (2026-10-23)
+
+![Histograms of Open-Meteo's archived 10 m wind minus KPMV's reports, start of run and a day earlier](img/om-archive-wind-errors-2026-10-22.svg)
+
+The sample above ends on 2026-10-30, and covers twelve days. Open-Meteo
+keeps its own past forecasts, so the `#wind-errors` page also sets those
+against KPMV, back to 2026-04-01, and the weekly ceiling data refresh
+fetches each week's (`.github/workflows/ceiling-data-refresh.yml`).
+
+- **What was fetched.** `scripts/cloudCoverFetch.py` with `PARTS=omwind`:
+  `wind_speed_10m`, `wind_gusts_10m` and `wind_direction_10m` in knots
+  (`wind_speed_unit=kn`, as the dashboard asks), default model, at the
+  drop zone, from the same two archives the cloud-cover comparison read
+  (docs/cloud-cover-sources.md): the Historical Forecast API, the first
+  hours of each model run stitched together ("start of run"), and the
+  Previous Runs API's `_previous_day1`, the value predicted 24 hours
+  before ("a day earlier"). Both resolved to the same cell the dashboard's
+  live request does (40.8628, −96.1168), and served every hour from
+  2026-04-01 00Z to 2026-10-22 23Z, 4,920 each, with no nulls. Kept in
+  `data/parity/om-wind-2026-04-01-to-2026-10-22.jsonl.gz`.
+- **How it was paired.** As the kept NWS forecasts are
+  (docs/kept-forecasts-vs-kpmv.md): KPMV's report within 10 minutes of
+  each hour, the nearest one, from every archive of KPMV's reports under
+  `data/parity/` (14,363 from 2026-04-01; the drop-zone cloud-cover
+  archive holds the first six months); the forecast rounded to whole
+  knots as a METAR reports (`windDiffs`), the gust only where KPMV
+  reported one, direction only where the report gave one. 4,790 hours
+  paired; 128 had no report near the hour. `omArchiveSection`,
+  `src/domain/windErrors.ts`.
+
+What it showed, 2026-04-01 to 2026-10-22 (forecast minus reported):
+
+| | start of run | a day earlier |
+|---|---|---|
+| speed, median / mean | +1 / +0.6 kt | +1 / +1.1 kt |
+| speed, above / below | 2,421 / 1,583 of 4,790 | 2,685 / 1,507 |
+| speed, median miss / p90 | 2 / 4 kt | 2 / 6 kt |
+| gust, median / mean (965 h) | +2 / +2.5 kt | +2 / +1.5 kt |
+| gust, above / below | 614 / 273 | 562 / 343 |
+| direction, median / mean (4,124 h) | +6° / +4.6° | +10° / +8.4° |
+
+- **Speed** leans a knot high at both leads, and the day-earlier forecast
+  is spread wider (p90 miss 6 kt against 4). By month, the start-of-run
+  mean ran +0.2 to +0.6 kt from May to October and +1.7 in April; the
+  day-earlier +0.8 to +1.6. By time of day, start of run was centred at
+  night (01Z to 12Z, mean +0.1 kt) and a knot high by day (+1.0).
+- **Gust**, where KPMV reported one, is high in 64% of those hours at
+  the start of run and 58% a day earlier. By month the start-of-run mean ran from +0.7 kt
+  (July, 59 hours) to +3.7 (April, 280). At night, when KPMV reported a
+  gust in only 301 of 2,392 hours, it was +4.5; by day +1.6.
+- **Direction** sits clockwise of the report, more so a day ahead.
+- **Tails.** The six months hold the summer's storms. A few hours fall
+  past the shared axes: 20 and 88 speeds, 9 and 16 gusts (a reported gust
+  36 kt over the start-of-run forecast at the widest), 82 and 236
+  directions past 100°. The page counts them as beyond the axis.
+
+**Not the same as the sample, on the same days.** From 2026-10-09 03Z to
+10-21 23Z, the archive's start of run paired 307 hours with a speed mean
+of 0.0 kt (unrounded, also 0.0), where the sample's Open-Meteo hourly
+read +0.8 kt over 742 reports. The pairs differ: the sample sets each
+report, not only the one at the hour, against the forecast Open-Meteo's
+live API returned while it was the newest, from whichever run was newest
+then; the archive sets the report at the hour against the first hours of
+a run made for that hour. Which of those makes the difference was not worked out. The
+day-earlier row read +0.7 kt over the same days, and the gust +4 kt on
+both rows, as in the sample.
+
+Counts and spreads only. Nothing on the dashboard reads them. Rebuilt by
+the weekly refresh; by hand:
+
+```
+PARTS=omwind python3 scripts/cloudCoverFetch.py <start> <end> data/parity/om-wind-<start>-to-<end>.jsonl.gz
+npx tsx scripts/windErrorsData.ts --kept <dir>/data \
+  --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
+            data/parity/cloud-cover-2*.jsonl.gz \
+  --om data/parity/om-wind-*.jsonl.gz \
+  --sample data/parity/surfacewind-*.jsonl.gz \
+  --out public/wind-errors/summary.json --check-against public/wind-errors/summary.json \
+  --figures docs/img
+```
 
 ## Status
 

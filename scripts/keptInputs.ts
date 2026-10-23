@@ -1,9 +1,9 @@
 /**
  * Reading the inputs the kept-forecast scripts share
  * (scripts/keptForecastsVsKpmv.ts, scripts/windErrorsData.ts): the
- * forecast keeper's snapshots, KPMV's reports and the surface-wind
- * sampler's records, so the tables and the figures are built from the
- * same sets.
+ * forecast keeper's snapshots, KPMV's reports, Open-Meteo's archived
+ * wind and the surface-wind sampler's records, so the tables and the
+ * figures are built from the same sets.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,6 +11,7 @@ import { gunzipSync } from 'node:zlib';
 import type { KeptGridpointSnapshot } from '../src/domain/ceilingHeights';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import { parseSurfaceWindLines, type SurfaceWindRecord } from '../src/domain/surfaceWindSources';
+import { parseOmWindLines, type OmWindRecord } from '../src/domain/windErrors';
 
 const read = (f: string): string => {
   const buf = readFileSync(f);
@@ -26,6 +27,13 @@ const walk = (d: string): string[] =>
  *  as read; `orderedRuns` puts them in order and drops repeats. */
 export function loadSurfaceWindRecords(files: readonly string[]): SurfaceWindRecord[] {
   return files.flatMap((f) => parseSurfaceWindLines(read(f)));
+}
+
+/** Open-Meteo's archived wind (scripts/cloudCoverFetch.py, PARTS=omwind),
+ *  in the order the files are given; `omArchiveSection` keeps the last
+ *  record of an hour fetched twice. */
+export function loadOmWindRecords(files: readonly string[]): OmWindRecord[] {
+  return files.flatMap((f) => parseOmWindLines(read(f)));
 }
 
 /** Every kept snapshot (`.json.gz`) under a folder, searched recursively. */

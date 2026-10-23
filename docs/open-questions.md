@@ -329,6 +329,12 @@ docs/nws-gridpoint-age.md); and, not acted on, Open-Meteo's hourly gust at the D
 15-minute step on the hour, so it behaved as the last quarter hour's maximum
 rather than the hour's its docs describe (below the hour's largest 15-minute
 gust at one of four hours, by 2.5 kt).
+Since 2026-10-23 Open-Meteo's own archive gives six months beside it
+(docs/surface-wind-sources.md, "Open-Meteo's archive"): its start-of-run
+10 m wind a knot high by day and centred at night, and its gust high in
+64% of the hours KPMV reported one. Over the sample's own days the
+archive's start of run was centred (mean 0.0 kt) where the sample's
+hourly read +0.8; why was not worked out.
 Nothing on the dashboard changed.
 
 ## A note on the card about the forecast gust? (maintainer's call)
@@ -350,9 +356,12 @@ days will not settle it. Revisit when the keeper has more windy days.
 
 Since 2026-10-23 the weekly ceiling data refresh
 (`.github/workflows/ceiling-data-refresh.yml`) also rebuilds the
-`#wind-errors` page's data file and the docs' two wind figures, from the
-kept snapshots, the week's KPMV reports and the surface-wind sample's
-archives, at the maintainer's request. A rebuild holding less than the
+`#wind-errors` page's data file, from the kept snapshots, the week's
+KPMV reports and the surface-wind sample's archives, at the maintainer's
+request. Since the same day it also fetches Open-Meteo's archived 10 m
+wind each week, and the page has an Open-Meteo section from 2026-04-01
+(docs/surface-wind-sources.md, "Open-Meteo's archive"), so its Open-Meteo
+figures keep growing after the sample ends on 2026-10-30. A rebuild holding less than the
 published file (fewer pairs, a later start, an earlier end) is not copied
 in. The two pages are independent: a wind-side failure leaves the wind
 file as it was, the ceiling data is still committed, and the run then
