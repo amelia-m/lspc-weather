@@ -633,6 +633,19 @@ and changes nothing on the dashboard. When the window ends, archive the
 records under `data/parity/`, summarise them with
 `scripts/surfaceWindSummary.ts` into `docs/surface-wind-sources.md`, and
 delete the workflow.
+`.github/workflows/run-split-sample.yml` is the same pattern, temporary, until
+2026-10-27T06:00Z: every four minutes `scripts/runSplit.live.ts` asks Mark
+Schulze's tool for both its hour in progress and its next hour and sets each
+against the app's Open-Meteo answer for the same hour, plus two app requests
+a moment apart against each other, to tell a next-hour cause of the
+different-runs readings from a clock-time one (docs/run-split.md). It
+uploads `runsplit-*` artifacts the summary never reads. When the window
+ends, archive the records under `data/parity/`, summarise them with
+`scripts/runSplitSummary.ts` into docs/run-split.md and
+docs/open-questions.md, and delete the workflow and `scripts/runSplitLoop.sh`.
+The comparison's "different runs" rule is shared with it (`rawGap`,
+`src/domain/runSplit.ts`), and so are the tool and metadata fetches
+(`scripts/schulzeFetch.ts`).
 `.github/workflows/ceiling-data-refresh.yml` (Mondays 07:41Z, and on
 dispatch) fetches the NDFD ceilings and KPMV's reports from the newest
 kept record's day to the last whole UTC day, commits them under

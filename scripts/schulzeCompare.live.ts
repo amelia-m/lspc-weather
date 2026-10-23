@@ -31,73 +31,8 @@ import {
   type RawOpenMeteo,
 } from '../src/domain/normalize';
 import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
-import { openMeteoRunMeta, type OpenMeteoRunMeta } from '../src/domain/surfaceWindSources';
-import { runsSeen, type RunsSeen } from '../src/domain/runAge';
-
-interface Schulze {
-  validtime: string;
-  altFtRaw: number[];
-  directionRaw: Record<string, number>;
-  speedRaw: Record<string, number>;
-  direction: Record<string, number>;
-  speed: Record<string, number>;
-  temp: Record<string, number>;
-  groundElev: number;
-  groundDir: number;
-  groundSpd: number;
-}
-
-/** The tool's own endpoint, as its page calls it. `hourOffset` counts hours
- *  from the hour in progress; the site refuses a bare request. */
-async function schulze(hourOffset: number): Promise<Schulze | null> {
-  const dz = SITE.dz;
-  const url =
-    `https://www.markschulze.net/winds/winds_openmeteo.php?lat=${dz.lat}&lon=${dz.lon}` +
-    `&hourOffset=${hourOffset}&referrer=MSWA2024`;
-  try {
-    const res = await fetch(url, {
-      headers: { Referer: 'https://www.markschulze.net/winds/', 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!res.ok) return null;
-    const text = await res.text();
-    return text.trimStart().startsWith('{') ? (JSON.parse(text) as Schulze) : null;
-  } catch {
-    return null;
-  }
-}
-
-/** The Open-Meteo models this app's winds-aloft request can be served from
- *  here. On 2026-09-24 Schulze's raw 700 hPa level matched `best_match`,
- *  `gfs_seamless` and `ncep_hrrr_conus` exactly (docs/open-questions.md,
- *  "Which forecast run the winds-aloft request is served"). Open-Meteo's
- *  GFS & HRRR page lists "GFS Pressure Variables" at 0.25°, the
- *  `ncep_gfs025` domain, beside the 0.11° surface grid (read 2026-10-21). */
-const RUN_DOMAINS = ['ncep_hrrr_conus', 'ncep_gfs025'] as const;
-
-/** Reads of each model's metadata, made at once. Open-Meteo's servers can
- *  hold a run at different moments while it is copied (one HRRR run read as
- *  available at 17:37:20Z and 17:39:33Z a second apart on 2026-10-21), so
- *  one read says only what one server had; several can show that they
- *  disagreed, which is the copying itself. */
-const RUN_META_READS = 3;
-
-async function runMetaOnce(domain: string): Promise<OpenMeteoRunMeta | null> {
-  try {
-    const res = await fetch(`https://api.open-meteo.com/data/${domain}/static/meta.json`, {
-      signal: AbortSignal.timeout(10_000),
-    });
-    return res.ok ? openMeteoRunMeta((await res.json()) as Parameters<typeof openMeteoRunMeta>[0]) : null;
-  } catch {
-    return null;
-  }
-}
-
-/** One model's metadata across `RUN_META_READS` reads (`runsSeen`), or null
- *  when none could be read: the comparison goes on without it. */
-async function runMeta(domain: string): Promise<RunsSeen | null> {
-  return runsSeen(await Promise.all(Array.from({ length: RUN_META_READS }, () => runMetaOnce(domain))));
-}
+import { appRawLevels, rawGap, schulzeRawLevels } from '../src/domain/runSplit';
+import { RUN_DOMAINS, runMeta, schulze, type Schulze } from './schulzeFetch';
 
 const say = (lines: string[]): void => {
   process.stdout.write(lines.join('\n') + '\n');
@@ -250,25 +185,8 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   // levels are pressure levels, so only ours are candidates: a fixed-height
   // wind (80/120/180 m) or the 10 m wind near one of his would be a
   // different quantity, and pairing it would read as a mismatch.
-  let rawMismatch: boolean | null = null;
-  {
-    let pairs = 0;
-    let bad = 0;
-    for (const a of ms.altFtRaw) {
-      if (a < 0 || a > 14_000) continue;
-      const mine = samples
-        .filter((x) => !x.isSurface && x.fixedHeightM == null)
-        .map((x) => ({ x, d: Math.abs(x.heightFtMsl - dz.elevationFt - a) }))
-        .filter((p) => p.d <= 150)
-        .sort((p, q) => p.d - q.d)[0];
-      if (!mine) continue;
-      pairs += 1;
-      const dDir = Math.abs(((mine.x.directionDeg - ms.directionRaw[a] + 540) % 360) - 180);
-      const dSpd = Math.abs(mine.x.speedKt - ms.speedRaw[a]);
-      if (dDir > 5 || dSpd > 2) bad += 1;
-    }
-    if (pairs >= 3) rawMismatch = bad >= 2;
-  }
+  // The rule is runSplit.ts's rawGap, which the run-split sampler shares.
+  const rawMismatch = rawGap(appRawLevels(samples, dz.elevationFt), schulzeRawLevels(ms)).mismatch;
 
   // Both raw profiles, so a run-boundary case — one tool served a newer
   // forecast than the other for the same hour — is visible as the raw
