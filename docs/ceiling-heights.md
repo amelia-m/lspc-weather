@@ -1,5 +1,11 @@
 # Ceiling heights: the NWS forecast against the METAR
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 The question from 2026-10-13, after the cloud-cover comparison
 ([cloud-cover-sources.md](cloud-cover-sources.md)) left height out: how
 near is the forecast ceiling to the one KPMV reports? The Ceiling & sky

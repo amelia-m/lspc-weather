@@ -283,5 +283,6 @@
 <text class="t" x="937.4285714285714" y="492" text-anchor="middle">+50</text>
 <text class="t" x="1008.8571428571429" y="492" text-anchor="middle">+100</text>
 <text class="t" x="1016" y="506" text-anchor="end">236 beyond the axis</text>
+<text class="note" x="44" y="518">Open-Meteo rows: weather data by Open-Meteo.com, CC BY 4.0 (creativecommons.org/licenses/by/4.0), reworked as differences from KPMV’s reports.</text>
 <text class="note" x="44" y="534">Speeds rounded to whole knots, as a METAR reports. Direction only where the report gave one (not calm or variable). Source: docs/surface-wind-sources.md, scripts/windErrorsData.ts.</text>
 </svg>

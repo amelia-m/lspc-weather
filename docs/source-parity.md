@@ -1,5 +1,11 @@
 # The comparison logs and the "How different from other sources" page
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 Two pages sit beside the dashboard, both reached from its footer:
 
 - **Citations to verify** (`#citations`) — every USPA, CFR and FAA claim the
