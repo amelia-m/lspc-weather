@@ -273,9 +273,12 @@ push made with the workflow token starts no other workflow, as in
 `parity-summary.yml`. Since 2026-10-23 the same run also rebuilds the
 `#wind-errors` page's file from the same snapshots and reports
 (docs/kept-forecasts-vs-kpmv.md, "The spread, drawn"), held to the
-published file the same way. A wind-side failure leaves its file as it
-was and does not hold back the ceiling commit; a last step then fails
-the run. The steps that need more than a shell line are
+published file the same way, and fetches Open-Meteo's archived 10 m wind
+for its Open-Meteo section from the newest hour kept, on the same window
+rule (`omWindNewest`: the earlier of its two runs' newest;
+docs/surface-wind-sources.md, "Open-Meteo's archive"). A wind-side
+failure, the fetch or the rebuild, leaves the wind files as they were and
+does not hold back the ceiling commit; a last step then fails the run. The steps that need more than a shell line are
 `scripts/ceilingRefresh.ts`; the rules are `src/domain/ceilingRefresh.ts`,
 pure, and tested in `tests/ceilingRefresh.test.ts`. Each test was seen to
 fail with the behaviour it names broken (21 breaks, one at a time,

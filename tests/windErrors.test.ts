@@ -5,11 +5,16 @@ import {
   WIND_COLUMNS,
   histogram,
   nwsKeptSection,
+  omArchiveSection,
+  parseOmWindLines,
   surfaceSampleSection,
   windErrorsShrinkage,
+  yStep,
   type HistSpec,
+  type OmWindRecord,
   type WindErrorsData,
 } from '../src/domain/windErrors';
+import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import type { InstantPair } from '../src/domain/keptForecasts';
 import type { SurfaceWindRecord, WindAt } from '../src/domain/surfaceWindSources';
 import { WindErrorsPage } from '../src/components/WindErrorsPage';
@@ -40,6 +45,15 @@ describe('histogram', () => {
   });
 });
 
+describe('yStep', () => {
+  it('draws at most six gridlines, whatever the tallest bar, up to the archive’s hundreds', () => {
+    for (let max = 1; max <= 3000; max++) {
+      const step = yStep(max);
+      expect(Math.ceil(max / step)).toBeLessThanOrEqual(6);
+    }
+  });
+});
+
 const T = Date.parse('2026-10-20T15:00:00Z');
 const obs = (spd: number | null, gust: number | null, dir: number | null): InstantPair['obs'] => ({
   t: T - 300_000,
@@ -63,6 +77,72 @@ describe('nwsKeptSection', () => {
     expect(dir).toMatchObject({ n: 1, median: 10 }); // calm hour: no direction
     expect(s).toMatchObject({ id: 'nws-kept', unitWord: 'hour', first: new Date(T).toISOString() });
     expect(s.rows[0].panels.map((p) => p.quantity)).toEqual(WIND_COLUMNS.map((c) => c.quantity));
+  });
+});
+
+const om = (run: OmWindRecord['run'], valid: string, spd: number, gust: number, dir: number): OmWindRecord => ({
+  src: 'om-wind',
+  run,
+  valid,
+  spd,
+  gust,
+  dir,
+});
+const metar = (obsAt: string, raw: string): MetarRecord => ({ src: 'metar', obsAt, raw });
+
+describe('parseOmWindLines', () => {
+  it('reads the drop zone’s archived wind, skipping blank lines, other records and other sites', () => {
+    const text = [
+      JSON.stringify(om('historical', '2026-10-20T15:00Z', 9.4, 15.2, 200)),
+      '',
+      JSON.stringify({ src: 'om', run: 'historical', valid: '2026-10-20T15:00Z', total: 40 }),
+      JSON.stringify({ ...om('historical', '2026-10-20T15:00Z', 1, 2, 3), site: 'PMV' }),
+    ].join('\n');
+    expect(parseOmWindLines(text)).toEqual([om('historical', '2026-10-20T15:00Z', 9.4, 15.2, 200)]);
+  });
+});
+
+describe('omArchiveSection', () => {
+  const reports = [
+    metar('2026-10-20T14:55Z', 'KPMV 201455Z AUTO 19012G20KT 10SM CLR 12/03 A3001'),
+    // Nearer the 15Z hour than the :55, so this is the report paired.
+    metar('2026-10-20T15:03Z', 'KPMV 201503Z AUTO 19010KT 10SM CLR 12/03 A3001'),
+    metar('2026-10-20T15:55Z', 'KPMV 201555Z AUTO 00000KT 10SM CLR 13/03 A3001'),
+    // 17Z has no report within ten minutes: not paired.
+    metar('2026-10-20T16:40Z', 'KPMV 201640Z AUTO 18008KT 10SM CLR 13/03 A3001'),
+  ];
+
+  it('pairs each hour with the report nearest it and reads it as the kept NWS forecasts are', () => {
+    const s = omArchiveSection(
+      [
+        om('historical', '2026-10-20T15:00Z', 12.6, 18.4, 200),
+        om('historical', '2026-10-20T16:00Z', 4.4, 9, 120),
+        om('historical', '2026-10-20T17:00Z', 30, 40, 300),
+        om('previous_day1', '2026-10-20T15:00Z', 8.5, 14, 170),
+      ],
+      reports,
+    );
+    expect(s).toMatchObject({ id: 'om-archive', unitWord: 'hour' });
+    expect(s.rows.map((r) => r.label)).toEqual(['start of run', 'a day earlier']);
+    const [speed, gust, dir] = s.rows[0].panels;
+    // 15Z: 13 against 10 (whole knots, as windDiffs reads it). 16Z: 4 against calm.
+    expect(speed).toMatchObject({ n: 2, above: 2, below: 0, median: 3.5 });
+    // Neither paired report gave a gust; the 14:55 one did but is not the nearer.
+    expect(gust.n).toBe(0);
+    // Calm gives no direction: only 15Z, 200 against 190.
+    expect(dir).toMatchObject({ n: 1, median: 10 });
+    // 8.5 rounds to 9 against 10.
+    expect(s.rows[1].panels[0]).toMatchObject({ n: 1, median: -1 });
+    expect(s.first).toBe('2026-10-20T15:00:00.000Z');
+    expect(s.last).toBe('2026-10-20T16:00:00.000Z');
+  });
+
+  it('counts an hour fetched twice once, with the later file’s value', () => {
+    const s = omArchiveSection(
+      [om('historical', '2026-10-20T15:00Z', 30, 40, 300), om('historical', '2026-10-20T15:00Z', 12.6, 18.4, 200)],
+      reports,
+    );
+    expect(s.rows[0].panels[0]).toMatchObject({ n: 1, median: 3 });
   });
 });
 
@@ -147,6 +227,16 @@ describe('WindErrorsPage', () => {
     expect(html).not.toMatch(/\b(good|bad|accurate|inaccurate|reliable)\b/i);
     // No Open-Meteo data on the page, so no Open-Meteo credit.
     expect(html).not.toContain('Open-Meteo.com');
+  });
+
+  it('credits Open-Meteo when its archive is on the page', () => {
+    const withArchive: WindErrorsData = {
+      ...data,
+      sections: [...data.sections, omArchiveSection([om('historical', '2026-10-20T15:00Z', 12, 18, 200)], [metar('2026-10-20T15:03Z', 'KPMV 201503Z AUTO 19010KT 10SM CLR 12/03 A3001')])],
+    };
+    const html = page(withArchive, 'ready');
+    expect(html).toContain('Open-Meteo.com');
+    expect(html).toContain('Open-Meteo’s archived forecasts, against KPMV');
   });
 });
 

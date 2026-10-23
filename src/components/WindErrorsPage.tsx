@@ -15,8 +15,9 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
 /**
  * "How far the wind forecasts were from KPMV": histograms of forecast minus
  * reported wind speed, gust and direction, for the NWS forecasts the keeper
- * saved hourly (by lead) and the surface-wind sample's Open-Meteo and NWS
- * forecasts (by source).
+ * saved hourly (by lead), Open-Meteo's own archive of its forecasts (by
+ * run) and the surface-wind sample's Open-Meteo and NWS forecasts (by
+ * source).
  *
  * The data is public/wind-errors/summary.json, written by
  * scripts/windErrorsData.ts with the binning in src/domain/windErrors.ts,
@@ -119,6 +120,7 @@ function SectionPanel({ s, intro }: { s: WindErrorSection; intro: JSX.Element })
 
 export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; state: SiteJsonState }): JSX.Element {
   const kept = data?.sections.find((s) => s.id === 'nws-kept');
+  const archive = data?.sections.find((s) => s.id === 'om-archive');
   const sample = data?.sections.find((s) => s.id === 'surface-sample');
   const station = `${SITE.metarStation.id}, ~${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the drop zone`;
   return (
@@ -139,7 +141,7 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
         about whether a jump was safe, and nothing on the dashboard reads them. The forecasts are for
         the drop zone, so part of every difference is the distance.
       </p>
-      {sample && (
+      {(archive || sample) && (
         <p className="muted small">
           <OpenMeteoCredit scope="surface" />
         </p>
@@ -161,6 +163,25 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
               direction only where the report gave one. How it was paired:{' '}
               <a href={repoDoc('docs/kept-forecasts-vs-kpmv.md')} target="_blank" rel="noopener noreferrer">
                 docs/kept-forecasts-vs-kpmv.md
+              </a>
+              .
+            </p>
+          }
+        />
+      )}
+      {archive && (
+        <SectionPanel
+          s={archive}
+          intro={
+            <p className="muted small">
+              Open-Meteo&rsquo;s 10&nbsp;m wind for the drop zone from its own archive of past forecasts,
+              set against KPMV as the NWS forecasts above are: the report nearest each hour&rsquo;s start,
+              speed rounded to whole knots, the gust only where KPMV reported one, direction only where
+              the report gave one. Two rows: the first hours of each model run, its best case, and the
+              forecast made a day earlier. The dashboard&rsquo;s hours ahead come from runs in between. How
+              it was fetched:{' '}
+              <a href={repoDoc('docs/surface-wind-sources.md')} target="_blank" rel="noopener noreferrer">
+                docs/surface-wind-sources.md
               </a>
               .
             </p>

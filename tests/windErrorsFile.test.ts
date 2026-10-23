@@ -11,8 +11,8 @@ import publishedText from '../public/wind-errors/summary.json?raw';
 const data = JSON.parse(publishedText) as WindErrorsData;
 
 describe('the published #wind-errors file', () => {
-  it('holds both sections, each with dates in order and a row per source or lead', () => {
-    expect(data.sections.map((s) => s.id)).toEqual(['nws-kept', 'surface-sample']);
+  it('holds every section, each with dates in order and a row per source or lead', () => {
+    expect(data.sections.map((s) => s.id)).toEqual(['nws-kept', 'om-archive', 'surface-sample']);
     for (const s of data.sections) {
       expect(s.rows.length).toBeGreaterThan(0);
       expect(s.first).not.toBeNull();

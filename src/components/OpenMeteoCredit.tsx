@@ -23,9 +23,10 @@ export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' | 'sur
   if (scope === 'surface') {
     return (
       <>
-        {credit}: the hourly, 15-minute and current 10&nbsp;m wind in the surface-wind sample&rsquo;s
-        charts. This page shows it reworked: each value less KPMV&rsquo;s reported wind, binned to the
-        knot or to ten degrees.
+        {credit}: the 10&nbsp;m wind in the archived forecasts&rsquo; charts and the hourly, 15-minute
+        and current 10&nbsp;m wind in the surface-wind sample&rsquo;s. This page shows it reworked: each
+        value less KPMV&rsquo;s reported wind (the archived forecasts first rounded to whole knots), binned
+        to the knot or to ten degrees.
       </>
     );
   }

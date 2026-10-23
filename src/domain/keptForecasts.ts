@@ -96,18 +96,26 @@ export interface InstantPair {
   obs: Instant;
 }
 
-/** What every lead row reads, built once: each report, filed under the
- *  hour it is within REPORT_WINDOW_MIN of (rounding its time to the hour
- *  finds the only one), and each element's records by valid hour. */
-export function prepareInstants(snaps: readonly KeptGridpointSnapshot[], metars: readonly MetarRecord[]) {
-  const reportsByHour = new Map<number, Instant[]>();
+/** Each report, filed under the hour it is within REPORT_WINDOW_MIN of
+ *  (rounding its time to the hour finds the only one), in time order within
+ *  the hour, as `reportNear` takes them. */
+export function reportsByHour(metars: readonly MetarRecord[]): Map<number, Instant[]> {
+  const byHour = new Map<number, Instant[]>();
   for (const r of metars.map(readInstant)) {
     const h = Math.round(r.t / MS_H) * MS_H;
-    reportsByHour.set(h, [...(reportsByHour.get(h) ?? []), r]);
+    byHour.set(h, [...(byHour.get(h) ?? []), r]);
   }
+  for (const list of byHour.values()) list.sort((a, b) => a.t - b.t);
+  return byHour;
+}
+
+/** What every lead row reads, built once: the reports by hour
+ *  (`reportsByHour`) and each element's records by valid hour. */
+export function prepareInstants(snaps: readonly KeptGridpointSnapshot[], metars: readonly MetarRecord[]) {
+  const byHour = reportsByHour(metars);
   const per = INSTANT_ELEMENTS.map((el) => ({ el, ...byValidHour(snaps.flatMap((s) => keptInstantRecords(s, el))) }));
   const hours = [...new Set(per.flatMap((p) => [...p.byHour.keys()]))].sort((a, b) => a - b);
-  return { reportsByHour, per, hours };
+  return { reportsByHour: byHour, per, hours };
 }
 
 /** The pairs for one lead row: the newest issuance at least `minLeadH`
@@ -120,10 +128,10 @@ export function pairInstants(
   minLeadH: number,
   endReachH = END_REACH_H,
 ): InstantPair[] {
-  const { reportsByHour, per, hours } = prepared;
+  const { reportsByHour: byHour, per, hours } = prepared;
   const out: InstantPair[] = [];
   for (const t of hours) {
-    const obs = reportNear((reportsByHour.get(t) ?? []).sort((a, b) => a.t - b.t), t);
+    const obs = reportNear(byHour.get(t) ?? [], t);
     if (!obs) continue;
     const fc: InstantPair['fc'] = {};
     let issued: string | null = null;
@@ -147,7 +155,7 @@ export function pairInstants(
  *  against the reported gust where the station gave one, else against the
  *  reported steady wind; direction the short way round, only where the
  *  report gave one (calm and VRB give none). Null where a side is missing. */
-export function windDiffs(p: InstantPair): {
+export function windDiffs(p: Pick<InstantPair, 'fc' | 'obs'>): {
   speed: number | null;
   gust: number | null;
   gustOverSpeed: number | null;

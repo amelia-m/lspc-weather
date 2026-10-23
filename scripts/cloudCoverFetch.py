@@ -40,6 +40,10 @@ Sources, each as read 2026-10-10:
           `_previous_day1` (the forecast made a day earlier).
   metar   KPMV's reports from the Iowa Environmental Mesonet's ASOS archive,
           routine and special, as the METAR text.
+  omwind  Open-Meteo's 10 m wind, gust and direction, in knots, from the same
+          two archives as `om` (read 2026-10-23), for the #wind-errors page
+          (src/domain/windErrors.ts). Never in the default, like `cig`: its
+          records ('om-wind') go to their own archive, data/parity/om-wind-*.
 """
 import datetime as dt
 import gzip
@@ -56,7 +60,11 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
-import eccodes
+try:
+    import eccodes
+except ImportError:
+    # Only the NDFD parts decode GRIB2; PARTS=metar,om,omwind run without it.
+    eccodes = None
 
 # src/config/site.ts: the drop zone, as the dashboard asks every forecast for
 # it, and KPMV's reports against it. Each site is (id, lat, lon); `TAGGED`
@@ -211,6 +219,28 @@ def om_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -
     return out
 
 
+def om_wind_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -> list[dict]:
+    # Knots to the tenth, as the dashboard asks for its own 10 m wind
+    # (openMeteoWindsUrl), so the archive and the card read the same units.
+    loc = f'latitude={lat}&longitude={lon}&start_date={start}&end_date={end}&timezone=UTC&wind_speed_unit=kn'
+    names = ['wind_speed_10m', 'wind_gusts_10m', 'wind_direction_10m']
+    out = []
+    hist = json.loads(get(f'https://historical-forecast-api.open-meteo.com/v1/forecast?{loc}&hourly={",".join(names)}'))
+    prev_vars = [f'{n}_previous_day1' for n in names]
+    prev = json.loads(get(f'https://previous-runs-api.open-meteo.com/v1/forecast?{loc}&hourly={",".join(prev_vars)}'))
+    for run, data, keys in (('historical', hist, names), ('previous_day1', prev, prev_vars)):
+        hourly = data['hourly']
+        for i, t in enumerate(hourly['time']):
+            vals = [hourly[k][i] for k in keys]
+            if all(v is None for v in vals):
+                continue
+            out.append(tag({
+                'src': 'om-wind', 'run': run, 'valid': t + 'Z', 'spd': vals[0], 'gust': vals[1], 'dir': vals[2],
+                'grid': f"{data['latitude']},{data['longitude']}",
+            }, sid))
+    return out
+
+
 def metar_records(start: dt.date, end: dt.date) -> list[dict]:
     last = end + dt.timedelta(days=1)
     url = (
@@ -238,11 +268,16 @@ def main() -> None:
     # ('ndfd-cig') go to their own archive, data/parity/ceiling-*, and
     # parseCloudCoverLines skips them if they share a file with sky cover.
     parts = set(os.environ.get('PARTS', 'metar,om,ndfd').split(','))
+    if eccodes is None and parts & set(NDFD_PARTS):
+        sys.exit('the NDFD parts need ecCodes: pip install eccodes eccodeslib')
     records = metar_records(start, end) if 'metar' in parts else []
     for sid, lat, lon in (SITES if 'om' in parts else []):
         # Spaced, so a run of fourteen sites does not meet the archive host's
         # dropped handshakes back to back.
         records += om_records(start, end, sid, lat, lon)
+        time.sleep(3)
+    for sid, lat, lon in (SITES if 'omwind' in parts else []):
+        records += om_wind_records(start, end, sid, lat, lon)
         time.sleep(3)
     jobs = [(d, p) for p in NDFD_PARTS if p in parts for d in days]
     with ThreadPoolExecutor(8) as pool:

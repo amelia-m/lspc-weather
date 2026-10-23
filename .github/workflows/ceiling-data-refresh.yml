@@ -12,11 +12,14 @@ name: Ceiling data refresh
 #
 # Since 2026-10-23 it also rebuilds the #wind-errors page's data file
 # (public/wind-errors/summary.json) with scripts/windErrorsData.ts, from the
-# same kept snapshots and reports plus the surface-wind sample's archives.
+# same kept snapshots and reports plus the surface-wind sample's archives,
+# and fetches Open-Meteo's archived 10 m wind since the newest hour kept
+# (data/parity/om-wind-*) for the page's Open-Meteo section.
 # A rebuild that holds less than the published file is not copied in
 # (windErrorsShrinkage), as the ceiling file's check does. The two are
-# independent: a wind-side failure leaves the wind file as it was, the
-# ceiling data is still committed, and the run then fails so it is seen.
+# independent: a wind-side failure (the Open-Meteo fetch or the rebuild)
+# leaves the wind files as they were, the ceiling data is still committed,
+# and the run then fails so it is seen.
 # The docs' wind figures are dated readings and are not redrawn here.
 #
 # The rules are src/domain/ceilingRefresh.ts (pure, tested) and their
@@ -114,6 +117,26 @@ jobs:
           mv "$RUNNER_TEMP/$name" "data/parity/$name"
           mkdir -p "$RUNNER_TEMP/trial" && cp "data/parity/$name" "$RUNNER_TEMP/trial/"
 
+      # Open-Meteo's archive is a third-party service with a shared daily
+      # limit; its failure must not hold back the ceiling data, so it fails
+      # this step only, and the last step fails the run.
+      - name: Fetch Open-Meteo's archived wind
+        id: omwind
+        if: steps.window.outputs.fetch_om_wind == 'true'
+        continue-on-error: true
+        env:
+          START: ${{ steps.window.outputs.om_wind_start }}
+          END: ${{ steps.window.outputs.end }}
+          SINCE: ${{ steps.window.outputs.om_wind_newest }}
+        run: |
+          set -euo pipefail
+          name="om-wind-$START-to-$END.jsonl.gz"
+          if [ -e "data/parity/$name" ]; then echo "::error::data/parity/$name already exists"; exit 1; fi
+          PARTS=omwind python scripts/cloudCoverFetch.py "$START" "$END" "$RUNNER_TEMP/$name"
+          npx tsx scripts/ceilingRefresh.ts fetched omwind "$RUNNER_TEMP/$name" --since "$SINCE" --start "$START" --end "$END"
+          mv "$RUNNER_TEMP/$name" "data/parity/$name"
+          mkdir -p "$RUNNER_TEMP/trial" && cp "data/parity/$name" "$RUNNER_TEMP/trial/"
+
       # The keeper's snapshots in a worktree of their own, as
       # scripts/forecastKeepLoop.sh does, so main's checkout is untouched.
       - name: Check out the kept forecasts
@@ -140,9 +163,11 @@ jobs:
           cp "$RUNNER_TEMP/ceiling-errors.json" public/ceiling-errors/ceiling-errors.json
           mkdir -p "$RUNNER_TEMP/trial" && cp "$RUNNER_TEMP/ceiling-errors.json" "$RUNNER_TEMP/trial/"
 
-      # The #wind-errors page: the kept NWS forecasts against KPMV's reports
-      # (this week's fetch and every one before, data/parity/metar-*, and
-      # the reports kept for the first window), and the surface-wind
+      # The #wind-errors page: the kept NWS forecasts and Open-Meteo's
+      # archived wind against KPMV's reports (this week's fetch and every
+      # one before, data/parity/metar-*, the reports kept for the first
+      # kept window, and the drop-zone cloud-cover archive's, from
+      # 2026-04-01; not cloud-cover-stations-*), and the surface-wind
       # sample's archives. Built outside the repository, held to the
       # published file, then copied in.
       - name: Rebuild the wind-errors file
@@ -154,6 +179,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/wind-errors"
           npx tsx scripts/windErrorsData.ts --kept "$RUNNER_TEMP/forecast-archive/data" \
             --reports data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz data/parity/metar-*.jsonl.gz \
+              data/parity/cloud-cover-2*.jsonl.gz \
+            --om data/parity/om-wind-*.jsonl.gz \
             --sample data/parity/surfacewind-*.jsonl.gz \
             --out "$RUNNER_TEMP/wind-errors/summary.json" \
             --check-against public/wind-errors/summary.json
@@ -185,11 +212,11 @@ jobs:
           set -euo pipefail
           git config user.name "ceiling-data-refresh workflow"
           git config user.email "actions@users.noreply.github.com"
-          # The wind file is unchanged when its rebuild failed, and then adds nothing.
+          # The wind files are unchanged when their fetch or rebuild failed, and then add nothing.
           git add data/parity/ceiling-*.jsonl.gz data/parity/metar-*.jsonl.gz public/ceiling-errors/ceiling-errors.json \
-            public/wind-errors/summary.json
+            data/parity/om-wind-*.jsonl.gz public/wind-errors/summary.json
           git commit -m "Ceiling and wind data to $END" \
-            -m "Written by .github/workflows/ceiling-data-refresh.yml: NDFD ceilings and KPMV's reports fetched with scripts/cloudCoverFetch.py, the chart's data file rebuilt by scripts/ceilingChartData.ts, the #wind-errors file by scripts/windErrorsData.ts."
+            -m "Written by .github/workflows/ceiling-data-refresh.yml: NDFD ceilings, KPMV's reports and Open-Meteo's archived wind fetched with scripts/cloudCoverFetch.py, the chart's data file rebuilt by scripts/ceilingChartData.ts, the #wind-errors file by scripts/windErrorsData.ts."
           # main may have moved while the fetch ran; a conflict (someone
           # rebuilt the file by hand meanwhile) fails here, loudly.
           git fetch --quiet origin main
@@ -197,10 +224,14 @@ jobs:
           git push origin HEAD:main
           gh workflow run deploy.yml --ref main
 
-      # Last, after the ceiling data is committed: a failed wind rebuild
-      # still fails the run, so it is not missed.
-      - name: Fail if the wind-errors rebuild failed
-        if: steps.wind.outcome == 'failure'
+      # Last, after the ceiling data is committed: a failed Open-Meteo fetch
+      # or wind rebuild still fails the run, so it is not missed.
+      - name: Fail if the wind side failed
+        if: steps.omwind.outcome == 'failure' || steps.wind.outcome == 'failure'
+        env:
+          OMWIND: ${{ steps.omwind.outcome }}
+          WIND: ${{ steps.wind.outcome }}
         run: |
-          echo "::error::the #wind-errors rebuild failed (see its step); its file was left as published"
+          [ "$OMWIND" = failure ] && echo "::error::the Open-Meteo wind fetch failed (see its step); the next run starts from the same day"
+          [ "$WIND" = failure ] && echo "::error::the #wind-errors rebuild failed (see its step); its file was left as published"
           exit 1
