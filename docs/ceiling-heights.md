@@ -660,9 +660,25 @@ ceiling with a visibility as a clear sky, VFR at 5 SM or more. That
 would be wrong for an hour past the ceiling's reach but inside the
 visibility's. It does not happen while the two end together, and they
 did: the same end hour in all 190 kept snapshots from 2026-10-13 to
-10-23, and in the live gridpoint read that evening. If they ever part,
-the table would show VFR on hours with no ceiling forecast; a guard on
-the ceiling's own last hour would be the fix.
+10-23, and in the live gridpoint read that evening.
+
+**Guarded since 2026-10-23**, at the maintainer's request, so it stays
+right if they part. Each hour now says whether the ceiling forecast covers
+it (`HourlyPoint.ceilingForecast`, from the ceiling's own validTimes, its
+"no ceiling" nulls included, so a gap counts as well as the end). Inside
+it the table reads as before; past it `forecastFlightCategory` reads the
+ceiling as unknown, as for a report with no sky group: visibility can
+still give MVFR, IFR or LIFR, never VFR. The Ceiling & sky card's hourly
+strip prints a dash there, not "no". And so that a dash is not read as a
+blank category, the table marks the hour the ceiling forecast stops with
+a row of its own ("Ceiling and visibility not forecast from 5:00 AM…"),
+or a note above it when the whole day is past it, and folds a key under
+it: what each column is and where it comes from, the four categories as
+AIM 7-1-7 defines them, ceiling, gust and sky condition as NWS's glossary
+does (read 2026-10-23), and that a category is not a go/no-go. Checked
+in a local build at 1280, 390 and 320 px; at 320 the row first ran off
+the screen with the table's sideways scroll, and its text is now held to
+the visible width.
 
 ## What this does not say
 

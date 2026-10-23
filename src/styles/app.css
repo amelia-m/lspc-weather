@@ -955,6 +955,46 @@ a.sim-term {
 .hourly-detail-table {
   margin-top: 8px;
 }
+/* Where the ceiling and visibility forecast stops, across the whole row so
+   it reads on a phone without hover. */
+.reach-row td {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-style: italic;
+  white-space: normal;
+  border-top: 1px dashed var(--border);
+}
+/* The table scrolls sideways on a phone, and a row spanning it is wider than
+   the screen: held to the visible width and to the left edge, so the whole
+   sentence wraps where it can be read (seen cut off at 320 px, 2026-10-23). */
+.reach-text {
+  position: sticky;
+  left: 0;
+  max-width: calc(100vw - 64px);
+}
+.reach-note {
+  margin: 8px 0 0;
+}
+.hourly-key summary {
+  cursor: pointer;
+  color: var(--accent);
+  margin: 10px 0 4px;
+}
+.hourly-key dt {
+  font-weight: 600;
+  margin-top: 8px;
+}
+.hourly-key dd {
+  margin: 2px 0 0;
+}
+.hourly-key-cats {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0;
+}
+.hourly-key-cats li {
+  margin: 4px 0;
+}
 
 /* Decoded TAF periods. Eight columns never fit a phone, so the table scrolls
    inside the card instead of widening the page (a page-wide horizontal scroll

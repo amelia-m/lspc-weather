@@ -3,7 +3,7 @@
  *  unit-tested. This is a factual weather category (FAA AIM 7-1-7), NOT a
  *  jump go/no-go verdict; the UI surfaces it and cites the source. */
 
-import type { CurrentConditions } from './types';
+import type { CurrentConditions, HourlyPoint } from './types';
 import { ceilingState } from './normalize';
 
 export type FlightCategory = 'VFR' | 'MVFR' | 'IFR' | 'LIFR';
@@ -62,8 +62,31 @@ function visibilityCategory(sm: number): FlightCategory {
  */
 export function observedFlightCategory(c: CurrentConditions): FlightCategory | null {
   if (ceilingState(c) === 'known') return flightCategory(c.ceilingFtAgl, c.visibilitySm);
-  const byVisibility = flightCategory(null, c.visibilitySm);
+  return withoutCeiling(c.visibilitySm);
+}
+
+/** The category when the ceiling is unknown: what visibility alone can
+ *  establish (MVFR, IFR or LIFR), never VFR. */
+function withoutCeiling(visibilitySm: number | null): FlightCategory | null {
+  const byVisibility = flightCategory(null, visibilitySm);
   return byVisibility === 'VFR' ? null : byVisibility;
+}
+
+/**
+ * Flight category for a forecast hour from the NWS gridpoint. Inside the
+ * ceiling forecast a null ceiling is NWS's "no ceiling" and reads as
+ * `flightCategory` reads it. Past it the ceiling is unknown, as for a
+ * report with no sky group (`observedFlightCategory`): visibility can still
+ * establish MVFR, IFR or LIFR, not VFR. The two elements have ended at the
+ * same hour in every forecast read to 2026-10-23
+ * (docs/ceiling-heights.md, "The hourly table's flight category"), so this
+ * only changes anything if they part.
+ */
+export function forecastFlightCategory(
+  h: Pick<HourlyPoint, 'ceilingFtAgl' | 'ceilingForecast' | 'visibilitySm'>,
+): FlightCategory | null {
+  if (h.ceilingForecast) return flightCategory(h.ceilingFtAgl, h.visibilitySm);
+  return withoutCeiling(h.visibilitySm);
 }
 
 export const CATEGORY_LABEL: Record<FlightCategory, string> = {

@@ -161,9 +161,22 @@ export function CeilingSkyPanel({
                   </div>
                 )}
               </div>
-              <span className="sky-ceil" title={h.ceilingFtAgl != null ? undefined : 'No ceiling (no broken/overcast layer)'}>
-                {h.ceilingFtAgl != null ? fmtCeilK(h.ceilingFtAgl) : 'no'}
-                <span className="sr-only">{h.ceilingFtAgl != null ? ' thousand ft ceiling' : ' ceiling'}</span>
+              {/* "no" only inside the ceiling forecast, where a missing
+                  ceiling is NWS's "no ceiling"; past it, a dash. */}
+              <span
+                className="sky-ceil"
+                title={
+                  h.ceilingFtAgl != null
+                    ? undefined
+                    : h.ceilingForecast
+                      ? 'No ceiling (no broken/overcast layer)'
+                      : 'No ceiling forecast for this hour'
+                }
+              >
+                {h.ceilingFtAgl != null ? fmtCeilK(h.ceilingFtAgl) : h.ceilingForecast ? 'no' : '—'}
+                <span className="sr-only">
+                  {h.ceilingFtAgl != null ? ' thousand ft ceiling' : h.ceilingForecast ? ' ceiling' : ' ceiling not forecast'}
+                </span>
               </span>
               <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
             </div>
@@ -254,6 +267,7 @@ function describeHour(h: HourlyPoint, om?: OpenMeteoCloudHour): string {
     parts.push(`Open-Meteo ${round(om.totalPct)}% cover${bands.length ? ` (${bands.join(', ')})` : ''}`);
   }
   if (h.ceilingFtAgl != null) parts.push(`ceiling ${h.ceilingFtAgl.toLocaleString()} ft`);
+  else if (!h.ceilingForecast) parts.push('ceiling not forecast');
   if (h.precipProbPct != null) parts.push(`${round(h.precipProbPct)}% precip`);
   return parts.join(' · ');
 }

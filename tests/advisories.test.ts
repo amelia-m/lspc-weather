@@ -32,6 +32,7 @@ const hourAhead = (hoursAhead: number, over: Partial<HourlyPoint> = {}): HourlyP
   time: now + hoursAhead * 3600_000,
   skyCoverPct: null,
   ceilingFtAgl: null,
+  ceilingForecast: true,
   visibilitySm: null,
   windSpeedKt: null,
   windGustKt: null,

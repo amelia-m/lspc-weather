@@ -18,6 +18,7 @@ const at = (utcHour: number, wind: number, gust: number | null): HourlyPoint => 
   time: Date.parse('2026-10-10T00:00:00Z') + utcHour * H,
   skyCoverPct: null,
   ceilingFtAgl: null,
+  ceilingForecast: true,
   visibilitySm: null,
   windSpeedKt: wind,
   windGustKt: gust,

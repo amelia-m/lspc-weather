@@ -75,7 +75,14 @@ export interface CurrentConditions {
 export interface HourlyPoint {
   time: number; // epoch ms
   skyCoverPct: number | null;
+  /** Null is "no ceiling" only where `ceilingForecast` is true. */
   ceilingFtAgl: number | null;
+  /** Whether the gridpoint's ceiling forecast covers this hour. Inside it
+   *  the API serves "no ceiling" as a null value, so a null `ceilingFtAgl`
+   *  is a clear sky; past it (the ceiling runs about a day and a half, the
+   *  sky cover a week) the ceiling is simply not forecast, and a null says
+   *  nothing. `forecastFlightCategory` reads the two apart. */
+  ceilingForecast: boolean;
   visibilitySm: number | null;
   windSpeedKt: number | null;
   windGustKt: number | null;
