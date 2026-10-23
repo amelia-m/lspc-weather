@@ -170,6 +170,12 @@ as published and does not hold back the ceiling commit.
 
 ![Histograms of the NWS forecast from NOAA's archive minus KPMV's reports, at three leads](img/nws-archive-wind-errors-2026-10-22.svg)
 
+A branch trial of the refresh on 2026-10-23 (run 40036630382) rebuilt
+the page's file with the section (4,791, 4,786 and 4,768 hours by lead,
+the week's reports reaching 10-23 00Z) and passed its tests. Its NDFD
+fetch step was skipped, the archive being current to the last whole day,
+so the step's first run on a runner is the refresh of 2026-10-26.
+
 The figure is this reading's, to 2026-10-22, kept as it is; the page is
 the current view.
 
