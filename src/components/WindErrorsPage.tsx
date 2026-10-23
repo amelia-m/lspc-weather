@@ -176,8 +176,9 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
           intro={
             <p className="muted small">
               The same NWS forecast, read from NOAA&rsquo;s archive of it (NDFD), which holds the months
-              before the keeper started. Four forecasts a day, so the newest one before an hour is up to
-              six hours older than the dashboard&rsquo;s. Paired and read exactly as the section above. How it
+              before the keeper started. Four forecasts a day, so the newest one before an hour is usually
+              up to six hours older than the dashboard&rsquo;s, and older where the archive lacks a file.
+              Paired and read by the same code as the section above. How it
               was fetched and read:{' '}
               <a href={repoDoc('docs/nws-gust-archive.md')} target="_blank" rel="noopener noreferrer">
                 docs/nws-gust-archive.md

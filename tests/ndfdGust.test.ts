@@ -215,6 +215,12 @@ describe('pairNdfdWind', () => {
     expect(six.pairs[0].fc.windGust).toBeUndefined();
   });
 
+  it('keeps an hour with only a direction, as the kept pairing does', () => {
+    const [latest] = pairNdfdWind({ spd: [], gust: [], dir: [dirRec('01T06:46', '01T12:00', 200)] }, reports);
+    expect(latest.pairs).toHaveLength(1);
+    expect(latest.pairs[0]).toMatchObject({ issued: '2026-07-01T06:46Z', fc: { windDirection: 200 } });
+  });
+
   it('leaves out an hour with no report near it', () => {
     const [latest] = pairNdfdWind(wind, []);
     expect(latest.pairs).toEqual([]);
@@ -222,6 +228,11 @@ describe('pairNdfdWind', () => {
 });
 
 describe('pairGusts with the speed', () => {
+  it('counts an hour with a forecast speed and no gust apart, rather than pairing it', () => {
+    const [latest] = pairGusts([], [metar('01T11:55', '19012G20KT')], [spdRec('01T06:47', '01T12:00', 14)]);
+    expect(latest).toMatchObject({ pairs: [], withoutGust: 1 });
+  });
+
   it('gives each hour the forecast wind at the same lead, in whole knots', () => {
     const [latest] = pairGusts([rec('01T06:47', '01T12:00', 15.4)], [metar('01T11:55', '19012G20KT')], [
       spdRec('01T06:47', '01T12:00', 9.6),

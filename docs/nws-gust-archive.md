@@ -113,7 +113,8 @@ BSR 2-1 H's 14 mph read as 12 kt, and so does this count. Over the six
 months the forecast gust was never under the forecast wind in whole
 knots: 0 of 4,789 hours at the latest issuance, 0 of 4,784 and 0 of 4,766
 at the other leads (and 0 of 34,149 hour-values in the kept forecasts,
-2026-10-13 to 10-23). So the gust decided it. At the latest issuance
+2026-10-13 to 10-23), and no hour had a forecast speed without a gust at
+its lead. So the gust decided it. At the latest issuance
 the forecast was at or over 12 kt in 2,477 of 4,789 hours. KPMV's report near the hour was at or over
 12 kt (the higher of its wind and gust, as the report's flag reads it) in
 1,014 of those, and in 41 more the report was at or over 12 kt with the
@@ -158,10 +159,12 @@ page's speed charts count the 4,789 with a speed on both sides.
 Since 2026-10-23 the page has a section for this archive, "NWS forecasts
 from NOAA’s archive, against KPMV", between the kept forecasts and
 Open-Meteo's archive, a row per lead (`nwsArchiveSection`,
-`src/domain/windErrors.ts`), read exactly as the kept section is. The
+`src/domain/windErrors.ts`), paired by the kept reading's own code
+(`pairInstants`) and read exactly as the kept section is. The
 weekly ceiling data refresh fetches each week's speed, gust and
 direction (`PARTS=wspd,wgust,wdir`, to `data/parity/ndfd-wind-*`) from the
-newest issuance kept of the three (`earliestNewest`), and rebuilds the
+newest issuance kept of the three (`earliestNewest`), checks that each
+element brought something newer than its own newest kept, and rebuilds the
 page with them; a failure there, like Open-Meteo's, leaves the page's file
 as published and does not hold back the ceiling commit.
 
