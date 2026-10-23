@@ -65,7 +65,7 @@ export const RUN_AGE_BANDS: readonly { fromMin: number; toMin: number }[] = [
 /** Minutes from `domain`'s newest availability time seen to the
  *  comparison's start, or null when the record has no usable metadata for
  *  it. Negative when the run arrived while the comparison ran. */
-export function runAgeMinutes(r: SchulzeRecord, domain: string): number | null {
+export function runAgeMinutes(r: Pick<SchulzeRecord, 'at' | 'omRuns'>, domain: string): number | null {
   const avail = r.omRuns?.[domain]?.avail;
   if (avail == null) return null;
   const a = Date.parse(avail);

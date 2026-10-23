@@ -47,7 +47,7 @@ describe('runAgeMinutes', () => {
 
   it('is null for a model with no metadata, or a record from before it was logged', () => {
     expect(runAgeMinutes(rec('2026-10-21T17:49:30.000Z', false), 'ncep_gfs025')).toBeNull();
-    expect(runAgeMinutes({ kind: 'schulze', at: '2026-10-21T17:49:30.000Z', rawMismatch: true }, 'ncep_hrrr_conus')).toBeNull();
+    expect(runAgeMinutes({ at: '2026-10-21T17:49:30.000Z' }, 'ncep_hrrr_conus')).toBeNull();
   });
 });
 
