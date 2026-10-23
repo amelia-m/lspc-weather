@@ -161,6 +161,7 @@ describe('the Ceiling & sky timeline', () => {
     ceilingFtAgl: pct >= 50 ? 4500 : null,
     // Inside the ceiling forecast, so a null ceiling is NWS's "no ceiling".
     ceilingForecast: true,
+    visibilityForecast: true,
     precipProbPct: 0,
   })) as unknown as HourlyPoint[];
   const om: OpenMeteoCloudHour[] = hourly.map((h) => ({ time: h.time, totalPct: 2, lowPct: 1, midPct: 1, highPct: 0 }));

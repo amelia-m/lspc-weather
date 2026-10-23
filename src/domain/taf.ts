@@ -31,7 +31,7 @@
  * through `flightCategory`, the same function the observation uses.
  */
 
-import { flightCategory, type FlightCategory } from './flightCategory';
+import { flightCategory, withoutCeiling, type FlightCategory } from './flightCategory';
 import type { SkyCover, SkyLayer , TafPassedOver } from './types';
 import { M_PER_SM, round } from './units';
 
@@ -500,8 +500,7 @@ export function periodFlightCategory(periods: TafPeriod[], index: number): Fligh
   const skySource = p.skyLayers != null ? p : base?.skyLayers != null ? base : null;
   const vis = p.visibilitySm ?? base?.visibilitySm ?? null;
   if (skySource) return flightCategory(skySource.ceilingFtAgl, vis);
-  const byVisibility = flightCategory(null, vis);
-  return byVisibility === 'VFR' ? null : byVisibility;
+  return withoutCeiling(vis);
 }
 
 /** Plain words for the present-weather codes NWS offices write in TAFs

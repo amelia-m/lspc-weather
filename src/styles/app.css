@@ -972,9 +972,6 @@ a.sim-term {
   left: 0;
   max-width: calc(100vw - 64px);
 }
-.reach-note {
-  margin: 8px 0 0;
-}
 .hourly-key summary {
   cursor: pointer;
   color: var(--accent);

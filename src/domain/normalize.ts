@@ -561,12 +561,13 @@ export const GRIDPOINT_FIELDS = [
 export function normalizeGridpoint(gp: RawGridpoint, maxHours = 192): HourlyPoint[] {
   const p = gp.properties;
   const sky = expand(p.skyCover);
-  const ceil = expand(p.ceilingHeight, (v, uom) => convertLength(v, uom)); // → ft
-  // The hours the ceiling forecast covers, its null ("no ceiling") values
-  // included, which `expand` drops: past them a missing ceiling is not a
-  // clear sky (HourlyPoint.ceilingForecast).
-  const ceilCovered = coveredHours(p.ceilingHeight);
-  const vis = expand(p.visibility, (v, uom) => (isMeters(uom) ? mToSm(v) : v)); // → SM
+  // The hours the ceiling and visibility forecasts cover, their null ("no
+  // ceiling") values included: past them a missing figure is not forecast,
+  // and a missing ceiling is not a clear sky (HourlyPoint.ceilingForecast).
+  const ceilCovered = new Set<number>();
+  const visCovered = new Set<number>();
+  const ceil = expand(p.ceilingHeight, (v, uom) => convertLength(v, uom), ceilCovered); // → ft
+  const vis = expand(p.visibility, (v, uom) => (isMeters(uom) ? mToSm(v) : v), visCovered); // → SM
   const spd = expand(p.windSpeed, (v, uom) => convertSpeed(v, uom)); // → kt
   const gst = expand(p.windGust, (v, uom) => convertSpeed(v, uom));
   const dir = expand(p.windDirection);
@@ -594,6 +595,7 @@ export function normalizeGridpoint(gp: RawGridpoint, maxHours = 192): HourlyPoin
       ceilingFtAgl: ceil.get(t) ?? null,
       ceilingForecast: ceilCovered.has(t),
       visibilitySm: vis.get(t) ?? null,
+      visibilityForecast: visCovered.has(t),
       windSpeedKt: spd.get(t) ?? null,
       windGustKt: gst.get(t) ?? null,
       windDirectionDeg: dir.get(t) ?? null,
@@ -608,27 +610,20 @@ export function normalizeGridpoint(gp: RawGridpoint, maxHours = 192): HourlyPoin
 
 type Converter = (value: number, uom?: string) => number;
 
-/** Every hour a gridpoint property's validTimes cover, null values or not. */
-function coveredHours(prop: GridProp | undefined): Set<number> {
-  const out = new Set<number>();
-  for (const { validTime } of prop?.values ?? []) {
-    const parsed = parseValidTime(validTime);
-    if (!parsed) continue;
-    for (let h = 0; h < parsed.hours; h++) out.add(hourFloor(parsed.start + h * 3600_000));
-  }
-  return out;
-}
-
-function expand(prop: GridProp | undefined, convert?: Converter): Map<number, number> {
+/** A gridpoint property's values by hour. `covered`, when given, collects
+ *  every hour the validTimes cover, null values included: a null inside the
+ *  forecast is a value ("no ceiling"), past it there is none. */
+function expand(prop: GridProp | undefined, convert?: Converter, covered?: Set<number>): Map<number, number> {
   const map = new Map<number, number>();
   if (!prop) return map;
   for (const { validTime, value } of prop.values) {
-    if (value == null) continue;
     const parsed = parseValidTime(validTime);
     if (!parsed) continue;
-    const v = convert ? convert(value, prop.uom) : value;
+    const v = value == null ? null : convert ? convert(value, prop.uom) : value;
     for (let h = 0; h < parsed.hours; h++) {
-      map.set(hourFloor(parsed.start + h * 3600_000), v);
+      const t = hourFloor(parsed.start + h * 3600_000);
+      covered?.add(t);
+      if (v != null) map.set(t, v);
     }
   }
   return map;

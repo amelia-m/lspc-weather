@@ -84,6 +84,10 @@ export interface HourlyPoint {
    *  nothing. `forecastFlightCategory` reads the two apart. */
   ceilingForecast: boolean;
   visibilitySm: number | null;
+  /** Whether the gridpoint's visibility forecast covers this hour: the
+   *  same reach as the ceiling's in every forecast read to 2026-10-23, kept
+   *  apart so neither can stand in for the other if they part. */
+  visibilityForecast: boolean;
   windSpeedKt: number | null;
   windGustKt: number | null;
   windDirectionDeg: number | null;

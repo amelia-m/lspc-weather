@@ -663,17 +663,19 @@ did: the same end hour in all 190 kept snapshots from 2026-10-13 to
 10-23, and in the live gridpoint read that evening.
 
 **Guarded since 2026-10-23**, at the maintainer's request, so it stays
-right if they part. Each hour now says whether the ceiling forecast covers
-it (`HourlyPoint.ceilingForecast`, from the ceiling's own validTimes, its
-"no ceiling" nulls included, so a gap counts as well as the end). Inside
-it the table reads as before; past it `forecastFlightCategory` reads the
-ceiling as unknown, as for a report with no sky group: visibility can
-still give MVFR, IFR or LIFR, never VFR. The Ceiling & sky card's hourly
-strip prints a dash there, not "no". And so that a dash is not read as a
-blank category, the table marks the hour the ceiling forecast stops with
-a row of its own ("Ceiling and visibility not forecast from 5:00 AM…"),
-or a note above it when the whole day is past it, and folds a key under
-it: what each column is and where it comes from, the four categories as
+right if they part, either way round. Each hour now says whether the
+ceiling and the visibility forecasts cover it (`HourlyPoint.ceilingForecast`,
+`visibilityForecast`, from each element's own validTimes, null values
+included, so a gap counts as well as the end). `forecastFlightCategory`
+gives VFR only where both are forecast, since AIM 7-1-7's VFR needs both
+halves; with one of them, that one can still give MVFR, IFR or LIFR; with
+neither, nothing. The Ceiling & sky card's hourly strip prints a dash
+past the ceiling forecast, not "no". And so that a dash is not read as a
+blank category, the table marks every hour where what is forecast
+changes with a row of its own ("Ceiling and visibility not forecast from
+5:00 AM…", "Ceiling not forecast from…", "…forecast again from…"; a day
+that starts outside the reach gets the row before its first hour), and
+folds a key under it: what each column is and where it comes from, the four categories as
 AIM 7-1-7 defines them, ceiling, gust and sky condition as NWS's glossary
 does (read 2026-10-23), and that a category is not a go/no-go. Checked
 in a local build at 1280, 390 and 320 px; at 320 the row first ran off

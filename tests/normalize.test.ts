@@ -553,6 +553,7 @@ describe('aggregateDailyFromHourly', () => {
     skyCoverPct: 20,
     ceilingFtAgl: null,
     ceilingForecast: true,
+    visibilityForecast: true,
     visibilitySm: null,
     windSpeedKt: 10,
     windGustKt: 18,

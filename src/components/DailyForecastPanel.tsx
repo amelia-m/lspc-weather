@@ -226,8 +226,6 @@ export function DayDetail({
   profile?: string;
 }): JSX.Element {
   const heading = dayHeading(dayKey);
-  // The first hour past the ceiling forecast, or -1 when the day is inside it.
-  const pastFrom = points.findIndex((h) => !h.ceilingForecast);
   return (
     <div className="daily-detail">
       <div className="daily-detail-head">
@@ -250,12 +248,6 @@ export function DayDetail({
           {/* The heading names the day; the chart need not name it again. */}
           <HourlyChart points={points} unit={unit} limits={limits} dayNames={false} />
           <HourlyLegend unit={unit} limits={limits} profile={profile} />
-          {pastFrom === 0 && (
-            <p className="muted small reach-note">
-              The NWS forecasts ceiling and visibility only about a day and a half ahead, and not as far as
-              this day, so Flight and Vis are blank.
-            </p>
-          )}
           <div className="daily-scroll">
             <table className="daily-table hourly-detail-table">
               <thead>
@@ -277,16 +269,20 @@ export function DayDetail({
                   // Past the ceiling alone, visibility can still give MVFR or
                   // worse but never VFR (forecastFlightCategory).
                   const cat = forecastFlightCategory(h);
+                  // Where what is forecast changes, marked in the table itself:
+                  // a dash alone read as a blank category, not as "not
+                  // forecast" (the maintainer, 2026-10-23). The first hour
+                  // counts as a change when the day starts outside the reach.
+                  const note = reachChange(i === 0 ? null : points[i - 1], h);
                   return [
-                    // The hour the ceiling forecast stops, marked in the table
-                    // itself: a dash alone read as a blank category, not as
-                    // "not forecast" (the maintainer, 2026-10-23).
-                    i === pastFrom && i > 0 ? (
+                    note ? (
                       <tr key={`reach-${h.time}`} className="reach-row">
                         <td colSpan={8}>
                           <div className="reach-text">
-                            Ceiling and visibility not forecast from {fmtTime(h.time)}: the NWS forecasts them
-                            about a day and a half ahead.
+                            {note} from {fmtTime(h.time)}
+                            {note.endsWith('not forecast')
+                              ? ': the NWS forecasts ceiling and visibility about a day and a half ahead.'
+                              : '.'}
                           </div>
                         </td>
                       </tr>
@@ -296,10 +292,10 @@ export function DayDetail({
                       <td>
                         {cat ? (
                           <FlightCategoryPill category={cat} />
-                        ) : h.ceilingForecast ? (
+                        ) : h.ceilingForecast && h.visibilityForecast ? (
                           '—'
                         ) : (
-                          <span title="Not forecast: no ceiling forecast for this hour">
+                          <span title="Not forecast: ceiling or visibility not forecast for this hour">
                             —<span className="sr-only"> not forecast</span>
                           </span>
                         )}
@@ -324,6 +320,20 @@ export function DayDetail({
 }
 
 /* ---- helpers ---- */
+
+/** What changed between two hours in what the NWS forecast covers, as the
+ *  hourly table's marker row says it, or null for no change. Against no
+ *  previous hour, a day that starts fully forecast needs no row. */
+export function reachChange(
+  prev: Pick<HourlyPoint, 'ceilingForecast' | 'visibilityForecast'> | null,
+  h: Pick<HourlyPoint, 'ceilingForecast' | 'visibilityForecast'>,
+): string | null {
+  const before = prev ?? { ceilingForecast: true, visibilityForecast: true };
+  if (before.ceilingForecast === h.ceilingForecast && before.visibilityForecast === h.visibilityForecast) return null;
+  if (h.ceilingForecast && h.visibilityForecast) return 'Ceiling and visibility forecast again';
+  if (!h.ceilingForecast && !h.visibilityForecast) return 'Ceiling and visibility not forecast';
+  return h.ceilingForecast ? 'Visibility not forecast' : 'Ceiling not forecast';
+}
 
 const dayKeyFmt = new Intl.DateTimeFormat('en-CA', {
   timeZone: SITE.timeZone,
