@@ -552,6 +552,7 @@ describe('aggregateDailyFromHourly', () => {
     time: Date.parse(iso),
     skyCoverPct: 20,
     ceilingFtAgl: null,
+    ceilingForecast: true,
     visibilitySm: null,
     windSpeedKt: 10,
     windGustKt: 18,

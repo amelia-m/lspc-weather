@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import type { DailyPoint, DailySource, HourlyPoint } from '../domain/types';
 import { compass, fmtTemp, round, toSpeed, toTemp, type SpeedUnit, type TempUnit } from '../domain/units';
-import { flightCategory } from '../domain/flightCategory';
+import { forecastFlightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
 import { DATA_SOURCES, dailySourceInUse } from '../config/sources';
 import { Panel } from './common/Panel';
 import { FallbackSources } from './common/FallbackSources';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
+import { HourlyKey } from './HourlyKey';
 import { fmtTime } from './format';
 import type { Thresholds } from '../config/thresholds';
 
@@ -203,8 +204,9 @@ export function DailyForecastPanel({
   );
 }
 
-/** Expanded hourly view for one selected outlook day. */
-function DayDetail({
+/** Expanded hourly view for one selected outlook day. Exported for its tests:
+ *  the card opens it only on a tap, which a static render cannot make. */
+export function DayDetail({
   dayKey,
   points,
   lastCoveredDay,
@@ -224,6 +226,8 @@ function DayDetail({
   profile?: string;
 }): JSX.Element {
   const heading = dayHeading(dayKey);
+  // The first hour past the ceiling forecast, or -1 when the day is inside it.
+  const pastFrom = points.findIndex((h) => !h.ceilingForecast);
   return (
     <div className="daily-detail">
       <div className="daily-detail-head">
@@ -246,6 +250,12 @@ function DayDetail({
           {/* The heading names the day; the chart need not name it again. */}
           <HourlyChart points={points} unit={unit} limits={limits} dayNames={false} />
           <HourlyLegend unit={unit} limits={limits} profile={profile} />
+          {pastFrom === 0 && (
+            <p className="muted small reach-note">
+              The NWS forecasts ceiling and visibility only about a day and a half ahead, and not as far as
+              this day, so Flight and Vis are blank.
+            </p>
+          )}
           <div className="daily-scroll">
             <table className="daily-table hourly-detail-table">
               <thead>
@@ -261,31 +271,52 @@ function DayDetail({
                 </tr>
               </thead>
               <tbody>
-                {points.map((h) => {
+                {points.map((h, i) => {
                   // A dash past the gridpoint's ceiling and visibility, which run
-                  // about a day and a half; their sky cover and wind run a week.
-                  // Within reach the API serves "no ceiling" as a null value, so
-                  // a null ceiling there is a clear sky, read as VFR with the
-                  // visibility. That holds only while the two elements end
-                  // together: they did in all 190 kept snapshots to 2026-10-23
-                  // (docs/ceiling-heights.md, "The hourly table's flight category").
-                  const cat = flightCategory(h.ceilingFtAgl, h.visibilitySm);
-                  return (
+                  // about a day and a half; its sky cover and wind run a week.
+                  // Past the ceiling alone, visibility can still give MVFR or
+                  // worse but never VFR (forecastFlightCategory).
+                  const cat = forecastFlightCategory(h);
+                  return [
+                    // The hour the ceiling forecast stops, marked in the table
+                    // itself: a dash alone read as a blank category, not as
+                    // "not forecast" (the maintainer, 2026-10-23).
+                    i === pastFrom && i > 0 ? (
+                      <tr key={`reach-${h.time}`} className="reach-row">
+                        <td colSpan={8}>
+                          <div className="reach-text">
+                            Ceiling and visibility not forecast from {fmtTime(h.time)}: the NWS forecasts them
+                            about a day and a half ahead.
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null,
                     <tr key={h.time}>
                       <td>{fmtTime(h.time)}</td>
-                      <td>{cat ? <FlightCategoryPill category={cat} /> : '—'}</td>
+                      <td>
+                        {cat ? (
+                          <FlightCategoryPill category={cat} />
+                        ) : h.ceilingForecast ? (
+                          '—'
+                        ) : (
+                          <span title="Not forecast: no ceiling forecast for this hour">
+                            —<span className="sr-only"> not forecast</span>
+                          </span>
+                        )}
+                      </td>
                       <td>{hourWind(h, unit)}</td>
                       <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
                       <td>{h.visibilitySm != null ? `${round(h.visibilitySm, 1)} SM` : '—'}</td>
                       <td>{h.tempC != null ? fmtTemp(h.tempC, tempUnit) : '—'}</td>
                       <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
                       <td>{h.thunderProbPct != null ? `${round(h.thunderProbPct)}%` : '—'}</td>
-                    </tr>
-                  );
+                    </tr>,
+                  ];
                 })}
               </tbody>
             </table>
           </div>
+          <HourlyKey unit={unit} />
         </>
       )}
     </div>
