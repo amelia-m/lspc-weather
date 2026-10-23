@@ -653,8 +653,10 @@ To stop it, disable the workflow in the Actions tab: a run dispatched
 only by the last one would otherwise follow it for good.
 The in-app page at `#wind-errors`, "How far the wind forecasts were from
 KPMV", draws forecast minus reported surface wind as histograms: the kept
-NWS forecasts by lead, Open-Meteo's archived 10 m wind by run (from
-2026-04-01, `data/parity/om-wind-*`), and the surface-wind sample's
+NWS forecasts by lead, the same NWS forecast from NOAA's NDFD archive by
+lead (from 2026-04-01, `data/parity/ndfd-wgust-*` and `ndfd-wind-*`),
+Open-Meteo's archived 10 m wind by run (from 2026-04-01,
+`data/parity/om-wind-*`), and the surface-wind sample's
 Open-Meteo forms and NWS hour by source (`src/domain/windErrors.ts`,
 `src/components/WindErrorsPage.tsx`). Its data file,
 `public/wind-errors/summary.json`, is rebuilt weekly by the ceiling data
@@ -690,13 +692,14 @@ The comparison's "different runs" rule is shared with it (`rawGap`,
 dispatch) fetches the NDFD ceilings and KPMV's reports from the newest
 kept record's day to the last whole UTC day, commits them under
 `data/parity/` with the ceiling-error page's rebuilt data file to `main`,
-and since 2026-10-23 Open-Meteo's archived wind for the same days and
-the `#wind-errors` page's rebuilt file with them, and dispatches the deploy. It fails, committing nothing, when a fetch
+and since 2026-10-23 Open-Meteo's archived wind and NDFD's wind, gust
+and direction for the same days and the `#wind-errors` page's rebuilt
+file with them, and dispatches the deploy. It fails, committing nothing, when a fetch
 brings nothing newer or either rebuilt file holds less than the published
 one (`src/domain/ceilingRefresh.ts`, `windErrorsShrinkage`); a run on
-another branch commits nothing. The wind side is independent: when the
-Open-Meteo fetch or the wind rebuild fails, the page's wind file is left
-as published, the ceiling data (and any Open-Meteo archive fetched) still
+another branch commits nothing. The wind side is independent: when
+either wind fetch or the wind rebuild fails, the page's wind file is left
+as published, the ceiling data (and any wind archive fetched) still
 commits, and a last step fails the run. Its rules and why are in docs/ceiling-heights.md, "The chart".
 
 usairnet's page is read by `src/domain/usairnet.ts`, tested against station

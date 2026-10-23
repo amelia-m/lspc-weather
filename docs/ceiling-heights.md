@@ -282,8 +282,11 @@ push made with the workflow token starts no other workflow, as in
 published file the same way, and fetches Open-Meteo's archived 10 m wind
 for its Open-Meteo section from the newest hour kept, on the same window
 rule (`omWindNewest`: the earlier of its two runs' newest;
-docs/surface-wind-sources.md, "Open-Meteo's archive"). A wind-side
-failure (no Open-Meteo archive to start from, its fetch, or the rebuild)
+docs/surface-wind-sources.md, "Open-Meteo's archive"), and NOAA's NDFD
+wind, gust and direction for its NWS archive section from the newest
+issuance kept of the three (`earliestNewest`; docs/nws-gust-archive.md).
+A wind-side failure (no wind archive to start from, either fetch, or the
+rebuild)
 leaves the page's wind file as published and does not hold back the
 ceiling commit; a last step then fails the run. The steps that need more than a shell line are
 `scripts/ceilingRefresh.ts`; the rules are `src/domain/ceilingRefresh.ts`,

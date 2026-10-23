@@ -387,6 +387,13 @@ over it in 2,477 hours and KPMV's report in 1,055, with 41 of those under
 in the forecast. A single figure for a card note would be right on
 average and wrong on the windiest days. Still the maintainer's call.
 
+The same evening the archive's wind speed was read too: the forecast
+gust was never under the forecast wind in any of the six months' hours,
+so those counts are the forecast flag's own. Over six months the speed
+was centred (+0.13 kt; the kept reading's −0.78 was October's), and the
+`#wind-errors` page now has the archive's speed, gust and direction from
+April, refreshed weekly (docs/nws-gust-archive.md).
+
 ## Done: the #wind-errors page refreshes weekly
 
 Since 2026-10-23 the weekly ceiling data refresh
@@ -402,6 +409,11 @@ in. The two pages are independent: a wind-side failure leaves the wind
 file as it was, the ceiling data is still committed, and the run then
 fails so it is seen. The docs' wind figures are dated readings, and the
 weekly run does not redraw them.
+
+Since the same evening it also fetches NOAA's NDFD wind, gust and
+direction each week for the page's NWS archive section, from 2026-04-01
+(docs/nws-gust-archive.md, "On the #wind-errors page"). Its first run on a
+runner is the refresh of 2026-10-26.
 
 ## Forecasts kept for later
 

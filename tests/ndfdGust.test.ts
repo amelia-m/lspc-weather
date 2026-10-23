@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { pairGusts, pairNdfdWind, parseNdfdWindLines, summarizeGusts, type NdfdGustRecord } from '../src/domain/ndfdGust';
+import {
+  pairGusts,
+  pairNdfdWind,
+  parseNdfdWindLines,
+  summarizeGusts,
+  summarizeNdfdWind,
+  type NdfdGustRecord,
+} from '../src/domain/ndfdGust';
 import { KT_PER_MPS } from '../src/domain/units';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 
@@ -220,5 +227,33 @@ describe('pairGusts with the speed', () => {
       spdRec('01T06:47', '01T12:00', 9.6),
     ]);
     expect(latest.pairs[0]).toMatchObject({ fc: 15, fcWind: 10 });
+  });
+});
+
+describe('summarizeNdfdWind', () => {
+  it('gives the speed and direction spreads as windDiffs reads them, and the speed by UTC block', () => {
+    const at = (iso: string, spdKt: number, dir: number, obsSpd: number, obsDir: number | null) => ({
+      t: Date.parse(iso),
+      issued: '2026-07-01T00:47Z',
+      fc: { windSpeed: spdKt, windDirection: dir },
+      obs: { t: Date.parse(iso), spd: obsSpd, gust: null, dir: obsDir, tempC: null, visSm: null },
+    });
+    const [w] = summarizeNdfdWind([
+      {
+        label: 'latest issuance',
+        pairs: [
+          at('2026-07-01T07:00Z', 9.6, 200, 12, 190), // −2 kt, +10°
+          at('2026-07-01T19:00Z', 14.4, 350, 12, 10), // +2 kt, −20° the short way
+          at('2026-07-01T20:00Z', 5, 90, 0, null), // +5 kt; calm, no direction
+        ],
+      },
+    ]);
+    expect(w.hours).toBe(3);
+    expect(w.speed).toMatchObject({ n: 3, mean: 1.67 });
+    expect(w.dir).toMatchObject({ n: 2, mean: -5 });
+    expect(w.speedByUtcBlock).toEqual([
+      { key: '06–11Z', n: 1, mean: -2 },
+      { key: '18–23Z', n: 2, mean: 3.5 },
+    ]);
   });
 });
