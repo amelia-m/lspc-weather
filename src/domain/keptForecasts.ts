@@ -142,7 +142,7 @@ export function pairInstants(
 }
 
 /** One pair's wind differences, forecast minus reported, read as the
- *  summary reads them (and the figure, scripts/keptWindErrorsPlot.ts):
+ *  summary reads them (and the #wind-errors page, src/domain/windErrors.ts):
  *  speed in whole knots, as a METAR reports and the card prints; the gust
  *  against the reported gust where the station gave one, else against the
  *  reported steady wind; direction the short way round, only where the

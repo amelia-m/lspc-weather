@@ -194,8 +194,11 @@ miles from the drop zone, and the gridpoint is the drop zone's.
 ![Histograms of forecast minus reported wind speed, gust and direction at three leads](img/kept-wind-errors.svg)
 
 The same pairs as the tables above, as histograms of forecast minus reported,
-one row per lead (`scripts/keptWindErrorsPlot.ts`, which uses the
-comparison's own pairing). The figure shows what the means alone did not:
+one row per lead (`scripts/windErrorsData.ts`, with the comparison's own
+pairing and `windDiffs`). The same histograms are on the dashboard's
+`#wind-errors` page, "How far the wind forecasts were from KPMV", beside
+Open-Meteo's from the surface-wind sample. The figure shows what the means
+alone did not:
 
 - **Speed** is one hump, centred a knot below the report (median −1 kt,
   the tallest bin −1 kt) rather than a few large misses pulling the mean
@@ -215,10 +218,14 @@ comparison's own pairing). The figure shows what the means alone did not:
   (median miss 10° both under and over 10 kt, but p90 30° under against
   20° over, in the table).
 
-Rerun it as the keeper adds days:
+Rerun it as the keeper adds days. One command rebuilds the page's data
+file and both figures:
 
 ```
-npx tsx scripts/keptWindErrorsPlot.ts <dir>/data docs/img/kept-wind-errors.svg data/parity/kept-forecasts-kpmv-reports-2026-10-13-to-2026-10-22.jsonl.gz <newer reports>
+npx tsx scripts/windErrorsData.ts --kept <dir>/data \
+  --reports data/parity/kept-forecasts-kpmv-reports-2026-10-13-to-2026-10-22.jsonl.gz <newer reports> \
+  --sample data/parity/surfacewind-*.jsonl.gz \
+  --out public/wind-errors/summary.json --figures docs/img
 ```
 
 ## Running it again

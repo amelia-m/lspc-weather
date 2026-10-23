@@ -57,8 +57,11 @@ import { DataFreshness } from './components/DataFreshness';
 import { SettingsPanel } from './components/SettingsPanel';
 import { MasonryGrid } from './components/common/MasonryGrid';
 import { CitationsPage } from './components/CitationsPage';
-import { ParityPage, type ParityState } from './components/ParityPage';
+import { ParityPage } from './components/ParityPage';
+import { WindErrorsPage } from './components/WindErrorsPage';
 import type { ParitySummary } from './domain/paritySummary';
+import type { WindErrorsData } from './domain/windErrors';
+import { useSiteJson } from './hooks/useSiteJson';
 import { UnitToggle } from './components/common/UnitToggle';
 import { deriveProvenance } from './domain/sourceProvenance';
 import { TAF_RELAY_SET } from './config/tafRelay';
@@ -102,9 +105,9 @@ function toWindProfileId(raw: string | null): WindProfileId {
 
 /** Which page or dashboard tab is showing. A hash rather than a router: the
  *  app is a single page served from a GitHub Pages subpath, and `#citations`,
- *  `#parity` or `#pilots` needs no server rewrite, no dependency, and
+ *  `#parity`, `#wind-errors` or `#pilots` needs no server rewrite, no dependency, and
  *  survives a reload and a shared link. No hash is the Jumpers tab. */
-function useRoute(): 'citations' | 'parity' | 'pilots' | null {
+function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'pilots' | null {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHashChange = (): void => setHash(window.location.hash);
@@ -113,35 +116,23 @@ function useRoute(): 'citations' | 'parity' | 'pilots' | null {
   }, []);
   if (hash === '#citations') return 'citations';
   if (hash === '#parity') return 'parity';
+  if (hash === '#wind-errors') return 'wind-errors';
   if (hash === VIEW_HASH.pilots) return 'pilots';
   return null;
 }
 
 /** The parity page with its data: the summary the parity-summary workflow
- *  last published beside the site. Fetched relative to the page so it works
- *  under the Pages subpath and under a local build alike. */
+ *  last published beside the site. */
 function ParityRoute(): JSX.Element {
-  const [state, setState] = useState<ParityState>('loading');
-  const [summary, setSummary] = useState<ParitySummary | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${import.meta.env.BASE_URL}parity/summary.json`, { cache: 'no-cache' })
-      .then(async (res) => {
-        if (res.status === 404) return 'missing' as const;
-        if (!res.ok) return 'error' as const;
-        const data = (await res.json()) as ParitySummary;
-        if (!cancelled) setSummary(data);
-        return 'ready' as const;
-      })
-      .catch(() => 'error' as const)
-      .then((next) => {
-        if (!cancelled) setState(next);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return <ParityPage summary={summary} state={state} />;
+  const { state, data } = useSiteJson<ParitySummary>('parity/summary.json');
+  return <ParityPage summary={data} state={state} />;
+}
+
+/** The wind-errors page with its data: the file scripts/windErrorsData.ts
+ *  last wrote beside the site. */
+function WindErrorsRoute(): JSX.Element {
+  const { state, data } = useSiteJson<WindErrorsData>('wind-errors/summary.json');
+  return <WindErrorsPage data={data} state={state} />;
 }
 
 export default function App(): JSX.Element {
@@ -279,6 +270,7 @@ export default function App(): JSX.Element {
   // what you want when someone ducks in to check a reference and comes back.
   if (route === 'citations') return <CitationsPage />;
   if (route === 'parity') return <ParityRoute />;
+  if (route === 'wind-errors') return <WindErrorsRoute />;
 
   const cards: Record<CardId, JSX.Element> = {
     metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} {...temp} />,

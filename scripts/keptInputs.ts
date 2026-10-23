@@ -1,6 +1,6 @@
 /**
  * Reading the inputs the kept-forecast scripts share
- * (scripts/keptForecastsVsKpmv.ts, scripts/keptWindErrorsPlot.ts): the
+ * (scripts/keptForecastsVsKpmv.ts, scripts/windErrorsData.ts): the
  * forecast keeper's snapshots and KPMV's reports, so the tables and the
  * figure are always built from the same set.
  */

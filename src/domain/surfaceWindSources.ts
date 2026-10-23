@@ -656,8 +656,14 @@ function stalenessOf(records: readonly SurfaceWindRecord[], source: SourceName):
  * `current` has one valid time per run, so for it the report is paired with
  * the first run whose `current` interval contains the observation time, if
  * any run's does, whichever report that run had.
+ *
+ * The pairs themselves, for the summary below and the #wind-errors page
+ * (src/domain/windErrors.ts), so both count the same reports.
  */
-function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource): VsMetar {
+export function pairsVsMetar(
+  records: readonly SurfaceWindRecord[],
+  source: ForecastSource,
+): { reports: number; pairs: { obsAt: string; fc: WindAt; obs: WindAt }[] } {
   const hasForecast = (r: SurfaceWindRecord): boolean => (source === 'nws' ? r.nws != null : r.om != null);
   const firstByReport = new Map<string, SurfaceWindRecord | null>();
   for (const r of records) {
@@ -666,13 +672,7 @@ function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource
     if (seen) continue;
     firstByReport.set(r.metar.obsAt, hasForecast(r) || source === 'omCurrent' ? r : null);
   }
-  const spd: number[] = [];
-  const dir: number[] = [];
-  const gust: number[] = [];
-  let n = 0;
-  let metarGusts = 0;
-  let gustBoth = 0;
-  let gustOnlyForecast = 0;
+  const pairs: { obsAt: string; fc: WindAt; obs: WindAt }[] = [];
   for (const [obsAt, first] of firstByReport) {
     if (!first) continue;
     const obs = first.metar?.wind;
@@ -693,8 +693,21 @@ function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource
     } else {
       fc = windAtTime(seriesOf(first, source), ms, RULES[source]);
     }
-    if (!fc) continue;
-    n += 1;
+    if (fc) pairs.push({ obsAt, fc, obs });
+  }
+  return { reports: firstByReport.size, pairs };
+}
+
+function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource): VsMetar {
+  const { reports, pairs } = pairsVsMetar(records, source);
+  const spd: number[] = [];
+  const dir: number[] = [];
+  const gust: number[] = [];
+  const n = pairs.length;
+  let metarGusts = 0;
+  let gustBoth = 0;
+  let gustOnlyForecast = 0;
+  for (const { fc, obs } of pairs) {
     if (fc.spd != null && obs.spd != null) spd.push(Math.round((fc.spd - obs.spd) * 10) / 10);
     if (fc.dir != null && obs.dir != null) dir.push(angular(fc.dir, obs.dir));
     if (obs.gust != null) {
@@ -709,7 +722,7 @@ function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource
   }
   return {
     source,
-    reports: firstByReport.size,
+    reports,
     n,
     spd: spreadOf(spd),
     dir: spreadOf(dir),

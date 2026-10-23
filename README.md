@@ -251,6 +251,12 @@ so "BSR" beside a SIM 2-1 link is not a link. The entries, the day the glossary
 was read (2026-10-09), and why "waiver", "night jump" and "density altitude"
 are left unlinked are in [`src/config/simGlossary.ts`](src/config/simGlossary.ts).
 
+A page, **How far the wind forecasts were from KPMV** (`#wind-errors`), draws
+forecast minus reported surface wind as histograms: speed, gust and
+direction, for the NWS forecasts kept hourly (by how far ahead they were
+made) and for Open-Meteo's three 10 m winds from the surface-wind sample.
+Counts only, like the page below.
+
 A second page, **How different from other sources** (`#parity`), shows what
 the scheduled comparison logs add up to: the winds-aloft table against Mark
 Schulze's Winds Aloft at the same valid hour, row by row, and the dashboard's
