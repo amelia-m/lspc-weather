@@ -16,15 +16,13 @@
  *
  * Counts and spreads only; nothing on the dashboard reads them.
  */
-import { END_REACH_H, pastReach } from './ceilingHeights';
+import { byValidHour, END_REACH_H, pastReach } from './ceilingHeights';
 import { NWS_ISSUANCES, reportNear, type MetarRecord } from './cloudCoverSources';
 import { reportsByHour, windDiffs, type Instant } from './keptForecasts';
 import { median, spreadOf, type Spread } from './paritySummary';
+import { KT_PER_MPS } from './units';
 
 const MS_H = 3_600_000;
-
-/** m/s to knots, as scripts/ndfdApiCheck.py reads NDFD's gust. */
-export const KT_PER_MS = 3.6 / 1.852;
 
 /** One hour of one NDFD gust issuance at the drop zone's grid point, as
  *  scripts/cloudCoverFetch.py (PARTS=wgust) writes it. `gust` in m/s. */
@@ -65,20 +63,6 @@ export interface GustPair {
   overSteady: number | null;
 }
 
-/** Each valid hour's issuances, newest first. A file read twice
- *  (overlapping fetches) needs no weeding here: a row picks one issuance
- *  per hour, and an issuance at or after the hour is never far enough
- *  ahead to be picked. */
-function byValidHour(records: readonly NdfdGustRecord[]): Map<number, NdfdGustRecord[]> {
-  const by = new Map<number, NdfdGustRecord[]>();
-  for (const r of records) {
-    const t = Date.parse(r.valid);
-    by.set(t, [...(by.get(t) ?? []), r]);
-  }
-  for (const rs of by.values()) rs.sort((a, b) => Date.parse(b.issued) - Date.parse(a.issued));
-  return by;
-}
-
 /** The pairs for each NWS_ISSUANCES row: the newest issuance at least
  *  `minLeadH` before the hour, chosen by time as the cloud-cover and
  *  ceiling comparisons choose it, and KPMV's report near the hour. Hours
@@ -89,11 +73,12 @@ export function pairGusts(
   records: readonly NdfdGustRecord[],
   metars: readonly MetarRecord[],
 ): { label: string; minLeadH: number; pairs: GustPair[] }[] {
-  const fcBy = byValidHour(records);
+  // An issuance at or after its hour is never picked (every row asks for
+  // one at least 0 h before), and a row takes one issuance an hour, so a
+  // file read twice by overlapping fetches needs no weeding.
+  const { byHour: fcBy, lastIssued } = byValidHour(records);
   const repBy = reportsByHour(metars);
   const hours = [...fcBy.keys()].sort((a, b) => a - b);
-  let lastIssued = -Infinity;
-  for (const r of records) lastIssued = Math.max(lastIssued, Date.parse(r.issued));
   return NWS_ISSUANCES.map(({ minLeadH, label }) => {
     const pairs: GustPair[] = [];
     for (const t of hours) {
@@ -102,12 +87,14 @@ export function pairGusts(
       if (!r) continue;
       const obs = reportNear(repBy.get(t) ?? [], t);
       if (!obs || obs.spd == null) continue;
-      const d = windDiffs({ fc: { windGust: r.gust * KT_PER_MS }, obs });
+      // Whole knots once, so the pair's figure and its differences agree.
+      const fc = Math.round(r.gust * KT_PER_MPS);
+      const d = windDiffs({ fc: { windGust: fc }, obs });
       pairs.push({
         t,
         issued: r.issued,
         leadH: (t - Date.parse(r.issued)) / MS_H,
-        fc: Math.round(r.gust * KT_PER_MS),
+        fc,
         obs,
         gustDiff: d.gust,
         overSteady: d.gustOverSpeed,
@@ -181,10 +168,13 @@ export interface GustSummary {
   /** Those days' means, signed: the lowest, middle and highest, and how
    *  many fell below −2 kt, within 2 kt of zero, and above +2 kt. */
   dayMeans: { n: number; min: number; median: number; max: number; under: number; near: number; over: number } | null;
-  /** At a published limit: hours the forecast gust was at or over it, and
-   *  how many of those KPMV's report was at or over it too (the higher of
-   *  its wind and gust, as the caution flag reads), and hours the report
-   *  was at or over it with the forecast under. */
+  /** At a published limit: hours the forecast gust was at or over it, how
+   *  many of those KPMV's report was at or over it too (the higher of its
+   *  wind and gust, as the report's caution flag reads it), and hours the
+   *  report was at or over it with the forecast gust under. The forecast
+   *  flag reads the higher of the forecast wind and gust; only the gust is
+   *  fetched here, so this is the flag's count only where the gust is the
+   *  higher (docs/nws-gust-archive.md says how far that was checked). */
   atLimit: { limitKt: number; forecastAt: number; bothAt: number; reportOnly: number; hours: number };
 }
 
@@ -216,7 +206,7 @@ export function summarizeGusts(
       side: sideOf(ds),
       spread: spreadOf(ds),
       overSteady: spreadOf(pairs.flatMap((p) => (p.overSteady == null ? [] : [p.overSteady]))),
-      byMonth: groups(pairs, (p) => new Date(p.t).toISOString().slice(0, 7)),
+      byMonth: groups(pairs, (p) => localDay(p.t, opts.timeZone).slice(0, 7)),
       byUtcBlock: groups(pairs, (p) => {
         const b = Math.floor(new Date(p.t).getUTCHours() / 6) * 6;
         return `${String(b).padStart(2, '0')}–${String(b + 5).padStart(2, '0')}Z`;

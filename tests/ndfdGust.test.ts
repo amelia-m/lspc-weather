@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { KT_PER_MS, pairGusts, parseNdfdGustLines, summarizeGusts, type NdfdGustRecord } from '../src/domain/ndfdGust';
+import { pairGusts, parseNdfdGustLines, summarizeGusts, type NdfdGustRecord } from '../src/domain/ndfdGust';
+import { KT_PER_MPS } from '../src/domain/units';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 
-const ms = (kt: number): number => kt / KT_PER_MS;
+const ms = (kt: number): number => kt / KT_PER_MPS;
 const rec = (issued: string, valid: string, gustKt: number, key = `YWUZ98_KWBN_${issued}`): NdfdGustRecord => ({
   src: 'ndfd-wgust',
   key,
@@ -39,11 +40,9 @@ describe('pairGusts', () => {
     rec('01T00:47', '01T12:00', 20),
     rec('01T06:47', '01T12:00', 17.6),
     rec('01T12:46', '01T12:00', 30),
-    // The same file read twice (overlapping fetches): counted once.
-    rec('01T06:47', '01T12:00', 17.6),
     // Valid 13Z: no gust reported at 12:55, so set against the steady wind.
     rec('01T06:47', '01T13:00', 14),
-    // The next issuance, so 13Z and 14Z are within reach.
+    // A later issuance, so 13Z is within reach.
     rec('01T12:46', '01T18:00', 10),
   ];
   const reports = [
@@ -62,15 +61,13 @@ describe('pairGusts', () => {
     expect(six12).toMatchObject({ issued: '2026-07-01T00:47Z', fc: 20, gustDiff: 4 });
   });
 
-  it('sets the gust against the steady wind where KPMV reported none, and counts a file read twice once', () => {
-    // One pair an hour whatever the files hold: the row picks one issuance.
+  it('sets the gust against the steady wind where KPMV reported none', () => {
     const [latest] = pairGusts(records, reports);
     expect(latest.pairs.find((p) => p.t === Date.parse('2026-07-01T13:00Z'))).toMatchObject({
       fc: 14,
       gustDiff: null,
       overSteady: 5,
     });
-    expect(latest.pairs.filter((p) => p.t === Date.parse('2026-07-01T12:00Z'))).toHaveLength(1);
   });
 
   it('leaves out hours past the reach of the issuances fetched', () => {
@@ -130,7 +127,17 @@ describe('summarizeGusts', () => {
     expect(s.dayMeans).toEqual({ n: 1, min: 1, median: 1, max: 1, under: 0, near: 1, over: 0 });
   });
 
-  it('counts hours at a limit as the caution flag reads them: the forecast gust, the higher of the reported wind and gust', () => {
+  it('groups by month in the drop zone’s time, as it does by day', () => {
+    // 03Z on July 1 is 10 pm CDT on June 30.
+    const [m] = summarizeGusts([{ label: 'x', pairs: [pair('01T03:00', 2, 20, 14, 18)] }], {
+      timeZone: 'America/Chicago',
+      limitKt: 12,
+      minDayHours: 3,
+    });
+    expect(m.byMonth.map((g) => g.key)).toEqual(['2026-06']);
+  });
+
+  it('counts hours at a limit: the forecast gust, and the higher of the reported wind and gust', () => {
     expect(s.atLimit).toEqual({ limitKt: 12, forecastAt: 6, bothAt: 5, reportOnly: 1, hours: 7 });
   });
 });

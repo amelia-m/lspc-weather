@@ -192,10 +192,16 @@ def ndfd_records(job: tuple[str, str]) -> list[dict]:
                 except eccodes.PrematureEndOfFileError:
                     # A file cut short in the archive itself: the gust's
                     # 2026-09-28 00:47Z issuance ends inside its 48th
-                    # message, every time it is read. Keep the messages
-                    # before the break; the hours it loses fall to the
-                    # issuance before, as for a missing file.
-                    print(f'warning: {key} ends inside a message; kept {len(out)} records before it', file=sys.stderr)
+                    # message, every time it is read, so failing would
+                    # stop every later fetch on a gap no rerun can fill.
+                    # Keep the messages before the break (the hours it
+                    # loses fall to the issuance before, as for a missing
+                    # file), and say so twice: a `::warning::` line, which
+                    # GitHub shows on the run's page, and a record in the
+                    # archive itself, which the readers skip (they keep
+                    # only their own `src`).
+                    print(f'::warning::{key} ends inside a message; kept {len(out)} records before it')
+                    out.append(tag({'src': 'ndfd-truncated', 'key': key.rsplit('/', 1)[1], 'issued': iso(issued), 'kept': len(out)}, SITES[0][0]))
                     break
                 if h is None:
                     break

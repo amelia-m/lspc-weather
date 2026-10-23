@@ -21,8 +21,10 @@ April, so this sets six months of it against KPMV.
   and ceiling: 819 issuances from 2026-04-01 00:47Z to 2026-10-22 18:47Z.
   One was missing from the archive (2026-09-05 18Z) and one was cut short
   in it: `YWUZ98_KWBN_202609280047` ends inside its 48th message every
-  time it is read, so its first 47 hours were kept and the fetch script
-  now keeps the readable part of such a file instead of stopping.
+  time it is read. Its first 47 hours were kept. The fetch script now
+  keeps the readable part of such a file instead of stopping, prints a
+  `::warning::` line and writes an `ndfd-truncated` record into the
+  archive, which the readers skip.
   Fetched 2026-10-23 with `PARTS=wgust python3 scripts/cloudCoverFetch.py`,
   a month at a time from the sandbox (about 6 GB and a minute and a half a
   month); 36,857 records in
@@ -67,13 +69,15 @@ way.
 of gusting hours at the latest issuance, below in 28%, against 85% and 6%
 in the kept window.
 
-**By month** (latest issuance; hours with a reported gust):
+**By month** (latest issuance; hours with a reported gust; months in
+Central time, as the days below are, so the first three hours fall on
+March 31 and are left out of the table):
 
 | | Apr | May | Jun | Jul | Aug | Sep | Oct |
 |---|---|---|---|---|---|---|---|
-| hours | 279 | 180 | 135 | 59 | 91 | 100 | 120 |
-| mean | +0.9 | +0.8 | +2.3 | +2.6 | +1.4 | +1.3 | +2.8 |
-| above / below | 148 / 90 | 101 / 67 | 100 / 25 | 43 / 11 | 57 / 27 | 63 / 29 | 93 / 17 |
+| hours | 276 | 180 | 135 | 64 | 86 | 103 | 117 |
+| mean | +1.0 | +0.8 | +2.3 | +2.8 | +1.2 | +1.0 | +3.1 |
+| above / below | 148 / 87 | 101 / 67 | 100 / 25 | 48 / 11 | 52 / 27 | 63 / 32 | 93 / 14 |
 
 **By the size of the reported gust**, the clearest pattern: the forecast
 ran high on small gusts and low on the largest.
@@ -94,15 +98,19 @@ and 51/37/21). By six-hour block of UTC the mean stayed between +1.3 and
 
 **Against the Student profile's limit.** The forecast wind flag reads
 the higher of the forecast wind and gust against the profile's caution,
-BSR 2-1 H's 14 mph read as 12 kt, so for a student the forecast gust
-decides it. At the latest issuance the forecast gust was at or over
-12 kt in 2,477 of 4,789 hours. KPMV's report near the hour was at or over
+BSR 2-1 H's 14 mph read as 12 kt. Only the gust was fetched here. In the
+kept forecasts the gust was never under the wind in whole knots: 34,149
+hour-values in 186 snapshots, 2026-10-13 to 10-23, equal in 149. Over
+those days, then, the gust decided the flag; over the six months that
+was not checked, and an hour with the wind over the gust would make the
+flag fire more often than counted here, not less. At the latest issuance
+the forecast gust was at or over 12 kt in 2,477 of 4,789 hours. KPMV's report near the hour was at or over
 12 kt (the higher of its wind and gust, as the report's flag reads it) in
 1,014 of those, and in 41 more the report was at or over 12 kt with the
 forecast gust under it: 1,055 hours the report reached the figure. So
-over these months the forecast flag would have named about 2.3 hours
-for each hour the report reached it, and missed about one in 25 of those
-(41 of 1,055). A report covers only the minutes before it; the station
+over these months the forecast gust was at the figure in about 2.3 hours
+for each hour the report reached it, and under it in about one in 25 of
+those (41 of 1,055). A report covers only the minutes before it; the station
 may reach the figure at other minutes of the hour, so "reached" here
 counts less than the station did.
 
