@@ -456,6 +456,12 @@ fetches each week's (`.github/workflows/ceiling-data-refresh.yml`).
   stopped; asked again a minute later it answered. The weekly run fails
   its wind side on such an answer and starts from the same day the next
   week.
+- **The weekly run.** A branch trial of the refresh on 2026-10-23 (run
+  39982915380) rebuilt the page's file with this section (4,791 hours a
+  row, one more than above: the week's reports reached 23Z on 10-22) and
+  passed its tests. Its fetch step was skipped, the archive being current
+  to the last whole day, so the step's first run on a runner is the
+  refresh of 2026-10-26.
 - **How it was paired.** As the kept NWS forecasts are
   (docs/kept-forecasts-vs-kpmv.md): KPMV's report within 10 minutes of
   each hour, the nearest one, from every archive of KPMV's reports under
