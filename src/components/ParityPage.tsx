@@ -13,6 +13,7 @@ import type {
   UsairnetTiming,
 } from '../domain/paritySummary';
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
+import type { SiteJsonState } from '../hooks/useSiteJson';
 import { Panel } from './common/Panel';
 import { OpenMeteoCredit } from './OpenMeteoCredit';
 import { ParityContext } from './ParityContext';
@@ -32,7 +33,7 @@ import { ParityTimeline } from './ParityTimeline';
  * usairnet's, field by field.
  */
 
-export type ParityState = 'loading' | 'missing' | 'error' | 'ready';
+export type ParityState = SiteJsonState;
 
 const fmtDay = (iso: string | null): string =>
   iso == null

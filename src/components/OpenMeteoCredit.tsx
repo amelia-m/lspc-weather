@@ -13,12 +13,22 @@ import { SourceLinks } from './common/SourceLinks';
  * name the fallback that answered, so it does not claim the NOAA FD bulletin
  * or the NWS gridpoint as Open-Meteo's.
  * #parity shows the winds comparison, and its context notes quote other
- * Open-Meteo figures, so it says that.
+ * Open-Meteo figures, so it says that. #wind-errors shows only Open-Meteo's
+ * 10 m wind, reworked into differences from KPMV's reports, so it says that.
  */
-export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' }): JSX.Element {
+export function OpenMeteoCredit({ scope }: { scope: 'dashboard' | 'winds' | 'surface' }): JSX.Element {
   const credit = (
     <SourceLinks sources={[{ ...DATA_SOURCES.openMeteo, label: 'Weather data by Open-Meteo.com' }]} />
   );
+  if (scope === 'surface') {
+    return (
+      <>
+        {credit}: the hourly, 15-minute and current 10&nbsp;m wind in the surface-wind sample&rsquo;s
+        charts. This page shows it reworked: each value less KPMV&rsquo;s reported wind, binned to the
+        knot or to ten degrees.
+      </>
+    );
+  }
   if (scope === 'winds') {
     return (
       <>

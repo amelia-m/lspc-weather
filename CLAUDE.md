@@ -617,7 +617,14 @@ for them; the ceiling-error page scores the kept chances against KPMV's
 reports (`src/domain/chances.ts`, docs/forecast-chances.md), and
 `scripts/keptForecastsVsKpmv.ts` sets the kept wind, gust, direction,
 temperature, visibility and rainfall against them by hand
-(`src/domain/keptForecasts.ts`, docs/kept-forecasts-vs-kpmv.md). It never touches `main`, so it starts no deploy. Since
+(`src/domain/keptForecasts.ts`, docs/kept-forecasts-vs-kpmv.md). The
+in-app page at `#wind-errors`, "How far the wind forecasts were from
+KPMV", draws the wind differences as histograms, the kept NWS forecasts
+by lead and the surface-wind sample's Open-Meteo forms and NWS hour by
+source (`src/domain/windErrors.ts`, `src/components/WindErrorsPage.tsx`).
+Its data file, `public/wind-errors/summary.json`, and the docs' figures
+are rebuilt by hand with `scripts/windErrorsData.ts`; nothing refreshes
+them on a schedule yet (docs/open-questions.md). It never touches `main`, so it starts no deploy. Since
 2026-10-16 it is a job that loops (`scripts/forecastKeepLoop.sh`, a
 snapshot at minute 23 of each hour, pushed as taken; five or six a run)
 and queues its own successor before it starts, so the chain does not

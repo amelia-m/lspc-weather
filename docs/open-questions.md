@@ -346,6 +346,19 @@ The maintainer, 2026-10-23: "depends how consistent the difference is".
 The side was consistent; the size was not, and 53 hours over a few windy
 days will not settle it. Revisit when the keeper has more windy days.
 
+## The #wind-errors page: refreshed by hand
+
+Since 2026-10-23 the dashboard has a page, `#wind-errors`, drawing forecast
+minus reported surface wind as histograms. Its data file,
+`public/wind-errors/summary.json`, is rebuilt by hand with
+`scripts/windErrorsData.ts` (docs/kept-forecasts-vs-kpmv.md, "The spread,
+drawn"). The surface-wind half is fixed once the sample ends on 2026-10-30
+and the wrap-up rebuilds it. The NWS half could grow every week: the
+weekly ceiling refresh already fetches KPMV's reports and reads the kept
+snapshots, so a step there could rebuild the file. That would be a new
+step in a workflow that commits to `main`, so it waits on the
+maintainer's say-so.
+
 ## Forecasts kept for later
 
 Started 2026-10-13, at the maintainer's request: where no archive holds a

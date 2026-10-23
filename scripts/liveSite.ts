@@ -1,6 +1,6 @@
 /**
  * Load the deployed site in a browser and say whether a reader would meet a
- * fault: every page (Jumpers, Pilots, #citations, #parity, the ceiling-error
+ * fault: every page (Jumpers, Pilots, #citations, #parity, #wind-errors, the ceiling-error
  * page) at 1280, 390 and 320 px, live data. What counts as a fault is
  * src/domain/liveSite.ts; this file drives the browser and prints.
  * Run daily and after each deploy by .github/workflows/live-site.yml, which
@@ -31,6 +31,7 @@ const PAGES: { name: string; path: string }[] = [
   { name: 'Pilots', path: '#pilots' },
   { name: 'Citations', path: '#citations' },
   { name: 'Parity', path: '#parity' },
+  { name: 'Wind errors', path: '#wind-errors' },
   { name: 'Ceiling errors', path: 'ceiling-errors/index.html' },
 ];
 const WIDTHS = [1280, 390, 320];
@@ -147,6 +148,13 @@ async function observe(
       radar: radar ? { complete: radar.complete, natural: radar.naturalWidth } : null,
       radarFailed: text.includes('Radar image unavailable'),
       paritySummary: text.includes('The summary could not be read') ? 'error' : text.includes('Loading the latest summary') ? 'loading' : 'ok',
+      windErrors: text.includes('The wind figures could not be read')
+        ? 'error'
+        : text.includes('Loading the wind figures')
+          ? 'loading'
+          : text.includes('No wind figures have been published')
+            ? 'missing'
+            : document.querySelectorAll('svg.werr-svg').length,
       ceilingMeta: document.querySelector('#meta .error')?.textContent ?? null,
       ceilingCharts: document.querySelectorAll('#ch-size svg, #ch-spread svg, #ch-band svg').length,
       panels: document.querySelectorAll('.panel').length,
@@ -164,6 +172,13 @@ async function observe(
     });
   }
   if (page.name === 'Parity') o.checks.push({ name: 'parity summary loaded', ok: seen.paritySummary === 'ok', detail: seen.paritySummary });
+  if (page.name === 'Wind errors') {
+    o.checks.push({
+      name: 'wind figures drew',
+      ok: typeof seen.windErrors === 'number' && seen.windErrors > 0,
+      detail: typeof seen.windErrors === 'number' ? `${seen.windErrors} charts` : seen.windErrors,
+    });
+  }
   if (page.name === 'Ceiling errors') {
     o.checks.push({ name: 'ceiling data file loaded', ok: seen.ceilingMeta == null, detail: seen.ceilingMeta ?? undefined });
     o.checks.push({ name: 'ceiling charts drew', ok: seen.ceilingCharts === 3, detail: `${seen.ceilingCharts} of 3` });

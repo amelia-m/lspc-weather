@@ -392,6 +392,45 @@ measured speed. NWS runs a little low, Open-Meteo a little high, and
 Open-Meteo overshoots gusts more. Counts and spreads only, never a grade.
 Nothing on the dashboard changed.
 
+## The spread, drawn (2026-10-23)
+
+![Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's three forms and the NWS hour](img/surface-wind-errors.svg)
+
+The preview's pairs as histograms: each KPMV report once, against each
+forecast as it stood while the report was the newest (`pairsVsMetar`,
+which the summary above counts by). The same histograms are on the
+dashboard's `#wind-errors` page, "How far the wind forecasts were from
+KPMV", beside the kept NWS forecasts (docs/kept-forecasts-vs-kpmv.md).
+
+- **Speed.** Open-Meteo's three forms have a broad, flat top from −1 to
+  +2 kt (about 90 to 105 reports in each of those bins), so the median and
+  mean of +0.8 kt are the whole hump leaning right, not a peak there. The
+  NWS hour on the same reports leans the other way: its tallest bins are
+  −2 and 0 kt, median −1 kt. Both are spread about as wide (median miss
+  2 kt each, p90 4 to 4.5 kt); neither is tighter.
+- **Gust, where KPMV reported one** (229 reports, 224 for `current`).
+  Open-Meteo sits right of zero in 191 to 197 of them, and its tail runs
+  out to +17 kt; the NWS hour sits right in 164, closer in (median +3 kt
+  to Open-Meteo's +3.7 to +4) but with a tail of 47 below, down to −13 kt.
+- **Direction.** All four peak at a small clockwise offset (median +6° to
+  +7° for Open-Meteo, +10° for NWS, which serves whole tens), with a tail
+  clockwise to +50° and 1 to 4 reports past 100°.
+- **The three Open-Meteo forms look alike**, as the cadence rows say they
+  should: `current` is the 15-minute step at its time, and the hourly value
+  the 15-minute step on the hour.
+
+Rebuilt by the same command as the NWS figures:
+
+```
+npx tsx scripts/windErrorsData.ts --kept <dir>/data \
+  --reports data/parity/kept-forecasts-kpmv-reports-2026-10-13-to-2026-10-22.jsonl.gz <newer reports> \
+  --sample data/parity/surfacewind-*.jsonl.gz \
+  --out public/wind-errors/summary.json --figures docs/img
+```
+
+The sample runs to 2026-10-30; the wrap-up should rebuild the page and
+figures with the whole window.
+
 ## Status
 
 Measurement only. Nothing on the dashboard changed. The open question is
