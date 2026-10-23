@@ -170,10 +170,18 @@ function rowOf(label: string, diffs: readonly Diffs[]): WindErrorRow {
   };
 }
 
-const span = (times: readonly number[]): { first: string | null; last: string | null } =>
-  times.length
-    ? { first: new Date(Math.min(...times)).toISOString(), last: new Date(Math.max(...times)).toISOString() }
-    : { first: null, last: null };
+/** The first and last of the times. A loop, not Math.min(...times): the
+ *  archive section's times grow every week, past what a spread call takes. */
+function span(times: readonly number[]): { first: string | null; last: string | null } {
+  if (!times.length) return { first: null, last: null };
+  let lo = times[0];
+  let hi = times[0];
+  for (const t of times) {
+    if (t < lo) lo = t;
+    if (t > hi) hi = t;
+  }
+  return { first: new Date(lo).toISOString(), last: new Date(hi).toISOString() };
+}
 
 /** The kept NWS forecasts, a row per issuance lead (the rows `pairInstants`
  *  was run for, in order). */
@@ -235,11 +243,16 @@ export const OM_ARCHIVE_ROWS: readonly { run: OmArchiveRun; label: string }[] = 
  *  of each hour (`reportNear`), and `windDiffs`, so the forecast is rounded
  *  to whole knots as a METAR reports and the two sections read alike. An
  *  hour fetched twice (the weekly windows overlap by a day) counts once,
- *  the later file's value kept. */
+ *  each field the later file's where it has one: a refetch that left a
+ *  field null does not take away a value an earlier fetch had. */
 export function omArchiveSection(records: readonly OmWindRecord[], metars: readonly MetarRecord[]): WindErrorSection {
   const byHour = reportsByHour(metars);
   const latest = new Map<string, OmWindRecord>();
-  for (const r of records) latest.set(`${r.run}|${Date.parse(r.valid)}`, r);
+  for (const r of records) {
+    const key = `${r.run}|${Date.parse(r.valid)}`;
+    const had = latest.get(key);
+    latest.set(key, had ? { ...r, spd: r.spd ?? had.spd, gust: r.gust ?? had.gust, dir: r.dir ?? had.dir } : r);
+  }
   const times: number[] = [];
   const rows = OM_ARCHIVE_ROWS.map(({ run, label }) => {
     const diffs: Diffs[] = [];

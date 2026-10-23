@@ -144,6 +144,13 @@ describe('omArchiveSection', () => {
     );
     expect(s.rows[0].panels[0]).toMatchObject({ n: 1, median: 3 });
   });
+
+  it('keeps a field an earlier fetch had when the later one left it null', () => {
+    const partial: OmWindRecord = { ...om('historical', '2026-10-20T15:00Z', 12.6, 0, 0), gust: null, dir: null };
+    const s = omArchiveSection([om('historical', '2026-10-20T15:00Z', 30, 40, 200), partial], reports);
+    expect(s.rows[0].panels[0]).toMatchObject({ n: 1, median: 3 }); // the later speed
+    expect(s.rows[0].panels[2]).toMatchObject({ n: 1, median: 10 }); // the earlier direction
+  });
 });
 
 const w = (t: string, dir: number | null, spd: number | null, gust: number | null = null): WindAt => ({
@@ -237,6 +244,9 @@ describe('WindErrorsPage', () => {
     const html = page(withArchive, 'ready');
     expect(html).toContain('Open-Meteo.com');
     expect(html).toContain('Open-Meteo’s archived forecasts, against KPMV');
+    // Only the archive is on this page: the credit names it and not the sample.
+    expect(html).toContain('archived forecasts’ charts');
+    expect(html).not.toContain('surface-wind sample’s');
   });
 });
 

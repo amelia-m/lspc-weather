@@ -11,7 +11,8 @@
  *     with their folder.
  *   npx tsx scripts/ceilingRefresh.ts window [--dir data/parity] [--now <ISO>]
  *     key=value lines for $GITHUB_OUTPUT: each part's start and end, the
- *     newest record already kept, and skip=true when neither needs a fetch.
+ *     newest record already kept, skip=true when none needs a fetch, and
+ *     om_wind_missing=true when the Open-Meteo wind archive holds nothing.
  *   npx tsx scripts/ceilingRefresh.ts fetched ceiling|metar|omwind <file> --since <ISO> --start <day> --end <day>
  *     Exits 1 unless the file holds a record newer than --since.
  *   npx tsx scripts/ceilingRefresh.ts check <published.json> <new.json>
@@ -102,6 +103,7 @@ if (cmd === 'inputs') {
     `om_wind_newest=${lastOmWind}`,
     `om_wind_start=${w.omWind?.start ?? ''}`,
     `fetch_om_wind=${w.omWind != null}`,
+    `om_wind_missing=${w.omWindMissing}`,
     `skip=${w.ceiling == null && w.metar == null && w.omWind == null}`,
   ];
   console.log(lines.join('\n'));

@@ -94,7 +94,14 @@ describe('refreshWindow', () => {
     const kept = { lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: '2026-10-24T23:00Z', now };
     expect(() => refreshWindow({ ...kept, lastIssued: null })).toThrow(/NDFD.*archive/);
     expect(() => refreshWindow({ ...kept, lastReport: null })).toThrow(/KPMV.*archive/);
-    expect(() => refreshWindow({ ...kept, lastOmWind: null })).toThrow(/Open-Meteo.*archive/);
+  });
+
+  it('does not let a missing Open-Meteo archive stop the ceiling side: it fetches none and says so', () => {
+    const kept = { lastIssued: '2026-10-24T18:47Z', lastReport: '2026-10-24T23:55Z', lastOmWind: null, now };
+    const w = refreshWindow(kept);
+    expect(w.ceiling).toEqual({ start: '2026-10-24', end: '2026-10-25' });
+    expect(w).toMatchObject({ omWind: null, omWindMissing: true });
+    expect(refreshWindow({ ...kept, lastOmWind: '2026-10-24T23:00Z' }).omWindMissing).toBe(false);
   });
 });
 

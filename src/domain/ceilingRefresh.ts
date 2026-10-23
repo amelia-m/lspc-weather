@@ -81,8 +81,14 @@ export interface RefreshWindow {
   ceiling: FetchWindow | null;
   metar: FetchWindow | null;
   /** Open-Meteo's archived 10 m wind, for the #wind-errors page
-   *  (data/parity/om-wind-*, src/domain/windErrors.ts). */
+   *  (data/parity/om-wind-*, src/domain/windErrors.ts). Null too when
+   *  that archive holds nothing (`omWindMissing`). */
   omWind: FetchWindow | null;
+  /** The Open-Meteo archive held no records, so there is no start to
+   *  fetch from. Not thrown, as a missing ceiling or report archive is:
+   *  the wind side must not stop the ceiling refresh, so the workflow
+   *  fetches the rest and fails the run at its end. */
+  omWindMissing: boolean;
 }
 
 /**
@@ -91,8 +97,10 @@ export interface RefreshWindow {
  * already kept (`omWindNewest`). A part whose newest record falls on
  * `end` or later is left alone this run: if that day was fetched only in
  * part, the next run starts on it again, so nothing is skipped for good.
- * With no records at all the archive is missing, and the refresh refuses
- * rather than fetch from an invented start.
+ * With no ceiling or report records at all the archive is missing, and the
+ * refresh refuses rather than fetch from an invented start. With no
+ * Open-Meteo wind records it fetches none of those either, and says so
+ * (`omWindMissing`) rather than refuse, so the ceiling side still runs.
  */
 export function refreshWindow(input: {
   lastIssued: string | null;
@@ -103,10 +111,15 @@ export function refreshWindow(input: {
   const { lastIssued, lastReport, lastOmWind, now } = input;
   if (lastIssued == null) throw new Error('no NDFD ceiling records found: the archive under data/parity/ is missing');
   if (lastReport == null) throw new Error('no KPMV reports found: the archive under data/parity/ is missing');
-  if (lastOmWind == null) throw new Error('no Open-Meteo wind records found: the archive under data/parity/ is missing');
   const end = utcDay(new Date(Date.parse(utcDay(now)) - 86_400_000));
   const part = (last: string): FetchWindow | null => (utcDay(last) >= end ? null : { start: utcDay(last), end });
-  return { end, ceiling: part(lastIssued), metar: part(lastReport), omWind: part(lastOmWind) };
+  return {
+    end,
+    ceiling: part(lastIssued),
+    metar: part(lastReport),
+    omWind: lastOmWind == null ? null : part(lastOmWind),
+    omWindMissing: lastOmWind == null,
+  };
 }
 
 /**

@@ -199,46 +199,41 @@ def ndfd_records(job: tuple[str, str]) -> list[dict]:
         return out
 
 
-def om_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -> list[dict]:
-    loc = f'latitude={lat}&longitude={lon}&start_date={start}&end_date={end}&timezone=UTC'
-    bands = ['cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high']
-    out = []
-    hist = json.loads(get(f'https://historical-forecast-api.open-meteo.com/v1/forecast?{loc}&hourly={",".join(bands)}'))
-    prev_vars = [f'{b}_previous_day1' for b in bands]
-    prev = json.loads(get(f'https://previous-runs-api.open-meteo.com/v1/forecast?{loc}&hourly={",".join(prev_vars)}'))
-    for run, data, names in (('historical', hist, bands), ('previous_day1', prev, prev_vars)):
-        hourly = data['hourly']
-        for i, t in enumerate(hourly['time']):
-            vals = [hourly[n][i] for n in names]
-            if all(v is None for v in vals):
-                continue
-            out.append(tag({
-                'src': 'om', 'run': run, 'valid': t + 'Z', 'total': vals[0], 'low': vals[1], 'mid': vals[2], 'high': vals[3],
-                'grid': f"{data['latitude']},{data['longitude']}",
-            }, sid))
-    return out
-
-
-def om_wind_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -> list[dict]:
-    # Knots to the tenth, as the dashboard asks for its own 10 m wind
-    # (openMeteoWindsUrl), so the archive and the card read the same units.
-    loc = f'latitude={lat}&longitude={lon}&start_date={start}&end_date={end}&timezone=UTC&wind_speed_unit=kn'
-    names = ['wind_speed_10m', 'wind_gusts_10m', 'wind_direction_10m']
-    out = []
+def om_archive(start: dt.date, end: dt.date, lat: float, lon: float, names: list[str], extra: str = '') -> list[tuple]:
+    """Both Open-Meteo archives' hourly values for `names`: (run, valid time,
+    values in `names`' order, the cell served) for every hour with any value.
+    `extra` adds query parameters, such as the wind's unit."""
+    loc = f'latitude={lat}&longitude={lon}&start_date={start}&end_date={end}&timezone=UTC{extra}'
     hist = json.loads(get(f'https://historical-forecast-api.open-meteo.com/v1/forecast?{loc}&hourly={",".join(names)}'))
     prev_vars = [f'{n}_previous_day1' for n in names]
     prev = json.loads(get(f'https://previous-runs-api.open-meteo.com/v1/forecast?{loc}&hourly={",".join(prev_vars)}'))
+    out = []
     for run, data, keys in (('historical', hist, names), ('previous_day1', prev, prev_vars)):
         hourly = data['hourly']
         for i, t in enumerate(hourly['time']):
             vals = [hourly[k][i] for k in keys]
             if all(v is None for v in vals):
                 continue
-            out.append(tag({
-                'src': 'om-wind', 'run': run, 'valid': t + 'Z', 'spd': vals[0], 'gust': vals[1], 'dir': vals[2],
-                'grid': f"{data['latitude']},{data['longitude']}",
-            }, sid))
+            out.append((run, t + 'Z', vals, f"{data['latitude']},{data['longitude']}"))
     return out
+
+
+def om_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -> list[dict]:
+    bands = ['cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high']
+    return [
+        tag({'src': 'om', 'run': run, 'valid': t, 'total': v[0], 'low': v[1], 'mid': v[2], 'high': v[3], 'grid': grid}, sid)
+        for run, t, v, grid in om_archive(start, end, lat, lon, bands)
+    ]
+
+
+def om_wind_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -> list[dict]:
+    # Knots to the tenth, as the dashboard asks for its own 10 m wind
+    # (openMeteoWindsUrl), so the archive and the card read the same units.
+    names = ['wind_speed_10m', 'wind_gusts_10m', 'wind_direction_10m']
+    return [
+        tag({'src': 'om-wind', 'run': run, 'valid': t, 'spd': v[0], 'gust': v[1], 'dir': v[2], 'grid': grid}, sid)
+        for run, t, v, grid in om_archive(start, end, lat, lon, names, '&wind_speed_unit=kn')
+    ]
 
 
 def metar_records(start: dt.date, end: dt.date) -> list[dict]:
