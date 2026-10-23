@@ -12,9 +12,13 @@
  * Prints the summary as text, then as JSON. The arithmetic is
  * src/domain/ndfdGust.ts (pure, tested); this file only reads and prints.
  * The limit counted against is the Student profile's surface-wind caution,
- * BSR 2-1 H's 14 mph read as 12 kt, the figure the forecast wind flag reads
- * the gust against for a student. Counts and spreads, never a grade.
+ * BSR 2-1 H's 14 mph read as 12 kt. The forecast wind flag reads the higher
+ * of the forecast wind and gust against it; only the gust is fetched, so
+ * the count is the gust's (docs/nws-gust-archive.md). Counts and spreads,
+ * never a grade.
  */
+import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { DEFAULT_THRESHOLDS } from '../src/config/thresholds';
 import { SITE } from '../src/config/site';
 import { pairGusts, summarizeGusts, type GroupMean } from '../src/domain/ndfdGust';
@@ -32,12 +36,24 @@ const gustFiles = flag('--gust');
 const reportFiles = flag('--reports');
 const [from] = flag('--from');
 const [to] = flag('--to');
+for (const [name, v] of [['--from', from], ['--to', to]] as const) {
+  if (v != null && Number.isNaN(Date.parse(v))) {
+    console.error(`${name} ${v}: not a time`);
+    process.exit(2);
+  }
+}
 if (gustFiles.length === 0 || reportFiles.length === 0) {
   console.error('usage: nwsGustArchive.ts --gust <files> --reports <files>');
   process.exit(2);
 }
 
 const records = loadNdfdGustRecords(gustFiles);
+const truncated = gustFiles.flatMap((f) =>
+  (f.endsWith('.gz') ? gunzipSync(readFileSync(f)) : readFileSync(f))
+    .toString('utf8')
+    .split('\n')
+    .filter((l) => l.includes('"src":"ndfd-truncated"')),
+);
 const metars = loadKpmvReports(reportFiles);
 const inWindow = (t: number): boolean => (from == null || t >= Date.parse(from)) && (to == null || t <= Date.parse(to));
 const rows = pairGusts(records, metars).map((r) => ({ ...r, pairs: r.pairs.filter((p) => inWindow(p.t)) }));
@@ -51,7 +67,9 @@ const summary = summarizeGusts(rows, {
 
 const issued = [...new Set(records.map((r) => r.issued))].sort();
 console.log(`${records.length} gust records, ${issued.length} issuances, ${issued[0]} to ${issued[issued.length - 1]}`);
-console.log(`${metars.length} KPMV reports, ${metars[0]?.obsAt} to ${metars[metars.length - 1]?.obsAt}\n`);
+console.log(`${metars.length} KPMV reports, ${metars[0]?.obsAt} to ${metars[metars.length - 1]?.obsAt}`);
+for (const t of truncated) console.log(`cut short in the archive: ${t}`);
+console.log(from || to ? `hours from ${from ?? 'the start'} to ${to ?? 'the end'} only\n` : '');
 const signed = (x: number | null): string => (x == null ? '—' : x > 0 ? `+${x}` : `${x}`);
 const line = (g: GroupMean): string =>
   `  ${g.key.padEnd(14)} n ${String(g.n).padStart(4)}  mean ${signed(g.mean).padStart(6)}  above ${g.side.above}, same ${g.side.equal}, below ${g.side.below}`;

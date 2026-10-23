@@ -1,5 +1,11 @@
 # Open questions and follow-ups
 
+> Open-Meteo figures in this document are weather data by
+> [Open-Meteo.com](https://open-meteo.com/), under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reworked as
+> the document describes (set against other sources, counted,
+> differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
+
 Live backlog. Closed items should be deleted rather than marked done — the
 repository history is the record.
 
