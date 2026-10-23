@@ -643,6 +643,27 @@ the counts move by up to 17 of about 4,500 hours and the medians by up to
   with one above 3,000 ft (its mid band on 38%). It marks a low
   ceiling as likely without saying whether it is at 400 or 2,500 ft.
 
+## The hourly table's flight category
+
+Asked 2026-10-23 from a screenshot of the 10-day outlook's hourly table:
+what does a dash in the Flight column mean? The column is
+`flightCategory(ceiling, visibility)` on the NWS gridpoint's hour, and it
+is a dash when the gridpoint gives neither. Its ceiling and visibility run
+about a day and a half (on 2026-10-23 at 22:36Z, to 10Z on the 25th, 42
+hours from the series' start), its sky cover and wind about a week, so
+past that hour the table still has sky, wind and temperature but no
+category, and its Vis column is a dash too.
+
+Within that reach the API gives "no ceiling" as a null value (NDFD's −29,
+above), the same as an hour past the reach, so the table reads a null
+ceiling with a visibility as a clear sky, VFR at 5 SM or more. That
+would be wrong for an hour past the ceiling's reach but inside the
+visibility's. It does not happen while the two end together, and they
+did: the same end hour in all 190 kept snapshots from 2026-10-13 to
+10-23, and in the live gridpoint read that evening. If they ever part,
+the table would show VFR on hours with no ceiling forecast; a guard on
+the ceiling's own last hour would be the fix.
+
 ## What this does not say
 
 - **Season.** April to early October at one station, as before.
