@@ -97,9 +97,15 @@ ceiling or visibility, the rows usairnet calls "IFR ceiling chance") and
 `MHT`, `TWD`, `TWS` (mixing height and transport wind). That night `LCB`
 gave a base under every hour, `CIG` a ceiling in only some. The two read
 on one scale, hundreds of feet: 3Z on the 25th read `CIG 210`, `LCB 150`.
-That scale is read from the values. MDL's key to the elements is on
-vlab.noaa.gov, which this sandbox cannot reach, so the units and
-definitions are not read from MDL.
+That scale is read from the values. MDL's key to the elements is its
+"text card", <https://vlab.noaa.gov/web/mdl/nbm-textcard-v5.0>, linked
+from the menu of MDL's own NBM text page (its element list is
+<https://vlab.noaa.gov/web/mdl/nbm-weather-elements>, and the station
+list `nbm-stations-v5.0` on the same host). `vlab.noaa.gov` is not on
+this sandbox's allowlist (the proxy refused it, 2026-10-24), nor is
+`blend.mdl.nws.noaa.gov`, MDL's own bulletin viewer, so the units and
+definitions are not read from MDL. Adding `vlab.noaa.gov` would let them
+be read.
 
 **Could the dashboard read it?** The bucket answers a GET that carries an
 `Origin` with `Access-Control-Allow-Origin: *`, and a preflight with `GET`
