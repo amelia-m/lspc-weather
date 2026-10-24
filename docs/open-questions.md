@@ -406,7 +406,9 @@ for every station, so it would need a byte range at an offset nothing
 promises, or a workflow or the relay to cut out KPMV's block. Everything
 read is in docs/usairnet-parity.md, "Where usairnet's rows come from".
 Not built: it would be a second ceiling forecast beside the NWS one, and
-whether that is worth a source is yours to say.
+whether that is worth a source is yours to say. Before it is built, MDL's
+key to the bulletin's rows (units and definitions) should be read; it is
+on `vlab.noaa.gov`, which needs adding to the sandbox's allowlist.
 
 ## Done: the #wind-errors page refreshes weekly
 
