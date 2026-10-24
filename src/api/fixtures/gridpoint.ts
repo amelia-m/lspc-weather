@@ -12,9 +12,11 @@ export const GRIDPOINT_FIXTURE: RawGridpoint = {
         { validTime: interval(0, 3), value: 55 },
         { validTime: interval(3, 3), value: 40 },
         { validTime: interval(6, 6), value: 25 },
-        // Two days of sky cover and 30 hours of ceiling, as the live grid
-        // runs a week and about a day and a half: enough for the Ceiling &
-        // sky card's 24 h and 36 h views and the note where the ceiling stops.
+        // Two days of sky cover, wind, temperature and chances and 30 hours
+        // of ceiling, as the live grid runs a week and the ceiling about a
+        // day and a half: enough for the Ceiling & sky card's 24 h and 36 h
+        // views and the note where the ceiling stops, without hours that
+        // have sky cover and nothing else.
         { validTime: interval(12, 12), value: 70 },
         { validTime: interval(24, 24), value: 35 },
       ],
@@ -36,29 +38,29 @@ export const GRIDPOINT_FIXTURE: RawGridpoint = {
       uom: 'wmoUnit:km_h-1',
       values: [
         { validTime: interval(0, 3), value: 22 }, // ~12 kt
-        { validTime: interval(3, 6), value: 28 }, // ~15 kt
+        { validTime: interval(3, 45), value: 28 }, // ~15 kt
       ],
     },
     windGust: {
       uom: 'wmoUnit:km_h-1',
-      values: [{ validTime: interval(0, 9), value: 41 }], // ~22 kt
+      values: [{ validTime: interval(0, 48), value: 41 }], // ~22 kt
     },
     windDirection: {
       uom: 'wmoUnit:degree_(angle)',
-      values: [{ validTime: interval(0, 9), value: 190 }],
+      values: [{ validTime: interval(0, 48), value: 190 }],
     },
     probabilityOfPrecipitation: {
       uom: 'wmoUnit:percent',
       values: [
         { validTime: interval(0, 6), value: 15 },
-        { validTime: interval(6, 6), value: 35 },
+        { validTime: interval(6, 42), value: 35 },
       ],
     },
     probabilityOfThunder: {
       uom: 'wmoUnit:percent',
       values: [
         { validTime: interval(0, 6), value: 5 },
-        { validTime: interval(6, 6), value: 25 },
+        { validTime: interval(6, 42), value: 25 },
       ],
     },
     quantitativePrecipitation: {
@@ -72,7 +74,7 @@ export const GRIDPOINT_FIXTURE: RawGridpoint = {
       uom: 'wmoUnit:degC',
       values: [
         { validTime: interval(0, 3), value: 28 },
-        { validTime: interval(3, 6), value: 31 },
+        { validTime: interval(3, 45), value: 31 },
       ],
     },
   },

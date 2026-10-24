@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
-import { skyHorizonOptions } from '../src/components/forecastReach';
+import { ceilingCoverage, horizonOptions, skyHorizonOptions } from '../src/components/forecastReach';
+import { localDateKey } from '../src/components/format';
 import type { HourlyPoint } from '../src/domain/types';
 
 /* The Ceiling & sky strip looks 12 hours ahead by default and 24 or 36 at
@@ -14,6 +15,26 @@ describe('skyHorizonOptions', () => {
     expect(skyHorizonOptions(12)).toEqual([12]);
     expect(skyHorizonOptions(13)).toEqual([12, 24]);
     expect(skyHorizonOptions(25)).toEqual([12, 24, 36]);
+  });
+
+  it('is the rule the Hourly wind card offers its horizons by', () => {
+    const wind = [{ hours: 18 }, { hours: 36 }, { hours: 72 }];
+    expect(horizonOptions(wind, (o) => o.hours, 30)).toEqual([{ hours: 18 }, { hours: 36 }]);
+    expect(horizonOptions(wind, (o) => o.hours, 37)).toEqual(wind);
+  });
+});
+
+describe('ceilingCoverage', () => {
+  const at = (covered: boolean[]) => covered.map((c, i) => ({ time: i, ceilingForecast: c }));
+  it('names the hour a ceiling forecast ends when it does not come back', () => {
+    expect(ceilingCoverage(at([true, true, false, false]))).toEqual({ kind: 'end', from: 2 });
+  });
+  it('calls a hole the forecast resumes after, or no ceiling at all, gaps, not an end', () => {
+    expect(ceilingCoverage(at([true, false, true]))).toEqual({ kind: 'gaps' });
+    expect(ceilingCoverage(at([false, false]))).toEqual({ kind: 'gaps' });
+  });
+  it('says nothing when every hour is covered', () => {
+    expect(ceilingCoverage(at([true, true]))).toBeNull();
   });
 });
 
@@ -65,12 +86,32 @@ describe('the Ceiling & sky horizon', () => {
     expect(card(hours(48, 30))).not.toContain('No ceiling forecast from');
   });
 
+  it('does not explain a missing ceiling element as the forecast\'s reach ending', () => {
+    const html = card(hours(48, 0), 24);
+    expect(html).not.toContain('No ceiling forecast from');
+    expect(html).toContain('no ceiling for some of these hours');
+  });
+
+  it('names the new day under its first hour when the strip crosses midnight', () => {
+    const h = hours(48, 40);
+    const newDay = h.findIndex((p, i) => i > 0 && localDateKey(p.time) !== localDateKey(h[i - 1].time));
+    const html = card(h, 36);
+    const days = html.match(/<span class="sky-time sky-day">([^<]*)<\/span>/g) ?? [];
+    // One per column plus the axis column's spacer, a weekday at each new day.
+    expect(days).toHaveLength(37);
+    expect(days.filter((d) => !d.includes('\u00a0') && !d.includes('&nbsp;')).length).toBe(newDay + 24 < 36 ? 2 : 1);
+  });
+
+  it('counts the hours it draws in its subtitle, not the horizon chosen', () => {
+    expect(card(hours(30, 30), 36)).toContain('now + next 30 h');
+  });
+
   it('offers no switch when the forecast runs no further than twelve hours, and falls back to twelve', () => {
     const html = card(hours(10, 10), 36);
     expect(html).not.toContain('Sky forecast horizon');
     expect(columns(html)).toBe(10);
     // Not labelled or laid out as a 36-hour strip it cannot show.
-    expect(html).toContain('now + next 12 h');
+    expect(html).toContain('now + next 10 h');
     expect(html).not.toContain('ceiling-timeline extended');
   });
 });

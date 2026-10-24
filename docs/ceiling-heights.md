@@ -690,16 +690,29 @@ switches between 12, 24 and 36 hours (`skyHorizonOptions`,
 forecast fills. It stops at 36: the ceiling reaches about a day and a
 half (above), so past that the strip would be sky cover alone. Where the
 chosen horizon runs past the ceiling forecast, the card says from which
-hour (weekday and time, since 36 hours can name the same clock time twice), and that the ceiling column shows a dash from there. The category
-pill and the flag still read the current hour only.
+hour (weekday and time, since 36 hours can name the same clock time
+twice), and that the ceiling column shows a dash from there. It says
+that only when the ceiling stops and does not come back within the
+strip; a gridpoint with no ceiling element, or a hole the forecast
+resumes after, gets "no ceiling for some of these hours" instead
+(`ceilingCoverage`), since the day-and-a-half reach would not explain
+it. A strip that crosses midnight names the new day under its first
+hour, and in the 24 and 36 hour strips the units column stays in view
+as the hours scroll under it: the figures carry no units of their own.
+The subtitle counts the hours drawn. The category pill and the flag
+still read the current hour only. The Hourly wind card offers its
+horizons by the same rule (`horizonOptions`).
 
 At 390 px the 36-hour strip first widened the whole page, to 847 px,
 though the strip scrolls sideways in its own box. Each column's
 screen-reader label is `.sr-only`, which is absolutely positioned. The
 scroll box was not positioned, so the labels were placed against the page,
 not the box, and the box's `overflow` did not hold them. `.sky-scroll`
-is now `position: relative`. Checked in a local build at 1280, 390 and
-320 px at each horizon: the page is no wider than the viewport.
+is now `position: relative`, and so are the 10-day outlook's and the
+TAF's scrollers, which hold `.sr-only` labels too. Checked in a local
+build at 1280, 390 and 320 px at each horizon, and with every day of the
+10-day outlook opened: the page is no wider than the viewport, and the
+units column stays inside the strip scrolled to its end.
 
 ## What this does not say
 

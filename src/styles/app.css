@@ -890,6 +890,9 @@ a.sim-term {
 /* 10-day outlook */
 .daily-scroll {
   overflow-x: auto;
+  /* Positioned so the hourly table's .sr-only labels are placed inside the
+     scroll box, not against the page (see .sky-scroll). */
+  position: relative;
 }
 /* Six columns don't fit a single grid cell. The card takes the full grid
    width where there is more than one column: a two-column span in a
@@ -999,6 +1002,7 @@ a.sim-term {
 .taf-scroll {
   overflow-x: auto;
   margin-top: 10px;
+  position: relative; /* see .sky-scroll */
 }
 .taf-table {
   width: 100%;
@@ -1202,6 +1206,19 @@ a.sim-term {
 }
 .ceiling-timeline.extended .sky-col:not(.sky-axis-col) {
   flex: 1 0 20px;
+}
+/* The figures carry no units (the axis column prints them once), so the
+   axis stays in view while the longer strips scroll under it. */
+.ceiling-timeline.extended .sky-axis-col {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--panel);
+}
+/* The weekday under the first hour of a new day, centred on its column
+   even where wider than it, as the times are. */
+.sky-day {
+  font-weight: 600;
 }
 .ceiling-timeline .sky-pct,
 .ceiling-timeline .sky-ceil {

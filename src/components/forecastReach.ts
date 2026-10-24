@@ -11,9 +11,30 @@ export const SKY_HORIZONS = [12, 24, 36] as const;
 
 /** The horizons worth offering for `futureHours` hours of forecast: the
  *  first always, a longer one only when the forecast runs past the one
- *  before it, as the Hourly wind card offers its own. */
+ *  before it, so it always shows something new, though not always its full
+ *  length. The Hourly wind card and the Ceiling & sky card both offer
+ *  theirs this way. */
+export function horizonOptions<T>(horizons: readonly T[], hoursOf: (h: T) => number, futureHours: number): T[] {
+  return horizons.filter((_, i) => i === 0 || futureHours > hoursOf(horizons[i - 1]));
+}
+
 export const skyHorizonOptions = (futureHours: number): number[] =>
-  SKY_HORIZONS.filter((_, i) => i === 0 || futureHours > SKY_HORIZONS[i - 1]);
+  horizonOptions(SKY_HORIZONS, (h) => h, futureHours);
+
+/** What the Ceiling & sky card says about hours in its strip that the NWS
+ *  ceiling forecast does not cover: `end` when the forecast stops partway
+ *  and does not come back within the strip (its usual reach, about a day
+ *  and a half), `gaps` for any other shape (no ceiling element at all, or a
+ *  hole it resumes after), null when every hour is covered. A reach ending
+ *  is the only shape the "about a day and a half" sentence explains. */
+export function ceilingCoverage(
+  hours: readonly Pick<HourlyPoint, 'time' | 'ceilingForecast'>[],
+): { kind: 'end'; from: number } | { kind: 'gaps' } | null {
+  const first = hours.findIndex((h) => !h.ceilingForecast);
+  if (first < 0) return null;
+  if (first > 0 && !hours.slice(first).some((h) => h.ceilingForecast)) return { kind: 'end', from: hours[first].time };
+  return { kind: 'gaps' };
+}
 
 /** What changed between two hours in what the NWS forecast covers, as the
  *  hourly table's marker row says it, or null for no change. Against no
