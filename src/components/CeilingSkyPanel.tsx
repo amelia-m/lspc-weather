@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { CurrentConditions, HourlyPoint, OpenMeteoCloudHour } from '../domain/types';
 import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
@@ -10,7 +11,8 @@ import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
-import { fmtShortHour, fmtTime } from './format';
+import { fmtClock, fmtShortHour, fmtTime } from './format';
+import { SKY_HORIZONS, skyHorizonOptions } from './forecastReach';
 
 /** A time under every third hour, as on the Precip card: twelve labels do
  *  not fit a phone-width card. The hours between follow from them (and a
@@ -40,9 +42,13 @@ export function CeilingSkyPanel({
   hourly,
   omClouds = null,
   thresholds,
+  initialHours = SKY_HORIZONS[0],
 }: {
   current: CurrentConditions | null;
   hourly: HourlyPoint[];
+  /** The horizon the strip opens at; the reader's toggle moves it. A prop so
+   *  a static render (the tests) can draw the longer strips. */
+  initialHours?: number;
   /** Open-Meteo's hourly cloud cover (`snapshot.openMeteoClouds`); null on
    *  the FD fallback and until it loads, and the card then shows the NWS
    *  forecast alone. Each figure is matched to an NWS hour by its time. */
@@ -52,8 +58,15 @@ export function CeilingSkyPanel({
    *  rather than guess past a Settings edit. */
   thresholds?: Pick<Thresholds, 'visibilityCautionSm' | 'published'>;
 }): JSX.Element {
+  const [hours, setHours] = useState<number>(initialHours);
   const now = Date.now();
-  const upcoming = hourly.filter((h) => h.time >= now - 3600_000).slice(0, 12);
+  const future = hourly.filter((h) => h.time >= now - 3600_000);
+  const options = skyHorizonOptions(future.length);
+  const effectiveHours = options.includes(hours) ? hours : SKY_HORIZONS[0];
+  const upcoming = future.slice(0, effectiveHours);
+  const extended = effectiveHours > SKY_HORIZONS[0];
+  // The first hour shown past the NWS ceiling forecast, if any.
+  const ceilingEnd = upcoming.find((h) => !h.ceilingForecast);
   // Matched hour for hour by valid time; an hour Open-Meteo did not serve
   // shows no second bar rather than a borrowed neighbour's.
   const omAt = new Map((omClouds ?? []).map((c) => [c.time, c]));
@@ -63,7 +76,7 @@ export function CeilingSkyPanel({
   return (
     <Panel
       title="Ceiling & sky"
-      subtitle="now + next hours"
+      subtitle={`now + next ${effectiveHours} h`}
       sources={[
         DATA_SOURCES.iemObservation,
         DATA_SOURCES.nwsObservation,
@@ -114,11 +127,29 @@ export function CeilingSkyPanel({
           <SourceLink citation={CITATIONS.far10517} />
         </p>
       )}
+      {upcoming.length > 0 && options.length > 1 && (
+        <div className="range-toggle" role="group" aria-label="Sky forecast horizon">
+          {options.map((o) => (
+            <button
+              key={o}
+              type="button"
+              className={o === effectiveHours ? 'active' : ''}
+              aria-pressed={o === effectiveHours}
+              onClick={() => setHours(o)}
+            >
+              {o}h
+            </button>
+          ))}
+        </div>
+      )}
       {upcoming.length === 0 ? (
         <p className="muted">No hourly forecast available.</p>
       ) : (
         <div className="sky-scroll">
-          <div className="sky-timeline ceiling-timeline">
+          {/* Past twelve hours the columns keep a readable width and the
+              strip scrolls sideways inside the card, as the TAF table does,
+              rather than squeezing 36 figures into a phone's width. */}
+          <div className={extended ? 'sky-timeline ceiling-timeline extended' : 'sky-timeline ceiling-timeline'}>
           {/* The units, once for each row, so a figure in a column a
               phone makes 17 px wide is only its digits. */}
           <div className="sky-col sky-axis-col" aria-hidden="true">
@@ -184,6 +215,12 @@ export function CeilingSkyPanel({
           })}
           </div>
         </div>
+      )}
+      {ceilingEnd && (
+        <p className="muted small">
+          No ceiling forecast from {fmtClock(ceilingEnd.time)}: the NWS forecasts the ceiling about a day
+          and a half ahead, so later hours show sky cover only, and a dash where the ceiling would be.
+        </p>
       )}
       <p className="muted small">
         Bar height and the figure above it = sky cover %. Label under it = ceiling in thousands of

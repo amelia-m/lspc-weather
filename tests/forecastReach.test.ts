@@ -3,7 +3,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { normalizeGridpoint } from '../src/domain/normalize';
 import { forecastFlightCategory } from '../src/domain/flightCategory';
-import { DayDetail, reachChange } from '../src/components/DailyForecastPanel';
+import { DayDetail } from '../src/components/DailyForecastPanel';
+import { reachChange } from '../src/components/forecastReach';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
 import type { HourlyPoint } from '../src/domain/types';
 

@@ -540,7 +540,11 @@ app with fixtures. Run throwaway scripts from the repo root, then delete them.
 
 Check 390px and 320px, not just desktop. Several defects this repo has had were
 phone-only: a page-wide horizontal scroll, headers overflowing, and a control
-overlaying the Refresh button.
+overlaying the Refresh button. A sideways scroller is not
+enough to hold its contents: an absolutely positioned `.sr-only` label inside
+one that is not itself positioned is placed against the page and widens it
+(the Ceiling & sky card's 36-hour strip, to 847 px at 390, until
+`.sky-scroll` got `position: relative`, 2026-10-24).
 
 ## Gates
 

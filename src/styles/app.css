@@ -1089,6 +1089,11 @@ a.sim-term {
 .sky-scroll {
   overflow-x: auto;
   padding-bottom: 2px;
+  /* The containing block for the columns' .sr-only labels, which are
+     absolutely positioned: without it they sit outside the scroll box, and
+     the Ceiling & sky card's 36 h strip widened the whole page to 847 px at
+     390 (2026-10-24). */
+  position: relative;
 }
 .sky-timeline {
   display: flex;
@@ -1187,6 +1192,16 @@ a.sim-term {
 .ceiling-timeline .sky-col:not(.sky-axis-col) {
   flex: 1 1 0;
   min-width: 0;
+}
+/* 24 and 36 hours: each column keeps the width twelve get on a phone, and
+   the strip scrolls inside the card (.sky-scroll) instead of shrinking them
+   until the figures overlap. On a wide screen the columns still share the
+   width. */
+.ceiling-timeline.extended {
+  min-width: min-content;
+}
+.ceiling-timeline.extended .sky-col:not(.sky-axis-col) {
+  flex: 1 0 20px;
 }
 .ceiling-timeline .sky-pct,
 .ceiling-timeline .sky-ceil {
