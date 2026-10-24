@@ -12,6 +12,11 @@ export const GRIDPOINT_FIXTURE: RawGridpoint = {
         { validTime: interval(0, 3), value: 55 },
         { validTime: interval(3, 3), value: 40 },
         { validTime: interval(6, 6), value: 25 },
+        // Two days of sky cover and 30 hours of ceiling, as the live grid
+        // runs a week and about a day and a half: enough for the Ceiling &
+        // sky card's 24 h and 36 h views and the note where the ceiling stops.
+        { validTime: interval(12, 12), value: 70 },
+        { validTime: interval(24, 24), value: 35 },
       ],
     },
     ceilingHeight: {
@@ -19,6 +24,8 @@ export const GRIDPOINT_FIXTURE: RawGridpoint = {
       values: [
         { validTime: interval(0, 3), value: 1372 }, // ~4500 ft
         { validTime: interval(3, 6), value: 2438 }, // ~8000 ft
+        { validTime: interval(9, 9), value: null }, // no ceiling
+        { validTime: interval(18, 12), value: 3048 }, // ~10,000 ft
       ],
     },
     visibility: {

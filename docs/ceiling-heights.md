@@ -682,6 +682,25 @@ in a local build at 1280, 390 and 320 px; at 320 the row first ran off
 the screen with the table's sideways scroll, and its text is now held to
 the visible width.
 
+### The Ceiling & sky card's horizon
+
+Asked 2026-10-23: a button to take the card's strip further out. It now
+switches between 12, 24 and 36 hours (`skyHorizonOptions`,
+`src/components/forecastReach.ts`), and offers only the horizons the
+forecast fills. It stops at 36: the ceiling reaches about a day and a
+half (above), so past that the strip would be sky cover alone. Where the
+chosen horizon runs past the ceiling forecast, the card says from which
+hour (weekday and time, since 36 hours can name the same clock time twice), and that the ceiling column shows a dash from there. The category
+pill and the flag still read the current hour only.
+
+At 390 px the 36-hour strip first widened the whole page, to 847 px,
+though the strip scrolls sideways in its own box. Each column's
+screen-reader label is `.sr-only`, which is absolutely positioned. The
+scroll box was not positioned, so the labels were placed against the page,
+not the box, and the box's `overflow` did not hold them. `.sky-scroll`
+is now `position: relative`. Checked in a local build at 1280, 390 and
+320 px at each horizon: the page is no wider than the viewport.
+
 ## What this does not say
 
 - **Season.** April to early October at one station, as before.

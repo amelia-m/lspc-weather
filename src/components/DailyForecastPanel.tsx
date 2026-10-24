@@ -9,6 +9,7 @@ import { FallbackSources } from './common/FallbackSources';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { HourlyKey } from './HourlyKey';
+import { reachChange } from './forecastReach';
 import { fmtTime } from './format';
 import type { Thresholds } from '../config/thresholds';
 
@@ -321,19 +322,6 @@ export function DayDetail({
 
 /* ---- helpers ---- */
 
-/** What changed between two hours in what the NWS forecast covers, as the
- *  hourly table's marker row says it, or null for no change. Against no
- *  previous hour, a day that starts fully forecast needs no row. */
-export function reachChange(
-  prev: Pick<HourlyPoint, 'ceilingForecast' | 'visibilityForecast'> | null,
-  h: Pick<HourlyPoint, 'ceilingForecast' | 'visibilityForecast'>,
-): string | null {
-  const before = prev ?? { ceilingForecast: true, visibilityForecast: true };
-  if (before.ceilingForecast === h.ceilingForecast && before.visibilityForecast === h.visibilityForecast) return null;
-  if (h.ceilingForecast && h.visibilityForecast) return 'Ceiling and visibility forecast again';
-  if (!h.ceilingForecast && !h.visibilityForecast) return 'Ceiling and visibility not forecast';
-  return h.ceilingForecast ? 'Visibility not forecast' : 'Ceiling not forecast';
-}
 
 const dayKeyFmt = new Intl.DateTimeFormat('en-CA', {
   timeZone: SITE.timeZone,

@@ -394,6 +394,20 @@ was centred (+0.13 kt; the kept reading's −0.78 was October's), and the
 `#wind-errors` page now has the archive's speed, gust and direction from
 April, refreshed weekly (docs/nws-gust-archive.md).
 
+## A forecast lowest cloud base from the NBM? (maintainer's call)
+
+Asked 2026-10-24: does the dashboard have both the ceiling and the lowest
+cloud base? For the latest report, yes: the Current conditions card's Sky
+line lists every layer. For the forecast, only the ceiling: the NWS
+gridpoint has no lowest-base element. usairnet's "Lowest cloud base" row
+is the NBM's `LCB`, and the NBM's hourly KPMV bulletin can be read from
+NOAA's open data bucket, which sends a CORS header; its files are 28 MB
+for every station, so it would need a byte range at an offset nothing
+promises, or a workflow or the relay to cut out KPMV's block. Everything
+read is in docs/usairnet-parity.md, "Where usairnet's rows come from".
+Not built: it would be a second ceiling forecast beside the NWS one, and
+whether that is worth a source is yours to say.
+
 ## Done: the #wind-errors page refreshes weekly
 
 Since 2026-10-23 the weekly ceiling data refresh
