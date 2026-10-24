@@ -11,8 +11,8 @@ import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
 import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
-import { fmtClock, fmtShortHour, fmtTime } from './format';
-import { SKY_HORIZONS, skyHorizonOptions } from './forecastReach';
+import { fmtClock, fmtShortHour, fmtTime, fmtWeekday, localDateKey } from './format';
+import { SKY_HORIZONS, ceilingCoverage, skyHorizonOptions } from './forecastReach';
 
 /** A time under every third hour, as on the Precip card: twelve labels do
  *  not fit a phone-width card. The hours between follow from them (and a
@@ -65,8 +65,10 @@ export function CeilingSkyPanel({
   const effectiveHours = options.includes(hours) ? hours : SKY_HORIZONS[0];
   const upcoming = future.slice(0, effectiveHours);
   const extended = effectiveHours > SKY_HORIZONS[0];
-  // The first hour shown past the NWS ceiling forecast, if any.
-  const ceilingEnd = upcoming.find((h) => !h.ceilingForecast);
+  const coverage = ceilingCoverage(upcoming);
+  // A strip that crosses midnight names the new day under its first hour:
+  // 36 hours print the same clock times twice, and a phone shows no tooltip.
+  const crossesDay = upcoming.length > 0 && localDateKey(upcoming[0].time) !== localDateKey(upcoming[upcoming.length - 1].time);
   // Matched hour for hour by valid time; an hour Open-Meteo did not serve
   // shows no second bar rather than a borrowed neighbour's.
   const omAt = new Map((omClouds ?? []).map((c) => [c.time, c]));
@@ -76,7 +78,7 @@ export function CeilingSkyPanel({
   return (
     <Panel
       title="Ceiling & sky"
-      subtitle={`now + next ${effectiveHours} h`}
+      subtitle={`now + next ${upcoming.length || effectiveHours} h`}
       sources={[
         DATA_SOURCES.iemObservation,
         DATA_SOURCES.nwsObservation,
@@ -162,6 +164,7 @@ export function CeilingSkyPanel({
             </div>
             <span className="sky-ceil">k ft</span>
             <span className="sky-time">&nbsp;</span>
+            {crossesDay && <span className="sky-time sky-day">&nbsp;</span>}
           </div>
           {upcoming.map((h, i) => {
             const om = omAt.get(h.time);
@@ -210,16 +213,26 @@ export function CeilingSkyPanel({
                 </span>
               </span>
               <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
+              {crossesDay && (
+                <span className="sky-time sky-day">
+                  {i > 0 && localDateKey(h.time) !== localDateKey(upcoming[i - 1].time) ? fmtWeekday(h.time) : '\u00a0'}
+                </span>
+              )}
             </div>
             );
           })}
           </div>
         </div>
       )}
-      {ceilingEnd && (
+      {coverage?.kind === 'end' && (
         <p className="muted small">
-          No ceiling forecast from {fmtClock(ceilingEnd.time)}: the NWS forecasts the ceiling about a day
+          No ceiling forecast from {fmtClock(coverage.from)}: the NWS forecasts the ceiling about a day
           and a half ahead, so later hours show sky cover only, and a dash where the ceiling would be.
+        </p>
+      )}
+      {coverage?.kind === 'gaps' && (
+        <p className="muted small">
+          The NWS forecast gives no ceiling for some of these hours; a dash marks them.
         </p>
       )}
       <p className="muted small">

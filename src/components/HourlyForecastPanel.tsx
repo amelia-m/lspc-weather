@@ -5,6 +5,7 @@ import type { Thresholds } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
 import { HourlyChart, HourlyLegend } from './common/HourlyChart';
+import { horizonOptions } from './forecastReach';
 
 /** Selectable forecast horizons. 18 h is the default working window; each
  *  longer option is offered once the data runs past the one before it, so
@@ -51,7 +52,7 @@ export function HourlyForecastPanel({
   // Offer a longer horizon only when the data extends past the previous option
   // (otherwise the longer window would show nothing new). The default is always
   // available.
-  const options = HORIZONS.filter((_, i) => i === 0 || future.length > HORIZONS[i - 1].hours);
+  const options = horizonOptions(HORIZONS, (o) => o.hours, future.length);
   const effectiveHours = options.some((o) => o.hours === hours) ? hours : HORIZONS[0].hours;
   const points = future.slice(0, effectiveHours);
   const hasWind = points.some((p) => p.windSpeedKt != null);
