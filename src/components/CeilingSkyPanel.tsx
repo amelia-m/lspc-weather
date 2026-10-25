@@ -68,7 +68,9 @@ export function CeilingSkyPanel({
   const coverage = ceilingCoverage(upcoming);
   // A strip that crosses midnight names the new day under its first hour:
   // 36 hours print the same clock times twice, and a phone shows no tooltip.
-  const crossesDay = upcoming.length > 0 && localDateKey(upcoming[0].time) !== localDateKey(upcoming[upcoming.length - 1].time);
+  // Each hour's date once: the card re-renders on every observation poll.
+  const dayKeys = upcoming.map((h) => localDateKey(h.time));
+  const crossesDay = dayKeys.length > 0 && dayKeys[0] !== dayKeys[dayKeys.length - 1];
   // Matched hour for hour by valid time; an hour Open-Meteo did not serve
   // shows no second bar rather than a borrowed neighbour's.
   const omAt = new Map((omClouds ?? []).map((c) => [c.time, c]));
@@ -78,7 +80,9 @@ export function CeilingSkyPanel({
   return (
     <Panel
       title="Ceiling & sky"
-      subtitle={`now + next ${upcoming.length || effectiveHours} h`}
+      // The first column is the hour under way, so twelve columns look eleven
+      // hours past it.
+      subtitle={upcoming.length > 1 ? `now + next ${upcoming.length - 1} h` : 'now + next hours'}
       sources={[
         DATA_SOURCES.iemObservation,
         DATA_SOURCES.nwsObservation,
@@ -215,7 +219,7 @@ export function CeilingSkyPanel({
               <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
               {crossesDay && (
                 <span className="sky-time sky-day">
-                  {i > 0 && localDateKey(h.time) !== localDateKey(upcoming[i - 1].time) ? fmtWeekday(h.time) : '\u00a0'}
+                  {i > 0 && dayKeys[i] !== dayKeys[i - 1] ? fmtWeekday(h.time) : '\u00a0'}
                 </span>
               )}
             </div>
@@ -224,10 +228,20 @@ export function CeilingSkyPanel({
           </div>
         </div>
       )}
+      {/* Where the forecast ends is a fact of the copy the card has; why is
+          not. Its usual reach is given as the usual, since a copy a day old
+          (an outage, or an edge serving an older one) ends sooner. */}
       {coverage?.kind === 'end' && (
         <p className="muted small">
-          No ceiling forecast from {fmtClock(coverage.from)}: the NWS forecasts the ceiling about a day
-          and a half ahead, so later hours show sky cover only, and a dash where the ceiling would be.
+          No ceiling forecast from {fmtClock(coverage.from)}: the NWS ceiling forecast the card has ends
+          there (it normally runs about a day and a half from when it was issued), so later hours show
+          sky cover only, and a dash where the ceiling would be.
+        </p>
+      )}
+      {coverage?.kind === 'none' && (
+        <p className="muted small">
+          The NWS forecast the card has gives no ceiling for any of these hours; the ceiling row shows
+          a dash.
         </p>
       )}
       {coverage?.kind === 'gaps' && (

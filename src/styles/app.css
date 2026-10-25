@@ -1214,6 +1214,10 @@ a.sim-term {
   left: 0;
   z-index: 1;
   background: var(--panel);
+  /* The strip's 2 px flex gap beside the axis is the container's, not the
+     column's, so the background alone left a sliver of each passing column
+     showing through it. */
+  box-shadow: 2px 0 0 var(--panel);
 }
 /* The weekday under the first hour of a new day, centred on its column
    even where wider than it, as the times are. */
