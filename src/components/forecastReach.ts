@@ -23,17 +23,20 @@ export const skyHorizonOptions = (futureHours: number): number[] =>
 
 /** What the Ceiling & sky card says about hours in its strip that the NWS
  *  ceiling forecast does not cover: `end` when the forecast stops partway
- *  and does not come back within the strip (its usual reach, about a day
- *  and a half), `gaps` for any other shape (no ceiling element at all, or a
- *  hole it resumes after), null when every hour is covered. A reach ending
- *  is the only shape the "about a day and a half" sentence explains. */
+ *  and does not come back within the strip, `none` when it covers no hour
+ *  of the strip (no ceiling element, or a copy so old it has run out),
+ *  `gaps` for a hole it resumes after, null when every hour is covered.
+ *  Each gets its own sentence: "from <hour>" names an end, and "some of
+ *  these hours" would send a reader looking for the ones with a figure
+ *  when there are none. */
 export function ceilingCoverage(
   hours: readonly Pick<HourlyPoint, 'time' | 'ceilingForecast'>[],
-): { kind: 'end'; from: number } | { kind: 'gaps' } | null {
+): { kind: 'end'; from: number } | { kind: 'none' } | { kind: 'gaps' } | null {
   const first = hours.findIndex((h) => !h.ceilingForecast);
   if (first < 0) return null;
-  if (first > 0 && !hours.slice(first).some((h) => h.ceilingForecast)) return { kind: 'end', from: hours[first].time };
-  return { kind: 'gaps' };
+  const resumes = hours.slice(first).some((h) => h.ceilingForecast);
+  if (resumes) return { kind: 'gaps' };
+  return first > 0 ? { kind: 'end', from: hours[first].time } : { kind: 'none' };
 }
 
 /** What changed between two hours in what the NWS forecast covers, as the

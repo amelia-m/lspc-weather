@@ -686,17 +686,22 @@ the visible width.
 
 Asked 2026-10-23: a button to take the card's strip further out. It now
 switches between 12, 24 and 36 hours (`skyHorizonOptions`,
-`src/components/forecastReach.ts`), and offers only the horizons the
-forecast fills. It stops at 36: the ceiling reaches about a day and a
+`src/components/forecastReach.ts`); a longer horizon is offered once the
+forecast runs past the one before it, so the switch always shows
+something new, though not always its full length (25 hours of forecast
+offer 36h and draw 25 columns, and the subtitle counts the columns, less
+the hour under way). It stops at 36: the ceiling reaches about a day and a
 half (above), so past that the strip would be sky cover alone. Where the
 chosen horizon runs past the ceiling forecast, the card says from which
 hour (weekday and time, since 36 hours can name the same clock time
 twice), and that the ceiling column shows a dash from there. It says
 that only when the ceiling stops and does not come back within the
-strip; a gridpoint with no ceiling element, or a hole the forecast
-resumes after, gets "no ceiling for some of these hours" instead
-(`ceilingCoverage`), since the day-and-a-half reach would not explain
-it. A strip that crosses midnight names the new day under its first
+strip, and gives the day-and-a-half reach as the usual, from issuance,
+not as the cause: a copy of the gridpoint a day old (an outage, or an
+edge serving an older one, docs/nws-gridpoint-age.md) ends sooner, and
+the card cannot tell why. A gridpoint with no ceiling in any of the
+hours shown gets "no ceiling for any of these hours", and a hole the
+forecast resumes after "for some of these hours" (`ceilingCoverage`). A strip that crosses midnight names the new day under its first
 hour, and in the 24 and 36 hour strips the units column stays in view
 as the hours scroll under it: the figures carry no units of their own.
 The subtitle counts the hours drawn. The category pill and the flag
