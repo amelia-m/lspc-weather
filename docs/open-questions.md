@@ -406,9 +406,10 @@ for every station, so it would need a byte range at an offset nothing
 promises, or a workflow or the relay to cut out KPMV's block. Everything
 read is in docs/usairnet-parity.md, "Where usairnet's rows come from".
 Not built: it would be a second ceiling forecast beside the NWS one, and
-whether that is worth a source is yours to say. Before it is built, MDL's
-key to the bulletin's rows (units and definitions) should be read; it is
-on `vlab.noaa.gov`, which needs adding to the sandbox's allowlist.
+whether that is worth a source is yours to say. MDL's key to the rows was
+read on 2026-10-26 (docs/usairnet-parity.md, same section): hundreds of
+feet, -88 for unlimited, and the base is "whether or not a ceiling is
+present (could be FEW or SCT layer)".
 
 ## Done: the #wind-errors page refreshes weekly
 
@@ -960,9 +961,13 @@ this repository establishes it.
 A lead, 2026-10-08: the maintainer believes most of the club's student rigs
 carry an Aerodyne Smart reserve
 (<https://www.flyaerodyne.com/reserve-canopy-smart.html>). The Smart is a
-ram-air reserve, by its maker's description as commonly known, not by a
-reading: the page was not opened, because `www.flyaerodyne.com` is not on the
-sandbox's allowlist. If an instructor confirms it for every student rig, no
+ram-air reserve. Its maker's page was read on 2026-10-26, once
+`www.flyaerodyne.com` was allowlisted: the Smart "incorporates the
+latest 7-cell technology", offers "amazing glide performance for a
+7-cell" and "the powerful landing flare", and is "certified under the US
+FAA TSO-C23". The page does not use the words "ram-air"; a canopy with
+cells, a glide and a flare is one, and a round reserve has none of the
+three. If an instructor confirms it for every student rig, no
 student here jumps a round reserve, which is the fact the second option
 waits on. "Most" is not "every": a rig with a round reserve would still need
 the 10 mph figure.
