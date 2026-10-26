@@ -3,6 +3,7 @@ import {
   ceilingFromTheirClouds,
   cloudsInTheirWords,
   comparableDirection,
+  metarObservedMs,
   milesFrom,
   pageTextNear,
   parseUsairnet,
@@ -134,16 +135,42 @@ describe('parseUsairnet on the redesigned page (2026-10-09 on)', () => {
     expect(parseUsairnet(modern('KLBF'), 'KLBF')).toMatchObject({ visibilityMi: 2.5, condition: 'Heavy rain, mist' });
   });
 
-  it('reads a sky group the METAR left out in the dashboard’s own words (KHEQ, no sky group)', () => {
-    expect(parseUsairnet(modern('KHEQ'), 'KHEQ')).toMatchObject({ clouds: '(not reported)' });
+  it('reads a sky group the METAR left out in the dashboard’s own words, and the rule’s qualifier apart (KHEQ, no sky group)', () => {
+    // The page writes "MVFR (at least)": the visibility alone set a floor.
+    expect(parseUsairnet(modern('KHEQ'), 'KHEQ')).toMatchObject({ clouds: '(not reported)', flightRule: 'MVFR', flightRuleNote: '(at least)' });
     expect(cloudsInTheirWords([])).toBe(parseUsairnet(modern('KHEQ'), 'KHEQ')!.clouds);
+    expect(parseUsairnet(modern('KPMV'), 'KPMV')).toMatchObject({ flightRule: 'VFR', flightRuleNote: null });
+  });
+
+  it('still reads the clock and the rest when the page prints no temperature', () => {
+    const noTemp = modern('KPMV').replace(/54(°|&deg;|&#176;)F/, '--$1F');
+    expect(noTemp).not.toBe(modern('KPMV'));
+    expect(parseUsairnet(noTemp, 'KPMV')).toMatchObject({ asOf: '4:15 AM', tempF: null, condition: null, windMph: 7, clouds: 'Clear' });
   });
 
   it('joins layers as the legacy page did, so one wording serves both (K9K7, OVC110)', () => {
     expect(parseUsairnet(modern('K9K7'), 'K9K7')!.clouds).toBe('Overcast at 11000 ft');
     expect(cloudsInTheirWords([{ cover: 'OVC', baseFtAgl: 11000 }])).toBe('Overcast at 11000 ft');
   });
+
+  it('reads a gust whatever the page puts between the speed and it', () => {
+    const variable = modern('KIML').replace('40° from', 'Variable');
+    expect(variable).not.toBe(modern('KIML'));
+    expect(parseUsairnet(variable, 'KIML')).toMatchObject({ windMph: 15, windGustMph: 21, windDirDeg: null });
+  });
 });
+
+describe('metarObservedMs', () => {
+  it('dates the page’s METAR by its own time group, in the month of the dashboard’s report', () => {
+    const near = Date.UTC(2026, 9, 26, 9, 35);
+    expect(metarObservedMs('KPMV 260935Z AUTO 02007KT 10SM CLR 12/08 A3029', near)).toBe(near);
+    // A report a day behind reads the same on the page's clock; not here.
+    expect(metarObservedMs('KPMV 250935Z AUTO 02007KT 10SM CLR 12/08 A3029', near)).toBe(near - 86_400_000);
+    expect(metarObservedMs(null, near)).toBeNull();
+    expect(metarObservedMs('no time group here', near)).toBeNull();
+  });
+});
+
 
 describe('cloudsInTheirWords', () => {
   it('writes OVC as usairnet does, so an overcast report can agree', () => {

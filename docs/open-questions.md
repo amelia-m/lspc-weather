@@ -716,7 +716,7 @@ decodes it", differed on Offutt's temperatures alone: `TAF KOFF 241000Z
 2410/2516 … TX26/2420Z TN12/2510Z`. The app put the minimum on the 25th
 at 10Z, as the text says; aviationweather.gov's decode put it on the
 24th at 10Z, the forecast's start, a day early. Every other period and
-station agreed. Read again on 2026-10-26 at 09:4xZ, their decoder dated
+station agreed. Read again on 2026-10-26 at 09:35Z, their decoder dated
 12 of 12 TX/TN groups across 374 CONUS TAFs as written, so the fault is
 not constant, and the case (a group on the day after issuance, at the
 issuance hour) is not reproducible on demand. The check now asks whether
