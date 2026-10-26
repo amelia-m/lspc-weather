@@ -445,6 +445,11 @@ export interface Thresholds {
      *  12 kt, ". */
     bandIs: string;
     citation: Citation;
+    /** A fact about this drop zone that makes the lower limit bind nobody
+     *  here, as a sentence with its source and date, said wherever the
+     *  limit is named. The figure stays: it is the source's, and the link
+     *  vouches for it; the fact is the club's, and says so. */
+    notHere?: string;
   };
   /** Visibility, statute miles: the 105.17 row in use (`VISIBILITY_ROW`). */
   visibilityCautionSm: number;
@@ -701,8 +706,12 @@ const STUDENT: Thresholds = {
   // card and the hourly chart's legend each build theirs from
   // `windBandCaveat`, because it is about the
   // app's band, which Settings can move, and this one is about the BSR, which
-  // it cannot. Modelling canopy
-  // type is in docs/open-questions.md.
+  // it cannot. Whether to model canopy type waited on whether any student
+  // rig here has a round reserve; the maintainer's word on 2026-10-26 is
+  // that none does (docs/open-questions.md, "The Student profile models no
+  // canopy type"), so the figure is named with that fact beside it and no
+  // canopy model is built. An instructor's confirmation is still asked for
+  // on #citations (A1).
   windGuidance:
     'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it, by a written waiver.',
   windCitation: CITATIONS.uspaStudentWinds,
@@ -721,6 +730,7 @@ const STUDENT: Thresholds = {
     appliesTo: 'solo students on round reserves',
     bandIs: 'the 14 mph figure for ram-air canopies rounded down to whole knots',
     citation: CITATIONS.uspaStudentWinds,
+    notHere: 'No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26), so the lower figure binds nobody here.',
   },
   visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm,
 };

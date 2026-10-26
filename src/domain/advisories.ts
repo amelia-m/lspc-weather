@@ -420,7 +420,9 @@ export function lowerLimitUnchecked(t: Thresholds): boolean {
  *  theirs does not check it. Empty where the profile has none. */
 export function lowerLimitPublished(t: Thresholds, unit: SpeedUnit): string {
   const c = t.windBandCaveat;
-  return c ? `A lower maximum ground wind, ${fmtLimitSpeed(c.limitKt, unit)}, is published for ${c.appliesTo}.` : '';
+  if (!c) return '';
+  const published = `A lower maximum ground wind, ${fmtLimitSpeed(c.limitKt, unit)}, is published for ${c.appliesTo}.`;
+  return c.notHere ? `${published} ${c.notHere}` : published;
 }
 
 /** The flag's sentence: which figure it uses and, below it, what it leaves
@@ -428,7 +430,7 @@ export function lowerLimitPublished(t: Thresholds, unit: SpeedUnit): string {
 export function windBandSentence(t: Thresholds, unit: SpeedUnit): string {
   const use = windBandUse(t, unit);
   if (!use) return '';
-  return lowerLimitUnchecked(t) && t.windBandCaveat
-    ? `${use}, so below the band nothing on this page flags the lower limit for ${t.windBandCaveat.appliesTo}.`
-    : `${use}.`;
+  if (!lowerLimitUnchecked(t) || !t.windBandCaveat) return `${use}.`;
+  const unchecked = `${use}, so below the band nothing on this page flags the lower limit for ${t.windBandCaveat.appliesTo}.`;
+  return t.windBandCaveat.notHere ? `${unchecked} ${t.windBandCaveat.notHere}` : unchecked;
 }

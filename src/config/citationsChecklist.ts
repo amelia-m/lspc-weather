@@ -85,7 +85,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     },
     asks: [
       'The flag fires at 12 kt, which is 14 mph rounded down to whole knots. Is rounding down the right direction for a limit a jumper reads off this card?',
-      'The app has one Student profile and its band and flag use the 14 mph figure only; a student on a round reserve gets no flag at 10 mph, and the card says so. Does anyone at this DZ jump a round reserve?',
+      'The app has one Student profile and its band and flag use the 14 mph figure only; the card names the 10 mph round-reserve figure and says, on the maintainer’s word of 2026-10-26, that no student rig at LSPC carries a round reserve. Is that so for every student rig?',
     ],
   },
   {
@@ -167,7 +167,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     },
     asks: [
       'The club’s posted tiers are a standing waiver in the 2-2 sense. Has it been filed as one, and is the posted sign the current version?',
-      'Does the waiver reach the BSR’s 10 mph round-reserve figure, or does that still bind a waivered student on a round reserve? The Student card names that figure as one its band does not check; the waiver-tier cards say nothing about it until this is answered.',
+      'Does the waiver reach the BSR’s 10 mph round-reserve figure, or does that still bind a waivered student on a round reserve? Moot while no student rig here carries one (the maintainer, 2026-10-26; A1 asks for confirmation); the waiver-tier cards say nothing about it.',
     ],
   },
   {

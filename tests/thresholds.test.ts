@@ -373,6 +373,8 @@ describe('guidance says only what its own citation carries', () => {
     // flag (windBandSentence), so an edited caution can be named as such.
     expect(t.windBandCaveat?.appliesTo).toBe('solo students on round reserves');
     expect(t.windBandCaveat?.bandIs).toBe('the 14 mph figure for ram-air canopies rounded down to whole knots');
+    // The club's fact beside the source's figure, with its source and date.
+    expect(t.windBandCaveat?.notHere).toMatch(/No student rig at LSPC carries a round reserve \(the maintainer, 2026-10-26\)/);
     // And the band really is the ram-air figure, not the lower one.
     expect(resolveThresholds('student').windCautionKt).toBe(12);
   });
