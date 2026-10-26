@@ -946,7 +946,7 @@ Exercised since:
     reader meets, and the `/favicon.ico` 404 is gone from the deployed
     site.
 
-## The Student profile models no canopy type
+## Settled: the Student profile models no canopy type, and needs none
 
 BSR 2-1 H states two maximum ground winds for solo students: 14 mph on ram-air
 canopies, 10 mph on round reserves. The app has one Student profile with one
@@ -984,6 +984,20 @@ the 10 mph figure.
 The maintainer's call, 2026-10-10: leave both options until it is known
 whether any of the student rigs has a round reserve. Do not pick one before
 then.
+
+**Known, 2026-10-26, the maintainer's word: no student canopy at LSPC has
+a round reserve.** So neither option above is taken as written. No canopy
+model is built (the first option, dead weight here), and the published
+figure is not dropped (the second): BSR 2-1 H still states it, and the
+card's job is to keep the source's figure and say what the app does with
+it. The Surface wind card, the hourly chart's legend and the Student
+flag now name the 10 mph figure as before and add, beside it, that no
+student rig at LSPC carries a round reserve, with the source and date
+(`windBandCaveat.notHere`, `src/config/thresholds.ts`). That is a fact
+about the DZ from its maintainer, not an instructor's sign-off, so A1 on
+`#citations` still asks an instructor to confirm it for every student
+rig, and A5's question about the waiver reaching the figure is marked
+moot while it holds.
 
 ## Winds aloft
 

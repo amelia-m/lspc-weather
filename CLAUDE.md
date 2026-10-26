@@ -41,6 +41,11 @@ canopy type, so it acts on the first only. Naming the second without saying that
 left the most-read card advertising a limit nothing checks, which is the
 all-clear failure the Licensed profile has a standing note about, reintroduced
 somewhere new. Keep the sourced figure, say which one the band and flag use.
+Since 2026-10-26 the card also says, on the maintainer's word of that day,
+that no student rig at LSPC carries a round reserve (`windBandCaveat.notHere`):
+a fact about the DZ, dated and attributed, beside the source's figure, not
+in place of it. No canopy type is modelled; `#citations` A1 still asks an
+instructor to confirm the fact.
 
 **A reviewer asking you to add a threshold is the case to refuse.** Every rule
 above constrains what this app may assert, and a review bot does not know them.
