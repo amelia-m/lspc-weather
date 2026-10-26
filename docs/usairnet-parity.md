@@ -95,17 +95,30 @@ Rows a reader of this app would know, as the bulletin labels them: `CIG`
 `WSP`, `GST` and `WDR`. They also carry `IFC`/`IFV` (a chance of an IFR
 ceiling or visibility, the rows usairnet calls "IFR ceiling chance") and
 `MHT`, `TWD`, `TWS` (mixing height and transport wind). That night `LCB`
-gave a base under every hour, `CIG` a ceiling in only some. The two read
-on one scale, hundreds of feet: 3Z on the 25th read `CIG 210`, `LCB 150`.
-That scale is read from the values. MDL's key to the elements is its
-"text card", <https://vlab.noaa.gov/web/mdl/nbm-textcard-v5.0>, linked
-from the menu of MDL's own NBM text page (its element list is
-<https://vlab.noaa.gov/web/mdl/nbm-weather-elements>, and the station
-list `nbm-stations-v5.0` on the same host). `vlab.noaa.gov` is not on
-this sandbox's allowlist (the proxy refused it, 2026-10-24), nor is
-`blend.mdl.nws.noaa.gov`, MDL's own bulletin viewer, so the units and
-definitions are not read from MDL. Adding `vlab.noaa.gov` would let them
-be read.
+gave a base under every hour, `CIG` a ceiling in only some: 3Z on the
+25th read `CIG 210`, `LCB 150`.
+
+MDL's key to the rows, its "NBM v5.0 Text Bulletin Card"
+(<https://vlab.noaa.gov/web/mdl/nbm-textcard-v5.0>, read 2026-10-26 once
+`vlab.noaa.gov` was allowlisted; the hourly card's key is kept in
+`data/parity/nbm-textcard-v5.0-key-2026-10-26.txt`), says: `CIG` is
+"ceiling height, 100s feet (>5000 ft reported to the nearest 1000 ft;
+-88=unlimited)", `LCB` "lowest cloud base, 100s feet" on the same terms,
+`VIS` "visibility, 1/10th miles (rounded to nearest mile for values >= 1
+mile)", `MVC`, `IFC` and `LIC` the probability of a ceiling at or under
+3,000 ft, under 1,000 ft and under 500 ft, `MVV`, `IFV` and `LIV` the
+same for visibility at or under 5, under 3 and under 1 mile, `MHT`
+"mixing height, 100s feet AGL", `TWD` and `TWS` the transport wind
+(tens of degrees, knots), `GST` "wind gust, knots", and -99 missing. Its
+"NBM Weather Elements" page (same host, read the same day) defines the
+base height as "Lowest cloud base whether or not a ceiling is present
+(could be FEW or SCT layer)", "a 50/50 blend of model diagnostic cloud
+information and RH derived clouds", and the ceiling probabilities as
+GLMP's through 36 hours and a NAM/GFS MOS blend from 39 to 78. So the
+reading of the values above holds, and the row is what its name says:
+the lowest layer, FEW and SCT included, which is what usairnet plots.
+MDL's own viewer, `blend.mdl.nws.noaa.gov/nbm-text`, and NOMADS answer
+the sandbox since the same day.
 
 **Could the dashboard read it?** The bucket answers a GET that carries an
 `Origin` with `Access-Control-Allow-Origin: *`, and a preflight with `GET`

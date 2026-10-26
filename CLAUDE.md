@@ -332,7 +332,12 @@ map tiles (`tile.openstreetmap.org`, `*.tile.openstreetmap.de`,
 `earthdata.nasa.gov` and `heywhatsthat.com` (the receiver panorama in
 `docs/adsb-receiver.md`), and since 2026-10-20 `docs.github.com` and
 `developers.cloudflare.com` (GitHub's Actions limits and terms, and the
-Workers free tier, for the KOFF TAF relay in `docs/open-questions.md`). Reachable is not readable: `globe.adsb.fi`,
+Workers free tier, for the KOFF TAF relay in `docs/open-questions.md`),
+and since 2026-10-26 `vlab.noaa.gov` and `blend.mdl.nws.noaa.gov` (MDL's
+NBM text card and bulletin viewer), `nomads.ncep.noaa.gov` (NOAA's copy
+of the NBM bulletins; the S3 bucket `noaa-nbm-grib2-pds` answered
+before) and `www.flyaerodyne.com` (the Smart reserve's page, for the
+round-reserve question). Reachable is not readable: `globe.adsb.fi`,
 `api.adsb.one` and `airplanes.live` answer a script with Cloudflare's 403
 (airplanes.live's API asks for an emailed request first). The comparison artifacts can now be
 read from here with `curl -sL
