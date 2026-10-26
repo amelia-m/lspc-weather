@@ -134,7 +134,7 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       ...out,
       'usairnet page did not parse (markup changed?); nothing compared.',
       `page text: ${pageText || '(empty)'}`,
-      record({ kind: 'usairnet', at: startedAt, v: 3, error: 'usairnet: page did not parse', pageText }),
+      record({ kind: 'usairnet', at: startedAt, v: 4, error: 'usairnet: page did not parse', pageText }),
     ]);
     return;
   }
@@ -182,6 +182,7 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       ` · NOAA raw file ${rawFileObsAt?.slice(11, 16) ?? 'unread'}`,
   );
   out.push(`observed: dashboard ${localClock(ours.observedAt)} · usairnet as of ${theirs.asOf} (both ${ZONE})`);
+  if (theirs.rawMetar) out.push(`usairnet's METAR: ${theirs.rawMetar}`);
   const sameReport = localClock(ours.observedAt) === theirs.asOf;
   // usairnet gives a bare local clock; resolved to the date nearest the
   // dashboard's report so the two can be subtracted. Positive: the
@@ -280,9 +281,12 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       // 2: usairnet's page parsed for gusts, present weather and "Solid
       // Overcast", and a calm wind compared as no direction. 3: fractional
       // visibility parsed, 360° and 0° compared as one direction, and the
-      // app's sunset by NOAA's method. The summary leaves the rows each
-      // version changed out of older records (FIELD_SINCE_VERSION).
-      v: 3,
+      // app's sunset by NOAA's method. 4: usairnet's redesigned page read
+      // (2026-10-26; no run parsed it from 2026-10-09 13:24Z), with its
+      // raw METAR kept. The summary leaves the rows each version changed
+      // out of older records (FIELD_SINCE_VERSION).
+      v: 4,
+      theirRaw: theirs.rawMetar,
       ourObsAt: new Date(ours.observedAt).toISOString(),
       ourSource: chosen.source,
       rawFileObsAt,

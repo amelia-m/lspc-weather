@@ -31,7 +31,7 @@ import {
   type RawNwsObservation,
 } from '../src/domain/normalize';
 import { observedFlightCategory } from '../src/domain/flightCategory';
-import { decodeTaf, type DecodedTaf, type TafPeriod } from '../src/domain/taf';
+import { decodeTaf, type DecodedTaf, type TafPeriod, temperatureAsWritten } from '../src/domain/taf';
 import { fetchTafChain, NoCurrentTafError } from '../src/api/tafChain';
 import { TAF_RELAY_SET, tafRelayUrlFor } from '../src/config/tafRelay';
 import { describePassedOver } from '../src/domain/sourceProvenance';
@@ -336,7 +336,17 @@ describe(`sky decode parity for ${station}`, () => {
       });
       const temps = tempLines(ours, theirs);
       if (temps.ours.join(', ') !== temps.theirs.join(', ')) {
-        problems.push(`${t.icaoId} temperatures: ${temps.ours.join(', ') || '(none)'} vs ${temps.theirs.join(', ') || '(none)'}`);
+        // Their decoder has dated a group wrongly (2026-10-24: Offutt's
+        // TN12/2510Z put on the 24th, the forecast's start). When every
+        // group of ours sits on the day and hour its own text gives and the
+        // two sides differ only in time, the difference is theirs: said,
+        // not failed. Any other difference fails as before.
+        const figures = (lines: string[]): string => lines.map((l) => l.split(' ').slice(0, 2).join(' ')).join(', ');
+        const theirsOnly =
+          ours.temperatures.every(temperatureAsWritten) && figures(temps.ours) === figures(temps.theirs);
+        const line = `${t.icaoId} temperatures: ${temps.ours.join(', ') || '(none)'} vs ${temps.theirs.join(', ') || '(none)'}`;
+        if (theirsOnly) say(`[taf]  NOTE ${line} (aviationweather dates a group off the text; ours is as written)`);
+        else problems.push(line);
       }
     }
     for (const line of problems) say(`[taf]  DIFF ${line}`);

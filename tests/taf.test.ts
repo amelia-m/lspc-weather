@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseTaf } from '../src/domain/normalize';
-import { decodeTaf, periodFlightCategory, prevailingFor, resolveTafTime, tafOnScreenGone, type DecodedTaf } from '../src/domain/taf';
+import { decodeTaf, periodFlightCategory, prevailingFor, resolveTafTime, tafOnScreenGone, temperatureAsWritten, type DecodedTaf } from '../src/domain/taf';
 import { KLNK_2026_09_23_1120, KOMA_2026_09_24_0521 } from './support/tafProducts';
 
 const utc = (m: number, d: number, h: number, min = 0): number => Date.UTC(2026, m - 1, d, h, min);
@@ -262,6 +262,26 @@ describe('decodeTaf on the edges of the format', () => {
     const d = decodeTaf('KOMA 302320Z 0100/0124 13009KT P6SM SKC RMK NXT FCST BY 00Z', null)!;
     expect(d.periods).toHaveLength(1);
     expect(d.undecoded).toEqual([]);
+  });
+});
+
+describe('temperatureAsWritten', () => {
+  // Offutt's TAF of 2026-10-24 10Z, whose TN aviationweather.gov dated a
+  // day early. Issued 241000Z: the app puts TN12/2510Z on the 25th at 10Z.
+  const issued = Date.UTC(2026, 9, 24, 10);
+  const d = decodeTaf('TAF KOFF 241000Z 2410/2516 13009KT 9999 SCT180 QNH3012INS TX26/2420Z TN12/2510Z', issued)!;
+  it('is true when the group sits on the day and hour its text gives', () => {
+    expect(d.temperatures.map(temperatureAsWritten)).toEqual([true, true]);
+    expect(d.temperatures[1].atMs).toBe(Date.UTC(2026, 9, 25, 10));
+  });
+  it('is false for a time off the text, as aviationweather.gov dated that TN', () => {
+    expect(temperatureAsWritten({ ...d.temperatures[1], atMs: Date.UTC(2026, 9, 24, 10) })).toBe(false);
+    expect(temperatureAsWritten({ ...d.temperatures[1], atMs: null })).toBe(false);
+  });
+  it('reads an hour of 24 as midnight ending that day', () => {
+    const e = decodeTaf('TAF KOFF 241000Z 2410/2516 13009KT 9999 SCT180 TX26/2424Z', issued)!;
+    expect(e.temperatures[0].atMs).toBe(Date.UTC(2026, 9, 25, 0));
+    expect(temperatureAsWritten(e.temperatures[0])).toBe(true);
   });
 });
 

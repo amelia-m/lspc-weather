@@ -338,6 +338,30 @@ and warning classes. Where the cause of a difference is known, it is written in
 `docs/markschulze-altitude-reference.md`; where it is not, it is an open
 question in `docs/open-questions.md`.
 
+## usairnet's redesign: 17 days unread (2026-10-09 to 10-26)
+
+usairnet redesigned its station page ("Launch Code has a new look. Our
+first major redesign since the early days", its banner, read 2026-10-26),
+and the comparison's parser read none of it: the archived records hold
+one "page did not parse" on 2026-10-07 at 19:06Z, parsed pages again on
+the 8th and the 9th to 13:24Z, and from then every run to 2026-10-26,
+139 records in all, parsed nothing (the summary counts them as
+`unreadable`). Found on 2026-10-26 from the daily sky-parity logs, where
+the usairnet line is informational and so failed nothing; the `#parity`
+page's usairnet rows stopped growing on the 9th and nothing watched for
+that. The redesigned block, its formats, and the fixtures cut from live
+pages are described at the head of `src/domain/usairnet.ts`; the parser
+reads both layouts (the old is still served as `view=legacy`) and puts
+the cloud line in one wording, "Overcast" rather than the legacy "Solid
+Overcast", so the clouds row compares the same from either. The page now
+prints the raw METAR, kept in each record as `theirRaw` (`v: 4`), so a
+record can say which report usairnet decoded without resolving its
+clock. The rows' comparisons did not change, so no row is counted from
+`v: 4` only.
+
+What was lost: 17 days of same-report comparisons and arrival timings.
+The dashboard was not affected; nothing on it reads usairnet.
+
 ## Reading a summary
 
 - `from`/`to`: the span of runs summarised; `generatedAt`: when.

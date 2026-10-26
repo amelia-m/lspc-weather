@@ -467,7 +467,9 @@ fetches each week's (`.github/workflows/ceiling-data-refresh.yml`).
   row, one more than above: the week's reports reached 23Z on 10-22) and
   passed its tests. Its fetch step was skipped, the archive being current
   to the last whole day, so the step's first run on a runner is the
-  refresh of 2026-10-26.
+  refresh of 2026-10-26. That run had not started by 09:31Z (GitHub
+  started the week before's at 14:57Z, seven hours past the cron); its
+  outcome is recorded here once it has.
 - **How it was paired.** As the kept NWS forecasts are
   (docs/kept-forecasts-vs-kpmv.md): KPMV's report within 10 minutes of
   each hour, the nearest one, from every archive of KPMV's reports under

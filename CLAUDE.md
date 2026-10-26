@@ -609,7 +609,7 @@ shows, matched by observation time; also a report that never fails, since
 usairnet is a page scrape. `.github/workflows/comparisons.yml` also runs
 both eight times a day, about three hours apart and each scheduled at a
 different minute, so the samples spread over the day and every part of the
-hour (the daily sky-parity run is always about 13:00Z); the summary takes
+hour (the daily sky-parity run is scheduled for about 13:00Z; GitHub started it at 16:18Z and 16:52Z on 2026-10-24 and 25); the summary takes
 only artifacts from runs on `main`. Both print one `@@parity {json}` line per run,
 which every comparison run uploads as a `parity-<run id>` artifact (kept 14
 days). `.github/workflows/parity-summary.yml` combines them daily with
@@ -693,7 +693,8 @@ The comparison's "different runs" rule is shared with it (`rawGap`,
 `src/domain/runSplit.ts`), and so are the tool and metadata fetches
 (`scripts/schulzeFetch.ts`).
 `.github/workflows/ceiling-data-refresh.yml` (Mondays 07:41Z, and on
-dispatch) fetches the NDFD ceilings and KPMV's reports from the newest
+dispatch; GitHub started the 2026-10-19 run at 14:57Z, so check for it
+in the afternoon) fetches the NDFD ceilings and KPMV's reports from the newest
 kept record's day to the last whole UTC day, commits them under
 `data/parity/` with the ceiling-error page's rebuilt data file to `main`,
 and since 2026-10-23 Open-Meteo's archived wind and NDFD's wind, gust
@@ -718,5 +719,12 @@ and the summary counts each corrected row only from the version that fixed
 it (`FIELD_SINCE_VERSION`). A calm wind is compared as no direction on both
 sides: NWS's decode gives calm 0°, which no card shows. When the page will
 not parse, the record keeps the page's text near the station (`pageText`).
+usairnet redesigned the page about 2026-10-09 and nothing parsed it until
+2026-10-26, 17 days, because the usairnet line never fails a run and
+nothing watched the `#parity` rows stop growing (docs/source-parity.md,
+"usairnet's redesign"). The parser now reads both layouts (the old is
+still served as `view=legacy`), and records carry `v: 4` and the page's
+raw METAR. When a comparison that "never fails" goes quiet, the summary's
+`unreadable` count is where it shows; read it when checking a run.
 
 Open items live in `docs/open-questions.md`.
