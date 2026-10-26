@@ -432,12 +432,21 @@ direction each week for the page's NWS archive section, from 2026-04-01
 (docs/nws-gust-archive.md, "On the #wind-errors page"). Its first run on a
 runner is the refresh of 2026-10-26.
 
-Checked 2026-10-26 at 09:31Z: the scheduled run had not started. GitHub
-started the one scheduled run so far, 2026-10-19's, at 14:57Z, more than
-seven hours after its 07:41Z cron (the daily sky-parity run, scheduled
-about 13:00Z, started at 16:18Z and 16:52Z on the 24th and 25th), so a
-later check the same day is what settles it; the outcome goes here and
-in docs/surface-wind-sources.md, "The weekly run".
+It ran on 2026-10-26 (run 40340551073), started by GitHub at 14:32Z,
+nearly seven hours after its 07:41Z cron, as the week before's was
+(14:57Z; the daily sky-parity run, scheduled about 13:00Z, started at
+16:18Z and 16:52Z on the 24th and 25th). Every step passed, the wind
+fetches' first runs on a runner included: 32 NDFD ceiling issuances and
+569 KPMV reports for 2026-10-18 to 10-25, 96 Open-Meteo wind hours (192
+records, both runs) and 16 NDFD issuances each of speed, gust and
+direction for 10-22 to 10-25, the four archives committed to `main` as
+"Ceiling and wind data to 2026-10-25" (2f67fd3) with both rebuilt files,
+and the deploy and live-site check passed. The `#wind-errors` file runs
+to 2026-10-26 on the kept and NDFD sections and 2026-10-25 on the
+Open-Meteo one: the kept section's latest-issuance row went from
+223 to 296 hours, the NDFD archive's from 4789 to 4862, and
+the Open-Meteo archive's start-of-run row from 4790 to 4862. Nothing
+to fix. Also in docs/surface-wind-sources.md, "The weekly run".
 
 ## Forecasts kept for later
 
