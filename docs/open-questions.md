@@ -718,6 +718,25 @@ in a browser". The hashes are taken from the bundle each time, so a
 rotated proxy CA needs nothing changed. What the first load found is
 under "Live-site smoke test" below.
 
+## Issue #208: a 3 px sideways scroll at 320 px, seen once
+
+The live-site check of 2026-10-24 at 04:43Z (run 40063461188, head
+632789c) opened issue #208: the Jumpers and Pilots tabs at 320 px were
+323 px wide, on both loads; every other page and width passed. Read on
+2026-10-26: the run 19 minutes before it, on head 166f6ce, which has the
+same app code (632789c changed docs only), passed, and so did every run
+since, twelve to 2026-10-26 23:25Z, including one on the 24th at 16:21Z
+before any further app change. So it was the data of that quarter hour,
+not the code deployed; what element was 3 px past the edge is not known,
+because the check recorded the page's width and nothing else. PR #210
+(deployed 2026-10-25 16:41Z) positioned the 10-day and TAF scrollers so
+their screen-reader labels cannot widen the page, which is one way a
+reach row shown on both tabs could have done it, but that is a
+candidate, not a finding. Since 2026-10-26 the check names the innermost
+elements past the edge when a page scrolls sideways (`overflowReport`,
+`scripts/liveSiteDom.ts`), so a repeat can be traced. The issue is the
+maintainer's to close, with this section as the why.
+
 ## Issue #209: aviationweather.gov dated a TN a day early; and a timeout
 
 The sky-parity run of 2026-10-24 (run 40110944332) opened issue #209.

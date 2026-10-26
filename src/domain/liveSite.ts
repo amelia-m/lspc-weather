@@ -43,12 +43,40 @@ export interface LoadObservation {
   consoleErrors: string[];
   scrollWidth: number;
   viewportWidth: number;
+  /** The elements past the viewport's right edge, read only when the page
+   *  is wider than it (scripts/liveSiteDom.ts); absent otherwise. */
+  overflowing?: OverflowingBox[];
   /** The error boundary's screen was showing. */
   crashed: boolean;
   /** The Data health card's rows, or null on a page without the card. */
   sources: SourceRow[] | null;
   /** The page's own checks: the radar image drew, the summary loaded. */
   checks: { name: string; ok: boolean; detail?: string }[];
+}
+
+/** One element past the viewport's edge: its tag, id and classes as a
+ *  selector-like path, where its right edge is, how wide it is, and the
+ *  index (in the same list) of its nearest ancestor that is also past the
+ *  edge, or null. */
+export interface OverflowingBox {
+  path: string;
+  right: number;
+  width: number;
+  parent: number | null;
+}
+
+/** The elements to name for a sideways scroll: the innermost ones past
+ *  the edge (an ancestor is past it only because a descendant is), the
+ *  farthest out first, at most `max`. Issue #208 gave a width and nothing
+ *  to look at; this is what a repeat should give. */
+export function overflowReport(boxes: OverflowingBox[], max = 5): string[] {
+  const hasChildPast = new Set(boxes.map((b) => b.parent).filter((p): p is number => p != null));
+  return boxes
+    .map((b, i) => ({ b, i }))
+    .filter(({ i }) => !hasChildPast.has(i))
+    .sort((x, y) => y.b.right - x.b.right)
+    .slice(0, max)
+    .map(({ b }) => `${b.path} (right edge ${b.right} px, ${b.width} px wide)`);
 }
 
 export interface LoadVerdict {
@@ -71,7 +99,11 @@ export function judgeLoad(o: LoadObservation, opts: JudgeOptions = {}): LoadVerd
   for (const f of o.ownFailures) faults.push(`site file not served: ${f}`);
   // A pixel of rounding is not a sideways scroll.
   if (o.scrollWidth > o.viewportWidth + 1) {
-    faults.push(`scrolls sideways: ${o.scrollWidth} px wide in a ${o.viewportWidth} px viewport`);
+    const past = overflowReport(o.overflowing ?? []);
+    faults.push(
+      `scrolls sideways: ${o.scrollWidth} px wide in a ${o.viewportWidth} px viewport` +
+        (past.length ? `; past the edge: ${past.join('; ')}` : ''),
+    );
   }
   for (const s of o.sources ?? []) {
     if (s.state === 'error') faults.push(`${s.name}: ${s.meta}`);

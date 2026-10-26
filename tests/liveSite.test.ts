@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { judgeLoad, pagePasses, type LoadObservation } from '../src/domain/liveSite';
+import { judgeLoad, overflowReport, pagePasses, type LoadObservation, type OverflowingBox } from '../src/domain/liveSite';
 import { TAF_RELAY_FAILED } from '../src/domain/sourceProvenance';
 
 const clean: LoadObservation = {
@@ -106,6 +106,34 @@ describe('judgeLoad', () => {
 
   it('reads a page without the Data health card as having no sources to judge', () => {
     expect(judgeLoad({ ...clean, sources: null }).faults).toEqual([]);
+  });
+});
+
+describe('overflowReport', () => {
+  // A card past the edge because its strip is, because a column is: the
+  // column is what to look at. A second, unrelated element sits further out.
+  const boxes: OverflowingBox[] = [
+    { path: 'div.panel', right: 323, width: 300, parent: null },
+    { path: 'div.sky-scroll', right: 323, width: 290, parent: 0 },
+    { path: 'div.sky-col', right: 323, width: 20, parent: 1 },
+    { path: 'img.radar-img', right: 340, width: 340, parent: null },
+  ];
+  it('names the innermost elements past the edge, farthest out first', () => {
+    expect(overflowReport(boxes)).toEqual([
+      'img.radar-img (right edge 340 px, 340 px wide)',
+      'div.sky-col (right edge 323 px, 20 px wide)',
+    ]);
+  });
+  it('stops at the limit, and gives nothing for nothing', () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ path: `p.x${i}`, right: 330 + i, width: 10, parent: null }));
+    expect(overflowReport(many, 3).map((s) => s.split(' ')[0])).toEqual(['p.x7', 'p.x6', 'p.x5']);
+    expect(overflowReport([])).toEqual([]);
+  });
+  it('is written into the sideways-scroll fault when the load recorded any', () => {
+    const v = judgeLoad({ ...clean, scrollWidth: 323, viewportWidth: 320, overflowing: boxes });
+    expect(v.faults).toEqual([
+      'scrolls sideways: 323 px wide in a 320 px viewport; past the edge: img.radar-img (right edge 340 px, 340 px wide); div.sky-col (right edge 323 px, 20 px wide)',
+    ]);
   });
 });
 
