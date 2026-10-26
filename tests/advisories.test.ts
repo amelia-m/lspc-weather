@@ -575,9 +575,9 @@ describe('an empty advisory list is not an all-clear', () => {
     for (const current of [breezy, null]) {
       const kt = note(withoutGlossaryLinks(windPanel(t, 'Student', 'kt', current)));
       expect(kt).toContain('A lower maximum ground wind, 8.7 kt, is published for solo students on round reserves.');
-      // The figure is the BSR's; that it binds nobody here is the club's fact, dated.
-      expect(kt).toContain('No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26), so the lower figure binds nobody here.');
-      expect(kt).toContain('The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so neither checks the lower one.');
+      // The figure is the BSR's; that it binds nobody here is the club's
+      // fact, dated, after what the band leaves unchecked.
+      expect(kt).toContain('The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so neither checks the lower one. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26; confirmation asked on the citations page), so that figure binds no student at this drop zone.');
       expect(kt).toContain(CITATIONS.uspaStudentWinds.url);
       expect(note(windPanel(t, 'Student', 'mph', current))).toContain('A lower maximum ground wind, 10 mph,');
     }
@@ -813,7 +813,7 @@ describe('a limit edited in Settings is not presented as the published one', () 
     const g = wind(withOverrides(DEFAULT_THRESHOLDS.student))?.guidance ?? '';
     expect(g).toContain('10 mph on round reserves');
     expect(g).toContain(
-      'The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so below the band nothing on this page flags the lower limit for solo students on round reserves. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26), so the lower figure binds nobody here.',
+      'The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so below the band nothing on this page flags the lower limit for solo students on round reserves. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26; confirmation asked on the citations page), so that figure binds no student at this drop zone.',
     );
   });
 
@@ -830,7 +830,7 @@ describe('a limit edited in Settings is not presented as the published one', () 
     expect(low).not.toContain('below the band');
     // Nothing unchecked, so no round-reserve fact to give either (the
     // guidance still quotes the BSR's two figures).
-    expect(low).not.toContain('binds nobody here');
+    expect(low).not.toContain('binds no student');
     // The source's own figures stay: they are what the link vouches for.
     expect(g).toContain('14 mph (~12 kt) on ram-air canopies');
   });

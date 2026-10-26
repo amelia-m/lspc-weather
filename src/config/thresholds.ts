@@ -446,8 +446,12 @@ export interface Thresholds {
     bandIs: string;
     citation: Citation;
     /** A fact about this drop zone that makes the lower limit bind nobody
-     *  here, as a sentence with its source and date, said wherever the
-     *  limit is named. The figure stays: it is the source's, and the link
+     *  here, as a sentence with its source and date. The Surface wind
+     *  card, the hourly chart's legend and the flag each add it after
+     *  saying what they leave unchecked (`withNotHere`), so it is absent
+     *  when the band is low enough to check the lower limit and nothing is
+     *  left unchecked; `windGuidance` quotes both of the source's figures
+     *  either way. The figure stays: it is the source's, and the link
      *  vouches for it; the fact is the club's, and says so. */
     notHere?: string;
   };
@@ -688,6 +692,19 @@ const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
  *  dashboard's own 25 kt caution band, which fired a flag nobody could check. */
 const LICENSED_BAR_SCALE_KT = 25;
 
+/** The one fact about this drop zone the Student profile's wind figures
+ *  rest on, with its source and date, so the card, the flag and the
+ *  `#citations` asks all say the same thing and move together when an
+ *  instructor confirms it (A1). Not an instructor's sign-off. */
+export const STUDENT_ROUND_RESERVE_FACT = {
+  source: 'the maintainer',
+  date: '2026-10-26',
+  claim: 'no student rig at LSPC carries a round reserve',
+  get sentence(): string {
+    return `No student rig at LSPC carries a round reserve (${this.source}, ${this.date}; confirmation asked on the citations page), so that figure binds no student at this drop zone.`;
+  },
+} as const;
+
 const STUDENT: Thresholds = {
   windCautionKt: STUDENT_WIND_KT,
   // "Maximum", not "recommends": BSR 2-1 H states a maximum, and the [S]
@@ -708,10 +725,11 @@ const STUDENT: Thresholds = {
   // app's band, which Settings can move, and this one is about the BSR, which
   // it cannot. Whether to model canopy type waited on whether any student
   // rig here has a round reserve; the maintainer's word on 2026-10-26 is
-  // that none does (docs/open-questions.md, "The Student profile models no
-  // canopy type"), so the figure is named with that fact beside it and no
-  // canopy model is built. An instructor's confirmation is still asked for
-  // on #citations (A1).
+  // that none does (STUDENT_ROUND_RESERVE_FACT; docs/open-questions.md,
+  // "Settled: the Student profile models no canopy type, and needs none"),
+  // so the figure is named with that fact beside it and no canopy model is
+  // built. An instructor's confirmation is still asked for on #citations
+  // (A1).
   windGuidance:
     'USPA BSR maximum ground winds for solo students: 14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves. An S&TA or Examiner may waive it, by a written waiver.',
   windCitation: CITATIONS.uspaStudentWinds,
@@ -730,7 +748,7 @@ const STUDENT: Thresholds = {
     appliesTo: 'solo students on round reserves',
     bandIs: 'the 14 mph figure for ram-air canopies rounded down to whole knots',
     citation: CITATIONS.uspaStudentWinds,
-    notHere: 'No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26), so the lower figure binds nobody here.',
+    notHere: STUDENT_ROUND_RESERVE_FACT.sentence,
   },
   visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm,
 };
@@ -809,7 +827,9 @@ function waiverThresholds(tier: WaiverTier): Thresholds {
     // Not inherited from STUDENT. The posted policy waives "the wind limits
     // stated in the BSRs" without naming canopy type, and whether that
     // reaches the 10 mph round-reserve figure is the club's call, asked in
-    // A5 on the citations page. Stating it on the card would settle it.
+    // A5 on the citations page and moot while no student rig here carries
+    // a round reserve (STUDENT_ROUND_RESERVE_FACT); the tier cards say
+    // nothing about it.
     windBandCaveat: undefined,
     windGuidance:
       `LSPC waivered limit (students, ${tier.label}): max wind ${tier.windMph} mph, gusts under ${tier.gustMph} mph. ` +
