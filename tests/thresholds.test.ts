@@ -11,6 +11,7 @@ import { VISIBILITY_ROW, VISIBILITY_ROWS,
   resolveThresholds,
   WAIVER_TIERS,
   type WindProfileId,
+  STUDENT_ROUND_RESERVE_FACT,
 } from '../src/config/thresholds';
 
 describe('openingMinimum', () => {
@@ -373,9 +374,17 @@ describe('guidance says only what its own citation carries', () => {
     // flag (windBandSentence), so an edited caution can be named as such.
     expect(t.windBandCaveat?.appliesTo).toBe('solo students on round reserves');
     expect(t.windBandCaveat?.bandIs).toBe('the 14 mph figure for ram-air canopies rounded down to whole knots');
-    // The club's fact beside the source's figure, with its source and date.
-    expect(t.windBandCaveat?.notHere).toMatch(/No student rig at LSPC carries a round reserve \(the maintainer, 2026-10-26\)/);
     // And the band really is the ram-air figure, not the lower one.
     expect(resolveThresholds('student').windCautionKt).toBe(12);
+  });
+
+  /* Not the citation's: the club's own fact, said beside the BSR's figure
+   * with its source and date, and pointing at the page that asks an
+   * instructor to confirm it. One constant feeds the card and #citations. */
+  it('carries the drop zone’s round-reserve fact, attributed and dated, from the one constant the asks use', () => {
+    const t = resolveThresholds('student');
+    expect(t.windBandCaveat?.notHere).toBe(STUDENT_ROUND_RESERVE_FACT.sentence);
+    expect(STUDENT_ROUND_RESERVE_FACT.sentence).toContain(`(${STUDENT_ROUND_RESERVE_FACT.source}, ${STUDENT_ROUND_RESERVE_FACT.date}; confirmation asked on the citations page)`);
+    expect(STUDENT_ROUND_RESERVE_FACT.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

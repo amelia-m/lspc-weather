@@ -265,7 +265,7 @@ describe('HourlyChart limit lines', () => {
     // The Surface wind card's standing note, carried to the chart: the line
     // is the ram-air figure, and a reader on a round reserve has a lower one.
     expect(text(withoutGlossaryLinks(legend(resolveThresholds('student'))))).toContain(
-      'A lower maximum ground wind, 10 mph, is published for solo students on round reserves. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26), so the lower figure binds nobody here. The limit line is not it.',
+      'A lower maximum ground wind, 10 mph, is published for solo students on round reserves. The limit line is not it. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26; confirmation asked on the citations page), so that figure binds no student at this drop zone.',
     );
     // A waiver tier has no such caveat (the club's call, A5 on #citations).
     expect(legend(resolveThresholds('waiver:0-5'))).not.toContain('round reserves');

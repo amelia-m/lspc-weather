@@ -991,9 +991,11 @@ model is built (the first option, dead weight here), and the published
 figure is not dropped (the second): BSR 2-1 H still states it, and the
 card's job is to keep the source's figure and say what the app does with
 it. The Surface wind card, the hourly chart's legend and the Student
-flag now name the 10 mph figure as before and add, beside it, that no
-student rig at LSPC carries a round reserve, with the source and date
-(`windBandCaveat.notHere`, `src/config/thresholds.ts`). That is a fact
+flag name the 10 mph figure as before and, where each says what it
+leaves unchecked, add that no student rig at LSPC carries a round
+reserve, with the source and date (`STUDENT_ROUND_RESERVE_FACT`,
+`windBandCaveat.notHere`, `src/config/thresholds.ts`; the guidance line
+quotes both of the BSR's figures either way, without the fact). That is a fact
 about the DZ from its maintainer, not an instructor's sign-off, so A1 on
 `#citations` still asks an instructor to confirm it for every student
 rig, and A5's question about the waiver reaching the figure is marked

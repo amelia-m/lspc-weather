@@ -1,7 +1,7 @@
 import type { CurrentConditions } from '../domain/types';
 import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../domain/units';
 import { EDITABLE_LIMITS, hasWindLimit, isEdited, isOwnLimit, ownLimits, type Thresholds } from '../config/thresholds';
-import { lowerLimitPublished, lowerLimitUnchecked, windBandUse } from '../domain/advisories';
+import { lowerLimitPublished, lowerLimitUnchecked, windBandUse, withNotHere } from '../domain/advisories';
 import { DATA_SOURCES } from '../config/sources';
 import { spreadLabels } from './format';
 import { Panel } from './common/Panel';
@@ -116,7 +116,7 @@ export function SurfaceWindPanel({
   const showCaveat = caveat != null && lowerLimitUnchecked(t);
   const caveatText = showCaveat
     ? splitGlossaryTerms(
-        `${lowerLimitPublished(t, unit)} ${windBandUse(t, unit)}, so neither checks the lower one.`,
+        withNotHere(`${lowerLimitPublished(t, unit)} ${windBandUse(t, unit)}, so neither checks the lower one.`, t),
         linkableTerms([caveat.citation]),
       )
     : [];

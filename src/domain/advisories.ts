@@ -420,9 +420,16 @@ export function lowerLimitUnchecked(t: Thresholds): boolean {
  *  theirs does not check it. Empty where the profile has none. */
 export function lowerLimitPublished(t: Thresholds, unit: SpeedUnit): string {
   const c = t.windBandCaveat;
-  if (!c) return '';
-  const published = `A lower maximum ground wind, ${fmtLimitSpeed(c.limitKt, unit)}, is published for ${c.appliesTo}.`;
-  return c.notHere ? `${published} ${c.notHere}` : published;
+  return c ? `A lower maximum ground wind, ${fmtLimitSpeed(c.limitKt, unit)}, is published for ${c.appliesTo}.` : '';
+}
+
+/** A sentence about the lower limit, followed by the drop zone's fact that
+ *  it binds nobody here (`windBandCaveat.notHere`) where the profile has
+ *  one. The card, the chart's legend and the flag each end their sentence
+ *  with it, so the three cannot say the fact differently. */
+export function withNotHere(sentence: string, t: Thresholds): string {
+  const fact = t.windBandCaveat?.notHere;
+  return fact ? `${sentence} ${fact}` : sentence;
 }
 
 /** The flag's sentence: which figure it uses and, below it, what it leaves
@@ -431,6 +438,5 @@ export function windBandSentence(t: Thresholds, unit: SpeedUnit): string {
   const use = windBandUse(t, unit);
   if (!use) return '';
   if (!lowerLimitUnchecked(t) || !t.windBandCaveat) return `${use}.`;
-  const unchecked = `${use}, so below the band nothing on this page flags the lower limit for ${t.windBandCaveat.appliesTo}.`;
-  return t.windBandCaveat.notHere ? `${unchecked} ${t.windBandCaveat.notHere}` : unchecked;
+  return withNotHere(`${use}, so below the band nothing on this page flags the lower limit for ${t.windBandCaveat.appliesTo}.`, t);
 }

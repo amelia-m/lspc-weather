@@ -2,7 +2,7 @@ import { useId } from 'react';
 import type { HourlyPoint } from '../../domain/types';
 import { fmtLimitSpeed, toSpeed, type SpeedUnit } from '../../domain/units';
 import { limitLines, type Thresholds } from '../../config/thresholds';
-import { lowerLimitPublished, lowerLimitUnchecked } from '../../domain/advisories';
+import { lowerLimitPublished, lowerLimitUnchecked, withNotHere } from '../../domain/advisories';
 import { SourceLink } from './SourceLink';
 import { SimTermSegments } from './SimTerm';
 import { linkableTerms, splitGlossaryTerms } from '../../config/simGlossary';
@@ -346,7 +346,7 @@ export function HourlyLegend({
               {' '}
               <SimTermSegments
                 segments={splitGlossaryTerms(
-                  `${lowerLimitPublished(limits, unit)} The limit line is not it.`,
+                  withNotHere(`${lowerLimitPublished(limits, unit)} The limit line is not it.`, limits),
                   // The paragraph cites the limit lines' source, and the
                   // sentence's figure is the caveat's: neither may sit
                   // beside a glossary link to the document it cites.
