@@ -467,9 +467,13 @@ fetches each week's (`.github/workflows/ceiling-data-refresh.yml`).
   row, one more than above: the week's reports reached 23Z on 10-22) and
   passed its tests. Its fetch step was skipped, the archive being current
   to the last whole day, so the step's first run on a runner is the
-  refresh of 2026-10-26. That run had not started by 09:31Z (GitHub
-  started the week before's at 14:57Z, seven hours past the cron); its
-  outcome is recorded here once it has.
+  refresh of 2026-10-26. That run (40340551073, started by GitHub at
+  14:32Z, seven hours past the cron) fetched 96 hours for 10-22 to 10-25
+  (192 records, both runs), committed them as
+  `data/parity/om-wind-2026-10-22-to-2026-10-25.jsonl.gz`, and rebuilt
+  this section to 2026-10-25: the start-of-run row went from
+  4790 to 4862 hours. docs/open-questions.md, "Done: the #wind-errors
+  page refreshes weekly", has the whole run.
 - **How it was paired.** As the kept NWS forecasts are
   (docs/kept-forecasts-vs-kpmv.md): KPMV's report within 10 minutes of
   each hour, the nearest one, from every archive of KPMV's reports under
