@@ -52,6 +52,7 @@
  * Pure: HTML in, fields out.
  */
 import type { SkyLayer } from './types';
+import { resolveTafTime } from './taf';
 
 /** The fields usairnet prints for a station, as the page states them. */
 export interface UsairnetObs {
@@ -63,6 +64,12 @@ export interface UsairnetObs {
   visibilityMi: number | null;
   pressureInHg: number | null;
   flightRule: string | null;
+  /** A qualifier the redesigned page adds after the rule, "(at least)",
+   *  where the METAR has no sky group and the visibility alone sets a
+   *  floor (KHEQ, 2026-10-26); null otherwise. Kept apart so the rule
+   *  itself still compares with the dashboard's, which withholds VFR on
+   *  such a report for the same reason. */
+  flightRuleNote: string | null;
   windMph: number | null; // 0 for "Calm"
   windGustMph: number | null;
   /** null for calm, and for a variable wind, which the page prints as a
@@ -116,29 +123,40 @@ const str = (block: string, re: RegExp): string | null => block.match(re)?.[1]?.
 
 /** The redesigned layout (2026-10-09 on). */
 function parseModernBlock(block: string): UsairnetObs | null {
-  // "(KPMV)|54°F|Clear|Observed Oct 26, 04:15 AM CDT": the weather, when
-  // there is any, follows the sky as more parts ("|Light rain, mist|").
-  const head = block.match(/\(\w{4}\)\|(-?\d+)°F\|(.*?)\|Observed (?:[A-Z][a-z]{2} \d{1,2}, )?(\d{1,2}):(\d{2}) ([AP]M)/);
-  if (!head) return null;
-  // The comparison's clock has no leading zero ("4:15 AM"); the page's has.
-  const asOf = `${Number(head[3])}:${head[4]} ${head[5]}`;
+  // "Observed Oct 26, 04:15 AM CDT": the comparison's clock has no leading
+  // zero ("4:15 AM"); the page's has. Read apart from the heading, so a
+  // report with no temperature group still gives its clock and the rest.
+  const obs = block.match(/\|Observed (?:[A-Z][a-z]{2} \d{1,2}, )?(\d{1,2}):(\d{2}) ([AP]M)/);
+  if (!obs) return null;
+  const asOf = `${Number(obs[1])}:${obs[2]} ${obs[3]}`;
+  // "(KPMV)|54°F|Clear|Observed …": the weather, when there is any, follows
+  // the sky as more parts ("|Light rain, mist|").
+  const head = block.match(/\(\w{4}\)\|(-?\d+)°F\|(.*?)\|Observed /);
   // "7 mph|10° from", "15 mph|40° from|Gust 21", "Calm", or "Not reported"
-  // when the METAR has no wind group (KHYS, 2026-10-26).
+  // when the METAR has no wind group (KHYS, 2026-10-26). Each part is read
+  // on its own, so a gust is found whatever the page puts between the
+  // speed and it for a variable wind, a form not yet seen on this layout
+  // (the legacy page printed a variable wind as a speed alone).
   const windText = str(block, /Wind Data\|(.*?)\|?(?:Cloud level|$)/);
   const calm = windText != null && /^Calm\b/i.test(windText);
-  const wind = windText?.match(/^(\d+) mph(?:\|(\d+)° from)?(?:\|Gust (\d+))?/);
+  const speed = windText?.match(/^(\d+) mph/);
+  const dir = windText?.match(/\|(\d+)° from/);
+  const gust = windText?.match(/\|Gust (\d+)/);
+  // "VFR", or "MVFR (at least)" where only the visibility set it.
+  const rule = str(block, /Flight rule\|([^|]+)/)?.match(/^(\w+)(?: (.*))?$/);
   return {
     asOf,
-    tempF: Number(head[1]),
-    condition: head[2].split('|').map((s) => s.trim()).join(', '),
+    tempF: head ? Number(head[1]) : null,
+    condition: head ? head[2].split('|').map((s) => s.trim()).join(', ') : null,
     humidityPct: num(block, /Rel\. humidity\|(\d+)%/),
     dewpointF: num(block, /Dew point\|(-?\d+)°F/),
     visibilityMi: milesFrom(str(block, /Visibility\|([\d./ ]+?) mi\b/)),
     pressureInHg: num(block, /Pressure\|([\d.]+) inHg/),
-    flightRule: str(block, /Flight rule\|(\w+)/),
-    windMph: calm ? 0 : wind ? Number(wind[1]) : null,
-    windGustMph: wind?.[3] != null ? Number(wind[3]) : null,
-    windDirDeg: wind?.[2] != null ? Number(wind[2]) : null,
+    flightRule: rule?.[1] ?? null,
+    flightRuleNote: rule?.[2] ?? null,
+    windMph: calm ? 0 : speed ? Number(speed[1]) : null,
+    windGustMph: gust ? Number(gust[1]) : null,
+    windDirDeg: dir ? Number(dir[1]) : null,
     windText,
     clouds: cloudsInOneWording(str(block, /Cloud level\(s\): ([^|]+)/)),
     sunrise: str(block, /\|Sunrise\|(\d{1,2}:\d{2} [AP]M)/),
@@ -182,6 +200,7 @@ function parseLegacyBlock(block: string): UsairnetObs | null {
     visibilityMi: milesFrom(str(block, /Visibility: ([\d./ ]+?) Miles?/)),
     pressureInHg: num(block, /Pressure: ([\d.]+) in/),
     flightRule: str(block, /Flight Rule: (\w+)/),
+    flightRuleNote: null,
     windMph: calm ? 0 : wind ? Number(wind[1]) : null,
     windGustMph: wind?.[2] != null ? Number(wind[2]) : null,
     windDirDeg: wind?.[3] != null ? Number(wind[3]) : null,
@@ -192,6 +211,18 @@ function parseLegacyBlock(block: string): UsairnetObs | null {
     sunset: str(block, /\|Sunset:\|(\d{1,2}:\d{2} [AP]M)/),
     rawMetar: null,
   };
+}
+
+/** When the METAR usairnet's page prints was taken, from its own time
+ *  group ("KPMV 260935Z …"), dated to the month of `nearMs` (the
+ *  dashboard's report; a day at a month's end rolls as `resolveTafTime`
+ *  does). The page's clock is a wall time with no date, so two reports a
+ *  day apart read alike by it; the time group settles which report the
+ *  page decoded. null when the text has no time group, or on the legacy
+ *  layout, which prints no METAR. */
+export function metarObservedMs(raw: string | null, nearMs: number): number | null {
+  const m = raw?.match(/^\w{4} (\d{2})(\d{2})(\d{2})Z/);
+  return m ? resolveTafTime(Number(m[1]), Number(m[2]), Number(m[3]), nearMs) : null;
 }
 
 /** "10", "2.5", "1/2" or "1 1/4" as miles; null for anything else. */

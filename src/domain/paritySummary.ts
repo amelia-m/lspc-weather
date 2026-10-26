@@ -93,8 +93,10 @@ export interface UsairnetRecord {
    *  from 2026-10-26 (usairnet's redesigned page); absent before. See
    *  FIELD_SINCE_VERSION. */
   v?: number;
-  /** The METAR as usairnet's redesigned page prints it (from v 4). */
+  /** The METAR as usairnet's redesigned page prints it (from v 4), and
+   *  the qualifier it adds to the flight rule ("(at least)") when one. */
   theirRaw?: string | null;
+  theirRuleNote?: string | null;
   /** usairnet's page text near the station, kept when the page did not
    *  parse (from 2026-10-03). */
   pageText?: string;

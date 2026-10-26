@@ -188,10 +188,11 @@ export function ParityContext(): JSX.Element {
           so a repeat can be explained.
         </li>
         <li>
-          <strong>Overcast:</strong> usairnet writes &ldquo;Solid Overcast&rdquo;; the FAA&rsquo;s word,
-          which this dashboard uses, is &ldquo;Overcast&rdquo;. Clouds agreed in 72 of 120 same-report
-          runs to Sep 29, and in 576 of 576 once the comparison used usairnet&rsquo;s word (to Oct
-          2).
+          <strong>Overcast:</strong> usairnet&rsquo;s page wrote &ldquo;Solid Overcast&rdquo; until its
+          redesign of Oct 9, and &ldquo;Overcast&rdquo; since; the FAA&rsquo;s word, which this
+          dashboard uses, is &ldquo;Overcast&rdquo;, and the comparison reads either page&rsquo;s as
+          one. Clouds agreed in 72 of 120 same-report runs to Sep 29, and in 576 of 576 once the
+          comparison used the page&rsquo;s word (to Oct 2).
         </li>
         <li>
           <strong>Rain or fog in usairnet&rsquo;s heading</strong> hid the temperature from the

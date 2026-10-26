@@ -44,6 +44,7 @@ import {
   parseUsairnet,
   sameDirection,
   type UsairnetObs,
+  metarObservedMs,
 } from '../src/domain/usairnet';
 
 const station = SITE.metarStation.id;
@@ -183,11 +184,14 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
   );
   out.push(`observed: dashboard ${localClock(ours.observedAt)} · usairnet as of ${theirs.asOf} (both ${ZONE})`);
   if (theirs.rawMetar) out.push(`usairnet's METAR: ${theirs.rawMetar}`);
-  const sameReport = localClock(ours.observedAt) === theirs.asOf;
-  // usairnet gives a bare local clock; resolved to the date nearest the
-  // dashboard's report so the two can be subtracted. Positive: the
-  // dashboard had the newer report.
-  const theirObsMs = resolveLocalClock(theirs.asOf, ours.observedAt, ZONE);
+  if (theirs.flightRuleNote) out.push(`usairnet's flight rule is qualified: ${theirs.flightRule} ${theirs.flightRuleNote}`);
+  // Which report the page decoded: from the time group of the METAR it
+  // prints (the redesigned layout), else from its bare local clock,
+  // resolved to the date nearest the dashboard's report. A clock alone
+  // reads two reports a day apart as one. Positive gap: the dashboard
+  // had the newer report.
+  const theirObsMs = metarObservedMs(theirs.rawMetar, ours.observedAt) ?? resolveLocalClock(theirs.asOf, ours.observedAt, ZONE);
+  const sameReport = theirObsMs != null ? theirObsMs === ours.observedAt : localClock(ours.observedAt) === theirs.asOf;
   const obsGapMin = theirObsMs == null ? null : Math.round((ours.observedAt - theirObsMs) / 60_000);
   const startedMs = Date.parse(startedAt);
   out.push(
@@ -287,6 +291,7 @@ it('prints the dashboard’s decode of the latest observation beside usairnet’
       // out of older records (FIELD_SINCE_VERSION).
       v: 4,
       theirRaw: theirs.rawMetar,
+      theirRuleNote: theirs.flightRuleNote,
       ourObsAt: new Date(ours.observedAt).toISOString(),
       ourSource: chosen.source,
       rawFileObsAt,

@@ -123,6 +123,20 @@ const TIMELINE: Entry[] = [
     effect:
       'The table moves from his by design: near the ground mostly (his has no 500 ft row; the 1,000 ft row on high-pressure hours), and by up to a few knots and about 10° where an extra level sits. The same-hour spreads above include that from here. Each run now also logs the table built his way, shown first above, which is the check that the two still agree.',
   },
+  {
+    date: 'Oct 9',
+    kind: 'Event',
+    what: 'usairnet redesigned its station page, and the comparison read none of it until Oct 26: 139 runs over 17 days.',
+    effect:
+      'Those runs compared nothing and count as unreadable above; the usairnet rows and timings stopped growing on Oct 9. The runs were hours apart, so the outage line, which joins failures within five minutes, does not show them as one stretch. Nothing on the dashboard reads usairnet.',
+  },
+  {
+    date: 'Oct 26',
+    kind: 'Comparison',
+    what: 'usairnet’s redesigned page is read (both layouts; its “Overcast” replaces the legacy “Solid Overcast” in the comparison’s wording), and the raw METAR it now prints is kept, so which report it decoded is read from the report itself.',
+    effect:
+      'The usairnet rows count again from this day. The first run on the new page agreed with the dashboard on 11 of 13 fields on the same report; the two sun rows were a minute or two apart, as before.',
+  },
 ];
 
 export function ParityTimeline(): JSX.Element {
