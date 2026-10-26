@@ -23,6 +23,7 @@
 /// <reference lib="dom.iterable" />
 import { judgeLoad, pagePasses, type LoadObservation, type LoadVerdict, type SourceRow } from '../src/domain/liveSite';
 import { TAF_RELAY_SET } from '../src/config/tafRelay';
+import { collectOverflowing } from './liveSiteDom';
 import { ALLOWED_ORIGINS as RELAY_ORIGINS } from '../relay/src/station';
 
 const BASE = process.env.LIVE_SITE_URL ?? 'https://amelia-m.github.io/lspc-weather/';
@@ -162,6 +163,9 @@ async function observe(
   });
   o.scrollWidth = seen.scrollWidth;
   o.viewportWidth = seen.viewportWidth;
+  // Which elements, when the page is wider than the viewport: issue #208
+  // (2026-10-24) recorded the width alone and could not be traced.
+  if (seen.scrollWidth > seen.viewportWidth + 1) o.overflowing = await p.evaluate(collectOverflowing);
   o.crashed = seen.crashed;
   o.sources = seen.rows.length ? seen.rows : null;
   if (page.name === 'Jumpers') {

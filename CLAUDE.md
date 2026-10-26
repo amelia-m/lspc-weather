@@ -577,8 +577,9 @@ available for the change that needs one.
 deploy and on dispatch, it loads the deployed site in a browser, every page
 at 1280, 390 and 320 px on live data (`scripts/liveSite.ts`), and fails
 when a reader would meet a fault, as `src/domain/liveSite.ts` counts one:
-a script error, the crash screen, a page wider than the viewport, a site
-file not served, a Data health source in error or still loading, the TAF
+a script error, the crash screen, a page wider than the viewport (naming
+the innermost elements past the edge, since issue #208's 3 px at 320 could
+not be traced from a width alone), a site file not served, a Data health source in error or still loading, the TAF
 relay's fetch failing once the relay is set (read from the TAF row's chip,
 since 2026-10-21), the radar image not drawn, the parity summary or the
 ceiling page's data not loaded.
