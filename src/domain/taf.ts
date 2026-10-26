@@ -158,6 +158,21 @@ export function resolveTafTime(
   return Date.UTC(year, month, day, hour, minute);
 }
 
+/** Whether a decoded TX/TN group's time is the day and hour its text
+ *  gives ("TN12/2510Z": the 25th at 10Z). The live decode comparison asks
+ *  this when aviationweather.gov dates a group differently: on 2026-10-24
+ *  its decoder put Offutt's `TN12/2510Z` (TAF issued 241000Z) on the 24th
+ *  at 10Z, the forecast's start, a day before the text, and the app's
+ *  dating was the text's. An hour of 24 is midnight ending that day. */
+export function temperatureAsWritten(t: TafTemperature): boolean {
+  const m = TEMP_GROUP.exec(t.raw);
+  if (!m || t.atMs == null) return false;
+  const written = `${m[4]}${m[5]}`;
+  const at = new Date(m[5] === '24' ? t.atMs - 3600_000 : t.atMs);
+  const dayHour = `${String(at.getUTCDate()).padStart(2, '0')}${String(at.getUTCHours()).padStart(2, '0')}`;
+  return m[5] === '24' ? dayHour === `${m[4]}23` : dayHour === written;
+}
+
 /** A wind group, `18012G20KT`, `VRB03KT` or `00000KT` (knots or m/s), as
  *  TAFs and METARs both write it. keptForecasts.ts reads KPMV's with it. */
 export function windOf(token: string): TafWind | null {

@@ -431,6 +431,13 @@ direction each week for the page's NWS archive section, from 2026-04-01
 (docs/nws-gust-archive.md, "On the #wind-errors page"). Its first run on a
 runner is the refresh of 2026-10-26.
 
+Checked 2026-10-26 at 09:31Z: the scheduled run had not started. GitHub
+started the one scheduled run so far, 2026-10-19's, at 14:57Z, more than
+seven hours after its 07:41Z cron (the daily sky-parity run, scheduled
+about 13:00Z, started at 16:18Z and 16:52Z on the 24th and 25th), so a
+later check the same day is what settles it; the outcome goes here and
+in docs/surface-wind-sources.md, "The weekly run".
+
 ## Forecasts kept for later
 
 Started 2026-10-13, at the maintainer's request: where no archive holds a
@@ -700,6 +707,33 @@ the NSS store would have. The recipe is in CLAUDE.md, "The deployed site
 in a browser". The hashes are taken from the bundle each time, so a
 rotated proxy CA needs nothing changed. What the first load found is
 under "Live-site smoke test" below.
+
+## Issue #209: aviationweather.gov dated a TN a day early; and a timeout
+
+The sky-parity run of 2026-10-24 (run 40110944332) opened issue #209.
+Its one failing test, "decodes each TAF period the way aviationweather.gov
+decodes it", differed on Offutt's temperatures alone: `TAF KOFF 241000Z
+2410/2516 … TX26/2420Z TN12/2510Z`. The app put the minimum on the 25th
+at 10Z, as the text says; aviationweather.gov's decode put it on the
+24th at 10Z, the forecast's start, a day early. Every other period and
+station agreed. Read again on 2026-10-26 at 09:4xZ, their decoder dated
+12 of 12 TX/TN groups across 374 CONUS TAFs as written, so the fault is
+not constant, and the case (a group on the day after issuance, at the
+issuance hour) is not reproducible on demand. The check now asks whether
+each of the app's groups sits on the day and hour its own text gives
+(`temperatureAsWritten`, `src/domain/taf.ts`, tested) and, when every one
+does and the two sides differ only in time, prints the difference as a
+note instead of failing: the gate is the app's decode, and a time the
+text gives is checkable against the text. Any other difference fails as
+before.
+
+The run of 2026-10-25 (40213803117) failed the same test on a 20-second
+timeout fetching aviationweather.gov's TAFs, as issue #147's run did on
+the METAR; the same run's other aviationweather.gov requests passed, and
+the run from the sandbox on the 26th passed every check. It opened no
+second issue (one is open). Nothing for the code to fix.
+
+Both are the maintainer's to close: #209 with this section as the why.
 
 ## Issue #147: a timeout, not a disagreement
 

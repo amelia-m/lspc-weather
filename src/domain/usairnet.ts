@@ -32,6 +32,23 @@
  * KRKS (variable), KAIA (calm), KOMA (overcast), KPMV. Their station blocks
  * are the fixtures under tests/fixtures/usairnet/.
  *
+ * usairnet redesigned the page ("Launch Code has a new look", its banner)
+ * and the comparison read none of it from 2026-10-09 13:24Z to 2026-10-26,
+ * every run "page did not parse" (139 records): the block became
+ * "Plattsmouth Muni (KPMV)|54°F|Clear|Observed Oct 26, 04:15 AM CDT|…|Rel.
+ * humidity|82%|Dew point|48°F|Visibility|10 mi|Pressure|30.30 inHg|Flight
+ * rule|VFR|…|Wind Data|7 mph|10° from|Cloud level(s): Overcast at 8000 ft
+ * AGL|…|Raw METAR|KPMV 260915Z …". A gust is "15 mph|40° from|Gust 21",
+ * an overcast plain "Overcast", a missing wind group "Not reported", a
+ * clear sky "No cloud detected below automated reporting limit", a
+ * missing sky group "Not reported", a fraction a decimal ("1.75 mi"), and
+ * the clock has a leading zero. It also prints the raw METAR, kept in
+ * `rawMetar`. Both layouts are read (`Observed` marks the new one; the
+ * old is still served as `view=legacy`), the clouds put in one wording
+ * ("Overcast", no "AGL", layers joined by ", ") so the comparison's row
+ * reads the same from either. Fixtures of the new layout, cut from live
+ * pages on 2026-10-26, are under tests/fixtures/usairnet/modern/.
+ *
  * Pure: HTML in, fields out.
  */
 import type { SkyLayer } from './types';
@@ -58,6 +75,9 @@ export interface UsairnetObs {
   /** The page's sun almanac for the station, its local clock: "7:13 AM". */
   sunrise: string | null;
   sunset: string | null;
+  /** The METAR as the page prints it, on the redesigned layout only; null
+   *  on the legacy layout, which does not show it. */
+  rawMetar: string | null;
 }
 
 /** The page as text: tags become bars, runs of bars collapse to one. */
@@ -74,8 +94,10 @@ function pageText(html: string): string {
 
 /** Strip the page to text and read the block for `station`. The block is
  *  "Current Conditions at|<NAME> - (KPMV)|66°|Clear|as of 8:15 PM CDST|…"
- *  once tags collapse to bars; the next "Current Conditions at" (another
- *  station on the same page) ends it. */
+ *  on the legacy layout, "Current Conditions at|<Name> (KPMV)|66°F|Clear|
+ *  Observed Oct 26, 04:15 AM CDT|…" on the redesigned one, once tags
+ *  collapse to bars; the next "Current Conditions at" (another station on
+ *  the same page) ends it. */
 export function parseUsairnet(html: string, station: string): UsairnetObs | null {
   const text = pageText(html);
   const start = text.indexOf(`(${station})`);
@@ -83,38 +105,92 @@ export function parseUsairnet(html: string, station: string): UsairnetObs | null
   const rest = text.slice(start);
   const end = rest.indexOf('Current Conditions at', 10);
   const block = end > 0 ? rest.slice(0, end) : rest;
+  return block.includes('|Observed ') ? parseModernBlock(block) : parseLegacyBlock(block);
+}
 
-  const num = (re: RegExp): number | null => {
-    const m = block.match(re);
-    return m ? Number(m[1]) : null;
+const num = (block: string, re: RegExp): number | null => {
+  const m = block.match(re);
+  return m ? Number(m[1]) : null;
+};
+const str = (block: string, re: RegExp): string | null => block.match(re)?.[1]?.trim() ?? null;
+
+/** The redesigned layout (2026-10-09 on). */
+function parseModernBlock(block: string): UsairnetObs | null {
+  // "(KPMV)|54°F|Clear|Observed Oct 26, 04:15 AM CDT": the weather, when
+  // there is any, follows the sky as more parts ("|Light rain, mist|").
+  const head = block.match(/\(\w{4}\)\|(-?\d+)°F\|(.*?)\|Observed (?:[A-Z][a-z]{2} \d{1,2}, )?(\d{1,2}):(\d{2}) ([AP]M)/);
+  if (!head) return null;
+  // The comparison's clock has no leading zero ("4:15 AM"); the page's has.
+  const asOf = `${Number(head[3])}:${head[4]} ${head[5]}`;
+  // "7 mph|10° from", "15 mph|40° from|Gust 21", "Calm", or "Not reported"
+  // when the METAR has no wind group (KHYS, 2026-10-26).
+  const windText = str(block, /Wind Data\|(.*?)\|?(?:Cloud level|$)/);
+  const calm = windText != null && /^Calm\b/i.test(windText);
+  const wind = windText?.match(/^(\d+) mph(?:\|(\d+)° from)?(?:\|Gust (\d+))?/);
+  return {
+    asOf,
+    tempF: Number(head[1]),
+    condition: head[2].split('|').map((s) => s.trim()).join(', '),
+    humidityPct: num(block, /Rel\. humidity\|(\d+)%/),
+    dewpointF: num(block, /Dew point\|(-?\d+)°F/),
+    visibilityMi: milesFrom(str(block, /Visibility\|([\d./ ]+?) mi\b/)),
+    pressureInHg: num(block, /Pressure\|([\d.]+) inHg/),
+    flightRule: str(block, /Flight rule\|(\w+)/),
+    windMph: calm ? 0 : wind ? Number(wind[1]) : null,
+    windGustMph: wind?.[3] != null ? Number(wind[3]) : null,
+    windDirDeg: wind?.[2] != null ? Number(wind[2]) : null,
+    windText,
+    clouds: cloudsInOneWording(str(block, /Cloud level\(s\): ([^|]+)/)),
+    sunrise: str(block, /\|Sunrise\|(\d{1,2}:\d{2} [AP]M)/),
+    sunset: str(block, /\|Sunset\|(\d{1,2}:\d{2} [AP]M)/),
+    rawMetar: str(block, /Raw METAR\|([^|]+)/),
   };
-  const str = (re: RegExp): string | null => block.match(re)?.[1]?.trim() ?? null;
+}
 
-  const asOf = str(/as of (\d{1,2}:\d{2} [AP]M)/);
+/** The page's cloud line in the wording the comparison uses on both
+ *  layouts: the redesign's "Broken at 700 ft AGL; Overcast at 1300 ft AGL"
+ *  becomes "Broken at 700 ft, Overcast at 1300 ft", its clear-sky sentence
+ *  "Clear", its "Not reported" (a METAR with no sky group) the dashboard's
+ *  own "(not reported)"; the legacy "Solid Overcast" becomes "Overcast". */
+function cloudsInOneWording(line: string | null): string | null {
+  if (line == null) return null;
+  if (/^No cloud detected/i.test(line)) return 'Clear';
+  if (/^Not reported$/i.test(line)) return '(not reported)';
+  return line
+    .split(/;\s*|,\s*/)
+    .map((l) => l.replace(/ AGL$/, '').replace(/^Solid Overcast/, 'Overcast').trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
+/** The layout the page had to 2026-10-09, still served as `view=legacy`. */
+function parseLegacyBlock(block: string): UsairnetObs | null {
+  const asOf = str(block, /as of (\d{1,2}:\d{2} [AP]M)/);
   if (!asOf) return null;
   const head = block.match(/\(\w{4}\)\|(-?\d+)°\|(.*?)\|as of/);
   // Everything from "Wind Data" to the cloud line: "Calm", "5 MPH" (variable),
   // "12 MPH|270° West", or "18 MPH|Gust: 24 MPH|160° South".
-  const windText = str(/Wind Data\|(.*?)\|?(?:Cloud Level|$)/);
+  const windText = str(block, /Wind Data\|(.*?)\|?(?:Cloud Level|$)/);
   const calm = windText != null && /^Calm\b/i.test(windText);
   const wind = windText?.match(/^(\d+) MPH(?:\|Gust: (\d+) MPH)?(?:\|(\d+)°)?/);
   return {
     asOf,
     tempF: head ? Number(head[1]) : null,
     condition: head ? head[2].split('|').map((s) => s.trim()).join(', ') : null,
-    humidityPct: num(/Rel\. Humidity: (\d+)%/),
-    dewpointF: num(/Dew Point: (-?\d+)°F/),
-    visibilityMi: milesFrom(str(/Visibility: ([\d./ ]+?) Miles?/)),
-    pressureInHg: num(/Pressure: ([\d.]+) in/),
-    flightRule: str(/Flight Rule: (\w+)/),
+    humidityPct: num(block, /Rel\. Humidity: (\d+)%/),
+    dewpointF: num(block, /Dew Point: (-?\d+)°F/),
+    visibilityMi: milesFrom(str(block, /Visibility: ([\d./ ]+?) Miles?/)),
+    pressureInHg: num(block, /Pressure: ([\d.]+) in/),
+    flightRule: str(block, /Flight Rule: (\w+)/),
     windMph: calm ? 0 : wind ? Number(wind[1]) : null,
     windGustMph: wind?.[2] != null ? Number(wind[2]) : null,
     windDirDeg: wind?.[3] != null ? Number(wind[3]) : null,
     windText,
-    clouds: str(/Cloud Level\(s\): ([^|]+)/),
+    clouds: cloudsInOneWording(str(block, /Cloud Level\(s\): ([^|]+)/)),
     // "|Sunrise:|7:13 AM": the bar keeps this from matching "Civil Sunrise:".
-    sunrise: str(/\|Sunrise:\|(\d{1,2}:\d{2} [AP]M)/),
-    sunset: str(/\|Sunset:\|(\d{1,2}:\d{2} [AP]M)/),
+    sunrise: str(block, /\|Sunrise:\|(\d{1,2}:\d{2} [AP]M)/),
+    sunset: str(block, /\|Sunset:\|(\d{1,2}:\d{2} [AP]M)/),
+    rawMetar: null,
   };
 }
 
@@ -143,13 +219,15 @@ export function pageTextNear(html: string, station: string, max = 300): string {
   return text.slice(Math.max(0, at), Math.max(0, at) + max).trim();
 }
 
-/** Sky cover in usairnet's words. VV has not been seen on the page; its
- *  word here is a guess, and a VV report will show whether it holds. */
+/** Sky cover in the comparison's wording: usairnet's words on its
+ *  redesigned page (its legacy "Solid Overcast" is read as "Overcast",
+ *  `cloudsInOneWording`). VV has not been seen on the page; its word here
+ *  is a guess, and a VV report will show whether it holds. */
 const COVER_WORD: Record<string, string> = {
   FEW: 'Few',
   SCT: 'Scattered',
   BKN: 'Broken',
-  OVC: 'Solid Overcast',
+  OVC: 'Overcast',
   VV: 'Obscured',
   CLR: 'Clear',
   SKC: 'Clear',
