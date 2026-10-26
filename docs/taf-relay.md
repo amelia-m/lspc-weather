@@ -191,8 +191,12 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    `main`, so the GitHub account already decides what the relay serves.
    Signing in with it is separate from step 3's connection of the
    repository, which is still needed.
-2. **The workers.dev subdomain.** The first time you open Workers & Pages,
-   Cloudflare asks for an account subdomain. It becomes part of the relay's
+2. **The workers.dev subdomain.** The first time you open Workers & Pages
+   (Compute, then Workers & Pages, on the current dashboard), Cloudflare
+   asks for an account subdomain. Not the search box on the account's home
+   page: that looks up domains to register, and answered a workers.dev
+   name typed there with "We can't register this TLD" (the maintainer,
+   2026-10-26). It becomes part of the relay's
    address, `https://lspc-taf-relay.<subdomain>.workers.dev`, which anyone
    reading the page source can see, so pick a neutral name. It names the
    account, not this Worker (every Worker in the account shares it, and
