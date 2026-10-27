@@ -64,7 +64,7 @@ out.push(
   `His table was on a different run from the app’s first request at both his hours in ${s.offsetsTogether.both} samples and at one only in ${s.offsetsTogether.one}; ` +
     `those samples came in ${s.stretches.count} stretches, the longest ${s.stretches.longest} samples.`,
 );
-out.push('', '## When HRRR runs reached Open-Meteo’s servers (availability minute, every copy seen)', '');
+out.push('', '## When HRRR runs reached Open-Meteo’s servers (availability minute of the newest copy each sample’s reads saw)', '');
 out.push(
   `${s.runArrivals.runs} runs, ${s.runArrivals.runsWithSeveralArrivals} of them seen with more than one availability time.`,
   '',

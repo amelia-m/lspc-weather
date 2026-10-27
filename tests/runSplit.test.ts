@@ -194,6 +194,8 @@ describe('summarizeRunSplit', () => {
       // The same run from another copy, ten minutes later: a second arrival.
       { ...rec(13, [false, false], [false, false]), omRuns: run('2026-10-23T08:00:00.000Z', '2026-10-23T09:44:00.000Z') },
       { ...rec(17, [false, false], [false, false]), omRuns: run('2026-10-23T09:00:00.000Z', '2026-10-23T10:58:00.000Z') },
+      // No initialisation time: not a run that can be told from another.
+      { ...rec(21, [false, false], [false, false]), omRuns: run(null as unknown as string, '2026-10-23T10:59:00.000Z') },
     ]);
     expect(s.runArrivals.runs).toBe(2);
     expect(s.runArrivals.runsWithSeveralArrivals).toBe(1);
@@ -206,12 +208,24 @@ describe('summarizeRunSplit', () => {
       rec(34, [true, true], [false, false]),
       rec(38, [false, false], [false, false]),
       rec(42, [false, false], [true, true]),
-      // Unjudged: not a mismatch, so it ends a stretch.
+      // Unjudged: neither ends nor extends a stretch.
       rec(46, [null, null], [null, null]),
       rec(50, [true, true], [true, true]),
     ]);
     expect(s.offsetsTogether).toEqual({ both: 2, one: 2 });
-    expect(s.stretches).toEqual({ count: 3, longest: 2 });
+    expect(s.stretches).toEqual({ count: 2, longest: 2 });
+  });
+
+  it('ends a stretch at a gap in the sampling, which a job starting late leaves', () => {
+    const at = (iso: string, m: boolean): RunSplitRecord => ({ ...rec(0, [m, m], [m, m]), at: iso });
+    const s = summarizeRunSplit([
+      at('2026-10-26T15:50:00.000Z', true),
+      at('2026-10-26T15:54:00.000Z', true),
+      // The job restarted four and a half hours later.
+      at('2026-10-26T20:35:00.000Z', true),
+      at('2026-10-26T20:39:00.000Z', false),
+    ]);
+    expect(s.stretches).toEqual({ count: 2, longest: 2 });
   });
 });
 
