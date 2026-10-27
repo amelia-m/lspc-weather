@@ -2020,6 +2020,9 @@ a.sim-term {
   gap: 4px 14px;
   align-items: center;
 }
+.werr-key-item {
+  white-space: nowrap;
+}
 .werr-swatch {
   display: inline-block;
   width: 12px;
