@@ -159,7 +159,7 @@ export function deriveProvenance(
   if (snapshot.taf) prov.taf = describeTafSource(snapshot.taf, tafRelay);
 
   if (snapshot.nbm) {
-    const d = new Date(snapshot.nbm.issuedMs);
+    const d = new Date(snapshot.nbm.cycleMs);
     prov.nbm = {
       detail: `${snapshot.nbm.station} NBH ${String(d.getUTCHours()).padStart(2, '0')}Z · NOAA's bucket via the relay`,
       fallback: false,

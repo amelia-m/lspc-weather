@@ -47,13 +47,26 @@ header; no reader should fetch that for a 2 KB block. The TAF relay
 - **What it answers.** JSON: the station, `NBH`, the bucket file, the
   cycle, and the block's text; kept in the Worker's memory ten minutes,
   as the TAF is for five. The same origin rule as the TAF path, and 502
-  for every way the bucket can fail.
+  for every way the bucket can fail. All of one answer's requests share
+  a 20-second budget, and the app waits 25, so a slow whole-file read is
+  finished rather than abandoned. A HEAD that fails moves on to the hour
+  before; a bucket that answers a range with the whole file is read once;
+  the block ends at the line of spaces after it or at any station's
+  header, five-character ids included. The card names the bulletin by its
+  cycle, not an issue time: the file lands about an hour after the cycle.
+  The live-site check notes the bucket failing behind the relay (the
+  app names the relay's 502 as the bucket's) and counts any other failure
+  of the row, as the TAF row is judged.
 
 The app parses the block (`src/domain/nbm.ts`, pure, tested against the
 saved block of 2026-10-24 03Z): fields by position, three characters
 each after a five-character label, since "-88-88140" is three fields;
-the hours from the cycle, rolling to the next day past 23Z, as the key
-says. `src/api/nbm.ts` reads the relay's path with the TAF path's retry
+the hours from the cycle's own hour, an hour not after the last being
+the next day's, so the 23Z cycle's hours, which all begin at 00, are the
+next day's from the first (the key: "date as in line 1, unless past
+23Z"; a first version started from -1 and dated that cycle's hours a day
+early, found in review on 2026-10-27 against the bucket's 23Z file). A
+second station's header ends the block whatever the relay cut. `src/api/nbm.ts` reads the relay's path with the TAF path's retry
 rule (none after the relay's own 502); the fixtures re-date the saved
 block to the hour before now (`src/api/fixtures/nbm.ts`). Data health
 has a row for it, shown only with the relay set; the source log records
@@ -80,6 +93,8 @@ the cycle and file.
   thousand ft for the next twelve hours; Data health's rows "TAF ·
   primary · KOFF · via the relay" and "NBM cloud base · primary · KPMV
   NBH 01Z · NOAA's bucket via the relay"; no script errors; the page no
-  wider than the viewport at 1280 and 390 px. (A first try loaded
+  wider than the viewport at 1280 and 390 px, and at 320 px in the
+  fixture build (the strip's base row and axis label in place at all
+  three). (A first try loaded
   nothing: with a proxy set, Chromium sent the localhost page through it
   and got 405s, until `<-loopback>` was added to the proxy bypass list.)

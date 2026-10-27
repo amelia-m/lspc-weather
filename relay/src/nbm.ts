@@ -62,28 +62,45 @@ export function nbmFileFor(cycleMs: number): string {
 }
 
 const HEADER = (station: string): RegExp => new RegExp(`(^|\\n) ${station}\\s+NBM V\\S+ NBH GUIDANCE[^\\n]*`);
-const ANY_HEADER = /\n [A-Z0-9]{3,4}\s+NBM V\S+ NBH GUIDANCE/;
+/** Any station's header: ids are mostly four characters, but the NBM's
+ *  station list has buoys and C-MAN stations with five, which a tighter
+ *  pattern ran past (found in review, 2026-10-27). */
+const ANY_HEADER = /\n \S+\s+NBM V\S+ NBH GUIDANCE/;
+/** The line of spaces between one station's block and the next's. */
+const BLANK_LINE = /\n[ \t]*\r?\n/;
 
 /** The station's block out of bulletin text: from its header line to the
- *  line before the next station's. `at` is where the header begins in
- *  `text`. Null when the block is not there, or when the text ends inside
- *  it (`complete` false), which a window can do and the whole file cannot. */
+ *  blank line or the next station's header, whichever comes first. `at` is
+ *  where the header begins in `text`. Null when the block is not there;
+ *  `complete` false when the text ends before either marker, which a window
+ *  can do and the whole file cannot. */
 export function cutStationBlock(text: string, station: string): { block: string; at: number; complete: boolean } | null {
   const m = HEADER(station).exec(text);
   if (!m) return null;
   const at = m.index + (m[1] === '\n' ? 1 : 0);
   const rest = text.slice(at);
   const next = ANY_HEADER.exec(rest.slice(1));
-  if (!next) return { block: rest.trimEnd(), at, complete: false };
-  return { block: rest.slice(0, next.index + 1).trimEnd(), at, complete: true };
+  const blank = BLANK_LINE.exec(rest);
+  const ends = [next ? next.index + 1 : Infinity, blank ? blank.index : Infinity];
+  const end = Math.min(...ends);
+  if (!Number.isFinite(end)) return { block: rest.trimEnd(), at, complete: false };
+  return { block: rest.slice(0, end).trimEnd(), at, complete: true };
 }
 
 const upstreamFailed = (why: string, origin: string | null): Response =>
   json(502, JSON.stringify({ error: `NOAA's NBM bucket ${why}` }), origin);
 
+/** All the bucket requests of one answer share this much time, so the
+ *  app's own wait (25 s, src/api/nbm.ts) outlasts the relay's worst case:
+ *  five HEADs, a window and a whole file could otherwise take
+ *  5 + 1 + 1 timeouts. */
+export const NBM_BUDGET_MS = 20_000;
+
 /** The newest cycle whose NBH file the bucket has, looking back a few hours
- *  from `now`; null when none of them is there. */
-async function newestFile(deps: NbmDeps): Promise<{ file: string; cycleMs: number } | null> {
+ *  from `now`; null when none of them is there. A HEAD that fails or is
+ *  refused moves on to the older file: a late or ailing bucket still has
+ *  the hour before. */
+async function newestFile(deps: NbmDeps, left: () => number): Promise<{ file: string; cycleMs: number } | null> {
   const hour = Math.floor(deps.now() / 3_600_000) * 3_600_000;
   for (let k = 0; k <= NBM_LOOKBACK_HOURS; k++) {
     const cycleMs = hour - k * 3_600_000;
@@ -91,10 +108,9 @@ async function newestFile(deps: NbmDeps): Promise<{ file: string; cycleMs: numbe
     const res = await deps.fetch(`${NBM_BUCKET}/${file}`, {
       method: 'HEAD',
       headers: { 'user-agent': USER_AGENT },
-      signal: AbortSignal.timeout(NBM_TIMEOUT_MS),
+      signal: AbortSignal.timeout(Math.min(NBM_TIMEOUT_MS, left())),
     });
     if (res.ok) return { file, cycleMs };
-    if (res.status !== 404 && res.status !== 403) throw new Error(`answered ${res.status} for ${file}`);
   }
   return null;
 }
@@ -109,33 +125,39 @@ export async function nbmHandle(request: Request, origin: string | null, deps: N
     return json(200, deps.memo.body, origin, Math.floor(NBM_CACHE_SECONDS - memoAgeS));
   }
 
+  const left = (): number => Math.max(1_000, NBM_BUDGET_MS - (deps.now() - now));
   let found: { file: string; cycleMs: number } | null;
   try {
-    found = await newestFile(deps);
+    found = await newestFile(deps, left);
   } catch (err) {
     return upstreamFailed(`unreachable: ${String(err)}`, origin);
   }
   if (!found) return upstreamFailed(`has no NBH file for the last ${NBM_LOOKBACK_HOURS + 1} hours`, origin);
   const url = `${NBM_BUCKET}/${found.file}`;
 
-  // The window first, the whole file only when the block is not in it.
+  // The window first, the whole file only when the block is not whole in
+  // it. A bucket that answers the range with the whole file (200) has
+  // already sent it: read that rather than ask again.
   let cut: ReturnType<typeof cutStationBlock> = null;
   let base = 0;
   try {
     const from = Math.max(0, deps.memo.offset - NBM_WINDOW);
     const part = await deps.fetch(url, {
       headers: { 'user-agent': USER_AGENT, range: `bytes=${from}-${deps.memo.offset + NBM_WINDOW}` },
-      signal: AbortSignal.timeout(NBM_TIMEOUT_MS),
+      signal: AbortSignal.timeout(Math.min(NBM_TIMEOUT_MS, left())),
     });
     if (part.status === 206) {
       cut = cutStationBlock(await part.text(), NBM_STATION);
       base = from;
       if (cut && !cut.complete) cut = null;
+    } else if (part.status === 200) {
+      cut = cutStationBlock(await part.text(), NBM_STATION);
+      base = 0;
     }
     if (!cut) {
       const whole = await deps.fetch(url, {
         headers: { 'user-agent': USER_AGENT },
-        signal: AbortSignal.timeout(NBM_TIMEOUT_MS),
+        signal: AbortSignal.timeout(Math.min(NBM_TIMEOUT_MS, left())),
       });
       if (!whole.ok) return upstreamFailed(`answered ${whole.status}`, origin);
       cut = cutStationBlock(await whole.text(), NBM_STATION);

@@ -11,10 +11,10 @@ const NBH = Object.values(FILES)[0].split('\n\n')[0];
 describe('parseNbhBlock', () => {
   const f = parseNbhBlock(NBH)!;
 
-  it('reads the header: station, version, and the cycle as the issue time', () => {
+  it('reads the header: station, version, and the cycle', () => {
     expect(f.station).toBe('KPMV');
     expect(f.version).toBe('5.0');
-    expect(f.issuedMs).toBe(Date.UTC(2026, 9, 24, 3));
+    expect(f.cycleMs).toBe(Date.UTC(2026, 9, 24, 3));
   });
 
   it('dates the hours from the cycle, rolling to the next day past 23Z', () => {
@@ -23,6 +23,26 @@ describe('parseNbhBlock', () => {
     expect(f.hours[19].time).toBe(Date.UTC(2026, 9, 24, 23));
     expect(f.hours[20].time).toBe(Date.UTC(2026, 9, 25, 0));
     expect(f.hours[24].time).toBe(Date.UTC(2026, 9, 25, 4));
+  });
+
+  it('dates the 23Z cycle’s hours, which all begin at 00, to the next day from the first', () => {
+    // As the bucket's 23Z file is headed (read 2026-10-27): the cycle on
+    // the 26th, the hours 00 to 00 all on the 27th and the last on the 28th.
+    const night = NBH.replace('10/24/2026  0300 UTC', '10/26/2026  2300 UTC').replace(
+      /^ UTC .*$/m,
+      ` UTC  ${Array.from({ length: 25 }, (_, i) => String(i % 24).padStart(2, '0')).join(' ')} `,
+    );
+    const g = parseNbhBlock(night)!;
+    expect(g.cycleMs).toBe(Date.UTC(2026, 9, 26, 23));
+    expect(g.hours[0].time).toBe(Date.UTC(2026, 9, 27, 0));
+    expect(g.hours[23].time).toBe(Date.UTC(2026, 9, 27, 23));
+    expect(g.hours[24].time).toBe(Date.UTC(2026, 9, 28, 0));
+  });
+
+  it('stops at another station’s header, so loosely cut text cannot hand it the neighbour’s rows', () => {
+    const two = `${NBH}\n KPMZ   NBM V5.0 NBH GUIDANCE    10/24/2026  0300 UTC\n UTC  04 05\n LCB  10 10`;
+    expect(parseNbhBlock(two)!.hours[0].lowestBaseFtAgl).toBe(20000);
+    expect(parseNbhBlock(two)!.hours).toHaveLength(25);
   });
 
   it('reads the fields by position in hundreds of feet: "-88-88140" is unlimited, unlimited, 14,000', () => {
@@ -53,7 +73,7 @@ describe('nbhFixtureText', () => {
   it('re-dates the saved block to the hour before now, so its hours overlap the strip', () => {
     const now = Date.UTC(2026, 10, 3, 15, 20);
     const f = parseNbhBlock(nbhFixtureText(now))!;
-    expect(f.issuedMs).toBe(Date.UTC(2026, 10, 3, 14));
+    expect(f.cycleMs).toBe(Date.UTC(2026, 10, 3, 14));
     expect(f.hours[0].time).toBe(Date.UTC(2026, 10, 3, 15));
     expect(f.hours[24].time).toBe(Date.UTC(2026, 10, 4, 15));
     expect(f.hours[0].lowestBaseFtAgl).toBe(20000);

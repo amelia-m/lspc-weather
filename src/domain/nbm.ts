@@ -59,9 +59,13 @@ export function parseNbhBlock(text: string): NbmForecast | null {
   const head = /^ (\S+)\s+NBM V(\S+) NBH GUIDANCE\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2})(\d{2}) UTC/.exec(lines[0] ?? '');
   if (!head) return null;
   const station = head[1];
-  const issuedMs = Date.UTC(Number(head[5]), Number(head[3]) - 1, Number(head[4]), Number(head[6]), Number(head[7]));
+  const cycleHour = Number(head[6]);
+  const cycleMs = Date.UTC(Number(head[5]), Number(head[3]) - 1, Number(head[4]), cycleHour, Number(head[7]));
   const rows = new Map<string, string[]>();
   for (const line of lines.slice(1)) {
+    // Another station's header ends this block: text cut loosely would
+    // otherwise hand the next station's rows to this one.
+    if (/^ \S+\s+NBM V\S+ NB[A-Z] GUIDANCE/.test(line)) break;
     const label = line.slice(1, LABEL).trim();
     if (label) rows.set(label, fields(line));
   }
@@ -69,13 +73,16 @@ export function parseNbhBlock(text: string): NbmForecast | null {
   if (!utc) return null;
   const hours: NbmHour[] = [];
   let day = 0;
-  let prev = -1;
+  // The hours run on from the cycle's own, so one not after the last is
+  // the next day's: the 23Z cycle's first hour, 00, is the next day's at
+  // once (the key: "date as in line 1, unless past 23Z"). Starting from -1
+  // instead dated the 23Z bulletin's every hour a day early (found in
+  // review, 2026-10-27).
+  let prev = cycleHour;
   utc.forEach((f, i) => {
     const hh = Number(f);
     if (!Number.isFinite(hh) || f.trim() === '') return;
-    // The hours run on from the cycle; a smaller one than the last is the
-    // next day's.
-    if (hh < prev) day += 1;
+    if (hh <= prev) day += 1;
     prev = hh;
     const time = Date.UTC(Number(head[5]), Number(head[3]) - 1, Number(head[4]) + day, hh);
     hours.push({
@@ -85,5 +92,5 @@ export function parseNbhBlock(text: string): NbmForecast | null {
       skyCoverPct: percent(rows.get('SKY')?.[i]),
     });
   });
-  return { station, version: head[2], issuedMs, hours };
+  return { station, version: head[2], cycleMs, hours };
 }

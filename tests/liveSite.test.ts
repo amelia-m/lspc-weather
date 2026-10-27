@@ -84,6 +84,15 @@ describe('judgeLoad', () => {
     expect(judgeLoad(taf('fallback KOMA · KOFF TAF ended'), { relayServesOrigin: true })).toEqual({ faults: [], notes: [] });
   });
 
+  it('notes NOAA’s bucket failing behind the relay on the NBM row, and counts any other failure of the row', () => {
+    const row = (meta: string) => ({ ...clean, sources: [{ name: 'NBM cloud base', state: 'error' as const, meta }] });
+    expect(judgeLoad(row("error: NOAA's NBM bucket failed behind the relay (relay answered 502)"))).toEqual({
+      faults: [],
+      notes: ["NBM cloud base: error: NOAA's NBM bucket failed behind the relay (relay answered 502)"],
+    });
+    expect(judgeLoad(row('error: HTTP 530 for lspc-taf-relay.amelia-m.workers.dev')).faults).toEqual(['NBM cloud base: error: HTTP 530 for lspc-taf-relay.amelia-m.workers.dev']);
+  });
+
   it('reads the chip on the TAF row only', () => {
     const v = judgeLoad(
       { ...clean, sources: [{ name: 'Winds aloft', state: 'ok', meta: 'just now', detail: 'fallback KOFF fetch failed', flags: [TAF_RELAY_FAILED] }] },

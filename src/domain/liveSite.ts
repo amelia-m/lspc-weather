@@ -106,7 +106,12 @@ export function judgeLoad(o: LoadObservation, opts: JudgeOptions = {}): LoadVerd
     );
   }
   for (const s of o.sources ?? []) {
-    if (s.state === 'error') faults.push(`${s.name}: ${s.meta}`);
+    // The NBM row reads NOAA's bucket through the relay: the bucket failing
+    // behind it (the relay's 502, which the app names as the bucket's) is
+    // another host's, a note, as aviationweather.gov's is on the TAF row;
+    // anything else on the row is the relay's or the site's, a fault.
+    if (s.state === 'error' && s.name.startsWith('NBM') && /NBM bucket/.test(s.meta)) notes.push(`${s.name}: ${s.meta}`);
+    else if (s.state === 'error') faults.push(`${s.name}: ${s.meta}`);
     else if (s.state === 'pending') faults.push(`${s.name}: still loading when the check stopped waiting`);
     // A stale or idle source can be the station or the forecast office
     // being late, not the site; it is shown, not counted.

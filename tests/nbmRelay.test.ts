@@ -10,29 +10,32 @@ const FILES = import.meta.glob('../data/parity/nbm-kpmv-2026-10-24-03z.txt', { q
 const KPMV = Object.values(FILES)[0].split('\n\n')[0];
 const other = (id: string) => KPMV.replace(/^ KPMV /, ` ${id} `.padEnd(6));
 
-/** A stand-in bulletin: filler, two other stations, KPMV, another station.
- *  KPMV's block sits `at` bytes in. */
+/** A stand-in bulletin: filler, two other stations, KPMV, a buoy with a
+ *  five-character id, another station; blocks parted by a line of spaces,
+ *  as the bucket's files are. KPMV's block sits `at` bytes in. */
+const GAP = '\n' + ' '.repeat(60) + '\n';
 function bulletin(at: number): { text: string; at: number } {
-  const before = `${other('KOMA')}\n\n${other('KOFF')}\n\n`;
+  const before = `${other('KOMA')}${GAP}${other('KOFF')}${GAP}`;
   const filler = 'x'.repeat(Math.max(0, at - before.length)) + '\n';
-  const text = `${filler}${before}${KPMV}\n\n${other('KPMZ')}\n`;
+  const text = `${filler}${before}${KPMV}${GAP}${other('45001').replace(/^ 45001 /, ' 45001  ')}${GAP}${other('KPMZ')}\n`;
   return { text, at: text.indexOf(' KPMV ') };
 }
 
 // 2026-10-27 02:17Z: the 01Z file is the newest (landed 02:06Z); 02Z is not there yet.
 const T0 = Date.UTC(2026, 9, 27, 2, 17);
 
-function deps(text: string, opts: { missingHours?: number; rangeStatus?: number } = {}) {
+function deps(text: string, opts: { missingHours?: number; rangeStatus?: number; headStatus?: Record<number, number> } = {}) {
   const missing = opts.missingHours ?? 1;
   const fetch = vi.fn<RelayDeps['fetch']>(async (url, init) => {
     const method = init.method ?? 'GET';
     const hour = Number(/\/(\d{2})\/text\//.exec(url)?.[1]);
     const exists = hour <= 2 - missing;
-    if (method === 'HEAD') return new Response(null, { status: exists ? 200 : 404 });
+    if (method === 'HEAD') return new Response(null, { status: opts.headStatus?.[hour] ?? (exists ? 200 : 404) });
     if (!exists) return new Response('<?xml?>', { status: 404 });
     const range = new Headers(init.headers).get('range');
     if (range) {
-      if (opts.rangeStatus) return new Response('', { status: opts.rangeStatus });
+      // A bucket that will not answer a range sends the whole file (200).
+      if (opts.rangeStatus) return new Response(text, { status: opts.rangeStatus });
       const [a, b] = range.replace('bytes=', '').split('-').map(Number);
       return new Response(text.slice(a, b + 1), { status: 206 });
     }
@@ -61,6 +64,21 @@ describe('cutStationBlock', () => {
     expect(cutStationBlock(b.text, 'KLNK')).toBeNull();
     // KPMZ's header must not read as KPMV's.
     expect(cutStationBlock(b.text.slice(b.at + 10), 'KPMV')).toBeNull();
+  });
+
+  it('is whole once the blank line after the block is in the text, though the next header is not', () => {
+    const b = bulletin(5000);
+    const cut = cutStationBlock(b.text.slice(0, b.at + KPMV.length + GAP.length), 'KPMV')!;
+    expect(cut.complete).toBe(true);
+    expect(cut.block).toBe(KPMV);
+  });
+
+  it('ends at a five-character station’s header too', () => {
+    const b = bulletin(5000);
+    const buoy = cutStationBlock(b.text, '45001')!;
+    expect(buoy.complete).toBe(true);
+    expect(buoy.block.startsWith(' 45001 ')).toBe(true);
+    expect(buoy.block).not.toContain('KPMZ');
   });
 });
 
@@ -111,11 +129,22 @@ describe('the NBM path of the relay', () => {
     expect(d.fetch.mock.calls.filter(([, i]) => (i.method ?? 'GET') === 'GET')).toHaveLength(2);
   });
 
-  it('reads the whole file too when the bucket will not answer a range', async () => {
+  it('reads the whole file the bucket sends for a range (200) once, not again', async () => {
     const b = bulletin(NBM_KNOWN_OFFSET + 4000);
     const d = deps(b.text, { rangeStatus: 200 });
-    expect((await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), d)).status).toBe(200);
-    expect(d.fetch.mock.calls.filter(([, i]) => (i.method ?? 'GET') === 'GET')).toHaveLength(2);
+    const res = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), d);
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { text: string }).text).toBe(KPMV);
+    expect(d.fetch.mock.calls.filter(([, i]) => (i.method ?? 'GET') === 'GET')).toHaveLength(1);
+    expect(d.nbm.offset).toBe(b.at);
+  });
+
+  it('moves on to the older file when a HEAD fails, as a late or ailing bucket still has that one', async () => {
+    const b = bulletin(NBM_KNOWN_OFFSET + 4000);
+    const d = deps(b.text, { headStatus: { 1: 503 } });
+    const res = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), d);
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { file: string }).file).toBe(nbmFileFor(Date.UTC(2026, 9, 27, 0)));
   });
 
   it('asks the bucket once per cache period however many readers ask, then again', async () => {
@@ -133,7 +162,7 @@ describe('the NBM path of the relay', () => {
     const none = deps(bulletin(NBM_KNOWN_OFFSET + 4000).text, { missingHours: NBM_LOOKBACK_HOURS + 2 });
     const res = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), none);
     expect(res.status).toBe(502);
-    expect(((await res.json()) as { error: string }).error).toMatch(/no NBH file/);
+    expect(((await res.json()) as { error: string }).error).toMatch(/NBM bucket has no NBH file/);
     expect(none.nbm.body).toBeNull();
     const without = deps(bulletin(NBM_KNOWN_OFFSET + 4000).text.replace(/ KPMV /g, ' KXXX '));
     expect((await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), without)).status).toBe(502);
