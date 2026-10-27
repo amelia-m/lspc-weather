@@ -132,6 +132,11 @@ the change was made to move exactly those numbers.
    still there. The workflow's first run on `main` with the step (run
    39306224631, 2026-10-19 18:52Z) added the 4 records logged since the
    backfill to the same day's file and committed it with the summary.
+   Checked 2026-10-27: nine daily files, 10-19 to 10-27, the first
+   holding the backlog from 10-05 and each later one that day's nine
+   usairnet and nine Schulze records; the workflow's last five runs all
+   succeeded, the latest at 18:25Z that day. Nothing has expired
+   unarchived since the step began.
 3. `.github/workflows/parity-summary.yml` runs when the daily sky-parity
    run finishes, and on demand, so the page takes in a day's comparison
    runs at once: it downloads every unexpired artifact,
