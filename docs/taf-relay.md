@@ -175,6 +175,25 @@ the sandbox.
   The only console errors were Open-Meteo's first-try failures through the
   sandbox's proxy, which CLAUDE.md already puts down to the proxy.
 
+## Checked after deploying (2026-10-27)
+
+The maintainer deployed it on 2026-10-27 at 00:33Z (Workers Builds from
+`main`, wrangler 4.151.3; the build log: 3.16 KiB uploaded, 2 ms startup,
+two warnings that `workers_dev` and `preview_urls` default on, which is
+the intended route). From the sandbox, once
+`lspc-taf-relay.amelia-m.workers.dev` was allowlisted, at about 01:00Z:
+
+- `/taf/KOFF` with the site's origin: 200, `application/json`,
+  `access-control-allow-origin: https://amelia-m.github.io`,
+  `cache-control: public, max-age=300`, and the TAF byte for byte
+  aviationweather.gov's current issuance (`TAF KOFF 261800Z 2618/2724 …`);
+- the preflight: 204, `access-control-allow-methods: GET`, max-age a day;
+- another origin: 403; no Origin (curl): 200, as designed (relay.ts);
+- `/taf/KOMA`, `/` and `/x`: 404.
+
+`TAF_RELAY_URL` was set to it in the same piece of work (PR #223); the
+live-site check reads the relay's flag on every page load from then on.
+
 ## Setting it up (the maintainer, once)
 
 Read from Cloudflare's Workers docs on 2026-10-20: "Builds", "Build
