@@ -171,9 +171,10 @@ precisely because they were colour and text rather than flags.
   (3.9 min). Without the guard, edges holding older copies would step it
   back about once a day. A cache-busting query parameter is not a way past the
   edges: the API answers it with a 400. See docs/nws-gridpoint-age.md.
-- **Offutt's TAF comes through a relay of the maintainer's, once it is
-  set** (`relay/`, a Cloudflare Worker; `TAF_RELAY_URL` in
-  `src/config/tafRelay.ts`, null until deployed; docs/taf-relay.md). The
+- **Offutt's TAF comes through a relay of the maintainer's** (`relay/`, a
+  Cloudflare Worker at `lspc-taf-relay.amelia-m.workers.dev`, deployed
+  2026-10-27; `TAF_RELAY_URL` in `src/config/tafRelay.ts`;
+  docs/taf-relay.md, "Checked after deploying"). The
   USAF issues it, api.weather.gov does not carry it, and
   aviationweather.gov sends no CORS header. A workflow copying it was
   ruled out on GitHub's Actions terms, which name "part of a serverless
@@ -345,7 +346,9 @@ and since 2026-10-26 `vlab.noaa.gov` and `blend.mdl.nws.noaa.gov` (MDL's
 NBM text card and bulletin viewer), `nomads.ncep.noaa.gov` (NOAA's copy
 of the NBM bulletins; the S3 bucket `noaa-nbm-grib2-pds` answered
 before) and `www.flyaerodyne.com` (the Smart reserve's page, for the
-round-reserve question). Reachable is not readable: `globe.adsb.fi`,
+round-reserve question), and since 2026-10-27
+`lspc-taf-relay.amelia-m.workers.dev` (the TAF relay, so it can be
+checked from here). Reachable is not readable: `globe.adsb.fi`,
 `api.adsb.one` and `airplanes.live` answer a script with Cloudflare's 403
 (airplanes.live's API asks for an emailed request first). The comparison artifacts can now be
 read from here with `curl -sL

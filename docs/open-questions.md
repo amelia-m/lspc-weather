@@ -779,6 +779,11 @@ passed. Nothing for the code to fix. Closed as not planned on
 
 ## KOFF's TAF: no feed a browser can read carries it
 
+**Done, 2026-10-27:** the relay is deployed at
+`lspc-taf-relay.amelia-m.workers.dev` and the card reads Offutt's TAF
+through it (docs/taf-relay.md, "Checked after deploying"). What follows
+is why it was needed.
+
 Read 2026-10-13. Offutt's TAF is issued by the USAF, not the NWS:
 
 - api.weather.gov: no product under any lookup (also 2026-09-27 and -30).
