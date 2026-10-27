@@ -56,5 +56,21 @@ for (const b of s.byRunAge) {
         : `${b.fromMin} to ${b.toMin} min`;
   out.push(`| ${label} | ${pct(b.cell)} |`);
 }
+out.push('', '## By whether the HRRR metadata reads made during the sample disagreed', '');
+out.push('| reads | his table against the app’s first | app against itself |', '|---|---|---|');
+for (const row of s.bySplit) out.push(`| ${row.serversDisagreed ? 'disagreed' : 'agreed'} | ${pct(row.cell)} | ${pct(row.self)} |`);
+out.push(
+  '',
+  `His table was on a different run from the app’s first request at both his hours in ${s.offsetsTogether.both} samples and at one only in ${s.offsetsTogether.one}; ` +
+    `those samples came in ${s.stretches.count} stretches, the longest ${s.stretches.longest} samples.`,
+);
+out.push('', '## When HRRR runs reached Open-Meteo’s servers (availability minute, every copy seen)', '');
+out.push(
+  `${s.runArrivals.runs} runs, ${s.runArrivals.runsWithSeveralArrivals} of them seen with more than one availability time.`,
+  '',
+  '| from minute | arrivals |',
+  '|---|---|',
+);
+for (const b of s.runArrivals.byMinute) out.push(`| ${b.fromMin} | ${b.arrivals} |`);
 console.log(out.join('\n'));
 console.log(JSON.stringify(s, (_k, v) => (v === Infinity ? 'Infinity' : v === -Infinity ? '-Infinity' : v)));

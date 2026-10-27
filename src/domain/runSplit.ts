@@ -180,6 +180,24 @@ export interface RunSplitSummary {
   /** Every judged pairing (both offsets, first request) by minutes since
    *  the newest HRRR run the metadata reads saw became available. */
   byRunAge: { fromMin: number; toMin: number; cell: Cell }[];
+  /** The same pairings (`cell`) and the app against itself (`self`) by
+   *  whether the HRRR metadata reads made during the sample disagreed:
+   *  the copying caught in the act. A sample with fewer than two
+   *  answering reads cannot say and is left out. */
+  bySplit: { serversDisagreed: boolean; cell: Cell; self: Cell }[];
+  /** When HRRR runs reach Open-Meteo's servers: each distinct
+   *  (initialisation, availability) pair any sample's reads saw, by
+   *  ten-minute band of the availability time's minute. A run seen with
+   *  two availability times is two arrivals, one per copy. */
+  runArrivals: { runs: number; runsWithSeveralArrivals: number; byMinute: { fromMin: number; arrivals: number }[] };
+  /** Samples where his table was on a different run from the app's first
+   *  request at both his hours, or at one only. A clock cause moves both
+   *  hours together; a next-hour cause, one. */
+  offsetsTogether: { both: number; one: number };
+  /** Runs of consecutive samples with either hour on a different run from
+   *  the app's first request: how many, and the longest in samples. The
+   *  samples are about four minutes apart. */
+  stretches: { count: number; longest: number };
 }
 
 const RUN_DOMAIN = 'ncep_hrrr_conus';
@@ -198,24 +216,61 @@ export function summarizeRunSplit(records: readonly RunSplitRecord[]): RunSplitS
   );
   const selfByBand = MINUTE_BANDS.map((fromMin) => ({ fromMin, cell: cell() }));
   const byRunAge = RUN_AGE_BANDS.map((b) => ({ ...b, cell: cell() }));
+  const bySplit = [false, true].map((serversDisagreed) => ({ serversDisagreed, cell: cell(), self: cell() }));
   const odd = { of: 0, secondMatched: 0 };
+  const arrivals = new Map<string, Set<string>>();
+  const offsetsTogether = { both: 0, one: 0 };
+  const stretches = { count: 0, longest: 0 };
+  let stretch = 0;
   for (const r of recs) {
     const half = r.minute < 30 ? 'first' : 'second';
     const band = MINUTE_BANDS.filter((b) => r.minute >= b).pop() ?? 0;
     const ageMin = runAgeMinutes(r, RUN_DOMAIN);
     const ageRow = ageMin == null ? undefined : byRunAge.find((b) => ageMin >= b.fromMin && ageMin < b.toMin);
+    const seen = r.omRuns?.[RUN_DOMAIN];
+    const splitRow = seen != null && seen.reads >= 2 ? bySplit[seen.variants > 1 ? 1 : 0] : undefined;
+    if (seen?.avail != null) {
+      const key = seen.init ?? '';
+      if (!arrivals.has(key)) arrivals.set(key, new Set());
+      arrivals.get(key)!.add(seen.avail);
+    }
+    let mismatchedHours = 0;
     for (const h of r.hours) {
       const m = h.vsFirst?.mismatch ?? null;
+      if (m) mismatchedHours += 1;
       add(byOffsetAndHalf.find((c) => c.offset === h.offset && c.half === half)!.cell, m);
       add(byOffsetAndBand.find((c) => c.offset === h.offset && c.fromMin === band)!.cell, m);
       if (ageRow) add(ageRow.cell, m);
+      if (splitRow) add(splitRow.cell, m);
       const second = h.vsSecond?.mismatch ?? null;
       if (m === true && second != null) {
         odd.of += 1;
         if (!second) odd.secondMatched += 1;
       }
     }
-    for (const s of r.self) add(selfByBand.find((c) => c.fromMin === band)!.cell, s.gap?.mismatch ?? null);
+    for (const s of r.self) {
+      add(selfByBand.find((c) => c.fromMin === band)!.cell, s.gap?.mismatch ?? null);
+      if (splitRow) add(splitRow.self, s.gap?.mismatch ?? null);
+    }
+    if (mismatchedHours === 2) offsetsTogether.both += 1;
+    else if (mismatchedHours === 1) offsetsTogether.one += 1;
+    if (mismatchedHours > 0) {
+      stretch += 1;
+      if (stretch === 1) stretches.count += 1;
+      stretches.longest = Math.max(stretches.longest, stretch);
+    } else {
+      stretch = 0;
+    }
+  }
+  const byMinute = MINUTE_BANDS.map((fromMin) => ({ fromMin, arrivals: 0 }));
+  let runsWithSeveralArrivals = 0;
+  for (const times of arrivals.values()) {
+    if (times.size > 1) runsWithSeveralArrivals += 1;
+    for (const t of times) {
+      const minute = new Date(t).getUTCMinutes();
+      if (!Number.isFinite(minute)) continue;
+      byMinute[Math.floor(minute / 10)].arrivals += 1;
+    }
   }
   return {
     samples: recs.length,
@@ -226,6 +281,10 @@ export function summarizeRunSplit(records: readonly RunSplitRecord[]): RunSplitS
     selfByBand,
     firstWasOddOneOut: odd,
     byRunAge,
+    bySplit,
+    runArrivals: { runs: arrivals.size, runsWithSeveralArrivals, byMinute },
+    offsetsTogether,
+    stretches,
   };
 }
 

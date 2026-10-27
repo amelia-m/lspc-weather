@@ -155,12 +155,16 @@ morning).
   hour, 20 of the 24 UTC hours had some, and they came in 73 short
   stretches, the longest about half an hour. On the same run they agreed to
   a median 0° and 0 kt (largest 12° and 3 kt); on different runs to a
-  median 4° and 1 kt (90th percentile 15° and 3 kt). The cause is not
-  settled: after half past the comparison reads Schulze's next hour
+  median 4° and 1 kt (90th percentile 15° and 3 kt). The cause was not
+  settled here: after half past the comparison reads Schulze's next hour
   (`hourOffset=1`), and the rate is 2.5% on his hour in progress against
-  11.4% on his next hour, so the minute and the request change together;
-  see `docs/open-questions.md`, "Which forecast run…". The Winds aloft card
-  says only what was seen.
+  11.4% on his next hour, so the minute and the request change together.
+  A sampler that asked for both his hours at every minute, 2026-10-23 to
+  10-27, found the minute is the cause and the request is not: a new HRRR
+  run reaches Open-Meteo's servers one copy at a time between about :20
+  and :59, and the app's own two requests a moment apart disagreed in the
+  same minutes (docs/run-split.md; `docs/open-questions.md`, "Which
+  forecast run…"). The Winds aloft card says so.
 - **When each source had each report**, median minutes after the report's
   own time: NOAA's raw file 5, IEM 7, usairnet 18, NWS's observation list 24,
   NWS's `latest` 26. Since the dashboard read IEM first it had the newer

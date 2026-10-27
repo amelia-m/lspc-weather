@@ -707,17 +707,19 @@ with `scripts/windErrorsData.ts` on the whole window, and delete the
 workflow (the maintainer, 2026-10-27: fine to delete as long as the page's
 data keeps growing, which the weekly refresh's Open-Meteo and NDFD archive
 fetches do; the sampler was a time-boxed sample, not a feed).
-`.github/workflows/run-split-sample.yml` is the same pattern, temporary, until
-2026-10-27T06:00Z: every four minutes `scripts/runSplit.live.ts` asks Mark
-Schulze's tool for both its hour in progress and its next hour and sets each
-against the app's Open-Meteo answer for the same hour, plus two app requests
-a moment apart against each other, to tell a next-hour cause of the
-different-runs readings from a clock-time one (docs/run-split.md). It
-uploads `runsplit-*` artifacts the summary never reads. When the window
-ends, archive the records under `data/parity/`, summarise them with
-`scripts/runSplitSummary.ts` into docs/run-split.md and
-docs/open-questions.md, and delete the workflow and `scripts/runSplitLoop.sh`.
-The comparison's "different runs" rule is shared with it (`rawGap`,
+The run-split sampler (`.github/workflows/run-split-sample.yml`,
+`scripts/runSplitLoop.sh`, both deleted 2026-10-27) was the same pattern:
+every four minutes from 2026-10-23 to 2026-10-27T06:00Z it asked Mark
+Schulze's tool for both its hour in progress and its next hour and set
+each against the app's Open-Meteo answer for the same hour, plus two app
+requests a moment apart against each other. Its 1,291 records are
+`data/parity/runsplit-2026-10-23-to-2026-10-27.jsonl.gz`, summarised by
+`scripts/runSplitSummary.ts` in docs/run-split.md: the different-runs
+readings follow the clock, not his next-hour request. A new HRRR run
+reaches Open-Meteo's servers one copy at a time between about :20 and
+:59, and for some minutes after each copy a request gets either run; the
+app's own two requests a moment apart disagreed in the same minutes. The
+comparison's "different runs" rule is shared with it (`rawGap`,
 `src/domain/runSplit.ts`), and so are the tool and metadata fetches
 (`scripts/schulzeFetch.ts`).
 `.github/workflows/ceiling-data-refresh.yml` (Mondays 07:41Z, and on

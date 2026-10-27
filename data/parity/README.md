@@ -14,6 +14,10 @@ Open-Meteo's terms ask for a credit next to wherever its data are shown
   Historical Forecast and Previous Runs APIs (`scripts/cloudCoverFetch.py`).
 - `om-wind-*.jsonl.gz`: its 10 m wind, gust and direction from the same
   two archives, as served (`PARTS=omwind`).
+- `runsplit-*` (the run-split sampler, docs/run-split.md): its raw
+  pressure-level winds set against Mark Schulze's and against a second
+  request of the app's own, as gaps, with the run metadata of its HRRR
+  and GFS domains.
 - `surfacewind-*` (the surface-wind sampler) and `schulze-logs-*`,
   `logs-to-*` and `parity-logs-*` (the comparison logs): Open-Meteo's
   values as the app requested them, some as served, some interpolated to

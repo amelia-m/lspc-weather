@@ -158,10 +158,15 @@ Every remaining difference has a known cause, none of them the data:
   hour, in stretches of up to about half an hour. Different models were
   effectively ruled out on 2026-09-24 (one level in one hour matched
   `best_match`, `gfs_seamless` and `ncep_hrrr_conus` and no other), and
-  nothing in the app's response asks for caching. The cause is still open, since the comparison switches to the
-  tool's next-hour request at the same half past: `docs/open-questions.md`,
-  "Which forecast run…", and the figures in `docs/source-parity.md`, "What
-  the sampler found".
+  nothing in the app's response asks for caching. The comparison could not tell the cause, since it switches to the
+  tool's next-hour request at the same half past; a sampler that asked
+  for both his hours at every minute (2026-10-23 to 10-27,
+  docs/run-split.md) found it is the minute: a new HRRR run reaches
+  Open-Meteo's servers one copy at a time between about :20 and :59, and
+  a request in the minutes after gets either run, the app's own two
+  requests a moment apart included. See `docs/open-questions.md`, "Which
+  forecast run…", and the figures in `docs/source-parity.md`, "What the
+  sampler found".
 
 Before 2026-09-23 there was a fifth, and it dwarfed the others: the sampling
 gap described above. It is gone, and the comparison script exists so that its
