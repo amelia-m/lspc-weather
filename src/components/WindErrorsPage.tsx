@@ -6,8 +6,7 @@ import {
   yStep,
   type Histogram,
   type WindErrorSection,
-  type WindErrorsData,
-} from '../domain/windErrors';
+  type WindErrorsData, barSide } from '../domain/windErrors';
 import type { SiteJsonState } from '../hooks/useSiteJson';
 import { Panel } from './common/Panel';
 import { OpenMeteoCredit } from './OpenMeteoCredit';
@@ -26,6 +25,18 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
  * forecast fell on at this station over these days, not that it is wrong
  * for a jump, and nothing on the dashboard reads any of it.
  */
+
+/** The key the page prints once, above the charts, in the same words the
+ *  captions use. */
+export function SideKey(): JSX.Element {
+  return (
+    <p className="werr-key muted small" aria-label="Key to the bar colours">
+      <span className="werr-swatch over" aria-hidden="true" /> forecast above the report (right of the line)
+      <span className="werr-swatch under" aria-hidden="true" /> below it (left)
+      <span className="werr-swatch zero" aria-hidden="true" /> within half a bin of zero (neither)
+    </p>
+  );
+}
 
 /** One histogram as its own small chart, so the panels reflow to one column
  *  on a phone. Forecast minus reported along the bottom, zero dashed; each
@@ -77,7 +88,7 @@ function HistogramChart({ h, unitWord }: { h: Histogram; unitWord: string }): JS
           return (
             <path
               key={i}
-              className="werr-bar"
+              className={`werr-bar ${barSide(v)}`}
               d={`M${x},${base} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${base} Z`}
             >
               <title>{`${signed(v)} ${h.unit}: ${c} ${unitWord}${c === 1 ? '' : 's'}`}</title>
@@ -142,6 +153,7 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
         about whether a jump was safe, and nothing on the dashboard reads them. The forecasts are for
         the drop zone, so part of every difference is the distance.
       </p>
+      <SideKey />
       {(archive || sample) && (
         <p className="muted small">
           <OpenMeteoCredit scope="surface" surface={{ archive: archive != null, sample: sample != null }} />

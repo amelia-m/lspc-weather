@@ -6,6 +6,9 @@
   --text: #e6edf3;
   --muted: #93a1b0;
   --accent: #4aa8ff;
+  /* A second neutral hue, for the side of zero the accent does not take on
+     the #wind-errors charts: teal, which no flag, band or limit mark uses. */
+  --accent-2: #3fc1c9;
   --caution: #ff5d5d;
   --watch: #ffb454;
   /* The gust ceiling's mark: the Surface wind card's band and the hourly
@@ -1998,8 +2001,41 @@ a.sim-term {
   width: 100%;
   height: auto;
 }
-.werr-svg .werr-bar {
+/* Each side of zero its own fill: forecast above the report in the accent,
+   below in a second neutral hue, the zero bar (counted on neither side) in
+   the muted grey. Neither side is the worse one, so neither is a warning
+   colour (the maintainer asked for the sides to read apart, 2026-10-27). */
+.werr-svg .werr-bar.over {
   fill: var(--accent);
+}
+.werr-svg .werr-bar.under {
+  fill: var(--accent-2);
+}
+.werr-svg .werr-bar.zero {
+  fill: var(--muted);
+}
+.werr-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: center;
+}
+.werr-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.werr-swatch.over {
+  background: var(--accent);
+}
+.werr-swatch.under {
+  background: var(--accent-2);
+}
+.werr-swatch.zero {
+  background: var(--muted);
 }
 .werr-svg .werr-grid {
   stroke: var(--border);

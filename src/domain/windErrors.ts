@@ -59,6 +59,17 @@ export const WIND_COLUMNS: readonly HistSpec[] = [
   { quantity: 'dir', title: 'Direction', unit: '°', bin: 10, lo: -100, hi: 100 },
 ];
 
+/** Which side of zero a bar is on, as the charts class it: right of the
+ *  dashed line (forecast above the report), left of it (below), or the zero
+ *  bar, which `above` and `below` count on neither side. Each takes a fill
+ *  of its own so the sides read apart at a glance (the maintainer,
+ *  2026-10-27): two neutral hues and a grey, since neither side is the
+ *  worse one and neither may take a warning colour. The page's charts and
+ *  the docs' figures (scripts/histogramGrid.ts) class bars the same way. */
+export function barSide(v: number): 'over' | 'under' | 'zero' {
+  return v > 0 ? 'over' : v < 0 ? 'under' : 'zero';
+}
+
 export interface Histogram extends HistSpec {
   n: number;
   /** Rounded to a tenth. Null with no values. */

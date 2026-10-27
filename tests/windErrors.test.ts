@@ -14,6 +14,7 @@ import {
   type HistSpec,
   type OmWindRecord,
   type WindErrorsData,
+  barSide,
 } from '../src/domain/windErrors';
 import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import type { InstantPair } from '../src/domain/keptForecasts';
@@ -43,6 +44,14 @@ describe('histogram', () => {
   it('counts values past the axis as beyond it, and gives no median or mean for none', () => {
     expect(histogram([4, -40, 1], SPEED).outside).toBe(2);
     expect(histogram([], SPEED)).toMatchObject({ n: 0, median: null, mean: null, outside: 0 });
+  });
+});
+
+describe('barSide', () => {
+  it('puts a bar right of zero over, left under, and the zero bar on neither side', () => {
+    expect(barSide(1)).toBe('over');
+    expect(barSide(-1)).toBe('under');
+    expect(barSide(0)).toBe('zero');
   });
 });
 
@@ -247,6 +256,14 @@ describe('WindErrorsPage', () => {
     const html = page(data, 'ready');
     expect(html.match(/class="werr-svg"/g)).toHaveLength(3);
     expect(html).toContain('<title>−3 kt: 1 hour</title>');
+    // The sides of zero read apart: the −3 kt speed bar and −5 kt gust bar
+    // are "under", the +10° direction bar "over", and the key says which is
+    // which in the captions' words.
+    expect(html).toContain('class="werr-bar under"');
+    expect(html).toContain('class="werr-bar over"');
+    expect(html).not.toContain('class="werr-bar zero"');
+    expect(html).toContain('forecast above the report (right of the line)');
+    expect(html).toContain('werr-swatch under');
     expect(html).toContain('n 1 · median −3 kt');
     expect(html).not.toMatch(/\b(good|bad|accurate|inaccurate|reliable)\b/i);
     // No Open-Meteo data on the page, so no Open-Meteo credit.
