@@ -591,7 +591,9 @@ a script error, the crash screen, a page wider than the viewport (naming
 the innermost elements past the edge, since issue #208's 3 px at 320 could
 not be traced from a width alone), a site file not served, a Data health source in error or still loading, the TAF
 relay's fetch failing once the relay is set (read from the TAF row's chip,
-since 2026-10-21), the radar image not drawn, the parity summary or the
+since 2026-10-21; the NBM row the same way since 2026-10-27, NOAA's bucket
+failing behind the relay a note, anything else on the row a fault), the
+radar image not drawn, the parity summary or the
 ceiling page's data not loaded.
 Another host's failed request and console errors are printed as notes,
 since the app retries them. A page failing its first load is loaded once

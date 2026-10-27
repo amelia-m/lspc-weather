@@ -313,7 +313,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
           .then((nbm) => {
             setSnapshot((prev) => ({ ...prev, nbm }));
             if (nbm) {
-              logSource('nbm', 'success', `NBM NBH ${new Date(nbm.issuedMs).toISOString()} (${nbm.hours.length} hours, ${nbm.file ?? 'no file'})`);
+              logSource('nbm', 'success', `NBM NBH cycle ${new Date(nbm.cycleMs).toISOString()} (${nbm.hours.length} hours, ${nbm.file ?? 'no file'})`);
               updateSource('nbm', okStatus());
             } else {
               const err = new Error('No NBM bulletin');

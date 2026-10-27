@@ -281,7 +281,7 @@ export function CeilingSkyPanel({
       {showBase && nbm && (
         <p className="muted small">
           The “base” row is the lowest cloud base in the NWS National Blend of Models&rsquo; hourly bulletin
-          for {nbm.station} (issued {fmtClock(nbm.issuedMs)}, read through the relay): the lowest layer
+          for {nbm.station} (the {String(new Date(nbm.cycleMs).getUTCHours()).padStart(2, '0')}Z cycle, read through the relay): the lowest layer
           whether or not a ceiling is present, a few or scattered layer included, from a blend of models
           and humidity (MDL&rsquo;s definition, read 2026-10-26). In thousands of ft AGL; “no” = no layer.
           A second forecast beside the NWS ceiling above it, which it can disagree with; it raises no

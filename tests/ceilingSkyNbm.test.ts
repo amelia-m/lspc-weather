@@ -29,7 +29,7 @@ const hours = (n: number): HourlyPoint[] =>
 const nbm: NbmForecast = {
   station: 'KPMV',
   version: '5.0',
-  issuedMs: t0 - 3_600_000,
+  cycleMs: t0 - 3_600_000,
   file: 'blend.20261027/01/text/blend_nbhtx.t01z',
   // Three hours only: a base, no layer, no figure; the rest of the strip is past it.
   hours: [
@@ -53,6 +53,9 @@ describe('the NBM base row on the Ceiling & sky card', () => {
     expect(cells).toHaveLength(12);
     expect(cells[11]).toEqual(['No NBM figure for this hour', '—']);
     expect(html).toContain('lowest cloud base in the NWS National Blend of Models');
+    // The cycle, not an issue time: the file lands about an hour after it.
+    expect(html).toContain(`(the ${String(new Date(nbm.cycleMs).getUTCHours()).padStart(2, '0')}Z cycle, read through the relay)`);
+    expect(html).not.toContain('issued');
     expect(html).toContain('it raises no');
     expect(html).toContain(DATA_SOURCES.nbm.url);
   });
@@ -74,7 +77,7 @@ describe('the NBM base row on the Ceiling & sky card', () => {
 
 describe('Data health names the NBM bulletin', () => {
   it('as the station’s NBH cycle through the relay', () => {
-    const prov = deriveProvenance({ current: null, hourly: [], daily: [], windsAloft: [], sun: null, densityAltitude: null, taf: null, nbm: { ...nbm, issuedMs: Date.UTC(2026, 9, 27, 1) } }, true);
+    const prov = deriveProvenance({ current: null, hourly: [], daily: [], windsAloft: [], sun: null, densityAltitude: null, taf: null, nbm: { ...nbm, cycleMs: Date.UTC(2026, 9, 27, 1) } }, true);
     expect(prov.nbm).toEqual({ detail: "KPMV NBH 01Z · NOAA's bucket via the relay", fallback: false });
   });
 });

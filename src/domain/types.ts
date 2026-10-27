@@ -267,7 +267,10 @@ export interface NbmForecast {
   station: string;
   /** The bulletin's "NBM V5.0". */
   version: string;
-  issuedMs: number;
+  /** The model cycle the header names, "0100 UTC": the hours run from the
+   *  one after it. The file lands about an hour later, so this is not when
+   *  it was published. */
+  cycleMs: number;
   hours: NbmHour[];
   /** The bucket file the relay cut it from, for the source log. */
   file?: string;
