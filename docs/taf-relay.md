@@ -191,8 +191,17 @@ the intended route). From the sandbox, once
 - another origin: 403; no Origin (curl): 200, as designed (relay.ts);
 - `/taf/KOMA`, `/` and `/x`: 404.
 
-`TAF_RELAY_URL` was set to it in the same piece of work (PR #223); the
-live-site check reads the relay's flag on every page load from then on.
+`TAF_RELAY_URL` was set to it in the same piece of work (PR #223, merged
+2026-10-27 about 01:20Z). The deploy's live-site check passed every page
+at every width with the relay's flag read. The deployed site in
+Chromium from the sandbox (CLAUDE.md, "The deployed site in a browser"),
+Pilots tab at 1280 px: one request to
+`lspc-taf-relay.amelia-m.workers.dev/taf/KOFF`, answered 200; the TAF
+card headed "KOFF · ~20 mi NNE of DZ", "Terminal Aerodrome Forecast for
+Offutt AFB (KOFF)", issued Mon 1:00 PM, the 261800Z text; Data health's
+TAF row "primary KOFF · aviationweather.gov via the relay"; no script or
+console errors. The live-site check reads the relay's flag on every page
+load from then on.
 
 ## Setting it up (the maintainer, once)
 
