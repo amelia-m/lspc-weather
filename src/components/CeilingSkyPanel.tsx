@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CurrentConditions, HourlyPoint, OpenMeteoCloudHour } from '../domain/types';
+import type { CurrentConditions, HourlyPoint, NbmForecast, OpenMeteoCloudHour } from '../domain/types';
 import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { ceilingState, type CeilingState } from '../domain/normalize';
@@ -41,6 +41,7 @@ export function CeilingSkyPanel({
   current,
   hourly,
   omClouds = null,
+  nbm = null,
   thresholds,
   initialHours = SKY_HORIZONS[0],
 }: {
@@ -53,6 +54,10 @@ export function CeilingSkyPanel({
    *  the FD fallback and until it loads, and the card then shows the NWS
    *  forecast alone. Each figure is matched to an NWS hour by its time. */
   omClouds?: OpenMeteoCloudHour[] | null;
+  /** The NBM's hourly bulletin for KPMV (`snapshot.nbm`), through the
+   *  relay; null without it. Its lowest cloud base is a row under the
+   *  ceiling, matched to each NWS hour by time. */
+  nbm?: NbmForecast | null;
   /** The thresholds the flags are read against, for the sentence naming the
    *  figure the visibility flag fires at; without them the card names none
    *  rather than guess past a Settings edit. */
@@ -75,6 +80,13 @@ export function CeilingSkyPanel({
   // shows no second bar rather than a borrowed neighbour's.
   const omAt = new Map((omClouds ?? []).map((c) => [c.time, c]));
   const showOm = upcoming.some((h) => omAt.get(h.time)?.totalPct != null);
+  // The NBM's hours by time, as Open-Meteo's: a row only where its bulletin
+  // reaches this strip. The base is what its name says, the lowest layer
+  // whether or not a ceiling is present, from a blend of models, so it can
+  // sit under the NWS ceiling above it or disagree with "no". Printed, not
+  // flagged: no published limit applies to a cloud base.
+  const nbmAt = new Map((nbm?.hours ?? []).map((h) => [h.time, h]));
+  const showBase = upcoming.some((h) => nbmAt.get(h.time)?.lowestBaseFtAgl !== undefined);
   const category = current ? observedFlightCategory(current) : null;
 
   return (
@@ -88,6 +100,7 @@ export function CeilingSkyPanel({
         DATA_SOURCES.nwsObservation,
         DATA_SOURCES.nwsForecast,
         ...(showOm ? [DATA_SOURCES.openMeteo] : []),
+        ...(showBase ? [DATA_SOURCES.nbm] : []),
         DATA_SOURCES.usairnet,
       ]}
     >
@@ -167,6 +180,7 @@ export function CeilingSkyPanel({
               <span>0%</span>
             </div>
             <span className="sky-ceil">k ft</span>
+            {showBase && <span className="sky-ceil sky-base">base</span>}
             <span className="sky-time">&nbsp;</span>
             {crossesDay && <span className="sky-time sky-day">&nbsp;</span>}
           </div>
@@ -216,6 +230,21 @@ export function CeilingSkyPanel({
                   {h.ceilingFtAgl != null ? ' thousand ft ceiling' : h.ceilingForecast ? ' ceiling' : ' ceiling not forecast'}
                 </span>
               </span>
+              {/* The NBM's lowest cloud base under the ceiling, in the same
+                  units: "no" where the bulletin says no layer, a dash where
+                  it gives no figure for the hour. */}
+              {showBase && (() => {
+                const base = nbmAt.get(h.time)?.lowestBaseFtAgl;
+                return (
+                  <span
+                    className="sky-base"
+                    title={base === undefined ? 'No NBM figure for this hour' : base === null ? 'NBM: no cloud layer' : `NBM lowest cloud base ${base.toLocaleString()} ft AGL`}
+                  >
+                    {base === undefined ? '—' : base === null ? 'no' : fmtCeilK(base)}
+                    <span className="sr-only">{base === undefined ? ' NBM base not given' : base === null ? ' NBM no layer' : ' thousand ft NBM lowest base'}</span>
+                  </span>
+                );
+              })()}
               <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
               {crossesDay && (
                 <span className="sky-time sky-day">
@@ -247,6 +276,16 @@ export function CeilingSkyPanel({
       {coverage?.kind === 'gaps' && (
         <p className="muted small">
           The NWS forecast gives no ceiling for some of these hours; a dash marks them.
+        </p>
+      )}
+      {showBase && nbm && (
+        <p className="muted small">
+          The “base” row is the lowest cloud base in the NWS National Blend of Models&rsquo; hourly bulletin
+          for {nbm.station} (issued {fmtClock(nbm.issuedMs)}, read through the relay): the lowest layer
+          whether or not a ceiling is present, a few or scattered layer included, from a blend of models
+          and humidity (MDL&rsquo;s definition, read 2026-10-26). In thousands of ft AGL; “no” = no layer.
+          A second forecast beside the NWS ceiling above it, which it can disagree with; it raises no
+          flag.
         </p>
       )}
       <p className="muted small">

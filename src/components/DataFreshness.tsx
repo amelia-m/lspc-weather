@@ -2,6 +2,7 @@ import type { SourceKey, SourceStatus } from '../domain/types';
 import type { SourceProvenance } from '../domain/sourceProvenance';
 import { USE_FIXTURES } from '../api/http';
 import { DATA_SOURCES, type DataSource } from '../config/sources';
+import { TAF_RELAY_SET } from '../config/tafRelay';
 import { Panel } from './common/Panel';
 import { fmtAgo, shortError } from './format';
 
@@ -11,6 +12,7 @@ const LABELS: Record<SourceKey, string> = {
   windsAloft: 'Winds aloft',
   taf: 'TAF',
   daily: '10-day outlook',
+  nbm: 'NBM cloud base',
 };
 
 const SOURCE_LINKS: Record<SourceKey, DataSource> = {
@@ -19,7 +21,13 @@ const SOURCE_LINKS: Record<SourceKey, DataSource> = {
   windsAloft: DATA_SOURCES.openMeteo,
   taf: DATA_SOURCES.taf,
   daily: DATA_SOURCES.openMeteo,
+  nbm: DATA_SOURCES.nbm,
 };
+
+/** The rows shown: the NBM's only where the relay is set (or the fixtures
+ *  stand in for it), since nothing fetches it otherwise and an idle row
+ *  would read as a source that never answers. */
+const ROWS = (Object.keys(LABELS) as SourceKey[]).filter((k) => k !== 'nbm' || TAF_RELAY_SET || USE_FIXTURES);
 
 export function DataFreshness({
   status,
@@ -50,7 +58,7 @@ export function DataFreshness({
           </p>
         )}
         <ul className="source-list">
-          {(Object.keys(LABELS) as SourceKey[]).map((k) => {
+          {ROWS.map((k) => {
             const prov = provenance?.[k];
             return (
               <li key={k} className={statusClass(status[k])} data-flags={prov?.flags?.join(' ') || undefined}>

@@ -11,7 +11,7 @@
  * vite.config.ts reads this file to build the policy, so it imports only
  * the relay's station file, which carries no Worker types.
  */
-import { PATH, STATION } from '../../relay/src/station';
+import { NBM_PATH, PATH, STATION } from '../../relay/src/station';
 
 export const TAF_RELAY_URL: string | null = 'https://lspc-taf-relay.amelia-m.workers.dev';
 
@@ -23,6 +23,11 @@ export const TAF_RELAY_SET = TAF_RELAY_URL != null;
  *  not serve that station (relay/src/station.ts). */
 export function tafRelayUrlFor(station: string, base: string | null = TAF_RELAY_URL): string | null {
   return base != null && station === STATION ? `${base.replace(/\/+$/, '')}${PATH}` : null;
+}
+
+/** The relay's NBM path (relay/src/nbm.ts), or null without the relay. */
+export function nbmRelayUrl(base: string | null = TAF_RELAY_URL): string | null {
+  return base != null ? `${base.replace(/\/+$/, '')}${NBM_PATH}` : null;
 }
 
 /** The connect-src origins the app's policy allows: the live APIs, plus the

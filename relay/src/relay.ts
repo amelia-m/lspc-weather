@@ -35,9 +35,11 @@
  * `rawTAF` and `issueTime`); the app reads it with `tafFromAwcJson`.
  */
 
-import { ALLOWED_ORIGINS, PATH, STATION } from './station';
+import { ALLOWED_ORIGINS, NBM_PATH, PATH, STATION } from './station';
+import { json, preflightOrMethod, refuseOrigin } from './http';
+import { nbmHandle, type NbmMemo } from './nbm';
 
-export { ALLOWED_ORIGINS, PATH };
+export { ALLOWED_ORIGINS, PATH, NBM_PATH };
 export const UPSTREAM = `https://aviationweather.gov/api/data/taf?ids=${STATION}&format=json`;
 export const CACHE_SECONDS = 300;
 /** Give up on aviationweather.gov after this long and answer 502, so a
@@ -55,43 +57,29 @@ export interface RelayMemo {
 export interface RelayDeps {
   fetch: (url: string, init: RequestInit) => Promise<Response>;
   memo: RelayMemo;
+  /** The NBM path's own memory (nbm.ts). */
+  nbm: NbmMemo;
   now: () => number;
-}
-
-function corsHeaders(origin: string | null): Record<string, string> {
-  return origin
-    ? { 'access-control-allow-origin': origin, vary: 'Origin' }
-    : { vary: 'Origin' };
-}
-
-function json(status: number, body: string, origin: string | null, maxAgeS = 0): Response {
-  return new Response(body, {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': `public, max-age=${maxAgeS}`,
-      ...corsHeaders(origin),
-    },
-  });
 }
 
 const upstreamFailed = (why: string, origin: string | null): Response =>
   json(502, JSON.stringify({ error: `aviationweather.gov ${why}` }), origin);
 
+/** The Worker's one entry: the origin rule, then the path. Two paths, each
+ *  one fixed upstream URL (or file), so the relay can fetch nothing else. */
 export async function handle(request: Request, deps: RelayDeps): Promise<Response> {
   const origin = request.headers.get('origin');
-  if (origin != null && !ALLOWED_ORIGINS.includes(origin)) {
-    return json(403, JSON.stringify({ error: 'origin not allowed' }), null);
-  }
+  const refused = refuseOrigin(origin);
+  if (refused) return refused;
   const url = new URL(request.url);
-  if (url.pathname !== PATH) return json(404, JSON.stringify({ error: `only ${PATH}` }), origin);
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: { 'access-control-allow-methods': 'GET', 'access-control-max-age': '86400', ...corsHeaders(origin) },
-    });
-  }
-  if (request.method !== 'GET') return json(405, JSON.stringify({ error: 'GET only' }), origin);
+  if (url.pathname === NBM_PATH) return nbmHandle(request, origin, { fetch: deps.fetch, memo: deps.nbm, now: deps.now });
+  if (url.pathname !== PATH) return json(404, JSON.stringify({ error: `only ${PATH} and ${NBM_PATH}` }), origin);
+  return tafHandle(request, origin, deps);
+}
+
+async function tafHandle(request: Request, origin: string | null, deps: RelayDeps): Promise<Response> {
+  const early = preflightOrMethod(request, origin);
+  if (early) return early;
 
   const now = deps.now();
   const memoAgeS = (now - deps.memo.at) / 1000;

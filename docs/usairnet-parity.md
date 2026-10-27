@@ -21,7 +21,7 @@ Legend: ✅ have · ⚠️ partial · ❌ missing · ⏭️ intentionally skippe
 | Precip amount (QPF, inches) | ✅ NWS gridpoint `quantitativePrecipitation`, on the Precip & storms card |
 | Chance of thunder % | ✅ NWS gridpoint `probabilityOfThunder` (Precip & storms card, hourly Storm column) |
 | Probability precip is rain % | ⏭️ skip — low value for summer jumping |
-| Lowest cloud base (any layer) | ⚠️ partial: the latest report's every layer is on the Current conditions card's Sky line; no forecast of it (NWS's gridpoint has the ceiling only; usairnet's comes from the NBM, below) |
+| Lowest cloud base (any layer) | ✅ the latest report's every layer on the Current conditions card's Sky line; the forecast from the NBM, a "base" row on the Ceiling & sky card since 2026-10-27 (docs/nbm-lowest-cloud-base.md) |
 | IFR ceiling / IFR visibility chance % | ❌ missing (NBM's `IFC` and `IFV`, below) |
 | Mixing height, transport wind | ❌ missing (NBM's `MHT`, `TWD`, `TWS`, below) |
 | Nebraska State Summary sidebar | ⏭️ skip — regional roundup, not DZ-specific |
@@ -131,11 +131,11 @@ holds, though; one station added or removed upstream of KPMV would move
 it. A workflow, or the TAF relay, could instead cut the block out and
 serve it.
 
-Not built. A forecast lowest cloud base raises no flag of its own: no
-published limit applies to a FEW or SCT base. It would be printed plainly
-beside the NWS ceiling, from a second forecast that can disagree with it,
-as usairnet's "mismatch" popup shows. Whether that is worth a new source
-is the maintainer's call (docs/open-questions.md).
+Built on 2026-10-27 at the maintainer's word, as the relay's second path
+(docs/nbm-lowest-cloud-base.md): printed plainly under the NWS ceiling,
+from a second forecast that can disagree with it, as usairnet's
+"mismatch" popup shows; no flag, since no published limit applies to a
+FEW or SCT base.
 
 Design rule reminder: every added metric flags a condition and cites a source,
 and none renders a go/no-go verdict. The stronger rule this branch added: a

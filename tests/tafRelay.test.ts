@@ -21,7 +21,7 @@ const T0 = Date.parse('2026-10-20T18:00:00Z');
 function deps(answer: () => Response | Promise<Response>) {
   const fetch = vi.fn<RelayDeps['fetch']>(async () => answer());
   const clock = { t: T0 };
-  return { fetch, memo: { body: null, at: 0 }, now: () => clock.t, clock } satisfies RelayDeps & { clock: { t: number } };
+  return { fetch, memo: { body: null, at: 0 }, nbm: { body: null, at: 0, offset: 0 }, now: () => clock.t, clock } satisfies RelayDeps & { clock: { t: number } };
 }
 
 const req = (path: string, init: { origin?: string; method?: string } = {}) =>
@@ -61,7 +61,7 @@ describe('the TAF relay', () => {
     expect(res.headers.get('access-control-allow-origin')).toBeNull();
   });
 
-  it('serves its one path and GET only', async () => {
+  it('serves its TAF path (the NBM path is tests/nbmRelay.test.ts) and GET only', async () => {
     const d = deps(() => Response.json(AWC_KOFF));
     expect((await handle(req('/taf/KOMA', { origin: SITE_ORIGIN }), d)).status).toBe(404);
     expect((await handle(req(`${PATH}?ids=KOMA`, { origin: SITE_ORIGIN }), d)).status).toBe(200);

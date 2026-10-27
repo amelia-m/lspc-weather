@@ -20,6 +20,7 @@ const status: Record<SourceKey, SourceStatus> = {
   windsAloft: idle,
   taf: idle,
   daily: idle,
+  nbm: idle,
 };
 
 describe('cards that go through Panel', () => {
