@@ -103,3 +103,11 @@ the cycle and file.
   three). (A first try loaded
   nothing: with a proxy set, Chromium sent the localhost page through it
   and got 405s, until `<-loopback>` was added to the proxy bypass list.)
+- After the merge (PR #228, 2026-10-27 02:52Z): Cloudflare built the
+  Worker from `main` and the deployed relay's `/nbm/KPMV`, asked from the
+  sandbox with the site's origin, answered 404 at 02:52:58Z (the old
+  Worker, which knew only the TAF path) and 200 at 02:53:14Z with the
+  01Z file's block; the second ask, from memory, took 0.6 s. The Pages
+  deploy of the same head and the live-site check it starts both
+  passed, every page at every width, so the NBM row is on the deployed
+  site and the Data health row reads as above.
