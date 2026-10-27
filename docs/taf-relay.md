@@ -213,23 +213,30 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    2026-10-27): more than a build needs, used for build checks and
    deployment records. It is limited to the one repository and can be
    revoked under GitHub, Settings, Applications, Installed GitHub Apps.
-4. **Build:**
-   - **Worker name:** `lspc-taf-relay`, matching `name` in
+4. **Build** (the form of 2026-10-27, "Set up your application", which
+   prefills the project name and build command from the repository's
+   root `package.json`; both prefills are wrong for the relay):
+   - **Project name:** `lspc-taf-relay`, matching `name` in
      `relay/wrangler.toml` (else the build fails)
-   - **Root directory:** `relay`
    - **Build command:** empty
    - **Deploy command:** `npx wrangler@4.151.3 deploy` (the version the
      local check ran; `relay/` has no `package.json`, so the default would
      take whatever Wrangler is newest)
-   - **Production branch:** `main`
+   - **Enable Preview builds:** off (so `claude/*` and `forecast-archive`
+     build nothing); **Protect with Cloudflare Access:** off
+   - **Advanced settings, Path:** `relay` (the root directory)
+   - **API token:** "Create new token", the builder's credential for
+     deploying into the account; its scope is Cloudflare's standard list
+     for every Workers Build (Workers Scripts, KV, R2, D1, Queues and
+     more), far wider than this Worker uses, and stays within Cloudflare
+   - **Variables:** none; the relay's URL and origins are in its code
 
-   Save and Deploy. It builds from `main`, so it deploys once this
-   change is merged.
+   Deploy. It builds from `main`, so it deploys once this change is
+   merged.
 5. **Afterwards**, under the Worker's Settings, then Build: **watch
    paths** `relay/*` (else every push builds, and the forecast keeper
-   pushes hourly), **preview builds** off (so `claude/*` and
-   `forecast-archive` build nothing). The free plan has 3,000 build
-   minutes a month, one build at a time.
+   pushes hourly). The free plan has 3,000 build minutes a month, one
+   build at a time.
 6. **Check:** `https://lspc-taf-relay.<subdomain>.workers.dev/taf/KOFF`
    should show JSON beginning `[{"icaoId":"KOFF"`. An empty `[]` means
    Offutt has no TAF in force, as over weekends and holidays.
