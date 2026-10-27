@@ -1230,9 +1230,16 @@ a.sim-term {
   font-weight: 600;
 }
 .ceiling-timeline .sky-pct,
-.ceiling-timeline .sky-ceil {
+.ceiling-timeline .sky-ceil,
+.ceiling-timeline .sky-base {
   font-size: 0.55rem;
   white-space: nowrap;
+}
+/* The NBM's lowest cloud base, a row under the NWS ceiling in the muted
+   colour: a second forecast, set apart from the first without a verdict. */
+.ceiling-timeline .sky-base {
+  display: block;
+  color: var(--muted);
 }
 .ceiling-timeline .sky-time {
   display: flex;

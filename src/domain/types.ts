@@ -252,6 +252,27 @@ export interface WindsAloftForecast {
 export type DailySource = 'open-meteo' | 'nws-gridpoint';
 
 /** Merged, normalized snapshot fed to the advisory engine and the UI. */
+/** One hour of the NBM's hourly bulletin for the METAR station
+ *  (src/domain/nbm.ts). Heights in feet AGL: a number, `null` for the
+ *  bulletin's "unlimited" (no layer), `undefined` where the bulletin gave
+ *  no figure. */
+export interface NbmHour {
+  time: number;
+  lowestBaseFtAgl: number | null | undefined;
+  ceilingFtAgl: number | null | undefined;
+  skyCoverPct: number | null;
+}
+
+export interface NbmForecast {
+  station: string;
+  /** The bulletin's "NBM V5.0". */
+  version: string;
+  issuedMs: number;
+  hours: NbmHour[];
+  /** The bucket file the relay cut it from, for the source log. */
+  file?: string;
+}
+
 export interface WeatherSnapshot {
   current: CurrentConditions | null;
   /** When the observation feed NOT shown had its latest report taken (see
@@ -277,6 +298,9 @@ export interface WeatherSnapshot {
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
   taf: TafForecast | null;
+  /** The NBM's hourly bulletin for the METAR station, through the relay;
+   *  null until it loads and without the relay. */
+  nbm?: NbmForecast | null;
 }
 
 // ---- Advisories (flags, never a go/no-go verdict) ----
@@ -313,7 +337,7 @@ export type JumperClass = 'student' | 'licensed';
 
 // ---- Per-source fetch status ----
 
-export type SourceKey = 'nws' | 'metar' | 'windsAloft' | 'taf' | 'daily';
+export type SourceKey = 'nws' | 'metar' | 'windsAloft' | 'taf' | 'daily' | 'nbm';
 
 export interface SourceStatus {
   ok: boolean;

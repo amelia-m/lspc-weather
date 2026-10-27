@@ -175,6 +175,16 @@ the sandbox.
   The only console errors were Open-Meteo's first-try failures through the
   sandbox's proxy, which CLAUDE.md already puts down to the proxy.
 
+## A second path: the NBM bulletin (2026-10-27)
+
+The same Worker serves `/nbm/KPMV` (`relay/src/nbm.ts`): the NWS
+National Blend of Models' hourly bulletin for KPMV, cut from NOAA's open
+data bucket, for the Ceiling & sky card's lowest cloud base
+(docs/nbm-lowest-cloud-base.md). The origin rule and the shape of the
+answer are the TAF path's (`relay/src/http.ts` holds what the two share);
+each path fetches one fixed thing, so the relay can still fetch nothing
+else. Deployed by the same build on merge, with nothing to set up.
+
 ## Checked after deploying (2026-10-27)
 
 The maintainer deployed it on 2026-10-27 at 00:33Z (Workers Builds from

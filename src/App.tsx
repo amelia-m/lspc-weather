@@ -288,6 +288,7 @@ export default function App(): JSX.Element {
         current={snapshot.current}
         hourly={snapshot.hourly}
         omClouds={snapshot.openMeteoClouds ?? null}
+        nbm={snapshot.nbm ?? null}
         thresholds={advisoryThresholds}
       />
     ),

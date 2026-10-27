@@ -153,6 +153,15 @@ export const DATA_SOURCES = {
    *  (src/config/tafRelay.ts). AWC's TAF page reads
    *  `ids` (or `id`) from the query string (its own script, read 2026-09-30). */
   awcTafPrimary: awcTafFor(SITE.tafStations[0].id),
+  /** The NWS National Blend of Models' hourly station bulletin (NBH), the
+   *  Ceiling & sky card's lowest cloud base, read through the relay from
+   *  NOAA's open data bucket. The link is MDL's page for the text
+   *  bulletins, which names the products and where their files are; no
+   *  page opens on one station. */
+  nbm: {
+    label: 'NWS NBM hourly bulletin',
+    url: 'https://www.weather.gov/mdl/nbm_text',
+  },
   /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source.
    *
    *  The label names no station even though the fetch uses SITE.fdWindsStation

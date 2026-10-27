@@ -11,6 +11,10 @@ repository history is the record.
 
 ## Needs a human with a document
 
+The maintainer's word, 2026-10-27: the instructor's review of `#citations`
+(every ask on the page, A1's round-reserve confirmation now among them)
+is held until Saturday 2026-10-31 at the earliest; do not raise it before.
+
 These cannot be settled from the code.
 
 1. **Which 105.17 visibility row the flag should use.** Until this is
@@ -394,7 +398,11 @@ was centred (+0.13 kt; the kept reading's −0.78 was October's), and the
 `#wind-errors` page now has the archive's speed, gust and direction from
 April, refreshed weekly (docs/nws-gust-archive.md).
 
-## A forecast lowest cloud base from the NBM? (maintainer's call)
+## Done: a forecast lowest cloud base from the NBM
+
+**Built 2026-10-27**, the maintainer's call that morning: a "base" row on
+the Ceiling & sky card, read through the TAF relay's second path
+(docs/nbm-lowest-cloud-base.md). What follows is the question as it stood.
 
 Asked 2026-10-24: does the dashboard have both the ceiling and the lowest
 cloud base? For the latest report, yes: the Current conditions card's Sky
