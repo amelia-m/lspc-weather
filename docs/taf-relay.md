@@ -261,10 +261,14 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
 
    Deploy. It builds from `main`, so it deploys once this change is
    merged.
-5. **Afterwards**, under the Worker's Settings, then Build: **watch
-   paths** `relay/*` (else every push builds, and the forecast keeper
-   pushes hourly). The free plan has 3,000 build minutes a month, one
-   build at a time.
+5. **Afterwards**, under the Worker's Settings, then Build, "Build watch
+   paths": in **Include paths** remove the default `*` chip and add
+   `relay/*` (else every push to `main` builds: the parity summary's
+   daily commit, the weekly refresh); leave **Exclude paths** at its
+   default `node_modules/**, .git/`. Paths are matched from the
+   repository root, not the root directory, per Cloudflare's docs read
+   2026-10-20; if a relay-only change does not build, try `relay/**`.
+   The free plan has 3,000 build minutes a month, one build at a time.
 6. **Check:** `https://lspc-taf-relay.<subdomain>.workers.dev/taf/KOFF`
    should show JSON beginning `[{"icaoId":"KOFF"`. An empty `[]` means
    Offutt has no TAF in force, as over weekends and holidays.
