@@ -305,7 +305,7 @@ reported gust (14 more).
 | hours paired | 4,862 | 4,857 | 4,839 |
 | hours KPMV reported a gust | 978 | 973 | 968 |
 | forecast gust above / same / below the reported gust | 615 / 93 / 270 | 616 / 93 / 264 | 565 / 82 / 321 |
-| share below | 27.6% | 27.1% | 33.2% |
+| the same as shares | 62.9% / 9.5% / 27.6% | 63.3% / 9.6% / 27.1% | 58.4% / 8.5% / 33.2% |
 | mean, forecast minus reported | +1.51 kt | +1.49 kt | +0.98 kt |
 | median / p90 / largest miss | 3 / 8 / 24 kt | 3 / 8 / 25 kt | 3 / 8 / 24 kt |
 | no gust reported: forecast gust over the steady wind, mean | +5.88 kt (3,884 h) | +5.92 kt | +5.96 kt |
