@@ -31,8 +31,9 @@
  * Left out on purpose, because linking a word asserts its definition applies:
  *  - WAIVER. The glossary defines it as an exception to the BSRs or a
  *    liability release; the app's "LSPC waiver" is the club's posted wind
- *    policy, and whether that is a SIM 2-2 waiver is a question #citations
- *    leaves open. A link would answer it.
+ *    policy, and #citations (A5) still asks whether the club's tiers were
+ *    filed as a SIM 2-2 waiver and whether the sign is current. A link
+ *    would answer the first.
  *  - NIGHT JUMP. The glossary's sentence dates a night jump from one hour
  *    after official sunset; the night flag fires on 14 CFR 105.19's sunset
  *    to sunrise. A link from the flag would put a figure in front of the

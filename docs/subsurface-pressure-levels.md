@@ -129,9 +129,13 @@ Open-Meteo returns 355 m, the field is ~17 ft above the model's ground, and the
 ## Re-checking this
 
 ```
-curl -sS 'https://api.open-meteo.com/v1/forecast?latitude=40.8675&longitude=-96.11\
+curl -sS 'https://api.open-meteo.com/v1/forecast?latitude=40.8703&longitude=-96.1085\
 &hourly=wind_speed_1000hPa,geopotential_height_1000hPa&forecast_days=1&timezone=UTC'
 ```
+
+That is the landing area, the point the app has asked for since 2026-10-08
+(`SITE.dz`); the figures in "What this changed here" were read at 40.8675,
+−96.11.
 
 Compare `geopotential_height_1000hPa` (m MSL) against the `elevation` field in
 the same response. Where the first is smaller, the level is underground.

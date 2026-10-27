@@ -4,17 +4,20 @@ Offutt AFB (KOFF), about 20 mi from the drop zone, is the nearest TAF. The
 USAF issues it, and api.weather.gov, the only TAF feed a browser can read
 from another site, does not carry it. aviationweather.gov carries it but
 sends no CORS header ("Cross-origin resource sharing is not permitted at
-this time", its API page, read 2026-10-20). So the TAF card shows Omaha's
-(about 32 mi) and links Offutt's. Why a relay and not a workflow:
+this time", its API page, read 2026-10-20). So without a relay the TAF
+card showed Omaha's (about 32 mi) and linked Offutt's; since 2026-10-27 it
+reads Offutt's through the relay below. Why a relay and not a workflow:
 docs/open-questions.md, "KOFF's TAF".
 
-`relay/` is a Cloudflare Worker that fetches one URL,
-`https://aviationweather.gov/api/data/taf?ids=KOFF&format=json`, and hands
-it to the dashboard with the CORS header. It is the app's only server-side
-piece.
+`relay/` is a Cloudflare Worker that fetches two fixed things, Offutt's
+TAF, `https://aviationweather.gov/api/data/taf?ids=KOFF&format=json`, and
+since 2026-10-27 KPMV's block of the NBM bulletin ("A second path",
+below), and hands each to the dashboard with the CORS header. It is the
+app's only server-side piece.
 
-- **One fixed URL.** It cannot be pointed at anything else: one path,
-  `/taf/KOFF`, GET only, and the query string is not passed on.
+- **Fixed paths only.** It cannot be pointed at anything else: two paths,
+  `/taf/KOFF` and `/nbm/KPMV`, GET only, and the query string is not
+  passed on.
 - **Your site only, in a browser.** It answers a page only from
   `https://amelia-m.github.io` and the local dev and preview servers
   (`ALLOWED_ORIGINS`). Another site's page gets a 403. A request with no
@@ -55,10 +58,12 @@ piece.
 
 ## What the app does with it
 
-`src/config/tafRelay.ts` holds the Worker's address, `TAF_RELAY_URL`,
-null until the relay is deployed (a trailing slash is dropped). The station
-the relay serves is written once, in `relay/src/station.ts`, which both the
-Worker and the app read. Once the address is set:
+`src/config/tafRelay.ts` holds the Worker's address, `TAF_RELAY_URL`:
+`https://lspc-taf-relay.amelia-m.workers.dev` since 2026-10-27, null
+before, when the card read every TAF from api.weather.gov (a trailing
+slash is dropped). The station the relay serves is written once, in
+`relay/src/station.ts`, which both the Worker and the app read. With the
+address set:
 
 - the card reads Offutt's TAF through the relay (`fetchTafFrom`,
   src/api/nws.ts; `tafFromAwcJson`, src/domain/normalize.ts) and names
@@ -286,8 +291,9 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
 7. **Send the address to a Claude session.** It sets `TAF_RELAY_URL` and
    opens the PR; the deploy carries the new policy.
 
-To turn it off: `TAF_RELAY_URL` back to null (the card returns to
-Omaha's), then delete the Worker in the dashboard.
+To turn it off: `TAF_RELAY_URL` back to null (the TAF card returns to
+Omaha's, and the Ceiling & sky card's base row goes, since the NBM comes
+only through the relay), then delete the Worker in the dashboard.
 
 ## Handing it over
 
@@ -301,7 +307,7 @@ The relay holds no data and no secrets. Everything it is lives in
    `TAF_RELAY_URL` (src/config/tafRelay.ts) changes to it, which also
    moves the build's security policy.
 3. If the dashboard moves too, its new origin goes into `ALLOWED_ORIGINS`
-   in `relay/src/relay.ts`. A fork on GitHub Pages is served from
+   in `relay/src/station.ts`. A fork on GitHub Pages is served from
    `https://<their user>.github.io`; under a custom domain, that domain.
    Without it the Worker refuses the dashboard's requests with a 403, and
    the card says Offutt's TAF could not be fetched.

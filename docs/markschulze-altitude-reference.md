@@ -330,7 +330,8 @@ logs both tables against his on every run (`aligned`, the default; and
 First live runs, 2026-10-08 near 02:46Z, for 03Z: the "As Schulze" table
 matched his to 0° and 0 kt at every row, the Surface row included. A run a
 minute earlier was 5° and 2 kt apart at 5,000 and 6,000 ft, the pattern of the
-two being served different forecast runs (still open, above), which the logs
+two being served different forecast runs (a request landing on the other
+copy of a run as it arrives, above), which the logs
 will now count for both tables.
 
 
@@ -423,7 +424,8 @@ What the result does and does not say:
   (27 to 15, with 20 ties).
 - Both ran above the measured wind on average, the 10 m row by about 1.5 kt.
 - Most of the 156 hours were logged at the point used until 2026-10-08, in
-  the field south-west of the runway; none at the landing area yet.
+  the field south-west of the runway; none at the landing area yet (see
+  "Again, at the landing area", below).
 
 To repeat it: take every Schulze record with `aligned` and `ground`, place
 each on its valid hour (the run time rounded to the hour, checked against

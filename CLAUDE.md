@@ -69,7 +69,8 @@ precisely because they were colour and text rather than flags.
   bands were the app's own, and no USPA limit binds a licensed jumper, so there
   is no trigger a reader could check. This is deliberate, and it is **correct**:
   BSR 2-1 H states maximum ground winds for solo students and then, in as many
-  words, "For licensed skydivers are unlimited" (read at uspa.org 2026-09-22).
+  words, "For licensed skydivers are unlimited" (read at uspa.org 2026-09-22,
+  and again with every cited part on 2026-10-08).
   This used to be the app's largest open risk — if the BSRs had set a limit, the
   app would have been silent exactly where it should warn. They do not. The
   Surface wind card still carries the profile's guidance and BSR citation as a
@@ -226,10 +227,12 @@ precisely because they were colour and text rather than flags.
   `aligned`), so `#parity` shows that the app reproduces his table and,
   separately, how far the default table moves from it. Keep the "As Schulze"
   view his method exactly; improvements go in the default. What can still differ,
-  and why, is in `docs/markschulze-altitude-reference.md` (among them, for a
-  while, the two being on different forecast runs for the same hour: 114
-  of 1,611 same-hour comparisons to 2026-10-05, mostly between half past
-  and ten to the hour, cause still open in `docs/open-questions.md`); run
+  and why, is in `docs/markschulze-altitude-reference.md` (among them the two
+  being on different forecast runs for the same hour: 114 of 1,611
+  same-hour comparisons to 2026-10-05, mostly between half past and ten to
+  the hour; settled 2026-10-27 by the run-split sampler, docs/run-split.md,
+  "What the sample found": it is the minute a new HRRR run reaches
+  Open-Meteo's servers, not his next-hour request); run
   `scripts/schulzeCompare.live.ts` before touching the interpolation.
 
 ## Citations
@@ -285,8 +288,9 @@ styled apart from citation links, and a term stays plain in a flag or note
 that already cites the document it names (`linkableTerms`: no "BSR" link
 beside a SIM 2-1 or 2-2 link), since a reader clicking it to check the
 figure wants the citation. Linking a word asserts its definition applies:
-"waiver" stays unlinked because whether the club's posted waiver is a SIM 2-2
-waiver is open on `#citations`; "night jump" because the glossary's one-hour
+"waiver" stays unlinked because `#citations` (A5) still asks whether the
+club's posted tiers were filed as a SIM 2-2 waiver and whether the sign is
+current; "night jump" because the glossary's one-hour
 figure is not the night flag's trigger; "density altitude" because the
 card's note already quotes the FAA's definition beside its citation, and
 goes on to a "With humidity" row the glossary's method (pressure altitude
@@ -344,7 +348,8 @@ map tiles (`tile.openstreetmap.org`, `*.tile.openstreetmap.de`,
 `earthdata.nasa.gov` and `heywhatsthat.com` (the receiver panorama in
 `docs/adsb-receiver.md`), and since 2026-10-20 `docs.github.com` and
 `developers.cloudflare.com` (GitHub's Actions limits and terms, and the
-Workers free tier, for the KOFF TAF relay in `docs/open-questions.md`),
+Workers free tier, for the KOFF TAF relay; its history is under "KOFF's
+TAF" in `docs/open-questions.md`, marked done 2026-10-27),
 and since 2026-10-26 `vlab.noaa.gov` and `blend.mdl.nws.noaa.gov` (MDL's
 NBM text card and bulletin viewer), `nomads.ncep.noaa.gov` (NOAA's copy
 of the NBM bulletins; the S3 bucket `noaa-nbm-grib2-pds` answered
@@ -359,6 +364,8 @@ https://api.github.com/repos/amelia-m/lspc-weather/actions/artifacts/<id>/zip`
 (the session's GitHub proxy supplies the credential); `gh api` still refuses
 to follow that redirect. A change to the list applies to a running session as
 soon as it is saved.
+
+Checkable from here, and checked:
 
 - the live NWS and Open-Meteo paths, the TAF fallback chain and the NOAA FD
   winds fallback, by running the app's own fetch and domain code under Node;
@@ -572,8 +579,9 @@ one that is not itself positioned is placed against the page and widens it
 ## Gates
 
 `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`. CI runs on
-pull requests only (`.github/workflows/ci.yml`), so commits pushed to a branch
-with no open PR are never checked by CI — a long branch can accumulate a lot of
+pull requests and on dispatch, never on a push (`.github/workflows/ci.yml`),
+so commits pushed to a branch with no open PR are never checked by CI
+unless someone dispatches it — a long branch can accumulate a lot of
 unverified work. `main` deploys to GitHub Pages on push.
 
 Copilot code review draws on the account's monthly premium-request quota, and
