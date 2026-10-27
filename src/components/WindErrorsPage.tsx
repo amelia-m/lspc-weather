@@ -1,12 +1,14 @@
 import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
 import {
+  barSide,
   histogramLine,
   signed,
   spanDay,
   yStep,
   type Histogram,
   type WindErrorSection,
-  type WindErrorsData, barSide } from '../domain/windErrors';
+  type WindErrorsData,
+} from '../domain/windErrors';
 import type { SiteJsonState } from '../hooks/useSiteJson';
 import { Panel } from './common/Panel';
 import { OpenMeteoCredit } from './OpenMeteoCredit';
@@ -27,22 +29,27 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
  */
 
 /** The key the page prints once, above the charts, in the same words the
- *  captions use. */
-export function SideKey(): JSX.Element {
+ *  captions use. A list, so a screen reader gets three items and the label
+ *  (ARIA allows none on a paragraph); each item keeps its swatch beside its
+ *  words however they wrap (seen stranded at 390 px). The zero bar takes
+ *  a difference nearer zero than half a bin: `histogram` rounds a
+ *  half-bin away from zero, onto a side. */
+function SideKey(): JSX.Element {
   return (
-    <p className="werr-key muted small" aria-label="Key to the bar colours">
-      {/* Each swatch and its words wrap as one, so a phone never strands a
-          swatch at a line's end apart from its label (seen at 390 px). */}
-      <span className="werr-key-item">
-        <span className="werr-swatch over" aria-hidden="true" /> forecast above the report (right of the line)
-      </span>
-      <span className="werr-key-item">
-        <span className="werr-swatch under" aria-hidden="true" /> below it (left)
-      </span>
-      <span className="werr-key-item">
-        <span className="werr-swatch zero" aria-hidden="true" /> within half a bin of zero (neither)
-      </span>
-    </p>
+    <ul className="werr-key muted small" aria-label="Key to the bar colours">
+      <li className="werr-key-item">
+        <span className="werr-swatch over" aria-hidden="true" />
+        <span>forecast above the report (right of the line)</span>
+      </li>
+      <li className="werr-key-item">
+        <span className="werr-swatch under" aria-hidden="true" />
+        <span>below it (left)</span>
+      </li>
+      <li className="werr-key-item">
+        <span className="werr-swatch zero" aria-hidden="true" />
+        <span>nearer zero than half a bin (neither)</span>
+      </li>
+    </ul>
   );
 }
 
@@ -161,7 +168,6 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
         about whether a jump was safe, and nothing on the dashboard reads them. The forecasts are for
         the drop zone, so part of every difference is the distance.
       </p>
-      <SideKey />
       {(archive || sample) && (
         <p className="muted small">
           <OpenMeteoCredit scope="surface" surface={{ archive: archive != null, sample: sample != null }} />
@@ -171,6 +177,8 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
       {state === 'loading' && <p className="muted small">Loading the wind figures…</p>}
       {state === 'missing' && <p className="muted small">No wind figures have been published yet.</p>}
       {state === 'error' && <p className="muted small">The wind figures could not be read. Try again later.</p>}
+      {/* Only with charts to key. */}
+      {data != null && data.sections.length > 0 && <SideKey />}
 
       {kept && (
         <SectionPanel
