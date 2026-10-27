@@ -31,9 +31,17 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
 export function SideKey(): JSX.Element {
   return (
     <p className="werr-key muted small" aria-label="Key to the bar colours">
-      <span className="werr-swatch over" aria-hidden="true" /> forecast above the report (right of the line)
-      <span className="werr-swatch under" aria-hidden="true" /> below it (left)
-      <span className="werr-swatch zero" aria-hidden="true" /> within half a bin of zero (neither)
+      {/* Each swatch and its words wrap as one, so a phone never strands a
+          swatch at a line's end apart from its label (seen at 390 px). */}
+      <span className="werr-key-item">
+        <span className="werr-swatch over" aria-hidden="true" /> forecast above the report (right of the line)
+      </span>
+      <span className="werr-key-item">
+        <span className="werr-swatch under" aria-hidden="true" /> below it (left)
+      </span>
+      <span className="werr-key-item">
+        <span className="werr-swatch zero" aria-hidden="true" /> within half a bin of zero (neither)
+      </span>
     </p>
   );
 }
