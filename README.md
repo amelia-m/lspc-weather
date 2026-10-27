@@ -125,13 +125,33 @@ card, the charts' limit lines and the flags, each marked as theirs.
 
 ## 🔗 Data sources (all free, no API key)
 
+**What the dashboard reads live**, from the reader's browser:
+
 | Source | Used for |
 |---|---|
-| [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/) | the current KPMV observation (raw METAR + decoded), read first |
-| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ, the current KPMV observation as the backup to IEM's, and TAF text products |
+| [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/) (IEM) | the current KPMV observation (raw METAR + decoded), read first; the Nearby METARs card's six stations, from its Nebraska ASOS network |
+| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ (its view of the NDFD, below), the current KPMV observation as the backup to IEM's, the Omaha and Lincoln TAFs, and the NOAA FD winds-aloft product as the winds card's fallback when Open-Meteo is unreachable |
 | [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels), the 10-day daily outlook and the second cloud-cover figure on Ceiling & sky; on `#parity` and `#wind-errors`, its winds set against other sources. Weather data by Open-Meteo.com under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The dashboard reworks it: winds and temperatures interpolated from pressure levels to heights above the drop zone, a drift estimate worked from those winds, the outlook's weather codes grouped into its own labels, and on the two pages differences from other sources. The outlook's hourly detail is the NWS gridpoint's. The repository's comparison docs and the archives under [`data/parity/`](data/parity/README.md) hold Open-Meteo data too, under the same licence; what this app does to meet Open-Meteo's terms is in [docs/open-meteo-terms.md](docs/open-meteo-terms.md) |
+| The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | two fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, and KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)) |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 | [FAA VFR sectional](https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59) | Sectional chart tiles (image embed, no API) |
+| Computed locally | sunrise and sunset by NOAA's Solar Calculator method ([`src/domain/sun.ts`](src/domain/sun.ts)), density altitude by the NWS calculators' formulas |
+
+**What only the comparisons read**: the workflows, the scripts under
+`scripts/` and the pages `#parity`, `#wind-errors` and
+[`ceiling-errors/`](public/ceiling-errors/) set the dashboard against other
+sources and its own past. Nothing on the cards comes from these.
+
+| Source | Used for |
+|---|---|
+| NOAA's [NDFD archive](https://noaa-ndfd-pds.s3.amazonaws.com/) | the NWS gridpoint's past: every issued grid of ceiling, sky cover, wind, gust and direction back to April, set against KPMV's reports ([docs/ceiling-heights.md](docs/ceiling-heights.md), [docs/nws-gust-archive.md](docs/nws-gust-archive.md)) |
+| Open-Meteo's Historical Forecast and Previous Runs APIs | its past cloud cover and 10 m wind, the same way ([docs/cloud-cover-sources.md](docs/cloud-cover-sources.md), [docs/surface-wind-sources.md](docs/surface-wind-sources.md)) |
+| [usairnet's KPMV page](https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=KPMV) | a second decode of the same METAR, every field the page shows ([docs/usairnet-parity.md](docs/usairnet-parity.md)) |
+| [Mark Schulze's Winds Aloft](https://www.markschulze.net/winds/?lat=40.8703&lon=-96.1085) | the winds-aloft table beside his for the same hour ([docs/markschulze-altitude-reference.md](docs/markschulze-altitude-reference.md), [docs/run-split.md](docs/run-split.md)) |
+| [aviationweather.gov](https://aviationweather.gov/) | its METAR and TAF decoders, against the app's parse of today's reports (`.github/workflows/sky-parity.yml`) |
+| IEM's archives | KPMV's past reports, and once Omaha's local storm reports ([docs/nws-gust-archive.md](docs/nws-gust-archive.md)) |
+| The [US Naval Observatory](https://aa.usno.navy.mil/) | sunrise and sunset, to check the local calculation (56 of 56 events in 2026 matched to the minute) |
+| [uspa.org](https://www.uspa.org/) | the SIM's text, fingerprinted daily so a change to a cited part is noticed (`scripts/simText.live.ts`) |
 
 KPMV (~12 mi from the DZ) is the nearest reporting station and issues METARs;
 it does not issue a TAF. TAFs are fetched through a fallback chain —
@@ -173,6 +193,36 @@ sanity-check the dashboard against sources you already trust:
 
 If a dashboard number and its cross-reference disagree meaningfully, trust
 neither — check the primary source and ask the S&TA.
+
+## 🔤 Abbreviations
+
+The cards and the docs use the aviation and weather shorthand jumpers and
+pilots meet elsewhere. In the order they tend to come up:
+
+| | |
+|---|---|
+| **METAR**, **SPECI** | an airport's routine hourly weather report, and an unscheduled one when conditions change; KPMV's is what "Current conditions" decodes |
+| **TAF** | Terminal Aerodrome Forecast: an airport's forecast in periods (FM, TEMPO, BECMG, PROB), issued by the NWS, or by the USAF at Offutt |
+| **AWOS**, **ASOS** | Automated Weather (or Surface) Observing System: the station hardware that writes a METAR. KPMV's is an AWOS |
+| **KPMV**, **KOFF**, **KOMA**, **KLNK**, **KOAX**, **NE69** | ICAO-style identifiers: Plattsmouth (the nearest reporting station, 11.5 mi from the DZ), Offutt AFB, Omaha Eppley, Lincoln, the Omaha NWS radar, and Brown's Airport, the drop zone |
+| **DZ** | drop zone |
+| **AGL**, **MSL** | heights above ground level and above mean sea level; the cards use AGL for everything but the sectional |
+| **VFR**, **MVFR**, **IFR**, **LIFR** | the FAA's flight categories from ceiling and visibility, best to worst |
+| **NWS**, **NOAA**, **WFO** | the National Weather Service, its parent agency, and a Weather Forecast Office (Omaha's is OAX) |
+| **NDFD** | National Digital Forecast Database: the NWS's gridded forecast of every element by the hour. api.weather.gov's gridpoint, which the hourly chart and the forecast wind flags read, is its view at the DZ; NOAA's archive of its grids is the forecast's past |
+| **NBM**, **NBH** | the National Blend of Models, the NWS's blended guidance, and its hourly text bulletin (NBH) per station; the "base" row on Ceiling & sky is its lowest cloud base for KPMV |
+| **HRRR**, **GFS** | NOAA's High-Resolution Rapid Refresh and Global Forecast System, the two models behind the Open-Meteo request the winds-aloft table reads ([docs/run-split.md](docs/run-split.md)) |
+| **FD** | NOAA's winds-and-temperatures-aloft forecast (the "FD" product), the winds card's fallback |
+| **IEM** | the Iowa Environmental Mesonet, Iowa State University's archive and live feed of observations |
+| **AWC** | the Aviation Weather Center, aviationweather.gov |
+| **GFA**, **PIREP**, **SIGMET**, **NOTAM**, **TFR** | the briefing links on the Pilots tab: the Graphical Forecasts for Aviation, pilot reports, significant-weather advisories, notices to air missions and temporary flight restrictions |
+| **DA**, **ISA**, **QNH** | density altitude, the International Standard Atmosphere it is measured against, and the altimeter setting |
+| **UTC**, **Z** | Coordinated Universal Time, which every aviation product is stamped in ("Z"); the cards show the drop zone's local time |
+| **TS** | thunderstorm, as coded in a METAR or TAF |
+| **USPA**, **SIM**, **BSR**, **S&TA** | the United States Parachute Association, its Skydiver's Information Manual, the Basic Safety Requirements in it, and the Safety & Training Advisor |
+| **CFR**, **FAR**, **AIM** | the Code of Federal Regulations (Title 14, Part 105 is parachute operations; "FAR" is the older name), and the FAA's Aeronautical Information Manual |
+| **PD** | Performance Designs, whose Navigator canopy the wing-loading card is sized on |
+| **CORS**, **CSP** | why some sources need a relay: a browser reads a site only when it sends the Cross-Origin Resource Sharing header, and the build's Content-Security-Policy names every host the page may fetch |
 
 ## 🛠️ Develop
 
