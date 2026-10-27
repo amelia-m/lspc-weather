@@ -207,7 +207,12 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    account, shared by every Worker in it.
 3. **Repository.** Workers & Pages, then Create application, then
    GitHub; authorize Cloudflare's GitHub app for "Only select
-   repositories", `amelia-m/lspc-weather`.
+   repositories", `amelia-m/lspc-weather`. The app asks for read access
+   to metadata and read and write access to administration, checks,
+   code, deployments and pull requests on that repository (as installed
+   2026-10-27): more than a build needs, used for build checks and
+   deployment records. It is limited to the one repository and can be
+   revoked under GitHub, Settings, Applications, Installed GitHub Apps.
 4. **Build:**
    - **Worker name:** `lspc-taf-relay`, matching `name` in
      `relay/wrangler.toml` (else the build fails)
