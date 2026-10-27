@@ -426,7 +426,11 @@ Not covered by `npm test`, so do not imply a green suite covers them:
   ```
 
   It exercises the real bundle under the real CSP, at 1280/390/320 px. Only the
-  live data and the real cross-origin fetch are missing. A Node render is not a
+  live data and the real cross-origin fetch are missing. To have those too
+  with a local server (the relay under `wrangler dev`, say), give Chromium
+  the proxy and the SPKI list as above **and** `bypass: '<-loopback>,localhost'`:
+  with a proxy set it otherwise sends the localhost page through the proxy,
+  which answers plain HTTP with 405 and the page loads nothing (2026-10-27). A Node render is not a
   substitute for either — `renderToStaticMarkup` does not run effects, load
   images or apply CSS.
 - CI is no better: it runs the same fixture-backed suite. Nothing in `npm test`
