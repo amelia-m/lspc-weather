@@ -8,9 +8,13 @@ import { KLNK_2026_09_23_1120, KOMA_2026_09_24_0521 } from './support/tafProduct
 
 const idle: SourceStatus = { ok: true, fetchedAt: null, stale: false, error: null, pending: false };
 
+/* `relay: false` throughout the no-relay cases: the prop's default follows
+ * TAF_RELAY_URL, set since 2026-10-27, and these pin the wording the card
+ * had without a relay (and keeps, should it be unset). The relay's own
+ * wording is pinned below with `relay: true`. */
 function render(product: { productText?: string; issuanceTime?: string }, station: string): string {
   const taf = parseTaf(product.productText!, station, product.issuanceTime);
-  return renderToStaticMarkup(createElement(TafPanel, { taf, status: idle }));
+  return renderToStaticMarkup(createElement(TafPanel, { taf, status: idle, relay: false }));
 }
 
 describe('TafPanel decoded periods', () => {
@@ -80,7 +84,7 @@ describe('TafPanel change rows', () => {
 
 describe('TafPanel without a decodable forecast', () => {
   it('renders no table when there is no TAF', () => {
-    const html = renderToStaticMarkup(createElement(TafPanel, { taf: null, status: idle }));
+    const html = renderToStaticMarkup(createElement(TafPanel, { taf: null, status: idle, relay: false }));
     expect(html).not.toContain('taf-table');
   });
 
@@ -107,7 +111,7 @@ describe('TafPanel without a decodable forecast', () => {
 describe('TafPanel when a nearer station’s TAF had ended', () => {
   const taf = parseTaf(KOMA_2026_09_24_0521.productText!, 'KOMA', KOMA_2026_09_24_0521.issuanceTime);
   const show = (passedOver: TafPassedOver[]): string =>
-    renderToStaticMarkup(createElement(TafPanel, { taf: { ...taf!, passedOver }, status: idle }));
+    renderToStaticMarkup(createElement(TafPanel, { taf: { ...taf!, passedOver }, status: idle, relay: false }));
   const html = show([{ station: 'KOFF', endedMs: Date.parse('2026-10-11T16:00:00Z') }]);
 
   it('says whose TAF ended, and when, with the date', () => {
