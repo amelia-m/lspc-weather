@@ -540,5 +540,11 @@ npx tsx scripts/windErrorsData.ts --kept <dir>/data \
 
 Measurement only: nothing the dashboard's cards show changed. Since
 2026-10-23 the archived records also feed the `#wind-errors` page, which
-draws the histograms above. The open question is
+draws the histograms above. Since 2026-10-27 the bars are filled by
+side (the maintainer's request): right of zero, the forecast above the
+report, in the accent; left of it in a second neutral hue; the zero bar,
+counted on neither side, in grey (`barSide`, `src/domain/windErrors.ts`,
+shared by the page and the figures). Neither hue is a warning colour,
+since neither side is the worse one. The dated figures drawn before that
+day are one colour and are not redrawn. The open question is
 in `docs/open-questions.md`, "Surface wind: which forecast source".

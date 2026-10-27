@@ -9,7 +9,7 @@
  * Each bar is titled with its count, so a hover names it. Counts, never a
  * grade.
  */
-import { histogramLine, signed, yStep, type WindErrorSection } from '../src/domain/windErrors';
+import { histogramLine, signed, yStep, type WindErrorSection, barSide } from '../src/domain/windErrors';
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
@@ -65,7 +65,7 @@ export function histogramGridSvg(o: {
         const r = Math.min(4, w / 2, y0 + PH - y);
         // Rounded at the data end, square on the baseline.
         parts.push(
-          `<path class="bar" d="M${x},${y0 + PH} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0 + PH} Z">` +
+          `<path class="bar ${barSide(v)}" d="M${x},${y0 + PH} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0 + PH} Z">` +
             `<title>${signed(v)} ${h.unit}: ${c} ${unitWord}${c === 1 ? '' : 's'}</title></path>`,
         );
       });
@@ -88,10 +88,12 @@ export function histogramGridSvg(o: {
 <title id="t">${esc(o.title)}</title>
 <desc id="d">${esc(o.desc)}</desc>
 <style>
-  svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --base:#c3c2b7; --bar:#2a78d6;
+  svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --base:#c3c2b7;
+        --bar:#2a78d6; --bar-under:#1f9ea6; --bar-zero:#a3a29b;
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
   @media (prefers-color-scheme: dark) {
-    svg { --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781; --grid:#2c2c2a; --base:#383835; --bar:#3987e5; }
+    svg { --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781; --grid:#2c2c2a; --base:#383835;
+          --bar:#3987e5; --bar-under:#3fc1c9; --bar-zero:#6b6a66; }
   }
   .bg { fill: var(--surface); }
   .h { fill: var(--ink); font-size: 15px; font-weight: 600; }
@@ -103,6 +105,8 @@ export function histogramGridSvg(o: {
   .base { stroke: var(--base); stroke-width: 1; }
   .zero { stroke: var(--ink2); stroke-width: 1.5; stroke-dasharray: 4 3; }
   .bar { fill: var(--bar); }
+  .bar.under { fill: var(--bar-under); }
+  .bar.zero { fill: var(--bar-zero); }
 </style>
 <rect class="bg" width="100%" height="100%"/>
 <text class="h" x="${ML}" y="24">${esc(o.title)}</text>
