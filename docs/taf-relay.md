@@ -202,12 +202,17 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    register this TLD". It becomes part of the relay's
    address, `https://lspc-taf-relay.<subdomain>.workers.dev`, which anyone
    reading the page source can see, so pick a neutral name. It names the
-   account, not this Worker (every Worker in the account shares it, and
-   the Worker's own name already says "taf-relay"), so `lspc-weather`
-   reads as project then component; `lspc-weather-taf-relay` would say
-   the component twice. The namespace is global: if the name is taken,
-   another short one for the project. It can be changed later, but that
-   breaks the address the app has.
+   account, not this Worker: every Worker in the account shares it, and
+   the Worker's own name already says "taf-relay" (`lspc-weather-taf-relay`
+   would say the component twice). If the account will only ever hold
+   this project, `lspc-weather` reads as project then component. If it
+   may hold others, name it for the account: the GitHub handle, already
+   public as the site's host (`amelia-m.github.io`), gives
+   `lspc-taf-relay.amelia-m.workers.dev` and fits every later Worker,
+   where a project's name would not (the maintainer asked, 2026-10-27).
+   The free plan's limits are per account, shared by every Worker in it.
+   The namespace is global: if the name is taken, another short one. It
+   can be changed later, but that breaks the address the app has.
 3. **Connect the repository.** Go to Workers & Pages, then Create
    application, then GitHub. (The dashboard's account home, as seen by the
    maintainer on 2026-10-21, has no "Workers & Pages" entry at the top of
