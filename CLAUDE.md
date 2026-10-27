@@ -695,7 +695,9 @@ It changes nothing the dashboard shows, but its archived records feed the
 `data/parity/`, summarise them with `scripts/surfaceWindSummary.ts` into
 `docs/surface-wind-sources.md`, rebuild the page's data file and figures
 with `scripts/windErrorsData.ts` on the whole window, and delete the
-workflow.
+workflow (the maintainer, 2026-10-27: fine to delete as long as the page's
+data keeps growing, which the weekly refresh's Open-Meteo and NDFD archive
+fetches do; the sampler was a time-boxed sample, not a feed).
 `.github/workflows/run-split-sample.yml` is the same pattern, temporary, until
 2026-10-27T06:00Z: every four minutes `scripts/runSplit.live.ts` asks Mark
 Schulze's tool for both its hour in progress and its next hour and sets each
