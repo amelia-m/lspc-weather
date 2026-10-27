@@ -6,7 +6,8 @@
 > the document describes (set against other sources, counted,
 > differenced or interpolated). See [open-meteo-terms.md](open-meteo-terms.md).
 
-Live backlog. Closed items should be deleted rather than marked done — the
+Live backlog. A closed item is kept for a while under a "Done" or "Settled"
+heading, then deleted — the
 repository history is the record.
 
 ## Needs a human with a document
@@ -59,9 +60,8 @@ These cannot be settled from the code.
    (A5). The page takes the answers in place — a verdict per claim, yes / no /
    not sure and a note per question, kept in the browser — and sends them as a
    prefilled GitHub issue or as copied text. The next step is an instructor or
-   S&TA working through it. The maintainer asked on 2026-10-09 not to be
-   asked about the verdicts again for a week: raise it no sooner than
-   2026-10-16.
+   S&TA working through it. When to raise it is at the top of this list:
+   held until 2026-10-31 at the earliest (the maintainer, 2026-10-27).
 
 3. **The app's own thresholds, for an instructor's judgement rather than a
    lookup.** Part B of the citations page — currently one entry, the 25 kt
@@ -176,8 +176,9 @@ without placing it. Whether the card should say so is open.
 Raised 2026-10-08. Open-Meteo's README
 (<https://github.com/open-meteo/open-meteo>) asks: "Do you use Open-Meteo?
 Please open a pull request and add your repository or app to the list!"
-This app reads its winds aloft (pressure levels, with the 10 m and 2 m
-samples) and the 10-day outlook from Open-Meteo, so it qualifies. Not started: the pull request goes to another
+This app reads its winds aloft (pressure levels, the 80 to 180 m winds and
+the 10 m and 2 m samples), its cloud cover and the 10-day outlook from
+Open-Meteo, so it qualifies. Not started: the pull request goes to another
 project's repository under the maintainer's name, so it waits on the
 maintainer deciding to send it. Before writing the entry, read the README's
 list as it then stands for the format it uses.
@@ -217,8 +218,10 @@ terrain). Logs before 2026-10-08 were taken at the old point.
 Done 2026-10-18: the comparison below is now `scripts/surfaceRows.ts`, and
 over 79 hours at the landing area it found what the old point did
 (`docs/markschulze-altitude-reference.md`, "Again, at the landing area").
-Still worth re-running in other seasons; the logs it needs expire after 14
-days unless their Schulze lines are archived under `data/parity/` first.
+Still worth re-running in other seasons. The logs it needs are the
+comparison records, archived daily since 2026-10-19 as
+`data/parity/parity-logs-<day>.jsonl.gz`, so nothing expires; pass those
+files to `--logs`.
 
 What it replaced: on 2026-10-08 both forecast Surface rows were set by hand against KPMV's
 measured wind over the 156 hours the logs held (the 10 m row nearer in 104,
@@ -278,13 +281,13 @@ request for the same hours several times across :30 to :59, recording each
 raw profile, so the next-hour request can be compared with itself and with
 the hour-in-progress one at the same minute. Open-Meteo's responses carry no
 run time; its `generationtime_ms` and the raw values are what there is.
-Until then the Winds aloft card states only what was seen: on the same hour
-the two can show different runs for a while, most often between half past
-and ten to the hour.
+Until 2026-10-27 the Winds aloft card stated only what was seen: on the
+same hour the two can show different runs for a while, most often between
+half past and ten to the hour. It now says why (`WindsAloftPanel`).
 
 A lead from the surface-wind sample of 2026-10-09
-(`docs/surface-wind-sources.md`), not yet tested against the winds-aloft
-request: Open-Meteo's metadata API (`/data/<model>/static/meta.json`) does
+(`docs/surface-wind-sources.md`), tested since (logged from 2026-10-21,
+then the sampler, below): Open-Meteo's metadata API (`/data/<model>/static/meta.json`) does
 give each model's last run and when it became available, and that evening
 HRRR's hourly domain (`ncep_hrrr_conus`) became available at 00:48Z and
 01:52Z, the window where the mismatches cluster. For about twelve minutes
@@ -313,7 +316,8 @@ If the copying explains the mismatches, they sit in the first band, and
 above all where the reads disagreed, whatever the minute of the clock.
 The comparisons run eight times a day plus the daily sky-parity run, and
 the archive keeps them (`parity-logs-<day>`), so a reading needs a few
-weeks:
+weeks. The sampler below overtook this count; it is kept as a way to read
+the daily comparisons:
 
     npx tsx scripts/runAge.ts --logs data/parity/parity-logs-*.jsonl.gz
 
@@ -378,9 +382,9 @@ it does not take (CLAUDE.md). The option is a standing note on the
 Surface wind card or the hourly chart, giving the comparison's figures.
 The maintainer, 2026-10-23: "depends how consistent the difference is".
 The side was consistent; the size was not, and 53 hours over a few windy
-days will not settle it. Revisit when the keeper has more windy days.
+days will not settle it.
 
-A quicker route, found 2026-10-23: NOAA's NDFD archive, which already
+A quicker route, found 2026-10-23, and taken the same day (below): NOAA's NDFD archive, which already
 stands in for the API's sky cover and ceiling (docs/cloud-cover-sources.md),
 also holds the wind grids. Listed that day, `noaa-ndfd-pds.s3.amazonaws.com`
 has `wmo/wspd/`, `wmo/wgust/` and `wmo/wdir/` beside `sky/` and `cig/`,
@@ -561,12 +565,14 @@ What that choice involves, as read 2026-10-16:
   repositories; the 2026 pricing changes (hosted-runner prices cut from
   January 1, a self-hosted platform charge from March 1) left that alone.
   Private repositories draw on a monthly quota (2,000 minutes on Free, by
-  a third-party listing; the official page was not read). A job looping
+  a third-party listing; the official page was not read that day). A job looping
   around the clock is about 43,000 minutes a month: nothing while the
   repository is public, many times the quota if it ever went private.
-  docs.github.com is not on the sandbox allowlist (the proxy refused it,
-  and WebFetch could not resolve it), so none of this was read on
-  GitHub's own pages.
+  docs.github.com was not on the sandbox allowlist that day (the proxy
+  refused it, and WebFetch could not resolve it), so none of this was read
+  on GitHub's own pages then. Read there on 2026-10-20, once it was
+  allowlisted: see "KOFF's TAF" below, the limits and terms list, which
+  has the figures.
 - **Limits.** A job on a GitHub-hosted runner stops at 6 hours, so a loop
   is a chain of starts, as the surface-wind sampler is. A workflow run
   stops at 35 days. Scheduled workflows in a public repository are
@@ -575,9 +581,9 @@ What that choice involves, as read 2026-10-16:
 - **Terms.** GitHub's terms for Actions list, among uses not allowed,
   "any other activity unrelated to the production, testing, deployment,
   or publication of the software project" of the repository, and say
-  misuse can end jobs or restrict Actions. That wording was read in
-  copies of the terms (a mirror of the github/docs repository), not the
-  live page. A keeper whose records check this project's own forecasts is
+  misuse can end jobs or restrict Actions. That wording was read on
+  2026-10-16 in copies of the terms (a mirror of the github/docs
+  repository), and on the live page on 2026-10-20 ("KOFF's TAF", below). A keeper whose records check this project's own forecasts is
   arguably within the project; the surface-wind sampler already runs the
   same way.
 - **Precedent.** The surface-wind sampler (`surface-wind-sample.yml`) is
@@ -672,7 +678,11 @@ and claude.ai comments, and it had no comments. Deleted 2026-10-17 at the
 maintainer's word ("if it's fully superseded delete"); its link no
 longer opens.
 
-## The ceiling data refresh: its first run on GitHub
+## Settled: the ceiling data refresh's first runs on GitHub
+
+Ran first on 2026-10-19 (b46f05d) and again on 2026-10-26 (2f67fd3); the
+file-per-week and schedule questions were settled by the maintainer on
+2026-10-20 (below). What follows is the question as it stood.
 
 `.github/workflows/ceiling-data-refresh.yml` (added 2026-10-17;
 docs/ceiling-heights.md, "The chart") was run step by step in a scratch
@@ -723,8 +733,8 @@ What the check-ins found on 2026-10-19:
   live site served the new file. The live-site check did not follow that
   deploy: deploys dispatched by a workflow's token raise no `workflow_run`
   event, so the check now starts from `deploy.yml` instead (CLAUDE.md,
-  `live-site.yml`). The first scheduled run is settled; the two choices
-  above still wait on the maintainer.
+  `live-site.yml`). The first scheduled run is settled, and so are the
+  two choices above (the maintainer, 2026-10-20).
 
 ## Viewing the deployed site from the sandbox
 
@@ -836,8 +846,9 @@ their name) that fetches aviationweather.gov and adds a CORS header, which
 would be current; or a workflow that copies the TAF onto the site on a
 schedule, which needs no new account but would run late as often as this
 repo has seen GitHub schedules run late. Keyed services (CheckWX and the
-like) would put the key in the public page. Until one is chosen, the card
-shows the next station, KOMA, and links Offutt's TAF.
+like) would put the key in the public page. Until the relay was
+deployed (2026-10-27) the card showed the next station, KOMA, and linked
+Offutt's TAF.
 
 Read again 2026-10-20. aviationweather.gov's API and NOAA's raw file
 still send no CORS header, and both held the TAF issued Monday 19
@@ -878,17 +889,18 @@ before, connect_rejected). Read that day:
 - Cloudflare, Workers "Limits" (page last updated 2026-10-12) and
   "Pricing": the Workers Free plan allows 100,000 requests a day,
   resetting at midnight UTC (past it, Error 1027), and 10 ms of CPU per
-  request, with network waits not counted. The card asks every 10
-  minutes per open page, 144 requests a day, so the free plan covers
-  about 690 pages open all day. The paid plan is $5 a month.
+  request, with network waits not counted. Since 2026-10-27 the card
+  asks the relay twice every 10 minutes per open page (the TAF and the
+  NBM block), 288 requests a day, so the free plan covers about 347 pages
+  open all day (one path, 144 and about 690). The paid plan is $5 a month.
 
 The relay is written (2026-10-20, at the maintainer's word): `relay/`, a
 Cloudflare Worker, checked in Cloudflare's runtime locally and end to end
 in a browser; docs/taf-relay.md has what it does, how it was checked, and
-the setup. **Waiting on the maintainer:** create the Cloudflare account,
-connect the repository and deploy (docs/taf-relay.md, "Setting it up"),
-then give a session the Worker's address to set `TAF_RELAY_URL`
-(src/config/tafRelay.ts). Until then the card is as before.
+the setup. Done 2026-10-27, as the top of this section says: the
+maintainer created the account, connected the repository and deployed
+(docs/taf-relay.md, "Setting it up"), and `TAF_RELAY_URL`
+(src/config/tafRelay.ts) was set the same day.
 
 Either route needed the chain to pass over a TAF past its valid time
 (Offutt's weekend gap), and since 2026-10-20 it does, at the maintainer's
@@ -934,7 +946,7 @@ Settled:
 Exercised since:
 
 - **The deployed site, in a browser, on live data** (2026-10-17, about
-  01:30Z; how, in "Viewing the deployed site from the sandbox" below).
+  01:30Z; how, in "Viewing the deployed site from the sandbox" above).
   <https://amelia-m.github.io/lspc-weather/> loaded at 1280, 390 and
   320 px with no sideways scroll, and every source answered: IEM and
   NWS's latest KPMV observation, the gridpoint, the TAF chain (KOFF had

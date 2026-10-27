@@ -47,9 +47,10 @@ piece.
   - At this club's scale none of that matters: each open dashboard asks
     every 10 minutes, far under the limit with no cache at all.
 - **Within the free plan.** Workers Free allows 100,000 requests a day
-  (Cloudflare's Workers limits page, read 2026-10-20). The card asks every
-  10 minutes per open page, 144 a day, so the plan covers about 690 pages
-  open all day. Past the limit, Cloudflare answers with its Error 1027 and
+  (Cloudflare's Workers limits page, read 2026-10-20). Since 2026-10-27
+  the card asks the relay twice every 10 minutes per open page, the TAF
+  and the NBM block, 288 a day, so the plan covers about 347 pages open
+  all day (one path, 144 and about 690). Past the limit, Cloudflare answers with its Error 1027 and
   the card falls back to Omaha's TAF, as on any failed fetch.
 
 ## What the app does with it
