@@ -179,76 +179,59 @@ the sandbox.
 
 Read from Cloudflare's Workers docs on 2026-10-20: "Builds", "Build
 configuration", "Build watch paths", "Build branches", "workers.dev" and
-"Limits & pricing".
+"Limits & pricing". Dashboard details are as the maintainer saw them on
+2026-10-21, 10-26 and 10-27; the docs' names lag the dashboard's.
 
-1. **Create a Cloudflare account** at <https://dash.cloudflare.com/sign-up>.
-   Workers starts on the Free plan by default. Turn on two-factor
-   authentication: this account can change what the dashboard shows.
-   Which email to use is about handover (below), not security. The
-   address is not public; only the workers.dev name is. Cloudflare also
-   offers "Sign in with GitHub" (seen by the maintainer on 2026-10-21).
-   That ties nothing new together: Workers Builds deploys whatever reaches
-   `main`, so the GitHub account already decides what the relay serves.
-   Signing in with it is separate from step 3's connection of the
-   repository, which is still needed.
-2. **The workers.dev subdomain.** Cloudflare does not ask for one: on
-   opening Workers & Pages (Compute, then Workers & Pages, on the current
-   dashboard) the account already had one made from the account's name,
-   shown as "Subdomain" under Account details on the right, with a pencil
-   to change it (seen by the maintainer on 2026-10-26). Change it before
-   creating the Worker, since it is part of every Worker's address. Not
-   the search box on the account's home page: that looks up domains to
-   register, and answered a workers.dev name typed there with "We can't
-   register this TLD". It becomes part of the relay's
-   address, `https://lspc-taf-relay.<subdomain>.workers.dev`, which anyone
-   reading the page source can see, so pick a neutral name. It names the
-   account, not this Worker: every Worker in the account shares it, and
-   the Worker's own name already says "taf-relay" (`lspc-weather-taf-relay`
-   would say the component twice). If the account will only ever hold
-   this project, `lspc-weather` reads as project then component. If it
-   may hold others, name it for the account: the GitHub handle, already
-   public as the site's host (`amelia-m.github.io`), gives
-   `lspc-taf-relay.amelia-m.workers.dev` and fits every later Worker,
-   where a project's name would not (the maintainer asked, 2026-10-27).
-   The free plan's limits are per account, shared by every Worker in it.
-   The namespace is global: if the name is taken, another short one. It
-   can be changed later, but that breaks the address the app has.
-3. **Connect the repository.** Go to Workers & Pages, then Create
-   application, then GitHub. (The dashboard's account home, as seen by the
-   maintainer on 2026-10-21, has no "Workers & Pages" entry at the top of
-   its sidebar: Workers sits under Build, then Compute, and the home page
-   has a "Create app" button. The docs' names lag the dashboard's.) Then and authorize Cloudflare's GitHub app. When
-   GitHub asks which repositories, choose "Only select repositories" and
-   pick `amelia-m/lspc-weather`.
-4. **Configure the build:**
-   - **Project / Worker name:** `lspc-taf-relay`. It must match `name` in
-     `relay/wrangler.toml`, or the build fails.
+1. **Account.** Sign up at <https://dash.cloudflare.com/sign-up>; Workers
+   starts on the Free plan. Turn on two-factor authentication: the account
+   can change what the dashboard shows. The email is not public, only the
+   workers.dev name is, so which to use is a handover question (below).
+   "Sign in with GitHub" is offered and ties nothing new together (Workers
+   Builds deploys whatever reaches `main`, so the GitHub account already
+   decides what the relay serves); step 3's repository connection is
+   still needed.
+2. **Subdomain.** Every Worker's address is
+   `<worker-name>.<account-subdomain>.workers.dev`, so the subdomain
+   names the account, is shared by every Worker in it, and shows in the
+   page source. Cloudflare assigns one from the account's name; change
+   it before creating the Worker, as the address breaks when it changes
+   later: Compute, then Workers & Pages, then the pencil beside
+   "Subdomain" under Account details. (The home page's search box is a
+   domain-registration search and answers a workers.dev name with "We
+   can't register this TLD".) The Worker's own name already says
+   "taf-relay", so the subdomain should not: `lspc-weather` if the
+   account will only hold this project; the GitHub handle (`amelia-m`,
+   already public as the site's host) if it may hold others, giving
+   `lspc-taf-relay.amelia-m.workers.dev`. The namespace is global, so a
+   taken name means another short one. The free plan's limits are per
+   account, shared by every Worker in it.
+3. **Repository.** Workers & Pages, then Create application, then
+   GitHub; authorize Cloudflare's GitHub app for "Only select
+   repositories", `amelia-m/lspc-weather`.
+4. **Build:**
+   - **Worker name:** `lspc-taf-relay`, matching `name` in
+     `relay/wrangler.toml` (else the build fails)
    - **Root directory:** `relay`
-   - **Build command:** leave empty.
+   - **Build command:** empty
    - **Deploy command:** `npx wrangler@4.151.3 deploy` (the version the
-     local check ran; with no `package.json` in `relay/`, the default takes
-     whatever Wrangler is newest).
-   - **Production branch:** `main`.
+     local check ran; `relay/` has no `package.json`, so the default would
+     take whatever Wrangler is newest)
+   - **Production branch:** `main`
 
-   Then Save and Deploy. The Worker merges from `main`, so it deploys only
-   once this change is merged.
-5. **Two settings afterwards**, under the Worker's Settings, then Build:
-   - **Build watch paths:** include `relay/*`, so only a change to the
-     relay builds it. Otherwise every push to the repository does, and the
-     forecast keeper alone pushes hourly (to its own branch, which the
-     next setting covers).
-   - **Preview builds** (Build branches): off, so pushes to other branches
-     (`claude/*`, `forecast-archive`) build nothing.
-
-   The free plan has 3,000 build minutes a month and one build at a time.
-6. **Check it:** open
-   `https://lspc-taf-relay.<subdomain>.workers.dev/taf/KOFF`. It should
-   show JSON beginning `[{"icaoId":"KOFF"`. An empty `[]` means Offutt has
-   no TAF in force right now, which happens over weekends and holidays.
+   Save and Deploy. It builds from `main`, so it deploys once this
+   change is merged.
+5. **Afterwards**, under the Worker's Settings, then Build: **watch
+   paths** `relay/*` (else every push builds, and the forecast keeper
+   pushes hourly), **preview builds** off (so `claude/*` and
+   `forecast-archive` build nothing). The free plan has 3,000 build
+   minutes a month, one build at a time.
+6. **Check:** `https://lspc-taf-relay.<subdomain>.workers.dev/taf/KOFF`
+   should show JSON beginning `[{"icaoId":"KOFF"`. An empty `[]` means
+   Offutt has no TAF in force, as over weekends and holidays.
 7. **Send the address to a Claude session.** It sets `TAF_RELAY_URL` and
    opens the PR; the deploy carries the new policy.
 
-To turn it off, set `TAF_RELAY_URL` back to null (the card returns to
+To turn it off: `TAF_RELAY_URL` back to null (the card returns to
 Omaha's), then delete the Worker in the dashboard.
 
 ## Handing it over
