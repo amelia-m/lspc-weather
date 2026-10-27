@@ -330,8 +330,10 @@ export function WindsAloftPanel({
               before assuming the data disagrees: this card follows the hour nearest the clock, that
               tool the hour in progress, so after half past the two are an hour apart until one of
               them is stepped with its hour buttons. Even on the same hour the two have shown
-              different forecast runs, for up to about half an hour and most often between half past
-              and ten to the hour; if they disagree then, look again later. Its
+              different forecast runs for a few minutes at a time, most often between half past and
+              ten to the hour, while a new forecast run reaches Open-Meteo’s servers one copy at a
+              time and either table can get the old run or the new; if they disagree then, look again
+              later. Its
               altitudes are{' '}
               <strong>
                 <SimTerm term="agl">AGL</SimTerm>, like these

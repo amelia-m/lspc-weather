@@ -167,6 +167,52 @@ describe('summarizeRunSplit', () => {
     expect(s.byRunAge[3].cell).toEqual({ n: 2, mismatched: 0 }); // 110 min after
     expect(s.samples).toBe(2);
   });
+
+  it('splits the counts by whether the HRRR reads disagreed, and leaves a sample with one read out', () => {
+    const split = (variants: number, reads = 3) => ({
+      ncep_hrrr_conus: { init: '2026-10-23T08:00:00.000Z', modified: null, avail: null, stepS: 3600, reads, variants },
+    });
+    const s = summarizeRunSplit([
+      { ...rec(35, [true, true], [true, true], true), omRuns: split(2) },
+      { ...rec(39, [false, false], [false, false], false), omRuns: split(1) },
+      { ...rec(43, [true, true], [true, true], true), omRuns: split(2, 1) },
+    ]);
+    expect(s.bySplit).toEqual([
+      { serversDisagreed: false, cell: { n: 2, mismatched: 0 }, self: { n: 2, mismatched: 0 } },
+      { serversDisagreed: true, cell: { n: 2, mismatched: 2 }, self: { n: 2, mismatched: 2 } },
+    ]);
+  });
+
+  it('counts each copy of a run as an arrival, by the minute it became available', () => {
+    const run = (init: string, avail: string) => ({
+      ncep_hrrr_conus: { init, modified: null, avail, stepS: 3600, reads: 3, variants: 1 },
+    });
+    const s = summarizeRunSplit([
+      { ...rec(5, [false, false], [false, false]), omRuns: run('2026-10-23T08:00:00.000Z', '2026-10-23T09:34:00.000Z') },
+      // The same run again, from the same copy: one arrival.
+      { ...rec(9, [false, false], [false, false]), omRuns: run('2026-10-23T08:00:00.000Z', '2026-10-23T09:34:00.000Z') },
+      // The same run from another copy, ten minutes later: a second arrival.
+      { ...rec(13, [false, false], [false, false]), omRuns: run('2026-10-23T08:00:00.000Z', '2026-10-23T09:44:00.000Z') },
+      { ...rec(17, [false, false], [false, false]), omRuns: run('2026-10-23T09:00:00.000Z', '2026-10-23T10:58:00.000Z') },
+    ]);
+    expect(s.runArrivals.runs).toBe(2);
+    expect(s.runArrivals.runsWithSeveralArrivals).toBe(1);
+    expect(s.runArrivals.byMinute.map((b) => b.arrivals)).toEqual([0, 0, 0, 1, 1, 1]);
+  });
+
+  it('counts whether both his hours moved together, and the stretches of mismatched samples', () => {
+    const s = summarizeRunSplit([
+      rec(30, [true, true], [true, true]),
+      rec(34, [true, true], [false, false]),
+      rec(38, [false, false], [false, false]),
+      rec(42, [false, false], [true, true]),
+      // Unjudged: not a mismatch, so it ends a stretch.
+      rec(46, [null, null], [null, null]),
+      rec(50, [true, true], [true, true]),
+    ]);
+    expect(s.offsetsTogether).toEqual({ both: 2, one: 2 });
+    expect(s.stretches).toEqual({ count: 3, longest: 2 });
+  });
 });
 
 describe('parseRunSplitLines', () => {

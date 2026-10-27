@@ -231,7 +231,22 @@ by hand, so the figure on file is not a one-off.
 
 ## Which forecast run the winds-aloft request is served
 
-Narrowed, not settled. Seen first on 2026-09-23: for the same hour the app's
+**Settled 2026-10-27, as far as a sample can** (docs/run-split.md, "What
+the sample found"): it is the clock, not Mark Schulze's next-hour request.
+A new HRRR run reaches Open-Meteo's servers one copy at a time, between
+about :20 and :59 (140 of 148 arrivals seen), and for some minutes after
+each copy a request gets the new run or the old one, whichever server
+answers. The sampler's two app requests a moment apart disagreed with
+each other in the same minutes (5.5% from :30, 0.2% to 1.5% before half
+past), with his tool not involved; his hour in progress and his next hour
+mismatched at the same rates in both halves of the hour. Still counted,
+not explained: in 50 of 86 mismatched pairings his table differed from
+both of the app's answers, which is either his request on the other copy
+or his own cache, and 16 of 250 pairings mismatched with the newest HRRR
+run the reads saw an hour or more old. Neither is worth another sampler.
+The history of the question follows.
+
+Narrowed on the way. Seen first on 2026-09-23: for the same hour the app's
 table and Mark Schulze's tool, both reading Open-Meteo, were on different
 forecast runs. Checked 2026-09-24 at one level in one hour: Schulze's raw
 700 hPa level matched Open-Meteo's `best_match`, `gfs_seamless` and
@@ -315,17 +330,15 @@ copying explanation needs. One read gives only the time on whichever
 server answered, which can lag by minutes, or by a whole run while the
 copying goes on.
 
-**A sampler to separate the two, since 2026-10-23** (docs/run-split.md).
-The comparisons were too few: to 2026-10-22 the run metadata covered 9
-judged comparisons, 2 flagged. `.github/workflows/run-split-sample.yml`
-runs every four minutes until 2026-10-27T06:00Z. At every minute it asks
-the tool for both its hour in progress and its next hour, and sets each
-against the app's answer for the same valid hour. It also makes two app
-requests a moment apart, set against each other. A next-hour cause shows
-as the next-hour row high in both halves of the hour. A clock cause shows
-as both rows high in the same minutes, with the app disagreeing with
-itself there too. When the window ends, the records are archived and
-summarised, and the workflow deleted.
+**A sampler to separate the two, 2026-10-23 to 2026-10-27**
+(docs/run-split.md). The comparisons were too few: to 2026-10-22 the run
+metadata covered 9 judged comparisons, 2 flagged. The sampler ran every
+four minutes for four days, asking the tool for both its hour in progress
+and its next hour at every minute and setting each against the app's
+answer for the same valid hour, plus two app requests a moment apart set
+against each other. Its 1,291 records are
+`data/parity/runsplit-2026-10-23-to-2026-10-27.jsonl.gz`; the result is
+at the top of this section, and the workflow is deleted.
 
 ## Surface wind: which forecast source
 

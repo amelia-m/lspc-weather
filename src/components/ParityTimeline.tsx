@@ -131,11 +131,25 @@ const TIMELINE: Entry[] = [
       'Those runs compared nothing and count as unreadable above; the usairnet rows and timings stopped growing on Oct 9. The runs were hours apart, so the outage line, which joins failures within five minutes, does not show them as one stretch. Nothing on the dashboard reads usairnet.',
   },
   {
+    date: 'Oct 23',
+    kind: 'Comparison',
+    what: 'A four-day sampler asked Schulze’s tool for both its hour in progress and its next hour every four minutes, at every minute of the hour, and set each against this app’s Open-Meteo answer, plus two app requests a moment apart against each other (docs/run-split.md).',
+    effect:
+      'Nothing in the summary above: its records are archived apart. It was to tell whether the different-runs readings came with his next-hour request or with the minute of the clock, which the comparison could not separate.',
+  },
+  {
     date: 'Oct 26',
     kind: 'Comparison',
     what: 'usairnet’s redesigned page is read (both layouts; its “Overcast” replaces the legacy “Solid Overcast” in the comparison’s wording), and the raw METAR it now prints is kept, so which report it decoded is read from the report itself.',
     effect:
       'The usairnet rows count again from this day. The first run on the new page agreed with the dashboard on 11 of 13 fields on the same report; the two sun rows were a minute or two apart, as before.',
+  },
+  {
+    date: 'Oct 27',
+    kind: 'Comparison',
+    what: 'The run sampler ended with 1,291 samples. His hour in progress and his next hour were on a different run from this app’s answer at the same rates (1.5% and 1.2% before half past, 5.8% and 5.5% after), and this app’s own two requests a moment apart disagreed in the same minutes (5.5% from :30, under 1.5% before half past).',
+    effect:
+      'Why is answered: a new HRRR run reaches Open-Meteo’s servers one copy at a time, mostly between :20 and :59, and for some minutes after each copy a request gets either run. His next-hour request has no part in it. The different-runs rate in the summary above is unchanged by this; the Winds aloft card now says why.',
   },
 ];
 
