@@ -404,6 +404,15 @@ over it in 2,477 hours and KPMV's report in 1,055, with 41 of those under
 in the forecast. A single figure for a card note would be right on
 average and wrong on the windiest days. Still the maintainer's call.
 
+**Run again 2026-10-27** over the archive as the weekly refresh left it
+(to 2026-10-25; docs/nws-gust-archive.md, "Read again 2026-10-27"): 978
+gusting hours at the latest issuance, above in 615, the same in 93,
+below in 270, +1.51 kt on average, −0.59 on reported gusts of 23 kt or
+more; 113 gusty days, 54 within 2 kt, 43 more than 2 kt high, 16 more
+than 2 kt low. The three added days changed nothing. The refresh keeps
+the archive growing and the `#wind-errors` page current; the breakdown
+by gust size and by day is this script's, by hand.
+
 The same evening the archive's wind speed was read too: the forecast
 gust was never under the forecast wind in any of the six months' hours,
 so those counts are the forecast flag's own. Over six months the speed

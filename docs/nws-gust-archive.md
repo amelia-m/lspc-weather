@@ -288,3 +288,46 @@ dashboard changed, and nothing reads these figures.
 KPMV is 11.5 miles from the drop zone, and the grid point is the drop
 zone's, so part of every difference is the distance. How KPMV decides
 to report a gust is above, "How a gust gets into KPMV's report".
+
+## Read again 2026-10-27, to 2026-10-25
+
+The weekly refresh of 2026-10-26 (run 40340551073) brought the archive's
+speed, gust and direction for 2026-10-22 to 10-25
+(`data/parity/ndfd-wind-2026-10-22-to-2026-10-25.jsonl.gz`, 720 records
+of each, issuances to 10-25 18:47Z) and KPMV's reports to 10-25 23:55Z
+(`metar-2026-10-18-to-2026-10-25`). The same command over everything
+kept, 831 issuances and 14,576 reports, gives 4,862 hours at the latest
+issuance (73 more than the 2026-10-23 reading), 978 of them with a
+reported gust (14 more).
+
+| | latest issuance | 6 h or more ahead | 24 h or more ahead |
+|---|---|---|---|
+| hours paired | 4,862 | 4,857 | 4,839 |
+| hours KPMV reported a gust | 978 | 973 | 968 |
+| forecast gust above / same / below the reported gust | 615 / 93 / 270 | 616 / 93 / 264 | 565 / 82 / 321 |
+| share below | 27.6% | 27.1% | 33.2% |
+| mean, forecast minus reported | +1.51 kt | +1.49 kt | +0.98 kt |
+| median / p90 / largest miss | 3 / 8 / 24 kt | 3 / 8 / 25 kt | 3 / 8 / 24 kt |
+| no gust reported: forecast gust over the steady wind, mean | +5.88 kt (3,884 h) | +5.92 kt | +5.96 kt |
+
+By the size of the reported gust, at the latest issuance: under 18 kt
++2.48 kt (444 hours), 18 to 22 kt +1.53 (326), 23 kt or more −0.59
+(208, unchanged: the new days had no gust that large). Days with three
+or more gusting hours: 113, within 2 kt on 54, more than 2 kt high on
+43, more than 2 kt low on 16. At 12 kt the forecast was at or over in
+2,521 hours, the report in 1,026 of them and in 43 more with the
+forecast under. The forecast gust was again never under the forecast
+wind, in any hour at any lead.
+
+The days added on their own (76 hours, 2026-10-22 19Z to 10-25 23Z; 15
+with a reported gust, none over 22 kt): the forecast gust above the
+reported in 11, below in 4, +2.1 kt on average, on two gusty days one
++5.1 and one −3.0 kt; the speed +0.1 kt, the direction +16°, median miss
+10°.
+
+So nothing moved: the side holds in about two thirds of gusting hours,
+the size still varies by the day and turns negative on the largest
+gusts, and the card-note decision stands as it was. The script's
+by-month list carries a "2026-03" row of 3 hours, which are the hours
+of 2026-04-01 before 06Z, March 31 in Central time, and the "by month"
+table above left it out; both readings include them in their totals.
