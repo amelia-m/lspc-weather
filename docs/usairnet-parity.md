@@ -33,14 +33,14 @@ Everything that was on this list has shipped. What remains:
 1. **Forecast dew point / spread** — the spread is shown for the current METAR
    only; the NWS gridpoint carries a forecast dewpoint that would extend it.
    Note the constraint below before building anything on top of it.
-2. **Lowest cloud base (any layer)** — the Ceiling & sky card shows the ceiling
-   (lowest BKN/OVC); usairnet also plots the lowest FEW/SCT base. For the
-   latest report the dashboard has it: the Current conditions card's Sky
-   line lists every layer the METAR gives ("FEW 2,500 ft, BKN 4,000 ft"),
-   lowest first. A *forecast* of it would have to come from the NBM, the
-   source of usairnet's row; see "Where usairnet's rows come from" below.
 
 Resolved:
+
+- **Lowest cloud base (any layer)** — *implemented* 2026-10-27: the latest
+  report's layers on the Current conditions card's Sky line ("FEW 2,500
+  ft, BKN 4,000 ft", lowest first), and the NBM's `LCB` as a "base" row on
+  the Ceiling & sky card, through the relay (docs/nbm-lowest-cloud-base.md).
+  Printed plainly, no flag.
 
 - **Chance of thunder %** — *implemented.* Investigation found the NWS
   gridpoint (`api.weather.gov`, which works even when Open-Meteo is blocked)
@@ -86,7 +86,8 @@ NBH, NBP). Two matter here:
 KPMV is in both. Each issuance is one file for every station, on NOAA's
 open data bucket at
 `https://noaa-nbm-grib2-pds.s3.amazonaws.com/blend.YYYYMMDD/HH/text/blend_nb{h,s}tx.tHHz`
-(and on NOMADS, which refused this sandbox with a 403). The KPMV blocks of
+(and on NOMADS, which refused this sandbox with a 403 until it was
+allowlisted on 2026-10-26). The KPMV blocks of
 the 03Z issuance of 2026-10-24, as read, are in
 `data/parity/nbm-kpmv-2026-10-24-03z.txt`.
 
@@ -138,7 +139,7 @@ from a second forecast that can disagree with it, as usairnet's
 FEW or SCT base.
 
 Design rule reminder: every added metric flags a condition and cites a source,
-and none renders a go/no-go verdict. The stronger rule this branch added: a
+and none renders a go/no-go verdict. The stronger rule this app follows (CLAUDE.md): a
 metric only gets to raise a flag, or wear a warning colour, if a published
 source sets the number it fires at. Otherwise it is printed plainly and the
 reader judges it.

@@ -21,9 +21,10 @@ prints one `@@parity` line of kind `surfacewind`; the arithmetic over many
 runs is `src/domain/surfaceWindSources.ts`, pure and tested, and
 `npx tsx scripts/surfaceWindSummary.ts <log>` prints it.
 
-The script is opt-in and in no workflow. `vitest.live.config.ts` takes every
+The script is opt-in. `vitest.live.config.ts` takes every
 `scripts/*.live.ts`, and the daily sky-parity job runs that config with no
-path, so the script is skipped unless `SURFACE_WIND_SAMPLE=1` is set (shown
+path, so the script is skipped unless `SURFACE_WIND_SAMPLE=1` is set,
+which only the sampler workflow below sets, to 2026-10-30 (shown
 on 2026-10-09: the whole live config without it ran 5 files and skipped this
 one). One sample, from the sandbox:
 
@@ -305,8 +306,10 @@ beside the observed wind would see a figure the station did not report.
   report differs by that distance as well as by forecast error.
 - **NWS update cadence.** One update in two hours, and at 02:44:33Z, eight
   minutes after the hourly product's newer `updateTime`, the gridpoint still
-  answered with the older grid. The app shows NWS hours in the hourly chart, not in the
-  surface wind card or the flag.
+  answered with the older grid. The app shows NWS hours in the hourly
+  chart and, since 2026-10-10, reads them against the same wind limits as
+  a forecast flag (`forecastWindAdvisories`); the Surface wind card and
+  the observed-wind flag still read the METAR.
 
 ## What a longer sample needs
 

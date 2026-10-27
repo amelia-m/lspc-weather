@@ -206,7 +206,9 @@ The same pairs as the tables above, as histograms of forecast minus reported,
 one row per lead (`scripts/windErrorsData.ts`, with the comparison's own
 pairing and `windDiffs`). The same histograms are on the dashboard's
 `#wind-errors` page, "How far the wind forecasts were from KPMV", beside
-Open-Meteo's from the surface-wind sample. The figure shows what the means
+the same NWS forecast from NOAA's archive by lead (docs/nws-gust-archive.md),
+Open-Meteo's archived 10 m wind by run, and Open-Meteo's and NWS's hour
+from the surface-wind sample. The figure shows what the means
 alone did not:
 
 - **Speed** is one hump, centred a knot below the report (median −1 kt,

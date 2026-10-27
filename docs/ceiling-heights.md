@@ -237,8 +237,9 @@ following the footer link and back, with no policy violation logged; at
 320 px a legend entry that would not wrap made the page scroll
 sideways, and the first chart's axis labels ran together, both fixed
 then. Deployed the same day: the page, `chart.js` and the data file
-answered 200 from amelia-m.github.io (fetched with curl, which the
-sandbox can do; its browser still cannot load the live site), and the
+answered 200 from amelia-m.github.io (fetched with curl; the sandbox's
+browser could not load the live site until 2026-10-17,
+docs/open-questions.md, "Viewing the deployed site from the sandbox"), and the
 deployed dashboard's script carries the footer link. On 2026-10-17 the
 maintainer asked why the text stopped short of the chart panels: its
 paragraphs keep a readable measure, about 68 characters a line. They
@@ -365,8 +366,9 @@ fail with the behaviour it names broken (21 breaks, one at a time,
   and archive, this refresh), 0.12 MB in the week to 2026-10-20, about
   6 MB a year. That is about 43 MB a year, or 23 years to reach the
   1 GB GitHub recommends a repository stay under (its "about large
-  files" page as remembered: docs.github.com is not reachable from the
-  sandbox, so not read here). The week to 2026-10-20
+  files" page as remembered: docs.github.com was not reachable from the
+  sandbox when this was measured, 2026-10-20, the day it was allowlisted,
+  so the page was not read here). The week to 2026-10-20
   as a whole, the sessions' own commits included, added 1.4 MB (about
   14 years at that rate). What moves it is one-off data: the week to
   2026-10-13 added 10.9 MB, nearly all a 5 MB station cloud-cover

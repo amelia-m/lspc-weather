@@ -103,7 +103,10 @@ zoom 7). Whether to change the link is a separate decision from this one; it is
 noted here because the card says "Tap the image for the interactive radar".
 
 **Zoom, if a station link is kept.** The DZ is 54.8 km (34.0 mi) from KOAX —
-50.4 km south, 21.5 km east. Web Mercator at 41.3° N:
+50.4 km south, 21.5 km east. (The DZ here, and in links B to E, is the
+app's point of 2026-09-23, 40.8675, −96.11; since 2026-10-08 `SITE.dz` is
+the landing area, 40.8703, −96.1085, about 300 m away, which changes none
+of the above.) Web Mercator at 41.3° N:
 
 | zoom | m/px | 390×600 px phone map | 1280×800 px desktop map |
 |---|---|---|---|
@@ -149,8 +152,11 @@ The other candidates were produced the same way.
 
 ## What could not be checked
 
-**None of these URLs has been opened in a browser.** Playwright's Chromium here
-does not trust the egress proxy's CA, so it cannot load any https:// page. The
+**None of these URLs had been opened in a browser when this was written.**
+On 2026-09-23 Playwright's Chromium here did not trust the egress proxy's
+CA; since 2026-10-17 it loads https:// pages with the proxy's SPKI list
+(CLAUDE.md, "The deployed site in a browser"), so B could now be opened
+from the sandbox. The
 re-centring is read from the viewer's source, not observed; in particular the
 watcher is registered in the layer component's `created` hook without
 `immediate`, so if the station list were already loaded before that hook ran

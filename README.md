@@ -14,9 +14,11 @@ freefall drift and **density altitude** for jump-plane climb performance.
 > **Advisory only.** This dashboard *flags conditions and cites guidance* — it
 > does **not** decide whether it's safe to jump. Every USPA, CFR and FAA
 > citation here began as an AI recollection. Each has since been read at its
-> source — the **USPA SIM** at uspa.org on 2026-09-22 (2-1 I, 2-2 and 4-7 again on 2026-10-08), the **CFR sections, AIM
-> 7-1-7 and FAA-P-8740-2** on 2026-09-23 — and the claims corrected against
-> them. The club's wind-limit tiers are different in kind: a transcription of an
+> source — the **USPA SIM** at uspa.org on 2026-09-22 and every cited part
+> again on 2026-10-08, the **CFR sections, AIM 7-1-7 and FAA-P-8740-2** on
+> 2026-09-23 — and the claims corrected against them. When each cited
+> section was last read, and how, is `src/config/readingLog.ts`, shown at
+> the end of `#citations`. The club's wind-limit tiers are different in kind: a transcription of an
 > undated photo of the posted sign, not a document anyone opened. Neither is a
 > licensed professional's sign-off — verify against the primary source before
 > relying on it. Always confirm conditions with current official sources, the
@@ -69,7 +71,9 @@ card, the charts' limit lines and the flags, each marked as theirs.
   sets their own limit gets a band labelled as theirs.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
-  pressure-level model winds, with the
+  Open-Meteo's 10 m, 80, 120 and 180 m winds and its pressure levels, with
+  an "As Schulze" view that rebuilds the hour from his pressure levels
+  only, and with the
   spot/exit-separation note standing under the table at any wind speed. It
   follows the forecast hour nearest the clock; −1 h / +1 h buttons step up to
   two hours back and four ahead, and a bar and a line of text always say how
@@ -93,7 +97,11 @@ card, the charts' limit lines and the flags, each marked as theirs.
 - 📅 **10-day outlook** — daily sky, high/low, max wind/gust, dominant wind direction, precip chance; tap a
   day for its hourly detail.
 - ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline, with
-  Open-Meteo's cloud cover for the same hours beside the NWS figure.
+  Open-Meteo's cloud cover for the same hours beside the NWS figure, and
+  since 2026-10-27 a "base" row: the lowest cloud base in the NWS National
+  Blend of Models' hourly bulletin for KPMV, read through the relay
+  ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)). It is
+  not a ceiling and flags nothing.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline (narrow
   bars, a time under every third hour).
@@ -121,7 +129,11 @@ card, the charts' limit lines and the flags, each marked as theirs.
   provider each source is served from. The METAR row names the feed that
   served the report (IEM, or NWS when its report was the newer one), how old
   the other feed's report was, and whether the feed's decode of the report
-  agreed with the METAR text the app parses, amber when it did not.
+  agreed with the METAR text the app parses, amber when it did not. The
+  TAF row says which station is shown and, when it is Offutt's, that it
+  came from aviationweather.gov via the relay; an NBM row, since
+  2026-10-27, names the bulletin cycle and says NOAA's bucket answered
+  through the relay.
 
 ## 🔗 Data sources (all free, no API key)
 
@@ -155,10 +167,12 @@ sources and its own past. Nothing on the cards comes from these.
 
 KPMV (~12 mi from the DZ) is the nearest reporting station and issues METARs;
 it does not issue a TAF. TAFs are fetched through a fallback chain —
-**KOFF → KOMA → KLNK**. Offutt's TAF is USAF-issued and the NWS text-product
-feed, the only TAF source a browser can read, does not carry it, so the card
-normally shows Omaha's, labels the station, and links Offutt's TAF on
-aviationweather.gov.
+**KOFF → KOMA → KLNK**. Offutt's TAF is USAF-issued; api.weather.gov does
+not carry it and aviationweather.gov sends no CORS header, so since
+2026-10-27 the card reads it through the relay (`relay/`,
+[docs/taf-relay.md](docs/taf-relay.md)) and normally shows Offutt's. When
+the relay or aviationweather.gov fails it shows Omaha's or Lincoln's, says
+why, and links Offutt's on aviationweather.gov.
 
 Current conditions come from the Iowa Environmental Mesonet first and
 api.weather.gov second, both fetched every 2 minutes, and the newer report of
@@ -189,7 +203,7 @@ sanity-check the dashboard against sources you already trust:
 - **TAF ↔ [AWC TAF
   viewer](https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK)** —
   shows all three chain stations, including KOFF's USAF-issued TAF, which
-  the NWS feed does not carry.
+  the card reads from the same site through the relay.
 
 If a dashboard number and its cross-reference disagree meaningfully, trust
 neither — check the primary source and ask the S&TA.
@@ -306,9 +320,10 @@ forecast minus reported surface wind as histograms: speed, gust and
 direction, for the NWS forecasts kept hourly (by how far ahead they were
 made), for the same NWS forecast since April from NOAA's archive of it,
 for Open-Meteo's own archive of its 10 m wind since April (the start of
-each run and a day earlier), and for Open-Meteo's three 10 m winds from
-the surface-wind sample.
-Counts only, like the page below.
+each run and a day earlier), and, from the surface-wind sample,
+Open-Meteo's three 10 m forms and the NWS hour against the same reports.
+Its data file is rebuilt by the weekly ceiling data refresh. Counts only,
+like the page below.
 
 A second page, **How different from other sources** (`#parity`), shows what
 the scheduled comparison logs add up to: the winds-aloft table against Mark
@@ -354,10 +369,23 @@ relying on any of it operationally.
 ## 🚀 Deploy
 
 Pushing to `main` runs
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (lint + tests +
-build, then GitHub Pages publish); pull requests run the same checks via
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) without deploying.
-Enable Pages → "GitHub Actions" in repo settings. The Vite `base` is
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): lint, tests,
+build, the GitHub Pages publish, then a dispatch of
+[`.github/workflows/live-site.yml`](.github/workflows/live-site.yml), which
+loads every page of the deployed site at 1280, 390 and 320 px on live data
+and opens a `live-site` issue on a fault. Pull requests run lint, typecheck,
+tests and build via [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+without deploying. The deploy workflow enables Pages itself
+(`configure-pages` with `enablement: true`); no repo-settings step is
+needed. The other workflows are measurement, not gates: `comparisons.yml`
+(eight runs a day against usairnet and Mark Schulze's tool, feeding
+`#parity`), `parity-summary.yml` (daily; combines them, archives every
+record under `data/parity/`), `sky-parity.yml` (daily; the METAR and TAF
+decoders, the pilot links and the SIM text), `forecast-keep.yml` (hourly
+snapshots of the forecasts to the `forecast-archive` branch),
+`ceiling-data-refresh.yml` (Mondays; the ceiling page's and `#wind-errors`'
+data), `cloud-cover-fetch.yml` (by hand) and, until 2026-10-30,
+`surface-wind-sample.yml`. The Vite `base` is
 `/lspc-weather/`; override with `BASE_PATH` if hosting elsewhere. The
 production build also injects a Content-Security-Policy meta tag scoped to the
 data sources above.

@@ -48,8 +48,9 @@ Read from its API on 2026-10-08
 without `alts` it answers with an empty body): the panorama sits at
 40.870836, −96.1117301, 1,214 ft (370.1 m) above sea level. Less the 30 ft
 mast that is 1,184 ft of ground, against the field's 1,182 ft
-(`SITE.dz.elevationFt`), and the point is about 400 m from the drop zone's
-coordinates in `src/config/site.ts`. A site address is not necessarily
+(`SITE.dz.elevationFt`), and the point is about 300 m from the drop zone's
+coordinates in `src/config/site.ts` (the landing area, 40.8703, −96.1085;
+about 400 m from the point the app used until 2026-10-08). A site address is not necessarily
 where an antenna would go; if one is planned, a panorama at the antenna's
 own spot is worth making.
 

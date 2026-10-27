@@ -1,12 +1,13 @@
 /**
- * Where the dashboard reads Offutt's TAF, once the relay is deployed
- * (relay/, docs/taf-relay.md). Null until then: the card reads every TAF
- * from api.weather.gov, which has no Offutt TAF, and shows Omaha's.
+ * Where the dashboard reads Offutt's TAF and KPMV's NBM bulletin block:
+ * the maintainer's relay (relay/, docs/taf-relay.md), deployed
+ * 2026-10-27. Null would turn both off: the TAF card would read every TAF
+ * from api.weather.gov, which has no Offutt TAF, and show Omaha's, and
+ * the Ceiling & sky card's base row would go.
  *
- * Set it to the Worker's address, for example
- * 'https://lspc-taf-relay.example.workers.dev' (a trailing slash is
- * dropped). The build's Content-Security-Policy takes its origin from here
- * (`connectSources`), so this is the one line to change.
+ * The Worker's address, with a trailing slash dropped. The build's
+ * Content-Security-Policy takes its origin from here (`connectSources`),
+ * so this is the one line to change.
  *
  * vite.config.ts reads this file to build the policy, so it imports only
  * the relay's station file, which carries no Worker types.

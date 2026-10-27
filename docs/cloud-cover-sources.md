@@ -100,7 +100,12 @@ python3 scripts/cloudCoverFetch.py 2026-04-01 2026-10-09 out.jsonl.gz   # about 
 npx tsx scripts/cloudCoverSummary.ts out.jsonl.gz
 ```
 
-The two scripts are by hand and in no workflow.
+The summary script is by hand and in no workflow. The fetch script is also
+run on GitHub's runners: by `.github/workflows/cloud-cover-fetch.yml` on
+dispatch (since 2026-10-11, when Open-Meteo's archive refused the sandbox),
+and weekly by `.github/workflows/ceiling-data-refresh.yml` for the ceiling,
+METAR, Open-Meteo wind and NDFD wind parts (`PARTS=…`), never for the sky
+cover compared here.
 
 ## What KPMV reported
 
