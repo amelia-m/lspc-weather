@@ -13,10 +13,12 @@
  * window. Nothing promises the offset; the window and the fallback are what
  * make it safe to assume.
  *
- * Which file: each hour's bulletin lands about 65 to 70 minutes after its hour
- * (read 2026-10-27: the 00Z file at 01:13Z, 01Z at 02:06Z), so the newest is
- * usually the hour before, found by asking for the files of the last few
- * hours, newest first, with HEAD. The bucket answers a missing key 404.
+ * Which file: each hour's bulletin lands 40 to 70 minutes after its hour
+ * (read 2026-10-27: the 00Z file at 01:13Z, 01Z at 02:06Z, 02Z before
+ * 02:47Z), and its hours begin the hour after its cycle, so the newest
+ * file never covers the hour under way. The relay takes the newest cycle
+ * whose hours do: the hour before the one under way, then older ones,
+ * asked for with HEAD. The bucket answers a missing key 404.
  *
  * The answer is kept for `NBM_CACHE_SECONDS` in the Worker's memory, as the
  * TAF is: a bulletin an hour, so ten minutes loses little and spares the
@@ -101,7 +103,13 @@ export const NBM_BUDGET_MS = 20_000;
  *  refused moves on to the older file: a late or ailing bucket still has
  *  the hour before. */
 async function newestFile(deps: NbmDeps, left: () => number): Promise<{ file: string; cycleMs: number } | null> {
-  const hour = Math.floor(deps.now() / 3_600_000) * 3_600_000;
+  // From the hour before the one under way: a cycle's hours begin the hour
+  // after it, so the newest file, once it lands, covers the next hour on
+  // and never the one under way, and the card's first column (the hour
+  // under way) would always be blank (seen 2026-10-27 at 02:47Z, the 02Z
+  // file in place). The cycle before covers it, at the cost of an hour's
+  // freshness on the later columns.
+  const hour = Math.floor(deps.now() / 3_600_000) * 3_600_000 - 3_600_000;
   for (let k = 0; k <= NBM_LOOKBACK_HOURS; k++) {
     const cycleMs = hour - k * 3_600_000;
     const file = nbmFileFor(cycleMs);
