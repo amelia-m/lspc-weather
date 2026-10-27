@@ -72,3 +72,14 @@ the cycle and file.
   the second ask answered from memory in 8 ms; another origin got 403,
   `/nbm/KOMA` 404, and the TAF path still answered 200. The runtime's
   own log showed only its telemetry hosts refused by the sandbox's proxy.
+- The app built with `TAF_RELAY_URL` set to that local Worker, served
+  at `localhost:4173` and loaded in Chromium on live data through the
+  sandbox's proxy (CLAUDE.md, "The deployed site in a browser"), about
+  03:05Z: both relay paths answered 200 among the live APIs' requests;
+  the card's base row read 6, 6, 6, 7, 6, 5, 5, 3, 1.9, 1.9, 0.8, 0.8
+  thousand ft for the next twelve hours; Data health's rows "TAF ·
+  primary · KOFF · via the relay" and "NBM cloud base · primary · KPMV
+  NBH 01Z · NOAA's bucket via the relay"; no script errors; the page no
+  wider than the viewport at 1280 and 390 px. (A first try loaded
+  nothing: with a proxy set, Chromium sent the localhost page through it
+  and got 405s, until `<-loopback>` was added to the proxy bypass list.)
