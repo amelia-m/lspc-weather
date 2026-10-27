@@ -20,6 +20,7 @@ import type { MetarRecord } from '../src/domain/cloudCoverSources';
 import type { InstantPair } from '../src/domain/keptForecasts';
 import type { SurfaceWindRecord, WindAt } from '../src/domain/surfaceWindSources';
 import { WindErrorsPage } from '../src/components/WindErrorsPage';
+import { histogramGridSvg } from '../scripts/histogramGrid';
 
 const SPEED: HistSpec = { quantity: 'speed', title: 'Wind speed', unit: 'kt', bin: 1, lo: -3, hi: 3 };
 const DIR: HistSpec = { quantity: 'dir', title: 'Direction', unit: '°', bin: 10, lo: -30, hi: 30 };
@@ -240,7 +241,11 @@ describe('WindErrorsPage', () => {
       nwsKeptSection([
         {
           label: 'latest issuance',
-          pairs: [{ t: T, issued: '2026-10-20T14:00:00Z', fc: { windSpeed: 9, windGust: 15, windDirection: 200 }, obs: obs(12, 20, 190) }],
+          pairs: [
+            { t: T, issued: '2026-10-20T14:00:00Z', fc: { windSpeed: 9, windGust: 15, windDirection: 200 }, obs: obs(12, 20, 190) },
+            // The same speed forecast and reported: a zero bar.
+            { t: T + 3_600_000, issued: '2026-10-20T15:00:00Z', fc: { windSpeed: 12, windGust: 15, windDirection: 200 }, obs: obs(12, 20, 190) },
+          ],
         },
       ]),
     ],
@@ -261,10 +266,13 @@ describe('WindErrorsPage', () => {
     // which in the captions' words.
     expect(html).toContain('class="werr-bar under"');
     expect(html).toContain('class="werr-bar over"');
-    expect(html).not.toContain('class="werr-bar zero"');
+    expect(html).toContain('class="werr-bar zero"');
+    expect(html).toContain('<ul class="werr-key muted small" aria-label="Key to the bar colours">');
     expect(html).toContain('forecast above the report (right of the line)');
-    expect(html).toContain('werr-swatch under');
-    expect(html).toContain('n 1 · median −3 kt');
+    expect(html).toContain('nearer zero than half a bin (neither)');
+    // The key only where there are charts.
+    expect(page(null, 'missing')).not.toContain('werr-key');
+    expect(html).toContain('n 2 · median −1.5 kt');
     expect(html).not.toMatch(/\b(good|bad|accurate|inaccurate|reliable)\b/i);
     // No Open-Meteo data on the page, so no Open-Meteo credit.
     expect(html).not.toContain('Open-Meteo.com');
@@ -281,6 +289,26 @@ describe('WindErrorsPage', () => {
     // Only the archive is on this page: the credit names it and not the sample.
     expect(html).toContain('archived forecasts’ charts');
     expect(html).not.toContain('surface-wind sample’s');
+  });
+});
+
+describe('histogramGridSvg', () => {
+  it('fills the docs’ bars by side as the page does, and carries a key', () => {
+    const s = nwsKeptSection([
+      {
+        label: 'latest issuance',
+        pairs: [
+          { t: T, issued: '2026-10-20T14:00:00Z', fc: { windSpeed: 9, windGust: 15, windDirection: 200 }, obs: obs(12, 20, 190) },
+          { t: T + 3_600_000, issued: '2026-10-20T15:00:00Z', fc: { windSpeed: 12, windGust: 15, windDirection: 200 }, obs: obs(12, 20, 190) },
+        ],
+      },
+    ]);
+    const svg = histogramGridSvg({ section: s, title: 't', desc: 'd.', subtitle: ['a', 'b'], note: 'n' });
+    expect(svg).toContain('class="bar under"');
+    expect(svg).toContain('class="bar over"');
+    expect(svg).toContain('class="bar zero"');
+    expect(svg).toContain('nearer zero than half a bin (neither)');
+    expect(svg).toContain('left of it magenta (below)');
   });
 });
 

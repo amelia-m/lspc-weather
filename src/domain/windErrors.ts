@@ -98,8 +98,11 @@ export function histogram(values: readonly number[], spec: HistSpec): Histogram 
   let below = 0;
   for (const d of values) {
     const v = Math.sign(d) * Math.round(Math.abs(d) / spec.bin) * spec.bin;
-    if (v > 0) above += 1;
-    else if (v < 0) below += 1;
+    // The side the bar is drawn on decides the count, so the caption's
+    // "above" and "below" are the accent and magenta bars exactly.
+    const side = barSide(v);
+    if (side === 'over') above += 1;
+    else if (side === 'under') below += 1;
     const i = Math.round((v - spec.lo) / spec.bin);
     if (i < 0 || i >= nb) outside += 1;
     else counts[i] += 1;

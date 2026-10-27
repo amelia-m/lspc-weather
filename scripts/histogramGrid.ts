@@ -6,12 +6,33 @@
  * are src/domain/windErrors.ts's `histogram`, the same the page draws. The
  * colours are the dataviz reference palette's single-series blue and its
  * neutrals, checked against both surfaces; the page uses the app's own.
+ * Since 2026-10-27 the bars are filled by side of zero, as the page's are
+ * (`barSide`): blue right of it, magenta left, grey for the zero bar, with
+ * a key row under the subtitle and the sides named in the description.
  * Each bar is titled with its count, so a hover names it. Counts, never a
  * grade.
  */
-import { histogramLine, signed, yStep, type WindErrorSection, barSide } from '../src/domain/windErrors';
+import { barSide, histogramLine, signed, yStep, type WindErrorSection } from '../src/domain/windErrors';
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/** The key the figure carries under its subtitle: a swatch and words per
+ *  side, in the page's words, so a figure in a doc explains its own fills. */
+function keyRow(x: number, y: number): string {
+  const items: [string, string][] = [
+    ['over', 'forecast above the report (right of the line)'],
+    ['under', 'below it (left)'],
+    ['zero', 'nearer zero than half a bin (neither)'],
+  ];
+  let cx = x;
+  return items
+    .map(([side, words]) => {
+      const s = `<rect class="sw ${side}" x="${cx}" y="${y}" width="11" height="11" rx="2"/><text class="key" x="${cx + 16}" y="${y + 10}">${esc(words)}</text>`;
+      cx += 16 + words.length * 6.2 + 18;
+      return s;
+    })
+    .join('');
+}
 
 export function histogramGridSvg(o: {
   section: WindErrorSection;
@@ -86,14 +107,14 @@ export function histogramGridSvg(o: {
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="t d">
 <title id="t">${esc(o.title)}</title>
-<desc id="d">${esc(o.desc)}</desc>
+<desc id="d">${esc(o.desc)} Bars right of zero are blue (forecast above the report), left of it magenta (below), the zero bar grey (nearer zero than half a bin, on neither side).</desc>
 <style>
   svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --base:#c3c2b7;
-        --bar:#2a78d6; --bar-under:#1f9ea6; --bar-zero:#a3a29b;
+        --bar:#2a78d6; --bar-under:#b8408f; --bar-zero:#a3a29b;
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
   @media (prefers-color-scheme: dark) {
     svg { --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781; --grid:#2c2c2a; --base:#383835;
-          --bar:#3987e5; --bar-under:#3fc1c9; --bar-zero:#6b6a66; }
+          --bar:#3987e5; --bar-under:#d65db1; --bar-zero:#6b6a66; }
   }
   .bg { fill: var(--surface); }
   .h { fill: var(--ink); font-size: 15px; font-weight: 600; }
@@ -107,11 +128,14 @@ export function histogramGridSvg(o: {
   .bar { fill: var(--bar); }
   .bar.under { fill: var(--bar-under); }
   .bar.zero { fill: var(--bar-zero); }
+  .key { fill: var(--ink2); font-size: 11px; }
+  .sw.over { fill: var(--bar); } .sw.under { fill: var(--bar-under); } .sw.zero { fill: var(--bar-zero); }
 </style>
 <rect class="bg" width="100%" height="100%"/>
 <text class="h" x="${ML}" y="24">${esc(o.title)}</text>
 <text class="s" x="${ML}" y="42">${esc(o.subtitle[0])}</text>
 <text class="s" x="${ML}" y="58">${esc(o.subtitle[1])}</text>
+${keyRow(ML, 70)}
 ${parts.join('\n')}
 ${o.credit ? `<text class="note" x="${ML}" y="${H - 30}">${esc(o.credit)}</text>\n` : ''}<text class="note" x="${ML}" y="${H - 14}">${esc(o.note)}</text>
 </svg>
