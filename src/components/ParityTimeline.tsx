@@ -147,7 +147,7 @@ const TIMELINE: Entry[] = [
   {
     date: 'Oct 27',
     kind: 'Comparison',
-    what: 'The run sampler ended with 1,291 samples. His hour in progress and his next hour were on a different run from this app’s answer at the same rates (1.5% and 1.2% before half past, 5.8% and 5.5% after), and this app’s own two requests a moment apart disagreed in the same minutes (5.5% from :30, under 1.5% before half past).',
+    what: 'The run sampler ended with 1,291 samples. His hour in progress and his next hour were on a different run from this app’s answer at the same rates (1.5% and 1.2% before half past, 5.8% and 5.5% after), and this app’s own two requests a moment apart disagreed in the same minutes (5.5% from :30, 0.2% to 1.5% before half past).',
     effect:
       'Why is answered: a new HRRR run reaches Open-Meteo’s servers one copy at a time, mostly between :20 and :59, and for some minutes after each copy a request gets either run. His next-hour request has no part in it. The different-runs rate in the summary above is unchanged by this; the Winds aloft card now says why.',
   },

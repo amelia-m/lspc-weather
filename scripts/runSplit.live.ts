@@ -7,7 +7,8 @@
  *
  * Opt-in: skipped unless RUN_SPLIT_SAMPLE=1, as surfaceWindCompare.live.ts
  * is, because the daily sky-parity job runs every scripts/*.live.ts. Run by
- * scripts/runSplitLoop.sh from .github/workflows/run-split-sample.yml, or by
+ * scripts/runSplitLoop.sh from .github/workflows/run-split-sample.yml (both
+ * deleted 2026-10-27 when the window ended; docs/run-split.md), or by
  * hand from the sandbox with the proxy env (CLAUDE.md):
  *
  *   RUN_SPLIT_SAMPLE=1 npx vitest run --config vitest.live.config.ts scripts/runSplit.live.ts

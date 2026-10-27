@@ -105,9 +105,10 @@ run again after its fetches and its rule moved to the shared modules, gave
 `data/parity/runsplit-2026-10-23-to-2026-10-27.jsonl.gz` (one `@@parity`
 line per sample, the artifacts' lines deduplicated by their time). The
 tables below are `npx tsx scripts/runSplitSummary.ts` on that file.
-Open-Meteo answered 1,280 samples with both app requests and his endpoint
-1,201 (82 samples could not read his tool, 71 of them on the first day);
-a side that was not read is not counted. GitHub started the five-hourly
+Open-Meteo answered 1,280 samples with both app requests, and 1,201
+samples could be set against his table (82 could not read his tool, 71
+of them on the first day, and 8 more could not read the app's first
+request); a side that was not read is not counted. GitHub started the five-hourly
 job late four times, so the run has gaps of five hours on the 23rd from
 10:15Z, four and a half on the 26th from 15:54Z, four on the 27th from
 01:15Z and an hour and a half on the 26th from 09:37Z, and about 1,300
@@ -150,10 +151,13 @@ answer differed, his matched the app's second answer in 36: the app's own
 first request was the odd one out, not his table. In 22 of the 51
 mismatched samples the app disagreed with itself in the same sample.
 
-**It is when HRRR arrives.** The metadata reads saw 88 HRRR runs become
+**It is when HRRR arrives.** The samples recorded 88 HRRR runs becoming
 available, 58 of them with two availability times for the same run, about
-ten minutes apart, one per copy of the data. By the minute of the hour
-they became available:
+ten minutes apart, one per copy of the data. (Each sample keeps only the
+newest run and time its three reads saw, so a copy that was never the
+newest in any sample is not in this count; the reads held different
+versions in 676 of the 1,291 samples.) By the minute of the hour they
+became available:
 
 | from minute | arrivals |
 |---|---|
@@ -197,8 +201,11 @@ minutes. The reads disagreed in more than half of all samples (1,340 of
 2,400 pairings), so "disagreed" is most of the time, not a rare moment.
 
 **The disagreements are short and small.** The mismatched samples came in
-38 stretches, the longest 3 samples (about 8 minutes), shorter than the
-half-hour stretches the 2026-09-30 sampler saw. On different runs the
+38 stretches, the longest 3 samples (about 8 minutes, at four-minute
+spacing), shorter than the 2026-09-30 sampler's, which saw stretches up
+to about half an hour at two-minute spacing (docs/source-parity.md). The
+two samples were weeks apart and this one covers four days, so the card
+keeps the longer figure as the most seen. On different runs the
 largest gap at a paired level was a median 14° and 2.7 kt (90th percentile
 49° and 4.1 kt); on the same run a median 0° and 0.5 kt (largest 36° and
 3.7 kt, which is what the rule's margins absorb).

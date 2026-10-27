@@ -103,16 +103,24 @@ export interface SplitRow {
   mismatched: number;
 }
 
-/** Judged comparisons by whether `domain`'s metadata reads disagreed (two
- *  or more answered and `variants` > 1) or agreed. Records with fewer than
- *  two answering reads cannot say, and are left out. */
+/** Whether the reads disagreed (two or more answered and `variants` > 1):
+ *  the row of a split count a record falls in, or null when fewer than two
+ *  reads answered, which cannot say. One rule for the comparison's count
+ *  and the run-split sampler's (src/domain/runSplit.ts). */
+export function serversDisagreed(seen: RunsSeen | null | undefined): boolean | null {
+  if (seen == null || seen.reads < 2) return null;
+  return seen.variants > 1;
+}
+
+/** Judged comparisons by whether `domain`'s metadata reads disagreed or
+ *  agreed (`serversDisagreed`); records that cannot say are left out. */
 export function mismatchBySplit(records: readonly SchulzeRecord[], domain: string): SplitRow[] {
   const rows = [false, true].map((serversDisagreed) => ({ serversDisagreed, n: 0, mismatched: 0 }));
   for (const r of records) {
     if (r.kind !== 'schulze' || typeof r.rawMismatch !== 'boolean') continue;
-    const seen = r.omRuns?.[domain];
-    if (seen == null || seen.reads < 2) continue;
-    const row = rows[seen.variants > 1 ? 1 : 0];
+    const disagreed = serversDisagreed(r.omRuns?.[domain]);
+    if (disagreed == null) continue;
+    const row = rows[disagreed ? 1 : 0];
     row.n += 1;
     if (r.rawMismatch) row.mismatched += 1;
   }

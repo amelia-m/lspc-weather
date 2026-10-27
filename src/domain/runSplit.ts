@@ -23,7 +23,7 @@
  * Pure: the sampler fetches, this compares and counts.
  */
 import type { RawWindSample } from './windsAloft';
-import { RUN_AGE_BANDS, runAgeMinutes, type RunsSeen } from './runAge';
+import { RUN_AGE_BANDS, runAgeMinutes, serversDisagreed, type RunsSeen } from './runAge';
 import { angular } from './surfaceWindSources';
 
 /** A raw profile as heights above the drop zone with direction and speed. */
@@ -186,21 +186,30 @@ export interface RunSplitSummary {
    *  answering reads cannot say and is left out. */
   bySplit: { serversDisagreed: boolean; cell: Cell; self: Cell }[];
   /** When HRRR runs reach Open-Meteo's servers: each distinct
-   *  (initialisation, availability) pair any sample's reads saw, by
-   *  ten-minute band of the availability time's minute. A run seen with
-   *  two availability times is two arrivals, one per copy. */
+   *  (initialisation, availability) pair the samples recorded, by
+   *  ten-minute band of the availability time's minute. A record keeps
+   *  only the newest pair its reads saw (`runsSeen`), so a run recorded
+   *  with two availability times across samples is two arrivals, one per
+   *  copy, and a copy never the newest in any sample is not counted.
+   *  A record without the run's initialisation time is left out. */
   runArrivals: { runs: number; runsWithSeveralArrivals: number; byMinute: { fromMin: number; arrivals: number }[] };
   /** Samples where his table was on a different run from the app's first
    *  request at both his hours, or at one only. A clock cause moves both
    *  hours together; a next-hour cause, one. */
   offsetsTogether: { both: number; one: number };
-  /** Runs of consecutive samples with either hour on a different run from
-   *  the app's first request: how many, and the longest in samples. The
-   *  samples are about four minutes apart. */
+  /** Runs of consecutive judged samples with either hour on a different
+   *  run from the app's first request: how many, and the longest in
+   *  samples. The samples are about four minutes apart; a gap longer than
+   *  STRETCH_GAP_MS between judged samples (a job that started late) ends
+   *  a stretch, and a sample with neither hour judged neither ends nor
+   *  extends one. */
   stretches: { count: number; longest: number };
 }
 
 const RUN_DOMAIN = 'ncep_hrrr_conus';
+/** Judged samples further apart than this are not consecutive: the sampler
+ *  ran every four minutes, and GitHub started its job late by hours. */
+export const STRETCH_GAP_MS = 10 * 60_000;
 
 export function summarizeRunSplit(records: readonly RunSplitRecord[]): RunSplitSummary {
   const recs = records.filter((r) => r.kind === 'runsplit').sort((a, b) => a.at.localeCompare(b.at));
@@ -222,21 +231,24 @@ export function summarizeRunSplit(records: readonly RunSplitRecord[]): RunSplitS
   const offsetsTogether = { both: 0, one: 0 };
   const stretches = { count: 0, longest: 0 };
   let stretch = 0;
+  let lastJudgedAt: number | null = null;
   for (const r of recs) {
     const half = r.minute < 30 ? 'first' : 'second';
     const band = MINUTE_BANDS.filter((b) => r.minute >= b).pop() ?? 0;
     const ageMin = runAgeMinutes(r, RUN_DOMAIN);
     const ageRow = ageMin == null ? undefined : byRunAge.find((b) => ageMin >= b.fromMin && ageMin < b.toMin);
     const seen = r.omRuns?.[RUN_DOMAIN];
-    const splitRow = seen != null && seen.reads >= 2 ? bySplit[seen.variants > 1 ? 1 : 0] : undefined;
-    if (seen?.avail != null) {
-      const key = seen.init ?? '';
-      if (!arrivals.has(key)) arrivals.set(key, new Set());
-      arrivals.get(key)!.add(seen.avail);
+    const disagreed = serversDisagreed(seen);
+    const splitRow = disagreed == null ? undefined : bySplit[disagreed ? 1 : 0];
+    if (seen?.avail != null && seen.init != null) {
+      if (!arrivals.has(seen.init)) arrivals.set(seen.init, new Set());
+      arrivals.get(seen.init)!.add(seen.avail);
     }
     let mismatchedHours = 0;
+    let judgedHours = 0;
     for (const h of r.hours) {
       const m = h.vsFirst?.mismatch ?? null;
+      if (m != null) judgedHours += 1;
       if (m) mismatchedHours += 1;
       add(byOffsetAndHalf.find((c) => c.offset === h.offset && c.half === half)!.cell, m);
       add(byOffsetAndBand.find((c) => c.offset === h.offset && c.fromMin === band)!.cell, m);
@@ -254,12 +266,17 @@ export function summarizeRunSplit(records: readonly RunSplitRecord[]): RunSplitS
     }
     if (mismatchedHours === 2) offsetsTogether.both += 1;
     else if (mismatchedHours === 1) offsetsTogether.one += 1;
-    if (mismatchedHours > 0) {
-      stretch += 1;
-      if (stretch === 1) stretches.count += 1;
-      stretches.longest = Math.max(stretches.longest, stretch);
-    } else {
-      stretch = 0;
+    if (judgedHours > 0) {
+      const at = Date.parse(r.at);
+      if (lastJudgedAt != null && at - lastJudgedAt > STRETCH_GAP_MS) stretch = 0;
+      lastJudgedAt = at;
+      if (mismatchedHours > 0) {
+        stretch += 1;
+        if (stretch === 1) stretches.count += 1;
+        stretches.longest = Math.max(stretches.longest, stretch);
+      } else {
+        stretch = 0;
+      }
     }
   }
   const byMinute = MINUTE_BANDS.map((fromMin) => ({ fromMin, arrivals: 0 }));
