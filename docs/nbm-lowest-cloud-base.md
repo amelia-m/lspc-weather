@@ -34,10 +34,15 @@ header; no reader should fetch that for a 2 KB block. The TAF relay
 (`relay/`, docs/taf-relay.md) has a second path, `/nbm/KPMV`
 (`relay/src/nbm.ts`), that cuts the block out:
 
-- **Which file.** Each hour's bulletin lands about 65 to 70 minutes after
-  its hour (read 2026-10-27: the 00Z file at 01:13Z, the 01Z at 02:06Z;
-  HEAD answers 200 or 404). The relay asks HEAD for the current hour's
-  file and the four before it, newest first, and takes the first there.
+- **Which file.** Each hour's bulletin lands 40 to 70 minutes after its
+  hour (read 2026-10-27: the 00Z file at 01:13Z, the 01Z at 02:06Z, the
+  02Z before 02:47Z; HEAD answers 200 or 404), and its hours begin the
+  hour after its cycle, so the newest file never covers the hour under
+  way: with it the card's first column, the hour under way, was always a
+  dash (seen at 02:47Z with the 02Z file in place). The relay takes the
+  newest cycle whose hours cover that hour, the one before it, then
+  older ones, asking HEAD for each; the later columns are an hour less
+  fresh than the newest file would make them, and the first is filled.
 - **Which bytes.** KPMV's block began 18,242,995 bytes in, in every file
   read from 2026-10-24 to 10-27, files of two sizes included. The relay
   reads a Range of 1.5 MB either side of the last place it found the

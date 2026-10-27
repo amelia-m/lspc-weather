@@ -21,7 +21,7 @@ function bulletin(at: number): { text: string; at: number } {
   return { text, at: text.indexOf(' KPMV ') };
 }
 
-// 2026-10-27 02:17Z: the 01Z file is the newest (landed 02:06Z); 02Z is not there yet.
+// 2026-10-27 02:17Z: the 01Z file is there (landed 02:06Z) and covers the hour under way; 02Z is not there yet.
 const T0 = Date.UTC(2026, 9, 27, 2, 17);
 
 function deps(text: string, opts: { missingHours?: number; rangeStatus?: number; headStatus?: Record<number, number> } = {}) {
@@ -94,14 +94,15 @@ describe('the NBM path of the relay', () => {
     expect(body).toMatchObject({ station: 'KPMV', product: 'NBH', cycle: '2026-10-27T01:00:00.000Z' });
     expect(body.file).toBe(nbmFileFor(Date.UTC(2026, 9, 27, 1)));
     expect(body.text).toBe(KPMV);
-    // Two HEADs (02Z missing, 01Z there), then one window read, never the whole file.
+    // At 02:17Z the hour under way is 02Z, which only the 01Z cycle's hours
+    // cover (a cycle's begin the hour after it): one HEAD, then one window
+    // read, never the whole file. The 02Z file, if there, is not asked for.
     const calls = d.fetch.mock.calls.map(([u, i]) => `${i.method ?? 'GET'} ${u.replace(NBM_BUCKET, '')} ${new Headers(i.headers).get('range') ?? ''}`.trim());
     expect(calls).toEqual([
-      `HEAD /${nbmFileFor(Date.UTC(2026, 9, 27, 2))}`,
       `HEAD /${nbmFileFor(Date.UTC(2026, 9, 27, 1))}`,
       `GET /${nbmFileFor(Date.UTC(2026, 9, 27, 1))} bytes=${NBM_KNOWN_OFFSET - NBM_WINDOW}-${NBM_KNOWN_OFFSET + NBM_WINDOW}`,
     ]);
-    expect(new Headers(d.fetch.mock.calls[2][1].headers).get('user-agent')).toMatch(/lspc-weather/);
+    expect(new Headers(d.fetch.mock.calls[1][1].headers).get('user-agent')).toMatch(/lspc-weather/);
     // The block's place is remembered for the next window.
     expect(d.nbm.offset).toBe(b.at);
   });
@@ -145,6 +146,7 @@ describe('the NBM path of the relay', () => {
     const res = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), d);
     expect(res.status).toBe(200);
     expect(((await res.json()) as { file: string }).file).toBe(nbmFileFor(Date.UTC(2026, 9, 27, 0)));
+    expect(d.fetch.mock.calls.filter(([, i]) => i.method === 'HEAD')).toHaveLength(2);
   });
 
   it('asks the bucket once per cache period however many readers ask, then again', async () => {
