@@ -13,7 +13,7 @@
  */
 import { PATH, STATION } from '../../relay/src/station';
 
-export const TAF_RELAY_URL: string | null = null;
+export const TAF_RELAY_URL: string | null = 'https://lspc-taf-relay.amelia-m.workers.dev';
 
 /** Whether the relay is set: what the card, Data health, the source log
  *  and the checks ask of the setting. */
