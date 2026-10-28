@@ -267,6 +267,18 @@ of 9 to 15): on June 9 at night, with lightning only in the distance in
 KPMV's reports, June 17 at noon and September 26 at 9 am, under a low
 overcast.
 
+## On the card, since 2026-10-28
+
+The Surface wind card carries a standing note with this reading's
+figures (`FORECAST_GUST_NOTE`, `src/config/forecastGustNote.ts`; the
+maintainer's call, 2026-10-28: a note, with the typical size of the
+difference): the side as shares of the 978 gusting hours, the median and
+90th-percentile miss, the mean, the strong-gust mean and the no-gust
+figure, dated to the reading and linked here. `tests/surfaceWindRows.test.ts`
+holds each figure to the "Read again 2026-10-27" table above, so a later
+reading that changes them fails until the note moves with it. It is a
+note, not a correction: nothing that fires changed.
+
 ## What this says for the card note
 
 The question was whether the forecast gust's difference from the station

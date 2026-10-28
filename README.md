@@ -68,7 +68,11 @@ card, the charts' limit lines and the flags, each marked as theirs.
   LSPC waiver tier — and is labelled
   with that source. The Licensed profile draws no band and says so: nobody
   publishes a surface-wind limit for licensed jumpers. A licensed jumper who
-  sets their own limit gets a band labelled as theirs.
+  sets their own limit gets a band labelled as theirs. A standing note gives
+  how the NWS forecast gust, which the Forecast flag reads, compared with
+  KPMV's reports over six months, side and typical size
+  ([docs/nws-gust-archive.md](docs/nws-gust-archive.md)); counts, not a
+  correction.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   Open-Meteo's 10 m, 80, 120 and 180 m winds and its pressure levels, with

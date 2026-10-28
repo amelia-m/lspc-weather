@@ -100,7 +100,12 @@ precisely because they were colour and text rather than flags.
   a METAR reports, so the peak it prints never sits under the limit it
   names. It is not a licence for forecast
   thresholds of the app's own: a forecast storm or rain chance still flags
-  nothing.
+  nothing. Since 2026-10-28 the Surface wind card carries a standing note
+  on that forecast gust (`FORECAST_GUST_NOTE`, the maintainer's call that
+  day): six months of it against KPMV's reports, the side and the typical
+  size of the difference, dated to its reading in docs/nws-gust-archive.md
+  and held to that doc by a test. Figures beside the flag, not a
+  correction to it; keep it that way.
 - **The Surface wind card is first on the Jumpers tab: one bar with every
   mark labelled, then one line per limit** (the maintainer, 2026-10-10).
   One bar with a legend left the marks unnamed: a reader could not tell

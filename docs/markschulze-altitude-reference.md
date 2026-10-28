@@ -466,6 +466,30 @@ day, so 79 hours over ten days of October. Over all 235 hours the 10 m row
 was nearer in 155, his in 34, tied in 46. The same caveats hold: KPMV is
 11.5 mi off on different ground, and this is one autumn.
 
+### Again, to 2026-10-27 (run 2026-10-28)
+
+The same script over every Schulze record archived to 2026-10-27 (the
+archive to 10-05, `schulze-logs-2026-10-04-to-2026-10-17`, and the daily
+`parity-logs-*` files from 10-19) against KPMV's reports to 10-27
+(`kpmv-wind-2026-09-23-to-2026-10-17.csv.gz` and the new
+`kpmv-wind-2026-10-18-to-2026-10-27.csv.gz`, 707 reports): 1,861 records,
+308 valid hours from 2026-09-24T05Z to 2026-10-27T18Z, five weeks of one
+autumn, about nine hours a day since the sampler ended. Output:
+`data/parity/surface-rows-2026-10-28.md`. Every hour:
+
+| hours | n | KPMV median | this app: bias, mean abs error | Schulze: bias, mean abs error | nearer (this app, Schulze, tied) |
+|---|---|---|---|---|---|
+| all | 306 | 5.7 kt | +1.3, 2.2 kt | +3.6, 3.8 kt | 202, 41, 63 |
+| night, 7 PM to 7 AM | 134 | 5.0 kt | +1.2, 2.3 kt | +4.6, 4.8 kt | 108, 12, 14 |
+| day, 7 AM to 7 PM | 172 | 6.7 kt | +1.3, 2.1 kt | +2.7, 3.0 kt | 94, 29, 49 |
+| 9 AM to 6 PM | 135 | 7.0 kt | +1.5, 2.2 kt | +2.4, 2.7 kt | 65, 26, 44 |
+
+At the landing area alone, 150 hours from 10-08: nearer in 98, 18 and 34,
+the 10 m row +1.1 kt and his +3.6 (night +0.9 against +4.9). The old
+point's 156 hours are unchanged. So the finding of 10-18 holds over twice
+the landing-area hours: both rows above the measured wind, his by more,
+most at night. Still one autumn, and KPMV is 11.5 mi off.
+
 To take it again, download the unexpired `parity-*` artifacts (as
 `.github/workflows/parity-summary.yml` does), archive their Schulze lines
 under `data/parity/`, fetch KPMV's reports for the span from IEM, and run

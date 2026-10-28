@@ -218,10 +218,13 @@ terrain). Logs before 2026-10-08 were taken at the old point.
 Done 2026-10-18: the comparison below is now `scripts/surfaceRows.ts`, and
 over 79 hours at the landing area it found what the old point did
 (`docs/markschulze-altitude-reference.md`, "Again, at the landing area").
+Run again 2026-10-28 over the logs to 10-27: 306 hours from 2026-09-24,
+five weeks of one autumn, the 10 m row nearer in 202, his in 41, tied in
+63 (`docs/markschulze-altitude-reference.md`, "Again, to 2026-10-27").
 Still worth re-running in other seasons. The logs it needs are the
 comparison records, archived daily since 2026-10-19 as
 `data/parity/parity-logs-<day>.jsonl.gz`, so nothing expires; pass those
-files to `--logs`.
+files to `--logs`, and fetch KPMV's reports for the new span from IEM.
 
 What it replaced: on 2026-10-08 both forecast Surface rows were set by hand against KPMV's
 measured wind over the 156 hours the logs held (the 10 m row nearer in 104,
@@ -369,7 +372,19 @@ archive's start of run was centred (mean 0.0 kt) where the sample's
 hourly read +0.8; why was not worked out.
 Nothing on the dashboard changed.
 
-## A note on the card about the forecast gust? (maintainer's call)
+## Done: a note on the card about the forecast gust
+
+**Built 2026-10-28**, the maintainer's call that day ("yes, with a note
+about the typical range of the magnitude of the difference"): a standing
+note on the Surface wind card (`FORECAST_GUST_NOTE`,
+`src/config/forecastGustNote.ts`) giving the six-month comparison's
+side (above in 63% of 978 gusting hours, the same in 10%, below in 28%),
+its typical size (half the differences 3 kt or less, nine in ten 8 kt or
+less, mean +1.5 kt), that it ran a little low on reported gusts of 23 kt
+or more, and the 6 kt it sat over the steady wind when no gust was
+reported, dated to its reading and linked to docs/nws-gust-archive.md. A
+test holds the figures to the doc. No colour, no threshold; the flag
+reads the forecast as issued. What follows is the question as it stood.
 
 The kept forecasts' gust ran above KPMV's reported gust in 45 of 53
 gusting hours at the latest issuance, and on that side at every lead.
@@ -1124,6 +1139,16 @@ reading, not an observation: no URL has been opened in a browser from here.
 The doc lists six links (A–F) for a person to open on a phone and desktop, and
 what to look for; B is the one that settles it. Until then the card keeps its
 plain station link.
+
+**Tried 2026-10-28 from the sandbox** (docs/radar-interactive-link.md,
+"Tried from the sandbox"): the page loaded and selected KOAX from B's blob,
+but its map never initialised, because its basemap host
+`basemapstyles-api.arcgis.com` and its radar-tile host
+`opengeo.ncep.noaa.gov` are not on the sandbox's allowlist, so the viewer
+never wrote its settled centre back into the URL. **Waiting on the
+maintainer:** add those two hosts to the allowlist, and a session can open
+B and read the answer in a minute. Or open B on a phone and say where the
+map is centred.
 
 ## Mark Schulze's Winds Aloft: AGL or MSL?
 
