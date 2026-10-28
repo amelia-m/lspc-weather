@@ -211,15 +211,18 @@ each. The page itself loaded and read the blob: with B the header read
 Reflectivity", so the station in the blob was selected. But the map never
 initialised: its basemap comes from `basemapstyles-api.arcgis.com` and its
 radar tiles from `opengeo.ncep.noaa.gov`, and neither is on the sandbox's
-allowlist (both failed with the proxy's tunnel refusal; the only other
-hosts the page asked were api.weather.gov and radar.weather.gov, which
-answered, and two analytics hosts). The map pane stayed "Loading…", the
+allowlist (both failed with the proxy's tunnel refusal, and so did
+`geocode.arcgis.com`, which the search box asks; the only other hosts the
+page asked were api.weather.gov and radar.weather.gov, which answered, and
+two analytics hosts). The tile requests retry without end, so a run
+against the blocked hosts makes hundreds of refused connections. The map pane stayed "Loading…", the
 site never wrote its settled state back into the address bar (the URL was
 byte for byte the one opened, on every link), and so whether the station
 watcher re-centres on KOAX could not be observed. Nothing above changes.
-To settle it from here, the two hosts need allowlisting
-(docs/open-questions.md, "Radar card"); the scripts are in the session's
-scratchpad and take a minute to run again.
+To settle it from here, the three hosts need allowlisting
+(docs/open-questions.md, "Radar card"); then `scripts/radarLinks.mjs`
+opens the links again and prints each one's settled blob and the hosts
+it could not reach, in a minute or two.
 
 ## Why no link shipped
 
