@@ -150,13 +150,11 @@ The encoder expression above was run under Node with KOAX's `rdrLonLat` to
 produce link A below, and decoded back with `atob` to confirm the round trip.
 The other candidates were produced the same way.
 
-## What could not be checked
+## What could not be checked when this was written
 
-**None of these URLs had been opened in a browser when this was written.**
-On 2026-09-23 Playwright's Chromium here did not trust the egress proxy's
-CA; since 2026-10-17 it loads https:// pages with the proxy's SPKI list
-(CLAUDE.md, "The deployed site in a browser"), so B could now be opened
-from the sandbox. The
+**None of these URLs had been opened in a browser when this was written**
+(2026-09-23: Playwright's Chromium here did not trust the egress proxy's
+CA). They were on 2026-10-28, below, and the reading held. The
 re-centring is read from the viewer's source, not observed; in particular the
 watcher is registered in the layer component's `created` hook without
 `immediate`, so if the station list were already loaded before that hook ran
@@ -202,36 +200,63 @@ centre in the link survived.
 - **F — the interactive map for KOAX without a blob**, via the `/station/:id`
   alias: `https://radar.weather.gov/station/KOAX`
 
-## Tried from the sandbox, 2026-10-28
+## Settled in a browser, 2026-10-28
 
 Links A to F were opened in Playwright's Chromium through the sandbox's
 proxy (the SPKI recipe in CLAUDE.md), at 1280 and 390 px, 20 seconds
-each. The page itself loaded and read the blob: with B the header read
-"Station KOAX in Omaha" and "Local radar for Super Resolution Base
-Reflectivity", so the station in the blob was selected. But the map never
-initialised: its basemap comes from `basemapstyles-api.arcgis.com` and its
-radar tiles from `opengeo.ncep.noaa.gov`, and neither is on the sandbox's
-allowlist (both failed with the proxy's tunnel refusal, and so did
-`geocode.arcgis.com`, which the search box asks; the only other hosts the
-page asked were api.weather.gov and radar.weather.gov, which answered, and
-two analytics hosts). The tile requests retry without end, so a run
-against the blocked hosts makes hundreds of refused connections. The map pane stayed "Loading…", the
-site never wrote its settled state back into the address bar (the URL was
-byte for byte the one opened, on every link), and so whether the station
-watcher re-centres on KOAX could not be observed. Nothing above changes.
-To settle it from here, the three hosts need allowlisting
-(docs/open-questions.md, "Radar card"); then `scripts/radarLinks.mjs`
-opens the links again and prints each one's settled blob and the hosts
-it could not reach, in a minute or two.
+after `domcontentloaded` each, by `scripts/radarLinks.mjs`. The first
+run, in the morning, got the page but no map: its basemap style comes from
+`basemapstyles-api.arcgis.com`, its radar tiles from
+`opengeo.ncep.noaa.gov` and its search box asks `geocode.arcgis.com`, and
+none was on the sandbox's allowlist (the tile requests retry without end,
+so that run made hundreds of refused connections). The maintainer added
+the three that afternoon and the map drew: the KOAX echoes, the station
+icons, the animation's frames. Two things the earlier text assumed were
+wrong, and the script now allows for both: the site never writes its
+settled state back into the address bar (the URL stayed byte for byte the
+one opened, on every link, map or no map), and the map is OpenLayers, not
+Mapbox, so the centre is read from the first Vue component property with
+`getCenter()`, which gives Web Mercator metres, converted to degrees. The
+basemap's art (`cdn.arcgis.com`, sprites and glyphs) is still blocked, so
+the map drew on a blank ground, which changes nothing below.
+
+What each link settled to, the same at both widths
+(`data/parity/radar-links-2026-10-28.jsonl`, one line per load):
+
+| link | blob asked for | map centre and zoom once settled |
+|---|---|---|
+| A, KOAX at zoom 7 (the site's own link) | KOAX, 7 | −96.3668, 41.3203 (KOAX), 7 |
+| B, KOAX with the centre on the DZ, zoom 9 | DZ, 9, station KOAX | **−96.3668, 41.3203 (KOAX), 9** |
+| C, national mosaic centred on the DZ | DZ, 9 | −96.11, 40.8675 (the DZ), 9 |
+| D, "Weather for a location" at the DZ | DZ, 9, marker | −96.11, 40.8675 (the DZ), 9 |
+| E, `/location?lat&lon` | none | −96.11, 40.8675 (the DZ), 7 |
+| F, `/station/KOAX` | none | −96.3668, 41.3203 (KOAX), 7 |
+
+So the code reading holds: a station link is re-centred on the radar
+once the station list loads, keeping only the zoom; "centred on the DZ"
+and "KOAX's own product" cannot be had in one link. The mosaic and the
+location views honour the centre. B's screen at 1280 px, the DZ's
+latitude about 220 px below the middle:
+
+![Link B settled on KOAX at zoom 9](img/radar-link-B-2026-10-28.png)
+
+and C's, the mosaic centred on the DZ (the search box reverse-geocoded it
+to "Cass County, NE"):
+
+![Link C settled on the DZ at zoom 9](img/radar-link-C-2026-10-28.png)
 
 ## Why no link shipped
 
 The task was a link that lands on KOAX's radar *and* is centred on the drop
 zone. The viewer's own code makes those exclusive: selecting a station pans to
-the station. The two things that are possible — a DZ-centred mosaic, or a
-KOAX view at a zoom where the DZ is on screen — each change what the reader
-lands on, and neither has been seen in a browser. Shipping either would be
-guessing at the product on the strength of a code reading; better to hand the
+the station, and on 2026-10-28 a browser showed it doing so (above). The
+two things that are possible — a DZ-centred mosaic (C, or D with a marker),
+or a KOAX view at a zoom where the DZ is on screen — each change what the
+reader lands on, and both have now been seen. Which, if either, the card
+should link instead of the plain station view is the maintainer's call
+(docs/open-questions.md, "Radar card"). When this was written neither had
+been seen in a browser; shipping either would have been guessing at the
+product on the strength of a code reading; better to hand the
 decision, and the URLs to check it with, to someone who can open them.
 
 If B confirms the override, the choice is between C/D/E as a *second* link

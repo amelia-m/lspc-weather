@@ -361,7 +361,10 @@ of the NBM bulletins; the S3 bucket `noaa-nbm-grib2-pds` answered
 before) and `www.flyaerodyne.com` (the Smart reserve's page, for the
 round-reserve question), and since 2026-10-27
 `lspc-taf-relay.amelia-m.workers.dev` (the TAF relay, so it can be
-checked from here). Reachable is not readable: `globe.adsb.fi`,
+checked from here), and since 2026-10-28 `basemapstyles-api.arcgis.com`,
+`opengeo.ncep.noaa.gov` and `geocode.arcgis.com` (radar.weather.gov's
+viewer, for docs/radar-interactive-link.md; its basemap art at
+`cdn.arcgis.com` is not, and the map draws without it). Reachable is not readable: `globe.adsb.fi`,
 `api.adsb.one` and `airplanes.live` answer a script with Cloudflare's 403
 (airplanes.live's API asks for an emailed request first). The comparison artifacts can now be
 read from here with `curl -sL
