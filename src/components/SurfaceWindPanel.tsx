@@ -8,6 +8,7 @@ import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTermSegments } from './common/SimTerm';
 import { linkableTerms, splitGlossaryTerms } from '../config/simGlossary';
+import { FORECAST_GUST_NOTE } from '../config/forecastGustNote';
 
 /**
  * Surface wind, against whatever limit a source has actually published for the
@@ -242,6 +243,20 @@ export function SurfaceWindPanel({
           </p>
         </>
       )}
+      {/* Standing note on the forecast gust the Forecast flag reads: how it
+          has compared with the station, with the typical size of the
+          difference (the maintainer, 2026-10-28). One dated reading of the
+          six-month comparison, with its figures and its doc; no colour, no
+          threshold, and it changes nothing that fires. Shown for every
+          profile, since the gust is the same forecast whichever limit reads
+          it. */}
+      <p className="muted small forecast-gust-note">
+        {FORECAST_GUST_NOTE.sentence}{' '}
+        <a href={FORECAST_GUST_NOTE.url} target="_blank" rel="noopener noreferrer">
+          The comparison
+        </a>
+        .
+      </p>
     </Panel>
   );
 }

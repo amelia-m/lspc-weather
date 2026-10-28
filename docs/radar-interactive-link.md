@@ -202,6 +202,25 @@ centre in the link survived.
 - **F — the interactive map for KOAX without a blob**, via the `/station/:id`
   alias: `https://radar.weather.gov/station/KOAX`
 
+## Tried from the sandbox, 2026-10-28
+
+Links A to F were opened in Playwright's Chromium through the sandbox's
+proxy (the SPKI recipe in CLAUDE.md), at 1280 and 390 px, 20 seconds
+each. The page itself loaded and read the blob: with B the header read
+"Station KOAX in Omaha" and "Local radar for Super Resolution Base
+Reflectivity", so the station in the blob was selected. But the map never
+initialised: its basemap comes from `basemapstyles-api.arcgis.com` and its
+radar tiles from `opengeo.ncep.noaa.gov`, and neither is on the sandbox's
+allowlist (both failed with the proxy's tunnel refusal; the only other
+hosts the page asked were api.weather.gov and radar.weather.gov, which
+answered, and two analytics hosts). The map pane stayed "Loading…", the
+site never wrote its settled state back into the address bar (the URL was
+byte for byte the one opened, on every link), and so whether the station
+watcher re-centres on KOAX could not be observed. Nothing above changes.
+To settle it from here, the two hosts need allowlisting
+(docs/open-questions.md, "Radar card"); the scripts are in the session's
+scratchpad and take a minute to run again.
+
 ## Why no link shipped
 
 The task was a link that lands on KOAX's radar *and* is centred on the drop

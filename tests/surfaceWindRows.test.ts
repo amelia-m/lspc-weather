@@ -6,6 +6,7 @@ import { spreadLabels } from '../src/components/format';
 import { profileShortLabel, resolveThresholds, withOverrides, type Thresholds, type WindProfileId } from '../src/config/thresholds';
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
+import { FORECAST_GUST_NOTE } from '../src/config/forecastGustNote';
 
 /* The maintainer, 2026-10-10: on one bar it was not clear the yellow tick
  * was the gust, or what the red and purple marks were; then, with a row and
@@ -145,6 +146,36 @@ describe('Surface wind card', () => {
     expect(profileShortLabel('licensed')).toBe('Licensed');
     expect(card(10, null)).toContain('Student · LSPC waiver 21+');
     expect(card(10, null)).not.toContain('flag bands');
+  });
+});
+
+describe('the forecast-gust note', () => {
+  const docs = import.meta.glob('../docs/nws-gust-archive.md', { query: '?raw', import: 'default', eager: true });
+  const doc = Object.values(docs)[0] as string;
+
+  it('is on the card for every profile, with its counts and no warning colour', () => {
+    for (const profile of ['student:uspa', 'waiver:21+', 'licensed'] as WindProfileId[]) {
+      const html = card(10, null, profile);
+      const note = html.match(/<p class="muted small forecast-gust-note">([\s\S]*?)<\/p>/);
+      expect(note, profile).not.toBeNull();
+      expect(note![1]).toContain(`${FORECAST_GUST_NOTE.gustingHours.toLocaleString('en-US')} gusting hours`);
+      expect(note![1]).toContain(`half the differences were ${FORECAST_GUST_NOTE.medianMissKt} kt or less`);
+      expect(note![1]).toContain('not a correction');
+      expect(note![1]).toContain(`href="${FORECAST_GUST_NOTE.url}"`);
+      expect(note![1]).not.toMatch(/class="[^"]*(warn|caution|band-)/);
+    }
+  });
+
+  it('quotes the figures the comparison doc holds, as one dated reading', () => {
+    const n = FORECAST_GUST_NOTE;
+    expect(doc).toContain(`## Read again ${n.readOn}, to ${n.to}`);
+    expect(doc).toContain(`| hours KPMV reported a gust | ${n.gustingHours} |`);
+    expect(doc).toContain(`| ${n.above} / ${n.same} / ${n.below} |`);
+    expect(doc).toContain(`| mean, forecast minus reported | +${n.meanKt}`);
+    expect(doc).toContain(`| median / p90 / largest miss | ${n.medianMissKt} / ${n.p90MissKt} /`);
+    expect(doc).toContain(`${n.strongGustKt} kt or more −${Math.abs(n.strongMeanKt)}`);
+    expect(doc).toContain(`| no gust reported: forecast gust over the steady wind, mean | +${n.noGustMeanKt.toFixed(2)} kt (${n.noGustHours.toLocaleString('en-US')} h)`);
+    expect(n.above + n.same + n.below).toBe(n.gustingHours);
   });
 });
 
