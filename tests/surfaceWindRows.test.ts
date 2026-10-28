@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
 import { spreadLabels } from '../src/components/format';
-import { profileShortLabel, resolveThresholds, withOverrides, type Thresholds, type WindProfileId } from '../src/config/thresholds';
+import { profileShortLabel, resolveThresholds, WIND_PROFILE_IDS, withOverrides, type Thresholds, type WindProfileId } from '../src/config/thresholds';
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 import { FORECAST_GUST_NOTE } from '../src/config/forecastGustNote';
@@ -154,7 +154,7 @@ describe('the forecast-gust note', () => {
   const doc = Object.values(docs)[0] as string;
 
   it('is on the card for every profile, with its counts and no warning colour', () => {
-    for (const profile of ['student:uspa', 'waiver:21+', 'licensed'] as WindProfileId[]) {
+    for (const profile of WIND_PROFILE_IDS) {
       const html = card(10, null, profile);
       const note = html.match(/<p class="muted small forecast-gust-note">([\s\S]*?)<\/p>/);
       expect(note, profile).not.toBeNull();
@@ -166,16 +166,27 @@ describe('the forecast-gust note', () => {
     }
   });
 
-  it('quotes the figures the comparison doc holds, as one dated reading', () => {
+  it('quotes the figures the comparison doc holds, cell for cell from the latest-issuance column', () => {
     const n = FORECAST_GUST_NOTE;
-    expect(doc).toContain(`## Read again ${n.readOn}, to ${n.to}`);
-    expect(doc).toContain(`| hours KPMV reported a gust | ${n.gustingHours} |`);
-    expect(doc).toContain(`| ${n.above} / ${n.same} / ${n.below} |`);
-    expect(doc).toContain(`| mean, forecast minus reported | +${n.meanKt}`);
-    expect(doc).toContain(`| median / p90 / largest miss | ${n.medianMissKt} / ${n.p90MissKt} /`);
-    expect(doc).toContain(`${n.strongGustKt} kt or more −${Math.abs(n.strongMeanKt)}`);
-    expect(doc).toContain(`| no gust reported: forecast gust over the steady wind, mean | +${n.noGustMeanKt.toFixed(2)} kt (${n.noGustHours.toLocaleString('en-US')} h)`);
+    // The reading's own section (an earlier reading's table has the same
+    // rows with other figures), and each row up to and including its first
+    // (latest issuance) column, so another column's figures or a longer
+    // decimal would not pass.
+    const heading = `## Read again ${n.readOn}, to ${n.to}`;
+    expect(doc).toContain(heading);
+    expect(doc).toContain(`issuances from ${n.from} `);
+    const doc2 = doc.slice(doc.indexOf(heading));
+    expect(doc2).toContain(`| hours KPMV reported a gust | ${n.gustingHours} |`);
+    expect(doc2).toContain(`| forecast gust above / same / below the reported gust | ${n.above} / ${n.same} / ${n.below} |`);
+    expect(doc2).toContain(`| the same as shares | ${n.share(n.above)} / ${n.share(n.same)} / ${n.share(n.below)} |`);
+    expect(doc2).toContain(`| mean, forecast minus reported | +${n.meanKt} kt |`);
+    expect(doc2).toContain(`| median / p90 / largest miss | ${n.medianMissKt} / ${n.p90MissKt} / `);
+    expect(doc2).toContain(`${n.strongGustKt} kt or more ${n.strongMeanKt < 0 ? '−' : '+'}${Math.abs(n.strongMeanKt)}`);
+    expect(doc2).toContain(`| no gust reported: forecast gust over the steady wind, mean | +${n.noGustMeanKt.toFixed(2)} kt (${n.noGustHours.toLocaleString('en-US')} h) |`);
     expect(n.above + n.same + n.below).toBe(n.gustingHours);
+    // The wording's verdict follows the sign of the figure it prints.
+    expect(n.sentence).toContain(n.strongMeanKt < 0 ? 'a little low (−' : 'a little high (+');
+    expect(n.url).toBe(`https://github.com/amelia-m/lspc-weather/blob/main/${n.doc}`);
   });
 });
 

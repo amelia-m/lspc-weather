@@ -1143,11 +1143,12 @@ plain station link.
 **Tried 2026-10-28 from the sandbox** (docs/radar-interactive-link.md,
 "Tried from the sandbox"): the page loaded and selected KOAX from B's blob,
 but its map never initialised, because its basemap host
-`basemapstyles-api.arcgis.com` and its radar-tile host
-`opengeo.ncep.noaa.gov` are not on the sandbox's allowlist, so the viewer
-never wrote its settled centre back into the URL. **Waiting on the
-maintainer:** add those two hosts to the allowlist, and a session can open
-B and read the answer in a minute. Or open B on a phone and say where the
+`basemapstyles-api.arcgis.com`, its radar-tile host
+`opengeo.ncep.noaa.gov` and its geocoder `geocode.arcgis.com` are not on
+the sandbox's allowlist, so the viewer never wrote its settled centre back
+into the URL. **Waiting on the maintainer:** add those three hosts to the
+allowlist, and a session can open B with `scripts/radarLinks.mjs` and read
+the answer in a minute or two. Or open B on a phone and say where the
 map is centred.
 
 ## Mark Schulze's Winds Aloft: AGL or MSL?

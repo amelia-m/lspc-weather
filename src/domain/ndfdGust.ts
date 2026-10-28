@@ -1,11 +1,12 @@
 /**
  * The NWS gust forecast from NOAA's NDFD archive set against KPMV's reports,
  * over months rather than the forecast keeper's days
- * (docs/nws-gust-archive.md). The question it serves is the open one in
- * docs/open-questions.md, "A note on the card about the forecast gust?":
- * the kept forecasts' gust ran above KPMV's in 45 of 53 gusting hours, by
- * an amount that varied from day to day, and 53 hours could not say how
- * consistent that is.
+ * (docs/nws-gust-archive.md). The question it served is in
+ * docs/open-questions.md, "Done: a note on the card about the forecast
+ * gust": the kept forecasts' gust ran above KPMV's in 45 of 53 gusting
+ * hours, by an amount that varied from day to day, and 53 hours could not
+ * say how consistent that is. Its reading is now the Surface wind card's
+ * standing note (src/config/forecastGustNote.ts).
  *
  * Read as the kept forecasts are (docs/kept-forecasts-vs-kpmv.md), so the two
  * readings compare: the newest issuance at least each lead before the hour

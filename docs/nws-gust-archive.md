@@ -295,8 +295,9 @@ is consistent enough to describe on the card. Over six months:
 
 A figure like "the forecast gust runs about 1.5 kt high" would be true on
 average and misleading on the windiest days, the ones that matter. The
-decision stays the maintainer's (docs/open-questions.md). Nothing on the
-dashboard changed, and nothing reads these figures.
+decision stays the maintainer's (docs/open-questions.md). Since 2026-10-28 the Surface wind card
+reads them as a standing note ("On the card", above); nothing that
+fires changed.
 
 KPMV is 11.5 miles from the drop zone, and the grid point is the drop
 zone's, so part of every difference is the distance. How KPMV decides
