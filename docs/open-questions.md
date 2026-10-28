@@ -1140,15 +1140,18 @@ The doc lists six links (A–F) for a person to open on a phone and desktop, and
 what to look for; B is the one that settles it. Until then the card keeps its
 plain station link.
 
-**Tried 2026-10-28 from the sandbox** (docs/radar-interactive-link.md,
-"Tried from the sandbox"): the page loaded and selected KOAX from B's blob,
-but its map never initialised, because its basemap host
-`basemapstyles-api.arcgis.com`, its radar-tile host
-`opengeo.ncep.noaa.gov` and its geocoder `geocode.arcgis.com` are not on
-the sandbox's allowlist, so the viewer never wrote its settled centre back
-into the URL. **Waiting on the maintainer:** add those three hosts to the
-allowlist, and a session can open B with `scripts/radarLinks.mjs` and read
-the answer in a minute or two. Or open B on a phone and say where the
+**Settled 2026-10-28 in a browser** (docs/radar-interactive-link.md,
+"Settled in a browser"), once the maintainer allowlisted the viewer's
+basemap, tile and geocoder hosts that afternoon: B, a KOAX station link
+with its centre on the DZ, settles centred on KOAX at the zoom asked; the
+mosaic (C), the "weather for a location" view (D) and the `/location`
+quickset (E) settle centred on the DZ. So approach 3 as asked is not
+possible, as the code reading said. **The maintainer's call:** keep the
+plain station link (KOAX's own product, centred on the radar, the DZ off
+screen until zoomed out), or link the DZ-centred mosaic (C) or the
+location view with a marker (D), which show the national composite rather
+than KOAX's single-site product. `scripts/radarLinks.mjs` opens any of
+them again. Or open B on a phone and say where the
 map is centred.
 
 ## Mark Schulze's Winds Aloft: AGL or MSL?
