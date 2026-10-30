@@ -7,6 +7,7 @@ import { profileShortLabel, resolveThresholds, WIND_PROFILE_IDS, withOverrides, 
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 import { FORECAST_GUST_NOTE } from '../src/config/forecastGustNote';
+import { METAR_STATION_OFFSET } from '../src/config/site';
 
 /* The maintainer, 2026-10-10: on one bar it was not clear the yellow tick
  * was the gust, or what the red and purple marks were; then, with a row and
@@ -146,6 +147,22 @@ describe('Surface wind card', () => {
     expect(profileShortLabel('licensed')).toBe('Licensed');
     expect(card(10, null)).toContain('Student · LSPC waiver 21+');
     expect(card(10, null)).not.toContain('flag bands');
+  });
+});
+
+describe('the observed line', () => {
+  it('says first that the reading is KPMV’s latest report, with its time and distance, not a forecast', () => {
+    const html = card(10, null);
+    const i = html.indexOf('<p class="wind-observed">');
+    expect(i).toBeGreaterThan(-1);
+    expect(i).toBeLessThan(html.indexOf('wind-readout'));
+    const line = html.slice(i, html.indexOf('</p>', i));
+    expect(line).toContain(
+      `<strong>Observed</strong> at KPMV (${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the DZ)`,
+    );
+    expect(Math.round(METAR_STATION_OFFSET.distanceMi)).toBe(11);
+    expect(line).toMatch(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2}:\d{2} (AM|PM)\b/);
+    expect(line).toContain('the latest report, not a forecast');
   });
 });
 
