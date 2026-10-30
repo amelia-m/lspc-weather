@@ -24,8 +24,7 @@ runs is `src/domain/surfaceWindSources.ts`, pure and tested, and
 The script is opt-in. `vitest.live.config.ts` takes every
 `scripts/*.live.ts`, and the daily sky-parity job runs that config with no
 path, so the script is skipped unless `SURFACE_WIND_SAMPLE=1` is set,
-which only the sampler workflow (2026-10-09 to 10-30, since deleted) set
-(shown
+which only the sampler workflow sets (shown
 on 2026-10-09: the whole live config without it ran 5 files and skipped this
 one). One sample, from the sandbox:
 
@@ -336,7 +335,7 @@ API and a Single Runs API for "the full archive of past forecast runs as
 issued"), and IEM keeps KPMV's past reports; pairing those could cover months
 without a live sampler. Neither was tried here.
 
-## The longer sample (2026-10-09 to 10-30)
+## The longer sample, and the standing one
 
 `.github/workflows/surface-wind-sample.yml` ran the script every five
 minutes through `scripts/surfaceWindLoop.sh`, in five-hour batches started
@@ -345,8 +344,21 @@ day and drifted through every hour of it, from the workflow's merge to
 2026-10-30T02:00Z (three weeks). Its records were uploaded as
 `surfacewind-<run id>-<attempt>-<hour>` artifacts, kept 30 days, apart
 from the `#parity` summary's `parity-*` ones; they are archived under
-`data/parity/` and summarised below ("The whole sample"), and the
-workflow and loop script were deleted on 2026-10-30 (in the history).
+`data/parity/` and summarised below ("The first three weeks").
+
+Since 2026-10-30 the same workflow runs without an end date, every
+fifteen minutes (the maintainer, that day: three weeks of one autumn is
+a first reading, and the logging is to continue over seasons, times of
+day and kinds of weather). Fifteen minutes still sees every KPMV report,
+which comes each twenty, at a third of the Open-Meteo calls; the cadence
+rows below, which needed the five-minute spacing, are the first sample's.
+`parity-summary.yml` archives the artifacts daily as
+`data/parity/surfacewind-<YYYY-MM>.jsonl.gz` (`scripts/surfaceWindArchive.ts`,
+one record per run), and the weekly ceiling data refresh rebuilds the
+`#wind-errors` page's sample section from every `surfacewind-*` archive,
+so the section keeps growing. To read the whole series again:
+
+    npx tsx scripts/surfaceWindSummary.ts <(zcat data/parity/surfacewind-*.jsonl.gz)
 
 **It has not covered the whole day.** Read from the Actions API on
 2026-10-16: 27 runs, all successful, each 4.6 to 5.8 hours long. But its
@@ -539,11 +551,11 @@ npx tsx scripts/windErrorsData.ts --kept <dir>/data \
   --figures docs/img
 ```
 
-## The whole sample (2026-10-30)
+## The first three weeks (read 2026-10-30)
 
-All 430 artifacts, 5,125 runs from 2026-10-09 03:43Z to 2026-10-30
-01:58Z, the last run ending four minutes before the window. The runs
-after the preview's cut are archived beside it as
+All 430 artifacts of the time-boxed run, 5,125 runs from 2026-10-09
+03:43Z to 2026-10-30 01:58Z, the last ending four minutes before the
+window. The runs after the preview's cut are archived beside it as
 `data/parity/surfacewind-2026-10-21-to-2026-10-30.jsonl.gz` (2,029 runs,
 one line each, deduplicated by time); the whole sample is the two files:
 
@@ -597,29 +609,33 @@ one line each, deduplicated by time); the whole sample is the two files:
 
 ![Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's three forms and the NWS hour, the whole sample](img/surface-wind-errors-2026-10-30.svg)
 
-The `#wind-errors` page's sample section now holds these pairs (1,217
-reports per Open-Meteo form, 1,188 for `current`; its file rebuilt with
-`scripts/windErrorsData.ts` on 2026-10-30, the figure above drawn by the
-same run and never overwritten). The section stops growing: the sampler
-was a time-boxed sample, not a feed (the maintainer, 2026-10-27), and the
-page's other sections keep growing through the weekly refresh's
-Open-Meteo and NDFD archive fetches.
+The `#wind-errors` page's sample section held these pairs on 2026-10-30
+(1,217 reports per Open-Meteo form, 1,188 for `current`; its file rebuilt
+with `scripts/windErrorsData.ts` that day, the figure above drawn by the
+same run and never overwritten). The section keeps growing from the
+standing sampler's monthly archives (above), beside the page's other
+sections, which grow through the weekly refresh's Open-Meteo and NDFD
+archive fetches.
 
-**What it settles.** Over three weeks of one autumn, none of the four is
-clearly the nearer forecast of KPMV's measured speed: all miss by a
+**What it settles, so far.** Over three weeks of one autumn, none of the
+four is clearly the nearer forecast of KPMV's measured speed: all miss by a
 median 2 kt, the NWS gridpoint a little low on average and Open-Meteo a
 knot high, and on gusts Open-Meteo overshoots about twice as far as the
 NWS. Open-Meteo's `minutely_15` and `current` add nothing over its hourly
 value at this point, since all three are the same 15-minute series read
 at different times. Counts and spreads only, never a grade. Nothing on
 the dashboard changed. KPMV is 11.5 mi from the drop zone on different
-ground, so part of every difference is the distance.
+ground, so part of every difference is the distance. One season is one
+season: the standing sampler is for the others, and for the kinds of
+weather three October weeks did not hold.
 
 ## Status
 
 Measurement only: nothing the dashboard's cards show changed. The
-sampler ran from 2026-10-09 to 10-30 and is deleted; its records are
-archived under `data/parity/` and summarised above ("The whole sample").
+sampler ran every five minutes from 2026-10-09 to 10-30 (summarised
+above, "The first three weeks") and runs on, every fifteen minutes,
+with its records archived monthly under `data/parity/` ("The longer
+sample, and the standing one").
 Since 2026-10-23 the archived records also feed the `#wind-errors` page,
 which draws the histograms above. Since 2026-10-27 the bars are filled by
 side (the maintainer's request): right of zero, the forecast above the

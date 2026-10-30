@@ -1,0 +1,134 @@
+name: Surface-wind sample
+
+# Standing, since 2026-10-30 (the maintainer: the sample is to continue
+# over seasons, times of day and kinds of weather): every fifteen minutes,
+# record KPMV's METAR, the NWS hourly forecast, and Open-Meteo's hourly,
+# 15-minute and current 10 m wind for the drop zone
+# (scripts/surfaceWindCompare.live.ts, run through
+# scripts/surfaceWindLoop.sh). The question is which forecast sits nearer
+# the measured wind; the first three weeks (2026-10-09 to 10-30, every
+# five minutes) could not rank them (docs/surface-wind-sources.md, "The
+# first three weeks"), and one autumn is one season.
+#
+# Measurement only: nothing here changes what the dashboard shows. The
+# records are uploaded as surfacewind-* artifacts, kept 30 days, which the
+# #parity summary never reads; parity-summary.yml archives them daily as
+# data/parity/surfacewind-<month>.jsonl.gz (scripts/surfaceWindArchive.ts),
+# and the weekly ceiling data refresh rebuilds the #wind-errors page's
+# sample section from the archives. Never fails: the script records a
+# source it cannot read.
+#
+# One job that loops, started about five times a day, because GitHub
+# throttles a cron line per sample and does not throttle a running job (the
+# 2026-09-30 sampler, in the history, found this). Each start samples for
+# five hours in five one-hour slices, uploading after each, so a late or
+# cancelled job still keeps what it gathered, and a slice or upload that
+# fails does not stop the ones after it. Starts every five hours, queued
+# end to end, cover the whole day; GitHub starts them late by hours at
+# times, which the first sample's 78% coverage shows.
+#
+# To stop it, disable the workflow in the Actions tab or delete this file;
+# the archives and the page keep what was gathered.
+on:
+  schedule:
+    # Every five hours (00:41, 05:41, 10:41, 15:41, 20:41Z), each start
+    # sampling for about five: with the queue below, a start that fires while
+    # one is running waits and follows it, so the samples run end to end
+    # and drift through every hour of the day instead of leaving the same
+    # gaps daily (a fixed four-a-day schedule never sampled 13:45 to 14:41
+    # CDT, the gusty afternoon).
+    - cron: '41 */5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A start that fires while the previous one is still sampling waits for it
+# (GitHub keeps one waiting start; a newer one replaces it, which loses no
+# sampling time since either would follow the running one).
+concurrency:
+  group: surface-wind-sampler
+  cancel-in-progress: false
+
+env:
+  # Fifteen minutes: every KPMV report (one each twenty minutes) is still
+  # seen, at a third of the first sample's Open-Meteo calls.
+  SAMPLE_EVERY_SECONDS: '900'
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    # Five one-hour slices plus setup and uploads; GitHub's ceiling is 360.
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Sample, hour 1
+        if: always()
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-1.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-1
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-1.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 2
+        if: always()
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-2.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-2
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-2.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 3
+        if: always()
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-3.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-3
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-3.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 4
+        if: always()
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-4.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-4
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-4.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
+
+      - name: Sample, hour 5
+        if: always()
+        continue-on-error: true
+        run: scripts/surfaceWindLoop.sh 60 "surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-5.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-5
+          path: surfacewind-${{ github.run_id }}-${{ github.run_attempt }}-5.jsonl
+          retention-days: 30
+          if-no-files-found: ignore
+        continue-on-error: true
