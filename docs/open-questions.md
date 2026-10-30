@@ -943,6 +943,23 @@ same chain with its own requests; on 2026-10-20 it showed KOMA, issued
 
 ## Live-site smoke test
 
+**Broken by the runner image, 2026-10-28 to 10-30.** Every run from
+2026-10-28 16:52Z (the deploy of PR #236) to 2026-10-30 03:32Z (PR #239)
+failed before the check started: GitHub's `ubuntu-latest` had become the
+`ubuntu-26.04` image between the 14:15Z run, which passed on it, and
+16:52Z (the runner's own log names the image), and `npx playwright
+install --with-deps chromium` for Playwright 1.56.1 answered "Playwright
+does not support chromium on ubuntu26.04-x64". The workflow opened issue
+#237 and commented on it at each failure, which nobody read for two
+days: the deploy of PR #236 was docs only and its check was not waited
+for, and the next two sessions' PRs waited for the check but their
+summaries were written before reading why it failed. Fixed 2026-10-30
+by pinning the job to `ubuntu-24.04`, with a comment saying when to
+unpin. The other two `ubuntu-latest` workflows (sky-parity, the parity
+summary) use no browser and kept passing. Worth knowing: a failed
+live-site run is not always a site fault; the issue body says so when
+`live.log` is missing.
+
 Run against live data on 2026-09-22 (first time the app had ever been exercised
 against anything but the fixtures in `src/api/fixtures/`). Every source
 answered: NWS observation (KPMV), NWS gridpoint hourly (168 points), Open-Meteo

@@ -37,7 +37,13 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: on 2026-10-28 between 14:15Z and 16:52Z
+    # GitHub moved ubuntu-latest to the ubuntu-26.04 image, and
+    # `playwright install` (1.56.1) refuses it ("does not support chromium
+    # on ubuntu26.04-x64"), so every run from then to 2026-10-30 failed
+    # before the check started (issue #237). Move the pin only after
+    # `npx playwright install` is known to work on the newer image.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
