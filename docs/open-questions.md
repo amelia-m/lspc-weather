@@ -349,15 +349,27 @@ at the top of this section, and the workflow is deleted.
 
 ## Surface wind: which forecast source
 
+**Settled 2026-10-30, as far as three weeks of one autumn can**
+(docs/surface-wind-sources.md, "The whole sample"): none of the four is
+clearly nearer KPMV's measured speed. Over 1,217 reports from 2026-10-09
+to 10-30 every source missed by a median 2 kt; the NWS gridpoint hour ran
+a little low (signed mean −0.64 kt, below the report in 668 of 1,217)
+and Open-Meteo's hourly, 15-minute and current values a knot high (+1.0
+to +1.1 kt, above in about 700), being one 15-minute series read three
+ways, so `minutely_15` and `current` add nothing over the hourly value
+here. On the 294 reported gusts the NWS ran +2.3 kt and Open-Meteo +4.3.
+Nothing on the dashboard changed; the sampler is deleted and its records
+archived. What follows is the question as it stood.
+
 Open since 2026-10-09. Whether Open-Meteo's `minutely_15` or `current` 10 m
 wind is a better forecast of KPMV's measured wind than the NWS gridpoint hour
 or Open-Meteo's hourly value. One two-hour sample (41 runs, 7 METAR reports,
 all 5 to 6 kt) settled how the sources are built and how often they change,
-and could not settle accuracy: see `docs/surface-wind-sources.md`. It needs
+and could not settle accuracy: see `docs/surface-wind-sources.md`. It needed
 weeks of reports across windy, gusty and calm conditions. A sampler
-(`.github/workflows/surface-wind-sample.yml`, every five minutes) runs to
-2026-10-30T02:00Z for that; its records then need archiving and summarising
-(`docs/surface-wind-sources.md`, "The longer sample, running"). Also seen
+(`.github/workflows/surface-wind-sample.yml`, every five minutes) ran to
+2026-10-30T02:00Z for that; its records are archived and summarised
+(`docs/surface-wind-sources.md`, "The whole sample"). Also seen
 there: the NWS gridpoint is served from caches that keep a copy up to an
 hour, and the browser kept its own (measured and changed 2026-10-23,
 docs/nws-gridpoint-age.md); and, not acted on, Open-Meteo's hourly gust at the DZ always equalled the
@@ -599,10 +611,10 @@ What that choice involves, as read 2026-10-16:
   misuse can end jobs or restrict Actions. That wording was read on
   2026-10-16 in copies of the terms (a mirror of the github/docs
   repository), and on the live page on 2026-10-20 ("KOFF's TAF", below). A keeper whose records check this project's own forecasts is
-  arguably within the project; the surface-wind sampler already runs the
-  same way.
-- **Precedent.** The surface-wind sampler (`surface-wind-sample.yml`) is
-  that loop: 27 runs to 2026-10-16, all successful, 4.6 to 5.8 hours
+  arguably within the project; the surface-wind sampler ran the same way
+  to 2026-10-30.
+- **Precedent.** The surface-wind sampler (`surface-wind-sample.yml`,
+  2026-10-09 to 10-30, since deleted) was that loop: 27 runs to 2026-10-16, all successful, 4.6 to 5.8 hours
   each. But its own five-hourly starts were throttled too: it covered
   57% of the time from 2026-10-09 to 10-14, with gaps of up to 9 hours,
   and 96% since (docs/surface-wind-sources.md). A loop makes each start

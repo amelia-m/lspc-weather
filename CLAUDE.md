@@ -711,18 +711,20 @@ refresh below (`scripts/windErrorsData.ts`, held to the published file by
 figures are dated readings (`docs/img/*-wind-errors-<day>.svg`), drawn by
 hand with `--figures` and never overwritten, because each doc's text
 quotes the counts of its own reading.
-`.github/workflows/surface-wind-sample.yml` is that pattern again, temporary:
-it runs `scripts/surfaceWindCompare.live.ts` every five minutes
-(`scripts/surfaceWindLoop.sh`) until 2026-10-30T02:00Z, uploads
-`surfacewind-*` artifacts kept 30 days that the parity summary never reads.
-It changes nothing the dashboard shows, but its archived records feed the
-`#wind-errors` page. When the window ends, archive the records under
-`data/parity/`, summarise them with `scripts/surfaceWindSummary.ts` into
-`docs/surface-wind-sources.md`, rebuild the page's data file and figures
-with `scripts/windErrorsData.ts` on the whole window, and delete the
-workflow (the maintainer, 2026-10-27: fine to delete as long as the page's
-data keeps growing, which the weekly refresh's Open-Meteo and NDFD archive
-fetches do; the sampler was a time-boxed sample, not a feed).
+The surface-wind sampler (`.github/workflows/surface-wind-sample.yml`,
+`scripts/surfaceWindLoop.sh`, both deleted 2026-10-30) was that pattern,
+temporary: every five minutes from 2026-10-09 to 2026-10-30T02:00Z it ran
+`scripts/surfaceWindCompare.live.ts` and uploaded `surfacewind-*`
+artifacts the parity summary never read. Its 5,125 runs are
+`data/parity/surfacewind-2026-10-09-to-2026-10-21.jsonl.gz` and
+`surfacewind-2026-10-21-to-2026-10-30.jsonl.gz`, summarised by
+`scripts/surfaceWindSummary.ts` in docs/surface-wind-sources.md ("The
+whole sample"): over 1,217 reports none of the four forecasts was clearly
+nearer KPMV's speed, the NWS a little low and Open-Meteo a knot high, and
+Open-Meteo's 15-minute and current values are its hourly series read at
+other times. They feed the `#wind-errors` page's sample section, which
+stops growing (the maintainer, 2026-10-27: a time-boxed sample, not a
+feed; the page's other sections grow through the weekly refresh).
 The run-split sampler (`.github/workflows/run-split-sample.yml`,
 `scripts/runSplitLoop.sh`, both deleted 2026-10-27) was the same pattern:
 every four minutes from 2026-10-23 to 2026-10-27T06:00Z it asked Mark
