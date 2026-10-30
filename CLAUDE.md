@@ -600,7 +600,11 @@ gates and read your own diff first; a review spent on a typo is a review not
 available for the change that needs one.
 
 `.github/workflows/live-site.yml` is not a gate either: daily, after every
-deploy and on dispatch, it loads the deployed site in a browser, every page
+deploy and on dispatch, it loads the deployed site in a browser (on a
+runner pinned to `ubuntu-24.04` since 2026-10-30: `ubuntu-latest` became
+the 26.04 image on 2026-10-28 and Playwright 1.56.1 would not install
+Chromium there, so six runs in a row failed before the check started,
+issue #237), every page
 at 1280, 390 and 320 px on live data (`scripts/liveSite.ts`), and fails
 when a reader would meet a fault, as `src/domain/liveSite.ts` counts one:
 a script error, the crash screen, a page wider than the viewport (naming
