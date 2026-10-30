@@ -24,7 +24,8 @@ runs is `src/domain/surfaceWindSources.ts`, pure and tested, and
 The script is opt-in. `vitest.live.config.ts` takes every
 `scripts/*.live.ts`, and the daily sky-parity job runs that config with no
 path, so the script is skipped unless `SURFACE_WIND_SAMPLE=1` is set,
-which only the sampler workflow below sets, to 2026-10-30 (shown
+which only the sampler workflow (2026-10-09 to 10-30, since deleted) set
+(shown
 on 2026-10-09: the whole live config without it ran 5 files and skipped this
 one). One sample, from the sandbox:
 
@@ -335,18 +336,17 @@ API and a Single Runs API for "the full archive of past forecast runs as
 issued"), and IEM keeps KPMV's past reports; pairing those could cover months
 without a live sampler. Neither was tried here.
 
-## The longer sample, running
+## The longer sample (2026-10-09 to 10-30)
 
-`.github/workflows/surface-wind-sample.yml` runs the script every five
+`.github/workflows/surface-wind-sample.yml` ran the script every five
 minutes through `scripts/surfaceWindLoop.sh`, in five-hour batches started
-every five hours and queued end to end, so the samples cover the whole day
-and drift through every hour of it, from the workflow's merge to
-2026-10-30T02:00Z (three weeks, about 1,000 METAR pairs). Its records are
-uploaded as `surfacewind-<run id>-<attempt>-<hour>` artifacts and kept 30
-days, apart from the `#parity` summary's `parity-*` ones. Once the window
-ends, archive them under `data/parity/`, summarise them with
-`scripts/surfaceWindSummary.ts`, write the result up here, and delete the
-workflow.
+every five hours and queued end to end, so the samples covered the whole
+day and drifted through every hour of it, from the workflow's merge to
+2026-10-30T02:00Z (three weeks). Its records were uploaded as
+`surfacewind-<run id>-<attempt>-<hour>` artifacts, kept 30 days, apart
+from the `#parity` summary's `parity-*` ones; they are archived under
+`data/parity/` and summarised below ("The whole sample"), and the
+workflow and loop script were deleted on 2026-10-30 (in the history).
 
 **It has not covered the whole day.** Read from the Actions API on
 2026-10-16: 27 runs, all successful, each 4.6 to 5.8 hours long. But its
@@ -539,11 +539,89 @@ npx tsx scripts/windErrorsData.ts --kept <dir>/data \
   --figures docs/img
 ```
 
+## The whole sample (2026-10-30)
+
+All 430 artifacts, 5,125 runs from 2026-10-09 03:43Z to 2026-10-30
+01:58Z, the last run ending four minutes before the window. The runs
+after the preview's cut are archived beside it as
+`data/parity/surfacewind-2026-10-21-to-2026-10-30.jsonl.gz` (2,029 runs,
+one line each, deduplicated by time); the whole sample is the two files:
+
+    npx tsx scripts/surfaceWindSummary.ts <(zcat data/parity/surfacewind-2026-10-09-to-2026-10-21.jsonl.gz) <(zcat data/parity/surfacewind-2026-10-21-to-2026-10-30.jsonl.gz)
+
+- **The sample.** 1,217 distinct KPMV reports over 21 days, 43 to 62 in
+  each local hour (fewest at 6 AM and 11 PM, most at 1 AM and 7 PM), so no
+  hour is thin and weighting by hour would move little. The runs covered
+  78% of the window's 502 hours: GitHub's five-hourly starts were late 28
+  times by more than an hour, the longest gap 8.9 hours in the first days
+  and 6.1 hours on 10-29. Speeds: 46 calm, 376 at 1 to 5 kt, 568 at 6 to
+  10, 187 at 11 to 15, 40 at 16 or more (largest 25 kt); 294 reports with
+  a gust (largest 32 kt). Open-Meteo's requests failed in 24 runs of
+  5,125, the NWS's and IEM's in none.
+- **Speed, forecast minus measured**, each report once against each
+  forecast as it stood while the report was the newest:
+
+  | source | reports | median miss | p90 | largest | signed mean | above / below |
+  |---|---|---|---|---|---|---|
+  | NWS gridpoint hour | 1,217 | 2 kt | 4 | 10 | −0.64 kt | 356 / 668 |
+  | Open-Meteo hourly | 1,217 | 2.1 kt | 4.6 | 9.8 | +1.06 kt | 728 / 349 |
+  | Open-Meteo 15-minute | 1,217 | 2.1 kt | 4.6 | 9.8 | +1.03 kt | 712 / 359 |
+  | Open-Meteo current | 1,188 | 2.1 kt | 4.6 | 10.9 | +1.02 kt | 697 / 344 |
+
+  The preview's picture, on 1.6 times the reports: every source's median
+  miss is about 2 kt; the NWS runs a little low and Open-Meteo's three
+  forms, which are one value read three ways, a knot high.
+- **Direction.** Median miss 10° (NWS) to 13° (Open-Meteo), p90 30° to
+  34°, on the 1,172 reports with a direction; both lean clockwise of the
+  report (signed mean +7.4° to +9.6°).
+- **Gusts, where KPMV reported one** (294). The NWS gust's median miss is
+  4 kt, p90 7, signed mean +2.27 kt (above in 212, below in 59);
+  Open-Meteo's 4.1 to 4.3 kt, p90 about 10, signed mean +4.2 to +4.4 kt
+  (above in about 240, below in about 32). Both give a gust in the 923
+  reports with none, which says nothing either way (the METAR reports a
+  gust only when the station's rule finds one, docs/nws-gust-archive.md,
+  "How a gust gets into KPMV's report").
+- **The cadence rows, on the whole sample.** Open-Meteo's `current` was
+  the 15-minute step at its time, and its hourly value the 15-minute step
+  on the hour, in all 5,101 runs that had them. Its hourly gust was never
+  above the preceding hour's largest 15-minute gust and was below it at
+  285 of 466 hours, by up to 6.8 kt. The default model was HRRR in 5,045
+  of 5,096 comparable runs; the 51 others, all from 10-24 to 10-26,
+  differed from the HRRR request by up to 81° and 7.2 kt, a few hours at a
+  time.
+- **Freshness.** The KPMV report was a median 14.7 minutes old when
+  fetched (3 to 84), the NWS gridpoint's update time 63.9 minutes (2 to
+  224), Open-Meteo's `current` interval 7.8 minutes; the hourly and
+  15-minute ages, inferred from HRRR's availability time, a median 31
+  minutes.
+
+![Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's three forms and the NWS hour, the whole sample](img/surface-wind-errors-2026-10-30.svg)
+
+The `#wind-errors` page's sample section now holds these pairs (1,217
+reports per Open-Meteo form, 1,188 for `current`; its file rebuilt with
+`scripts/windErrorsData.ts` on 2026-10-30, the figure above drawn by the
+same run and never overwritten). The section stops growing: the sampler
+was a time-boxed sample, not a feed (the maintainer, 2026-10-27), and the
+page's other sections keep growing through the weekly refresh's
+Open-Meteo and NDFD archive fetches.
+
+**What it settles.** Over three weeks of one autumn, none of the four is
+clearly the nearer forecast of KPMV's measured speed: all miss by a
+median 2 kt, the NWS gridpoint a little low on average and Open-Meteo a
+knot high, and on gusts Open-Meteo overshoots about twice as far as the
+NWS. Open-Meteo's `minutely_15` and `current` add nothing over its hourly
+value at this point, since all three are the same 15-minute series read
+at different times. Counts and spreads only, never a grade. Nothing on
+the dashboard changed. KPMV is 11.5 mi from the drop zone on different
+ground, so part of every difference is the distance.
+
 ## Status
 
-Measurement only: nothing the dashboard's cards show changed. Since
-2026-10-23 the archived records also feed the `#wind-errors` page, which
-draws the histograms above. Since 2026-10-27 the bars are filled by
+Measurement only: nothing the dashboard's cards show changed. The
+sampler ran from 2026-10-09 to 10-30 and is deleted; its records are
+archived under `data/parity/` and summarised above ("The whole sample").
+Since 2026-10-23 the archived records also feed the `#wind-errors` page,
+which draws the histograms above. Since 2026-10-27 the bars are filled by
 side (the maintainer's request): right of zero, the forecast above the
 report, in the accent blue; left of it in magenta (first teal, which the
 maintainer found too close to the blue); the zero bar, counted on neither

@@ -388,8 +388,7 @@ record under `data/parity/`), `sky-parity.yml` (daily; the METAR and TAF
 decoders, the pilot links and the SIM text), `forecast-keep.yml` (hourly
 snapshots of the forecasts to the `forecast-archive` branch),
 `ceiling-data-refresh.yml` (Mondays; the ceiling page's and `#wind-errors`'
-data), `cloud-cover-fetch.yml` (by hand) and, until 2026-10-30,
-`surface-wind-sample.yml`. The Vite `base` is
+data) and `cloud-cover-fetch.yml` (by hand). The Vite `base` is
 `/lspc-weather/`; override with `BASE_PATH` if hosting elsewhere. The
 production build also injects a Content-Security-Policy meta tag scoped to the
 data sources above.
