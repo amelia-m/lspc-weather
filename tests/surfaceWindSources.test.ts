@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  mergeSurfaceWindLines,
+  unarchivedSurfaceWindLines,
   compareWindResponses,
   hasWind,
   maxAgeSeconds,
@@ -536,6 +538,36 @@ describe('the log lines', () => {
 
   it('the #parity summary’s parser leaves them out, so a mixed log cannot feed that page', () => {
     expect(parseParityLines(log).map((r) => r.kind)).toEqual(['usairnet']);
+  });
+});
+
+describe('the archive step', () => {
+  const line = (at: string, extra = ''): string => `@@parity {"kind":"surfacewind","v":1,"at":"${at}"${extra}}`;
+
+  it('keeps each run once, skips the runs an archive holds, and orders by run time', () => {
+    const fresh = [
+      'other text',
+      line('2026-11-02T10:05:00.000Z', ',"n":2'),
+      line('2026-11-02T10:00:00.000Z'),
+      // The same run uploaded twice (a re-run): one copy.
+      line('2026-11-02T10:05:00.000Z', ',"n":2'),
+      '@@parity {"kind":"schulze","at":"2026-11-02T10:01:00.000Z"}',
+    ].join('\n');
+    const archived = line('2026-11-02T10:00:00.000Z');
+    expect(unarchivedSurfaceWindLines(fresh, archived)).toEqual([line('2026-11-02T10:05:00.000Z', ',"n":2')]);
+    expect(unarchivedSurfaceWindLines(fresh, '')).toEqual([
+      line('2026-11-02T10:00:00.000Z'),
+      line('2026-11-02T10:05:00.000Z', ',"n":2'),
+    ]);
+  });
+
+  it('merges new lines into an archive in run order', () => {
+    const existing = [line('2026-11-02T10:00:00.000Z'), line('2026-11-02T10:10:00.000Z')].join('\n');
+    expect(mergeSurfaceWindLines(existing, [line('2026-11-02T10:05:00.000Z')])).toEqual([
+      line('2026-11-02T10:00:00.000Z'),
+      line('2026-11-02T10:05:00.000Z'),
+      line('2026-11-02T10:10:00.000Z'),
+    ]);
   });
 });
 

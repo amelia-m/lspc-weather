@@ -18,7 +18,9 @@ Open-Meteo's terms ask for a credit next to wherever its data are shown
   pressure-level winds set against Mark Schulze's and against a second
   request of the app's own, as gaps, with the run metadata of its HRRR
   and GFS domains.
-- `surfacewind-*` (the surface-wind sampler) and `schulze-logs-*`,
+- `surfacewind-*` (the surface-wind sampler: two dated files for its
+  first three weeks, then one a month, `surfacewind-<YYYY-MM>`, written
+  daily by the parity summary workflow) and `schulze-logs-*`,
   `logs-to-*` and `parity-logs-*` (the comparison logs): Open-Meteo's
   values as the app requested them, some as served, some interpolated to
   heights above the drop zone, set beside other sources'.

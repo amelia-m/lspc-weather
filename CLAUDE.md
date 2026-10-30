@@ -715,20 +715,23 @@ refresh below (`scripts/windErrorsData.ts`, held to the published file by
 figures are dated readings (`docs/img/*-wind-errors-<day>.svg`), drawn by
 hand with `--figures` and never overwritten, because each doc's text
 quotes the counts of its own reading.
-The surface-wind sampler (`.github/workflows/surface-wind-sample.yml`,
-`scripts/surfaceWindLoop.sh`, both deleted 2026-10-30) was that pattern,
-temporary: every five minutes from 2026-10-09 to 2026-10-30T02:00Z it ran
-`scripts/surfaceWindCompare.live.ts` and uploaded `surfacewind-*`
-artifacts the parity summary never read. Its 5,125 runs are
-`data/parity/surfacewind-2026-10-09-to-2026-10-21.jsonl.gz` and
-`surfacewind-2026-10-21-to-2026-10-30.jsonl.gz`, summarised by
-`scripts/surfaceWindSummary.ts` in docs/surface-wind-sources.md ("The
-whole sample"): over 1,217 reports none of the four forecasts was clearly
-nearer KPMV's speed, the NWS a little low and Open-Meteo a knot high, and
+`.github/workflows/surface-wind-sample.yml` is that pattern again, and
+standing: every fifteen minutes (five from 2026-10-09 to 2026-10-30T02:00Z,
+the time-boxed first sample) it runs `scripts/surfaceWindCompare.live.ts`
+through `scripts/surfaceWindLoop.sh` and uploads `surfacewind-*` artifacts
+the parity summary never reads; `parity-summary.yml` archives them daily
+as `data/parity/surfacewind-<YYYY-MM>.jsonl.gz` (`scripts/surfaceWindArchive.ts`,
+beside the first sample's two dated files), and the weekly refresh rebuilds
+the `#wind-errors` page's sample section from every `surfacewind-*`
+archive. It changes nothing the dashboard shows. The first three weeks
+(5,125 runs, 1,217 reports) are summarised in docs/surface-wind-sources.md,
+"The first three weeks": none of the four forecasts was clearly nearer
+KPMV's speed, the NWS a little low and Open-Meteo a knot high, and
 Open-Meteo's 15-minute and current values are its hourly series read at
-other times. They feed the `#wind-errors` page's sample section, which
-stops growing (the maintainer, 2026-10-27: a time-boxed sample, not a
-feed; the page's other sections grow through the weekly refresh).
+other times. The maintainer, 2026-10-30: one season is a brief window;
+the logging continues over seasons, times of day and kinds of weather,
+so do not time-box or delete it again without asking. Stop it, if ever,
+from the Actions tab; the archives and the page keep what was gathered.
 The run-split sampler (`.github/workflows/run-split-sample.yml`,
 `scripts/runSplitLoop.sh`, both deleted 2026-10-27) was the same pattern:
 every four minutes from 2026-10-23 to 2026-10-27T06:00Z it asked Mark

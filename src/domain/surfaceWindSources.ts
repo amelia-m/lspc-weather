@@ -838,20 +838,52 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
   };
 }
 
-/** The `@@parity` lines of kind `surfacewind` in a log, everything else
- *  ignored, a line that is not valid JSON skipped (as parseParityLines does
- *  for the other kinds, which in turn skips these). */
-export function parseSurfaceWindLines(text: string): SurfaceWindRecord[] {
-  const out: SurfaceWindRecord[] = [];
-  for (const line of text.split('\n')) {
-    const i = line.indexOf('@@parity ');
+/** Each `@@parity` line of kind `surfacewind` in a log with its record,
+ *  the line from the marker on; everything else ignored, a line that is
+ *  not valid JSON skipped. */
+function surfaceWindLineRecords(text: string): { record: SurfaceWindRecord; line: string }[] {
+  const out: { record: SurfaceWindRecord; line: string }[] = [];
+  for (const raw of text.split('\n')) {
+    const i = raw.indexOf('@@parity ');
     if (i < 0) continue;
     try {
-      const obj = JSON.parse(line.slice(i + '@@parity '.length)) as SurfaceWindRecord;
-      if (obj?.kind === 'surfacewind' && typeof obj.at === 'string') out.push(obj);
+      const obj = JSON.parse(raw.slice(i + '@@parity '.length)) as SurfaceWindRecord;
+      if (obj?.kind === 'surfacewind' && typeof obj.at === 'string') out.push({ record: obj, line: raw.slice(i).trimEnd() });
     } catch {
       // not ours, or truncated: skip
     }
   }
   return out;
+}
+
+/** The `@@parity` lines of kind `surfacewind` in a log, everything else
+ *  ignored, a line that is not valid JSON skipped (as parseParityLines does
+ *  for the other kinds, which in turn skips these). */
+export function parseSurfaceWindLines(text: string): SurfaceWindRecord[] {
+  return surfaceWindLineRecords(text).map((x) => x.record);
+}
+
+/**
+ * The sample lines in `fresh` whose run no line in `archived` holds, one
+ * per run time, oldest first, each as `@@parity {json}`: what the daily
+ * archive step adds to data/parity/ before the artifacts that carried them
+ * expire (thirty days). A run is one record, keyed by its `at`; a re-run
+ * uploads the same lines again, and the archive keeps one copy. The parity
+ * summary's archive (unarchivedLines) skips this kind, hence its own.
+ */
+export function unarchivedSurfaceWindLines(fresh: string, archived: string): string[] {
+  const kept = new Set(parseSurfaceWindLines(archived).map((r) => r.at));
+  const out = new Map<string, string>();
+  for (const { record, line } of surfaceWindLineRecords(fresh)) {
+    if (kept.has(record.at) || out.has(record.at)) continue;
+    out.set(record.at, line);
+  }
+  return [...out.entries()].sort((a, b) => a[0].localeCompare(b[0])).map((x) => x[1]);
+}
+
+/** An archive file's lines with new ones merged in, oldest first, so a
+ *  second run in the same month keeps the file in order. */
+export function mergeSurfaceWindLines(existing: string, added: readonly string[]): string[] {
+  const all = [...surfaceWindLineRecords(existing), ...surfaceWindLineRecords(added.join('\n'))];
+  return all.sort((a, b) => a.record.at.localeCompare(b.record.at)).map((x) => x.line);
 }
