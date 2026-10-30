@@ -108,6 +108,13 @@ precisely because they were colour and text rather than flags.
   correction to it; keep it that way.
 - **The Surface wind card is first on the Jumpers tab: one bar with every
   mark labelled, then one line per limit** (the maintainer, 2026-10-10).
+  Since 2026-10-30 its first line says what it is (the maintainer, that
+  day: make it very clear): "Observed at KPMV (11 mi ENE of the DZ),
+  <time>: the latest report, not a forecast" (`.wind-observed`, from
+  `METAR_STATION_OFFSET` and the report's time, a test pins it). The
+  forecast reaches the Jumpers tab only through the Forecast flag and the
+  hourly chart; Open-Meteo's 10 m wind is on the Winds aloft card's
+  Surface row and nowhere else.
   One bar with a legend left the marks unnamed: a reader could not tell
   the yellow tick was the gust or what the red and purple marks were. A bar
   and a status per limit, with a key, then said each thing twice. Now each

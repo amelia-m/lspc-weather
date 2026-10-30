@@ -391,6 +391,34 @@ archive's start of run was centred (mean 0.0 kt) where the sample's
 hourly read +0.8; why was not worked out.
 Nothing on the dashboard changed.
 
+## The observation beside the forecast, and the forecast beside the observation? (maintainer's call)
+
+Asked 2026-10-30, after the surface-wind sample's first reading. Two
+cards show a surface wind: the Surface wind card shows KPMV's latest
+METAR (since that day its first line says so), and the Winds aloft
+card's Surface row shows Open-Meteo's forecast 10 m wind at the DZ.
+
+1. **KPMV's observed wind beside the Winds aloft Surface row?** A
+   reader comparing the two today has to look at two cards. A line under
+   the Surface row ("observed at KPMV, 11 mi ENE, at <time>: 12 kt
+   gusting 22") would put the measurement where the forecast is read.
+   For: that card is where the comparison happens, and it already says
+   its Surface row is a forecast. Against: the table is one hour's
+   forecast and the observation is a different place and time, so the
+   line must say both, and it would be the only observed figure in a
+   forecast table. Recommended if either: the observation is the fact,
+   and it belongs beside the forecast, labelled.
+2. **Open-Meteo's forecast 10 m wind beside the observation on the
+   Surface wind card?** Against: the card's bar, limit lines and flags
+   are the report's; a forecast figure beside them invites reading the
+   limits against it, and the first sample found Open-Meteo's 10 m wind
+   a knot high and its gust 4 kt high at KPMV
+   (docs/surface-wind-sources.md). The same figure is already on the
+   Winds aloft card's Surface row, a card down. Not recommended; if
+   wanted, as a labelled line under the bar, never on it.
+
+Neither is built. The Surface wind card's "observed" line is.
+
 ## Done: a note on the card about the forecast gust
 
 **Built 2026-10-28**, the maintainer's call that day ("yes, with a note

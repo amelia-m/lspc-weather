@@ -56,7 +56,9 @@ card, the charts' limit lines and the flags, each marked as theirs.
   against the NWS hourly forecast for the next 12 hours: a **Forecast** flag
   names the hours the forecast reaches the same limit, and ranks below every
   flag on a report.
-- 💨 **Surface wind** — the first card on the Jumpers tab: sustained + gust,
+- 💨 **Surface wind** — the first card on the Jumpers tab, and the
+  observation, not a forecast: it says so first, with KPMV's distance and
+  the report's time. Sustained + gust,
   kt/mph toggle, one bar with every mark labelled by its figure, and a line
   per limit saying which reading it is held to (the caution takes the higher
   of wind and gust, the gust ceiling the gust) and how far over or under the

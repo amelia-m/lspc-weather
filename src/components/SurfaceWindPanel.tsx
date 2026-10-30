@@ -3,6 +3,8 @@ import { fmtLimitSpeed, fmtSpeed, round, toSpeed, type SpeedUnit } from '../doma
 import { EDITABLE_LIMITS, hasWindLimit, isEdited, isOwnLimit, ownLimits, type Thresholds } from '../config/thresholds';
 import { lowerLimitPublished, lowerLimitUnchecked, windBandUse, withNotHere } from '../domain/advisories';
 import { DATA_SOURCES } from '../config/sources';
+import { METAR_STATION_OFFSET, SITE } from '../config/site';
+import { fmtClock } from './format';
 import { spreadLabels } from './format';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
@@ -140,6 +142,19 @@ export function SurfaceWindPanel({
       unit={unit}
       onUnitChange={onUnitChange}
     >
+      {/* What the card is, said first (the maintainer, 2026-10-30: make it
+          very clear): KPMV's latest METAR, a measurement at the station
+          11.5 mi from the DZ, not a forecast of either place. The forecast
+          enters only through the Forecast flag and the hourly chart, which
+          read the NWS gridpoint; the Winds aloft card's Surface row is a
+          forecast too, and says so there. Outside the reading below on
+          purpose: with no wind reported the line still says what the card
+          would show. */}
+      <p className="wind-observed">
+        <strong>Observed</strong> at {current?.station ?? SITE.metarStation.id} (
+        {Math.round(METAR_STATION_OFFSET.distanceMi)} mi {METAR_STATION_OFFSET.compass} of the DZ)
+        {current ? `, ${fmtClock(current.observedAt)}` : ''}: the latest report, not a forecast.
+      </p>
       {speed == null ? (
         <p className="muted">No wind data.</p>
       ) : (
