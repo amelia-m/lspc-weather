@@ -20,6 +20,7 @@
  * It also checks that each SIM glossary entry the cards link to is still
  * filed under the letter its link lands on (last block below).
  */
+import { fetchWithRetry, type Fetched } from './liveFetch';
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { READING_LOG, SIM_EDITION_YEAR, citationsOf, type SourceReading } from '../src/config/readingLog';
@@ -43,12 +44,10 @@ const failed = (label: string, what: string, err?: unknown): Error => new Error(
 let lastRequest: Promise<unknown> = Promise.resolve();
 const get = (url: string, label: string): Promise<string> => {
   const request = lastRequest.then(async () => {
-    let r: Response;
+    let r: Fetched;
     try {
-      r = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' },
-        signal: AbortSignal.timeout(30_000),
-      });
+      // Thirty seconds, tried twice on a timeout (scripts/liveFetch.ts).
+      r = await fetchWithRetry(url, { headers: { 'User-Agent': 'Mozilla/5.0 (lspc-weather SIM text check)' } }, 30_000);
     } catch (err) {
       throw failed(label, 'request failed', err);
     }

@@ -656,8 +656,14 @@ dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
 app's METAR sky parse, its derived flight category, or its TAF group decode
 (`src/domain/taf.ts`, run on aviationweather.gov's own TAF text and compared
 period by period with the `fcsts` decode served beside it) disagrees with
-aviationweather.gov's decoder on today's reports, and opens one issue labelled
-`sky-parity` when it does on `main` (a run dispatched on a branch opens none);
+aviationweather.gov's decoder on today's reports, and on `main` opens one
+issue per failed check, labelled by it (`sky-parity`, `pilot-links`,
+`sim-text`; `live-checks` for a run that failed before they started),
+titled by the failed test and carrying the failure's own message, from
+Vitest's JSON report (`src/domain/liveIssue.ts`, since 2026-10-31, the
+maintainer's call: one broad body for three checks said too little; a run
+dispatched on a branch opens none). The checks' fetches are tried twice on
+a timeout (`scripts/liveFetch.ts`): #147 and #238 were one timeout each;
 it also prints whether the TAF the card shows is the issuance
 aviationweather.gov currently has (informational). It also fails, through
 `scripts/pilotLinks.live.ts`, when a Pilots tab deep link stops opening
