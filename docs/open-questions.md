@@ -1052,8 +1052,21 @@ clock pinned to 04:45Z, as the fix was verified, would be the guard for
 the next clock-dependent width; not built. The check passed on the fix's
 deploy (b9482b0) at about 05:00Z, which was already past midnight Central,
 so that run met the bare time, not the weekday; the weekday case is held
-by the fixture-build measurement and the markup test. **Waiting on the
-maintainer:** close #249 (the sandbox cannot close issues).
+by the fixture-build measurement and the markup test.
+
+**Measured in the runner's font, 2026-10-31 05:20Z**, when the maintainer
+asked whether it was fixed. The sandbox's Chromium resolves `system-ui`
+to Inter; a GitHub runner's resolves it to DejaVu Sans, which is wider,
+and DejaVu Sans is installed here, so the page can be rendered in it
+(`page.addStyleTag` forcing the family). At 320 px with the clock at
+04:45Z, the stepper row's content, in a box of 31 to 289 px: the old
+markup ran to 298 in Inter and to 339 in DejaVu Sans, with both buttons
+past the page's edge, which is #249 reproduced; with the weekday freed
+(b9482b0) 280 and 303, the page at 320 in both, but the row still past
+its box in DejaVu; with "local" freed as well, 280 in both fonts. So the
+first fix stopped the page overflow and the second makes the row fit its
+box in either font; only the clock time is held together now. **Waiting
+on the maintainer:** close #249 (the sandbox cannot close issues).
 
 ## Issue #147: a timeout, not a disagreement
 

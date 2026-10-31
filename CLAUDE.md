@@ -618,7 +618,11 @@ that word pushed its `+1 h` button off a 320 px page every night after
 about 11:30 PM Central until 2026-10-31 (issue #249); the daily check
 runs in the morning and never saw it. Playwright's `clock.install` with
 `timezoneId: 'America/Chicago'` on the context puts a fixture build at
-any hour.
+any hour. And the sandbox's font is not the runner's: here `system-ui`
+resolves to Inter, on a GitHub runner to DejaVu Sans, which is wider (the
+#249 row ran to 298 px here and 339 there). DejaVu Sans is installed
+here, so force it with `page.addStyleTag({ content: "* { font-family:
+'DejaVu Sans' !important }" })` to measure what the runner will.
 
 ## Gates
 
