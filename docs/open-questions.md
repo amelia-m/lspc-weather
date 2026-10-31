@@ -1017,6 +1017,42 @@ the report read `success: true`, and the script wrote no issue. The
 checks' test timeout went from 60 to 180 s with the retry, so a second
 attempt is never cut off by Vitest's own limit.
 
+## Issue #249: the hour stepper past the edge at 320 px, after 11:30 PM
+
+The live-site check failed on the docs-only deploy of 2026-10-31 at
+04:44Z and opened #249: on Jumpers and Pilots at 320 px the page was 323
+px wide, and the elements past the edge were the forecast hour stepper's
+`+1 h` buttons (`ForecastHourNav`, on the Winds aloft and Drift cards).
+The same build had passed at 04:19Z.
+
+What changed between the two runs was the clock. The readout prints the
+weekday only when the valid hour is on another local day than now
+("Sat 12:00 AM local" against "11:00 PM local"; now `validWeekday`), and at
+04:44Z, 11:44 PM Central, the nearest forecast hour was Saturday's
+midnight. The whole of "Sat 12:00 AM local" sat in one nowrap span, so
+the readout could shrink no narrower than it, and the row (two 50 px
+buttons, the gaps and padding) overflowed the nav's box: by 11 px even
+in the sandbox's font, where the buttons' right edge sat at 300 px, read
+on the live site at 320 px at 04:50Z; the runner's font is wider and put
+it at 323. The daily run is in the morning and never met it; a deploy in
+the last half hour before midnight Central did, twice tonight.
+
+Fixed the same night: the weekday is a word of its own before the span,
+so the row can break after it, and the time keeps its nowrap. On a
+fixture build at 320 px with the browser clock at 2026-10-31T04:45Z
+(Playwright's `clock.install`, time zone America/Chicago), the row's
+content runs 40 to 280 px inside a box of 31 to 289, where it ran to 300
+before; 390 and 1280 px unchanged. A test pins the markup (the weekday
+outside the nowrap span, `tests/windsHour.test.ts`); no unit test can
+see a layout, so the live-site check is the guard, and the next deploy
+near midnight Central will show it. It cannot be given a near-midnight
+clock itself: against live data a faked clock would pick a forecast hour
+the data does not hold. A check of the fixture build at 320 px with the
+clock pinned to 04:45Z, as the fix was verified, would be the guard for
+the next clock-dependent width; not built. **Waiting on the maintainer:**
+close #249 once the check passes on the fix (the sandbox cannot close
+issues).
+
 ## Issue #147: a timeout, not a disagreement
 
 The sky-parity run of 2026-10-11 (run 38161231894) opened issue #147.

@@ -611,7 +611,14 @@ overlaying the Refresh button. A sideways scroller is not
 enough to hold its contents: an absolutely positioned `.sr-only` label inside
 one that is not itself positioned is placed against the page and widens it
 (the Ceiling & sky card's 36-hour strip, to 847 px at 390, until
-`.sky-scroll` got `position: relative`, 2026-10-24).
+`.sky-scroll` got `position: relative`, 2026-10-24). Text that depends
+on the clock needs the clock set: the forecast hour stepper's readout
+prints a weekday only when the valid hour is on another local day, and
+that word pushed its `+1 h` button off a 320 px page every night after
+about 11:30 PM Central until 2026-10-31 (issue #249); the daily check
+runs in the morning and never saw it. Playwright's `clock.install` with
+`timezoneId: 'America/Chicago'` on the context puts a fixture build at
+any hour.
 
 ## Gates
 
