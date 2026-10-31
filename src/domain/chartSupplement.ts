@@ -15,7 +15,10 @@
  * differ on 2026-10-29 (AIRAC 2611, month 2610). A wrong number makes the
  * search answer 500, so scripts/pilotLinks.live.ts opens the link in the
  * daily live run and fails it, raising the parity issue, if it does not
- * list the airport.
+ * list the airport. On 2026-10-29, the first day the two numberings
+ * differed, the daily run opened cycle 2611 and FAA's search answered 200
+ * with Plattsmouth's entry (run 40933195884), so the AIRAC count held;
+ * the month form (2610) was not tried that day.
  *
  * Pure: the time is passed in.
  */

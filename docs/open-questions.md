@@ -885,6 +885,24 @@ second issue (one is open). Nothing for the code to fix.
 
 Both are the maintainer's to close: #209 with this section as the why.
 
+## Issue #238: a timeout again, on the day the Chart Supplement edition changed
+
+The sky-parity run of 2026-10-29 (run 40933195884) opened issue #238.
+Its log, read 2026-10-31: the one failing test, "parses the METAR text
+the way aviationweather.gov decodes it", failed on a 20-second timeout
+(`TIMEOUT_ERR`, code 23) on its request to aviationweather.gov, so it
+compared nothing, as #147 did on 2026-10-11 with a connect timeout. The
+same run's other aviationweather.gov requests passed, and so did every
+SIM part, the glossary, and the Pilots tab links. Among them the one that
+mattered that day: 2026-10-29 was the first Chart Supplement edition on
+which the inferred AIRAC numbering and the year-month form differed, and
+the link opened cycle 2611 and FAA's search answered 200 with
+Plattsmouth's entry, so the inference held (src/domain/chartSupplement.ts).
+The next day's run, 2026-10-30, passed. Nothing for the code to fix.
+**Waiting on the maintainer:** close #238 as not planned, as #147 was
+(the sandbox cannot close issues); #237, the live-site check's runner
+image, the same.
+
 ## Issue #147: a timeout, not a disagreement
 
 The sky-parity run of 2026-10-11 (run 38161231894) opened issue #147.

@@ -651,8 +651,9 @@ it also prints whether the TAF the card shows is the issuance
 aviationweather.gov currently has (informational). It also fails, through
 `scripts/pilotLinks.live.ts`, when a Pilots tab deep link stops opening
 what it should: the Chart Supplement link carries an edition number whose
-scheme is inferred (`src/domain/chartSupplement.ts`), and the first edition
-that would show the inference wrong takes effect 2026-10-29. And it fails,
+scheme is inferred (`src/domain/chartSupplement.ts`); the first edition
+that could have shown the inference wrong took effect 2026-10-29, and the
+link opened (cycle 2611, FAA's search answered 200 with the entry). And it fails,
 through `scripts/simText.live.ts`, on the SIM checks described under
 "Citations" above.
 aviationweather.gov is on the sandbox allowlist since 2026-09-29, so it runs
