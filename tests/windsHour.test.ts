@@ -106,7 +106,7 @@ describe('Winds aloft explanatory text', () => {
     // What reading the numbers right needs, unfolded: a forecast, what the
     // Surface row is, and why Schulze's table can look different.
     expect(outside).toContain('A model <strong>forecast</strong> for the DZ, not a measurement.');
-    expect(outside).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is on the Surface wind card.');
+    expect(outside).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.');
     // The extra samples are said even with no switch to offer: the table
     // on screen still takes levels his does not.
     expect(outside).toContain(

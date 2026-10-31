@@ -305,6 +305,7 @@ export default function App(): JSX.Element {
         onMethodChange={setWindsMethod}
         schulzeAvailable={winds.schulzeAvailable}
         schulzeGroundFtMsl={winds.schulzeGroundFtMsl}
+        observed={snapshot.current}
       />
     ),
     drift: (

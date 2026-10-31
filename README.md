@@ -83,7 +83,9 @@ card, the charts' limit lines and the flags, each marked as theirs.
   spot/exit-separation note standing under the table at any wind speed. It
   follows the forecast hour nearest the clock; −1 h / +1 h buttons step up to
   two hours back and four ahead, and a bar and a line of text always say how
-  far the hour shown is from now.
+  far the hour shown is from now. Under the table, KPMV's latest report,
+  labelled as the observation it is, so the forecast and the measurement
+  sit together.
 - ⚖️ **Exit weight & wing loading** — body weight plus gear (32 lb, one student
   rig weighed) over a Navigator 200/220/260/280, against Performance Designs'
   maximum exit weight for a Student on that size. The chart is the

@@ -391,7 +391,15 @@ archive's start of run was centred (mean 0.0 kt) where the sample's
 hourly read +0.8; why was not worked out.
 Nothing on the dashboard changed.
 
-## The observation beside the forecast, and the forecast beside the observation? (maintainer's call)
+## Done: the observation beside the forecast; not the forecast beside the observation
+
+**The maintainer's answers, 2026-10-30:** yes to the first, no to the
+second. Since 2026-10-31 the Winds aloft card shows KPMV's latest report
+under its table ("Observed at KPMV (11 mi ENE of the DZ), <time>: S 190°
+12 kt, gust 22 kt. A report, not a row of the forecast above."), from
+the same report the Surface wind card reads, with a test; the Surface
+wind card shows no forecast figure. What follows is the question as it
+was put.
 
 Asked 2026-10-30, after the surface-wind sample's first reading. Two
 cards show a surface wind: the Surface wind card shows KPMV's latest
@@ -417,7 +425,7 @@ card's Surface row shows Open-Meteo's forecast 10 m wind at the DZ.
    Winds aloft card's Surface row, a card down. Not recommended; if
    wanted, as a labelled line under the bar, never on it.
 
-Neither is built. The Surface wind card's "observed" line is.
+The first is built (2026-10-31); the second is declined.
 
 ## Done: a note on the card about the forecast gust
 
