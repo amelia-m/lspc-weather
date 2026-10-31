@@ -17,12 +17,16 @@ export interface WindsHourNav {
 
 /** The weekday, shown only when the valid hour is on another local day at
  *  the DZ than now (a late-evening load looking at a forecast hour past
- *  midnight), as a word of its own that may wrap: kept in the time's nowrap
- *  span, "Sat 12:00 AM local" was the widest thing the stepper row could
- *  not break at 320 px, and the row pushed the +1 h button past the page's
- *  edge on a GitHub runner's font every night after about 11:30 PM Central
- *  (issue #249, 2026-10-31). The daily check never ran at that hour; two
- *  late-night deploys did. */
+ *  midnight), as a word of its own that may wrap. Kept in one nowrap span
+ *  with the time and "local", "Sat 12:00 AM local" was the widest thing
+ *  the stepper row could not break at 320 px, and the row pushed the +1 h
+ *  button past the page's edge on a GitHub runner's font (DejaVu Sans,
+ *  wider than the sandbox's Inter) every night after about 11:30 PM
+ *  Central (issue #249, 2026-10-31). The daily check never ran at that
+ *  hour; two late-night deploys did. Only the clock time itself is held
+ *  together now; measured in DejaVu Sans at 320 px with the clock at
+ *  11:45 PM, the row's content ran to 339 px with everything in one span,
+ *  303 with the weekday out, and fits its box with "local" free too. */
 const validWeekday = (ms: number, now: number): string | null =>
   localDateKey(ms) === localDateKey(now) ? null : fmtWeekday(ms);
 
@@ -94,7 +98,7 @@ export function ForecastHourNav({
         <p className="wind-readout fc-readout">
           <strong>
             Valid {weekday && `${weekday} `}
-            <span className="nowrap">{fmtTime(validMs)} local</span>
+            <span className="nowrap">{fmtTime(validMs)}</span> local
           </strong>
           <strong className="wind-unit">·</strong>
           <strong>{fmtZulu(validMs)}</strong>
