@@ -198,11 +198,27 @@ the 10,000 a day for one address, but six or seven readers behind one
 address (the DZ's Wi-Fi) would cross it, against thirty-odd if a request
 is a call. Whether the free endpoint counts this way is not stated: the
 FAQ sits with the paid plans, and the terms page says only "10,000 API
-calls per day". Not changed. Two ways to halve it or better if the
-maintainer wants to: drop the pressure-level temperatures and
-geopotential heights the card does not show (check `interpolateWindsAloft`
-and the "As Schulze" view first, which read both), or refresh the winds
-request less often than the rest.
+calls per day". Not changed.
+
+Read again the same day, at the maintainer's question: every one of the
+96 variables is consumed. The temperatures are the table's temperature
+column (`WindsAloftPanel`, and `interpolateWindsAloft` interpolates them
+between levels), the geopotential heights place every pressure level, and
+the cloud covers are the Ceiling & sky card's Open-Meteo row. So there is
+nothing to drop for free. The levers, each with a cost: the seven extra
+pressure levels the default table takes beyond Schulze's
+(`OPEN_METEO_EXTRA_PRESSURE_LEVELS`, 28 variables, so about 6.8 calls a
+request instead of 9.6) at the price of the rows they decide; the second
+forecast day (`forecast_days=2`), which the hour stepper reads without a
+fetch; or the ten-minute refresh, which is what catches a new HRRR run
+within minutes of its reaching Open-Meteo's servers between :20 and :59
+(docs/run-split.md): at fifteen minutes about 1,000 calls a reader a day,
+at thirty about 500. If the limit were met, the winds card falls back to
+NOAA's FD winds and the outlook card to its error state until the limit
+resets at midnight UTC; nothing crashes. Whether the free endpoint counts
+this way at all is a question for Open-Meteo (its README asks to be
+contacted above 10,000 requests a day), and the maintainer's to ask, as
+the users-list pull request is.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 
@@ -933,8 +949,8 @@ the link opened cycle 2611 and FAA's search answered 200 with
 Plattsmouth's entry, so the inference held (src/domain/chartSupplement.ts).
 The next day's run, 2026-10-30, passed. Nothing for the code to fix.
 The maintainer closed #238 on 2026-10-31 (as completed, with PR #244
-linked). **Waiting on the maintainer:** #237, the live-site check's runner
-image, is still open (read 2026-10-31; the sandbox cannot close issues).
+linked), and #237, the live-site check's runner image, the same day.
+Nothing waits here.
 
 ## Done: the sky-parity issue's body, narrower, from the failed test names
 
