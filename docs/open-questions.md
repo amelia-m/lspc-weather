@@ -180,6 +180,60 @@ hours, against 149 reported). Open-Meteo has no ceiling figure here; its
 low band marks a ceiling of 3,000 ft or lower on 92 to 93% of those hours
 without placing it. Whether the card should say so is open.
 
+## Done: counting this browser's Open-Meteo calls
+
+The maintainer, 2026-10-31: first track the usage, how many calls the
+app makes in a given period. Built the same day. Each attempt at an
+Open-Meteo request (`fetchJson`'s `onAttempt`, so a retried request
+counts every try, as the server charges them) is recorded with its charge
+by Open-Meteo's formula (`openMeteoCallWeight`,
+`src/domain/openMeteoUsage.ts`: variables over ten, times days over
+fourteen above fourteen days, never under 1) and by how it ended: the
+weight when answered, and when it timed out on this side, since the
+server charges at completion and had the request; 1 when the server
+rejected it with an HTTP error, the limiter's 429 included; nothing when
+it never arrived (no network, a CORS block), so a phone on a network
+that blocks the host does not count a day of calls the server never saw.
+In memory and in this browser's localStorage (`src/api/openMeteoUsage.ts`,
+pruned to the last fourteen UTC days). Data health shows, under the
+rows, today's and this hour's requests and calls beside the free limits
+(10,000 a day, 5,000 an hour, per address), says that other browsers on
+the same address share the limits unseen, and lists the last fortnight by
+UTC day. The limiter's windows are the clock's minute, hour and UTC day
+(RateLimiter.swift, read 2026-10-31), so the summary uses the same. Two
+tabs of one browser merge their records on each write, so the count is
+the browser's and not the last tab's; the records are read from storage
+on the first read, so a restored fortnight shows on the first render; and
+an answered request whose body will not parse is counted once, as the
+server charges it.
+
+What it cannot do: see any other browser's requests, which is what the
+per-address limit counts, or the server's own tally. The server has sent
+`X-RateLimit-Cost` and `X-RateLimit-Remaining` headers since a change of
+2026-10-26 (not yet deployed on 2026-10-31), and even once it does, a
+browser can read a custom response header only if the server names it in
+`Access-Control-Expose-Headers`; checked when the headers appear. The
+sandbox cannot see a reader's count either: it is in their browser. To
+read typical usage, open Data health on a phone or a display that has
+been showing the site, and expand "By day".
+
+## Maybe, later: slow the refresh when calls run high
+
+The maintainer, 2026-10-31: could the refresh slow to every 15 minutes
+when calls exceed a threshold? Not built; noted for after the counting
+has shown what typical use is. What it would take: a threshold on the
+browser's own count (the one it can see), or better on the server's
+`X-RateLimit-Remaining` once a browser can read it; the winds request's
+timer (`REFRESH_MS`, `src/hooks/useWeatherData.ts`) taking a longer
+interval while over it, and the Data health line saying so, since a
+reader would otherwise see the forecast hour lag with no reason given.
+The cost of slowing is the one the ten-minute refresh buys: a new HRRR
+run reaches Open-Meteo between :20 and :59 (docs/run-split.md), and a
+fifteen-minute refresh sees it up to five minutes later. It is a refresh
+rate, not a weather judgement, so the no-verdict rule does not bear on
+it; the line that says the refresh is slowed must still be a fact, not
+advice.
+
 ## Open-Meteo's call counting: the winds request counts as 9.6 calls
 
 Found by the 2026-10-31 re-reading of Open-Meteo's pages

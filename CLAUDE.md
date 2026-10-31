@@ -539,7 +539,11 @@ days over fourteen above fourteen days), read in its server source on
 2026-10-31 (docs/open-meteo-terms.md, "Read again 2026-10-31"): the
 app's winds request is 9.6 calls, so the sandbox's 10,000 a day is about
 a thousand of them, and a day's quota is not a thing to spend on a test
-of the limit itself.
+of the limit itself. Since 2026-10-31 each browser counts its own
+requests the same way (`src/domain/openMeteoUsage.ts`, every attempt
+through `fetchJson`'s `onAttempt`) and Data health shows the count
+beside the limits, by UTC day for a fortnight; it cannot see other
+browsers on the same address, and says so.
 
 ## Conventions
 

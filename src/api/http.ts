@@ -42,11 +42,23 @@ const isAbort = (err: unknown): boolean =>
 
 export async function fetchJson<T>(
   url: string,
-  opts: { timeoutMs?: number; headers?: Record<string, string>; retries?: number; cache?: RequestCache } = {},
+  opts: {
+    timeoutMs?: number;
+    headers?: Record<string, string>;
+    retries?: number;
+    cache?: RequestCache;
+    /** Called once per attempt with how it ended (answered; rejected with
+     *  an HTTP error; timed out here; unreachable, a network or CORS
+     *  failure): a counter of requests (src/api/openMeteoUsage.ts) has to
+     *  see every attempt and how it ended, since the server charges each
+     *  one by that, not the call's final result. */
+    onAttempt?: (outcome: 'answered' | 'rejected' | 'timeout' | 'unreachable') => void;
+  } = {},
 ): Promise<T> {
-  const { timeoutMs = 12_000, headers = {}, retries = 1, cache } = opts;
+  const { timeoutMs = 12_000, headers = {}, retries = 1, cache, onAttempt } = opts;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    let reported = false;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -62,8 +74,14 @@ export async function fetchJson<T>(
         cache,
       });
       if (!res.ok) throw new HttpError(res.status, url);
+      // Answered: reported once, here, whatever the body then does. A 200
+      // whose body will not parse is an answered request the server has
+      // charged in full; the catch below must not report it a second time.
+      reported = true;
+      onAttempt?.('answered');
       return (await res.json()) as T;
     } catch (err) {
+      if (!reported) onAttempt?.(err instanceof HttpError ? 'rejected' : isAbort(err) ? 'timeout' : 'unreachable');
       lastErr = isAbort(err) ? new TimeoutError(url, timeoutMs) : err;
       // 4xx is a client error (bad URL, not found, unauthorized) — retrying
       // won't help, so fail fast. Retry only transient failures (5xx, network,

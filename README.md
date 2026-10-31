@@ -134,7 +134,12 @@ card, the charts' limit lines and the flags, each marked as theirs.
   where the 14 CFR 105.19 night-ops flag fires; there is no earlier "last load"
   countdown, because no published source sets a minutes-before-sunset figure.
 - 🩺 **Data health** — per-source freshness, staleness, and error state, plus which
-  provider each source is served from. The METAR row names the feed that
+  provider each source is served from, and under the rows this browser's
+  requests to Open-Meteo today and this hour, counted as Open-Meteo counts
+  them (a request of many variables is several calls; the winds request
+  is 9.6) beside its free limits, with a by-day table for the last
+  fortnight; the limits are per address, which other browsers on the same
+  network share unseen. The METAR row names the feed that
   served the report (IEM, or NWS when its report was the newer one), how old
   the other feed's report was, and whether the feed's decode of the report
   agreed with the METAR text the app parses, amber when it did not. The
