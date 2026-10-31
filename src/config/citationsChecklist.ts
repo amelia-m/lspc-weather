@@ -1,5 +1,12 @@
 import type { Citation } from '../domain/types';
-import { CITATIONS, STUDENT_ROUND_RESERVE_FACT, VISIBILITY_ROW, VISIBILITY_ROWS, visibilityGuidance } from './thresholds';
+import {
+  CITATIONS,
+  STUDENT_ROUND_RESERVE_FACT,
+  VISIBILITY_ROW,
+  VISIBILITY_ROWS,
+  visibilityGuidance,
+  type VisibilityRow,
+} from './thresholds';
 import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
 
 /** Where and when the SIM parts quoted below were read: every quote of the
@@ -61,8 +68,12 @@ export interface ChecklistEntry {
 }
 
 /** A8's figure on a 105.17 row: the entry's `value`, and the label its
- *  answers to another row are reported under. */
-const visibilityRowValue = (sm: number): string => `Flag fires below ${sm} SM`;
+ *  answers to another row are reported under. On both rows the figure is the
+ *  higher row's, and the flag's value says which rows the reading is under. */
+const visibilityRowValue = (row: VisibilityRow): string =>
+  row === 'both'
+    ? `Flag fires below ${VISIBILITY_ROWS.both.sm} SM, and says which rows the reading is under`
+    : `Flag fires below ${VISIBILITY_ROWS[row].sm} SM`;
 
 /** Ordered by what a jumper could act on. */
 export const CHECKLIST: ChecklistEntry[] = [
@@ -249,9 +260,14 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A8',
     title: 'Flight visibility and clearance from cloud',
-    // The flag's own wording and figure, for the row in use (VISIBILITY_ROW).
-    claim: visibilityGuidance({ visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm }),
-    value: visibilityRowValue(VISIBILITY_ROWS[VISIBILITY_ROW].sm),
+    // The flag's own wording and figure, for the row in use (VISIBILITY_ROW);
+    // the DZ fact's attribution worded for this page, which is where the
+    // confirmation is asked, rather than sending the reader here from here.
+    claim: visibilityGuidance(
+      { visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm, visibilityRow: VISIBILITY_ROW },
+      { onCitationsPage: true },
+    ),
+    value: visibilityRowValue(VISIBILITY_ROW),
     where:
       'Visibility flag in Conditions to note; the overcast flag, which gives the reported bases and the 105.17 rows below cloud; and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
     sources: [CITATIONS.far10517],
@@ -263,11 +279,11 @@ export const CHECKLIST: ChecklistEntry[] = [
         'Brown’s Airport is at 1,182 ft MSL, so a 10,000 ft AGL exit is above 10,000 ft MSL, in the 5 SM / 1 mile row; the freefall passes into the 3 SM row on the way down.',
       ],
     },
-    asks: [VISIBILITY_ROWS[VISIBILITY_ROW].ask],
+    asks: VISIBILITY_ROWS[VISIBILITY_ROW].asks,
     answerKey: VISIBILITY_ROWS[VISIBILITY_ROW].answerKey,
-    otherWordings: Object.entries(VISIBILITY_ROWS)
-      .filter(([row]) => row !== VISIBILITY_ROW)
-      .map(([, r]) => ({ answerKey: r.answerKey, value: visibilityRowValue(r.sm) })),
+    otherWordings: (Object.keys(VISIBILITY_ROWS) as VisibilityRow[])
+      .filter((row) => row !== VISIBILITY_ROW)
+      .map((row) => ({ answerKey: VISIBILITY_ROWS[row].answerKey, value: visibilityRowValue(row) })),
   },
   {
     id: 'A9',

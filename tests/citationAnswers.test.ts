@@ -13,7 +13,7 @@ import {
 import { clearAnswers, loadAnswers, saveAnswers } from '../src/api/citationAnswers';
 import type { ChecklistEntry } from '../src/config/citationsChecklist';
 import { CHECKLIST } from '../src/config/citationsChecklist';
-import { CITATIONS, VISIBILITY_ROW } from '../src/config/thresholds';
+import { CITATIONS, VISIBILITY_ROW, VISIBILITY_ROWS } from '../src/config/thresholds';
 
 const REPO = 'https://github.com/amelia-m/lspc-weather';
 
@@ -164,8 +164,8 @@ describe('answerKey', () => {
     expect(answerKey(entry('A2', []))).toBe('A2');
     const a8 = CHECKLIST.find((e) => e.id === 'A8')!;
     expect(answerKey(a8) === 'A8').toBe(VISIBILITY_ROW === 'below-10000-msl');
-    expect(a8.otherWordings).toHaveLength(1);
-    expect(a8.otherWordings![0].answerKey).not.toBe(answerKey(a8));
+    expect(a8.otherWordings).toHaveLength(Object.keys(VISIBILITY_ROWS).length - 1);
+    for (const w of a8.otherWordings!) expect(w.answerKey).not.toBe(answerKey(a8));
   });
 });
 

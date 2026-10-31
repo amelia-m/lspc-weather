@@ -73,7 +73,8 @@ export function SettingsPanel({
               &ldquo;Conditions to note&rdquo; above, each marked as yours. No published source sets a
               ground-wind limit or gust ceiling for licensed jumpers; leave either empty for none. The
               visibility row, unedited, is 14 CFR 105.17&rsquo;s {base.visibilityCautionSm} SM
-              row. Saved in this browser; winds and gusts in knots (1 kt ≈ 1.15 mph).
+              row{base.visibilityRow === 'both' && ', the higher of the two rows the flag holds the reading to'}.
+              Saved in this browser; winds and gusts in knots (1 kt ≈ 1.15 mph).
             </p>
             <div className="settings-grid">
               {FIELDS.filter((f) => isEditable(base, f.key)).map((f) => {

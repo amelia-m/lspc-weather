@@ -455,8 +455,13 @@ export interface Thresholds {
      *  vouches for it; the fact is the club's, and says so. */
     notHere?: string;
   };
-  /** Visibility, statute miles: the 105.17 row in use (`VISIBILITY_ROW`). */
+  /** Visibility, statute miles: the figure the flag fires below, from the
+   *  105.17 row in use (`VISIBILITY_ROW`; on `'both'`, the higher row's). */
   visibilityCautionSm: number;
+  /** Which of 105.17's rows the published figure is, so the wording that
+   *  says how the flag holds the surface reading (`visibilityFigure`) can
+   *  tell the 5 SM row alone from both rows, which fire at the same figure. */
+  visibilityRow: VisibilityRow;
   /** The profile's own value of each limit Settings can edit, recorded by
    *  `withOverrides` so everything that cites a limit can tell a figure the
    *  reader edited from the source's (`isEdited`). An edited number shown
@@ -626,7 +631,45 @@ export function limitLines(
  * the answer is this one constant: the flag's figure, the sentence saying
  * which row it uses, and the #citations entry all follow it.
  */
-export type VisibilityRow = 'below-10000-msl' | 'at-or-above-10000-msl';
+export type VisibilityRow = 'below-10000-msl' | 'at-or-above-10000-msl' | 'both';
+
+/** A fact about this drop zone that a published figure's use here rests
+ *  on, with its source and date: said beside the source's figure, never in
+ *  place of it, and asked of an instructor on `#citations`. One shape for
+ *  every such fact, so the attribution reads the same everywhere and
+ *  changes once. `sentence` is for a card or flag; `sentenceOnCitations`
+ *  for the page that asks the confirmation, which would otherwise send the
+ *  reader to itself. Not an instructor's sign-off. */
+export function dzFact(f: { source: string; date: string; claim: string; consequence: string }) {
+  const Claim = f.claim.charAt(0).toUpperCase() + f.claim.slice(1);
+  return {
+    ...f,
+    get sentence(): string {
+      return `${Claim} (${f.source}, ${f.date}; confirmation asked on the citations page), ${f.consequence}.`;
+    },
+    get sentenceOnCitations(): string {
+      return `${Claim} (${f.source}, ${f.date}; this page asks for confirmation), ${f.consequence}.`;
+    },
+  };
+}
+
+/** The one fact about this drop zone the `'both'` row rests on, as
+ *  `STUDENT_ROUND_RESERVE_FACT` is for the wind figures: a hop-and-pop here
+ *  exits well below 10,000 ft MSL, so it is in the 3 SM row from exit to
+ *  opening, while a full-altitude exit is in the 5 SM row. The flag, the
+ *  Ceiling & sky note and the `#citations` ask all say the same thing from
+ *  here and move together. */
+export const HOP_AND_POP_FACT = dzFact({
+  source: 'the maintainer',
+  date: '2026-10-31',
+  claim: 'hop-and-pop exits at LSPC are well below 10,000 ft MSL',
+  consequence: 'so a hop-and-pop is in the 3 SM row throughout',
+});
+
+/** The section's two figures, statute miles, written once: below 10,000 ft
+ *  MSL, and at or above it (eCFR, 2026-09-23). */
+const LOW_ROW_SM = 3;
+const HIGH_ROW_SM = 5;
 
 /** Where an exit from this DZ enters the 5 SM row, ft AGL: 10,000 ft MSL
  *  less the DZ's elevation, derived rather than written down. */
@@ -636,51 +679,109 @@ const EXIT_ROW_FROM_FT_AGL = (10_000 - SITE.dz.elevationFt).toLocaleString('en-U
  *  says which (`visibilityGuidance`). */
 export const VISIBILITY_RULE = `14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it; an exit from this DZ at or above ${EXIT_ROW_FROM_FT_AGL} ft AGL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.`;
 
-/** Each row's figure, and A8's question on #citations while the flag uses
+/** Each row's figure, and A8's questions on #citations while the flag uses
  *  it. `answerKey` is where A8's answers are stored on that row
- *  (`ChecklistEntry.answerKey`): the two questions ask opposite things, so
- *  an answer to one must not show against the other. A key names stored
- *  data, so it is written out rather than derived from the figure: it must
- *  not move if the figure were edited. The 3 SM row keeps A8's own id, which
- *  the answers given before there were two rows are under. */
-export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; ask: string; answerKey: string }> = {
+ *  (`ChecklistEntry.answerKey`): the questions ask different things, so an
+ *  answer to one must not show against another. A key names stored data,
+ *  so it is written out rather than derived from the figure: it must not
+ *  move if the figure were edited. The 3 SM row keeps A8's own id, which
+ *  the answers given before there were two rows are under. `'both'` fires
+ *  at the higher row's figure and the flag's value says which rows the
+ *  reading is under (`visibilityRowsUnder`). */
+export const VISIBILITY_ROWS: Record<VisibilityRow, { sm: number; asks: string[]; answerKey: string }> = {
   'below-10000-msl': {
-    sm: 3,
-    ask: 'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the pilot in command.',
+    sm: LOW_ROW_SM,
+    asks: [
+      'The flag fires at 3 SM on the METAR’s surface visibility. The reg’s measure is flight visibility at altitude, and at exit the row is 5 SM. Should the flag fire at 5 SM instead? That is a judgement for the S&TA and the pilot in command.',
+    ],
     answerKey: 'A8',
   },
   'at-or-above-10000-msl': {
-    sm: 5,
-    ask: 'The flag fires at 5 SM on the METAR’s surface visibility, the row an exit from this DZ is in. The reg’s measure is flight visibility at altitude, not at the surface. Is holding a surface reading to the exit’s row right? That is a judgement for the S&TA and the pilot in command.',
+    sm: HIGH_ROW_SM,
+    asks: [
+      'The flag fires at 5 SM on the METAR’s surface visibility, the row an exit from this DZ is in. The reg’s measure is flight visibility at altitude, not at the surface. Is holding a surface reading to the exit’s row right? That is a judgement for the S&TA and the pilot in command.',
+    ],
     answerKey: 'A8@5sm',
+  },
+  both: {
+    sm: HIGH_ROW_SM,
+    asks: [
+      `The flag fires below 5 SM on the METAR’s surface visibility, the row a full-altitude exit from this DZ is in, and says when the reading is also under the 3 SM row, the row a hop-and-pop is in (${HOP_AND_POP_FACT.source}’s call, ${HOP_AND_POP_FACT.date}). The reg’s measure is flight visibility at altitude, not at the surface. Is holding the surface reading to both rows the S&TA’s and the pilot in command’s reading too?`,
+      `The 3 SM row is tied to hop-and-pops on ${HOP_AND_POP_FACT.source}’s word of ${HOP_AND_POP_FACT.date} that ${HOP_AND_POP_FACT.claim}. Is that so for every low exit flown here?`,
+    ],
+    answerKey: 'A8@both',
   },
 };
 
-/** The row in use: the answer to A8, once the S&TA or pilot gives it. Until
- *  then 'below-10000-msl', the row a surface reading can be held to without
- *  claiming it says more than it does. */
-export const VISIBILITY_ROW: VisibilityRow = 'below-10000-msl';
+/** The row in use: both, the maintainer's answer of 2026-10-31 to the
+ *  question A8 asked (docs/open-questions.md, "Settled: the visibility flag
+ *  holds the reading to both 105.17 rows"): the rows are MSL, so a
+ *  full-altitude exit from this DZ is above 10,000 ft MSL and in the 5 SM
+ *  row, while a hop-and-pop is well under it and in the 3 SM row. Until
+ *  2026-10-31 it was 'below-10000-msl', the row a surface reading could be
+ *  held to without claiming more than the reading says. */
+export const VISIBILITY_ROW: VisibilityRow = 'both';
+
+/** The thresholds the visibility wording is read from: the profile's
+ *  published figure, or one edited in Settings on Licensed (`published`
+ *  is recorded by `withOverrides`; absent, nothing is edited). */
+type VisibilityThresholds = Pick<Thresholds, 'visibilityCautionSm' | 'published'> & { visibilityRow?: VisibilityRow };
+
+/** The figure the flag fires at, the figure the profile publishes, and
+ *  whether the flag holds the reading to both rows unedited: one reading
+ *  of the thresholds for the flag's value and its wording, so the two
+ *  cannot disagree about whether the figure is edited. */
+function visibilityFigures(t: VisibilityThresholds): { firesSm: number; publishedSm: number; both: boolean } {
+  const firesSm = t.visibilityCautionSm;
+  const publishedSm = t.published?.visibilityCautionSm ?? firesSm;
+  const both = t.visibilityRow === 'both' && publishedSm === VISIBILITY_ROWS.both.sm;
+  return { firesSm, publishedSm, both };
+}
+
+/** Which of 105.17's rows a surface reading is under, for the flag's value,
+ *  when the flag holds it to both rows and the figure is unedited: a plain
+ *  comparison of the reading with the section's two figures, nothing more.
+ *  Null when the flag uses one row, or an edited figure, whose wording names
+ *  the one figure it fires at. */
+export function visibilityRowsUnder(t: VisibilityThresholds, readingSm: number): string | null {
+  const { firesSm, publishedSm, both } = visibilityFigures(t);
+  if (!both || firesSm !== publishedSm) return null;
+  if (readingSm < LOW_ROW_SM) return 'under both rows';
+  if (readingSm < HIGH_ROW_SM) return `under the ${HIGH_ROW_SM} SM row, at or above the ${LOW_ROW_SM} SM row`;
+  return null;
+}
 
 /** Which figure the visibility flag fires at, as a predicate for "the flag"
  *  or "this flag", read from the thresholds the flag uses: the profile's
  *  published figure, or one edited in Settings on Licensed. The edited
  *  figure prints as typed: rounded, an edit of 3.04 would read "below 3 SM"
  *  while a 3 SM report raised the flag. A published figure is called a row
- *  only if it is one of the section's. */
-export function visibilityFigure(t: Pick<Thresholds, 'visibilityCautionSm' | 'published'>): string {
-  const firesSm = t.visibilityCautionSm;
-  const publishedSm = t.published?.visibilityCautionSm ?? firesSm;
+ *  only if it is one of the section's; the 5 SM figure is both rows only
+ *  when the profile says so (`visibilityRow`), since the 5 SM row alone
+ *  fires at the same figure. `onCitationsPage` words the DZ fact's
+ *  attribution for the page that asks its confirmation. */
+export function visibilityFigure(t: VisibilityThresholds, opts: { onCitationsPage?: boolean } = {}): string {
+  const { firesSm, publishedSm, both } = visibilityFigures(t);
   const isRow = Object.values(VISIBILITY_ROWS).some((r) => r.sm === publishedSm);
-  const published = isRow ? `the ${publishedSm} SM row` : `${publishedSm} SM`;
   if (firesSm !== publishedSm) {
-    return `fires below ${firesSm} SM, as edited in Settings, in place of ${published} it otherwise uses.`;
+    const inPlaceOf = both
+      ? `both rows it otherwise holds the reading to (${HIGH_ROW_SM} SM and ${LOW_ROW_SM} SM)`
+      : `${isRow ? `the ${publishedSm} SM row` : `${publishedSm} SM`} it otherwise uses`;
+    return `fires below ${firesSm} SM, as edited in Settings, in place of ${inPlaceOf}.`;
   }
-  return isRow ? `holds the surface reading to ${published}.` : `fires below ${published}.`;
+  if (both) {
+    const fact = opts.onCitationsPage ? HOP_AND_POP_FACT.sentenceOnCitations : HOP_AND_POP_FACT.sentence;
+    return (
+      `holds the surface reading to both rows: ${HIGH_ROW_SM} SM, the row a full-altitude exit from this DZ is in, ` +
+      `and ${LOW_ROW_SM} SM, the row a hop-and-pop is in, and says which the reading is under. ${fact}`
+    );
+  }
+  return isRow ? `holds the surface reading to the ${publishedSm} SM row.` : `fires below ${publishedSm} SM.`;
 }
 
 /** The flag's guidance: the rule, then the figure it fires at. */
-export function visibilityGuidance(t: Pick<Thresholds, 'visibilityCautionSm' | 'published'>): string {
-  return `${VISIBILITY_RULE} This flag ${visibilityFigure(t)}`;
+export function visibilityGuidance(t: VisibilityThresholds, opts: { onCitationsPage?: boolean } = {}): string {
+  return `${VISIBILITY_RULE} This flag ${visibilityFigure(t, opts)}`;
 }
 
 const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
@@ -696,14 +797,12 @@ const LICENSED_BAR_SCALE_KT = 25;
  *  rest on, with its source and date, so the card, the flag and the
  *  `#citations` asks all say the same thing and move together when an
  *  instructor confirms it (A1). Not an instructor's sign-off. */
-export const STUDENT_ROUND_RESERVE_FACT = {
+export const STUDENT_ROUND_RESERVE_FACT = dzFact({
   source: 'the maintainer',
   date: '2026-10-26',
   claim: 'no student rig at LSPC carries a round reserve',
-  get sentence(): string {
-    return `No student rig at LSPC carries a round reserve (${this.source}, ${this.date}; confirmation asked on the citations page), so that figure binds no student at this drop zone.`;
-  },
-} as const;
+  consequence: 'so that figure binds no student at this drop zone',
+});
 
 const STUDENT: Thresholds = {
   windCautionKt: STUDENT_WIND_KT,
@@ -751,6 +850,7 @@ const STUDENT: Thresholds = {
     notHere: STUDENT_ROUND_RESERVE_FACT.sentence,
   },
   visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm,
+  visibilityRow: VISIBILITY_ROW,
 };
 
 /**
@@ -784,6 +884,7 @@ const LICENSED: Thresholds = {
   windLimitCitation: null,
   takesOwnLimits: true,
   visibilityCautionSm: VISIBILITY_ROWS[VISIBILITY_ROW].sm,
+  visibilityRow: VISIBILITY_ROW,
 };
 
 /** Kept for tests / back-compat. */

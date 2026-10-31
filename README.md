@@ -268,8 +268,10 @@ Advisory thresholds and their sources live in
 
 **Every number that fires a flag comes from a published document** — the
 student ground-wind limit and the opening altitudes from the USPA SIM/BSR, the
-visibility floor (its 3 SM or 5 SM row, `VISIBILITY_ROW`) and cloud clearance
-from 14 CFR 105.17, the flight categories from FAA AIM 7-1-7, the sunset
+visibility floor (both its rows since 2026-10-31, `VISIBILITY_ROW`: the flag
+fires below the 5 SM row a full-altitude exit from this DZ is in and says
+when the reading is also under the 3 SM row a hop-and-pop is in) and cloud
+clearance from 14 CFR 105.17, the flight categories from FAA AIM 7-1-7, the sunset
 trigger from 14 CFR 105.19, and the
 waivered wind and gust ceilings from the club's posted policy
 ([`docs/lspc-waivered-wind-limits.md`](docs/lspc-waivered-wind-limits.md)).
@@ -370,7 +372,8 @@ sentences said more than their section does and were tightened — the sky card
 no longer says jumps "require VFR flight conditions", which 105.17 never
 mentions, and the night flag now says whose light it is — and the 105.17 row
 for exits at or above 10,000 ft MSL (5 SM, 1 mile from cloud) is printed where
-only the lower row was. What was read is each source as served on one day, not
+only the lower row was, and since 2026-10-31 the flag holds the surface
+reading to it as well as to the 3 SM row (the maintainer's call). What was read is each source as served on one day, not
 a printed edition, so **re-verify against the linked primary source** before
 relying on any of it operationally.
 

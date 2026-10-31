@@ -131,6 +131,17 @@ precisely because they were colour and text rather than flags.
   printed, so they add up in mph. The fill is one colour: a green end read
   as "fine". Do not bring back a legend in place of the labels, or a bar
   per limit.
+- **The visibility flag holds the surface reading to both 105.17 rows**
+  (`VISIBILITY_ROW = 'both'`, the maintainer's answer of 2026-10-31 to A8:
+  the rows are MSL, so a 10,000 ft AGL exit from this DZ is above 10,000 ft
+  MSL and in the 5 SM row, while hop-and-pops are well under it, in the
+  3 SM row). It fires below 5 SM and its value says which rows the reading
+  is under, a comparison of figures (`visibilityRowsUnder`); the guidance
+  carries the DZ fact the 3 SM row's jump rests on, dated and attributed
+  (`HOP_AND_POP_FACT`, the round-reserve pattern), and `#citations` A8 asks
+  an instructor to confirm both. The two single-row settings stay in
+  `VISIBILITY_ROWS` with their own wording and answer keys; every test
+  passes with any of the three. Neither figure is the app's.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed
