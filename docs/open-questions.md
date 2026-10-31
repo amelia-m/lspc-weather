@@ -1049,9 +1049,11 @@ near midnight Central will show it. It cannot be given a near-midnight
 clock itself: against live data a faked clock would pick a forecast hour
 the data does not hold. A check of the fixture build at 320 px with the
 clock pinned to 04:45Z, as the fix was verified, would be the guard for
-the next clock-dependent width; not built. **Waiting on the maintainer:**
-close #249 once the check passes on the fix (the sandbox cannot close
-issues).
+the next clock-dependent width; not built. The check passed on the fix's
+deploy (b9482b0) at about 05:00Z, which was already past midnight Central,
+so that run met the bare time, not the weekday; the weekday case is held
+by the fixture-build measurement and the markup test. **Waiting on the
+maintainer:** close #249 (the sandbox cannot close issues).
 
 ## Issue #147: a timeout, not a disagreement
 
