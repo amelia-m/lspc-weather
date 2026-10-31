@@ -28,7 +28,7 @@ Two pages sit beside the dashboard, both reached from its footer:
 | Flight category | the app's derived VFR/MVFR/IFR/LIFR | aviationweather.gov's `fltCat` for the same report | `scripts/skyParity.live.ts` (a gate, when both give a category) |
 | TAF shown | the TAF text the card shows: Offutt's through the relay (aviationweather.gov) since 2026-10-27, else the NWS text-products feed, first station in the chain with a product | the current TAF aviationweather.gov has for that station | `scripts/skyParity.live.ts` (informational: says whether the card's issuance is the current one) |
 | TAF decode | `decodeTaf` run on aviationweather.gov's own TAF text for every station in the chain: change type, period times, wind, visibility, weather, cloud layers and (since 2026-10-21) QNH per period, and the forecast's TX/TN temperatures | the `fcsts` decode aviationweather.gov returns beside that text (its `altim` in whole hPa, which ours must round to; its `temp` list, on the period each group is written in, compared sorted) | `scripts/skyParity.live.ts` (gate: any difference fails the run) |
-| Surface wind sources | KPMV's METAR as the dashboard picks it | the NWS gridpoint hour and Open-Meteo's hourly, 15-minute and `current` 10 m wind at the DZ, with each source's own update and run times | `scripts/surfaceWindCompare.live.ts` (skipped unless `SURFACE_WIND_SAMPLE=1`, since the daily job runs the whole live config; run every five minutes from 2026-10-09 to 2026-10-30 and every fifteen since by `surface-wind-sample.yml`; see [surface-wind-sources.md](surface-wind-sources.md)) |
+| Surface wind sources | KPMV's METAR as the dashboard picks it | the NWS gridpoint hour and Open-Meteo's hourly, 15-minute and `current` 10 m wind at the DZ, with each source's own update and run times | `scripts/surfaceWindCompare.live.ts` (skipped unless `SURFACE_WIND_SAMPLE=1`, since the daily job runs the whole live config; run every five minutes from 2026-10-09 to 2026-10-30 and every seventeen since by `surface-wind-sample.yml`; see [surface-wind-sources.md](surface-wind-sources.md)) |
 
 The Schulze and usairnet scripts print a human-readable table and one
 machine-readable line, `@@parity {json}`, per run. Neither ever fails a run:
@@ -192,7 +192,7 @@ morning).
 ## Surface wind: four forecasts against the METAR
 
 A separate comparison, skipped unless `SURFACE_WIND_SAMPLE=1`, run every
-five minutes from 2026-10-09 to 2026-10-30 and every fifteen since by
+five minutes from 2026-10-09 to 2026-10-30 and every seventeen since by
 `.github/workflows/surface-wind-sample.yml` (first by hand from the
 sandbox, for the two hours below):
 `scripts/surfaceWindCompare.live.ts` logs KPMV's METAR beside the NWS

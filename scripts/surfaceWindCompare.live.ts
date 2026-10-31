@@ -8,7 +8,7 @@
  * would run there too. Its own workflow,
  * .github/workflows/surface-wind-sample.yml, sets the switch and runs it
  * through scripts/surfaceWindLoop.sh: every five minutes from 2026-10-09
- * to 2026-10-30, every fifteen since, with no end date
+ * to 2026-10-30, every seventeen since, with no end date
  * (docs/surface-wind-sources.md, "The longer sample, and the standing
  * one").
  * By hand from the sandbox, with the proxy env (see CLAUDE.md):
