@@ -36,15 +36,14 @@ import { fetchTafChain, NoCurrentTafError } from '../src/api/tafChain';
 import { TAF_RELAY_SET, tafRelayUrlFor } from '../src/config/tafRelay';
 import { describePassedOver } from '../src/domain/sourceProvenance';
 import type { SkyLayer } from '../src/domain/types';
+import { fetchWithRetry, type Fetched } from './liveFetch';
 
 const station = SITE.metarStation.id;
 const UA = 'lspc-weather sky-parity (github.com/amelia-m/lspc-weather)';
 
-async function get(url: string, accept: string): Promise<Response> {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': UA, Accept: accept },
-    signal: AbortSignal.timeout(20_000),
-  });
+async function get(url: string, accept: string): Promise<Fetched> {
+  // Twenty seconds, tried twice on a timeout (scripts/liveFetch.ts).
+  const res = await fetchWithRetry(url, { headers: { 'User-Agent': UA, Accept: accept } }, 20_000);
   if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
   return res;
 }

@@ -16,6 +16,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { pilotLinks } from '../src/config/sources';
+import { fetchWithRetry } from './liveFetch';
 
 const UA = 'Mozilla/5.0 (lspc-weather pilot-link check; github.com/amelia-m/lspc-weather)';
 
@@ -25,7 +26,8 @@ describe('the Pilots tab links', () => {
 
   it('opens Plattsmouth in the current Chart Supplement edition', async () => {
     const url = link('Chart Supplement');
-    const res = await fetch(url, { headers: { 'user-agent': UA }, redirect: 'follow' });
+    // Twenty seconds, tried twice on a timeout (scripts/liveFetch.ts).
+    const res = await fetchWithRetry(url, { headers: { 'user-agent': UA }, redirect: 'follow' }, 20_000);
     const body = await res.text();
     console.log(`Chart Supplement: ${url} -> ${res.status} ${res.url}`);
     expect(res.status).toBe(200);
@@ -37,7 +39,7 @@ describe('the Pilots tab links', () => {
   it('opens the GFA and the SIGMET map', async () => {
     for (const start of ['Graphical Forecasts', 'SIGMETs']) {
       const url = link(start);
-      const res = await fetch(url, { headers: { 'user-agent': UA } });
+      const res = await fetchWithRetry(url, { headers: { 'user-agent': UA } }, 20_000);
       console.log(`${start}: ${url} -> ${res.status}`);
       expect(res.status).toBe(200);
       expect(await res.text()).toMatch(/<title>GFA/);

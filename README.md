@@ -392,7 +392,7 @@ needed. The other workflows are measurement, not gates: `comparisons.yml`
 (eight runs a day against usairnet and Mark Schulze's tool, feeding
 `#parity`), `parity-summary.yml` (daily; combines them, archives every
 record under `data/parity/`), `sky-parity.yml` (daily; the METAR and TAF
-decoders, the pilot links and the SIM text), `forecast-keep.yml` (hourly
+decoders, the pilot links and the SIM text, an issue per failed check), `forecast-keep.yml` (hourly
 snapshots of the forecasts to the `forecast-archive` branch),
 `ceiling-data-refresh.yml` (Mondays; the ceiling page's and `#wind-errors`'
 data), `cloud-cover-fetch.yml` (by hand) and `surface-wind-sample.yml`

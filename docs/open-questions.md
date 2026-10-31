@@ -936,7 +936,7 @@ The maintainer closed #238 on 2026-10-31 (as completed, with PR #244
 linked). **Waiting on the maintainer:** #237, the live-site check's runner
 image, is still open (read 2026-10-31; the sandbox cannot close issues).
 
-## The sky-parity issue's body: narrower, from the failed test names
+## Done: the sky-parity issue's body, narrower, from the failed test names
 
 Asked by the maintainer, 2026-10-31, reading #238's body ("Either the
 app's METAR sky parse or TAF decode disagrees ... or a fetch failed. The
@@ -961,8 +961,21 @@ workflow (`.github/workflows/sky-parity.yml`):
   (#147, #238) were a single 20-second timeout to aviationweather.gov, and
   neither would have opened.
 
-**Waiting on the maintainer:** say yes, and it is a small change to the
-workflow and `scripts/skyParity.live.ts`.
+The maintainer, the same day: good. Done 2026-10-31: the workflow runs
+Vitest with the JSON reporter beside the console one, and
+`scripts/liveIssue.ts` (`src/domain/liveIssue.ts`, pure and tested) turns
+the report into one issue per failed check, labelled `sky-parity`,
+`pilot-links` or `sim-text` (`live-checks` when the run failed before the
+checks started), titled by the failed test, with the failure's own message
+in the body and a note when it was a timeout. The three checks' fetches go
+through `scripts/liveFetch.ts`, which tries once more on a timeout. The
+first run that fails will show the new shape; until then it is checked
+on a sample report (`tests/liveIssue.test.ts`), by running the script on
+one, and by running the pilot-links and sky-parity checks from here on
+2026-10-31 with the JSON reporter beside the console one: both passed,
+the report read `success: true`, and the script wrote no issue. The
+checks' test timeout went from 60 to 180 s with the retry, so a second
+attempt is never cut off by Vitest's own limit.
 
 ## Issue #147: a timeout, not a disagreement
 
