@@ -1,4 +1,5 @@
 import { fetchJson, HttpError, NWS_BASE, USE_FIXTURES } from './http';
+import { safeLocalGet, safeLocalRemove, safeLocalSet } from './safeStorage';
 import {
   aggregateDailyFromHourly,
   normalizeGridpoint,
@@ -374,24 +375,3 @@ export async function fetchWindsAloftFd(
   return null;
 }
 
-function safeLocalGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-function safeLocalSet(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* private mode / quota — ignore */
-  }
-}
-function safeLocalRemove(key: string): void {
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    /* private mode / unavailable — ignore */
-  }
-}

@@ -66,6 +66,7 @@ import { UnitToggle } from './components/common/UnitToggle';
 import { deriveProvenance } from './domain/sourceProvenance';
 import { TAF_RELAY_SET } from './config/tafRelay';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
+import { openMeteoUsage } from './api/openMeteoUsage';
 
 const PROFILE_KEY = 'lspc:windProfile';
 /** The student choice last made (BSR or a waiver tier), so Licensed and back
@@ -254,6 +255,13 @@ export default function App(): JSX.Element {
   // only sets the jumper wind flags, which that tab leaves off.)
   const advisoryThresholds = VIEW_USES_PROFILE[view] ? thresholds : base;
   const { snapshot, advisories, status, lastUpdated, refresh } = useWeatherData(advisoryThresholds, unit);
+  // This browser's Open-Meteo calls, summed on each source status change
+  // (any source's poll or pending flip, several times per Open-Meteo poll)
+  // rather than on every render: an Open-Meteo fetch ends in a status
+  // change, so the count follows the request just made, and a fortnight
+  // of records is not re-summed on a unit or profile switch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the two are the trigger, not inputs: the records live in the api module
+  const usage = useMemo(() => openMeteoUsage(), [status, lastUpdated]);
   // Every level by default; "as Schulze" rebuilds the table his way so a
   // reader can check one against the other (WindsAloftPanel).
   const [windsMethod, setWindsMethod] = useState<WindsMethod>(() =>
@@ -437,6 +445,7 @@ export default function App(): JSX.Element {
         provenance={provenance}
         lastUpdated={lastUpdated}
         onRefresh={refresh}
+        openMeteoUsage={usage}
       />
 
       {VIEW_USES_PROFILE[view] && (

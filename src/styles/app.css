@@ -2085,3 +2085,26 @@ a.sim-term {
   fill: var(--muted);
   font-size: 10px;
 }
+
+/* This browser's Open-Meteo requests against the free limits, under the
+   Data health rows: a count beside the limits, in the card's small type. */
+.om-usage {
+  margin-top: 8px;
+}
+.om-usage-days summary {
+  cursor: pointer;
+}
+.om-usage-table {
+  border-collapse: collapse;
+  margin: 6px 0 2px;
+  font-size: 0.85rem;
+}
+.om-usage-table th,
+.om-usage-table td {
+  padding: 2px 10px 2px 0;
+  text-align: left;
+  color: var(--muted);
+}
+.om-usage-table th {
+  font-weight: 600;
+}
