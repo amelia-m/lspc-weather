@@ -53,6 +53,22 @@ describe('Winds aloft hour buttons', () => {
     expect(html).not.toMatch(/disabled=""[^>]*one hour later/);
   });
 
+  it('keeps the weekday out of the time’s nowrap span, so the row can break after it at 320 px', () => {
+    // Issue #249: at 11:44 PM Central the nearest hour was Saturday's
+    // midnight, and "Sat 12:00 AM local" in one nowrap span pushed the
+    // +1 h button off a 320 px page. The weekday is a word of its own,
+    // shown only when the valid hour is on another local day than now.
+    const now = Date.parse('2026-10-31T04:45:00Z'); // Fri 11:45 PM CDT
+    const control = (validMs: number) =>
+      renderToStaticMarkup(createElement(ForecastHourNav, { validMs, now, hourNav: nav() }));
+    expect(control(Date.parse('2026-10-31T05:00:00Z'))).toContain(
+      '<strong>Valid Sat <span class="nowrap">12:00 AM local</span></strong>',
+    );
+    expect(control(Date.parse('2026-10-31T04:00:00Z'))).toContain(
+      '<strong>Valid <span class="nowrap">11:00 PM local</span></strong>',
+    );
+  });
+
   it('always states how far the shown hour is from now, in words and on a bar', () => {
     const html = winds({ hourNav: nav() });
     expect(html).toContain('<strong>1 h 45 min ahead of now</strong>');
