@@ -79,6 +79,25 @@ keep_one() {
   mkdir -p "$w/data/$(dirname "$stamp")" || return 1
   cp "$tmp/snapshot.json.gz" "$w/data/$stamp.json.gz" || return 1
   git -C "$w" add "data/$stamp.json.gz" || return 1
+  # The branch shows Open-Meteo's data, so it carries the credit its
+  # licence asks for next to them (docs/open-meteo-terms.md), written once
+  # and committed with the next snapshot. Until 2026-10-31 it had none.
+  if [ ! -f "$w/README.md" ]; then
+    cat > "$w/README.md" <<'README' || return 1
+# Kept forecasts
+
+One gzipped JSON file an hour (`scripts/forecastKeep.ts` on `main`): the
+NWS gridpoint fields the dashboard reads and Open-Meteo's 10-day outlook
+for the drop zone, each as served, unchanged. The NWS fields are NOAA's.
+
+Weather data by [Open-Meteo.com](https://open-meteo.com/), under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+What the kept forecasts are set against is in `docs/forecast-chances.md`
+and `docs/kept-forecasts-vs-kpmv.md` on `main`.
+README
+    git -C "$w" add README.md || return 1
+  fi
   git -C "$w" commit --quiet -m "Keep forecasts ($stamp)" || return 1
   git -C "$w" push --quiet origin HEAD:forecast-archive && return 0
   git -C "$w" pull --quiet --rebase origin forecast-archive || return 1

@@ -15,12 +15,21 @@ import type { DailyPoint, WindsAloftForecast } from '../domain/types';
 import { SITE } from '../config/site';
 import { OPEN_METEO_FIXTURE } from './fixtures/openMeteo';
 import { OPEN_METEO_DAILY_FIXTURE } from './fixtures/openMeteoDaily';
+import { recordOpenMeteoRequest } from './openMeteoUsage';
+import type { UsageOutcome } from '../domain/openMeteoUsage';
 
 
 /** Open-Meteo can be slow from mobile networks (field reports of 12 s
  *  aborts while the NWS endpoints answered fine), so give it more headroom
  *  and an extra retry than the fetchJson defaults. */
 const OPEN_METEO_OPTS = { timeoutMs: 20_000, retries: 2 };
+
+/** The fetch options for one URL: the shared ones, plus the counter that
+ *  records each attempt as a call Open-Meteo charges this address. */
+const optsFor = (url: string) => ({
+  ...OPEN_METEO_OPTS,
+  onAttempt: (outcome: UsageOutcome) => recordOpenMeteoRequest(url, outcome),
+});
 
 /** Fetch winds aloft and interpolate to the requested AGL jump altitudes.
  *
@@ -36,9 +45,8 @@ export async function fetchWindsAloft(
   targetAltitudesFtAgl: readonly number[],
   now: number,
 ): Promise<WindsAloftForecast> {
-  const data: RawOpenMeteo = USE_FIXTURES
-    ? OPEN_METEO_FIXTURE
-    : await fetchJson<RawOpenMeteo>(openMeteoWindsUrl(lat, lon), OPEN_METEO_OPTS);
+  const windsUrl = openMeteoWindsUrl(lat, lon);
+  const data: RawOpenMeteo = USE_FIXTURES ? OPEN_METEO_FIXTURE : await fetchJson<RawOpenMeteo>(windsUrl, optsFor(windsUrl));
 
   const coerced = coerceOpenMeteoTimes(data);
   const atNow = normalizeOpenMeteo(coerced, now);
@@ -66,8 +74,9 @@ export async function fetchWindsAloft(
 /** Fetch the 10-day daily outlook (temps, wind/gust maxima, precip chance,
  *  WMO weather code). timezone=DZ so daily aggregates follow local days. */
 export async function fetchDailyForecast(lat: number, lon: number): Promise<DailyPoint[]> {
+  const dailyUrl = openMeteoDailyUrl(lat, lon, SITE.timeZone);
   const data: RawOpenMeteoDaily = USE_FIXTURES
     ? OPEN_METEO_DAILY_FIXTURE
-    : await fetchJson<RawOpenMeteoDaily>(openMeteoDailyUrl(lat, lon, SITE.timeZone), OPEN_METEO_OPTS);
+    : await fetchJson<RawOpenMeteoDaily>(dailyUrl, optsFor(dailyUrl));
   return normalizeOpenMeteoDaily(data);
 }

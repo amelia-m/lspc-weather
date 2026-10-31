@@ -1,6 +1,5 @@
-import { SITE } from '../../config/site';
 import { ForecastOffset } from './ForecastOffset';
-import { fmtClock, fmtTime, fmtZulu } from '../format';
+import { fmtTime, fmtWeekday, fmtZulu, localDateKey } from '../format';
 
 /** The hour buttons, when the winds source has more than one hour to offer.
  *  The NOAA FD fallback is one bulletin and gets none. One object, held by
@@ -16,16 +15,20 @@ export interface WindsHourNav {
   onFollow: () => void;
 }
 
-/** Local calendar day at the DZ, for deciding whether a time needs its weekday
- *  spelled out: a late-evening load can be looking at a forecast hour that has
- *  already crossed midnight local. */
-const localDay = (ms: number): string =>
-  new Date(ms).toLocaleDateString('en-CA', { timeZone: SITE.timeZone });
-
-/** Local clock for the valid time — bare time on today, weekday-qualified once
- *  the forecast hour falls on a different local day. */
-const fmtValidLocal = (ms: number, now: number): string =>
-  localDay(ms) === localDay(now) ? fmtTime(ms) : fmtClock(ms);
+/** The weekday, shown only when the valid hour is on another local day at
+ *  the DZ than now (a late-evening load looking at a forecast hour past
+ *  midnight), as a word of its own that may wrap. Kept in one nowrap span
+ *  with the time and "local", "Sat 12:00 AM local" was the widest thing
+ *  the stepper row could not break at 320 px, and the row pushed the +1 h
+ *  button past the page's edge on a GitHub runner's font (DejaVu Sans,
+ *  wider than the sandbox's Inter) every night after about 11:30 PM
+ *  Central (issue #249, 2026-10-31). The daily check never ran at that
+ *  hour; two late-night deploys did. Only the clock time itself is held
+ *  together now; measured in DejaVu Sans at 320 px with the clock at
+ *  11:45 PM, the row's content ran to 339 px with everything in one span,
+ *  303 with the weekday out, and fits its box with "local" free too. */
+const validWeekday = (ms: number, now: number): string | null =>
+  localDateKey(ms) === localDateKey(now) ? null : fmtWeekday(ms);
 
 /** Keyboard focus after a click that may take the focused button away: a
  *  step that reaches the end of the window disables the button in hand, and
@@ -71,6 +74,7 @@ export function ForecastHourNav({
   live?: boolean;
 }): JSX.Element {
   const shifted = hourNav != null && !hourNav.following;
+  const weekday = validWeekday(validMs, now);
   const named = (base: string): string => (forLabel ? `${base} ${forLabel}` : base);
   const step = (e: { currentTarget: HTMLButtonElement }, delta: -1 | 1): void => {
     const btn = e.currentTarget;
@@ -93,7 +97,8 @@ export function ForecastHourNav({
         )}
         <p className="wind-readout fc-readout">
           <strong>
-            Valid <span className="nowrap">{fmtValidLocal(validMs, now)} local</span>
+            Valid {weekday && `${weekday} `}
+            <span className="nowrap">{fmtTime(validMs)}</span> local
           </strong>
           <strong className="wind-unit">·</strong>
           <strong>{fmtZulu(validMs)}</strong>

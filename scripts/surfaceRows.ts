@@ -74,6 +74,9 @@ const span = (hs: typeof hours) => (hs.length ? `${new Date(hs[0].t).toISOString
 const points = [...new Set(hours.map((h) => h.point))].sort((a, b) => (a === OLD_POINT ? -1 : b === OLD_POINT ? 1 : a.localeCompare(b)));
 console.log(
   [
+    // Open-Meteo's credit, where its data are shown (docs/open-meteo-terms.md).
+    "Weather data by Open-Meteo.com (https://open-meteo.com/), under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/): both Surface rows here are worked from its forecast, this app's interpolated to 10 m and Mark Schulze's as his tool serves it. KPMV's reports beside them are NOAA's.",
+    '',
     `${records.length} Schulze records, ${hours.length} valid hours with both rows (${span(hours)}); ${reports.length} KPMV reports.`,
     '',
     table(`Every hour (${span(hours)})`, hours),

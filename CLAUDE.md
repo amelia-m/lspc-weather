@@ -131,6 +131,17 @@ precisely because they were colour and text rather than flags.
   printed, so they add up in mph. The fill is one colour: a green end read
   as "fine". Do not bring back a legend in place of the labels, or a bar
   per limit.
+- **The visibility flag holds the surface reading to both 105.17 rows**
+  (`VISIBILITY_ROW = 'both'`, the maintainer's answer of 2026-10-31 to A8:
+  the rows are MSL, so a 10,000 ft AGL exit from this DZ is above 10,000 ft
+  MSL and in the 5 SM row, while hop-and-pops are well under it, in the
+  3 SM row). It fires below 5 SM and its value says which rows the reading
+  is under, a comparison of figures (`visibilityRowsUnder`); the guidance
+  carries the DZ fact the 3 SM row's jump rests on, dated and attributed
+  (`HOP_AND_POP_FACT`, the round-reserve pattern), and `#citations` A8 asks
+  an instructor to confirm both. The two single-row settings stay in
+  `VISIBILITY_ROWS` with their own wording and answer keys; every test
+  passes with any of the three. Neither figure is the app's.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed
@@ -523,6 +534,16 @@ is kept. `.github/workflows/cloud-cover-fetch.yml`, started by hand, runs
 artifact; it was added when the sandbox was refused again at 01:10Z on
 2026-10-11, an hour after the limit reset. The dashboard is not affected:
 each reader's browser calls Open-Meteo from its own address.
+The free API charges a request its weight, variables over ten (times
+days over fourteen above fourteen days), read in its server source on
+2026-10-31 (docs/open-meteo-terms.md, "Read again 2026-10-31"): the
+app's winds request is 9.6 calls, so the sandbox's 10,000 a day is about
+a thousand of them, and a day's quota is not a thing to spend on a test
+of the limit itself. Since 2026-10-31 each browser counts its own
+requests the same way (`src/domain/openMeteoUsage.ts`, every attempt
+through `fetchJson`'s `onAttempt`) and Data health shows the count
+beside the limits, by UTC day for a fortnight; it cannot see other
+browsers on the same address, and says so.
 
 ## Conventions
 
@@ -594,7 +615,18 @@ overlaying the Refresh button. A sideways scroller is not
 enough to hold its contents: an absolutely positioned `.sr-only` label inside
 one that is not itself positioned is placed against the page and widens it
 (the Ceiling & sky card's 36-hour strip, to 847 px at 390, until
-`.sky-scroll` got `position: relative`, 2026-10-24).
+`.sky-scroll` got `position: relative`, 2026-10-24). Text that depends
+on the clock needs the clock set: the forecast hour stepper's readout
+prints a weekday only when the valid hour is on another local day, and
+that word pushed its `+1 h` button off a 320 px page every night after
+about 11:30 PM Central until 2026-10-31 (issue #249); the daily check
+runs in the morning and never saw it. Playwright's `clock.install` with
+`timezoneId: 'America/Chicago'` on the context puts a fixture build at
+any hour. And the sandbox's font is not the runner's: here `system-ui`
+resolves to Inter, on a GitHub runner to DejaVu Sans, which is wider (the
+#249 row ran to 298 px here and 339 there). DejaVu Sans is installed
+here, so force it with `page.addStyleTag({ content: "* { font-family:
+'DejaVu Sans' !important }" })` to measure what the runner will.
 
 ## Gates
 
@@ -647,8 +679,14 @@ dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
 app's METAR sky parse, its derived flight category, or its TAF group decode
 (`src/domain/taf.ts`, run on aviationweather.gov's own TAF text and compared
 period by period with the `fcsts` decode served beside it) disagrees with
-aviationweather.gov's decoder on today's reports, and opens one issue labelled
-`sky-parity` when it does on `main` (a run dispatched on a branch opens none);
+aviationweather.gov's decoder on today's reports, and on `main` opens one
+issue per failed check, labelled by it (`sky-parity`, `pilot-links`,
+`sim-text`; `live-checks` for a run that failed before they started),
+titled by the failed test and carrying the failure's own message, from
+Vitest's JSON report (`src/domain/liveIssue.ts`, since 2026-10-31, the
+maintainer's call: one broad body for three checks said too little; a run
+dispatched on a branch opens none). The checks' fetches are tried twice on
+a timeout (`scripts/liveFetch.ts`): #147 and #238 were one timeout each;
 it also prints whether the TAF the card shows is the issuance
 aviationweather.gov currently has (informational). It also fails, through
 `scripts/pilotLinks.live.ts`, when a Pilots tab deep link stops opening

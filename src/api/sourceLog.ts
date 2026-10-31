@@ -2,9 +2,10 @@
  *  primary, a fallback, or a failure. This lives in the api layer, not domain,
  *  because it is pure I/O — console output, localStorage persistence, Date.now()
  *  and mutable module state — none of which belongs beside the pure, unit-tested
- *  domain calculations. Storage access mirrors the safeLocal* helpers in nws.ts. */
+ *  domain calculations. Storage goes through safeStorage.ts. */
 
 import type { SourceKey } from '../domain/types';
+import { safeLocalGet, safeLocalRemove, safeLocalSet } from './safeStorage';
 
 export type SourceLogStatus = 'attempted' | 'success' | 'fallback' | 'failure';
 
@@ -37,27 +38,6 @@ const STATUSES: readonly SourceLogStatus[] = ['attempted', 'success', 'fallback'
  *  after the fact rather than from a phone at the DZ. */
 const CONSOLE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_DEBUG_LOGS === 'true';
 
-function safeLocalGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-function safeLocalSet(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* private mode / quota — ignore */
-  }
-}
-function safeLocalRemove(key: string): void {
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    /* private mode / unavailable — ignore */
-  }
-}
 
 let logs: SourceLog[] = [];
 /** Cached frozen copy of `logs`, replaced only when the buffer actually

@@ -18,34 +18,15 @@ is held until Saturday 2026-10-31 at the earliest; do not raise it before.
 
 These cannot be settled from the code.
 
-1. **Which 105.17 visibility row the flag should use.** Until this is
-   answered the visibility flag fires below 3 SM, the section's row for jumps
-   below 10,000 ft MSL. Brown's
-   is at 1,182 ft MSL, so a 10,000 ft AGL exit is in the other row: 5 SM and
-   1 mile from cloud. The reading is the METAR's surface visibility and the
-   reg's measure is flight visibility at altitude, so the flag stays on the
-   lower row and prints both (read through the eCFR 2026-09-23; A8 on the
-   #citations page). Whether a surface reading should be held to the 5 SM row
-   is a call for the S&TA and the PIC, not for this code.
-
-   **Both are ready (2026-10-22).** `VISIBILITY_ROW` in
-   `src/config/thresholds.ts` picks the row, and `VISIBILITY_ROWS` holds each
-   row's figure and #citations question. The flag, both profiles, the
-   edited-in-Settings note, the Ceiling & sky and Settings copy and the A8
-   entry all follow it. To use the 5 SM row, change the one line to
-   `'at-or-above-10000-msl'`. The flag's guidance gives both rows and where
-   an exit from this DZ enters the higher one (at or above 8,818 ft AGL,
-   derived from the DZ's elevation), then says which row it holds the
-   surface reading to; the Ceiling & sky note says the same, a Settings edit
-   included. A8's answers given on the 3 SM row stay with that wording: on
-   the 5 SM row the entry stores its answers under a new key (`answerKey`
-   in `VISIBILITY_ROWS`), so a verdict on the old question is not shown
-   against the new one. The old answers are not dropped, whichever way the
-   row moves: the page says they are there, and the report sends them under
-   the figure they were given to ("Flag fires below 3 SM"), after A8's
-   current figure, so a report says which row each ruling answered. With
-   either value every test and gate passes: checked by flipping it on
-   2026-10-22.
+1. **Which 105.17 visibility row the flag should use: answered.** The
+   maintainer, 2026-10-31: both, because the rows are MSL, so a jump from
+   10,000 ft AGL is above 10,000 ft MSL, while hop-and-pops are well
+   under. Done the same day ("Settled: the visibility flag holds the
+   reading to both 105.17 rows", below). What remains for the instructor
+   is A8's two asks on `#citations`: whether holding the surface reading
+   to both rows is the S&TA's and the pilot's reading too, and whether
+   every low exit flown here is well below 10,000 ft MSL
+   (`HOP_AND_POP_FACT`).
 
 2. **The claims still need an instructor, not another reading.** Every USPA,
    CFR and FAA citation has now been read at its source — the SIM at uspa.org
@@ -67,6 +48,34 @@ These cannot be settled from the code.
    lookup.** Part B of the citations page — currently one entry, the 25 kt
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
+
+## Settled: the visibility flag holds the reading to both 105.17 rows
+
+Asked since 2026-09-23 (item 1 above, A8 on `#citations`): the section's
+rows are MSL, Brown's is at 1,182 ft MSL, so a 10,000 ft AGL exit is in the
+5 SM row and the flag fired on the 3 SM row, the one a surface reading
+could be held to without claiming more than it says. The maintainer's
+answer, 2026-10-31: **both**, partly because it is MSL, not AGL, so a jump
+at 10,000 ft AGL is above 10,000 ft MSL, but hop-and-pops are well under.
+
+Done the same day. `VISIBILITY_ROW` is `'both'` (`src/config/thresholds.ts`):
+the flag fires below 5 SM, the higher row's figure, and its value says
+which rows the reading is under, a comparison of the reading with the two
+figures and nothing more ("4 SM, under the 5 SM row, at or above the 3 SM
+row"; "2 SM, under both rows"; `visibilityRowsUnder`). The guidance names
+each row's jump (a full-altitude exit from this DZ in the 5 SM row, a
+hop-and-pop in the 3 SM) and carries the DZ fact the 3 SM row's jump rests
+on, dated and attributed as the round-reserve fact is
+(`HOP_AND_POP_FACT`: hop-and-pop exits at LSPC are well below 10,000 ft
+MSL, the maintainer, 2026-10-31; confirmation asked on the citations
+page). The Ceiling & sky note and Settings say the same. A8 stores its
+answers under a new key (`A8@both`) and asks two things, the reading and
+the fact; verdicts given to the 3 SM wording stay reported under that
+figure. An edited figure still names no row. The two single-row settings
+remain in `VISIBILITY_ROWS`, each with its wording, and every test passes
+with any of the three (checked by flipping it, 2026-10-31). No threshold
+is the app's: both figures are the section's, and the fact is the DZ's,
+said so.
 
 ## Page counts: two things for the maintainer (2026-10-31)
 
@@ -182,6 +191,124 @@ one 100 ft step in each. It seldom forecast a ceiling under 500 ft (41
 hours, against 149 reported). Open-Meteo has no ceiling figure here; its
 low band marks a ceiling of 3,000 ft or lower on 92 to 93% of those hours
 without placing it. Whether the card should say so is open.
+
+## Done: counting this browser's Open-Meteo calls
+
+The maintainer, 2026-10-31: first track the usage, how many calls the
+app makes in a given period. Built the same day. Each attempt at an
+Open-Meteo request (`fetchJson`'s `onAttempt`, so a retried request
+counts every try, as the server charges them) is recorded with its charge
+by Open-Meteo's formula (`openMeteoCallWeight`,
+`src/domain/openMeteoUsage.ts`: variables over ten, times days over
+fourteen above fourteen days, never under 1) and by how it ended: the
+weight when answered, and when it timed out on this side, since the
+server charges at completion and had the request; 1 when the server
+rejected it with an HTTP error, the limiter's 429 included; nothing when
+it never arrived (no network, a CORS block), so a phone on a network
+that blocks the host does not count a day of calls the server never saw.
+In memory and in this browser's localStorage (`src/api/openMeteoUsage.ts`,
+pruned to the last fourteen UTC days). Data health shows, under the
+rows, today's and this hour's requests and calls beside the free limits
+(10,000 a day, 5,000 an hour, per address), says that other browsers on
+the same address share the limits unseen, and lists the last fortnight by
+UTC day. The limiter's windows are the clock's minute, hour and UTC day
+(RateLimiter.swift, read 2026-10-31), so the summary uses the same. Two
+tabs of one browser merge their records on each write, so the count is
+the browser's and not the last tab's; the records are read from storage
+on the first read, so a restored fortnight shows on the first render; and
+an answered request whose body will not parse is counted once, as the
+server charges it.
+
+What it cannot do: see any other browser's requests, which is what the
+per-address limit counts, or the server's own tally. The server has sent
+`X-RateLimit-Cost` and `X-RateLimit-Remaining` headers since a change of
+2026-10-26 (not yet deployed on 2026-10-31), and even once it does, a
+browser can read a custom response header only if the server names it in
+`Access-Control-Expose-Headers`; checked when the headers appear. The
+sandbox cannot see a reader's count either: it is in their browser. To
+read typical usage, open Data health on a phone or a display that has
+been showing the site, and expand "By day".
+
+## Maybe, later: slow the refresh when calls run high
+
+The maintainer, 2026-10-31: could the refresh slow to every 15 minutes
+when calls exceed a threshold? Not built; noted for after the counting
+has shown what typical use is. What it would take: a threshold on the
+browser's own count (the one it can see), or better on the server's
+`X-RateLimit-Remaining` once a browser can read it; the winds request's
+timer (`REFRESH_MS`, `src/hooks/useWeatherData.ts`) taking a longer
+interval while over it, and the Data health line saying so, since a
+reader would otherwise see the forecast hour lag with no reason given.
+The cost of slowing is the one the ten-minute refresh buys: a new HRRR
+run reaches Open-Meteo between :20 and :59 (docs/run-split.md), and a
+fifteen-minute refresh sees it up to five minutes later. It is a refresh
+rate, not a weather judgement, so the no-verdict rule does not bear on
+it; the line that says the refresh is slowed must still be a fact, not
+advice.
+
+## Open-Meteo's call counting: the winds request counts as 9.6 calls
+
+Found by the 2026-10-31 re-reading of Open-Meteo's pages
+(docs/open-meteo-terms.md, "Read again 2026-10-31"). The pricing page's
+FAQ, "How is one API call defined?": "Requests for data covering more than
+10 weather variables or extending over a period of more than 2 weeks for a
+single location are considered multiple API calls ... a request for 2
+weeks of data with 15 weather variables will be calculated as 1.5 API
+calls". The winds-aloft request asks 96 hourly variables for two days
+(`openMeteoHourlyVariables`, `src/domain/normalize.ts`: the 10 m wind,
+temperature and four cloud covers, three height levels and twenty
+pressure levels with wind, temperature and geopotential height each), so
+by that rule it is about 9.6 calls, and a reader's browser, refreshing
+every ten minutes, makes about 1,400 a day plus the outlook's 144: within
+the 10,000 a day for one address, but six or seven readers behind one
+address (the DZ's Wi-Fi) would cross it, against thirty-odd if a request
+is a call. Whether the free endpoint counts this way is not stated: the
+FAQ sits with the paid plans, and the terms page says only "10,000 API
+calls per day". Not changed.
+
+**Settled the same day, from the source.** The maintainer proposed a test
+for the following Tuesday or Wednesday, exhausting the limit to see, with
+a warning on the site in case it hit readers. Neither is needed. The free
+API's server is open source, and its limiter charges every free response
+the FAQ's weight (docs/open-meteo-terms.md, "Read again 2026-10-31", with
+the files and the formula): 9.6 for the winds request, 1 for the outlook.
+And the limit is per address, each reader's own: a test from the sandbox
+or a runner could never reach a reader, and the one way a test could is to
+run it on the DZ's own network. So no test, and no warning. What a test
+would have cost: the sandbox's shared address refused for the rest of the
+day, for every session on it (CLAUDE.md), and a deliberate overrun against
+a service whose README asks for fair use and reserves the right to block
+"applications", which could reach readers where the limit itself cannot.
+
+What the exposure is, now that the count is certain: 10.6 calls a
+refresh, 144 refreshes a day for a tab left open and visible all day
+(`usePolling` stops the timer while the tab is hidden and fetches once
+when it is shown again), about 1,500 a day. A phone looked at for ten
+minutes costs 11 or 21. So seven jumpers on the DZ's Wi-Fi for an
+afternoon are nowhere near 10,000; seven displays left showing the site
+all day behind one address would cross it, and the winds card would fall
+back to NOAA's FD winds until midnight UTC. The maintainer's call whether
+that case is worth a lever (below); the cheapest is the seven extra
+pressure levels, since the day count is free.
+
+Read again the same day, at the maintainer's question: every one of the
+96 variables is consumed. The temperatures are the table's temperature
+column (`WindsAloftPanel`, and `interpolateWindsAloft` interpolates them
+between levels), the geopotential heights place every pressure level, and
+the cloud covers are the Ceiling & sky card's Open-Meteo row. So there is
+nothing to drop for free. The levers, each with a cost: the seven extra
+pressure levels the default table takes beyond Schulze's
+(`OPEN_METEO_EXTRA_PRESSURE_LEVELS`, 28 variables, so about 6.8 calls a
+request instead of 9.6) at the price of the rows they decide; the second
+forecast day (`forecast_days=2`), which the hour stepper reads without a
+fetch; or the ten-minute refresh, which is what catches a new HRRR run
+within minutes of its reaching Open-Meteo's servers between :20 and :59
+(docs/run-split.md): at fifteen minutes about 1,000 calls a reader a day,
+at thirty about 500. If the limit were met, the winds card falls back to
+NOAA's FD winds and the outlook card to its error state until the limit
+resets at midnight UTC; nothing crashes. The second forecast day turns
+out to cost nothing (the weight scales with days only above fourteen),
+so that lever is gone; the other two stand.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 
@@ -911,9 +1038,101 @@ which the inferred AIRAC numbering and the year-month form differed, and
 the link opened cycle 2611 and FAA's search answered 200 with
 Plattsmouth's entry, so the inference held (src/domain/chartSupplement.ts).
 The next day's run, 2026-10-30, passed. Nothing for the code to fix.
-**Waiting on the maintainer:** close #238 as not planned, as #147 was
-(the sandbox cannot close issues); #237, the live-site check's runner
-image, the same.
+The maintainer closed #238 on 2026-10-31 (as completed, with PR #244
+linked), and #237, the live-site check's runner image, the same day.
+Nothing waits here.
+
+## Done: the sky-parity issue's body, narrower, from the failed test names
+
+Asked by the maintainer, 2026-10-31, reading #238's body ("Either the
+app's METAR sky parse or TAF decode disagrees ... or a fetch failed. The
+log says which."): is that too broad, and would more but narrower checks
+burn workflow runs?
+
+The answer proposed: narrower issues, not more workflows. A split would
+cost little in minutes (Actions minutes are free on a public repository,
+and the three scripts share one `npm ci`), but three daily runs could each
+open an issue with the same broad body. What the issue lacks is in the run
+already: Vitest knows which test file and test failed. So, in the one
+workflow (`.github/workflows/sky-parity.yml`):
+
+- run Vitest with a JSON reporter beside the console one
+  (`--reporter=default --reporter=json --outputFile=parity.json`) and
+  build the issue's title and body from the failed tests' names and error
+  messages, not from the last 60 lines of the log: "Pilots tab: Chart
+  Supplement link answered 404" in place of "the log says which";
+- one label per script (`sky-parity`, `pilot-links`, `sim-text`), so a SIM
+  edition change does not land as a comment on an open decoder issue;
+- one retry on a timeout in the scripts' fetch helper: both issues so far
+  (#147, #238) were a single 20-second timeout to aviationweather.gov, and
+  neither would have opened.
+
+The maintainer, the same day: good. Done 2026-10-31: the workflow runs
+Vitest with the JSON reporter beside the console one, and
+`scripts/liveIssue.ts` (`src/domain/liveIssue.ts`, pure and tested) turns
+the report into one issue per failed check, labelled `sky-parity`,
+`pilot-links` or `sim-text` (`live-checks` when the run failed before the
+checks started), titled by the failed test, with the failure's own message
+in the body and a note when it was a timeout. The three checks' fetches go
+through `scripts/liveFetch.ts`, which tries once more on a timeout. The
+first run that fails will show the new shape; until then it is checked
+on a sample report (`tests/liveIssue.test.ts`), by running the script on
+one, and by running the pilot-links and sky-parity checks from here on
+2026-10-31 with the JSON reporter beside the console one: both passed,
+the report read `success: true`, and the script wrote no issue. The
+checks' test timeout went from 60 to 180 s with the retry, so a second
+attempt is never cut off by Vitest's own limit.
+
+## Issue #249: the hour stepper past the edge at 320 px, after 11:30 PM
+
+The live-site check failed on the docs-only deploy of 2026-10-31 at
+04:44Z and opened #249: on Jumpers and Pilots at 320 px the page was 323
+px wide, and the elements past the edge were the forecast hour stepper's
+`+1 h` buttons (`ForecastHourNav`, on the Winds aloft and Drift cards).
+The same build had passed at 04:19Z.
+
+What changed between the two runs was the clock. The readout prints the
+weekday only when the valid hour is on another local day than now
+("Sat 12:00 AM local" against "11:00 PM local"; now `validWeekday`), and at
+04:44Z, 11:44 PM Central, the nearest forecast hour was Saturday's
+midnight. The whole of "Sat 12:00 AM local" sat in one nowrap span, so
+the readout could shrink no narrower than it, and the row (two 50 px
+buttons, the gaps and padding) overflowed the nav's box: by 11 px even
+in the sandbox's font, where the buttons' right edge sat at 300 px, read
+on the live site at 320 px at 04:50Z; the runner's font is wider and put
+it at 323. The daily run is in the morning and never met it; a deploy in
+the last half hour before midnight Central did, twice tonight.
+
+Fixed the same night: the weekday is a word of its own before the span,
+so the row can break after it, and the time keeps its nowrap. On a
+fixture build at 320 px with the browser clock at 2026-10-31T04:45Z
+(Playwright's `clock.install`, time zone America/Chicago), the row's
+content runs 40 to 280 px inside a box of 31 to 289, where it ran to 300
+before; 390 and 1280 px unchanged. A test pins the markup (the weekday
+outside the nowrap span, `tests/windsHour.test.ts`); no unit test can
+see a layout, so the live-site check is the guard, and the next deploy
+near midnight Central will show it. It cannot be given a near-midnight
+clock itself: against live data a faked clock would pick a forecast hour
+the data does not hold. A check of the fixture build at 320 px with the
+clock pinned to 04:45Z, as the fix was verified, would be the guard for
+the next clock-dependent width; not built. The check passed on the fix's
+deploy (b9482b0) at about 05:00Z, which was already past midnight Central,
+so that run met the bare time, not the weekday; the weekday case is held
+by the fixture-build measurement and the markup test.
+
+**Measured in the runner's font, 2026-10-31 05:20Z**, when the maintainer
+asked whether it was fixed. The sandbox's Chromium resolves `system-ui`
+to Inter; a GitHub runner's resolves it to DejaVu Sans, which is wider,
+and DejaVu Sans is installed here, so the page can be rendered in it
+(`page.addStyleTag` forcing the family). At 320 px with the clock at
+04:45Z, the stepper row's content, in a box of 31 to 289 px: the old
+markup ran to 298 in Inter and to 339 in DejaVu Sans, with both buttons
+past the page's edge, which is #249 reproduced; with the weekday freed
+(b9482b0) 280 and 303, the page at 320 in both, but the row still past
+its box in DejaVu; with "local" freed as well, 280 in both fonts. So the
+first fix stopped the page overflow and the second makes the row fit its
+box in either font; only the clock time is held together now. The
+maintainer closed #249 on 2026-10-31. Nothing waits here.
 
 ## Issue #147: a timeout, not a disagreement
 
