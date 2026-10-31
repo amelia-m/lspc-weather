@@ -18,6 +18,9 @@ Open-Meteo's terms ask for a credit next to wherever its data are shown
   pressure-level winds set against Mark Schulze's and against a second
   request of the app's own, as gaps, with the run metadata of its HRRR
   and GFS domains.
+- `surface-rows-*.md` (`scripts/surfaceRows.ts`): this app's 10 m row and
+  Mark Schulze's Surface row, both worked from Open-Meteo's forecast, set
+  against KPMV's measured wind.
 - `surfacewind-*` (the surface-wind sampler: two dated files for its
   first three weeks, then one a month, `surfacewind-<YYYY-MM>`, written
   daily by the parity summary workflow) and `schulze-logs-*`,

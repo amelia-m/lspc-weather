@@ -1,3 +1,7 @@
+<!-- Output of scripts/surfaceRows.ts, run 2026-10-28 (docs/markschulze-altitude-reference.md, "Again, at the landing area"). -->
+
+Weather data by Open-Meteo.com (https://open-meteo.com/), under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/): both Surface rows here are worked from its forecast, this app's interpolated to 10 m and Mark Schulze's as his tool serves it. KPMV's reports beside them are NOAA's.
+
 1861 Schulze records, 308 valid hours with both rows (2026-09-24T05Z to 2026-10-27T18Z); 2483 KPMV reports.
 
 ### Every hour (2026-09-24T05Z to 2026-10-27T18Z)

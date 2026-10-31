@@ -18,34 +18,15 @@ is held until Saturday 2026-10-31 at the earliest; do not raise it before.
 
 These cannot be settled from the code.
 
-1. **Which 105.17 visibility row the flag should use.** Until this is
-   answered the visibility flag fires below 3 SM, the section's row for jumps
-   below 10,000 ft MSL. Brown's
-   is at 1,182 ft MSL, so a 10,000 ft AGL exit is in the other row: 5 SM and
-   1 mile from cloud. The reading is the METAR's surface visibility and the
-   reg's measure is flight visibility at altitude, so the flag stays on the
-   lower row and prints both (read through the eCFR 2026-09-23; A8 on the
-   #citations page). Whether a surface reading should be held to the 5 SM row
-   is a call for the S&TA and the PIC, not for this code.
-
-   **Both are ready (2026-10-22).** `VISIBILITY_ROW` in
-   `src/config/thresholds.ts` picks the row, and `VISIBILITY_ROWS` holds each
-   row's figure and #citations question. The flag, both profiles, the
-   edited-in-Settings note, the Ceiling & sky and Settings copy and the A8
-   entry all follow it. To use the 5 SM row, change the one line to
-   `'at-or-above-10000-msl'`. The flag's guidance gives both rows and where
-   an exit from this DZ enters the higher one (at or above 8,818 ft AGL,
-   derived from the DZ's elevation), then says which row it holds the
-   surface reading to; the Ceiling & sky note says the same, a Settings edit
-   included. A8's answers given on the 3 SM row stay with that wording: on
-   the 5 SM row the entry stores its answers under a new key (`answerKey`
-   in `VISIBILITY_ROWS`), so a verdict on the old question is not shown
-   against the new one. The old answers are not dropped, whichever way the
-   row moves: the page says they are there, and the report sends them under
-   the figure they were given to ("Flag fires below 3 SM"), after A8's
-   current figure, so a report says which row each ruling answered. With
-   either value every test and gate passes: checked by flipping it on
-   2026-10-22.
+1. **Which 105.17 visibility row the flag should use: answered.** The
+   maintainer, 2026-10-31: both, because the rows are MSL, so a jump from
+   10,000 ft AGL is above 10,000 ft MSL, while hop-and-pops are well
+   under. Done the same day ("Settled: the visibility flag holds the
+   reading to both 105.17 rows", below). What remains for the instructor
+   is A8's two asks on `#citations`: whether holding the surface reading
+   to both rows is the S&TA's and the pilot's reading too, and whether
+   every low exit flown here is well below 10,000 ft MSL
+   (`HOP_AND_POP_FACT`).
 
 2. **The claims still need an instructor, not another reading.** Every USPA,
    CFR and FAA citation has now been read at its source — the SIM at uspa.org
@@ -67,6 +48,34 @@ These cannot be settled from the code.
    lookup.** Part B of the citations page — currently one entry, the 25 kt
    licensed bar scale, which triggers nothing and only sets how long a bar is
    drawn.
+
+## Settled: the visibility flag holds the reading to both 105.17 rows
+
+Asked since 2026-09-23 (item 1 above, A8 on `#citations`): the section's
+rows are MSL, Brown's is at 1,182 ft MSL, so a 10,000 ft AGL exit is in the
+5 SM row and the flag fired on the 3 SM row, the one a surface reading
+could be held to without claiming more than it says. The maintainer's
+answer, 2026-10-31: **both**, partly because it is MSL, not AGL, so a jump
+at 10,000 ft AGL is above 10,000 ft MSL, but hop-and-pops are well under.
+
+Done the same day. `VISIBILITY_ROW` is `'both'` (`src/config/thresholds.ts`):
+the flag fires below 5 SM, the higher row's figure, and its value says
+which rows the reading is under, a comparison of the reading with the two
+figures and nothing more ("4 SM, under the 5 SM row, at or above the 3 SM
+row"; "2 SM, under both rows"; `visibilityRowsUnder`). The guidance names
+each row's jump (a full-altitude exit from this DZ in the 5 SM row, a
+hop-and-pop in the 3 SM) and carries the DZ fact the 3 SM row's jump rests
+on, dated and attributed as the round-reserve fact is
+(`HOP_AND_POP_FACT`: hop-and-pop exits at LSPC are well below 10,000 ft
+MSL, the maintainer, 2026-10-31; confirmation asked on the citations
+page). The Ceiling & sky note and Settings say the same. A8 stores its
+answers under a new key (`A8@both`) and asks two things, the reading and
+the fact; verdicts given to the 3 SM wording stay reported under that
+figure. An edited figure still names no row. The two single-row settings
+remain in `VISIBILITY_ROWS`, each with its wording, and every test passes
+with any of the three (checked by flipping it, 2026-10-31). No threshold
+is the app's: both figures are the section's, and the fact is the DZ's,
+said so.
 
 ## Watch: a change document for the 2026 SIM
 
@@ -170,6 +179,30 @@ one 100 ft step in each. It seldom forecast a ceiling under 500 ft (41
 hours, against 149 reported). Open-Meteo has no ceiling figure here; its
 low band marks a ceiling of 3,000 ft or lower on 92 to 93% of those hours
 without placing it. Whether the card should say so is open.
+
+## Open-Meteo's call counting: the winds request may count as ten
+
+Found by the 2026-10-31 re-reading of Open-Meteo's pages
+(docs/open-meteo-terms.md, "Read again 2026-10-31"). The pricing page's
+FAQ, "How is one API call defined?": "Requests for data covering more than
+10 weather variables or extending over a period of more than 2 weeks for a
+single location are considered multiple API calls ... a request for 2
+weeks of data with 15 weather variables will be calculated as 1.5 API
+calls". The winds-aloft request asks 96 hourly variables for two days
+(`openMeteoHourlyVariables`, `src/domain/normalize.ts`: the 10 m wind,
+temperature and four cloud covers, three height levels and twenty
+pressure levels with wind, temperature and geopotential height each), so
+by that rule it is about 9.6 calls, and a reader's browser, refreshing
+every ten minutes, makes about 1,400 a day plus the outlook's 144: within
+the 10,000 a day for one address, but six or seven readers behind one
+address (the DZ's Wi-Fi) would cross it, against thirty-odd if a request
+is a call. Whether the free endpoint counts this way is not stated: the
+FAQ sits with the paid plans, and the terms page says only "10,000 API
+calls per day". Not changed. Two ways to halve it or better if the
+maintainer wants to: drop the pressure-level temperatures and
+geopotential heights the card does not show (check `interpolateWindsAloft`
+and the "As Schulze" view first, which read both), or refresh the winds
+request less often than the rest.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 
@@ -899,9 +932,37 @@ which the inferred AIRAC numbering and the year-month form differed, and
 the link opened cycle 2611 and FAA's search answered 200 with
 Plattsmouth's entry, so the inference held (src/domain/chartSupplement.ts).
 The next day's run, 2026-10-30, passed. Nothing for the code to fix.
-**Waiting on the maintainer:** close #238 as not planned, as #147 was
-(the sandbox cannot close issues); #237, the live-site check's runner
-image, the same.
+The maintainer closed #238 on 2026-10-31 (as completed, with PR #244
+linked). **Waiting on the maintainer:** #237, the live-site check's runner
+image, is still open (read 2026-10-31; the sandbox cannot close issues).
+
+## The sky-parity issue's body: narrower, from the failed test names
+
+Asked by the maintainer, 2026-10-31, reading #238's body ("Either the
+app's METAR sky parse or TAF decode disagrees ... or a fetch failed. The
+log says which."): is that too broad, and would more but narrower checks
+burn workflow runs?
+
+The answer proposed: narrower issues, not more workflows. A split would
+cost little in minutes (Actions minutes are free on a public repository,
+and the three scripts share one `npm ci`), but three daily runs could each
+open an issue with the same broad body. What the issue lacks is in the run
+already: Vitest knows which test file and test failed. So, in the one
+workflow (`.github/workflows/sky-parity.yml`):
+
+- run Vitest with a JSON reporter beside the console one
+  (`--reporter=default --reporter=json --outputFile=parity.json`) and
+  build the issue's title and body from the failed tests' names and error
+  messages, not from the last 60 lines of the log: "Pilots tab: Chart
+  Supplement link answered 404" in place of "the log says which";
+- one label per script (`sky-parity`, `pilot-links`, `sim-text`), so a SIM
+  edition change does not land as a comment on an open decoder issue;
+- one retry on a timeout in the scripts' fetch helper: both issues so far
+  (#147, #238) were a single 20-second timeout to aviationweather.gov, and
+  neither would have opened.
+
+**Waiting on the maintainer:** say yes, and it is a small change to the
+workflow and `scripts/skyParity.live.ts`.
 
 ## Issue #147: a timeout, not a disagreement
 
