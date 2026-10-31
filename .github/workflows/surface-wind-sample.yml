@@ -1,7 +1,7 @@
 name: Surface-wind sample
 
 # Standing, since 2026-10-30 (the maintainer: the sample is to continue
-# over seasons, times of day and kinds of weather): every fifteen minutes,
+# over seasons, times of day and kinds of weather): every seventeen minutes,
 # record KPMV's METAR, the NWS hourly forecast, and Open-Meteo's hourly,
 # 15-minute and current 10 m wind for the drop zone
 # (scripts/surfaceWindCompare.live.ts, run through
@@ -51,9 +51,13 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Fifteen minutes: every KPMV report (one each twenty minutes) is still
-  # seen, at a third of the first sample's Open-Meteo calls.
-  SAMPLE_EVERY_SECONDS: '900'
+  # Seventeen minutes: every KPMV report (one each twenty minutes) is still
+  # seen, at about a third of the first sample's Open-Meteo calls, and
+  # seventeen shares no factor with sixty, so the samples, paced from the
+  # job's start (SAMPLE_ANCHOR, set below), walk through every minute of
+  # the hour instead of sitting on the same four (the maintainer,
+  # 2026-10-30).
+  SAMPLE_EVERY_SECONDS: '1020'
 
 jobs:
   sample:
@@ -67,6 +71,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: One anchor for the job's samples
+        run: echo "SAMPLE_ANCHOR=$(date -u +%s)" >> "$GITHUB_ENV"
 
       - name: Sample, hour 1
         if: always()

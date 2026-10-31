@@ -723,8 +723,11 @@ figures are dated readings (`docs/img/*-wind-errors-<day>.svg`), drawn by
 hand with `--figures` and never overwritten, because each doc's text
 quotes the counts of its own reading.
 `.github/workflows/surface-wind-sample.yml` is that pattern again, and
-standing: every fifteen minutes (five from 2026-10-09 to 2026-10-30T02:00Z,
-the time-boxed first sample) it runs `scripts/surfaceWindCompare.live.ts`
+standing: every seventeen minutes (five from 2026-10-09 to 2026-10-30T02:00Z,
+the time-boxed first sample; seventeen because it shares no factor with
+sixty, and the samples are paced from one anchor per job, so they walk
+through every minute of the hour instead of sitting on the same few) it
+runs `scripts/surfaceWindCompare.live.ts`
 through `scripts/surfaceWindLoop.sh` and uploads `surfacewind-*` artifacts
 the parity summary never reads; `parity-summary.yml` archives them daily
 as `data/parity/surfacewind-<YYYY-MM>.jsonl.gz` (`scripts/surfaceWindArchive.ts`,

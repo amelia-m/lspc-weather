@@ -347,11 +347,20 @@ from the `#parity` summary's `parity-*` ones; they are archived under
 `data/parity/` and summarised below ("The first three weeks").
 
 Since 2026-10-30 the same workflow runs without an end date, every
-fifteen minutes (the maintainer, that day: three weeks of one autumn is
+seventeen minutes (the maintainer, that day: three weeks of one autumn is
 a first reading, and the logging is to continue over seasons, times of
-day and kinds of weather). Fifteen minutes still sees every KPMV report,
-which comes each twenty, at a third of the Open-Meteo calls; the cadence
-rows below, which needed the five-minute spacing, are the first sample's.
+day and kinds of weather). Seventeen minutes still sees every KPMV report,
+which comes each twenty, at about a third of the Open-Meteo calls (about
+170 a day); the cadence rows below, which needed the five-minute spacing,
+are the first sample's. Seventeen rather than fifteen, and paced from one
+anchor per job rather than from each hour's slice (`SAMPLE_ANCHOR`,
+`scripts/surfaceWindLoop.sh`), so the samples walk through every minute
+of the hour: paced from the slice, every cadence fell on the same minutes
+of every hour of a job, and one that divides sixty on the same minutes of
+every hour of every job that started on time, which would have sampled
+KPMV's reports (:15, :35, :55) at fixed ages and the minutes when new
+runs reach Open-Meteo always or never (the maintainer's question,
+2026-10-30).
 `parity-summary.yml` archives the artifacts daily as
 `data/parity/surfacewind-<YYYY-MM>.jsonl.gz` (`scripts/surfaceWindArchive.ts`,
 one record per run), and the weekly ceiling data refresh rebuilds the
@@ -633,7 +642,7 @@ weather three October weeks did not hold.
 
 Measurement only: nothing the dashboard's cards show changed. The
 sampler ran every five minutes from 2026-10-09 to 10-30 (summarised
-above, "The first three weeks") and runs on, every fifteen minutes,
+above, "The first three weeks") and runs on, every seventeen minutes,
 with its records archived monthly under `data/parity/` ("The longer
 sample, and the standing one").
 Since 2026-10-23 the archived records also feed the `#wind-errors` page,
