@@ -77,6 +77,18 @@ with any of the three (checked by flipping it, 2026-10-31). No threshold
 is the app's: both figures are the section's, and the fact is the DZ's,
 said so.
 
+## Page counts: two things for the maintainer (2026-10-31)
+
+Counting went in on 2026-10-31 (docs/page-counts.md). Two things only the
+maintainer can do or see:
+
+- Campaign Parameters on in the GoatCounter site settings, or a link
+  tagged `?utm_source=` is counted without its source.
+- After the first deploy, a view of the dashboard showing in the
+  GoatCounter dashboard under `/lspc-weather/`, and a `#` page under
+  `/lspc-weather/#pilots` or the like. The browser check stopped at the
+  request; nothing from here can read her dashboard.
+
 ## Watch: a change document for the 2026 SIM
 
 USPA revises the online SIM within an edition through change documents,

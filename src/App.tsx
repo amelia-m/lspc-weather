@@ -65,6 +65,7 @@ import { useSiteJson } from './hooks/useSiteJson';
 import { UnitToggle } from './components/common/UnitToggle';
 import { deriveProvenance } from './domain/sourceProvenance';
 import { TAF_RELAY_SET } from './config/tafRelay';
+import { countPage } from './api/pageCount';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 import { openMeteoUsage } from './api/openMeteoUsage';
 
@@ -138,6 +139,10 @@ function WindErrorsRoute(): JSX.Element {
 
 export default function App(): JSX.Element {
   const route = useRoute();
+  // One GoatCounter view per page shown, the `#` pages included
+  // (docs/page-counts.md). Counted only on the deployed site, never under
+  // automation; the cleanup drops a count still waiting on a background tab.
+  useEffect(() => countPage(route), [route]);
   /* Rehydrate the source log from localStorage before the first fetch runs, so
      a reload while chasing a flaky upstream keeps the history that explains it,
      and publish it on window for devtools. There is deliberately no in-page log
