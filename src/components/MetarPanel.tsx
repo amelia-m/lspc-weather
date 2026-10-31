@@ -1,8 +1,8 @@
 import type { CurrentConditions } from '../domain/types';
-import { compass, fmtSpeed, fmtTemp, round, toTemp, type SpeedUnit, type TempUnit } from '../domain/units';
+import { fmtTemp, round, toTemp, type SpeedUnit, type TempUnit } from '../domain/units';
 import { relativeHumidity } from '../domain/humidity';
 import { Panel } from './common/Panel';
-import { fmtTime } from './format';
+import { describeWind, fmtTime } from './format';
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 
@@ -76,15 +76,6 @@ export function MetarPanel({
       )}
     </Panel>
   );
-}
-
-function describeWind(c: CurrentConditions, unit: SpeedUnit): string {
-  const { directionDeg, speedKt, gustKt } = c.wind;
-  if (speedKt == null) return '— (not reported)';
-  if (speedKt === 0) return 'Calm';
-  const dir = directionDeg != null ? `${compass(directionDeg)} (${directionDeg}°)` : 'variable';
-  const g = gustKt != null ? `, gusting ${fmtSpeed(gustKt, unit)}` : '';
-  return `${dir} ${fmtSpeed(speedKt, unit)}${g}`;
 }
 
 /** "Clear" only when the report says so (CLR/SKC). An empty layer list used to

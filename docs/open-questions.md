@@ -367,6 +367,18 @@ season is `scripts/surfaceWindSummary.ts` over every
 `data/parity/surfacewind-*` archive. What follows is the question as it
 stood.
 
+The other schedules, looked at the same day for the same lock (the
+maintainer's question: anything else that always samples the same
+minute?): `comparisons.yml` runs eight times a day on eight fixed
+minutes, spread only by GitHub's late starts, but the question its
+minute-of-hour figures fed (which run Open-Meteo serves) is settled and
+`#parity` counts runs, not minutes, so it stays; `forecast-keep.yml`
+snapshots at :23 of each hour on purpose, one file an hour named by the
+hour, and the NWS gridpoint updates about hourly, so a fixed minute keeps
+each kept forecast at a known age; the daily sky-parity, live-site and
+summary runs read one report or one page a day, where the minute does
+not matter. Nothing else samples at a cadence.
+
 Open since 2026-10-09. Whether Open-Meteo's `minutely_15` or `current` 10 m
 wind is a better forecast of KPMV's measured wind than the NWS gridpoint hour
 or Open-Meteo's hourly value. One two-hour sample (41 runs, 7 METAR reports,

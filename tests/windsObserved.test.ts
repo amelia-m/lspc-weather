@@ -32,14 +32,28 @@ describe('the observation under the Winds aloft table', () => {
       `<strong>Observed</strong> at KPMV (${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the DZ)`,
     );
     expect(line).toMatch(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2}:\d{2} (AM|PM)\b/);
-    expect(line).toContain('S 190° 12 kt, gust 22 kt');
+    expect(line).toContain('S (190°) 12 kt, gusting 22 kt');
     expect(line).toContain('A report, not a row of the forecast above.');
     // The Surface-row note points at it.
     expect(html).toContain('the observed wind is under the table and on the Surface wind card');
   });
 
-  it('says calm for a calm report, and shows nothing before the report has loaded', () => {
-    expect(card(normalizeMetar({ ...METAR_FIXTURE[0], wdir: 0, wspd: 0, wgst: null }))).toContain(': calm.');
+  it('says Calm for a calm report, and shows nothing before the report has loaded', () => {
+    expect(card(normalizeMetar({ ...METAR_FIXTURE[0], wdir: 0, wspd: 0, wgst: null }))).toContain(': Calm.');
     expect(card(null)).not.toContain('wind-observed');
+  });
+
+  it('shows nothing with no table to set it beside', () => {
+    const html = renderToStaticMarkup(
+      createElement(WindsAloftPanel, {
+        levels: [],
+        source: null,
+        validity: null,
+        unit: 'kt',
+        onUnitChange: () => {},
+        observed: normalizeMetar({ ...METAR_FIXTURE[0], wdir: 190, wspd: 12, wgst: 22 }),
+      } as never),
+    );
+    expect(html).not.toContain('wind-observed');
   });
 });

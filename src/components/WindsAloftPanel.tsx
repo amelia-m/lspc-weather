@@ -11,7 +11,7 @@ import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
-import { fmtClock, fmtTime, fmtZulu } from './format';
+import { describeWind, fmtClock, fmtTime, fmtZulu } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
  *  around 10,000 ft, so the default view stops there and keeps the low levels
@@ -23,17 +23,6 @@ const COLLAPSED_ALTITUDES_FT = new Set([0, 500, 1000, 3000, 5000, 7000, 10000]);
 
 /** "9,000 ft" — the form every altitude on this card takes. */
 const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
-
-/** The report's wind as the Surface wind card reads it: a calm report is
- *  "calm", a missing speed "wind not reported", a direction of null with a
- *  speed "variable". Never derived beyond the report's own figures. */
-function observedWind(c: CurrentConditions, unit: SpeedUnit): string {
-  const w = c.wind;
-  if (w.speedKt == null) return 'wind not reported';
-  if (w.speedKt === 0) return 'calm';
-  const dir = w.directionDeg == null ? 'variable' : `${compass(w.directionDeg)} ${w.directionDeg}°`;
-  return `${dir} ${fmtSpeed(w.speedKt, unit)}${w.gustKt != null ? `, gust ${fmtSpeed(w.gustKt, unit)}` : ''}`;
-}
 
 /** Winds aloft at jump altitudes — the skydiver-specific centerpiece. An arrow
  *  points the direction the wind is blowing TOWARD (drift direction).
@@ -265,10 +254,10 @@ export function WindsAloftPanel({
           the table's Surface row, so the line says the station, its
           distance from the DZ, the report's time, and that it is a report.
           The same report, with its limits, is the Surface wind card. */}
-      {observed && (
+      {observed && levels.length > 0 && (
         <p className="wind-observed">
           <strong>Observed</strong> at {observed.station} ({Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
-          {METAR_STATION_OFFSET.compass} of the DZ), {fmtClock(observed.observedAt)}: {observedWind(observed, unit)}.
+          {METAR_STATION_OFFSET.compass} of the DZ), {fmtClock(observed.observedAt)}: {describeWind(observed, unit)}.
           A report, not a row of the forecast above.
         </p>
       )}
