@@ -17,8 +17,33 @@ import {
   withOverrides,
 } from '../src/config/thresholds';
 import type { Thresholds } from '../src/config/thresholds';
-import { VISIBILITY_ROW, VISIBILITY_ROWS, VISIBILITY_RULE, visibilityGuidance } from '../src/config/thresholds';
+import {
+  HOP_AND_POP_FACT,
+  VISIBILITY_ROW,
+  VISIBILITY_ROWS,
+  VISIBILITY_RULE,
+  visibilityGuidance,
+  visibilityRowsUnder,
+  type VisibilityRow,
+} from '../src/config/thresholds';
 import { CHECKLIST } from '../src/config/citationsChecklist';
+
+/** What the flag says of each row setting, literally, so a test fails on a
+ *  wrong wording rather than compare `visibilityFigure` with itself: how it
+ *  holds the reading unedited, and what an edited figure stands in place of
+ *  (the 5 SM figure is both rows only when the profile says so). */
+const HOLDS: Record<VisibilityRow, string> = {
+  'below-10000-msl': 'holds the surface reading to the 3 SM row.',
+  'at-or-above-10000-msl': 'holds the surface reading to the 5 SM row.',
+  both:
+    'holds the surface reading to both rows: 5 SM, the row a full-altitude exit from this DZ is in, and 3 SM, the row a hop-and-pop is in, and says which the reading is under. ' +
+    'Hop-and-pop exits at LSPC are well below 10,000 ft MSL (the maintainer, 2026-10-31; confirmation asked on the citations page), so a hop-and-pop is in the 3 SM row throughout.',
+};
+const IN_PLACE_OF: Record<VisibilityRow, string> = {
+  'below-10000-msl': 'the 3 SM row it otherwise uses',
+  'at-or-above-10000-msl': 'the 5 SM row it otherwise uses',
+  both: 'both rows it otherwise holds the reading to (5 SM and 3 SM)',
+};
 import type { SpeedUnit } from '../src/domain/units';
 import type { HourlyPoint, WeatherSnapshot } from '../src/domain/types';
 import { normalizeMetar, normalizeNwsObservation } from '../src/domain/normalize';
@@ -697,18 +722,19 @@ describe('guidance matches the section as read', () => {
     expect(html).toMatch(/5 SM/);
     expect(html).toMatch(/1 mile horizontal/);
     expect(html).toContain(CITATIONS.far10517.url);
-    // And which row the visibility flag uses, whichever it is.
-    expect(html.replace(/<!-- -->/g, '')).toContain(
-      `The visibility flag holds the surface reading to the ${VISIBILITY_ROWS[VISIBILITY_ROW].sm} SM row.`,
-    );
+    // And how the visibility flag holds the reading, in the flag's words,
+    // for a card (not the citations page's wording of the fact).
+    expect(html.replace(/<!-- -->/g, '')).toContain(`The visibility flag ${HOLDS[VISIBILITY_ROW]} `);
+    expect(html).not.toContain('this page asks');
     // A figure edited in Settings is named as one, as the flag names it; and
     // with no thresholds given the card names no figure rather than guess.
     const row = VISIBILITY_ROWS[VISIBILITY_ROW].sm;
     const edited = withOverrides(DEFAULT_THRESHOLDS.licensed, { visibilityCautionSm: row + 1 });
     const editedHtml = markup(createElement(CeilingSkyPanel, { current, hourly: [], thresholds: edited }));
     expect(editedHtml.replace(/<!-- -->/g, '')).toContain(
-      `The visibility flag fires below ${row + 1} SM, as edited in Settings, in place of the ${row} SM row it otherwise uses.`,
+      `The visibility flag fires below ${row + 1} SM, as edited in Settings, in place of ${IN_PLACE_OF[VISIBILITY_ROW]}.`,
     );
+    expect(editedHtml).not.toContain('hop-and-pop');
     expect(markup(createElement(CeilingSkyPanel, { current, hourly: [] }))).not.toContain('The visibility flag');
   });
 });
@@ -864,7 +890,7 @@ describe('a limit edited in Settings is not presented as the published one', () 
       evaluateAdvisories(snapshot({ current: hazy }), t, now, 'kt').find((a) => a.id === 'visibility');
     expect(vis(withOverrides(DEFAULT_THRESHOLDS.student))).toBeUndefined();
     expect(vis(withOverrides(DEFAULT_THRESHOLDS.student, { visibilityCautionSm: row + 2 }))?.guidance).toContain(
-      `This flag fires below ${row + 2} SM, as edited in Settings, in place of the ${row} SM row it otherwise uses.`,
+      `This flag fires below ${row + 2} SM, as edited in Settings, in place of ${IN_PLACE_OF[VISIBILITY_ROW]}.`,
     );
   });
 
@@ -916,7 +942,9 @@ describe('a limit edited in Settings is not presented as the published one', () 
     const row = VISIBILITY_ROWS[VISIBILITY_ROW].sm;
     expect(settings(withOverrides(licensed, { visibilityCautionSm: row + 2 }), licensed)).toContain(`· published ${row}`);
     expect(settings(withOverrides(licensed), licensed)).not.toContain(`published ${row}`);
-    expect(settings(withOverrides(licensed), licensed)).toContain(`14 CFR 105.17’s ${row} SM row.`);
+    expect(settings(withOverrides(licensed), licensed)).toContain(
+      `14 CFR 105.17’s ${row} SM row${VISIBILITY_ROW === 'both' ? ', the higher of the two rows the flag holds the reading to' : ''}.`,
+    );
   });
 
   it('treats an override equal to the published value as unedited', () => {
@@ -962,9 +990,9 @@ describe('isEdited', () => {
  * #citations is one constant. These hold each row's flag whichever is in use,
  * built as a profile is (withOverrides records the published figure). */
 describe('the 105.17 row the visibility flag uses', () => {
-  const at = (rowSm: number, edited?: number) =>
+  const at = (row: VisibilityRow, edited?: number) =>
     withOverrides(
-      { ...DEFAULT_THRESHOLDS.student, visibilityCautionSm: rowSm },
+      { ...DEFAULT_THRESHOLDS.student, visibilityCautionSm: VISIBILITY_ROWS[row].sm, visibilityRow: row },
       edited == null ? {} : { visibilityCautionSm: edited },
     );
   const flag = (visib: number, t: Thresholds) =>
@@ -979,33 +1007,58 @@ describe('the 105.17 row the visibility flag uses', () => {
   });
 
   it('at the 3 SM row, flags below 3 SM only, names both rows, and says which it uses', () => {
-    expect(flag(4, at(3))).toBeUndefined();
-    const v = flag(2, at(3));
+    expect(flag(4, at('below-10000-msl'))).toBeUndefined();
+    const v = flag(2, at('below-10000-msl'));
     expect(v?.guidance).toMatch(/3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it/);
-    expect(v?.guidance).toContain('This flag holds the surface reading to the 3 SM row.');
+    expect(v?.guidance).toContain(`This flag ${HOLDS['below-10000-msl']}`);
+    expect(v?.value).toBe('2 SM');
   });
 
   it('at the 5 SM row, flags below 5 SM, says it holds the reading to that row, and where an exit enters it', () => {
-    expect(flag(5, at(5))).toBeUndefined();
-    const v = flag(4, at(5));
-    expect(v?.guidance).toContain('This flag holds the surface reading to the 5 SM row.');
+    expect(flag(5, at('at-or-above-10000-msl'))).toBeUndefined();
+    const v = flag(4, at('at-or-above-10000-msl'));
+    expect(v?.guidance).toContain(`This flag ${HOLDS['at-or-above-10000-msl']}`);
+    expect(v?.guidance).not.toContain('hop-and-pop');
+    expect(v?.value).toBe('4 SM');
     // 10,000 ft MSL less the DZ's 1,182 ft: derived, not written down.
     expect(v?.guidance).toContain('at or above 8,818 ft AGL is in the 5 SM row');
   });
 
-  it('on either row, an edited figure is named in place of the row, with no row claimed', () => {
-    for (const row of [3, 5]) {
-      const g = flag(row + 1.5, at(row, row + 2))?.guidance;
-      expect(g).toBe(
-        `${VISIBILITY_RULE} This flag fires below ${row + 2} SM, as edited in Settings, in place of the ${row} SM row it otherwise uses.`,
-      );
+  it('on both rows, flags below 5 SM, names each row’s jump and the DZ fact, and the value says which rows the reading is under', () => {
+    // The maintainer's answer to A8, 2026-10-31: the rows are MSL, a
+    // full-altitude exit from this DZ is in the 5 SM row, a hop-and-pop
+    // well under it. The value is a comparison of the reading with the two
+    // figures, the guidance the standing text.
+    expect(flag(5, at('both'))).toBeUndefined();
+    const between = flag(4, at('both'));
+    expect(between?.value).toBe('4 SM, under the 5 SM row, at or above the 3 SM row');
+    expect(between?.guidance).toBe(`${VISIBILITY_RULE} This flag ${HOLDS.both}`);
+    expect(HOLDS.both).toContain(HOP_AND_POP_FACT.sentence);
+    expect(flag(2, at('both'))?.value).toBe('2 SM, under both rows');
+    expect(flag(2.9, at('both'))?.value).toBe('2.9 SM, under both rows');
+    expect(flag(3, at('both'))?.value).toBe('3 SM, under the 5 SM row, at or above the 3 SM row');
+    // An edited figure names no row and says which rows nothing.
+    expect(flag(4, at('both', 7))?.value).toBe('4 SM');
+    expect(visibilityRowsUnder(at('both', 7), 2)).toBeNull();
+    // The figure the flag holds the reading to is the higher row's, and the
+    // rows' figures are the section's, literally.
+    expect(VISIBILITY_ROWS.both.sm).toBe(VISIBILITY_ROWS['at-or-above-10000-msl'].sm);
+    expect(VISIBILITY_ROWS.both.sm).toBe(5);
+  });
+
+  it('on any row, an edited figure is named in place of the row, with no row claimed', () => {
+    for (const row of Object.keys(VISIBILITY_ROWS) as VisibilityRow[]) {
+      const sm = VISIBILITY_ROWS[row].sm;
+      const g = flag(sm + 1.5, at(row, sm + 2))?.guidance;
+      expect(g).toBe(`${VISIBILITY_RULE} This flag fires below ${sm + 2} SM, as edited in Settings, in place of ${IN_PLACE_OF[row]}.`);
       expect(g).not.toContain('holds the surface reading');
+      expect(g).not.toContain('hop-and-pop');
     }
   });
 
   it('prints an edited figure as typed, so it never reads as the row it replaced', () => {
     // Rounded to a tenth, 3.04 read "fires below 3 SM" while a 3 SM report flagged.
-    expect(flag(3, at(3, 3.04))?.guidance).toContain(
+    expect(flag(3, at('below-10000-msl', 3.04))?.guidance).toContain(
       'This flag fires below 3.04 SM, as edited in Settings, in place of the 3 SM row it otherwise uses.',
     );
   });
@@ -1023,6 +1076,10 @@ describe('the 105.17 row the visibility flag uses', () => {
     expect(new Set(keys).size).toBe(keys.length);
     // The 3 SM row keeps the id the answers given before there were two rows are under.
     expect(VISIBILITY_ROWS['below-10000-msl'].answerKey).toBe('A8');
+    // The both-rows wording asks two things: the reading, and the DZ fact
+    // the 3 SM row's jump rests on, so an instructor can answer each.
+    expect(VISIBILITY_ROWS.both.asks).toHaveLength(2);
+    expect(VISIBILITY_ROWS.both.asks[1]).toContain(HOP_AND_POP_FACT.claim);
   });
 
   it('uses the row in use in both profiles and on #citations', () => {
@@ -1030,8 +1087,25 @@ describe('the 105.17 row the visibility flag uses', () => {
     expect(DEFAULT_THRESHOLDS.student.visibilityCautionSm).toBe(row.sm);
     expect(DEFAULT_THRESHOLDS.licensed.visibilityCautionSm).toBe(row.sm);
     const a8 = CHECKLIST.find((e) => e.id === 'A8')!;
-    expect(a8.claim).toBe(visibilityGuidance({ visibilityCautionSm: row.sm }));
-    expect(a8.value).toBe(`Flag fires below ${row.sm} SM`);
-    expect(a8.asks).toEqual([row.ask]);
+    // The flag's words, with the DZ fact's attribution worded for the page
+    // that asks the confirmation rather than pointing the reader to it.
+    const onPage = visibilityGuidance(DEFAULT_THRESHOLDS.student, { onCitationsPage: true });
+    expect(a8.claim).toBe(onPage);
+    expect(a8.claim).not.toContain('confirmation asked on the citations page');
+    if (VISIBILITY_ROW === 'both') {
+      expect(a8.claim).toContain('(the maintainer, 2026-10-31; this page asks for confirmation)');
+      expect(onPage).not.toBe(visibilityGuidance(DEFAULT_THRESHOLDS.student));
+    }
+    expect(a8.value).toBe(
+      VISIBILITY_ROW === 'both'
+        ? `Flag fires below ${row.sm} SM, and says which rows the reading is under`
+        : `Flag fires below ${row.sm} SM`,
+    );
+    expect(a8.asks).toEqual(row.asks);
+    expect(a8.asks.length).toBeGreaterThan(0);
+    // The other wordings are reported under their own figures.
+    expect(a8.otherWordings?.map((w) => w.answerKey).sort()).toEqual(
+      Object.values(VISIBILITY_ROWS).map((r) => r.answerKey).filter((k) => k !== row.answerKey).sort(),
+    );
   });
 });

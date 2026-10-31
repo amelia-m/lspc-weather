@@ -61,7 +61,7 @@ export function CeilingSkyPanel({
   /** The thresholds the flags are read against, for the sentence naming the
    *  figure the visibility flag fires at; without them the card names none
    *  rather than guess past a Settings edit. */
-  thresholds?: Pick<Thresholds, 'visibilityCautionSm' | 'published'>;
+  thresholds?: Pick<Thresholds, 'visibilityCautionSm' | 'published' | 'visibilityRow'>;
 }): JSX.Element {
   const [hours, setHours] = useState<number>(initialHours);
   const now = Date.now();
@@ -133,9 +133,10 @@ export function CeilingSkyPanel({
         // "require VFR flight conditions" under the same source line; the
         // section never mentions VFR (read 2026-09-23) — the pilot's VFR
         // minimums are 91.155, which this app does not cite. Both altitude
-        // rows are printed because an exit from this DZ is above 10,000 ft
-        // MSL, where the figures are the higher ones; then the one the flag
-        // fires at, as the flag says it (`visibilityFigure`).
+        // rows are printed because a full-altitude exit from this DZ is
+        // above 10,000 ft MSL, where the figures are the higher ones, and a
+        // hop-and-pop is not; then how the flag holds the reading to them,
+        // as the flag says it (`visibilityFigure`).
         <p className="muted small">
           {CATEGORY_LABEL[category]}: reduced ceiling/visibility. 14 CFR 105.17 bars parachute ops
           into or through cloud and sets flight visibility and distance from cloud: below 10,000 ft
