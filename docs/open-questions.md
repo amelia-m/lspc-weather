@@ -360,8 +360,8 @@ ways, so `minutely_15` and `current` add nothing over the hourly value
 here. On the 294 reported gusts the NWS ran +2.3 kt and Open-Meteo +4.3.
 Nothing on the dashboard changed. The maintainer, 2026-10-30: one season
 is a brief window; keep logging over seasons, times of day and kinds of
-weather. So the sampler runs on without an end date, every fifteen
-minutes, its records archived monthly by the daily summary workflow and
+weather. So the sampler runs on without an end date, every seventeen
+minutes (paced from one anchor per job, so the minute of the hour walks), its records archived monthly by the daily summary workflow and
 the `#wind-errors` page rebuilt from them weekly; a reading in another
 season is `scripts/surfaceWindSummary.ts` over every
 `data/parity/surfacewind-*` archive. What follows is the question as it
@@ -374,7 +374,7 @@ all 5 to 6 kt) settled how the sources are built and how often they change,
 and could not settle accuracy: see `docs/surface-wind-sources.md`. It needed
 weeks of reports across windy, gusty and calm conditions. A sampler
 (`.github/workflows/surface-wind-sample.yml`, every five minutes) ran to
-2026-10-30T02:00Z for that, and since then runs on at fifteen; its
+2026-10-30T02:00Z for that, and since then runs on at seventeen; its
 records are archived and summarised (`docs/surface-wind-sources.md`, "The
 first three weeks"). Also seen
 there: the NWS gridpoint is served from caches that keep a copy up to an
