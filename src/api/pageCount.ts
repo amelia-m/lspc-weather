@@ -1,16 +1,37 @@
-import { PAGE_COUNT_ENDPOINT } from '../config/pageCount';
-import { countSkipReason, countUrl, countedPath, type CountContext } from '../domain/pageCount';
+import { PAGE_COUNT_ENDPOINT, PAGE_COUNT_HOST } from '../config/pageCount';
+import { TOGGLE_HASH, countSkipReason, countUrl, countedPath, type CountContext } from '../domain/pageCount';
 
 // The first view of a visit carries the referrer; every later `#` page was
 // reached from inside the app (src/domain/pageCount.ts, `CountData`).
 let countedOnce = false;
 
+// GoatCounter's opt-out flag, the key and value count.js uses. The
+// dashboard shares amelia-m.github.io's storage, so the personal site and
+// the dashboard read the same flag.
+const OPT_OUT_KEY = 'skipgc';
+
 function optedOut(): boolean {
   try {
-    return localStorage.getItem('skipgc') === 't';
+    return localStorage.getItem(OPT_OUT_KEY) === 't';
   } catch {
     // Storage refused (some private modes): the opt-out cannot have been set.
     return false;
+  }
+}
+
+/** count.js's `#toggle-goatcounter`, for the dashboard's own URL: flip the
+ *  flag and say which way it went, in count.js's words. */
+function toggleOptOut(): void {
+  try {
+    if (optedOut()) {
+      localStorage.removeItem(OPT_OUT_KEY);
+      window.alert('GoatCounter tracking is now ENABLED in this browser.');
+    } else {
+      localStorage.setItem(OPT_OUT_KEY, 't');
+      window.alert(`GoatCounter tracking is now DISABLED in this browser until ${location.href} is loaded again.`);
+    }
+  } catch {
+    window.alert('GoatCounter tracking could not be changed: this browser refused site storage.');
   }
 }
 
@@ -26,7 +47,6 @@ function inFrame(): boolean {
 function context(): CountContext {
   return {
     hostname: location.hostname,
-    protocol: location.protocol,
     inFrame: inFrame(),
     visibility: document.visibilityState,
     webdriver: navigator.webdriver === true,
@@ -35,7 +55,7 @@ function context(): CountContext {
 }
 
 function send(route: string | null, endpoint: string): void {
-  if (countSkipReason(context()) != null) return;
+  if (countSkipReason(context(), PAGE_COUNT_HOST) != null) return;
   const url = countUrl(
     endpoint,
     {
@@ -57,12 +77,20 @@ function send(route: string | null, endpoint: string): void {
  * Count a view of the dashboard page `route` (null for the Jumpers tab).
  * A tab opened in the background is counted when it is first shown, as
  * count.js does, so a link opened and never looked at is not a view.
+ * Returns a function that drops a count still waiting for the tab to be
+ * shown, for an effect's cleanup: a page left before it was seen is not
+ * counted.
  */
-export function countPage(route: string | null, endpoint: string | null = PAGE_COUNT_ENDPOINT): void {
-  if (endpoint == null) return;
+export function countPage(route: string | null, endpoint: string | null = PAGE_COUNT_ENDPOINT): () => void {
+  if (endpoint == null) return () => {};
+  if (location.hash === TOGGLE_HASH) {
+    // The opt-out link itself is not a view.
+    toggleOptOut();
+    return () => {};
+  }
   if (document.visibilityState !== 'hidden') {
     send(route, endpoint);
-    return;
+    return () => {};
   }
   const onVisible = (): void => {
     if (document.visibilityState === 'hidden') return;
@@ -70,4 +98,5 @@ export function countPage(route: string | null, endpoint: string | null = PAGE_C
     send(route, endpoint);
   };
   document.addEventListener('visibilitychange', onVisible);
+  return () => document.removeEventListener('visibilitychange', onVisible);
 }

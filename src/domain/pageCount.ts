@@ -9,14 +9,13 @@
  * an integration of one's own, with stable query parameters, so the app
  * sends that request as an image instead. What count.js decides in the
  * browser is reproduced here, from its source read on 2026-10-31
- * (github.com/arp242/goatcounter, public/count.js), with one difference
+ * (github.com/arp242/goatcounter, public/count.js), with the differences
  * noted on `countSkipReason`.
  */
 
 /** What the browser says about the page at the moment of counting. */
 export interface CountContext {
   hostname: string;
-  protocol: string;
   /** The page is inside a frame or iframe. */
   inFrame: boolean;
   /** document.visibilityState, where the browser has it. */
@@ -27,36 +26,41 @@ export interface CountContext {
   optedOut: boolean;
 }
 
-export type CountSkipReason = 'prerender' | 'frame' | 'local' | 'file' | 'opted-out' | 'automated';
-
-// count.js's own list of local addresses: localhost, loopback and the
-// private IPv4 ranges. A dev server or a preview build is never counted.
-const LOCAL_HOST = /(localhost$|^127\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|^192\.168\.|^0\.0\.0\.0$)/;
+export type CountSkipReason = 'prerender' | 'frame' | 'other-host' | 'opted-out' | 'automated';
 
 /**
- * Why this view should not be counted, or null to count it. count.js's
- * filters in its order, then one of this app's own.
+ * Why this view should not be counted, or null to count it, on the site
+ * whose host is `siteHost`. count.js's filters in its order, with two
+ * differences.
+ *
+ * `other-host` stands where count.js has its list of local addresses and
+ * its file check. Counting only on the deployed site's host covers those
+ * (a dev server, a preview by any name or address, a file opened from
+ * disk) and also a fork deployed elsewhere, which would count into the
+ * maintainer's account under the same paths.
  *
  * `opted-out` is GoatCounter's own switch. Loading any amelia-m.github.io
  * page that runs count.js with `#toggle-goatcounter` sets `skipgc` in that
  * origin's storage, and the dashboard is served from the same origin, so a
  * browser opted out on the personal site is opted out here too.
  *
- * `automated` is the difference. count.js still sends a headless browser's
+ * `automated` is the other. count.js still sends a headless browser's
  * view, flagged as a bot for the server to discard; this sends nothing. The
  * live-site workflow loads every page at three widths every day under
  * Playwright, which sets navigator.webdriver, and those loads are not
  * readers.
  */
-export function countSkipReason(c: CountContext): CountSkipReason | null {
+export function countSkipReason(c: CountContext, siteHost: string): CountSkipReason | null {
   if (c.visibility === 'prerender') return 'prerender';
   if (c.inFrame) return 'frame';
-  if (LOCAL_HOST.test(c.hostname)) return 'local';
-  if (c.protocol === 'file:') return 'file';
+  if (c.hostname !== siteHost) return 'other-host';
   if (c.optedOut) return 'opted-out';
   if (c.webdriver) return 'automated';
   return null;
 }
+
+/** The hash that toggles GoatCounter's opt-out, as count.js reads it. */
+export const TOGGLE_HASH = '#toggle-goatcounter';
 
 /**
  * The path a view is counted under: the page's path, plus the `#` page

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import viteConfig from '../vite.config.ts?raw';
-import { PAGE_COUNT_ENDPOINT } from '../src/config/pageCount';
+import { PAGE_COUNT_ENDPOINT, PAGE_COUNT_HOST } from '../src/config/pageCount';
+import { connectSources } from '../src/config/tafRelay';
 import { countSkipReason, countUrl, countedPath, type CountContext } from '../src/domain/pageCount';
 
 // A reader on the deployed site: every filter clear.
 const reader: CountContext = {
   hostname: 'amelia-m.github.io',
-  protocol: 'https:',
   inFrame: false,
   visibility: 'visible',
   webdriver: false,
@@ -15,30 +15,28 @@ const reader: CountContext = {
 
 describe('countSkipReason', () => {
   it('counts a reader on the deployed site', () => {
-    expect(countSkipReason(reader)).toBeNull();
+    expect(countSkipReason(reader, PAGE_COUNT_HOST)).toBeNull();
   });
 
   it('skips a browser opted out with #toggle-goatcounter on the same origin', () => {
-    expect(countSkipReason({ ...reader, optedOut: true })).toBe('opted-out');
+    expect(countSkipReason({ ...reader, optedOut: true }, PAGE_COUNT_HOST)).toBe('opted-out');
   });
 
   it('skips automation, so the daily live-site check is not counted as readers', () => {
-    expect(countSkipReason({ ...reader, webdriver: true })).toBe('automated');
+    expect(countSkipReason({ ...reader, webdriver: true }, PAGE_COUNT_HOST)).toBe('automated');
   });
 
-  it("skips a dev server, a preview build and a private address, as count.js's list does", () => {
-    for (const hostname of ['localhost', '127.0.0.1', '10.0.0.5', '172.16.0.1', '172.31.9.9', '192.168.1.20', '0.0.0.0']) {
-      expect(countSkipReason({ ...reader, hostname }), hostname).toBe('local');
+  it('counts only on the deployed site: not a dev server, a preview by any name, a file or a fork', () => {
+    // A file opened from disk has an empty hostname.
+    for (const hostname of ['localhost', '127.0.0.1', '[::1]', 'mybox.local', '192.168.1.20', '', 'someone.github.io']) {
+      expect(countSkipReason({ ...reader, hostname }, PAGE_COUNT_HOST), hostname).toBe('other-host');
     }
-    // Just outside 172.16/12, and a public host that ends in a digit.
-    expect(countSkipReason({ ...reader, hostname: '172.32.0.1' })).toBeNull();
-    expect(countSkipReason({ ...reader, hostname: '8.8.8.8' })).toBeNull();
+    expect(PAGE_COUNT_HOST).toBe('amelia-m.github.io');
   });
 
-  it('skips a file opened from disk, a frame and a prerender', () => {
-    expect(countSkipReason({ ...reader, hostname: '', protocol: 'file:' })).toBe('file');
-    expect(countSkipReason({ ...reader, inFrame: true })).toBe('frame');
-    expect(countSkipReason({ ...reader, visibility: 'prerender' })).toBe('prerender');
+  it('skips a frame and a prerender', () => {
+    expect(countSkipReason({ ...reader, inFrame: true }, PAGE_COUNT_HOST)).toBe('frame');
+    expect(countSkipReason({ ...reader, visibility: 'prerender' }, PAGE_COUNT_HOST)).toBe('prerender');
   });
 });
 
@@ -92,7 +90,10 @@ describe('the policy and the endpoint', () => {
   });
 
   it('does not open connect-src or script-src to GoatCounter', () => {
-    expect(/connect-src[^"]*/.exec(viteConfig)?.[0] ?? '').not.toContain('goatcounter');
+    // connect-src is built from connectSources(), so test what it returns,
+    // and that the config builds connect-src from nothing else.
+    expect(connectSources().join(' ')).not.toContain('goatcounter');
+    expect(/`connect-src[^`]*`/.exec(viteConfig)?.[0]).toBe("`connect-src 'self' ${connectSources().join(' ')}`");
     expect(/script-src[^"]*/.exec(viteConfig)?.[0]).toBe("script-src 'self'");
   });
 });

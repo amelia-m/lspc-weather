@@ -31,38 +31,47 @@ with stable query parameters (www.goatcounter.com/help/pixel, read
 The parameters are GoatCounter's: `p` (path), `t` (title), `r` (referrer,
 first view of a visit only, since later `#` pages are reached from inside
 the app), `s` (screen width), `q` (the query string, where campaign tags
-such as `?utm_source=` arrive) and `rnd` (a cache buster).
+such as `?utm_source=` arrive) and `rnd` (a cache buster). GoatCounter
+records a campaign tag only when Campaign Parameters is switched on in the
+site's settings; the request carrying it is not enough.
 
 ## When it does not count
 
-The same filters as count.js, read from its source on 2026-10-31
-(github.com/arp242/goatcounter, `public/count.js`), plus one:
+count.js's filters, read from its source on 2026-10-31
+(github.com/arp242/goatcounter, `public/count.js`), with two differences:
 
-- a prerendered page, a page in a frame, a local or private address (so
-  `npm run dev` and a local preview are never counted) and a file opened
-  from disk;
+- a prerendered page and a page in a frame, as count.js;
+- any host but `amelia-m.github.io` (`PAGE_COUNT_HOST`). This stands in
+  for count.js's list of local addresses and its file check, which missed
+  IPv6 loopback and `.local` names, and it also keeps a fork of this
+  public repository, deployed to its own github.io, from counting into the
+  maintainer's account under the same paths. `npm run dev`, any preview and
+  a file opened from disk are never counted;
 - a browser opted out with GoatCounter's own switch. count.js sets
   `skipgc` to `t` in local storage when a page running it is opened with
   `#toggle-goatcounter`. Storage is per origin, and the dashboard shares
   amelia-m.github.io's, so a browser opted out on the personal site
   (`https://amelia-m.github.io/#toggle-goatcounter`) is opted out here
-  too. The dashboard does not run count.js, so opening the dashboard's own
-  URL with that hash does nothing; use the personal site's;
+  too. The dashboard's own URL with that hash toggles the same flag, with
+  count.js's messages, and is not itself counted;
 - a browser under automation (`navigator.webdriver`). count.js sends such
   a view flagged as a bot; this app sends nothing, so the live-site
   workflow's daily loads of every page at three widths are not counted.
 
-A background tab is counted when it is first shown, as count.js does.
+A background tab is counted when it is first shown, as count.js does; if
+its page changes first, the earlier page is dropped, not counted late.
 
 ## Checked
 
-2026-10-31, the production build with fixtures served locally under a
-non-local hostname in Playwright's Chromium, GoatCounter's endpoint
-intercepted: a reader's browser sent one request per page (Jumpers,
-`#citations`, `#pilots`), each carrying the query's `utm_source`, and the
-policy logged no violation; with `skipgc` set it sent none, and with
-`navigator.webdriver` left true it sent none. Not yet seen counted in the
-GoatCounter dashboard itself, which needs the deployed site.
+2026-10-31, the production build with fixtures served locally in
+Playwright's Chromium under the hostname amelia-m.github.io (mapped to the
+local server), GoatCounter's endpoint intercepted: a reader's browser sent
+one request per page (Jumpers, `#citations`, `#pilots`), each carrying the
+query's `utm_source`, and the policy logged no violation; with `skipgc`
+set it sent none, with `navigator.webdriver` left true it sent none, under
+any other hostname it sent none, and `#toggle-goatcounter` set the flag and
+sent none. Not yet seen counted in the GoatCounter dashboard itself, which
+needs the deployed site (docs/open-questions.md).
 
 ## Not counted
 

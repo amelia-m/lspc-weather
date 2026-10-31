@@ -155,6 +155,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
 | The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | two fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, and KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)) |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 | [FAA VFR sectional](https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59) | Sectional chart tiles (image embed, no API) |
+| [GoatCounter](https://www.goatcounter.com/) | page counts, on the deployed site only: one image request per page shown, carrying the page's path and title, the referrer, the screen width and the query string; no cookies, and nothing from browsers opted out or under automation ([docs/page-counts.md](docs/page-counts.md)) |
 | Computed locally | sunrise and sunset by NOAA's Solar Calculator method ([`src/domain/sun.ts`](src/domain/sun.ts)), density altitude by the NWS calculators' formulas |
 
 **What only the comparisons read**: the workflows, the scripts under
