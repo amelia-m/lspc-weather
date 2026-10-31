@@ -8,10 +8,11 @@
  * `cycle`, worked out by `chartSupplementCycle`, whose numbering is an
  * inference (see src/domain/chartSupplement.ts). FAA's search answers a
  * wrong edition with a 500, and the first edition that tells the two
- * candidate numberings apart takes effect 2026-10-29. This opens the link as
- * a pilot would that day and fails if Plattsmouth's entry is not there, so
- * the daily run raises the parity issue rather than the link breaking
- * unseen. The run is at 13:00Z, after the 0901Z edition change.
+ * candidate numberings apart took effect 2026-10-29, and the AIRAC count
+ * held that day (cycle 2611 answered 200 with the entry). This opens the
+ * link as a pilot would that day and fails if Plattsmouth's entry is not
+ * there, so the daily run raises the parity issue rather than the link
+ * breaking unseen. The run is at 13:00Z, after the 0901Z edition change.
  */
 import { describe, expect, it } from 'vitest';
 import { pilotLinks } from '../src/config/sources';
