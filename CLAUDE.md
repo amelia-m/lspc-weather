@@ -114,7 +114,12 @@ precisely because they were colour and text rather than flags.
   `METAR_STATION_OFFSET` and the report's time, a test pins it). The
   forecast reaches the Jumpers tab only through the Forecast flag and the
   hourly chart; Open-Meteo's 10 m wind is on the Winds aloft card's
-  Surface row and nowhere else.
+  Surface row and nowhere else (the maintainer, 2026-10-30: not beside
+  the observation). The other way round, yes: since 2026-10-31 the Winds
+  aloft card shows the same report under its table as its one measured
+  figure, labelled as a report with the station, distance and time
+  (`observedWind`, `observed` prop), so a reader compares the two where
+  the forecast is read.
   One bar with a legend left the marks unnamed: a reader could not tell
   the yellow tick was the gust or what the red and purple marks were. A bar
   and a status per limit, with a key, then said each thing twice. Now each

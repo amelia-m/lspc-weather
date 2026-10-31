@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { WindsAloftLevel, WindsAloftSource, WindsAloftValidity, WindsMethod } from '../domain/types';
+import type { CurrentConditions, WindsAloftLevel, WindsAloftSource, WindsAloftValidity, WindsMethod } from '../domain/types';
 import { compass, fmtSpeed, fmtTemp, type SpeedUnit, type TempUnit } from '../domain/units';
 import { windsAloftTop } from '../domain/windsAloft';
-import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
+import { METAR_STATION_OFFSET, SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/site';
 import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
 import { FallbackSources } from './common/FallbackSources';
 import { CITATIONS } from '../config/thresholds';
@@ -11,7 +11,7 @@ import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
-import { fmtTime, fmtZulu } from './format';
+import { fmtClock, fmtTime, fmtZulu } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
  *  around 10,000 ft, so the default view stops there and keeps the low levels
@@ -23,6 +23,17 @@ const COLLAPSED_ALTITUDES_FT = new Set([0, 500, 1000, 3000, 5000, 7000, 10000]);
 
 /** "9,000 ft" — the form every altitude on this card takes. */
 const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
+
+/** The report's wind as the Surface wind card reads it: a calm report is
+ *  "calm", a missing speed "wind not reported", a direction of null with a
+ *  speed "variable". Never derived beyond the report's own figures. */
+function observedWind(c: CurrentConditions, unit: SpeedUnit): string {
+  const w = c.wind;
+  if (w.speedKt == null) return 'wind not reported';
+  if (w.speedKt === 0) return 'calm';
+  const dir = w.directionDeg == null ? 'variable' : `${compass(w.directionDeg)} ${w.directionDeg}°`;
+  return `${dir} ${fmtSpeed(w.speedKt, unit)}${w.gustKt != null ? `, gust ${fmtSpeed(w.gustKt, unit)}` : ''}`;
+}
 
 /** Winds aloft at jump altitudes — the skydiver-specific centerpiece. An arrow
  *  points the direction the wind is blowing TOWARD (drift direction).
@@ -44,6 +55,7 @@ export function WindsAloftPanel({
   onMethodChange,
   schulzeAvailable = false,
   schulzeGroundFtMsl = null,
+  observed = null,
 }: {
   levels: WindsAloftLevel[];
   source: WindsAloftSource | null | undefined;
@@ -70,6 +82,10 @@ export function WindsAloftPanel({
   /** The ground Mark Schulze's altitudes count from, ft MSL (useWindsHour);
    *  null where it is not known. */
   schulzeGroundFtMsl?: number | null;
+  /** KPMV's latest report, shown under the table as the one measured
+   *  figure beside the forecast (the maintainer, 2026-10-30); null until
+   *  it has loaded, or in a test that has none. */
+  observed?: CurrentConditions | null;
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false);
   // The table on screen is his way only when asked for AND this hour has it;
@@ -243,6 +259,19 @@ export function WindsAloftPanel({
           </tbody>
         </table>
       )}
+      {/* The measurement beside the forecast (the maintainer, 2026-10-30:
+          put KPMV's observation where the forecast is read). It is the one
+          measured figure on this card, from another place and time than
+          the table's Surface row, so the line says the station, its
+          distance from the DZ, the report's time, and that it is a report.
+          The same report, with its limits, is the Surface wind card. */}
+      {observed && (
+        <p className="wind-observed">
+          <strong>Observed</strong> at {observed.station} ({Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
+          {METAR_STATION_OFFSET.compass} of the DZ), {fmtClock(observed.observedAt)}: {observedWind(observed, unit)}.
+          A report, not a row of the forecast above.
+        </p>
+      )}
       {/* An observed fact about this report, in words: the rows are absent
           because no sample covered them (see `windsAloftTop`), not folded away
           by the collapse. Both figures are derived, never typed in. */}
@@ -305,8 +334,8 @@ export function WindsAloftPanel({
               <>
                 {' '}
                 {schulzeView
-                  ? 'In this view the Surface row is built his way, not the model’s 10\u00a0m wind; the observed wind is on the Surface wind card.'
-                  : 'The Surface row is the model’s 10\u00a0m wind; the observed wind is on the Surface wind card.'}
+                  ? 'In this view the Surface row is built his way, not the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.'
+                  : 'The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.'}
               </>
             )}{' '}
             Against Mark Schulze&rsquo;s tool: same data
