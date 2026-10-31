@@ -42,10 +42,29 @@ the pages. Not in it until now:
   calls ... a request for 2 weeks of data with 15 weather variables will
   be calculated as 1.5 API calls". The winds-aloft request asks 96 hourly
   variables for two days, so by that rule it is about 9.6 calls, and one
-  reader is about 1,500 calls a day, not 290; whether the free endpoint
-  counts this way is not stated. Raised in docs/open-questions.md,
-  "Open-Meteo's call counting". The repository's workflows stay under
-  400 a day either way.
+  reader is about 1,500 calls a day, not 290. **The free endpoint does
+  count this way**, read in Open-Meteo's own server source the same day
+  (github.com/open-meteo/open-meteo, commit 2060d80 of 2026-10-30,
+  cloned from here): `withFreeApiRateLimiter`
+  (`Sources/App/Helper/Vapor/ApiKeyManager.swift`) charges each free
+  response its `calculateQueryWeight()`
+  (`Sources/App/Helper/Writer/ForecastApiResult.swift`), which is
+  `max(variables / 10, variables / 10 × days / 14)` per location, never
+  under 1, against the limiter's 600 a minute, 5,000 an hour and 10,000 a
+  day per IPv4 address (`RateLimiter.swift`; the defaults, overridable by
+  environment); an error charges 1. The weighted charge is older than
+  the 400 commits of history fetched (to 2025-09-26). Since a change of
+  2026-10-26 the server also answers every free request with
+  `X-RateLimit-Cost` and `X-RateLimit-Remaining` headers, but the deployed
+  API did not send them on 2026-10-31 at 04:35Z (the app's two requests
+  made from here answered with Date, Content-Type, Transfer-Encoding and
+  Connection only), so the cost cannot yet be read off a response. By the
+  formula the winds request costs 9.6 and the outlook 1 (seven daily
+  variables, rounded up to the minimum), 10.6 a refresh. The day count
+  changes nothing below fourteen days, so `forecast_days=2` is free; only
+  the variable count and the refresh rate move it. Raised in
+  docs/open-questions.md, "Open-Meteo's call counting". The repository's
+  workflows stay under 400 a day either way.
 - **"Monthly limits are not enforced"** until Open-Meteo's usage portal
   exists (the pricing page).
 - **The README's fair-use line:** "We do not restrict access, but ask for

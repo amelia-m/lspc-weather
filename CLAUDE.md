@@ -534,6 +534,12 @@ is kept. `.github/workflows/cloud-cover-fetch.yml`, started by hand, runs
 artifact; it was added when the sandbox was refused again at 01:10Z on
 2026-10-11, an hour after the limit reset. The dashboard is not affected:
 each reader's browser calls Open-Meteo from its own address.
+The free API charges a request its weight, variables over ten (times
+days over fourteen above fourteen days), read in its server source on
+2026-10-31 (docs/open-meteo-terms.md, "Read again 2026-10-31"): the
+app's winds request is 9.6 calls, so the sandbox's 10,000 a day is about
+a thousand of them, and a day's quota is not a thing to spend on a test
+of the limit itself.
 
 ## Conventions
 
