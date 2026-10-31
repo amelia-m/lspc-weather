@@ -54,13 +54,25 @@ touch "$out"
 # The first tick at or after this slice's start on the anchor's grid, then
 # every `every` seconds on that grid: a slow sample shortens the wait after
 # it instead of pushing every later sample back, and a slice boundary adds
-# no sample of its own.
-k=$(( (start - anchor + every - 1) / every ))
+# no sample of its own. A tick the slice started a little after (the
+# workflow writes the anchor a second or two before the first slice) still
+# counts, so a job's first sample is at once, not a cadence later.
+grace=120
+k=$(( (start - anchor + every - 1 - grace) / every ))
+[ "$k" -lt 0 ] && k=0
 while :; do
   next=$((anchor + k * every))
-  [ "$next" -ge "$stop" ] && break
   now=$(date -u +%s)
+  if [ "$next" -ge "$stop" ]; then
+    # No tick left in this slice: hold it to its full length, so the next
+    # slice carries on the same grid with no gap between them.
+    [ "$stop" -gt "$now" ] && sleep $((stop - now))
+    break
+  fi
   [ "$next" -gt "$now" ] && sleep $((next - now))
+  # A sample that ran long (Open-Meteo timeouts) can carry the slice past
+  # its end; the slice ends there rather than taking one more.
+  [ "$(date -u +%s)" -ge "$stop" ] && break
   echo "== sample at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   SURFACE_WIND_SAMPLE=1 npx vitest run --config vitest.live.config.ts scripts/surfaceWindCompare.live.ts 2>&1 \
     | tee sample.log | grep -a -E 'METAR|NWS gridpoint|Open-Meteo|error' || true

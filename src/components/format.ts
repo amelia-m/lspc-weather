@@ -1,10 +1,32 @@
 import { SITE } from '../config/site';
+import type { CurrentConditions } from '../domain/types';
+import { compass, fmtSpeed, type SpeedUnit } from '../domain/units';
 import { shortHour } from '../domain/localClock';
 import { round } from '../domain/units';
 
 /** "10pm": the hour alone, as the hourly chart's axis and the precip
  *  card's blocks print it, where "10:00 PM" would wrap on a phone. */
 export const fmtShortHour = (ms: number): string => shortHour(ms, SITE.timeZone);
+
+/** A report's surface wind in words, one wording for every card that prints
+ *  it (Current conditions, Winds aloft): "SSW (200°) 12 kt, gusting 22 kt",
+ *  "Calm", "— (not reported)". A direction of null is "variable" only when
+ *  the report says VRB; a direction the feed dropped (IEM's drct missing,
+ *  NWS's failing QC) is "direction not reported", since a one-word label
+ *  asserts as much as a sentence and the report did not say variable. */
+export function describeWind(c: CurrentConditions, unit: SpeedUnit): string {
+  const { directionDeg, speedKt, gustKt } = c.wind;
+  if (speedKt == null) return '— (not reported)';
+  if (speedKt === 0) return 'Calm';
+  const dir =
+    directionDeg != null
+      ? `${compass(directionDeg)} (${directionDeg}°)`
+      : /\bVRB\d/.test(c.raw)
+        ? 'variable'
+        : 'direction not reported';
+  const g = gustKt != null ? `, gusting ${fmtSpeed(gustKt, unit)}` : '';
+  return `${dir} ${fmtSpeed(speedKt, unit)}${g}`;
+}
 
 /** "Fri": the weekday alone, at the drop zone, for the hourly chart's axis
  *  when it spans days. */
