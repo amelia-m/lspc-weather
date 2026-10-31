@@ -1065,8 +1065,8 @@ past the page's edge, which is #249 reproduced; with the weekday freed
 (b9482b0) 280 and 303, the page at 320 in both, but the row still past
 its box in DejaVu; with "local" freed as well, 280 in both fonts. So the
 first fix stopped the page overflow and the second makes the row fit its
-box in either font; only the clock time is held together now. **Waiting
-on the maintainer:** close #249 (the sandbox cannot close issues).
+box in either font; only the clock time is held together now. The
+maintainer closed #249 on 2026-10-31. Nothing waits here.
 
 ## Issue #147: a timeout, not a disagreement
 
