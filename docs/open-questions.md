@@ -180,7 +180,7 @@ hours, against 149 reported). Open-Meteo has no ceiling figure here; its
 low band marks a ceiling of 3,000 ft or lower on 92 to 93% of those hours
 without placing it. Whether the card should say so is open.
 
-## Open-Meteo's call counting: the winds request may count as ten
+## Open-Meteo's call counting: the winds request counts as 9.6 calls
 
 Found by the 2026-10-31 re-reading of Open-Meteo's pages
 (docs/open-meteo-terms.md, "Read again 2026-10-31"). The pricing page's
@@ -200,6 +200,31 @@ is a call. Whether the free endpoint counts this way is not stated: the
 FAQ sits with the paid plans, and the terms page says only "10,000 API
 calls per day". Not changed.
 
+**Settled the same day, from the source.** The maintainer proposed a test
+for the following Tuesday or Wednesday, exhausting the limit to see, with
+a warning on the site in case it hit readers. Neither is needed. The free
+API's server is open source, and its limiter charges every free response
+the FAQ's weight (docs/open-meteo-terms.md, "Read again 2026-10-31", with
+the files and the formula): 9.6 for the winds request, 1 for the outlook.
+And the limit is per address, each reader's own: a test from the sandbox
+or a runner could never reach a reader, and the one way a test could is to
+run it on the DZ's own network. So no test, and no warning. What a test
+would have cost: the sandbox's shared address refused for the rest of the
+day, for every session on it (CLAUDE.md), and a deliberate overrun against
+a service whose README asks for fair use and reserves the right to block
+"applications", which could reach readers where the limit itself cannot.
+
+What the exposure is, now that the count is certain: 10.6 calls a
+refresh, 144 refreshes a day for a tab left open and visible all day
+(`usePolling` stops the timer while the tab is hidden and fetches once
+when it is shown again), about 1,500 a day. A phone looked at for ten
+minutes costs 11 or 21. So seven jumpers on the DZ's Wi-Fi for an
+afternoon are nowhere near 10,000; seven displays left showing the site
+all day behind one address would cross it, and the winds card would fall
+back to NOAA's FD winds until midnight UTC. The maintainer's call whether
+that case is worth a lever (below); the cheapest is the seven extra
+pressure levels, since the day count is free.
+
 Read again the same day, at the maintainer's question: every one of the
 96 variables is consumed. The temperatures are the table's temperature
 column (`WindsAloftPanel`, and `interpolateWindsAloft` interpolates them
@@ -215,10 +240,9 @@ within minutes of its reaching Open-Meteo's servers between :20 and :59
 (docs/run-split.md): at fifteen minutes about 1,000 calls a reader a day,
 at thirty about 500. If the limit were met, the winds card falls back to
 NOAA's FD winds and the outlook card to its error state until the limit
-resets at midnight UTC; nothing crashes. Whether the free endpoint counts
-this way at all is a question for Open-Meteo (its README asks to be
-contacted above 10,000 requests a day), and the maintainer's to ask, as
-the users-list pull request is.
+resets at midnight UTC; nothing crashes. The second forecast day turns
+out to cost nothing (the weight scales with days only above fourteen),
+so that lever is gone; the other two stand.
 
 ## To do, eventually: add this app to Open-Meteo's list of users
 
