@@ -627,6 +627,8 @@ since 2026-10-21; the NBM row the same way since 2026-10-27, NOAA's bucket
 failing behind the relay a note, anything else on the row a fault), the
 radar image not drawn, the parity summary or the
 ceiling page's data not loaded.
+Its loads are not counted as page views: the app's GoatCounter count
+skips any browser under automation (docs/page-counts.md).
 Another host's failed request and console errors are printed as notes,
 since the app retries them. A page failing its first load is loaded once
 more before it counts, and a failure on `main` opens one issue labelled

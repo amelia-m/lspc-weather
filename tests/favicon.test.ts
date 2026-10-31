@@ -83,8 +83,12 @@ describe('the site icon', async () => {
   });
 
   it('is same-origin under both policies, which allow images from self and no wider than before', () => {
-    // The app's policy is injected at build time from vite.config.ts.
-    expect(imgSrc(viteConfig)).toBe("'self' data: https://radar.weather.gov https://tiles.arcgis.com");
+    // The app's policy is injected at build time from vite.config.ts. The
+    // GoatCounter URL is page counting's (tests/pageCount.test.ts), a single
+    // path rather than a host.
+    expect(imgSrc(viteConfig)).toBe(
+      "'self' data: https://radar.weather.gov https://tiles.arcgis.com https://amelia-m.goatcounter.com/count",
+    );
     expect(imgSrc(ceilingPage)).toBe("'self' data:");
     const svg = publicFile(servedAt(iconLink(appPage)?.href ?? '', '')) ?? '';
     // Nothing for the icon to fetch: the only URL in it is the SVG namespace.
