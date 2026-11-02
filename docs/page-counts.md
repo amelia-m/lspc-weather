@@ -1,14 +1,21 @@
 # Page counts
 
 Since 2026-10-31 the dashboard counts page views with GoatCounter, on the
-maintainer's `amelia-m` account, the same one her personal site at
-amelia-m.github.io counts to. Its dashboard is
-<https://amelia-m.goatcounter.com> (her login). The dashboard's views show
-there under paths starting `/lspc-weather/`: the Jumpers tab as
+maintainer's account. Since 2026-11-02 they go to a site of their own
+there, code `lspc-weather`, whose dashboard is
+<https://lspc-weather.goatcounter.com> (her login): the maintainer's
+call that day, so the dashboard's views and her personal site's, which
+the same account counts under `amelia-m`, never mix in one dashboard.
+(For the two days before, they went to the `amelia-m` site, under paths
+starting `/lspc-weather/`, where that site's own paths start `/`.) The
+views show under paths starting `/lspc-weather/`: the Jumpers tab as
 `/lspc-weather/`, the other pages as `/lspc-weather/#pilots`,
 `/lspc-weather/#citations`, `/lspc-weather/#parity` and
 `/lspc-weather/#wind-errors`. GoatCounter sets no cookies and keeps no
-personal data.
+personal data. The site has to exist on the account for the counts to
+land; what GoatCounter answers a request to a site code it does not know
+was not read (its hosts are not on the sandbox's allowlist), so the one
+check is the dashboard itself after the deploy.
 
 ## How it is sent
 
@@ -77,6 +84,10 @@ set it sent none, with `navigator.webdriver` left true it sent none, under
 any other hostname it sent none, and `#toggle-goatcounter` set the flag and
 sent none. Not yet seen counted in the GoatCounter dashboard itself, which
 needs the deployed site (docs/open-questions.md).
+
+2026-11-02, the same check with the new site code: the three pages sent
+one request each to `https://lspc-weather.goatcounter.com/count`, with the
+page's path in `p`, and the policy logged no violation.
 
 ## Not counted
 

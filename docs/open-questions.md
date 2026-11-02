@@ -77,15 +77,27 @@ with any of the three (checked by flipping it, 2026-10-31). No threshold
 is the app's: both figures are the section's, and the fact is the DZ's,
 said so.
 
-## Page counts: one thing for the maintainer (2026-10-31)
+## Page counts: one thing for the maintainer (2026-10-31, moved 2026-11-02)
 
-Counting went in on 2026-10-31 (docs/page-counts.md, merged as #245). One
-thing only the maintainer can see:
+Counting went in on 2026-10-31 (docs/page-counts.md, merged as #245), to
+the `amelia-m` GoatCounter site, where the maintainer's personal site
+counts too; her dashboard for the week to 2026-10-31 showed that site's
+`/` alone. On 2026-11-02 she asked for the two to be told apart, and
+chose a site of its own: "add goatcounter as lspc-weather". Done that day:
+the endpoint is `https://lspc-weather.goatcounter.com/count`, the policy's
+`img-src` names it, and the docs follow. Two things only the maintainer
+can see or do:
 
-- After the first deploy, a view of the dashboard showing in the
-  GoatCounter dashboard under `/lspc-weather/`, and a `#` page under
-  `/lspc-weather/#pilots` or the like. The browser check stopped at the
-  request; nothing from here can read her dashboard.
+- The site code `lspc-weather` has to exist on her GoatCounter account
+  (added where the account lists its sites, under its settings, as the
+  UI is remembered; not read from here). What a request to a code
+  GoatCounter does not know is answered with was not read either, and
+  nothing from here can tell whether the site exists (gc.zgo.at and
+  goatcounter.com are not on the sandbox's allowlist, 2026-11-02).
+- After the deploy, a view of the dashboard showing in
+  <https://lspc-weather.goatcounter.com> under `/lspc-weather/`, and a `#`
+  page under `/lspc-weather/#pilots` or the like. The browser check stops
+  at the request.
 
 ## Watch: a change document for the 2026 SIM
 

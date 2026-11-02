@@ -21,7 +21,7 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://radar.weather.gov https://tiles.arcgis.com https://amelia-m.goatcounter.com/count",
+  "img-src 'self' data: https://radar.weather.gov https://tiles.arcgis.com https://lspc-weather.goatcounter.com/count",
   `connect-src 'self' ${connectSources().join(' ')}`,
   "base-uri 'self'",
   "form-action 'none'",
