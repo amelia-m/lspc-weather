@@ -32,8 +32,13 @@ The parameters are GoatCounter's: `p` (path), `t` (title), `r` (referrer,
 first view of a visit only, since later `#` pages are reached from inside
 the app), `s` (screen width), `q` (the query string, where campaign tags
 such as `?utm_source=` arrive) and `rnd` (a cache buster). GoatCounter
-records a campaign tag only when Campaign Parameters is switched on in the
-site's settings; the request carrying it is not enough.
+reads the tags out of `q` itself, with no setting to switch on: the source
+from `utm_source`, `ref`, `src` or `source`, the campaign from
+`utm_campaign` or `campaign` (`hit.go`, read in its source on 2026-10-31).
+Its one related control is the Referrer box under data collection in the
+site's settings, "Referer header and campaign parameters", which is on by
+default. An earlier version of this doc said a Campaign Parameters setting
+had to be on; GoatCounter has none.
 
 ## When it does not count
 
