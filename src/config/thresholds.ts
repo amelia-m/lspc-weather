@@ -120,9 +120,56 @@ export const FAR_91155_ROWS =
  *  it is: under MVFR these two are the flag's only links, and 105.17's is
  *  on the visibility flag and the Ceiling & sky card. Under IFR and LIFR
  *  the comparison (`flightCategoryComparisonText`) follows it, naming
- *  105.17 and BSR 2-1 I by number with their links (`furtherCitations`). */
+ *  105.17 and BSR 2-1 I by number with their links (the flag's
+ *  `citations`). */
 export const FLIGHT_CATEGORY_GUIDANCE =
   'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, the rules to check are the pilot’s basic VFR weather minimums, 14 CFR 91.155 (by airspace class and altitude), and the flight-visibility and cloud-clearance rule for parachute operations that the Ceiling & sky card cites; that call belongs to the pilot in command.';
+
+/** BSR 2-1 I's minimum container opening altitudes, ft AGL, as read at
+ *  uspa.org on 2026-10-08 ("Tandem jumps: 5,000 feet AGL; All students and
+ *  A-license holders: 3,000 feet AGL; B-license holders: 2,500 feet AGL;
+ *  C- and D-license holders: 2,500 feet AGL [S] (waiverable to no lower
+ *  than 2,000 feet AGL)"). One table, so the citation's label, the drift
+ *  card's note and Deploy default (`openingMinimum`), its lowest Deploy
+ *  option, #citations A2 and the IFR/LIFR flag's comparison are all its
+ *  figures: the 2,000 ft floor was once written in four places, and a
+ *  correction to one would have left the others. The daily SIM check
+ *  catches a change to 2-1 I's text; this is the one place to carry it. */
+export const OPENING_ALTITUDES_FT_AGL = {
+  tandem: 5_000,
+  students: 3_000,
+  A: 3_000,
+  B: 2_500,
+  C: 2_500,
+  D: 2_500,
+} as const;
+
+/** The floor an S&TA may waive the C- and D-licence minimum to. Not a
+ *  minimum of its own: 2-2 C describes the waiver as "from 2,500 feet down
+ *  to 2,000 feet". */
+export const OPENING_WAIVER_FLOOR_FT_AGL = 2_000;
+
+/** The lowest altitude 2-1 I lets anyone open at, derived: the IFR and LIFR
+ *  flag's comparison holds a ceiling to it (under a ceiling below this,
+ *  every canopy opens above the layer), and the drift card's Deploy box
+ *  goes no lower. */
+export const LOWEST_OPENING_ALTITUDE_FT_AGL = Math.min(...Object.values(OPENING_ALTITUDES_FT_AGL), OPENING_WAIVER_FLOOR_FT_AGL);
+
+const ftAgl = (n: number): string => n.toLocaleString('en-US');
+
+/** The table in a sentence, in the pieces the drift card sets apart (the
+ *  students' figure in bold, "S&TA" linked to the glossary), so the card,
+ *  the citation's label and A2's claim are one wording: `lead`, then
+ *  `rest`, then `sta`, then `tail`. */
+export const OPENING_ALTITUDES_WORDING = {
+  lead: `students & A-license ${ftAgl(OPENING_ALTITUDES_FT_AGL.students)} ft AGL`,
+  rest: `, B-license ${ftAgl(OPENING_ALTITUDES_FT_AGL.B)} ft, C/D ${ftAgl(OPENING_ALTITUDES_FT_AGL.C)} ft (waiverable by an `,
+  sta: 'S&TA',
+  tail: ` to no lower than ${ftAgl(OPENING_WAIVER_FLOOR_FT_AGL)} ft), tandem ${ftAgl(OPENING_ALTITUDES_FT_AGL.tandem)} ft`,
+} as const;
+
+/** The sentence whole, for the citation's label and A2's claim. */
+export const OPENING_ALTITUDES_TEXT = Object.values(OPENING_ALTITUDES_WORDING).join('');
 
 export const CITATIONS = {
   /** BSR maximum ground winds for solo students. Section 2-1 is the Basic
@@ -365,19 +412,17 @@ export const CITATIONS = {
     note: SIM_READ_NOTE,
   },
   /** BSR minimum container-opening altitudes — same Section 2-1 as the wind
-   *  limits. Printed on the drift card; `openingMinimum`, the card's default
-   *  deploy altitude (not a floor: the dropdown goes lower), holds its
-   *  student and license figures, re-read on 2026-10-08.
-   *
-   *  2-1 I reads: tandem 5,000 ft AGL; all students and A-license 3,000 ft;
-   *  B-license 2,500 ft; C- and D-license 2,500 ft [S], waiverable to no lower
-   *  than 2,000 ft. This app previously printed a flat 2,000 ft for C/D, which
-   *  is the waiver floor rather than the BSR minimum — 2-2 C confirms the
-   *  direction, describing an S&TA waiving the deployment altitude "from 2,500
-   *  feet down to 2,000 feet". */
+   *  limits; the figures are `OPENING_ALTITUDES_FT_AGL`, re-read on
+   *  2026-10-08. Printed on the drift card, whose Deploy box opens on the
+   *  profile's (`openingMinimum`; not a floor: the dropdown goes lower),
+   *  and held against the ceiling by the IFR/LIFR flag's comparison. This
+   *  app previously printed a flat 2,000 ft for C/D, which is the waiver
+   *  floor rather than the BSR minimum — 2-2 C confirms the direction,
+   *  describing an S&TA waiving the deployment altitude "from 2,500 feet
+   *  down to 2,000 feet". */
   uspaOpeningAltitude: {
     source: 'USPA SIM, Section 2-1 (BSR)',
-    ref: 'BSR 2-1 I — minimum container opening altitudes: tandem 5,000 ft AGL; students & A 3,000 ft; B 2,500 ft; C/D 2,500 ft, waiverable to no lower than 2,000 ft',
+    ref: `BSR 2-1 I — minimum container opening altitudes: ${OPENING_ALTITUDES_TEXT}`,
     url: simUrl('2-1', '1I'),
     note: SIM_READ_NOTE,
   },
@@ -712,17 +757,11 @@ const HIGH_ROW_SM = 5;
 
 /** Where an exit from this DZ enters the 5 SM row, ft AGL: 10,000 ft MSL
  *  less the DZ's elevation, derived rather than written down. */
-const EXIT_ROW_FROM_FT_AGL = (10_000 - SITE.dz.elevationFt).toLocaleString('en-US');
+const EXIT_ROW_FROM_FT_AGL = ftAgl(10_000 - SITE.dz.elevationFt);
 
 /** What 105.17 says, the same whichever row the flag uses; the flag then
  *  says which (`visibilityGuidance`). */
 export const VISIBILITY_RULE = `14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it; an exit from this DZ at or above ${EXIT_ROW_FROM_FT_AGL} ft AGL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.`;
-
-/** The lowest minimum container opening altitude in BSR 2-1 I, ft AGL: the
- *  C- and D-licence 2,500 ft waived to its floor (`uspaOpeningAltitude`,
- *  read 2026-10-08). The IFR and LIFR flag's comparison holds the ceiling
- *  to it: under a ceiling below this, every canopy opens above the layer. */
-export const LOWEST_OPENING_ALTITUDE_FT_AGL = 2_000;
 
 /** What the flight-category flag adds under IFR and LIFR, in the report's
  *  figures: the maintainer's call of 2026-11-03 ("make the flag print the
@@ -755,7 +794,7 @@ export function flightCategoryComparisonText(p: {
   }
   if (p.ceiling) {
     parts.push(
-      `${p.ceiling} is under ${LOWEST_OPENING_ALTITUDE_FT_AGL.toLocaleString('en-US')} ft AGL, the lowest minimum container opening altitude in BSR 2-1 I, so every canopy opens above it; 14 CFR 105.17 bars a parachute operation into or through a cloud and, in its rows below 10,000 ft MSL, requires 500 ft below any cloud.` +
+      `${p.ceiling} is under ${ftAgl(LOWEST_OPENING_ALTITUDE_FT_AGL)} ft AGL, the lowest minimum container opening altitude in BSR 2-1 I, so every canopy opens above it; 14 CFR 105.17 bars a parachute operation into or through a cloud and, in its rows below 10,000 ft MSL, requires 500 ft below any cloud.` +
         (p.broken
           ? ' A broken ceiling has gaps; 105.17’s 2,000 ft horizontal distance holds in them, and the report does not give their size.'
           : ''),
@@ -1067,8 +1106,8 @@ export function toLicense(raw: string | null): License {
  *  says these are minimums, not targets. Tandem's 5,000 ft is not here: no
  *  profile is a tandem. */
 export function openingMinimum(license: License | null): { ft: number; who: string } {
-  if (license === null) return { ft: 3000, who: 'students' };
-  return { ft: license === 'A' ? 3000 : 2500, who: `${license}-license holders` };
+  if (license === null) return { ft: OPENING_ALTITUDES_FT_AGL.students, who: 'students' };
+  return { ft: OPENING_ALTITUDES_FT_AGL[license], who: `${license}-license holders` };
 }
 
 /** Human label for a profile id, used in the UI. */

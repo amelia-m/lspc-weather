@@ -144,8 +144,7 @@ const flags: Advisory[] = [
     metric: 'Surface wind',
     value: '20 kt',
     guidance: DEFAULT_THRESHOLDS.student.windGuidance,
-    citation: CITATIONS.uspaStudentWinds,
-    secondaryCitation: CITATIONS.uspaWaivers,
+    citations: [CITATIONS.uspaStudentWinds, CITATIONS.uspaWaivers],
   },
   {
     id: 'other',
@@ -153,7 +152,7 @@ const flags: Advisory[] = [
     metric: 'Other',
     value: 'n/a',
     guidance: 'A second flag that names the S&TA and the BSR again.',
-    citation: CITATIONS.uspaWeather,
+    citations: [CITATIONS.uspaWeather],
   },
 ];
 const r = (el: Parameters<typeof renderToStaticMarkup>[0]): string => renderToStaticMarkup(el);

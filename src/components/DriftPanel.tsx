@@ -4,7 +4,7 @@ import { compass, round } from '../domain/units';
 import { deployShown, estimateDrift, type DriftLeg } from '../domain/spot';
 import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
 import { FallbackSources } from './common/FallbackSources';
-import { CITATIONS, openingMinimum, type License } from '../config/thresholds';
+import { CITATIONS, LOWEST_OPENING_ALTITUDE_FT_AGL, OPENING_ALTITUDES_WORDING, openingMinimum, type License } from '../config/thresholds';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
@@ -23,10 +23,14 @@ const range = (lo: number, hi: number, step: number): number[] =>
 // says so rather than shrinking the selector — the exit altitude is the
 // jumper's, and the estimate still needs a wind for every foot of it.
 const EXIT_OPTIONS = range(3000, 13000, 500);
-const DEPLOY_OPTIONS = range(2000, 6000, 500);
+// From the lowest altitude BSR 2-1 I lets anyone open at (the C/D waiver
+// floor): the box offers nothing the BSR does not.
+const DEPLOY_OPTIONS = range(LOWEST_OPENING_ALTITUDE_FT_AGL, 6000, 500);
 const FALL_RATE_OPTIONS = range(90, 180, 10);
 
-const fmtFt = (ft: number): string => `${ft.toLocaleString()} ft`;
+// en-US, as the citations page and the flags print the same figures: the
+// browser's locale would set "3.000 ft" here beside "3,000 ft" there.
+const fmtFt = (ft: number): string => `${ft.toLocaleString('en-US')} ft`;
 const fmtMph = (mph: number): string => `${mph} mph`;
 
 const fmtDist = (ft: number): string =>
@@ -226,10 +230,10 @@ export function DriftPanel({
 
           <p className="muted small">
             USPA BSR minimum container-opening altitudes:{' '}
-            <strong>students &amp; A-license 3,000 ft AGL</strong>, B-license 2,500 ft, C/D
-            2,500 ft (waiverable by an <SimTerm term="sta">S&amp;TA</SimTerm> to no lower than 2,000 ft),
-            tandem 5,000 ft. These
-            are floors — deploy above your minimum, not at it. See the{' '}
+            <strong>{OPENING_ALTITUDES_WORDING.lead}</strong>
+            {OPENING_ALTITUDES_WORDING.rest}
+            <SimTerm term="sta">{OPENING_ALTITUDES_WORDING.sta}</SimTerm>
+            {OPENING_ALTITUDES_WORDING.tail}. These are floors — deploy above your minimum, not at it. See the{' '}
             <a href={CITATIONS.uspaOpeningAltitude.url} target="_blank" rel="noopener noreferrer">
               USPA SIM §2-1 (BSR)
             </a>

@@ -5,6 +5,9 @@ import { VISIBILITY_ROW, VISIBILITY_ROWS,
   CITATIONS,
   DEFAULT_LICENSE,
   LICENSES,
+  LOWEST_OPENING_ALTITUDE_FT_AGL,
+  OPENING_ALTITUDES_FT_AGL,
+  OPENING_WAIVER_FLOOR_FT_AGL,
   openingMinimum,
   toLicense,
   isSimSectionUrl,
@@ -13,6 +16,19 @@ import { VISIBILITY_ROW, VISIBILITY_ROWS,
   type WindProfileId,
   STUDENT_ROUND_RESERVE_FACT,
 } from '../src/config/thresholds';
+import { CHECKLIST } from '../src/config/citationsChecklist';
+
+describe('the opening-altitude table', () => {
+  it('is one source for the floor, the label, A2 and the comparison', () => {
+    // The floor is the waiver's, below every minimum in the table, and the
+    // figure the comparison and the Deploy box take is derived from both.
+    expect(OPENING_WAIVER_FLOOR_FT_AGL).toBeLessThan(Math.min(...Object.values(OPENING_ALTITUDES_FT_AGL)));
+    expect(LOWEST_OPENING_ALTITUDE_FT_AGL).toBe(2000);
+    expect(CITATIONS.uspaOpeningAltitude.ref).toContain('no lower than 2,000 ft');
+    expect(CITATIONS.uspaOpeningAltitude.ref).toContain('tandem 5,000 ft');
+    expect(CHECKLIST.find((e) => e.id === 'A2')?.claim).toContain('students & A-license 3,000 ft AGL, B-license 2,500 ft');
+  });
+});
 
 describe('openingMinimum', () => {
   it('is the BSR 2-1 I minimum: 3,000 ft for students and A, 2,500 ft for B, C and D', () => {

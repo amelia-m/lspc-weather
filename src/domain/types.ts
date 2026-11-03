@@ -327,19 +327,17 @@ export interface Advisory {
   metric: string; // "Surface wind"
   value: string; // "21 kt (24 mph), gusting 28"
   guidance: string; // brief paraphrase of the cited rule
-  citation: Citation;
-  /** A second authority, where the guidance makes a claim the first does not
-   *  support. The after-sunset flag is the case it exists for: the FAA reg
-   *  sets the light requirement and the trigger, while the USPA licence claim
-   *  in the same sentence comes from the SIM. One link for two authorities let
-   *  a reader check the reg and find nothing about licences in it. */
-  secondaryCitation?: Citation;
-  /** Any further authority the guidance names. The flight-category flag's
-   *  comparison under IFR and LIFR names 105.17's table and BSR 2-1 I's
-   *  opening altitudes beside the AIM and 91.155 its guidance already
-   *  carries; each section named gets its link, since a named section with
-   *  no link is what the two-link rule above was for. */
-  furtherCitations?: Citation[];
+  /** Every authority the guidance rests on, the trigger's first, then the
+   *  rest in the order the guidance names them; the panel links each. One
+   *  list, because a claim with no link is the failure the list exists to
+   *  rule out: the after-sunset flag once offered only 14 CFR 105.19 for a
+   *  sentence that also makes a USPA licence claim, so a reader checking
+   *  that half landed on a reg that says nothing about licences; and the
+   *  flight-category flag's comparison under IFR and LIFR names 105.17 and
+   *  BSR 2-1 I beside the AIM and 91.155. When these were three fields
+   *  (one, an optional second, an optional list) every consumer had to
+   *  splice them, and the panel once dropped the second for a while. */
+  citations: [Citation, ...Citation[]];
 }
 
 export type JumperClass = 'student' | 'licensed';

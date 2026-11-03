@@ -170,26 +170,29 @@ AGL, the lowest minimum container opening altitude in BSR 2-1 I, so
 every canopy opens above it; 14 CFR 105.17 bars a parachute operation
 into or through a cloud and, in its rows below 10,000 ft MSL, requires
 500 ft below any cloud", with the gaps sentence when the ceiling layer
-is broken. Each section named is linked beside the AIM and 91.155
-(`furtherCitations` on the advisory, a third slot the panel renders);
+is broken. Each section named is linked beside the AIM and 91.155 (the
+advisory's `citations`, one ordered list the panel renders);
 2-1 I is not among A9's sources on `#citations`, since the daily SIM
 check would then test A9's AIM quotation against 2-1 I's text, so A9
 says the figure is A2's and asks whether the reading is right. MVFR gets
 no comparison: the figures do not settle it. The flag's level (MVFR a
 watch, IFR and LIFR a caution) is still the app's and still the
 maintainer's call (the review section below). Two cleanups the change's
-review named are left: the 2,000 ft floor is a constant beside the
-wording (`LOWEST_OPENING_ALTITUDE_FT_AGL`) and in prose in A2, the
-citation's ref and the drift card, with no structured table of 2-1 I's
-altitudes to derive it from; and the advisory's three citation fields
-(`citation`, `secondaryCitation`, `furtherCitations`) could be one
-ordered list, a refactor across every flag and test for no change on
-screen.
+review named were done later on 2026-11-03 at the maintainer's word, for no
+change on screen: 2-1 I's opening altitudes are one table
+(`OPENING_ALTITUDES_FT_AGL`, with the C/D waiver floor beside it and the
+lowest figure derived), from which the citation's label, A2's claim, the
+drift card's note, its Deploy default and lowest option, and the
+comparison's 2,000 ft are all built, where the floor had been written in
+four places; and the advisory's three citation fields (`citation`, an
+optional `secondaryCitation`, an optional `furtherCitations`) are one
+ordered list, `citations`, the trigger's source first, which the panel
+renders and a test holds to one link per authority.
 
 Done the same day: `CITATIONS.far91155` (14 CFR 91.155, Basic VFR
 weather minimums), its reading-log entry, the flight-category flag's
-guidance naming it with the section as its second link
-(`secondaryCitation`, the after-sunset flag's pattern), the Ceiling & sky
+guidance naming it with the section as its second link (the after-sunset
+flag's pattern), the Ceiling & sky
 card's note giving every row of its table (`FAR_91155_ROWS`, one string
 for the card, the citation's ref and A9: Class E and Class G, day and
 night, both altitude bands, since the app reads neither the airspace
