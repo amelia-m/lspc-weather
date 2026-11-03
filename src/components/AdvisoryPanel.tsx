@@ -92,7 +92,7 @@ export function AdvisoryPanel({
   const guidance = splitGlossaryTermsAcross(
     advisories.map((a) => ({
       text: a.guidance,
-      skip: GLOSSARY_KEYS.filter((k) => citesTerm(k, [a.citation, a.secondaryCitation])),
+      skip: GLOSSARY_KEYS.filter((k) => citesTerm(k, [a.citation, a.secondaryCitation, ...(a.furtherCitations ?? [])])),
     })),
     GLOSSARY_KEYS,
   );
@@ -163,14 +163,18 @@ export function AdvisoryPanel({
                   <SimTermSegments segments={guidance[i]} />
                 </p>
                 <div className="advisory-cite">
-                  {a.secondaryCitation ? 'Sources: ' : 'Source: '}
+                  {a.secondaryCitation || a.furtherCitations?.length ? 'Sources: ' : 'Source: '}
                   <SourceLink citation={a.citation} />
-                  {a.secondaryCitation && (
-                    <>
-                      {' · '}
-                      <SourceLink citation={a.secondaryCitation} />
-                    </>
-                  )}
+                  {[a.secondaryCitation, ...(a.furtherCitations ?? [])]
+                    .filter((c): c is NonNullable<typeof c> => c != null)
+                    .map((c, j) => (
+                      // By position, not URL: two citations can share one
+                      // (2-1 H backs both wind-limit claims).
+                      <span key={j}>
+                        {' · '}
+                        <SourceLink citation={c} />
+                      </span>
+                    ))}
                 </div>
               </li>
             ))}

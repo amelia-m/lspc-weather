@@ -117,8 +117,10 @@ export const FAR_91155_ROWS =
 /** The flight-category flag's guidance, also #citations A9's claim: one
  *  string so the page reviews the words the flag shows. It names 91.155 by
  *  number, which is the flag's second link, and the parachute rule by what
- *  it is: the flag has two links, and 105.17's is on the visibility flag
- *  and the Ceiling & sky card. */
+ *  it is: under MVFR these two are the flag's only links, and 105.17's is
+ *  on the visibility flag and the Ceiling & sky card. Under IFR and LIFR
+ *  the comparison (`flightCategoryComparisonText`) follows it, naming
+ *  105.17 and BSR 2-1 I by number with their links (`furtherCitations`). */
 export const FLIGHT_CATEGORY_GUIDANCE =
   'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, the rules to check are the pilot’s basic VFR weather minimums, 14 CFR 91.155 (by airspace class and altitude), and the flight-visibility and cloud-clearance rule for parachute operations that the Ceiling & sky card cites; that call belongs to the pilot in command.';
 
@@ -715,6 +717,52 @@ const EXIT_ROW_FROM_FT_AGL = (10_000 - SITE.dz.elevationFt).toLocaleString('en-U
 /** What 105.17 says, the same whichever row the flag uses; the flag then
  *  says which (`visibilityGuidance`). */
 export const VISIBILITY_RULE = `14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it; an exit from this DZ at or above ${EXIT_ROW_FROM_FT_AGL} ft AGL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.`;
+
+/** The lowest minimum container opening altitude in BSR 2-1 I, ft AGL: the
+ *  C- and D-licence 2,500 ft waived to its floor (`uspaOpeningAltitude`,
+ *  read 2026-10-08). The IFR and LIFR flag's comparison holds the ceiling
+ *  to it: under a ceiling below this, every canopy opens above the layer. */
+export const LOWEST_OPENING_ALTITUDE_FT_AGL = 2_000;
+
+/** What the flight-category flag adds under IFR and LIFR, in the report's
+ *  figures: the maintainer's call of 2026-11-03 ("make the flag print the
+ *  comparison"), after asking whether the two categories are incompatible
+ *  with 105.17 by the figures alone (docs/open-questions.md, "Settled: the
+ *  flight categories against 105.17 and BSR 2-1 I"). It compares published
+ *  figures with reported ones, as the visibility flag's "under both rows"
+ *  does, and gives no verdict: a visibility in the IFR or LIFR band is
+ *  under 3 SM, the lowest flight visibility in any row of 105.17's table;
+ *  a ceiling in those bands (under 1,000 ft AGL) is under the lowest
+ *  opening altitude in BSR 2-1 I, so every canopy opens above it, where
+ *  105.17 (a) bars a parachute operation into or through a cloud and (b),
+ *  in its rows below 10,000 ft MSL (where such a ceiling is, at this DZ),
+ *  requires 500 ft below any cloud. A broken ceiling has gaps, 105.17's
+ *  horizontal distance holds in them and the METAR does not report their
+ *  size, so the flag says so when the ceiling layer is broken rather than
+ *  overcast or an obscuration. The labels are the caller's (the flag's
+ *  figures; #citations A9's bands), so the page shows the flag's words.
+ *  The flag links 105.17 and 2-1 I beside its guidance's sources. */
+export function flightCategoryComparisonText(p: {
+  visibility: string | null;
+  ceiling: string | null;
+  broken: boolean;
+}): string {
+  const parts: string[] = [];
+  if (p.visibility) {
+    parts.push(
+      `${p.visibility} is under ${LOW_ROW_SM} SM, the lowest flight visibility in any row of 14 CFR 105.17’s table, which has no airspace column.`,
+    );
+  }
+  if (p.ceiling) {
+    parts.push(
+      `${p.ceiling} is under ${LOWEST_OPENING_ALTITUDE_FT_AGL.toLocaleString('en-US')} ft AGL, the lowest minimum container opening altitude in BSR 2-1 I, so every canopy opens above it; 14 CFR 105.17 bars a parachute operation into or through a cloud and, in its rows below 10,000 ft MSL, requires 500 ft below any cloud.` +
+        (p.broken
+          ? ' A broken ceiling has gaps; 105.17’s 2,000 ft horizontal distance holds in them, and the report does not give their size.'
+          : ''),
+    );
+  }
+  return parts.join(' ');
+}
 
 /** Each row's figure, and A8's questions on #citations while the flag uses
  *  it. `answerKey` is where A8's answers are stored on that row

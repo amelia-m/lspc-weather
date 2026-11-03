@@ -39,7 +39,7 @@ export function ceilingCategory(ft: number | null): FlightCategory {
   return 'VFR';
 }
 
-function visibilityCategory(sm: number): FlightCategory {
+export function visibilityCategory(sm: number): FlightCategory {
   if (sm < 1) return 'LIFR';
   if (sm < 3) return 'IFR';
   if (sm <= 5) return 'MVFR';

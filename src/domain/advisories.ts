@@ -1,7 +1,8 @@
-import type { Advisory, AdvisoryLevel, HourlyPoint, WeatherSnapshot } from './types';
+import type { Advisory, AdvisoryLevel, Citation, CurrentConditions, HourlyPoint, WeatherSnapshot } from './types';
 import {
   CITATIONS,
   FLIGHT_CATEGORY_GUIDANCE,
+  flightCategoryComparisonText,
   hasWindLimit,
   isEdited,
   isOwnLimit,
@@ -10,7 +11,8 @@ import {
   type Thresholds,
 } from '../config/thresholds';
 import { fmtLimitSpeed, fmtSpeed, type SpeedUnit, fmtVisibilitySm } from './units';
-import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
+import { observedFlightCategory, ceilingCategory, visibilityCategory, CATEGORY_LABEL, type FlightCategory } from './flightCategory';
+import { CEILING_COVERS, ceilingState } from './normalize';
 import { SITE } from '../config/site';
 import { shortHour } from './localClock';
 
@@ -21,6 +23,30 @@ import { shortHour } from './localClock';
  *
  * Pure function: same input → same output, no I/O. Unit-tested.
  */
+
+/** The IFR and LIFR flag's comparison, from the half of the report that put
+ *  the category in those bands (the AIM's "and/or": either half, or both).
+ *  The ceiling half needs a measured ceiling (`ceilingState` known): a
+ *  `BKN///` is in no band. Its layer is the lowest ceiling-making layer at
+ *  the ceiling's height; broken is said as such, since gaps are the caveat
+ *  (`flightCategoryComparisonText`). Null under MVFR, or when neither half
+ *  is in the bands. */
+function flightCategoryComparison(c: CurrentConditions): { text: string; cites: Citation[] } | null {
+  const low = (cat: FlightCategory): boolean => cat === 'IFR' || cat === 'LIFR';
+  const visibility = c.visibilitySm != null && low(visibilityCategory(c.visibilitySm)) ? c.visibilitySm : null;
+  const ceiling =
+    ceilingState(c) === 'known' && c.ceilingFtAgl != null && low(ceilingCategory(c.ceilingFtAgl)) ? c.ceilingFtAgl : null;
+  if (visibility == null && ceiling == null) return null;
+  const layer =
+    ceiling == null ? null : c.skyLayers.find((l) => CEILING_COVERS.includes(l.cover) && l.baseFtAgl === ceiling);
+  const text = flightCategoryComparisonText({
+    visibility: visibility == null ? null : `Visibility ${fmtVisibilitySm(visibility)} SM`,
+    ceiling: ceiling == null ? null : `The ceiling at ${ceiling.toLocaleString('en-US')} ft AGL`,
+    broken: layer?.cover === 'BKN',
+  });
+  const cites = [CITATIONS.far10517, ...(ceiling == null ? [] : [CITATIONS.uspaOpeningAltitude])];
+  return { text, cites };
+}
 
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
@@ -152,6 +178,7 @@ export function evaluateAdvisories(
     // --- Flight category (FAA VFR/MVFR/IFR/LIFR from ceiling + visibility) ---
     const category = observedFlightCategory(current);
     if (category && category !== 'VFR') {
+      const comparison = flightCategoryComparison(current);
       out.push({
         id: 'flight-category',
         level: category === 'MVFR' ? 'watch' : 'caution',
@@ -162,14 +189,18 @@ export function evaluateAdvisories(
         // the one rule the guidance names by number, 91.155, is the second
         // link (read and logged like any other citation): a section named
         // under the AIM's link alone offered a source that could not support
-        // it. The parachute rule (105.17) is named by what it is, not by
-        // number, since this flag has two links and 105.17's is on the
-        // visibility flag and the Ceiling & sky card. The operating decision
-        // is sent to the PIC, who holds it; the level is the app's (see
-        // #citations A9).
-        guidance: FLIGHT_CATEGORY_GUIDANCE,
+        // it. The guidance names the parachute rule (105.17) by what it is,
+        // not by number: under MVFR the flag carries only these two links,
+        // and 105.17's is on the visibility flag and the Ceiling & sky card.
+        // The operating decision is sent to the PIC, who holds it; the level
+        // is the app's (see #citations A9).
+        // Under IFR and LIFR the comparison follows, in the report's
+        // figures, each section it names linked (the maintainer,
+        // 2026-11-03; `flightCategoryComparisonText` says what it compares).
+        guidance: comparison ? `${FLIGHT_CATEGORY_GUIDANCE} ${comparison.text}` : FLIGHT_CATEGORY_GUIDANCE,
         citation: CITATIONS.aimFlightCategory,
         secondaryCitation: CITATIONS.far91155,
+        ...(comparison ? { furtherCitations: comparison.cites } : {}),
       });
     }
 
