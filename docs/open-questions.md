@@ -1278,6 +1278,20 @@ second issue (one is open). Nothing for the code to fix.
 
 Both are the maintainer's to close: #209 with this section as the why.
 
+## Issue #256: aviationweather.gov answered the GFA link 502, once
+
+The daily check of 2026-11-01 (18:09Z) failed "opens the GFA and the
+SIGMET map": aviationweather.gov answered the Graphical Forecasts link
+502, and the test expects 200. The next run, 2026-11-02, passed, and the
+link opens. A 502 is the server's, not the link's: nothing in
+`src/config/sources.ts` changed between the two runs. It is the third
+one-off in this check (#147 and #238 were one timeout each), and the
+retry those two earned (`scripts/liveFetch.ts`) covers a timeout only,
+not a 5xx answer. Worth doing, not done: let `fetchWithRetry` try once
+more on a 502, 503 or 504, as it does on a timeout, so a server's bad
+minute does not open an issue; a second 5xx would still fail. Read
+2026-11-03; the issue is the maintainer's to close (the sandbox cannot).
+
 ## Issue #238: a timeout again, on the day the Chart Supplement edition changed
 
 The sky-parity run of 2026-10-29 (run 40933195884) opened issue #238.
