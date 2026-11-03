@@ -4,7 +4,7 @@ import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { ceilingState, type CeilingState } from '../domain/normalize';
 import { DATA_SOURCES } from '../config/sources';
-import { CITATIONS, visibilityFigure, type Thresholds } from '../config/thresholds';
+import { CITATIONS, FAR_91155_ROWS, visibilityFigure, type Thresholds } from '../config/thresholds';
 import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
 import { CLOUD_COMPARISON } from '../config/cloudComparison';
 import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
@@ -129,12 +129,19 @@ export function CeilingSkyPanel({
         // section number and nowhere to check it — the citation layer exists
         // precisely so that does not happen.
         //
-        // It says what 105.17 says and no more. It used to add that jumps
-        // "require VFR flight conditions" under the same source line; the
-        // section never mentions VFR (read 2026-09-23) — the pilot's VFR
-        // minimums are 91.155, which this app does not cite. Both altitude
-        // rows are printed because a full-altitude exit from this DZ is
-        // above 10,000 ft MSL, where the figures are the higher ones, and a
+        // It says what 105.17 says and no more under 105.17's link. It used
+        // to add that jumps "require VFR flight conditions" under the same
+        // source line; the section never mentions VFR (read 2026-09-23 and
+        // 2026-11-03). The pilot's VFR minimums are 91.155, which has its
+        // own sentence and link below (since 2026-11-03): its figures turn on
+        // the airspace class and on day or night, and the app reads the
+        // airspace no more than it reads which band the climb is in, so
+        // every row is printed (FAR_91155_ROWS, one string with the citation
+        // and #citations A9) and the sectional named. 105.17's table has no
+        // airspace column, so Class G's 1 SM does not loosen the jump; the
+        // sentence says so. Both 105.17 altitude rows
+        // are printed because a full-altitude exit from this DZ is above
+        // 10,000 ft MSL, where the figures are the higher ones, and a
         // hop-and-pop is not; then how the flag holds the reading to them,
         // as the flag says it (`visibilityFigure`).
         <p className="muted small">
@@ -144,7 +151,11 @@ export function CeilingSkyPanel({
           MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile horizontal.{' '}
           {thresholds && `The visibility flag ${visibilityFigure(thresholds)} `}
           Source:{' '}
-          <SourceLink citation={CITATIONS.far10517} />
+          <SourceLink citation={CITATIONS.far10517} />. The pilot&rsquo;s basic VFR weather minimums
+          are 14 CFR 91.155, by airspace class and altitude, for aircraft other than helicopters:{' '}
+          {FAR_91155_ROWS} 105.17&rsquo;s table has no airspace column, so the Class G figures do not
+          loosen the parachute operation. Which airspace is over the DZ is on the sectional chart
+          (Pilots tab). Source: <SourceLink citation={CITATIONS.far91155} />
         </p>
       )}
       {upcoming.length > 0 && options.length > 1 && (

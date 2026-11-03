@@ -1,6 +1,7 @@
 import type { Advisory, AdvisoryLevel, HourlyPoint, WeatherSnapshot } from './types';
 import {
   CITATIONS,
+  FLIGHT_CATEGORY_GUIDANCE,
   hasWindLimit,
   isEdited,
   isOwnLimit,
@@ -157,14 +158,18 @@ export function evaluateAdvisories(
         metric: 'Flight category',
         value: `${category} (${CATEGORY_LABEL[category]})`,
         // The AIM defines these categories and nothing else; it is not
-        // regulatory and does not carry the pilot's VFR weather minimums. The
-        // guidance used to name 14 CFR 91.155 while citing the AIM, so the one
-        // link offered could not support the one rule named. Below-VFR
-        // conditions are described here in terms the AIM does cover, and the
-        // operating decision is sent to the PIC, who holds it.
-        guidance:
-          'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the pilot in command.',
+        // regulatory and does not carry the pilot's VFR weather minimums. So
+        // the one rule the guidance names by number, 91.155, is the second
+        // link (read and logged like any other citation): a section named
+        // under the AIM's link alone offered a source that could not support
+        // it. The parachute rule (105.17) is named by what it is, not by
+        // number, since this flag has two links and 105.17's is on the
+        // visibility flag and the Ceiling & sky card. The operating decision
+        // is sent to the PIC, who holds it; the level is the app's (see
+        // #citations A9).
+        guidance: FLIGHT_CATEGORY_GUIDANCE,
         citation: CITATIONS.aimFlightCategory,
+        secondaryCitation: CITATIONS.far91155,
       });
     }
 

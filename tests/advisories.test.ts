@@ -128,7 +128,8 @@ describe('evaluateAdvisories', () => {
     const fc = out.find((a) => a.id === 'flight-category');
     expect(fc?.level).toBe('caution');
     expect(fc?.value).toContain('IFR');
-    // VFR/MVFR/IFR/LIFR are defined in the AIM, not 14 CFR 91.155.
+    // VFR/MVFR/IFR/LIFR are defined in the AIM, not 14 CFR 91.155, which
+    // the flag cites second, for the pilot's minimums its guidance names.
     expect(fc?.citation.source).toContain('AIM');
   });
 
@@ -476,15 +477,22 @@ describe('surface wind where no published limit exists (licensed)', () => {
 });
 
 describe('citations that name a regulation', () => {
-  it('the flight-category flag does not name 14 CFR 91.155 while citing the AIM', () => {
-    // The AIM is non-regulatory and does not contain 91.155, so the one link
-    // offered could not support the one rule named.
+  it('the flight-category flag names 14 CFR 91.155 only with the section’s own link beside the AIM’s', () => {
+    // The AIM is non-regulatory and does not contain 91.155, so a guidance
+    // that names the section under the AIM's link alone offers a source that
+    // cannot support the rule named. Named, it is the second link, read and
+    // logged like any other citation; the AIM stays the categories' source.
+    // 105.17 is named by what it is, not by number: the flag has no third
+    // link, and its own is on the visibility flag and the Ceiling & sky card.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 });
     const fc = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now).find(
       (a) => a.id === 'flight-category',
     );
     expect(fc?.citation).toBe(CITATIONS.aimFlightCategory);
-    expect(fc?.guidance).not.toMatch(/91\.155/);
+    expect(fc?.guidance).toMatch(/91\.155/);
+    expect(fc?.secondaryCitation).toBe(CITATIONS.far91155);
+    expect(CITATIONS.far91155.url).toContain('section-91.155');
+    expect(fc?.guidance).not.toMatch(/105\.17/);
   });
 
   it('neither gust spread nor winds aloft raises a flag on an invented speed', () => {
@@ -709,8 +717,9 @@ describe('guidance matches the section as read', () => {
 
   it('the sky card states 105.17 and no longer claims jumps "require VFR flight conditions"', () => {
     // 105.17 never mentions VFR; the pilot's minimums are 91.155, which the
-    // app does not cite. MVFR ceiling so the note renders; the text is read
-    // first, so it carries the change.
+    // card cites in its own sentence, with the section's link, under
+    // 105.17's. MVFR ceiling so the note renders; the text is read first, so
+    // it carries the change.
     const current = normalizeMetar({
       ...METAR_FIXTURE[0],
       rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'BKN020'),
@@ -722,6 +731,15 @@ describe('guidance matches the section as read', () => {
     expect(html).toMatch(/5 SM/);
     expect(html).toMatch(/1 mile horizontal/);
     expect(html).toContain(CITATIONS.far10517.url);
+    expect(html).toMatch(/91\.155/);
+    expect(html).toContain(CITATIONS.far91155.url);
+    // Every row, in figures: the two Class E altitude bands and Class G by
+    // night, not only the day rows a reader after sunset would have to know
+    // were not theirs.
+    expect(html).toMatch(/Class E below 10,000 ft MSL: 3 SM and 500 ft below/);
+    expect(html).toMatch(/Class E at or above 10,000 ft MSL: 5 SM and 1,000 ft below/);
+    expect(html).toMatch(/Class G at or below 1,200 ft AGL: by day 1 SM, clear of clouds; by night 3 SM/);
+    expect(html).toMatch(/no airspace column/);
     // And how the visibility flag holds the reading, in the flag's words,
     // for a card (not the citations page's wording of the fact).
     expect(html.replace(/<!-- -->/g, '')).toContain(`The visibility flag ${HOLDS[VISIBILITY_ROW]} `);

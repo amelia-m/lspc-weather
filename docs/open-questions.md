@@ -108,6 +108,83 @@ trailing slash the app sends is dropped in the listing), so the whole
 path from a reader's browser to the dashboard is proven on the
 `amelia-m` site. Nothing waits here.
 
+## Settled: the flight categories against 105.17 and BSR 2-1 I; 91.155 cited (2026-11-03)
+
+The maintainer asked, of AIM 7-1-7's LIFR (ceiling under 500 ft and/or
+visibility under 1 SM) and IFR (500 to under 1,000 ft and/or 1 to under
+3 SM), whether the two are incompatible with 105.17's minimum visibility
+by the figures alone, with nothing judged; and asked for 91.155 to be
+cited and linked, since the flag's guidance named the pilot's VFR minimums
+with no source for them.
+
+Read on 2026-11-03 through the eCFR API (Title 14 current as of
+2026-10-30): 105.17, 105.19 and 91.155 in full, each matching its claim
+(the reading log and every CFR note now carry that date). The versions
+endpoint lists no change to 105.17 or 91.155 since its earliest point in
+time, so the text is the one read on 2026-09-23. The link the maintainer
+gave, law.cornell.edu, is not on the sandbox allowlist (curl answers 000),
+so the eCFR was read instead; it is the same text. SIM 2-1 at uspa.org the
+same day: 2-1 B says no skydive may be made in violation of FAA
+regulations, and 2-1 I's minimum container opening altitudes are as cited
+(tandem 5,000 ft AGL, students and A 3,000, B 2,500, C and D 2,500,
+waiverable to no lower than 2,000).
+
+What the figures say:
+
+- **By visibility: yes.** Every row of 105.17's table asks at least 3 SM
+  flight visibility (3, 3 and 5 SM), and the table has no airspace
+  column, so Class G's 1 SM in 91.155 does not loosen it. IFR's and
+  LIFR's visibility bands end below 3 SM, so a category set by visibility
+  is under every row; the Visibility flag already prints that ("under
+  both rows", `visibilityRowsUnder`).
+- **By ceiling alone** (visibility 3 SM or more; the AIM's bands are
+  "and/or"): 105.17's visibility rows are met, so it is not the visibility
+  rule. It is 105.17 (a), no parachute operation into or through a cloud,
+  and (b), 500 ft below any cloud in the rows below 10,000 ft MSL (where
+  a ceiling under 1,000 ft AGL is, at this DZ), set against BSR 2-1 I: the lowest
+  opening altitude anyone may use is 2,000 ft AGL, so under a ceiling
+  below 1,000 ft AGL every canopy opens above the layer and comes down
+  through it or its gaps. An overcast has no gaps. A broken layer (5/8 to
+  7/8) has them, 105.17's 2,000 ft horizontal distance holds in them, and
+  the METAR does not report where they are or how wide; so for a broken
+  ceiling the figures say "through or within 2,000 ft of cloud", not
+  "through cloud".
+- **MVFR** (ceiling 1,000 to 3,000 ft and/or visibility 3 to 5 SM) was
+  not asked and the figures do not settle it: 3 SM meets the two lower
+  rows, and a 3,000 ft ceiling is above every opening altitude; what the
+  reader compares it to is the exit.
+
+So: correct for the visibility half outright, and for the ceiling half
+through the cloud rule and the opening altitudes rather than the
+visibility row, with the broken-layer caveat. The app still gives no
+verdict: the flag states the category and names the rules, and
+`#citations` A9 now carries the comparison in its question to the S&TA,
+marked as the app's reading of A8's and A2's figures and not a source's
+words (whether the flag should print it, as the visibility flag prints
+its rows). The flag's level (MVFR a watch, IFR and
+LIFR a caution) is still the app's and still the maintainer's call (the
+review section below).
+
+Done the same day: `CITATIONS.far91155` (14 CFR 91.155, Basic VFR
+weather minimums), its reading-log entry, the flight-category flag's
+guidance naming it with the section as its second link
+(`secondaryCitation`, the after-sunset flag's pattern), the Ceiling & sky
+card's note giving every row of its table (`FAR_91155_ROWS`, one string
+for the card, the citation's ref and A9: Class E and Class G, day and
+night, both altitude bands, since the app reads neither the airspace
+nor the band and does detect night) under 105.17's with the link, and
+A9 citing and quoting it. The code review of the change found the
+card's first wording saying "the same distances" after 105.17's higher
+row, printing only the day rows and the lower Class E band, A9 stating
+105.17 (b) as 500 ft without its band, and the app's comparison filed
+among the source's words; all fixed the same day. Which airspace is over the DZ the
+app does not read; the sectional on the Pilots tab shows it, and A9 asks
+the pilot which rows apply to the climb and whether any surface area of
+controlled airspace (91.155 (c) and (d)) reaches the DZ.
+docs/usairnet-parity.md's line that citing 91.155 was "not to be revived"
+meant naming it under the AIM's link; with its own link, read and logged,
+it is what that line asked for, and the line now says so.
+
 ## Review of the whole project (2026-11-03)
 
 At the maintainer's ask, a review agent read the whole project for
@@ -225,7 +302,9 @@ caller's.
   claims only the classification, and a test pins "MVFR as watch" as
   deliberate. Whether a level with no published source behind it sits
   with the no-verdict rule, or the two flags should carry one neutral
-  level, is the maintainer's call.
+  level, is the maintainer's call. (The categories against 105.17 and
+  BSR 2-1 I, and the 91.155 citation the flag now carries, are the
+  section above.)
 
 Reviewed and found sound: the advisories and thresholds (band and limit
 gating, the forecast flag's whole knots, the visibility rows, the waiver

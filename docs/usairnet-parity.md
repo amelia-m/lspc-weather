@@ -49,12 +49,16 @@ Resolved:
   needed. See the [NWS gridpoint properties
   doc](https://github.com/weather-gov/api/blob/master/gridpoints.md).
 - **Flight category (VFR/MVFR/IFR/LIFR)** — *implemented*, derived from the
-  ceiling and visibility already fetched. Cited to **FAA AIM 7-1-7 only**. An
-  earlier plan here was to cite 14 CFR 91.155 alongside it; that was wrong and
-  is not to be revived. The AIM defines the categories and nothing else — it is
-  not regulatory and does not carry the pilot's VFR weather minimums, so naming
-  91.155 while linking the AIM offered a source that could not support the rule
-  named.
+  ceiling and visibility already fetched. The categories are cited to **FAA
+  AIM 7-1-7**, which defines them and nothing else — it is not regulatory and
+  does not carry the pilot's VFR weather minimums, so an earlier plan to
+  name 14 CFR 91.155 in the flag's guidance under the AIM's link alone was
+  wrong: a source that could not support the rule named. Since 2026-11-03
+  the flag names 91.155 with the section's own link beside the AIM's
+  (`CITATIONS.far91155`, read through the eCFR that day and in the reading
+  log), and the Ceiling & sky card's note prints its Class E and Class G
+  rows; see docs/open-questions.md, "Settled: the flight categories against
+  105.17 and BSR 2-1 I".
 - **Per-hour visibility** — *implemented* as the Vis column in the 10-day
   card's expanded hourly detail.
 - **Precip amount (QPF, inches)** — *implemented* from the gridpoint's

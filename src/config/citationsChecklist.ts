@@ -1,6 +1,8 @@
 import type { Citation } from '../domain/types';
 import {
   CITATIONS,
+  FAR_91155_ROWS,
+  FLIGHT_CATEGORY_GUIDANCE,
   STUDENT_ROUND_RESERVE_FACT,
   VISIBILITY_ROW,
   VISIBILITY_ROWS,
@@ -127,7 +129,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     sources: [CITATIONS.far10519, CITATIONS.uspaNightJumps],
     citesNote: '105.19 for the light; SIM 5-3 for the USPA sentence',
     found: {
-      read: `${SIM_READ}; the eCFR (Title 14 current as of 2026-09-21), 2026-09-23`,
+      read: `${SIM_READ}; the eCFR (Title 14 current as of 2026-10-30), 2026-11-03`,
       says: [
         '14 CFR 105.19, in full: “(a) No person may conduct a parachute operation, and no pilot in command of an aircraft may allow a person to conduct a parachute operation from an aircraft between sunset and sunrise, unless the person or object descending from the aircraft displays a light that is visible for at least 3 statute miles. (b) The light required by paragraph (a) of this section must be displayed from the time that the person or object is under a properly functioning open parachute until that person or object reaches the surface.” It says nothing about licences.',
         'SIM 5-3 A: “Any jumps made between official sunset and official sunrise are considered night jumps.”',
@@ -272,7 +274,7 @@ export const CHECKLIST: ChecklistEntry[] = [
       'Visibility flag in Conditions to note; the overcast flag, which gives the reported bases and the 105.17 rows below cloud; and the note under the flight category on the Ceiling & sky card, which prints both altitude rows.',
     sources: [CITATIONS.far10517],
     found: {
-      read: 'the eCFR (Title 14 current as of 2026-09-21), 2026-09-23',
+      read: 'the eCFR (Title 14 current as of 2026-10-30), 2026-11-03',
       says: [
         '“No person may conduct a parachute operation, and no pilot in command of an aircraft may allow a parachute operation to be conducted from that aircraft — (a) Into or through a cloud, or (b) When the flight visibility or the distance from any cloud is less than that prescribed in the following table.”',
         'The table, in full. 1,200 ft or less above the surface regardless of the MSL altitude: 3 SM; 500 ft below, 1,000 ft above, 2,000 ft horizontal. More than 1,200 ft above the surface but less than 10,000 ft MSL: 3 SM; 500 ft below, 1,000 ft above, 2,000 ft horizontal. More than 1,200 ft above the surface and at or above 10,000 ft MSL: 5 SM; 1,000 ft below, 1,000 ft above, 1 mile horizontal.',
@@ -288,24 +290,26 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A9',
     title: 'Flight category',
-    claim:
-      'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, expect the pilot’s VFR weather minimums and the cloud-clearance requirements for parachute ops to be the limiting factors; that call belongs to the pilot in command.',
+    claim: FLIGHT_CATEGORY_GUIDANCE,
     value: 'MVFR is a watch; IFR and LIFR a caution',
-    where: 'Flight-category flag in Conditions to note, and the category pill on the Ceiling & sky card.',
-    sources: [CITATIONS.aimFlightCategory],
+    where:
+      'Flight-category flag in Conditions to note, the category pill on the Ceiling & sky card, and that card’s note below VFR, which prints 105.17’s rows and every row of 91.155’s table.',
+    sources: [CITATIONS.aimFlightCategory, CITATIONS.far91155],
     citesNote:
-      'for the categories only. The second sentence cites nothing: it names no rule number and no figure, and sends the reader to the pilot in command.',
+      'the AIM for the categories, 91.155 for the pilot’s minimums the second sentence names. The parachute rule it names is 105.17, cited on the card and in A8; the level (watch or caution) cites nothing, since no source grades the categories.',
     found: {
-      read: 'the AIM on faa.gov (Change 3, effective 2026-07-09), 2026-09-23',
+      read: 'the AIM on faa.gov (Change 3, effective 2026-07-09), 2026-09-23; the eCFR (Title 14 current as of 2026-10-30), 2026-11-03',
       says: [
         'AIM 7-1-7, Categorical Ceiling and Visibility Conditions: “LIFR (Low IFR). Ceiling less than 500 feet and/or visibility less than 1 mile. IFR. Ceiling 500 to less than 1,000 feet and/or visibility 1 to less than 3 miles. MVFR (Marginal VFR). Ceiling 1,000 to 3,000 feet and/or visibility 3 to 5 miles inclusive. VFR. Ceiling greater than 3,000 feet and visibility greater than 5 miles; includes sky clear.”',
         'The AIM says the terms describe “either reported or forecast general ceiling and visibility conditions”.',
-        'The pilot’s VFR weather minimums are 14 CFR 91.155, which this app does not cite.',
+        `14 CFR 91.155 (a): “no person may operate an aircraft under VFR when the flight visibility is less, or at a distance from clouds that is less, than that prescribed for the corresponding altitude and class of airspace in the following table”. Its rows for aircraft other than helicopters, as the card prints them: ${FAR_91155_ROWS}`,
       ],
     },
     asks: [
       'The app’s bands: a 3,000 ft ceiling or exactly 5 SM is MVFR; 1,000 ft or 3 SM is MVFR rather than IFR; the overall category is the worse of the two. Do those match the definitions above?',
       'A report with no sky group, or a broken layer with no measured height (BKN///), gets no VFR label: visibility alone can make it MVFR, IFR or LIFR, but VFR needs a ceiling. Does that read correctly to a pilot?',
+      'The flag names the category and the rules and leaves the comparison to the reader; this is the app’s reading of the figures in A8 and A2, not a source’s. The IFR and LIFR visibility bands (under 3 SM) are below the lowest flight visibility in any row of 105.17’s table (A8), which has no airspace column. The IFR and LIFR ceiling bands (under 1,000 ft AGL) are below the lowest minimum container opening altitude in BSR 2-1 I (A2), so every canopy opens above such a layer, with 105.17 (a) barring a parachute operation into or through a cloud and (b), in its rows below 10,000 ft MSL, requiring 500 ft below any cloud; a broken ceiling has gaps, 105.17’s horizontal distance holds in them, and the METAR does not report their size. Read together, do the two leave any jump open under an IFR or LIFR reading? Should the flag print that comparison, as the visibility flag prints its rows?',
+      'Which rows of 91.155 apply to the climb and the jump run depends on the airspace over the DZ, which the app does not read; the sectional on the Pilots tab shows it. Which class is the jump plane in from the surface to exit altitude, and does any surface area of controlled airspace (91.155 (c) and (d)) reach the DZ?',
     ],
   },
   {
