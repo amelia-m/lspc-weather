@@ -1,21 +1,28 @@
 # Page counts
 
 Since 2026-10-31 the dashboard counts page views with GoatCounter, on the
-maintainer's account. Since 2026-11-02 they go to a site of their own
-there, code `lspc-weather`, whose dashboard is
-<https://lspc-weather.goatcounter.com> (her login): the maintainer's
-call that day, so the dashboard's views and her personal site's, which
-the same account counts under `amelia-m`, never mix in one dashboard.
-(For the two days before, they went to the `amelia-m` site, under paths
-starting `/lspc-weather/`, where that site's own paths start `/`.) The
-views show under paths starting `/lspc-weather/`: the Jumpers tab as
+maintainer's `amelia-m` site, the same one her personal site at
+amelia-m.github.io counts to. Its dashboard is
+<https://amelia-m.goatcounter.com> (her login). The dashboard's views show
+there under paths starting `/lspc-weather/`: the Jumpers tab as
 `/lspc-weather/`, the other pages as `/lspc-weather/#pilots`,
 `/lspc-weather/#citations`, `/lspc-weather/#parity` and
-`/lspc-weather/#wind-errors`. GoatCounter sets no cookies and keeps no
-personal data. The site has to exist on the account for the counts to
-land; what GoatCounter answers a request to a site code it does not know
-was not read (its hosts are not on the sandbox's allowlist), so the one
-check is the dashboard itself after the deploy.
+`/lspc-weather/#wind-errors`; the personal site's start `/`. To see one
+site alone, put `/lspc-weather/` in the dashboard's "Filter paths" box
+(the Pages list already tells them apart by path; the Totals line adds
+both). GoatCounter sets no cookies and keeps no personal data.
+
+**A day counted nowhere.** On 2026-11-02 the endpoint was moved to a
+site of its own, `lspc-weather.goatcounter.com`, so the two sites would
+have dashboards of their own; the site had not been made on the account,
+and GoatCounter answers a code it does not have with "error 400: no site
+at this domain" (read in the maintainer's browser, 2026-11-03), so every
+view from that deploy to the next, about a day, was counted nowhere.
+Back on `amelia-m` since 2026-11-03. The sandbox could not have seen the
+400 (GoatCounter's hosts are not on its allowlist); the lesson is in
+docs/open-questions.md. A site of its own is one line to change
+(`PAGE_COUNT_ENDPOINT`, the policy's `img-src` and the tests) once the
+site exists on the account.
 
 ## How it is sent
 
@@ -85,9 +92,10 @@ any other hostname it sent none, and `#toggle-goatcounter` set the flag and
 sent none. Not yet seen counted in the GoatCounter dashboard itself, which
 needs the deployed site (docs/open-questions.md).
 
-2026-11-02, the same check with the new site code: the three pages sent
-one request each to `https://lspc-weather.goatcounter.com/count`, with the
-page's path in `p`, and the policy logged no violation.
+2026-11-02, the same check with the `lspc-weather` site code: the three
+pages sent one request each to that endpoint, with the page's path in
+`p`, and the policy logged no violation; the endpoint itself, which the
+check intercepts, answered the real requests with a 400 (above).
 
 ## Not counted
 
