@@ -72,6 +72,7 @@ describe('CitationsPage', () => {
       'uspaSpottingWho',
       'far10517',
       'aimFlightCategory',
+      'far91155',
       'faaDensityAltitude',
     ] as const) {
       expect(html, `${key} not linked`).toContain(`href="${CITATIONS[key].url}"`);

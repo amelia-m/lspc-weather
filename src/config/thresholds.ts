@@ -22,14 +22,16 @@ import { SIM_EDITION, SIM_LAST_READ } from './readingLog';
  *  that date. */
 const SIM_READ_NOTE = `Section text read in the online SIM at uspa.org (the ${SIM_EDITION}) on ${SIM_LAST_READ} and matches this claim. USPA revises the SIM, so re-check against the current one and confirm with the S&TA before relying on it.`;
 
-/** The same shape for the two CFR sections, read on 2026-09-23. They were read
- *  through the eCFR API (api/versioner/v1/full/2026-09-21/title-14.xml — Title
- *  14 as current on 2026-09-21), which serves the text the linked page renders;
+/** The same shape for the three CFR sections: 105.17 and 105.19 first read
+ *  on 2026-09-23, 91.155 on 2026-11-03, and all three on 2026-11-03 (when
+ *  91.155 was added). They were read through the
+ *  eCFR API (api/versioner/v1/full/2026-10-30/title-14.xml — Title 14 as
+ *  current on 2026-10-30), which serves the text the linked page renders;
  *  the page itself answers a script with a redirect to a bot check, so the API
  *  is what was actually read and the note says so. The URL stays on the page a
  *  person would open. */
 const CFR_READ_NOTE =
-  'Section text read through the eCFR (Title 14 current as of 2026-09-21) on 2026-09-23 and matches this claim. The CFR is amended — re-check the linked section, and confirm with the S&TA and the pilot in command before relying on it.';
+  'Section text read through the eCFR (Title 14 current as of 2026-10-30) on 2026-11-03 and matches this claim. The CFR is amended — re-check the linked section, and confirm with the S&TA and the pilot in command before relying on it.';
 
 /** AIM 7-1-7 as faa.gov served it on 2026-09-23: the HTML edition, Change 3,
  *  effective 2026-07-09. The FAA issues AIM changes on a schedule, so the
@@ -101,6 +103,25 @@ export const isSimSectionUrl = (url: string): boolean =>
  *     premise is that every flag is traceable has no honest way to show one.
  *     Such numbers are listed on the in-app #citations page for review instead.
  */
+/** 14 CFR 91.155's table for aircraft other than helicopters, and its (c),
+ *  in one string, so the Ceiling & sky card's note, the citation's ref and
+ *  #citations A9 print the same rows (read through the eCFR 2026-11-03).
+ *  Every row is here, day and night and both altitude bands, because the
+ *  app reads neither the airspace class over the DZ nor which band the
+ *  climb is in, and the night rows differ from the day's: a reader after
+ *  sunset (which the app does detect) must find their row, not be shown
+ *  the day's as if it were the only one. */
+export const FAR_91155_ROWS =
+  'Class E below 10,000 ft MSL: 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; Class E at or above 10,000 ft MSL: 5 SM and 1,000 ft below / 1,000 ft above / 1 SM horizontal. Class G at or below 1,200 ft AGL: by day 1 SM, clear of clouds; by night 3 SM and 500 / 1,000 / 2,000 ft. Class G above 1,200 ft AGL and below 10,000 ft MSL: by day 1 SM, by night 3 SM, with 500 / 1,000 / 2,000 ft; Class G at or above 10,000 ft MSL: 5 SM and 1,000 / 1,000 ft / 1 SM. And (c): no VFR beneath a ceiling under 1,000 ft within the lateral boundaries of controlled airspace designated to the surface for an airport.';
+
+/** The flight-category flag's guidance, also #citations A9's claim: one
+ *  string so the page reviews the words the flag shows. It names 91.155 by
+ *  number, which is the flag's second link, and the parachute rule by what
+ *  it is: the flag has two links, and 105.17's is on the visibility flag
+ *  and the Ceiling & sky card. */
+export const FLIGHT_CATEGORY_GUIDANCE =
+  'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, the rules to check are the pilot’s basic VFR weather minimums, 14 CFR 91.155 (by airspace class and altitude), and the flight-visibility and cloud-clearance rule for parachute operations that the Ceiling & sky card cites; that call belongs to the pilot in command.';
+
 export const CITATIONS = {
   /** BSR maximum ground winds for solo students. Section 2-1 is the Basic
    *  Safety Requirements themselves; the LSPC waiver (docs/) treats this limit
@@ -166,6 +187,22 @@ export const CITATIONS = {
     ref: 'Categorical ceiling and visibility conditions — LIFR / IFR / MVFR / VFR',
     url: 'https://www.faa.gov/air_traffic/publications/atpubs/aim_html/chap7_section_1.html',
     note: AIM_READ_NOTE,
+  },
+  /** The pilot's basic VFR weather minimums, by airspace class and altitude.
+   *  Cited beside the AIM on the flight-category flag and on the Ceiling &
+   *  sky card's note, because the flag's guidance names the pilot's VFR
+   *  minimums as a rule to check below VFR: a rule named needs its own link
+   *  (the AIM defines the categories and carries no minimums). 105.17 is
+   *  the parachute operation's own rule and has no airspace column, so the
+   *  looser Class G day figures here do not loosen the jump; which airspace
+   *  is over the DZ the app does not read (the sectional, on the Pilots
+   *  tab, shows it), so the card prints every row (FAR_91155_ROWS) and
+   *  #citations A9 asks the pilot which apply. Not a flag's trigger. */
+  far91155: {
+    source: '14 CFR § 91.155',
+    ref: `Basic VFR weather minimums, by airspace class and altitude, for aircraft other than helicopters — ${FAR_91155_ROWS}`,
+    url: 'https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-91/subpart-B/subject-group-ECFR4d5279ba676bedc/section-91.155',
+    note: CFR_READ_NOTE,
   },
   /** METAR sky-cover amounts in eighths. Backs the 5/8 cut the Ceiling & sky
    *  card's comparison note uses (the least a broken layer, and so a ceiling
