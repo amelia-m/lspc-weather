@@ -18,6 +18,7 @@ import {
 } from '../src/config/thresholds';
 import type { Thresholds } from '../src/config/thresholds';
 import {
+  FLIGHT_CATEGORY_GUIDANCE,
   HOP_AND_POP_FACT,
   VISIBILITY_ROW,
   VISIBILITY_ROWS,
@@ -482,8 +483,8 @@ describe('citations that name a regulation', () => {
     // that names the section under the AIM's link alone offers a source that
     // cannot support the rule named. Named, it is the second link, read and
     // logged like any other citation; the AIM stays the categories' source.
-    // 105.17 is named by what it is, not by number: the flag has no third
-    // link, and its own is on the visibility flag and the Ceiling & sky card.
+    // The guidance names 105.17 by what it is; the comparison that follows
+    // under IFR names it by number, and the flag then links it too.
     const current = normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 });
     const fc = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now).find(
       (a) => a.id === 'flight-category',
@@ -492,7 +493,84 @@ describe('citations that name a regulation', () => {
     expect(fc?.guidance).toMatch(/91\.155/);
     expect(fc?.secondaryCitation).toBe(CITATIONS.far91155);
     expect(CITATIONS.far91155.url).toContain('section-91.155');
-    expect(fc?.guidance).not.toMatch(/105\.17/);
+    // The comparison names 105.17 by number; so that section is linked too.
+    expect(fc?.guidance).toMatch(/105\.17/);
+    expect(fc?.furtherCitations).toContain(CITATIONS.far10517);
+  });
+
+  /* The maintainer, 2026-11-03: make the flag print the comparison. Under
+   * IFR and LIFR the flag sets the report's figures against the published
+   * ones its guidance names, by the half of the report that put the
+   * category there, and links each section named. MVFR gets none: the
+   * figures do not settle it. */
+  describe('the flight-category flag prints the comparison under IFR and LIFR', () => {
+    const fc = (current: ReturnType<typeof normalizeMetar>) =>
+      evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now).find((a) => a.id === 'flight-category');
+
+    it('by visibility: the reading against the lowest row of 105.17, and 105.17 linked', () => {
+      const a = fc(normalizeMetar({ ...METAR_FIXTURE[0], visib: 2 }));
+      expect(a?.value).toContain('IFR');
+      expect(a?.guidance).toContain('Visibility 2 SM is under 3 SM, the lowest flight visibility in any row of 14 CFR 105.17’s table');
+      expect(a?.guidance).not.toMatch(/opening altitude/);
+      expect(a?.furtherCitations).toEqual([CITATIONS.far10517]);
+    });
+
+    it('by an overcast ceiling: the base against the lowest opening altitude, both sections linked, no gaps', () => {
+      const current = normalizeMetar({
+        ...METAR_FIXTURE[0],
+        rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'OVC008'),
+        clouds: [{ cover: 'OVC', base: 800 }],
+      });
+      const a = fc(current);
+      expect(a?.value).toContain('IFR');
+      expect(a?.guidance).toContain('The ceiling at 800 ft AGL is under 2,000 ft AGL, the lowest minimum container opening altitude in BSR 2-1 I');
+      expect(a?.guidance).toContain('into or through a cloud');
+      expect(a?.guidance).not.toMatch(/Visibility \d/);
+      expect(a?.guidance).not.toMatch(/gaps/);
+      expect(a?.furtherCitations).toEqual([CITATIONS.far10517, CITATIONS.uspaOpeningAltitude]);
+    });
+
+    it('by a broken ceiling: the gaps caveat; by both halves: both comparisons', () => {
+      const current = normalizeMetar({
+        ...METAR_FIXTURE[0],
+        rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'BKN004'),
+        clouds: [{ cover: 'BKN', base: 400 }],
+        visib: 0.5,
+      });
+      const a = fc(current);
+      expect(a?.value).toContain('LIFR');
+      expect(a?.guidance).toContain('Visibility 1/2 SM is under 3 SM');
+      expect(a?.guidance).toContain('The ceiling at 400 ft AGL is under 2,000 ft AGL');
+      expect(a?.guidance).toContain('A broken ceiling has gaps');
+    });
+
+    it('under MVFR, the guidance alone', () => {
+      const current = normalizeMetar({
+        ...METAR_FIXTURE[0],
+        rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'BKN020'),
+        clouds: [{ cover: 'BKN', base: 2000 }],
+      });
+      const a = fc(current);
+      expect(a?.value).toContain('MVFR');
+      expect(a?.guidance).toBe(FLIGHT_CATEGORY_GUIDANCE);
+      expect(a?.furtherCitations).toBeUndefined();
+    });
+
+    it('renders every section the comparison names as a link', () => {
+      // The data field is not the reader's link (see the two-sources test
+      // above): the panel must print the further sources.
+      const current = normalizeMetar({
+        ...METAR_FIXTURE[0],
+        rawOb: METAR_FIXTURE[0].rawOb.replace('BKN045', 'OVC008'),
+        clouds: [{ cover: 'OVC', base: 800 }],
+      });
+      const advisories = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
+      const html = renderToStaticMarkup(createElement(AdvisoryPanel, { advisories, profile: 'Student', hasWindLimit: true }));
+      expect(html).toContain('Sources:');
+      for (const c of [CITATIONS.aimFlightCategory, CITATIONS.far91155, CITATIONS.far10517, CITATIONS.uspaOpeningAltitude]) {
+        expect(html).toContain(`href="${c.url}"`);
+      }
+    });
   });
 
   it('neither gust spread nor winds aloft raises a flag on an invented speed', () => {

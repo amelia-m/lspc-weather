@@ -142,6 +142,17 @@ precisely because they were colour and text rather than flags.
   an instructor to confirm both. The two single-row settings stay in
   `VISIBILITY_ROWS` with their own wording and answer keys; every test
   passes with any of the three. Neither figure is the app's.
+- **The flight-category flag prints a comparison under IFR and LIFR**
+  (the maintainer, 2026-11-03), in the same pattern: the reported
+  visibility against 3 SM, the lowest row of 105.17's table, and the
+  reported ceiling against 2,000 ft AGL, the lowest opening altitude in
+  BSR 2-1 I, with 105.17's cloud rules and the gaps of a broken layer as
+  the caveat (`flightCategoryComparisonText`; the flag links every
+  section it names, `furtherCitations`). It compares figures and gives no
+  verdict; MVFR gets none, since the figures do not settle it. The
+  readings behind it are in docs/open-questions.md, "Settled: the flight
+  categories against 105.17 and BSR 2-1 I". The flag's level is still the
+  app's.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed

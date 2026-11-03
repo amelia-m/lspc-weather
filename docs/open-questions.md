@@ -157,13 +157,34 @@ What the figures say:
 So: correct for the visibility half outright, and for the ceiling half
 through the cloud rule and the opening altitudes rather than the
 visibility row, with the broken-layer caveat. The app still gives no
-verdict: the flag states the category and names the rules, and
-`#citations` A9 now carries the comparison in its question to the S&TA,
-marked as the app's reading of A8's and A2's figures and not a source's
-words (whether the flag should print it, as the visibility flag prints
-its rows). The flag's level (MVFR a watch, IFR and
-LIFR a caution) is still the app's and still the maintainer's call (the
-review section below).
+verdict. At first the flag stated the category and named the rules and
+`#citations` A9 carried the comparison only in its question to the S&TA;
+the maintainer, later the same day: make the flag print the comparison.
+Since then, under IFR or LIFR, the flag adds it in the report's figures
+(`flightCategoryComparisonText`, `src/config/thresholds.ts`; the flag
+builds it in `src/domain/advisories.ts` from the half of the report that
+put the category in those bands): "Visibility 2 SM is under 3 SM, the
+lowest flight visibility in any row of 14 CFR 105.17's table, which has
+no airspace column", and "The ceiling at 800 ft AGL is under 2,000 ft
+AGL, the lowest minimum container opening altitude in BSR 2-1 I, so
+every canopy opens above it; 14 CFR 105.17 bars a parachute operation
+into or through a cloud and, in its rows below 10,000 ft MSL, requires
+500 ft below any cloud", with the gaps sentence when the ceiling layer
+is broken. Each section named is linked beside the AIM and 91.155
+(`furtherCitations` on the advisory, a third slot the panel renders);
+2-1 I is not among A9's sources on `#citations`, since the daily SIM
+check would then test A9's AIM quotation against 2-1 I's text, so A9
+says the figure is A2's and asks whether the reading is right. MVFR gets
+no comparison: the figures do not settle it. The flag's level (MVFR a
+watch, IFR and LIFR a caution) is still the app's and still the
+maintainer's call (the review section below). Two cleanups the change's
+review named are left: the 2,000 ft floor is a constant beside the
+wording (`LOWEST_OPENING_ALTITUDE_FT_AGL`) and in prose in A2, the
+citation's ref and the drift card, with no structured table of 2-1 I's
+altitudes to derive it from; and the advisory's three citation fields
+(`citation`, `secondaryCitation`, `furtherCitations`) could be one
+ordered list, a refactor across every flag and test for no change on
+screen.
 
 Done the same day: `CITATIONS.far91155` (14 CFR 91.155, Basic VFR
 weather minimums), its reading-log entry, the flight-category flag's

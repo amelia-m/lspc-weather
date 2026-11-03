@@ -334,6 +334,12 @@ export interface Advisory {
    *  in the same sentence comes from the SIM. One link for two authorities let
    *  a reader check the reg and find nothing about licences in it. */
   secondaryCitation?: Citation;
+  /** Any further authority the guidance names. The flight-category flag's
+   *  comparison under IFR and LIFR names 105.17's table and BSR 2-1 I's
+   *  opening altitudes beside the AIM and 91.155 its guidance already
+   *  carries; each section named gets its link, since a named section with
+   *  no link is what the two-link rule above was for. */
+  furtherCitations?: Citation[];
 }
 
 export type JumperClass = 'student' | 'licensed';

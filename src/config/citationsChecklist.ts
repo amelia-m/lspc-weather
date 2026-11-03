@@ -3,6 +3,7 @@ import {
   CITATIONS,
   FAR_91155_ROWS,
   FLIGHT_CATEGORY_GUIDANCE,
+  flightCategoryComparisonText,
   STUDENT_ROUND_RESERVE_FACT,
   VISIBILITY_ROW,
   VISIBILITY_ROWS,
@@ -290,13 +291,20 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A9',
     title: 'Flight category',
-    claim: FLIGHT_CATEGORY_GUIDANCE,
+    // The flag's words: its guidance, then under IFR or LIFR the comparison
+    // it prints in the report's figures, with this page's band labels in
+    // their place (the maintainer, 2026-11-03: make the flag print it). The
+    // broken-layer sentence is in the flag only when the ceiling layer is
+    // broken; here it is shown.
+    claim: `${FLIGHT_CATEGORY_GUIDANCE} Under IFR or LIFR the flag adds, in the report’s figures: ${flightCategoryComparisonText(
+      { visibility: 'A visibility in the IFR or LIFR band', ceiling: 'A ceiling in the IFR or LIFR band', broken: true },
+    )} (The last sentence only when the ceiling layer is broken.)`,
     value: 'MVFR is a watch; IFR and LIFR a caution',
     where:
       'Flight-category flag in Conditions to note, the category pill on the Ceiling & sky card, and that card’s note below VFR, which prints 105.17’s rows and every row of 91.155’s table.',
-    sources: [CITATIONS.aimFlightCategory, CITATIONS.far91155],
+    sources: [CITATIONS.aimFlightCategory, CITATIONS.far91155, CITATIONS.far10517],
     citesNote:
-      'the AIM for the categories, 91.155 for the pilot’s minimums the second sentence names. The parachute rule it names is 105.17, cited on the card and in A8; the level (watch or caution) cites nothing, since no source grades the categories.',
+      'the AIM for the categories, 91.155 for the pilot’s minimums the second sentence names, 105.17 for the comparison’s rows. The opening altitude the comparison holds the ceiling to is A2’s figure (BSR 2-1 I), which the flag links beside these; the level (watch or caution) cites nothing, since no source grades the categories.',
     found: {
       read: 'the AIM on faa.gov (Change 3, effective 2026-07-09), 2026-09-23; the eCFR (Title 14 current as of 2026-10-30), 2026-11-03',
       says: [
@@ -308,7 +316,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     asks: [
       'The app’s bands: a 3,000 ft ceiling or exactly 5 SM is MVFR; 1,000 ft or 3 SM is MVFR rather than IFR; the overall category is the worse of the two. Do those match the definitions above?',
       'A report with no sky group, or a broken layer with no measured height (BKN///), gets no VFR label: visibility alone can make it MVFR, IFR or LIFR, but VFR needs a ceiling. Does that read correctly to a pilot?',
-      'The flag names the category and the rules and leaves the comparison to the reader; this is the app’s reading of the figures in A8 and A2, not a source’s. The IFR and LIFR visibility bands (under 3 SM) are below the lowest flight visibility in any row of 105.17’s table (A8), which has no airspace column. The IFR and LIFR ceiling bands (under 1,000 ft AGL) are below the lowest minimum container opening altitude in BSR 2-1 I (A2), so every canopy opens above such a layer, with 105.17 (a) barring a parachute operation into or through a cloud and (b), in its rows below 10,000 ft MSL, requiring 500 ft below any cloud; a broken ceiling has gaps, 105.17’s horizontal distance holds in them, and the METAR does not report their size. Read together, do the two leave any jump open under an IFR or LIFR reading? Should the flag print that comparison, as the visibility flag prints its rows?',
+      'The comparison the flag prints under IFR or LIFR is the app’s reading of the figures in A8 and A2, not a source’s: a visibility in those bands against the lowest row of 105.17’s table, a ceiling in them against the lowest opening altitude in BSR 2-1 I and 105.17’s cloud rules, with a broken layer’s gaps as the caveat. Is that reading right, and is the broken-layer sentence the right caveat? Read together, do the two leave any jump open under an IFR or LIFR reading?',
       'Which rows of 91.155 apply to the climb and the jump run depends on the airspace over the DZ, which the app does not read; the sectional on the Pilots tab shows it. Which class is the jump plane in from the surface to exit altitude, and does any surface area of controlled airspace (91.155 (c) and (d)) reach the DZ?',
     ],
   },
