@@ -21,7 +21,7 @@ import { VISIBILITY_ROW, VISIBILITY_ROWS,
   withOverrides,
   type Thresholds,
 } from '../src/config/thresholds';
-import type { WeatherSnapshot } from '../src/domain/types';
+import type { Citation, WeatherSnapshot } from '../src/domain/types';
 import { normalizeMetar } from '../src/domain/normalize';
 import { METAR_FIXTURE } from '../src/api/fixtures/metar';
 
@@ -131,7 +131,7 @@ describe('own limits on Licensed', () => {
 
   it('says the steady wind goes unflagged when only a gust ceiling is set, with other flags listed or none', () => {
     const steady = 'You have set no wind limit, so the sustained wind is not flagged at any speed';
-    const overcast = { id: 'overcast', level: 'caution' as const, metric: 'Sky', value: 'OVC015', guidance: 'g', citation: { source: 's', ref: 'r', url: 'https://example.org/' } };
+    const overcast = { id: 'overcast', level: 'caution' as const, metric: 'Sky', value: 'OVC015', guidance: 'g', citations: [{ source: 's', ref: 'r', url: 'https://example.org/' }] as [Citation] };
     for (const advisories of [[], [overcast]]) {
       const list = html(createElement(AdvisoryPanel, { advisories, profile: 'Licensed', hasWindLimit: false, ownLimits: ['Your gust ceiling'] }));
       expect(list).toContain(steady);

@@ -4,6 +4,7 @@ import {
   FAR_91155_ROWS,
   FLIGHT_CATEGORY_GUIDANCE,
   flightCategoryComparisonText,
+  OPENING_ALTITUDES_TEXT,
   STUDENT_ROUND_RESERVE_FACT,
   VISIBILITY_ROW,
   VISIBILITY_ROWS,
@@ -105,8 +106,7 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A2',
     title: 'Minimum opening altitudes',
-    claim:
-      'USPA BSR minimum container-opening altitudes: students & A-license 3,000 ft AGL, B-license 2,500 ft, C/D 2,500 ft (waiverable by an S&TA to no lower than 2,000 ft), tandem 5,000 ft. These are floors — deploy above your minimum, not at it.',
+    claim: `USPA BSR minimum container-opening altitudes: ${OPENING_ALTITUDES_TEXT}. These are floors — deploy above your minimum, not at it.`,
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
     sources: [CITATIONS.uspaOpeningAltitude],
     found: {

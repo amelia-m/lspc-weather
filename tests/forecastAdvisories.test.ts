@@ -68,7 +68,7 @@ describe('forecast wind flags', () => {
     expect(gust?.guidance).toContain('17.4 kt');
     expect(gust?.guidance).toContain('the LSPC waiver gust ceiling for this experience tier');
     expect(gust?.guidance).toContain('A forecast, not a reading: the Gust limit flag fires if KPMV reports it.');
-    expect(gust?.citation).toBe(CITATIONS.lspcWaiver);
+    expect(gust?.citations[0]).toBe(CITATIONS.lspcWaiver);
   });
 
   it('flags the surface-wind caution on the same test as the reading: gusts included', () => {

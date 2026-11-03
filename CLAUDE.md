@@ -148,7 +148,10 @@ precisely because they were colour and text rather than flags.
   reported ceiling against 2,000 ft AGL, the lowest opening altitude in
   BSR 2-1 I, with 105.17's cloud rules and the gaps of a broken layer as
   the caveat (`flightCategoryComparisonText`; the flag links every
-  section it names, `furtherCitations`). It compares figures and gives no
+  section it names: an advisory's `citations` is one ordered list, the
+  trigger's source first). The 2,000 ft is derived from one table of
+  2-1 I's altitudes (`OPENING_ALTITUDES_FT_AGL`, the waiver floor beside
+  it), which the drift card and A2 read too. It compares figures and gives no
   verdict; MVFR gets none, since the figures do not settle it. The
   readings behind it are in docs/open-questions.md, "Settled: the flight
   categories against 105.17 and BSR 2-1 I". The flag's level is still the

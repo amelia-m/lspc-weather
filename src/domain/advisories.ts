@@ -48,6 +48,14 @@ function flightCategoryComparison(c: CurrentConditions): { text: string; cites: 
   return { text, cites };
 }
 
+/** A flag's citations from a required first and any optional others: the
+ *  waiver tiers' wind flags cite the club's sign and then the SIM's waiver
+ *  rule (`windSecondaryCitation`), which the BSR profiles have no need of. */
+const cited = (first: Citation, ...rest: (Citation | undefined)[]): [Citation, ...Citation[]] => [
+  first,
+  ...rest.filter((c): c is Citation => c != null),
+];
+
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
   thresholds: Thresholds,
@@ -107,10 +115,9 @@ export function evaluateAdvisories(
                   : ' (gusts at or above the caution)'
               : ''),
           guidance: `${thresholds.windGuidance} ${windBandSentence(thresholds, unit)}`.trim(),
-          citation: thresholds.windCitation,
           // Waiver tiers: the guidance quotes the club's numbers and then the
           // BSR-excursion rule, which is the SIM's, not the club's.
-          secondaryCitation: thresholds.windSecondaryCitation,
+          citations: cited(thresholds.windCitation, thresholds.windSecondaryCitation),
         });
       }
     }
@@ -147,7 +154,7 @@ export function evaluateAdvisories(
             : 'Gusts are at or above the LSPC waiver gust ceiling for this experience tier (gusts measured over the last 30 min).',
         // On an own ceiling the link backs the guidance's account of the
         // BSR (no ground-wind limit for licensed jumpers), not the figure.
-        citation: thresholds.windCitation,
+        citations: [thresholds.windCitation],
       });
     }
 
@@ -171,7 +178,7 @@ export function evaluateAdvisories(
         metric: 'Visibility',
         value: `${fmtVisibilitySm(current.visibilitySm)} SM${under ? `, ${under}` : ''}`,
         guidance: visibilityGuidance(thresholds),
-        citation: CITATIONS.far10517,
+        citations: [CITATIONS.far10517],
       });
     }
 
@@ -198,9 +205,7 @@ export function evaluateAdvisories(
         // figures, each section it names linked (the maintainer,
         // 2026-11-03; `flightCategoryComparisonText` says what it compares).
         guidance: comparison ? `${FLIGHT_CATEGORY_GUIDANCE} ${comparison.text}` : FLIGHT_CATEGORY_GUIDANCE,
-        citation: CITATIONS.aimFlightCategory,
-        secondaryCitation: CITATIONS.far91155,
-        ...(comparison ? { furtherCitations: comparison.cites } : {}),
+        citations: [CITATIONS.aimFlightCategory, CITATIONS.far91155, ...(comparison?.cites ?? [])],
       });
     }
 
@@ -238,7 +243,7 @@ export function evaluateAdvisories(
           (lower != null ? `; the lowest cloud reported is ${lower.cover} at ${ft(lower.baseFtAgl)}` : '') +
           '. 14 CFR 105.17 bars parachute operations into or through a cloud, and requires staying at least ' +
           `500 ft below cloud under 10,000 ft MSL, 1,000 ft at or above (the field is at ${ft(SITE.dz.elevationFt)} MSL).`,
-        citation: CITATIONS.far10517,
+        citations: [CITATIONS.far10517],
       });
     }
 
@@ -254,7 +259,7 @@ export function evaluateAdvisories(
         // with convection. The flag invents no number — it fires on TS in the
         // METAR — so the citation carries the practice, not a trigger.
         guidance: 'Thunderstorms reported at the station — convective hazard for aircraft and canopies.',
-        citation: CITATIONS.uspaWeather,
+        citations: [CITATIONS.uspaWeather],
       });
     }
   }
@@ -304,8 +309,7 @@ export function evaluateAdvisories(
         // the aircraft, which an earlier wording left open.
         guidance:
           'Between sunset and sunrise, 14 CFR 105.19 requires the jumper to display a light visible for at least 3 statute miles, from open canopy until landing. USPA counts any jump between official sunset and sunrise as a night jump, and says participants should meet USPA B-licence requirements — see SIM 5-3. Not a daytime operation.',
-        citation: CITATIONS.far10519,
-        secondaryCitation: CITATIONS.uspaNightJumps,
+        citations: [CITATIONS.far10519, CITATIONS.uspaNightJumps],
       });
     }
   }
@@ -398,8 +402,7 @@ export function forecastWindAdvisories(
           // Which of the source's figures the flag uses, as the flag on the
           // report says: on Student, the BSR's 14 mph and not its 10 mph.
           windBandSentence(t, unit)).trim(),
-        citation: t.windCitation,
-        secondaryCitation: t.windSecondaryCitation,
+        citations: cited(t.windCitation, t.windSecondaryCitation),
       });
     }
   }
@@ -431,7 +434,7 @@ export function forecastWindAdvisories(
         guidance:
           `The NWS hourly forecast for the drop zone has gusts at or above ${fmtLimitSpeed(ceiling, unit)}, ${which}, ` +
           `in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Gust limit')}${after}`.trim(),
-        citation: t.windCitation,
+        citations: [t.windCitation],
       });
     }
   }

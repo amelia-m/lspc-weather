@@ -97,8 +97,8 @@ describe('evaluateAdvisories', () => {
     const out = evaluateAdvisories(snapshot(), DEFAULT_THRESHOLDS.student, now);
     expect(out.length).toBeGreaterThan(0);
     for (const a of out) {
-      expect(a.citation.url).toMatch(/^https:\/\//);
-      expect(a.citation.source.length).toBeGreaterThan(0);
+      expect(a.citations[0].url).toMatch(/^https:\/\//);
+      expect(a.citations[0].source.length).toBeGreaterThan(0);
     }
   });
 
@@ -114,7 +114,7 @@ describe('evaluateAdvisories', () => {
     const out = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now);
     const vis = out.find((a) => a.id === 'visibility');
     expect(vis?.level).toBe('caution');
-    expect(vis?.citation.source).toContain('105.17');
+    expect(vis?.citations[0].source).toContain('105.17');
   });
 
   it('does not flag flight category when conditions are VFR', () => {
@@ -131,7 +131,7 @@ describe('evaluateAdvisories', () => {
     expect(fc?.value).toContain('IFR');
     // VFR/MVFR/IFR/LIFR are defined in the AIM, not 14 CFR 91.155, which
     // the flag cites second, for the pilot's minimums its guidance names.
-    expect(fc?.citation.source).toContain('AIM');
+    expect(fc?.citations[0].source).toContain('AIM');
   });
 
   it('flags a marginal (MVFR) ceiling as watch', () => {
@@ -176,7 +176,7 @@ describe('evaluateAdvisories', () => {
     const out = evaluateAdvisories(snap, DEFAULT_THRESHOLDS.student, now);
     const day = out.find((a) => a.id === 'daylight');
     expect(day?.level).toBe('caution');
-    expect(day?.citation.source).toContain('105.19');
+    expect(day?.citations[0].source).toContain('105.19');
     // USPA has no "night rating" — night jumps need a B license, not a rating.
     expect(JSON.stringify(out).toLowerCase()).not.toContain('night rating');
   });
@@ -190,7 +190,7 @@ describe('evaluateAdvisories', () => {
     const day = evaluateAdvisories(preDawn, DEFAULT_THRESHOLDS.student, now).find((a) => a.id === 'daylight');
     expect(day?.level).toBe('caution');
     expect(day?.value).toBe('Before sunrise');
-    expect(day?.citation.source).toContain('105.19');
+    expect(day?.citations[0].source).toContain('105.19');
     // And not in daylight.
     const midday = snapshot({ sun: { sunrise: now - 5 * 3600_000, sunset: now + 5 * 3600_000 } });
     expect(evaluateAdvisories(midday, DEFAULT_THRESHOLDS.student, now).find((a) => a.id === 'daylight')).toBeUndefined();
@@ -206,16 +206,17 @@ describe('evaluateAdvisories', () => {
       (a) => a.id === 'daylight',
     );
     expect(day?.guidance).toMatch(/USPA/);
-    expect(day?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/5-3#3A');
+    expect(day?.citations[1]?.url).toBe('https://www.uspa.org/sim/5-3#3A');
     // SIM 5-3 B says participants "should" meet B-licence requirements; it is
     // not a BSR, so the flag must not upgrade it to a requirement.
     expect(day?.guidance).not.toMatch(/USPA (also )?requires/i);
   });
 
   /* The data field being set is not the same as the reader seeing a link.
-   * Deleting the secondaryCitation block from AdvisoryPanel left the whole
-   * suite green, because every assertion checked the advisory object. This
-   * renders the panel and looks for the second source on screen. */
+   * Deleting the second source's block from AdvisoryPanel, when it had one,
+   * left the whole suite green, because every assertion checked the advisory
+   * object. This renders the panel and looks for the second source on
+   * screen. */
   it('renders both sources on a flag that carries two', () => {
     const current = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 20, wgst: 24 });
     const advisories = evaluateAdvisories(
@@ -246,8 +247,8 @@ describe('evaluateAdvisories', () => {
       resolveThresholds('waiver:0-5'),
       now,
     ).find((a) => a.id === 'surface-wind');
-    expect(wind?.citation.url).toContain('lspc-waivered-wind-limits');
-    expect(wind?.secondaryCitation?.url).toBe('https://www.uspa.org/sim/2-2#2B');
+    expect(wind?.citations[0].url).toContain('lspc-waivered-wind-limits');
+    expect(wind?.citations[1]?.url).toBe('https://www.uspa.org/sim/2-2#2B');
   });
 
   it('LSPC waiver (0–5 jumps) flags wind over 15 mph and gust at/over the 16 mph ceiling', () => {
@@ -257,9 +258,9 @@ describe('evaluateAdvisories', () => {
     const wind = out.find((a) => a.id === 'surface-wind');
     const gust = out.find((a) => a.id === 'gust-limit');
     expect(wind?.level).toBe('caution');
-    expect(wind?.citation.source).toContain('LSPC');
+    expect(wind?.citations[0].source).toContain('LSPC');
     expect(gust?.level).toBe('caution');
-    expect(gust?.citation.source).toContain('LSPC');
+    expect(gust?.citations[0].source).toContain('LSPC');
   });
 
   it('states the gust and the waiver ceiling in the SAME unit', () => {
@@ -432,8 +433,10 @@ describe('flags whose trigger no published source sets', () => {
     const out = evaluateAdvisories(wouldHaveTripped(), DEFAULT_THRESHOLDS.student, now);
     expect(out.length).toBeGreaterThan(0);
     for (const a of out) {
-      expect(a.citation, `${a.id} has no citation`).toBeDefined();
-      expect(a.citation.url, `${a.id} cites an in-app URL`).toMatch(/^https:\/\//);
+      expect(a.citations.length, `${a.id} has no citation`).toBeGreaterThan(0);
+      for (const c of a.citations) expect(c.url, `${a.id} cites an in-app URL`).toMatch(/^https:\/\//);
+      // Each authority once: a repeated link would read as a second source.
+      expect(new Set(a.citations.map((c) => c.url)).size, `${a.id} cites a source twice`).toBe(a.citations.length);
     }
   });
 });
@@ -489,13 +492,13 @@ describe('citations that name a regulation', () => {
     const fc = evaluateAdvisories(snapshot({ current }), DEFAULT_THRESHOLDS.student, now).find(
       (a) => a.id === 'flight-category',
     );
-    expect(fc?.citation).toBe(CITATIONS.aimFlightCategory);
+    expect(fc?.citations[0]).toBe(CITATIONS.aimFlightCategory);
     expect(fc?.guidance).toMatch(/91\.155/);
-    expect(fc?.secondaryCitation).toBe(CITATIONS.far91155);
+    expect(fc?.citations[1]).toBe(CITATIONS.far91155);
     expect(CITATIONS.far91155.url).toContain('section-91.155');
     // The comparison names 105.17 by number; so that section is linked too.
     expect(fc?.guidance).toMatch(/105\.17/);
-    expect(fc?.furtherCitations).toContain(CITATIONS.far10517);
+    expect(fc?.citations).toContain(CITATIONS.far10517);
   });
 
   /* The maintainer, 2026-11-03: make the flag print the comparison. Under
@@ -512,7 +515,7 @@ describe('citations that name a regulation', () => {
       expect(a?.value).toContain('IFR');
       expect(a?.guidance).toContain('Visibility 2 SM is under 3 SM, the lowest flight visibility in any row of 14 CFR 105.17’s table');
       expect(a?.guidance).not.toMatch(/opening altitude/);
-      expect(a?.furtherCitations).toEqual([CITATIONS.far10517]);
+      expect(a?.citations.slice(2)).toEqual([CITATIONS.far10517]);
     });
 
     it('by an overcast ceiling: the base against the lowest opening altitude, both sections linked, no gaps', () => {
@@ -527,7 +530,7 @@ describe('citations that name a regulation', () => {
       expect(a?.guidance).toContain('into or through a cloud');
       expect(a?.guidance).not.toMatch(/Visibility \d/);
       expect(a?.guidance).not.toMatch(/gaps/);
-      expect(a?.furtherCitations).toEqual([CITATIONS.far10517, CITATIONS.uspaOpeningAltitude]);
+      expect(a?.citations.slice(2)).toEqual([CITATIONS.far10517, CITATIONS.uspaOpeningAltitude]);
     });
 
     it('by a broken ceiling: the gaps caveat; by both halves: both comparisons', () => {
@@ -553,7 +556,7 @@ describe('citations that name a regulation', () => {
       const a = fc(current);
       expect(a?.value).toContain('MVFR');
       expect(a?.guidance).toBe(FLIGHT_CATEGORY_GUIDANCE);
-      expect(a?.furtherCitations).toBeUndefined();
+      expect(a?.citations).toEqual([CITATIONS.aimFlightCategory, CITATIONS.far91155]);
     });
 
     it('renders every section the comparison names as a link', () => {
