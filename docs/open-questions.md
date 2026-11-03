@@ -102,9 +102,11 @@ the check, in those words, instead of "the site has to exist". Nothing
 from here can read GoatCounter's answer (gc.zgo.at and goatcounter.com
 are not on the sandbox's allowlist, 2026-11-02); a reader's browser can.
 
-- **Waiting on the maintainer:** a view of the dashboard showing again in
-  <https://amelia-m.goatcounter.com> under `/lspc-weather/` after this
-  deploy. The browser check stops at the request.
+Seen in the dashboard itself on 2026-11-03: the week to 2026-11-02 listed
+`/lspc-weather` with 4 visits and `/lspc-weather/#pilots` with 2 (the
+trailing slash the app sends is dropped in the listing), so the whole
+path from a reader's browser to the dashboard is proven on the
+`amelia-m` site. Nothing waits here.
 
 ## Watch: a change document for the 2026 SIM
 
