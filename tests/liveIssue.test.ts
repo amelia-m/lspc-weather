@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { failureExcerpt, isTimeoutError, liveIssues, type VitestJsonReport } from '../src/domain/liveIssue';
+import { CHECK_LABELS, LABEL_DESCRIPTION_MAX, failureExcerpt, isTimeoutError, liveIssues, type VitestJsonReport } from '../src/domain/liveIssue';
 
 /* The shape Vitest's JSON reporter wrote on 2026-10-31 (vitest 4), with
  * #238's failure as its message: a TimeoutError from the fetch, colour
@@ -109,6 +109,18 @@ describe('liveIssues', () => {
 
   it('opens nothing when every check passed', () => {
     expect(liveIssues({ testResults: [file('skyParity.live.ts', [{ title: 'ok' }])] }, run)).toEqual([]);
+  });
+});
+
+describe('the labels', () => {
+  it('keep every description within GitHub’s limit, so the label step cannot fail the issue', () => {
+    // 2026-11-03: a 113-character description made `gh label create
+    // --force` answer 422, the step died, and a real failure opened nothing.
+    expect(CHECK_LABELS.length).toBeGreaterThanOrEqual(4);
+    for (const { label, description } of CHECK_LABELS) {
+      expect(description.length, label).toBeLessThanOrEqual(LABEL_DESCRIPTION_MAX);
+      expect(label).toMatch(/^[a-z-]+$/);
+    }
   });
 });
 

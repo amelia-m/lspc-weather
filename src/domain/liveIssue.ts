@@ -41,6 +41,14 @@ export interface LiveIssue {
   body: string;
 }
 
+/** GitHub refuses a label description longer than this (HTTP 422,
+ *  "description is too long (maximum is 100 characters)"). The workflow
+ *  creates or refreshes each label with `--force` before opening its issue,
+ *  so on 2026-11-03 a 113-character description for sky-parity failed that
+ *  step and no issue was opened for a real failure; a test holds every
+ *  description under the limit. */
+export const LABEL_DESCRIPTION_MAX = 100;
+
 /** The checks the workflow runs, by file, with what a failure of each
  *  means and where to look. A file not here (the comparison reports never
  *  fail; a new check would be added here) falls to `OTHER`. */
@@ -48,7 +56,7 @@ const CHECKS: Record<string, { label: string; name: string; description: string;
   'skyParity.live.ts': {
     label: 'sky-parity',
     name: 'Sky decode parity',
-    description: "The app's METAR sky parse, flight category or TAF decode disagreed with aviationweather.gov's, or its fetch failed",
+    description: "METAR sky, flight category or TAF decode disagreed with aviationweather.gov's, or its fetch failed",
     what:
       "The app's METAR sky parse, its derived flight category or its TAF group decode (src/domain/metar.ts, src/domain/taf.ts) disagrees with aviationweather.gov's decoder on today's report, or the fetch of it failed (scripts/skyParity.live.ts).",
   },
@@ -62,7 +70,7 @@ const CHECKS: Record<string, { label: string; name: string; description: string;
   'simText.live.ts': {
     label: 'sim-text',
     name: 'SIM text',
-    description: 'A cited SIM part changed since it was read, a quote is not in its part, or uspa.org names a new edition',
+    description: 'A cited SIM part changed since read, a quote is not in its part, or uspa.org names a new edition',
     what:
       'A SIM part the app cites or quotes has changed since it was read, a quote on #citations is not in the part it is tied to, uspa.org names a new SIM edition, or a page could not be fetched (scripts/simText.live.ts). Read the part again and update src/config/readingLog.ts.',
   },
@@ -73,6 +81,12 @@ const OTHER = {
   description: 'A live check failed outside the named checks, or the run failed before they started',
   what: 'A live check not listed by name failed (vitest.live.config.ts).',
 };
+
+/** Every label the workflow may create, with its description, for the
+ *  test that holds them to GitHub's limit. */
+export const CHECK_LABELS: readonly { label: string; description: string }[] = [...Object.values(CHECKS), OTHER].map(
+  (c) => ({ label: c.label, description: c.description }),
+);
 
 /** Whether an error is a fetch timeout: Node's AbortSignal.timeout rejects
  *  with a DOMException named TimeoutError, and Vitest prints it so. */

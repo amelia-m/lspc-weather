@@ -1278,6 +1278,46 @@ second issue (one is open). Nothing for the code to fix.
 
 Both are the maintainer's to close: #209 with this section as the why.
 
+## Done: the sky-parity run of 2026-11-03, a 1 hPa QNH and a label too long
+
+The daily run of 2026-11-03 (19:52Z) failed twice over, and opened no
+issue; found by reading the run list.
+
+**The failure.** "decodes each TAF period the way aviationweather.gov
+decodes it": KOFF period 4, `BECMG 0404/0405 30010G15KT 9000 BR OVC015
+620802 QNH2972INS`, the app's 29.72 inHg against aviationweather's
+`altim` 1007 hPa. 29.72 × 33.8639 is 1006.43, which rounds to 1006, and
+the check required the rounded figures to agree. Read the same day
+through aviationweather.gov's TAF API for twenty USAF stations with QNH
+groups (`https://aviationweather.gov/api/data/taf?ids=KOFF,KTIK,KBLV,KWRI,KDOV,KLSV,KSUU,KSKA,KRND,KFFO,KGUS,KMUO,KEDW,KBAB,KMCF,KCHS,KLFI,KSSC,KPOB,KDYS&format=json`,
+each QNH group in the text set against the `altim` of its period): 70
+pairs, 68 of them the rounded 33.8639 conversion. The two that were not
+were both 29.72 inHg, at KOFF and KBLV, both 1007; and a factor of 33.87
+would give 1007 there but 1021, 1025 and 1023 for the 30.13, 30.25 and
+30.19 that aviationweather gives as 1020, 1024 and 1022, so no single
+factor fits all 70. How aviationweather gets 1007 from 29.72 is not
+known; its figure is a hectopascal off the arithmetic, not a misread.
+The check now takes the app's converted figure within 1 hPa of theirs
+(`scripts/skyParity.live.ts`), which loses nothing: a misread figure is
+tens of hectopascals off, and a slip of one hundredth (0.34 hPa) was
+under the rounding either way.
+
+**The missing issue.** The step that opens one issue per failed check
+first creates or refreshes the check's label with `gh label create
+--force`, and GitHub answered 422: the sky-parity label's description
+was 113 characters against a limit of 100 (pilot-links', 53, is why
+#256 opened on 2026-11-01). The step died there, so a real failure
+opened nothing. The descriptions are now under 100
+(`LABEL_DESCRIPTION_MAX`, `CHECK_LABELS`, a test in
+tests/liveIssue.test.ts), and the workflow goes on to the issue when the
+label command fails, with a warning in the run.
+
+The forecast keeper's "cancelled" runs in the same list are the known
+pattern (below, "Forecasts kept for later"): with `cancel-in-progress:
+false` GitHub keeps one pending run per group, so a scheduled run
+arriving while a dispatched successor waits cancels the older of the two
+and the chain goes on.
+
 ## Issue #256: aviationweather.gov answered the GFA link 502, once
 
 The daily check of 2026-11-01 (18:09Z) failed "opens the GFA and the

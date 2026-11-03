@@ -78,7 +78,17 @@ jobs:
           fi
           for f in issues/*.json; do
             label=$(jq -r .label "$f")
-            gh label create "$label" --color D93F0B --force --description "$(jq -r .description "$f")"
+            # The label is a convenience; the issue is the point. A label
+            # GitHub refuses (on 2026-11-03, a description past its 100
+            # characters: 422, and the step died with no issue opened for a
+            # real failure) must not stop the issue: it is then opened
+            # without one, since `--label` on a label that does not exist
+            # would fail the create too, and the run says so.
+            labelArgs=(--label "$label")
+            if ! gh label create "$label" --color D93F0B --force --description "$(jq -r .description "$f")"; then
+              echo "::warning::could not create or update label $label; opening the issue without it"
+              labelArgs=()
+            fi
             {
               jq -r .body "$f"
               if [ -f parity.log ]; then
@@ -93,10 +103,10 @@ jobs:
             } > body.md
             # `.[0].number` on an empty list prints the word null, which is a
             # non-empty string; `// empty` prints nothing, which is what -n tests.
-            existing=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+            existing=$(gh issue list "${labelArgs[@]}" --state open --json number --jq '.[0].number // empty')
             if [ -n "$existing" ]; then
               gh issue comment "$existing" --body-file body.md
             else
-              gh issue create --title "$(jq -r .title "$f")" --label "$label" --body-file body.md
+              gh issue create --title "$(jq -r .title "$f")" "${labelArgs[@]}" --body-file body.md
             fi
           done
