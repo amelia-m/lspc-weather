@@ -4,9 +4,10 @@
  * so the dashboard's views sit in that one dashboard under /lspc-weather/
  * paths, which its path filter tells from the personal site's (they start
  * `/`). On 2026-11-02 this pointed at a site of its own, `lspc-weather`,
- * which did not exist on the account: GoatCounter answered every count
- * "error 400: no site at this domain" (the maintainer's browser,
- * 2026-11-03), and a day's views were counted nowhere. Back here since
+ * which did not exist on the account: its root page answered "error 400:
+ * no site at this domain" (the maintainer's browser, 2026-11-03; the count
+ * endpoint presumed the same), and a day's views were counted nowhere.
+ * Back here since
  * 2026-11-03; a site of its own is one line to change if one is made
  * (docs/page-counts.md). Null turns counting off.
  *
