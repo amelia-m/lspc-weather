@@ -332,7 +332,8 @@ export function surfaceSampleSection(records: readonly SurfaceWindRecord[]): Win
   const times: number[] = [];
   const rows = SAMPLE_ROWS.map(({ source, label }) => {
     const { pairs } = pairsVsMetar(runs, source);
-    times.push(...pairs.map((p) => Date.parse(p.obsAt)));
+    // A loop, not a spread (see `span`): the sample runs over seasons.
+    for (const p of pairs) times.push(Date.parse(p.obsAt));
     return rowOf(
       label,
       pairs.map(({ fc, obs }) => ({

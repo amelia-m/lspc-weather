@@ -83,7 +83,17 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     say([...out, `Open-Meteo could not be read: ${(e as Error).message}`, record({ kind: 'schulze', at: new Date(now).toISOString(), error: `open-meteo: ${(e as Error).message}`, omRuns: await runsP })]);
     return;
   }
-  const { samples, validMs, schulze: hisWay } = normalizeOpenMeteo(coerceOpenMeteoTimes(raw), now);
+  // A report that never fails: a 200 whose body is not the forecast (no
+  // `hourly`, say) would throw in the normaliser, fail the daily run and
+  // open an issue, and in the eight-a-day runs leave no record at all.
+  let normalised: ReturnType<typeof normalizeOpenMeteo>;
+  try {
+    normalised = normalizeOpenMeteo(coerceOpenMeteoTimes(raw), now);
+  } catch (e) {
+    say([...out, `Open-Meteo's answer could not be read: ${(e as Error).message}`, record({ kind: 'schulze', at: new Date(now).toISOString(), error: `open-meteo: unreadable body: ${(e as Error).message}`, omRuns: await runsP })]);
+    return;
+  }
+  const { samples, validMs, schulze: hisWay } = normalised;
   const levels = interpolateWindsAloft(samples, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL);
   // The card's other table: the same hour built as Schulze's tool builds his.
   // Logged beside the default so the summary can show both that this app

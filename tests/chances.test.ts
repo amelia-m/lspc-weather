@@ -195,3 +195,17 @@ describe('summarizeChances, near misses and odd values', () => {
     expect(() => summarizeChances([at(T, 120)], hours, 'probabilityOfPrecipitation')).toThrow(/120%/);
   });
 });
+
+describe('reportedHours, a corrected hourly report', () => {
+  it('takes the hour’s amount from a corrected hourly report after one that could not say', () => {
+    const hours = reportedHours([m(16, 15, 'RA', 'P0001'), m(16, 55, 'RA', 'P////'), m(16, 55, 'RA', 'P0005')]);
+    expect(hours).toHaveLength(1);
+    expect(hours[0]).toMatchObject({ measurable: true, amount: 0.05 });
+    // And null when no hourly report gave a figure: the hour's rain unknown.
+    expect(reportedHours([m(17, 15, 'RA', ''), m(17, 55, 'RA', 'P////')])[0]).toMatchObject({ amount: null, measurable: null });
+    // A gauge that could not say at :15 beside an hourly report that gave
+    // none: the hour's rain is known not measurable, since the hourly
+    // report's amount covers the hour.
+    expect(reportedHours([m(18, 15, '', 'P////'), m(18, 55, '', 'P0000')])[0]).toMatchObject({ amount: 0, measurable: false });
+  });
+});

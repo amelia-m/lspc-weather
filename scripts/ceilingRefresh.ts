@@ -148,38 +148,52 @@ if (cmd === 'inputs') {
   if ((part !== 'ceiling' && part !== 'metar' && part !== 'omwind' && part !== 'ndfdwind') || !file || !since || !start || !end) {
     fail('usage: ceilingRefresh.ts fetched ceiling|metar|omwind|ndfdwind <file> --since <ISO> --start <day> --end <day>');
   }
+  // One gate for every part: each group of the fetch (an NDFD element, an
+  // Open-Meteo run, or the one group a ceiling or METAR fetch has) must
+  // bring something newer than its own newest kept record (or `--since`
+  // where nothing is kept), else the run fails and commits nothing. Per
+  // group, because the groups are fetched together and a fetch that
+  // brought one's days and none of another's would pass a pooled gate
+  // and publish a stale row for the other.
+  const gate = (groups: { label: string; what: string; times: string[]; keptNewest: string | null; distinct: boolean }[]): never => {
+    let failed = false;
+    for (const g of groups) {
+      const groupSince = g.keptNewest ?? since;
+      const { newer, emptyDays } = fetchCoverage(g.times, groupSince, { start, end });
+      const count = g.distinct ? new Set(g.times).size : g.times.length;
+      console.error(`${file}: ${g.label} ${count} ${g.what} (${g.times.length} records), ${newer} newer than ${groupSince}`);
+      // GitHub shows a ::warning:: line on the run's page.
+      for (const d of emptyDays) console.log(`::warning::no ${g.label} ${g.what} for ${d} in ${file}`);
+      if (newer === 0) {
+        console.log(`::error::the ${g.label} fetch for ${start} to ${end} returned nothing newer than ${groupSince}`);
+        failed = true;
+      }
+    }
+    process.exit(failed ? 1 : 0);
+  };
   if (part === 'ndfdwind') {
     const fetched = ndfdWindIssued([file]);
     const kept = ndfdWindIssued(ndfdWindFiles());
-    let failed = false;
-    NDFD_ELEMENTS.forEach((el, i) => {
-      const elSince = newest(kept[i]) ?? since;
-      const { newer, emptyDays } = fetchCoverage(fetched[i], elSince, { start, end });
-      console.error(`${file}: ${el} ${new Set(fetched[i]).size} issuances (${fetched[i].length} records), ${newer} newer than ${elSince}`);
-      for (const d of emptyDays) console.log(`::warning::no NDFD ${el} issuances for ${d} in ${file}`);
-      if (newer === 0) {
-        console.log(`::error::the NDFD ${el} fetch for ${start} to ${end} returned nothing newer than ${elSince}`);
-        failed = true;
-      }
-    });
-    if (failed) process.exit(1);
-    process.exit(0);
+    gate(NDFD_ELEMENTS.map((el, i) => ({ label: `NDFD ${el}`, what: 'issuances', times: fetched[i], keptNewest: newest(kept[i]), distinct: true })));
   }
-  const times =
+  if (part === 'omwind') {
+    const fetched = omWindRecords([file]);
+    const kept = omWindRecords(omWindFiles());
+    gate(
+      OM_RUNS.map((run) => ({
+        label: `Open-Meteo ${run}`,
+        what: 'wind hours',
+        times: fetched.filter((r) => r.run === run).map((r) => r.valid),
+        keptNewest: newest(kept.filter((r) => r.run === run).map((r) => r.valid)),
+        distinct: true,
+      })),
+    );
+  }
+  gate(
     part === 'ceiling'
-      ? issuedTimes([file])
-      : part === 'metar'
-        ? reportTimes([file])
-        : omWindRecords([file]).map((r) => r.valid);
-  const { newer, emptyDays } = fetchCoverage(times, since, { start, end });
-  const what = { ceiling: 'NDFD issuances', metar: 'KPMV reports', omwind: 'Open-Meteo wind hours' }[
-    part as 'ceiling' | 'metar' | 'omwind'
-  ];
-  const distinct = part === 'metar' ? times.length : new Set(times).size;
-  console.error(`${file}: ${distinct} ${what} (${times.length} records), ${newer} records newer than ${since}`);
-  // GitHub shows a ::warning:: line on the run's page.
-  for (const d of emptyDays) console.log(`::warning::no ${what} for ${d} in ${file}`);
-  if (newer === 0) fail(`::error::the ${part} fetch for ${start} to ${end} returned nothing newer than ${since}`);
+      ? [{ label: 'ceiling', what: 'NDFD issuances', times: issuedTimes([file]), keptNewest: null, distinct: true }]
+      : [{ label: 'metar', what: 'KPMV reports', times: reportTimes([file]), keptNewest: null, distinct: false }],
+  );
 } else if (cmd === 'check') {
   const [publishedFile, nextFile] = pos;
   if (!publishedFile || !nextFile) fail('usage: ceilingRefresh.ts check <published.json> <new.json>');

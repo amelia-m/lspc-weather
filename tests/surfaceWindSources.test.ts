@@ -390,6 +390,18 @@ describe('summarizeSurfaceWind', () => {
     expect(by.om15).toMatchObject({ reports: 3, n: 1, spd: { mean: 0.1 }, dir: { mean: 11 } });
   });
 
+  it('against the METAR: counts no direction error for a calm report, even one carrying the NWS decode’s 0°', () => {
+    // A version-1 record read through the NWS path carried 0° for calm;
+    // version 2 carries null. Neither has a direction to miss by.
+    const s = summarizeSurfaceWind([
+      run('00:20', { metar: { ...metar('00:15', 0, 0)!, source: 'nws' as const }, om: om({ m15: [w('00:15', 200, 4, 9)] }) }),
+    ]);
+    const by = Object.fromEntries(s.vsMetar.map((v) => [v.source, v]));
+    expect(by.om15.n).toBe(1);
+    expect(by.om15.dir?.n ?? 0).toBe(0);
+    expect(by.om15.spd?.n).toBe(1);
+  });
+
   it('against the METAR: direction left out when the METAR has none (calm or variable); gusts compared only when both have one', () => {
     const s = summarizeSurfaceWind([
       run('00:20', {

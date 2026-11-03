@@ -10,6 +10,7 @@
  * beside the hours it happened in. Nothing here grades the forecast, and
  * the app shows none of it on the dashboard.
  */
+import { extent } from './extent';
 import { byValidHour, END_REACH_H, keptHours, pastReach, type KeptGridpointSnapshot } from './ceilingHeights';
 import { NWS_ISSUANCES, type MetarRecord } from './cloudCoverSources';
 import { WX, WX_DESCRIPTOR_ONLY } from './taf';
@@ -143,16 +144,21 @@ export function reportedHours(metars: readonly MetarRecord[]): ReportedHour[] {
     const ts = wx.some((r) => r.ts);
     out.push({
       t,
-      measurable: measured ? true : amounts.some((r) => r.amount == null) ? null : false,
+      // Known not measurable when an hourly report gave a figure (a
+      // corrected one after a `P////` included); unknown when the only
+      // word on the gauge was that it could not say.
+      measurable: measured ? true : list.some((x) => x.hourly && x.r.amount != null) ? false : amounts.some((r) => r.amount == null) ? null : false,
       precip: wx.some((r) => r.precip) || amounts.some((r) => r.pGroup),
       ts: ts ? true : wx.some((r) => r.tsno) ? null : false,
       vcts: wx.some((r) => r.vcts),
       // The largest in the hour: every report in it measures from the :55
       // before, and an amount never fell within an hour in the archive.
-      amount:
-        list.find((x) => x.hourly)!.r.amount == null
-          ? null
-          : Math.max(...amounts.flatMap((r) => (r.amount == null ? [] : [r.amount]))),
+      // Null only when no hourly report in the hour gave a figure: a
+      // corrected hourly report (COR, also at :55) after one reading
+      // `P////` carries the hour's amount.
+      amount: list.some((x) => x.hourly && x.r.amount != null)
+        ? Math.max(...amounts.flatMap((r) => (r.amount == null ? [] : [r.amount])))
+        : null,
     });
   }
   return out.sort((a, b) => a.t - b.t);
@@ -237,7 +243,7 @@ export function summarizeChances(
       events: total('events'),
       chanceSum: total('chanceSum'),
       nearMiss: pairs.filter((p) => p.near).length,
-      leadH: leads.length ? { min: Math.min(...leads), max: Math.max(...leads) } : null,
+      leadH: extent(leads),
       bins,
       pairs,
     };

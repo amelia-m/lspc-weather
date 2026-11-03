@@ -8,6 +8,7 @@
  * Spreads and counts only, forecast minus reported. Nothing here grades
  * the forecast, and the dashboard shows none of it.
  */
+import { extent } from './extent';
 import { byValidHour, END_REACH_H, keptHours, pastReach, type KeptGridpointSnapshot } from './ceilingHeights';
 import { NWS_ISSUANCES, reportNear, type MetarRecord } from './cloudCoverSources';
 import { angular, metarWindGroup } from './surfaceWindSources';
@@ -285,11 +286,12 @@ export function summarizeInstants(
       }
     }
     const mean = (xs: number[]): number => r2(xs.reduce((a, b) => a + b, 0) / xs.length);
+    const leadsExtent = extent(leads);
     return {
       label,
       minLeadH,
       hours: pairs.length,
-      leadH: leads.length ? { min: r2(Math.min(...leads)), max: r2(Math.max(...leads)) } : null,
+      leadH: leadsExtent ? { min: r2(leadsExtent.min), max: r2(leadsExtent.max) } : null,
       first: pairs.length ? new Date(pairs[0].t).toISOString() : null,
       last: pairs.length ? new Date(pairs[pairs.length - 1].t).toISOString() : null,
       speed: spreadOf(speed.map((s) => s.d)),

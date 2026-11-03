@@ -175,6 +175,48 @@ listed under the test's fixtures; the hook's pending marking is held by
   to the older file; every HEAD thrown answers "unreachable") reaches the
   deployed Worker only when she deploys it (docs/taf-relay.md); until
   then the live relay still answers 502 on a stalled HEAD.
+
+**The modules the first pass had not read**, reviewed in depth the same
+day at the maintainer's ask (the parity and wind-error summaries, the
+kept-forecast, NDFD gust, chances, cloud-cover, usairnet, SIM-text and
+citation-answer modules, the three report pages, the comparison and
+live scripts): eight findings. Fixed, with a test each proved by
+breaking the fix where the code is pure:
+
+- The surface-wind summary (`vsMetarOf`) counted a direction error for a
+  calm report read through the NWS path on a version-1 record, where the
+  `#wind-errors` page already skipped it; it skips it now, so the version
+  note's "moves no figure" is true of both.
+- `#wind-errors` said the sample was taken every five minutes; every
+  seventeen since 2026-10-30.
+- The hour's rain amount came from the first hourly report in the input,
+  so a corrected hourly report (COR) after one reading `P////` left the
+  hour's amount unknown; the amount is null only when no hourly report
+  gave a figure.
+- Spreads over standing archives (`Math.min(...leads)`, a push of every
+  pair's time, the parity spread's extremes, the sample's gaps and ages)
+  that V8 refuses past about a hundred thousand values, years away at
+  current rates: a loop (`extent`) instead, at every site in
+  `src/domain` whose list grows with an archive; the spreads left are
+  over one record's own hours or levels, bounded.
+- The Open-Meteo wind fetch passed the weekly refresh's "nothing newer"
+  gate on either run alone, so a fetch with one run's days and none of
+  the other's would have published a stale row; the gate is now per
+  run, as the NDFD elements' is. A script change, with no unit test.
+- The Schulze comparison, a report that "never fails", would have failed
+  the daily run (and opened a `live-checks` issue) on a 200 whose body
+  was not the forecast, thrown in the normaliser outside its try; caught
+  now, as an error record the summary counts under `unreadable`. The
+  usairnet comparison's parse was already inside its try.
+
+Not changed, recorded: `arrivalLags` times only the newest report a
+source gained between two samples, so a feed catching up two reports at
+once has the older, slower one untimed, and a slow source reads a
+little quicker (docs/source-parity.md, beside the figures; the samples
+that gave them are not running). `scripts/cloudCoverFetch.py` writes
+its records only after every download, so one that fails past its
+attempts loses the rest of the part; low, and the parts are the
+caller's.
 - **For the maintainer's judgement, not changed:** the flight-category
   flag's level is the app's (`MVFR` a watch, `IFR`/`LIFR` a caution,
   `src/domain/advisories.ts`), and so is the overcast flag's watch; AIM

@@ -22,6 +22,7 @@
  *
  * Pure: records in, summary out. Every time is in a record.
  */
+import { extent } from './extent';
 import type { SkyLayer } from './types';
 import { CEILING_COVERS, parseSkyGroups, parseValidTime } from './normalize';
 import { ceilingCategory, type FlightCategory } from './flightCategory';
@@ -333,7 +334,7 @@ export function summarizeCeilings(
       label,
       minLeadH,
       hours: n,
-      leadH: leads.length ? { min: Math.min(...leads), max: Math.max(...leads) } : null,
+      leadH: extent(leads),
       call,
       diffFt: diffs.length
         ? {
