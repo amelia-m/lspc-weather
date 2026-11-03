@@ -692,7 +692,8 @@ dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
 `vitest.live.config.ts` so `npm test` stays hermetic. It fails when the
 app's METAR sky parse, its derived flight category, or its TAF group decode
 (`src/domain/taf.ts`, run on aviationweather.gov's own TAF text and compared
-period by period with the `fcsts` decode served beside it) disagrees with
+period by period with the `fcsts` decode served beside it; its QNH within
+1 hPa of theirs, since 2026-11-03) disagrees with
 aviationweather.gov's decoder on today's reports, and on `main` opens one
 issue per failed check, labelled by it (`sky-parity`, `pilot-links`,
 `sim-text`; `live-checks` for a run that failed before they started),

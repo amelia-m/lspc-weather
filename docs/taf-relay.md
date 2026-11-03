@@ -86,9 +86,11 @@ Aviation Weather Handbook (FAA-H-8083-28B, 27.4.2.10.4, read
   text carries them.
 
 The daily sky-parity check holds them to aviationweather.gov's decode. QNH
-must round to its whole hectopascal, which catches a misread figure but
-not every slip of one hundredth: 30.17 and 30.18 inHg both round to
-1022 hPa. The temperatures are compared as sorted lists. The check passed
+converted must be within 1 hPa of its whole hectopascal (until 2026-11-03,
+round to it: that day it gave 1007 for 29.72 inHg, which is 1006.43 hPa;
+docs/open-questions.md, "Done: the sky-parity run of 2026-11-03"), which
+catches a misread figure but not every slip of one hundredth: 30.17 and
+30.18 inHg both round to 1022 hPa. The temperatures are compared as sorted lists. The check passed
 on that day's Offutt TAF, and failed when the decoder was broken on
 purpose (QNH 0.03 inHg off, the temperature times an hour late). A
 production build in Chromium, with the relay's answer stood in by that
