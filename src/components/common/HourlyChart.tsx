@@ -95,10 +95,11 @@ export function HourlyChart({
   // the 21+ tier's 20 mph gust ceiling (17.4 kt, 19.99… mph converted back)
   // lands on a 20 mph axis top, and a figure edited in Settings can be
   // anywhere. Measured in chart units, so it holds on any axis.
-  let maxKt = Math.ceil(peak / 5) * 5;
-  while (lines.some((l) => (1 - toSpeed(l.kt, unit) / maxKt) * plotH < MIN_LIMIT_GAP)) maxKt += 5;
+  // In the display unit, as `speeds` and `gusts` are: knots or mph.
+  let maxSpeed = Math.ceil(peak / 5) * 5;
+  while (lines.some((l) => (1 - toSpeed(l.kt, unit) / maxSpeed) * plotH < MIN_LIMIT_GAP)) maxSpeed += 5;
 
-  const yOf = (kt: number): number => padT + (1 - kt / maxKt) * plotH;
+  const yOf = (speed: number): number => padT + (1 - speed / maxSpeed) * plotH;
 
   const path = (vals: (number | null)[]): string => {
     let d = '';
@@ -114,7 +115,7 @@ export function HourlyChart({
     return d.trim();
   };
 
-  const gridKt = [0, maxKt / 2, maxKt];
+  const gridSpeeds = [0, maxSpeed / 2, maxSpeed];
   // A 2-unit gap between bars where there is room; over a week (about 1.8
   // units an hour) a quarter of the step, so neighbouring translucent bars
   // never overlap into darker strips.
@@ -201,8 +202,8 @@ export function HourlyChart({
         ),
       )}
 
-      {/* y gridlines + labels (kt) */}
-      {gridKt.map((kt) => (
+      {/* y gridlines + labels, in the display unit */}
+      {gridSpeeds.map((kt) => (
         <g key={kt}>
           <line className="hc-grid" x1={padL} y1={yOf(kt)} x2={W - padR} y2={yOf(kt)} />
           <text className="hc-axis" x={padL - 4} y={yOf(kt) + 3} textAnchor="end">

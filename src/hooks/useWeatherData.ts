@@ -3,6 +3,8 @@ import { describePassedOver, passedOverReason } from '../domain/sourceProvenance
 import { NoCurrentTafError } from '../api/tafChain';
 import { tafOnScreenGone } from '../domain/taf';
 import { TAF_RELAY_SET } from '../config/tafRelay';
+import { isLatest } from '../domain/latest';
+import { sourcesFetched } from '../domain/types';
 import { fetchNbm } from '../api/nbm';
 import { USE_FIXTURES } from '../api/http';
 import {
@@ -97,6 +99,11 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
   const refreshRef = useRef<() => void>(() => {});
   const quickRetryUsed = useRef(false);
   const quickRetryTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Each refresh's number, and the number of the refresh whose answer each
+  // source last applied: an older refresh's late answer must not overwrite
+  // a newer one's (src/domain/latest.ts).
+  const refreshSeq = useRef(0);
+  const appliedSeq = useRef<Partial<Record<SourceKey, number>>>({});
 
   // Each settle bumps the panel's "Updated" line, so fast sources register
   // immediately instead of waiting for the slowest fetch to time out.
@@ -185,18 +192,35 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
     const { dz } = SITE;
     clearTimeout(quickRetryTimer.current);
     let failures = 0;
+    const seq = ++refreshSeq.current;
+    /** Whether no newer refresh has settled `key` yet. */
+    const stillLatest = (key: SourceKey): boolean => isLatest(appliedSeq.current, key, seq);
+    /** The same, and if so record this refresh as the one settling `key`:
+     *  success or failure, the newest attempt is the one the card and the
+     *  status show, and an older refresh's late answer is dropped. */
+    const latest = (key: SourceKey): boolean => {
+      if (!stillLatest(key)) return false;
+      appliedSeq.current[key] = seq;
+      return true;
+    };
+    const nbmFetched = TAF_RELAY_SET || USE_FIXTURES;
 
-    // Flag every source as in-flight so the UI can show that a refresh is
-    // actually happening — a hung request otherwise looks like a dead button.
+    // Flag every source this refresh fetches as in-flight so the UI can
+    // show that a refresh is actually happening — a hung request otherwise
+    // looks like a dead button. Only those: a source never fetched would
+    // stay pending for good, and the Refresh button with it.
     setStatus((prev) => {
-      const out = {} as Record<SourceKey, SourceStatus>;
-      for (const key of Object.keys(prev) as SourceKey[]) {
+      const out = { ...prev };
+      for (const key of sourcesFetched(nbmFetched)) {
         out[key] = { ...prev[key], pending: true };
       }
       return out;
     });
 
     const markStale = (key: SourceKey, err: unknown): void => {
+      // An older refresh's late failure must not mark stale what a newer
+      // one has since answered, nor arm the quick retry for it.
+      if (!latest(key)) return;
       failures++;
       setStale(key, err);
     };
@@ -218,6 +242,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
 
     const windsP = fetchWindsAloft(dz.lat, dz.lon, dz.elevationFt, WINDS_ALOFT_LEVELS_AGL, now)
       .then(({ levels, validity, hours, clouds }) => {
+        if (!latest('windsAloft')) return;
         setSnapshot((prev) => ({
           ...prev,
           windsAloft: levels,
@@ -230,6 +255,9 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         updateSource('windsAloft', okStatus());
       })
       .catch(async (e) => {
+        // A superseded refresh spends no fallback request on an answer
+        // that would be dropped.
+        if (!stillLatest('windsAloft')) return;
         logSource('windsAloft', 'failure', 'Open-Meteo unreachable, trying NOAA FD fallback', e);
         // Open-Meteo unreachable (some networks block that host) — fall back
         // to the NOAA FD winds-aloft product on api.weather.gov. The 0 AGL
@@ -246,6 +274,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
             now,
           );
           if (fd && fd.levels.length > 0) {
+            if (!latest('windsAloft')) return;
             setSnapshot((prev) => ({
               ...prev,
               windsAloft: fd.levels,
@@ -275,6 +304,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
 
     const tafP = fetchTafAny(SITE.tafStations)
       .then((taf) => {
+        if (!latest('taf')) return;
         setSnapshot((prev) => ({ ...prev, taf }));
         if (taf) {
           const passed = taf.passedOver?.length ? ` (passed over ${describePassedOver(taf.passedOver, TAF_RELAY_SET)})` : '';
@@ -292,6 +322,9 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         }
       })
       .catch((e) => {
+        // An older refresh's "no current TAF" must not blank the TAF a
+        // newer refresh has since put on screen.
+        if (!stillLatest('taf')) return;
         if (e instanceof NoCurrentTafError) {
           setSnapshot((prev) => (prev.taf && tafOnScreenGone(prev.taf.station, e.passedOver) ? { ...prev, taf: null } : prev));
           // Data health and the card get each station's reason in a few
@@ -307,10 +340,11 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
 
     // The NBM bulletin only through the relay; without it the row is left
     // idle and Data health does not list it.
-    const nbmP = !TAF_RELAY_SET && !USE_FIXTURES
+    const nbmP = !nbmFetched
       ? Promise.resolve()
       : fetchNbm()
           .then((nbm) => {
+            if (!latest('nbm')) return;
             setSnapshot((prev) => ({ ...prev, nbm }));
             if (nbm) {
               logSource('nbm', 'success', `NBM NBH cycle ${new Date(nbm.cycleMs).toISOString()} (${nbm.hours.length} hours, ${nbm.file ?? 'no file'})`);
@@ -328,17 +362,20 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
 
     const dailyP = fetchDailyForecast(dz.lat, dz.lon)
       .then((daily) => {
+        if (!latest('daily')) return;
         setSnapshot((prev) => ({ ...prev, daily, dailySource: 'open-meteo' }));
         logSource('daily', 'success', `Open-Meteo daily (${daily.length} days)`);
         updateSource('daily', okStatus());
       })
       .catch(async (e) => {
+        if (!stillLatest('daily')) return;
         logSource('daily', 'failure', 'Open-Meteo unreachable, trying NWS gridpoint fallback', e);
         // Open-Meteo unreachable — aggregate the NWS gridpoint hourlies into
         // a ~7-day outlook instead (same host as the working forecast).
         try {
           const daily = await fetchDailyFromGridpoint(dz.lat, dz.lon, SITE.timeZone);
           if (daily.length > 0) {
+            if (!latest('daily')) return;
             setSnapshot((prev) => ({ ...prev, daily, dailySource: 'nws-gridpoint' }));
             logSource('daily', 'fallback', `NWS gridpoint fallback (${daily.length} days)`);
             updateSource('daily', okStatus());

@@ -1,5 +1,5 @@
 import type { CurrentConditions } from '../domain/types';
-import { fmtTemp, round, toTemp, type SpeedUnit, type TempUnit } from '../domain/units';
+import { fmtTemp, round, toTemp, type SpeedUnit, type TempUnit, fmtVisibilitySm } from '../domain/units';
 import { relativeHumidity } from '../domain/humidity';
 import { Panel } from './common/Panel';
 import { describeWind, fmtTime } from './format';
@@ -59,7 +59,7 @@ export function MetarPanel({
             <dt>Wind</dt>
             <dd>{describeWind(current, unit)}</dd>
             <dt>Visibility</dt>
-            <dd>{current.visibilitySm != null ? `${round(current.visibilitySm, 1)} SM` : '—'}</dd>
+            <dd>{current.visibilitySm != null ? `${fmtVisibilitySm(current.visibilitySm)} SM` : '—'}</dd>
             <dt>Sky</dt>
             <dd>{describeSky(current)}</dd>
             <dt>Temp / Dew</dt>

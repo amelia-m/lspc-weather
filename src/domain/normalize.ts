@@ -240,13 +240,19 @@ export function normalizeNwsObservation(
     observedAt: Date.parse(p.timestamp),
     raw,
     wind: {
-      directionDeg: p.windDirection?.value ?? null,
+      // Calm has no direction (SurfaceWind): NWS's decode gives calm 0°,
+      // which no card shows, and the IEM path already nulls it.
+      directionDeg:
+        p.windSpeed?.value != null && round(convertObsSpeed(p.windSpeed)) === 0 ? null : (p.windDirection?.value ?? null),
       // null = wind speed not reported (NWS sends value:null when the sensor
       // reading fails QC); a genuine calm comes through as 0.
       speedKt: p.windSpeed?.value != null ? round(convertObsSpeed(p.windSpeed)) : null,
       gustKt: p.windGust?.value != null ? round(convertObsSpeed(p.windGust)) : null,
     },
-    visibilitySm: p.visibility?.value != null ? round(mToSm(p.visibility.value), 1) : null,
+    // To the sixteenth of a mile the METAR's fractions are in (1/4 SM is
+    // 402 m; NWS encodes 10 SM as 16090 m, a sixteenth short), as IEM's
+    // decode keeps them; rounded to a tenth, 1/4 SM read 0.3.
+    visibilitySm: p.visibility?.value != null ? Math.round(mToSm(p.visibility.value) * 16) / 16 : null,
     skyLayers,
     ceilingFtAgl: ceiling,
     skyDecode,

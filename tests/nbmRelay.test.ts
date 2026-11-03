@@ -24,12 +24,16 @@ function bulletin(at: number): { text: string; at: number } {
 // 2026-10-27 02:17Z: the 01Z file is there (landed 02:06Z) and covers the hour under way; 02Z is not there yet.
 const T0 = Date.UTC(2026, 9, 27, 2, 17);
 
-function deps(text: string, opts: { missingHours?: number; rangeStatus?: number; headStatus?: Record<number, number> } = {}) {
+function deps(
+  text: string,
+  opts: { missingHours?: number; rangeStatus?: number; headStatus?: Record<number, number>; headThrows?: number[] | 'all' } = {},
+) {
   const missing = opts.missingHours ?? 1;
   const fetch = vi.fn<RelayDeps['fetch']>(async (url, init) => {
     const method = init.method ?? 'GET';
     const hour = Number(/\/(\d{2})\/text\//.exec(url)?.[1]);
     const exists = hour <= 2 - missing;
+    if (method === 'HEAD' && (opts.headThrows === 'all' || opts.headThrows?.includes(hour))) throw new TypeError('fetch failed: connection reset');
     if (method === 'HEAD') return new Response(null, { status: opts.headStatus?.[hour] ?? (exists ? 200 : 404) });
     if (!exists) return new Response('<?xml?>', { status: 404 });
     const range = new Headers(init.headers).get('range');
@@ -147,6 +151,23 @@ describe('the NBM path of the relay', () => {
     expect(res.status).toBe(200);
     expect(((await res.json()) as { file: string }).file).toBe(nbmFileFor(Date.UTC(2026, 9, 27, 0)));
     expect(d.fetch.mock.calls.filter(([, i]) => i.method === 'HEAD')).toHaveLength(2);
+  });
+
+  it('moves on to the older file when a HEAD throws, too: a stalled or reset HEAD is a failed one', async () => {
+    const b = bulletin(NBM_KNOWN_OFFSET + 4000);
+    const d = deps(b.text, { headThrows: [1] });
+    const res = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), d);
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { file: string }).file).toBe(nbmFileFor(Date.UTC(2026, 9, 27, 0)));
+    expect(d.fetch.mock.calls.filter(([, i]) => i.method === 'HEAD')).toHaveLength(2);
+  });
+
+  it('says the bucket is unreachable, not that no file is there, when every HEAD throws', async () => {
+    const d = deps(bulletin(NBM_KNOWN_OFFSET + 4000).text, { headThrows: 'all' });
+    const res = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), d);
+    expect(res.status).toBe(502);
+    expect(((await res.json()) as { error: string }).error).toMatch(/unreachable/);
+    expect(((await res.json().catch(() => ({ error: '' }))) as { error: string }).error).not.toMatch(/has no NBH file/);
   });
 
   it('asks the bucket once per cache period however many readers ask, then again', async () => {

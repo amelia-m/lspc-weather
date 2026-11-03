@@ -8,7 +8,7 @@ import {
   visibilityRowsUnder,
   type Thresholds,
 } from '../config/thresholds';
-import { fmtLimitSpeed, fmtSpeed, round, type SpeedUnit } from './units';
+import { fmtLimitSpeed, fmtSpeed, type SpeedUnit, fmtVisibilitySm } from './units';
 import { observedFlightCategory, CATEGORY_LABEL } from './flightCategory';
 import { SITE } from '../config/site';
 import { shortHour } from './localClock';
@@ -142,7 +142,7 @@ export function evaluateAdvisories(
         id: 'visibility',
         level: 'caution',
         metric: 'Visibility',
-        value: `${round(current.visibilitySm, 1)} SM${under ? `, ${under}` : ''}`,
+        value: `${fmtVisibilitySm(current.visibilitySm)} SM${under ? `, ${under}` : ''}`,
         guidance: visibilityGuidance(thresholds),
         citation: CITATIONS.far10517,
       });

@@ -110,16 +110,30 @@ async function newestFile(deps: NbmDeps, left: () => number): Promise<{ file: st
   // file in place). The cycle before covers it, at the cost of an hour's
   // freshness on the later columns.
   const hour = Math.floor(deps.now() / 3_600_000) * 3_600_000 - 3_600_000;
+  let answered = false;
+  let lastThrown: unknown = null;
   for (let k = 0; k <= NBM_LOOKBACK_HOURS; k++) {
     const cycleMs = hour - k * 3_600_000;
     const file = nbmFileFor(cycleMs);
-    const res = await deps.fetch(`${NBM_BUCKET}/${file}`, {
-      method: 'HEAD',
-      headers: { 'user-agent': USER_AGENT },
-      signal: AbortSignal.timeout(Math.min(NBM_TIMEOUT_MS, left())),
-    });
-    if (res.ok) return { file, cycleMs };
+    try {
+      const res = await deps.fetch(`${NBM_BUCKET}/${file}`, {
+        method: 'HEAD',
+        headers: { 'user-agent': USER_AGENT },
+        signal: AbortSignal.timeout(Math.min(NBM_TIMEOUT_MS, left())),
+      });
+      answered = true;
+      if (res.ok) return { file, cycleMs };
+    } catch (err) {
+      // A HEAD that throws (its timeout, a reset) is a failed HEAD, and
+      // the older file is tried like after a refused one; until
+      // 2026-11-03 it left the loop and the relay answered 502 while the
+      // older file was in place.
+      lastThrown = err;
+    }
   }
+  // Every HEAD thrown and none answered: the bucket is unreachable, which
+  // is what the relay should say, not that no file is there.
+  if (!answered && lastThrown != null) throw lastThrown;
   return null;
 }
 

@@ -40,8 +40,13 @@ export interface WindAt {
   gust: number | null;
 }
 
-/** The record's version. 1 from 2026-10-09, the first. */
-export const SURFACE_WIND_RECORD_VERSION = 1;
+/** The record's version. 1 from 2026-10-09, the first; 2 from 2026-11-03,
+ *  when a calm report read through the NWS path stopped carrying its
+ *  decode's 0° as `dir` (null, as the IEM path's always was). The
+ *  direction error skips a calm report on either version (windErrors.ts),
+ *  so the change moves no figure; the version marks where the shape
+ *  changed. */
+export const SURFACE_WIND_RECORD_VERSION = 2;
 
 /** Model metadata from Open-Meteo's `/data/<domain>/static/meta.json`, the
  *  one place it says which run it has: init time, when its conversion

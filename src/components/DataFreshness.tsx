@@ -1,4 +1,4 @@
-import type { SourceKey, SourceStatus } from '../domain/types';
+import { sourcesFetched, type SourceKey, type SourceStatus } from '../domain/types';
 import type { SourceProvenance } from '../domain/sourceProvenance';
 import { USE_FIXTURES } from '../api/http';
 import { DATA_SOURCES, type DataSource } from '../config/sources';
@@ -25,10 +25,10 @@ const SOURCE_LINKS: Record<SourceKey, DataSource> = {
   nbm: DATA_SOURCES.nbm,
 };
 
-/** The rows shown: the NBM's only where the relay is set (or the fixtures
- *  stand in for it), since nothing fetches it otherwise and an idle row
- *  would read as a source that never answers. */
-const ROWS = (Object.keys(LABELS) as SourceKey[]).filter((k) => k !== 'nbm' || TAF_RELAY_SET || USE_FIXTURES);
+/** The rows shown: the sources a refresh fetches (the NBM's only where the
+ *  relay is set, or the fixtures stand in for it), since an idle row would
+ *  read as a source that never answers. */
+const ROWS = sourcesFetched(TAF_RELAY_SET || USE_FIXTURES);
 
 /** Calls as Open-Meteo counts them, to one decimal where fractional (a
  *  winds request is 9.6), whole where not: a sum of 9.6s is rounded first,
@@ -53,7 +53,9 @@ export function DataFreshness({
    *  (src/domain/openMeteoUsage.ts); absent when none has been made. */
   openMeteoUsage?: UsageSummary | null;
 }): JSX.Element {
-  const refreshing = Object.values(status).some((s) => s.pending);
+  // Over the rows shown: a source never fetched is never pending, but a
+  // status it carries must not hold the button either.
+  const refreshing = ROWS.some((k) => status[k]?.pending);
   return (
     <Panel
       className="freshness"

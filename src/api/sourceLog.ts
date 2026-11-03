@@ -4,7 +4,7 @@
  *  and mutable module state — none of which belongs beside the pure, unit-tested
  *  domain calculations. Storage goes through safeStorage.ts. */
 
-import type { SourceKey } from '../domain/types';
+import { SOURCE_KEYS, type SourceKey } from '../domain/types';
 import { safeLocalGet, safeLocalRemove, safeLocalSet } from './safeStorage';
 
 export type SourceLogStatus = 'attempted' | 'success' | 'fallback' | 'failure';
@@ -25,7 +25,6 @@ const STORAGE_KEY = 'lspc:sourceLogs';
  *  interesting entries around for a full day at the drop zone. */
 const MAX_LOGS = 200;
 
-const SOURCE_KEYS: readonly SourceKey[] = ['nws', 'metar', 'windsAloft', 'taf', 'daily'];
 const STATUSES: readonly SourceLogStatus[] = ['attempted', 'success', 'fallback', 'failure'];
 
 /** Gates the CONSOLE output only. The deployed GitHub Pages build would

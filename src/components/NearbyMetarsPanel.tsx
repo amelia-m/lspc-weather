@@ -3,7 +3,7 @@ import { NEARBY_METAR_NETWORK, NEARBY_METAR_STATIONS, SITE } from '../config/sit
 import { DATA_SOURCES } from '../config/sources';
 import { fetchIemNetwork } from '../api/nearbyMetars';
 import { nearbyRows, type NearbyRow } from '../domain/nearbyMetars';
-import { compass } from '../domain/units';
+import { compass, fmtVisibilitySm } from '../domain/units';
 import { usePolling } from '../hooks/usePolling';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
@@ -102,7 +102,7 @@ export function NearbyMetarsBody({ rows, error }: { rows: NearbyRow[] | null; er
                     : `${Math.round(r.distanceMi)} mi ${compass(r.bearingDeg)}`}
                 </td>
                 <td>{windText(r)}</td>
-                <td>{r.current?.visibilitySm == null ? '—' : r.current.visibilitySm}</td>
+                <td>{r.current?.visibilitySm == null ? '—' : fmtVisibilitySm(r.current.visibilitySm)}</td>
                 <td>{skyText(r)}</td>
                 <td>{r.category ? <FlightCategoryPill category={r.category} /> : '—'}</td>
               </tr>

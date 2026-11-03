@@ -230,6 +230,17 @@ describe('surfaceSampleSection', () => {
     // No NWS in these runs: that row pairs nothing.
     expect(s.rows.find((r) => r.label.startsWith('NWS'))!.panels[0].n).toBe(0);
   });
+
+  it('counts no direction error for a calm report, whichever direction its record carries', () => {
+    // A record before version 2 can carry the NWS decode's 0° for calm;
+    // version 2 carries null. Calm has no direction to miss by, so neither
+    // counts, and the speed error still does.
+    const hourly = [w('10:00', 200, 4, 8)];
+    const s = surfaceSampleSection([run('10:00', '09:55', w('09:55', 0, 0), hourly)]);
+    const [speed, , dir] = s.rows.find((r) => r.label === 'Open-Meteo hourly')!.panels;
+    expect(speed).toMatchObject({ n: 1, median: 4 });
+    expect(dir).toMatchObject({ n: 0 });
+  });
 });
 
 describe('WindErrorsPage', () => {
