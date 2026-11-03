@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DailyPoint, DailySource, HourlyPoint } from '../domain/types';
-import { compass, fmtTemp, round, toSpeed, toTemp, type SpeedUnit, type TempUnit } from '../domain/units';
+import { compass, fmtTemp, round, toSpeed, toTemp, type SpeedUnit, type TempUnit, fmtVisibilitySm } from '../domain/units';
 import { forecastFlightCategory } from '../domain/flightCategory';
 import { SITE } from '../config/site';
 import { DATA_SOURCES, dailySourceInUse } from '../config/sources';
@@ -303,7 +303,7 @@ export function DayDetail({
                       </td>
                       <td>{hourWind(h, unit)}</td>
                       <td>{h.skyCoverPct != null ? `${round(h.skyCoverPct)}%` : '—'}</td>
-                      <td>{h.visibilitySm != null ? `${round(h.visibilitySm, 1)} SM` : '—'}</td>
+                      <td>{h.visibilitySm != null ? `${fmtVisibilitySm(h.visibilitySm)} SM` : '—'}</td>
                       <td>{h.tempC != null ? fmtTemp(h.tempC, tempUnit) : '—'}</td>
                       <td>{h.precipProbPct != null ? `${round(h.precipProbPct)}%` : '—'}</td>
                       <td>{h.thunderProbPct != null ? `${round(h.thunderProbPct)}%` : '—'}</td>

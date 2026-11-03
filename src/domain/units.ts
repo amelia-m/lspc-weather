@@ -59,6 +59,27 @@ export const round = (n: number, places = 0): number => {
 
 export type SpeedUnit = 'kt' | 'mph';
 
+/** Visibility as a METAR states it, in statute miles and sixteenths: "10",
+ *  "1/4", "1 1/4", "2 1/2". A figure that is not on a sixteenth (a forecast
+ *  converted from metres) is put on the nearest. Rounded to a tenth, a
+ *  quarter mile read "0.3". */
+export function fmtVisibilitySm(sm: number): string {
+  const sixteenths = Math.round(sm * 16);
+  const whole = Math.floor(sixteenths / 16);
+  let num = sixteenths - whole * 16;
+  if (num === 0) return String(whole);
+  let den = 16;
+  while (num % 2 === 0) {
+    num /= 2;
+    den /= 2;
+  }
+  return whole > 0 ? `${whole} ${num}/${den}` : `${num}/${den}`;
+}
+
+/** A stored unit, or knots for anything else: storage is user-writable,
+ *  and an unknown unit would otherwise print as a word beside every speed. */
+export const toSpeedUnit = (v: unknown): SpeedUnit => (v === 'mph' ? 'mph' : 'kt');
+
 /** Convert a knots value to the selected display unit. */
 export const toSpeed = (kt: number, u: SpeedUnit): number => (u === 'mph' ? ktToMph(kt) : kt);
 

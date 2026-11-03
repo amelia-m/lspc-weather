@@ -287,10 +287,10 @@ export function ceilingFromTheirClouds(clouds: string | null): number | null {
 }
 
 /** The dashboard's wind direction as the comparison should read it: none when
- *  calm. NWS's decode gives a calm report 0° (IEM's path gives none), which
- *  the cards never show (they print "Calm" on speed 0) but which read as a
- *  disagreement against usairnet's "Calm" in 4 same-report runs to
- *  2026-09-29. */
+ *  calm. Both feeds' paths now give a calm report no direction (the NWS
+ *  path since 2026-11-03; before, its decode's 0° read as a disagreement
+ *  against usairnet's "Calm" in 4 same-report runs to 2026-09-29), and
+ *  this keeps the comparison the same whatever a feed decodes. */
 export function comparableDirection(speedKt: number | null, directionDeg: number | null): number | null {
   return speedKt === 0 ? null : directionDeg;
 }

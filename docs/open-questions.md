@@ -108,6 +108,96 @@ trailing slash the app sends is dropped in the listing), so the whole
 path from a reader's browser to the dashboard is proven on the
 `amelia-m` site. Nothing waits here.
 
+## Review of the whole project (2026-11-03)
+
+At the maintainer's ask, a review agent read the whole project for
+correctness bugs (the domain code first, then the hooks, components,
+scripts, relay and workflows; `npm test` green at 1,320), with the
+no-verdict rule in its brief. Nine findings; fixed the same day, in one
+change, with a test for each that was proved by breaking the fix:
+
+- **The source log dropped every NBM entry on reload** (confirmed):
+  `src/api/sourceLog.ts` kept its own list of sources, which lacked
+  `nbm`, so a restored entry for it was rejected as malformed. The list
+  is now `SOURCE_KEYS` in `src/domain/types.ts`, from which the
+  `SourceKey` type is derived, so the two cannot drift.
+- **With the relay off, the Refresh button stayed disabled for the life
+  of the page** (confirmed by reading; unreachable on the deployed site,
+  whose relay is set): the refresh marked every source pending, nothing
+  fetched the NBM, so its pending never cleared, and the button is
+  disabled while any source is pending. The refresh now marks only the
+  sources it fetches (`sourcesFetched`), Data health lists the same, and
+  the button reads only the rows it lists.
+- **A HEAD that threw aborted the relay's NBM lookup** instead of moving
+  to the older file, as the comment promised and a refused HEAD did
+  (`relay/src/nbm.ts`): a stalled bucket answered 502 while the hour
+  before was in place. Caught now; `tests/nbmRelay.test.ts` throws one.
+- **Two overlapping refreshes let an older answer overwrite a newer one**
+  (plausible): the 10-minute poll, the tab's return and the Refresh
+  button each start a full round whether or not one is in flight, and a
+  winds request can take a minute. Each refresh is numbered and a
+  source's answer is applied only if no newer refresh's has been
+  (`src/domain/latest.ts`), for the winds, outlook, TAF and NBM; the
+  gridpoint had its own guard and the observation its own ordering.
+- **The stored wind unit was used unvalidated** (`lspc:windUnit` set by
+  hand printed "12 foo" on every card): `toSpeedUnit` validates it like
+  the other stored keys.
+- **The NWS path rounded visibility to a tenth** (1/4 SM read 0.3) where
+  the IEM path kept 0.25, parity noise and a figure the METAR does not
+  say; now to the sixteenth of a mile, which also turns NWS's 16,090 m
+  for 10 SM into 10 rather than 9.9979.
+- **The NWS path passed the decode's 0° for calm** while the type said
+  calm has no direction and the IEM path nulled it; nulled now.
+- **The hourly chart's `maxKt`/`gridKt` were in the display unit**
+  (mph when toggled): renamed; the arithmetic was right.
+
+A second review of the fixes found seven more things, fixed the same
+day: the refresh guard covered only successes, so an older refresh's late
+failure still marked a source stale (and a late "no current TAF" blanked
+the TAF a newer refresh had shown), and a superseded refresh still spent
+its fallback request; now a source applies only its newest refresh's
+result, success or failure, and a superseded catch returns at once. The
+visibility fix had stopped in the domain while the METAR card, the flag
+and the nearby-stations table still rounded to a tenth; every print now
+goes through `fmtVisibilitySm`, which writes the METAR's fractions ("1/4",
+"1 1/4", "10"). The relay's catch swallowed a bucket that timed out on
+every HEAD into "has no NBH file"; it now says unreachable when none
+answered. The comparison's `comparableDirection` comment still said the
+NWS path gave calm 0°. And the surface-wind sample's record shape moved
+(a calm report read through NWS now carries no direction), so its
+version is 2, and the `#wind-errors` direction error skips a calm report
+on either version. One test of the Refresh button was dropped: it could
+not fail against the old code, since the rows it needs to exclude are
+listed under the test's fixtures; the hook's pending marking is held by
+`sourcesFetched`'s test instead.
+
+- **Waiting on the maintainer:** the relay change (a thrown HEAD moves on
+  to the older file; every HEAD thrown answers "unreachable") reaches the
+  deployed Worker only when she deploys it (docs/taf-relay.md); until
+  then the live relay still answers 502 on a stalled HEAD.
+- **For the maintainer's judgement, not changed:** the flight-category
+  flag's level is the app's (`MVFR` a watch, `IFR`/`LIFR` a caution,
+  `src/domain/advisories.ts`), and so is the overcast flag's watch; AIM
+  7-1-7 defines the categories, not a severity, and `AdvisoryPanel`
+  paints the badges in the watch and caution colours. The guidance text
+  claims only the classification, and a test pins "MVFR as watch" as
+  deliberate. Whether a level with no published source behind it sits
+  with the no-verdict rule, or the two flags should carry one neutral
+  level, is the maintainer's call.
+
+Reviewed and found sound: the advisories and thresholds (band and limit
+gating, the forecast flag's whole knots, the visibility rows, the waiver
+tiers), the METAR, TAF, FD and Open-Meteo normalisers, the winds-aloft
+interpolation and the "As Schulze" view, the sun, density-altitude and
+flight-category arithmetic, the page count and usage counters, the
+live-site and live-issue rules, `fetchJson`, the gridpoint dedupe, the
+TAF chain, the relay's origin rule and range cut, the polling hooks'
+pause and resume, the cards' wording, every workflow's shell, and the
+tests for self-asserting assertions (none). Not read in depth: the
+parity and wind-error summaries, the kept-forecast, NDFD gust, chances,
+cloud-cover, usairnet, SIM-text and citation-answer modules, the three
+report pages, and the comparison scripts.
+
 ## Watch: a change document for the 2026 SIM
 
 USPA revises the online SIM within an edition through change documents,

@@ -338,7 +338,10 @@ export function surfaceSampleSection(records: readonly SurfaceWindRecord[]): Win
       pairs.map(({ fc, obs }) => ({
         speed: fc.spd != null && obs.spd != null ? r1(fc.spd - obs.spd) : null,
         gust: fc.gust != null && obs.gust != null ? r1(fc.gust - obs.gust) : null,
-        dir: fc.dir != null && obs.dir != null ? angular(fc.dir, obs.dir) : null,
+        // A calm report has no direction to miss by: records before
+        // version 2 carried the NWS decode's 0° for one, and are skipped
+        // the same.
+        dir: fc.dir != null && obs.dir != null && obs.spd !== 0 ? angular(fc.dir, obs.dir) : null,
       })),
     );
   });

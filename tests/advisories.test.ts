@@ -1035,7 +1035,8 @@ describe('the 105.17 row the visibility flag uses', () => {
     expect(between?.guidance).toBe(`${VISIBILITY_RULE} This flag ${HOLDS.both}`);
     expect(HOLDS.both).toContain(HOP_AND_POP_FACT.sentence);
     expect(flag(2, at('both'))?.value).toBe('2 SM, under both rows');
-    expect(flag(2.9, at('both'))?.value).toBe('2.9 SM, under both rows');
+    // In the METAR's fractions, not a decimal (fmtVisibilitySm).
+    expect(flag(2.5, at('both'))?.value).toBe('2 1/2 SM, under both rows');
     expect(flag(3, at('both'))?.value).toBe('3 SM, under the 5 SM row, at or above the 3 SM row');
     // An edited figure names no row and says which rows nothing.
     expect(flag(4, at('both', 7))?.value).toBe('4 SM');

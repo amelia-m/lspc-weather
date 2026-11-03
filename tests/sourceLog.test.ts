@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SOURCE_KEYS } from '../src/domain/types';
 import {
   clearLogs,
   getLogs,
@@ -146,6 +147,17 @@ describe('loadPersistedLogs', () => {
     installStorage(JSON.stringify([entry({ message: 'from a previous session' })]));
     loadPersistedLogs();
     expect(getLogs()).toEqual([entry({ message: 'from a previous session' })]);
+  });
+
+  it('restores an entry of every source Data health knows, the NBM’s included', () => {
+    // Until 2026-11-03 the log's own list of sources lacked 'nbm', so the
+    // relay's failures, the entries the log exists to keep, were dropped on
+    // reload. The list is now the one the type is derived from.
+    const all = SOURCE_KEYS.map((source) => entry({ source, message: `${source} entry` }));
+    installStorage(JSON.stringify(all));
+    loadPersistedLogs();
+    expect(getLogs().map((e) => e.source)).toEqual([...SOURCE_KEYS]);
+    expect(SOURCE_KEYS).toContain('nbm');
   });
 
   it('drops malformed entries and keeps the valid ones', () => {

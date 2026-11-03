@@ -340,7 +340,21 @@ export type JumperClass = 'student' | 'licensed';
 
 // ---- Per-source fetch status ----
 
-export type SourceKey = 'nws' | 'metar' | 'windsAloft' | 'taf' | 'daily' | 'nbm';
+/** Every source Data health and the source log know, in the card's order.
+ *  The type is derived from the list so the two cannot drift: until
+ *  2026-11-03 the source log kept a list of its own that lacked `nbm`, and
+ *  dropped every NBM entry on reload. */
+export const SOURCE_KEYS = ['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm'] as const;
+export type SourceKey = (typeof SOURCE_KEYS)[number];
+
+/** The sources a refresh fetches: all of them, or all but the NBM when
+ *  nothing fetches it (no relay set, no fixtures). The refresh marks only
+ *  these pending, and Data health lists only these: a source never fetched
+ *  would otherwise sit pending for the life of the page, and the Refresh
+ *  button, disabled while any source is pending, with it (2026-11-03). */
+export function sourcesFetched(nbmFetched: boolean): SourceKey[] {
+  return nbmFetched ? [...SOURCE_KEYS] : SOURCE_KEYS.filter((k) => k !== 'nbm');
+}
 
 export interface SourceStatus {
   ok: boolean;

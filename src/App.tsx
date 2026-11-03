@@ -43,7 +43,7 @@ import { HourlyForecastPanel } from './components/HourlyForecastPanel';
 import { DailyForecastPanel } from './components/DailyForecastPanel';
 import { DriftPanel } from './components/DriftPanel';
 import { TafPanel } from './components/TafPanel';
-import type { SpeedUnit, TempUnit } from './domain/units';
+import { toSpeedUnit, type SpeedUnit, type TempUnit } from './domain/units';
 import type { WindsMethod } from './domain/types';
 import { SurfaceWindPanel } from './components/SurfaceWindPanel';
 import { WindsAloftPanel } from './components/WindsAloftPanel';
@@ -208,9 +208,8 @@ export default function App(): JSX.Element {
     safeLocalSet(OVERRIDES_KEY, JSON.stringify(overrides));
   }, [overrides]);
 
-  const [unit, setUnit] = useState<SpeedUnit>(
-    () => (safeLocalGet(UNIT_KEY) as SpeedUnit) || 'kt',
-  );
+  // Validated like every other stored key: storage is user-writable.
+  const [unit, setUnit] = useState<SpeedUnit>(() => toSpeedUnit(safeLocalGet(UNIT_KEY)));
   useEffect(() => {
     safeLocalSet(UNIT_KEY, unit);
   }, [unit]);
