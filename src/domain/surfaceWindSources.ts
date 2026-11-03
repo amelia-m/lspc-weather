@@ -28,6 +28,7 @@
  *
  * Pure: records in, summary out. No clock is read; every time is in a record.
  */
+import { extent } from './extent';
 import { median, spreadOf, type Spread } from './paritySummary';
 
 /** One wind value as a source served it, valid at `t` (ISO). Knots and
@@ -43,9 +44,9 @@ export interface WindAt {
 /** The record's version. 1 from 2026-10-09, the first; 2 from 2026-11-03,
  *  when a calm report read through the NWS path stopped carrying its
  *  decode's 0° as `dir` (null, as the IEM path's always was). The
- *  direction error skips a calm report on either version (windErrors.ts),
- *  so the change moves no figure; the version marks where the shape
- *  changed. */
+ *  direction error skips a calm report on either version, here and in
+ *  windErrors.ts, so the change moves no figure; the version marks where
+ *  the shape changed. */
 export const SURFACE_WIND_RECORD_VERSION = 2;
 
 /** Model metadata from Open-Meteo's `/data/<domain>/static/meta.json`, the
@@ -512,11 +513,8 @@ const isFlap = (a: WindAt, b: WindAt): boolean => a.t === b.t && dirOnlyByOne(a,
 
 function intervalOf(times: readonly number[]): Interval {
   const gaps = times.slice(1).map((t, i) => minutes(t - times[i]));
-  return {
-    median: median(gaps),
-    min: gaps.length ? Math.min(...gaps) : null,
-    max: gaps.length ? Math.max(...gaps) : null,
-  };
+  const e = extent(gaps);
+  return { median: median(gaps), min: e?.min ?? null, max: e?.max ?? null };
 }
 
 function cadenceOf(records: readonly SurfaceWindRecord[], source: SourceName): Cadence {
@@ -643,8 +641,8 @@ function stalenessOf(records: readonly SurfaceWindRecord[], source: SourceName):
     basis,
     n: ages.length,
     medianMin: median(ages),
-    minMin: ages.length ? Math.min(...ages) : null,
-    maxMin: ages.length ? Math.max(...ages) : null,
+    minMin: extent(ages)?.min ?? null,
+    maxMin: extent(ages)?.max ?? null,
   };
 }
 
@@ -715,7 +713,9 @@ function vsMetarOf(records: readonly SurfaceWindRecord[], source: ForecastSource
   let gustOnlyForecast = 0;
   for (const { fc, obs } of pairs) {
     if (fc.spd != null && obs.spd != null) spd.push(Math.round((fc.spd - obs.spd) * 10) / 10);
-    if (fc.dir != null && obs.dir != null) dir.push(angular(fc.dir, obs.dir));
+    // A calm report has no direction to miss by: a version-1 record read
+    // through the NWS path carried its decode's 0° for one.
+    if (fc.dir != null && obs.dir != null && obs.spd !== 0) dir.push(angular(fc.dir, obs.dir));
     if (obs.gust != null) {
       metarGusts += 1;
       if (fc.gust != null) {

@@ -240,7 +240,7 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
           s={sample}
           intro={
             <p className="muted small">
-              A sample taken every five minutes: each KPMV report once, against each forecast as it stood
+              A sample taken every seventeen minutes (every five until 2026-10-30): each KPMV report once, against each forecast as it stood
               while that report was the newest. Open-Meteo&rsquo;s hourly, 15-minute and current 10 m wind,
               then the NWS hour on the same reports for reference. Every row here is kept to a tenth of a
               knot, as the sample&rsquo;s summary keeps it, and binned to the knot, so a tenth either side

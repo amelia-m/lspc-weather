@@ -25,6 +25,7 @@
  *
  * Pure: records in, summary out. Every time is in a record.
  */
+import { extent } from './extent';
 import type { SkyLayer } from './types';
 import { CEILING_COVERS, NO_CLOUD_COVERS, parseSkyGroups } from './normalize';
 import { median, percentile, spreadOf, type Spread } from './paritySummary';
@@ -260,6 +261,7 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
     rows[c].p10 = percentile(xs, 0.1);
     rows[c].p90 = percentile(xs, 0.9);
   }
+  const leadsExtent = extent(leads);
   return {
     source,
     n: pairs.length,
@@ -267,10 +269,7 @@ function vsObserved(source: string, pairs: readonly Pair[]): VsObserved {
     below,
     above,
     gap: spreadOf(gaps),
-    leadH:
-      leads.length > 0
-        ? { min: Math.round(Math.min(...leads) * 10) / 10, max: Math.round(Math.max(...leads) * 10) / 10 }
-        : null,
+    leadH: leadsExtent ? { min: Math.round(leadsExtent.min * 10) / 10, max: Math.round(leadsExtent.max * 10) / 10 } : null,
     byObserved: rows,
     ceiling,
     sctAtOrBelowHalf,

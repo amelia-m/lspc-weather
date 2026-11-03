@@ -15,6 +15,7 @@
  * stale-forecast run (docs/open-questions.md, "Which forecast run…") is
  * exactly the kind of outlier a mean would smear across every row.
  */
+import { extent } from './extent';
 import { SITE } from '../config/site';
 import type { RunsSeen } from './runAge';
 
@@ -334,8 +335,8 @@ export function spreadOf(deltas: readonly number[]): Spread | null {
     meanAbs: round2(sum(abs) / abs.length),
     medianAbs: round2(median(abs) as number),
     p90Abs: round2(percentile(abs, 0.9) as number),
-    minAbs: round2(Math.min(...abs)),
-    maxAbs: round2(Math.max(...abs)),
+    minAbs: round2(extent(abs)!.min),
+    maxAbs: round2(extent(abs)!.max),
     mean: round2(sum(deltas) / deltas.length),
   };
 }
@@ -462,8 +463,9 @@ export function overCauses(
 
 export function summarizeParity(records: readonly ParityRecord[], now: number): ParitySummary {
   const times = records.map((r) => Date.parse(r.at)).filter((t) => Number.isFinite(t));
-  const from = times.length ? new Date(Math.min(...times)).toISOString() : null;
-  const to = times.length ? new Date(Math.max(...times)).toISOString() : null;
+  const timeSpan = extent(times);
+  const from = timeSpan ? new Date(timeSpan.min).toISOString() : null;
+  const to = timeSpan ? new Date(timeSpan.max).toISOString() : null;
 
   const schulze = records.filter((r): r is SchulzeRecord => r.kind === 'schulze');
   const readable = schulze.filter((r) => !r.error);

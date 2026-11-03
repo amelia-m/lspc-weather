@@ -24,6 +24,7 @@
  *
  * Counts and spreads only; nothing on the dashboard reads them.
  */
+import { extent } from './extent';
 import { byValidHour } from './ceilingHeights';
 import { NWS_ISSUANCES, type MetarRecord } from './cloudCoverSources';
 import { pairInstants, reportsByHour, windDiffs, type Instant, type InstantPair } from './keptForecasts';
@@ -294,10 +295,13 @@ export function summarizeGusts(
       if (f && o) bothAt++;
       if (o && !f) reportOnly++;
     }
+    const leadsExtent = extent(leads);
+    const dayMeanValues = days.map((d) => d.mean!);
+    const dayMeansExtent = extent(dayMeanValues);
     return {
       label,
       hours: pairs.length,
-      lead: leads.length ? { min: r2(Math.min(...leads)), max: r2(Math.max(...leads)) } : null,
+      lead: leadsExtent ? { min: r2(leadsExtent.min), max: r2(leadsExtent.max) } : null,
       gustHours: gusting.length,
       side: sideOf(ds),
       spread: spreadOf(ds),
@@ -309,12 +313,12 @@ export function summarizeGusts(
         return { key, n: xs.length, mean: mean(xs), side: sideOf(xs) };
       }),
       days,
-      dayMeans: days.length
+      dayMeans: dayMeansExtent
         ? {
             n: days.length,
-            min: Math.min(...days.map((d) => d.mean!)),
-            median: r2(median(days.map((d) => d.mean!))!),
-            max: Math.max(...days.map((d) => d.mean!)),
+            min: dayMeansExtent.min,
+            median: r2(median(dayMeanValues)!),
+            max: dayMeansExtent.max,
             under: days.filter((d) => d.mean! < -2).length,
             near: days.filter((d) => Math.abs(d.mean!) <= 2).length,
             over: days.filter((d) => d.mean! > 2).length,

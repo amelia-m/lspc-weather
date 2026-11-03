@@ -288,7 +288,14 @@ batches and the hours between comparison runs time nothing, so these
 figures come from the sampler's archived logs and since then grow only when
 two runs happen to land within five minutes (a late start beside the next
 one, or a run dispatched by hand)
-(`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`).
+(`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`). One more caveat, read in a
+review on 2026-11-03: a bracket times the newest report a source gained
+in it, and only that one. When two reports reach a source between two
+samples (a feed that was behind catching up), the older of the two is
+not timed, and its lag was the longer, so a slow source reads a little
+quicker than it was and its report count a little lower. Not changed:
+the figures published are the readings described, and the two-minute
+samples that gave them are not running.
 
 And **runs that could not read one side**: usairnet's page (unreachable or
 unparsed) apart from this dashboard's own feeds, with the number of unbroken
