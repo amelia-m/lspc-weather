@@ -700,7 +700,8 @@ titled by the failed test and carrying the failure's own message, from
 Vitest's JSON report (`src/domain/liveIssue.ts`, since 2026-10-31, the
 maintainer's call: one broad body for three checks said too little; a run
 dispatched on a branch opens none). The checks' fetches are tried twice on
-a timeout (`scripts/liveFetch.ts`): #147 and #238 were one timeout each;
+a timeout or a 502, 503 or 504 (`scripts/liveFetch.ts`): #147 and #238
+were one timeout each, #256 one 502; any other status is the finding;
 it also prints whether the TAF the card shows is the issuance
 aviationweather.gov currently has (informational). It also fails, through
 `scripts/pilotLinks.live.ts`, when a Pilots tab deep link stops opening

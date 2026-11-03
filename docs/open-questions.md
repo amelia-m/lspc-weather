@@ -1287,10 +1287,13 @@ link opens. A 502 is the server's, not the link's: nothing in
 `src/config/sources.ts` changed between the two runs. It is the third
 one-off in this check (#147 and #238 were one timeout each), and the
 retry those two earned (`scripts/liveFetch.ts`) covers a timeout only,
-not a 5xx answer. Worth doing, not done: let `fetchWithRetry` try once
-more on a 502, 503 or 504, as it does on a timeout, so a server's bad
-minute does not open an issue; a second 5xx would still fail. Read
-2026-11-03; the issue is the maintainer's to close (the sandbox cannot).
+not a 5xx answer. Done the same day at the maintainer's word:
+`fetchWithRetry` tries once more on a 502, 503 or 504, as it does on a
+timeout, so a server's bad minute does not open an issue; a second in a
+row still fails, and any other status (a 404, a 403, a plain 500) is the
+finding and is not retried (`RETRIED_STATUSES`, `tests/liveFetch.test.ts`
+with a stubbed fetch). Read 2026-11-03; the issue is the maintainer's to
+close (the sandbox cannot).
 
 ## Issue #238: a timeout again, on the day the Chart Supplement edition changed
 
