@@ -87,7 +87,7 @@ describe('the site icon', async () => {
     // GoatCounter URL is page counting's (tests/pageCount.test.ts), a single
     // path rather than a host.
     expect(imgSrc(viteConfig)).toBe(
-      "'self' data: https://radar.weather.gov https://tiles.arcgis.com https://lspc-weather.goatcounter.com/count",
+      "'self' data: https://radar.weather.gov https://tiles.arcgis.com https://amelia-m.goatcounter.com/count",
     );
     expect(imgSrc(ceilingPage)).toBe("'self' data:");
     const svg = publicFile(servedAt(iconLink(appPage)?.href ?? '', '')) ?? '';

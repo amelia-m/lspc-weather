@@ -86,9 +86,10 @@ describe('the policy and the endpoint', () => {
     expect(PAGE_COUNT_ENDPOINT).not.toBeNull();
     const imgSrc = /img-src ('[^;"]+)/.exec(viteConfig)?.[1] ?? '';
     expect(imgSrc.split(' ')).toContain(PAGE_COUNT_ENDPOINT);
-    expect(imgSrc.split(' ')).not.toContain('https://lspc-weather.goatcounter.com');
-    // The dashboard's own site, not the personal site's (the maintainer, 2026-11-02).
-    expect(PAGE_COUNT_ENDPOINT).toBe('https://lspc-weather.goatcounter.com/count');
+    expect(imgSrc.split(' ')).not.toContain('https://amelia-m.goatcounter.com');
+    // The account's one site: a site code that is not on the account
+    // counts nowhere (GoatCounter's 400, 2026-11-03).
+    expect(PAGE_COUNT_ENDPOINT).toBe('https://amelia-m.goatcounter.com/count');
   });
 
   it('does not open connect-src or script-src to GoatCounter', () => {

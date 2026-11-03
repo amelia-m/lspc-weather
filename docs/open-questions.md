@@ -77,27 +77,34 @@ with any of the three (checked by flipping it, 2026-10-31). No threshold
 is the app's: both figures are the section's, and the fact is the DZ's,
 said so.
 
-## Page counts: one thing for the maintainer (2026-10-31, moved 2026-11-02)
+## Page counts: back on the amelia-m site (2026-11-03)
 
 Counting went in on 2026-10-31 (docs/page-counts.md, merged as #245), to
 the `amelia-m` GoatCounter site, where the maintainer's personal site
 counts too; her dashboard for the week to 2026-10-31 showed that site's
-`/` alone. On 2026-11-02 she asked for the two to be told apart, and
-chose a site of its own: "add goatcounter as lspc-weather". Done that day:
-the endpoint is `https://lspc-weather.goatcounter.com/count`, the policy's
-`img-src` names it, and the docs follow. Two things only the maintainer
-can see or do:
+`/` alone. On 2026-11-02 she asked for the two to be told apart ("add
+goatcounter as lspc-weather"), and the endpoint was moved to
+`lspc-weather.goatcounter.com` (#257). The site did not exist on the
+account: on 2026-11-03 her browser showed GoatCounter's "error 400: no
+site at this domain" for it, so about a day of views was counted
+nowhere, and she said the account is `amelia-m`. Moved back the same day.
 
-- The site code `lspc-weather` has to exist on her GoatCounter account
-  (added where the account lists its sites, under its settings, as the
-  UI is remembered; not read from here). What a request to a code
-  GoatCounter does not know is answered with was not read either, and
-  nothing from here can tell whether the site exists (gc.zgo.at and
-  goatcounter.com are not on the sandbox's allowlist, 2026-11-02).
-- After the deploy, a view of the dashboard showing in
-  <https://lspc-weather.goatcounter.com> under `/lspc-weather/`, and a `#`
-  page under `/lspc-weather/#pilots` or the like. The browser check stops
-  at the request.
+The two sites are told apart on the one dashboard by path: the
+dashboard's views all start `/lspc-weather/`, the personal site's `/`,
+and "Filter paths" shows either alone. A dashboard of its own needs a
+site made on the account first, and the endpoint is then one line to
+change; not made.
+
+What should have happened on 2026-11-02: a change of endpoint to a host
+the sandbox cannot reach should have shipped only after the maintainer
+had made the site, or the doc should have said the first view would be
+the check, in those words, instead of "the site has to exist". Nothing
+from here can read GoatCounter's answer (gc.zgo.at and goatcounter.com
+are not on the sandbox's allowlist, 2026-11-02); a reader's browser can.
+
+- **Waiting on the maintainer:** a view of the dashboard showing again in
+  <https://amelia-m.goatcounter.com> under `/lspc-weather/` after this
+  deploy. The browser check stops at the request.
 
 ## Watch: a change document for the 2026 SIM
 
