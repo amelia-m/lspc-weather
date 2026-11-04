@@ -509,13 +509,26 @@ only once its remaining falls under the minute's, that is, once the day
 has about 9,400 calls on it. So the headers are the server's own view of
 this address, every browser on it included, and they name the day window
 exactly when it is the one about to bind, which is the signal the
-refresh-slowing idea ("Maybe, later", below) asked for. Not built yet:
-reading them means `fetchJson` handing the response's headers to its
-caller (`onAttempt` sees only the outcome), the Open-Meteo path keeping
-the last answer's figures, and Data health printing them beside the
-browser's own count, as the server's, with the window they are for. A
-reader's browser sees the server's tally for its own address, which is
-the count that matters; the sandbox still cannot see a reader's.
+refresh-slowing idea ("Maybe, later", below) asked for. Built the same
+day at the maintainer's word: `fetchJson` hands the answer's headers to
+its caller with the outcome (`onAttempt`), the Open-Meteo path keeps the
+newest answer's figures (`parseRateLimitHeaders`, `ServerQuota`, in
+memory only: an earlier session's reading says nothing about the windows
+now running), and Data health prints them under the browser's own count,
+as the server's, with the window they are for, their age and that
+request's cost: "Open-Meteo's own count for this address, from its
+answer 3 min ago: 577.4 of 600 calls left this minute, every browser on
+the address included; that request cost 9.6." A reader's browser sees
+the server's tally for its own address, which is the count that matters;
+the sandbox still cannot see a reader's, and the fixture build shows no
+server line, since no answer carries one. Checked the same day in a
+production build without fixtures, served locally and loaded in
+Chromium through the proxy (CLAUDE.md, "The deployed site in a
+browser"): at 1280 px, after the winds and outlook answers, "from its
+answer just now: 590.4 of 600 calls left this minute, every browser on
+the address included; that request cost 9.6" (600 less the two
+requests' 10.6, so the sandbox's address was otherwise quiet that
+minute); at 320 px the same line, no sideways scroll, no page errors.
 
 ## Maybe, later: slow the refresh when calls run high
 

@@ -5,7 +5,7 @@ import { DATA_SOURCES, type DataSource } from '../config/sources';
 import { TAF_RELAY_SET } from '../config/tafRelay';
 import { Panel } from './common/Panel';
 import { fmtAgo, shortError } from './format';
-import { OPEN_METEO_FREE_LIMITS, USAGE_KEEP_DAYS, type UsageSummary } from '../domain/openMeteoUsage';
+import { OPEN_METEO_FREE_LIMITS, USAGE_KEEP_DAYS, quotaWindowLabel, type UsageSummary } from '../domain/openMeteoUsage';
 
 const LABELS: Record<SourceKey, string> = {
   metar: 'METAR (KPMV)',
@@ -33,10 +33,9 @@ const ROWS = sourcesFetched(TAF_RELAY_SET || USE_FIXTURES);
 /** Calls as Open-Meteo counts them, to one decimal where fractional (a
  *  winds request is 9.6), whole where not: a sum of 9.6s is rounded first,
  *  so 106.00000000000001 prints "106", not "106.0". */
-const fmtCalls = (n: number): string => {
-  const tenths = Math.round(n * 10) / 10;
-  return Number.isInteger(tenths) ? String(tenths) : tenths.toFixed(1);
-};
+/** Calls to a tenth, whole when whole, thousands separated: 9.6, 50,
+ *  577.4, 10,000. The browser's count and the server's figures alike. */
+const fmtCalls = (n: number): string => n.toLocaleString('en-US', { maximumFractionDigits: 1 });
 
 export function DataFreshness({
   status,
@@ -123,6 +122,22 @@ export function DataFreshness({
               {OPEN_METEO_FREE_LIMITS.hour.toLocaleString('en-US')}. Other browsers on the same address
               share those limits and are not counted here. UTC days.
             </p>
+            {openMeteoUsage.server && (
+              // The server's own figures for this address, every browser on
+              // it included, off its newest answer's X-RateLimit headers:
+              // the window with the least left (the minute's on a quiet
+              // address; the day's once it is the one about to bind), what
+              // is left of it, and what that request cost. Figures as the
+              // server gave them, with their age; no judgement of them.
+              <p className="muted small">
+                <strong>Open-Meteo’s own count for this address</strong>, from its answer{' '}
+                {fmtAgo(openMeteoUsage.server.at)}: {fmtCalls(openMeteoUsage.server.remaining)} of{' '}
+                {fmtCalls(openMeteoUsage.server.limit)} calls left {quotaWindowLabel(openMeteoUsage.server.window)}, every
+                browser on the address included
+                {openMeteoUsage.server.cost != null && `; that request cost ${fmtCalls(openMeteoUsage.server.cost)}`}. The server
+                names whichever of its minute, hour and day windows has the least left.
+              </p>
+            )}
             <details className="om-usage-days">
               <summary className="muted small">By UTC day, the last {USAGE_KEEP_DAYS} days</summary>
               <table className="om-usage-table">

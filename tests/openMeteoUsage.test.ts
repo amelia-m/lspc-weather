@@ -6,7 +6,9 @@ import {
   USAGE_KEEP_DAYS,
   mergeUsage,
   openMeteoCallWeight,
+  parseRateLimitHeaders,
   pruneUsage,
+  quotaWindowLabel,
   summarizeUsage,
   toUsageRecord,
   usageCharge,
@@ -325,6 +327,144 @@ describe('fetchJson tells the counter about every attempt', () => {
     try {
       await expect(fetchJson('https://api.open-meteo.com/v1/forecast?hourly=a', { retries: 0, onAttempt: (o) => seen.push(o) })).rejects.toThrow();
       expect(seen).toEqual(['timeout']);
+    } finally {
+      globalThis.fetch = real;
+    }
+  });
+});
+
+/* The server's own count, off the X-RateLimit headers the deployed API has
+ * sent and exposed to browsers since 2026-11-04 (read that day: Cost 9.6
+ * for the winds request, Limit 600, Remaining 577.4, Reset in epoch
+ * seconds, Window 60). The window reported is whichever has the least
+ * remaining. */
+const HEADERS: Record<string, string> = {
+  'x-ratelimit-cost': '9.6',
+  'x-ratelimit-limit': '600.0',
+  'x-ratelimit-remaining': '577.4',
+  'x-ratelimit-reset': '1793777868',
+  'x-ratelimit-window': '60',
+};
+const lookup = (h: Record<string, string>) => (name: string) => h[name.toLowerCase()] ?? null;
+
+describe('parseRateLimitHeaders', () => {
+  it('reads the five headers as the server sends them', () => {
+    expect(parseRateLimitHeaders(lookup(HEADERS), T0)).toEqual({
+      at: T0,
+      cost: 9.6,
+      limit: 600,
+      remaining: 577.4,
+      window: 60,
+      resetMs: 1793777868000,
+    });
+  });
+
+  it('gives nothing without the limit, remaining and window, and no cost or reset without theirs', () => {
+    const without = (name: string) => lookup(Object.fromEntries(Object.entries(HEADERS).filter(([k]) => k !== name)));
+    expect(parseRateLimitHeaders(without('x-ratelimit-limit'), T0)).toBeNull();
+    expect(parseRateLimitHeaders(without('x-ratelimit-remaining'), T0)).toBeNull();
+    expect(parseRateLimitHeaders(without('x-ratelimit-window'), T0)).toBeNull();
+    expect(parseRateLimitHeaders(lookup({ ...HEADERS, 'x-ratelimit-window': '0' }), T0)).toBeNull();
+    expect(parseRateLimitHeaders(lookup({ ...HEADERS, 'x-ratelimit-remaining': 'many' }), T0)).toBeNull();
+    expect(parseRateLimitHeaders(without('x-ratelimit-cost'), T0)).toMatchObject({ cost: null, limit: 600 });
+    expect(parseRateLimitHeaders(without('x-ratelimit-reset'), T0)).toMatchObject({ resetMs: null });
+    expect(parseRateLimitHeaders(() => null, T0)).toBeNull();
+  });
+
+  it('names the windows the limiter has', () => {
+    expect(quotaWindowLabel(60)).toBe('this minute');
+    expect(quotaWindowLabel(3600)).toBe('this hour');
+    expect(quotaWindowLabel(86400)).toBe('today');
+    expect(quotaWindowLabel(90)).toBe('this 90 s window');
+  });
+
+  it('is carried by the summary, null before any answer', () => {
+    expect(summarizeUsage([], T0).server).toBeNull();
+    const q = parseRateLimitHeaders(lookup(HEADERS), T0)!;
+    expect(summarizeUsage([], T0, q).server).toBe(q);
+  });
+});
+
+describe('the recorder keeps the server’s newest figures', () => {
+  afterEach(() => {
+    clearOpenMeteoUsage();
+    removeStorage();
+  });
+
+  it('takes them off an answer’s headers, keeps the last when an answer has none, and clears with the rest', () => {
+    installStorage();
+    const winds = openMeteoWindsUrl(40.8703, -96.1085);
+    expect(openMeteoUsage(T0).server).toBeNull();
+    recordOpenMeteoRequest(winds, 'answered', T0 - 1000, new Headers(HEADERS));
+    expect(openMeteoUsage(T0).server).toMatchObject({ at: T0 - 1000, cost: 9.6, remaining: 577.4, window: 60 });
+    // A rejected attempt carries headers too (a 429 says what is left).
+    recordOpenMeteoRequest(winds, 'rejected', T0 - 500, new Headers({ ...HEADERS, 'x-ratelimit-remaining': '0', 'x-ratelimit-cost': '1.0' }));
+    expect(openMeteoUsage(T0).server).toMatchObject({ at: T0 - 500, cost: 1, remaining: 0 });
+    // An answer without the headers leaves the last reading in place.
+    recordOpenMeteoRequest(winds, 'answered', T0, new Headers({ 'content-type': 'application/json' }));
+    expect(openMeteoUsage(T0).server).toMatchObject({ at: T0 - 500, remaining: 0 });
+    recordOpenMeteoRequest(winds, 'timeout', T0);
+    expect(openMeteoUsage(T0).server).toMatchObject({ at: T0 - 500 });
+    expect(openMeteoUsage(T0).day.requests).toBe(4);
+    clearOpenMeteoUsage();
+    expect(openMeteoUsage(T0).server).toBeNull();
+  });
+});
+
+describe('Data health shows the server’s own count', () => {
+  const status = Object.fromEntries(
+    (['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm'] as SourceKey[]).map((k) => [
+      k,
+      { ok: true, pending: false, stale: false, error: null, fetchedAt: T0 } as SourceStatus,
+    ]),
+  ) as Record<SourceKey, SourceStatus>;
+  const html = (usage: ReturnType<typeof summarizeUsage>) =>
+    renderToStaticMarkup(createElement(DataFreshness, { status, lastUpdated: T0, onRefresh: () => {}, openMeteoUsage: usage })).replace(
+      /<!-- -->/g,
+      '',
+    );
+
+  it('prints what is left of the window the server named, its age, and the cost, as the server’s', () => {
+    const q = parseRateLimitHeaders(lookup(HEADERS), T0 - 3 * 60_000)!;
+    const out = html(summarizeUsage([rec(T0 - 30_000, 9.6)], T0, q));
+    expect(out).toContain('Open-Meteo’s own count for this address');
+    expect(out).toContain('577.4 of 600 calls left this minute, every browser on the address included; that request cost 9.6.');
+    expect(out).toContain('names whichever of its minute, hour and day windows has the least left');
+    // The day window, when the server names it, and no cost when it sent none.
+    const day = html(summarizeUsage([rec(T0 - 30_000, 9.6)], T0, { ...q, window: 86400, limit: 10_000, remaining: 412, cost: null }));
+    expect(day).toContain('412 of 10,000 calls left today, every browser on the address included.');
+    expect(day).not.toContain('that request cost');
+  });
+
+  it('prints nothing of the server before an answer carried its figures', () => {
+    expect(html(summarizeUsage([rec(T0 - 30_000, 9.6)], T0))).not.toContain('own count');
+  });
+});
+
+describe('fetchJson hands the answer’s headers to the counter', () => {
+  it('with an answered and with a rejected attempt, and none for one that never arrived', async () => {
+    const { fetchJson } = await import('../src/api/http');
+    const seen: [string, string | null | undefined][] = [];
+    let calls = 0;
+    const real = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      calls += 1;
+      if (calls === 1) throw new TypeError('Failed to fetch');
+      // A 5xx, which fetchJson retries; the limiter's 429 is a 4xx and is
+      // not, so the headers it carries reach the counter on the one attempt.
+      if (calls === 2) return new Response('down', { status: 503, headers: { ...HEADERS, 'x-ratelimit-remaining': '0' } });
+      return new Response('{"ok":true}', { status: 200, headers: { 'content-type': 'application/json', ...HEADERS } });
+    }) as unknown as typeof fetch;
+    try {
+      await fetchJson('https://api.open-meteo.com/v1/forecast?hourly=a', {
+        retries: 2,
+        onAttempt: (o, h) => seen.push([o, h === undefined ? undefined : h.get('x-ratelimit-remaining')]),
+      });
+      expect(seen).toEqual([
+        ['unreachable', undefined],
+        ['rejected', '0'],
+        ['answered', '577.4'],
+      ]);
     } finally {
       globalThis.fetch = real;
     }

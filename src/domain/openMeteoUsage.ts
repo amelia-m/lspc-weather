@@ -7,9 +7,10 @@
  * in Open-Meteo's own server source on 2026-10-31 (open-meteo/open-meteo,
  * commit 2060d80: `calculateQueryWeight` in
  * Sources/App/Helper/Writer/ForecastApiResult.swift, charged by
- * `withFreeApiRateLimiter`; the windows in RateLimiter.swift are the
- * clock's minute, hour and UTC day, within a client's first request's
- * seconds; docs/open-meteo-terms.md, "Read again 2026-10-31"):
+ * `withFreeApiRateLimiter`; the windows in RateLimiter.swift roll per
+ * client from the second of its first request, read again 2026-11-04, so
+ * the UTC-day summary here approximates the server's day window;
+ * docs/open-meteo-terms.md, "Read again 2026-10-31"):
  *
  *   weight = max(1, max(variables / 10, variables / 10 × days / 14)) per location
  *
@@ -21,11 +22,16 @@
  * a request the server answers with an error is charged 1 ("some users do
  * infinite retries on errors"). So the winds-aloft request (96 hourly
  * variables, two days) is 9.6 calls and the 10-day outlook (7 daily
- * variables) is 1. The server also answers with the cost in an
- * `X-RateLimit-Cost` header since a change of 2026-10-26, but the deployed
- * API did not send it on 2026-10-31, and a browser could not read it
- * without a CORS exposure anyway, so the cost is worked from the URL here,
- * by the same formula.
+ * variables) is 1. The cost is worked from the URL here, by the same
+ * formula, because the count must take in attempts the server answered
+ * with nothing (a timeout) and the formula is what the server charges:
+ * since 2026-11-04 the deployed API also says so in an `X-RateLimit-Cost`
+ * header (9.6 for the winds request, read that day), with the limit,
+ * remaining, reset and window of whichever of its windows has the least
+ * remaining, and exposes them to browsers. Those are the server's own
+ * figures for this address, every browser on it included, which the
+ * browser's count cannot see; `parseRateLimitHeaders` reads them off an
+ * answer and the summary carries the newest (`server`).
  *
  * Why count: a tab left open all day makes about 1,500 calls, and six or
  * seven such tabs behind one address would cross the daily limit (the
@@ -122,6 +128,23 @@ export interface UsageDay extends UsageWindow {
   day: string;
 }
 
+/** What the server said of this address in one answer's `X-RateLimit-*`
+ *  headers: the window with the least remaining (the minute's on a quiet
+ *  address; the day's once it is the one about to bind), its limit and
+ *  remaining in calls, when it resets, and what that request cost. */
+export interface ServerQuota {
+  /** When the answer came, ms. */
+  at: number;
+  /** `X-RateLimit-Cost`, calls; null when the header is missing. */
+  cost: number | null;
+  limit: number;
+  remaining: number;
+  /** The window's length in seconds: 60, 3600 or 86400. */
+  window: number;
+  /** When the window resets, ms; null when the header is missing. */
+  resetMs: number | null;
+}
+
 export interface UsageSummary {
   /** The UTC calendar hour and day holding `now`: the limiter's windows,
    *  give or take the seconds of this client's first request. The minute
@@ -131,6 +154,37 @@ export interface UsageSummary {
   day: UsageWindow;
   /** Each UTC day with records, newest first, today included. */
   days: UsageDay[];
+  /** The server's own figures from its newest answer, or null before one
+   *  (or when the API sends none, as it did not before 2026-11-04). */
+  server: ServerQuota | null;
+}
+
+/** The server's figures off an answer's headers, `get` being the
+ *  response's header lookup; null unless the limit, remaining and window
+ *  are all there and numeric, since a partial reading would print a
+ *  figure the server did not give. */
+export function parseRateLimitHeaders(get: (name: string) => string | null, at: number): ServerQuota | null {
+  const num = (name: string): number | null => {
+    const v = get(name);
+    if (v == null || v.trim() === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const limit = num('x-ratelimit-limit');
+  const remaining = num('x-ratelimit-remaining');
+  const window = num('x-ratelimit-window');
+  if (limit == null || remaining == null || window == null || window <= 0) return null;
+  const reset = num('x-ratelimit-reset');
+  return { at, cost: num('x-ratelimit-cost'), limit, remaining, window, resetMs: reset == null ? null : reset * 1000 };
+}
+
+/** The window's name for a reader: the server's are a minute, an hour
+ *  and a day, rolling from this address's first request. */
+export function quotaWindowLabel(window: number): string {
+  if (window === 60) return 'this minute';
+  if (window === 3600) return 'this hour';
+  if (window === 86400) return 'today';
+  return `this ${window} s window`;
 }
 
 const utcDay = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
@@ -141,8 +195,9 @@ const sum = (records: readonly UsageRecord[]): UsageWindow => ({
   calls: records.reduce((acc, r) => acc + r.w, 0),
 });
 
-/** The records read against the clock at `now`. */
-export function summarizeUsage(records: readonly UsageRecord[], now: number): UsageSummary {
+/** The records read against the clock at `now`, with the server's newest
+ *  figures beside them when an answer carried any. */
+export function summarizeUsage(records: readonly UsageRecord[], now: number, server: ServerQuota | null = null): UsageSummary {
   const hourStart = floorTo(now, 3_600_000);
   const dayStart = floorTo(now, 86_400_000);
   const inWindow = (start: number, length: number) => records.filter((r) => r.t >= start && r.t < start + length);
@@ -160,6 +215,7 @@ export function summarizeUsage(records: readonly UsageRecord[], now: number): Us
     hour: sum(inWindow(hourStart, 3_600_000)),
     day: sum(inWindow(dayStart, 86_400_000)),
     days,
+    server,
   };
 }
 

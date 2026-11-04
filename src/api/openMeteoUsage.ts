@@ -5,11 +5,13 @@
  *  module state. */
 import {
   mergeUsage,
+  parseRateLimitHeaders,
   pruneUsage,
   summarizeUsage,
   toUsageRecord,
   usageCharge,
   usageKey,
+  type ServerQuota,
   type UsageOutcome,
   type UsageRecord,
   type UsageSummary,
@@ -19,6 +21,10 @@ import { safeLocalGet, safeLocalRemove, safeLocalSet } from './safeStorage';
 const STORAGE_KEY = 'lspc:openMeteoUsage';
 
 let records: UsageRecord[] = [];
+/** The server's figures from the newest answer that carried them: in
+ *  memory only, since a reading from an earlier session says nothing
+ *  about the windows now running; the card prints how old it is. */
+let server: ServerQuota | null = null;
 /** Whether storage has been read into `records` this session: done on the
  *  first read or write, so a restored fortnight shows on the first render
  *  rather than after some later state change. */
@@ -57,22 +63,27 @@ export function loadPersistedUsage(now: number = Date.now()): void {
  *  record their own requests, and the count the card claims is the
  *  browser's, so neither may overwrite the other's; and the first record
  *  of a session is the load, not a load and then a re-read. */
-export function recordOpenMeteoRequest(url: string, outcome: UsageOutcome, now: number = Date.now()): void {
+export function recordOpenMeteoRequest(url: string, outcome: UsageOutcome, now: number = Date.now(), headers?: Headers): void {
   const fresh: UsageRecord = { t: now, w: usageCharge(url, outcome), k: usageKey(url), o: outcome };
   records = pruneUsage(mergeUsage(readStored(), [...records, fresh]), now);
   loaded = true;
   safeLocalSet(STORAGE_KEY, JSON.stringify(records));
+  // An answer without the headers (another host's, or the API before
+  // 2026-11-04) leaves the last reading in place rather than blanking it.
+  const quota = headers ? parseRateLimitHeaders((name) => headers.get(name), now) : null;
+  if (quota) server = quota;
 }
 
 /** What this browser has asked Open-Meteo, read against the clock. */
 export function openMeteoUsage(now: number = Date.now()): UsageSummary {
   if (!loaded) loadPersistedUsage(now);
-  return summarizeUsage(pruneUsage(records, now), now);
+  return summarizeUsage(pruneUsage(records, now), now, server);
 }
 
 /** Drop everything, in memory and in storage. */
 export function clearOpenMeteoUsage(): void {
   records = [];
+  server = null;
   loaded = false;
   safeLocalRemove(STORAGE_KEY);
 }

@@ -51,14 +51,18 @@ export async function fetchJson<T>(
      *  an HTTP error; timed out here; unreachable, a network or CORS
      *  failure): a counter of requests (src/api/openMeteoUsage.ts) has to
      *  see every attempt and how it ended, since the server charges each
-     *  one by that, not the call's final result. */
-    onAttempt?: (outcome: 'answered' | 'rejected' | 'timeout' | 'unreachable') => void;
+     *  one by that, not the call's final result. The response's headers
+     *  come with an answered or rejected attempt (none arrived otherwise):
+     *  Open-Meteo's carry its own count for the address (`X-RateLimit-*`,
+     *  exposed to browsers since 2026-11-04), which the counter keeps. */
+    onAttempt?: (outcome: 'answered' | 'rejected' | 'timeout' | 'unreachable', headers?: Headers) => void;
   } = {},
 ): Promise<T> {
   const { timeoutMs = 12_000, headers = {}, retries = 1, cache, onAttempt } = opts;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     let reported = false;
+    let answered: Response | null = null;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -73,15 +77,18 @@ export async function fetchJson<T>(
         headers: { Accept: 'application/json', ...headers },
         cache,
       });
+      answered = res;
       if (!res.ok) throw new HttpError(res.status, url);
       // Answered: reported once, here, whatever the body then does. A 200
       // whose body will not parse is an answered request the server has
       // charged in full; the catch below must not report it a second time.
       reported = true;
-      onAttempt?.('answered');
+      onAttempt?.('answered', res.headers);
       return (await res.json()) as T;
     } catch (err) {
-      if (!reported) onAttempt?.(err instanceof HttpError ? 'rejected' : isAbort(err) ? 'timeout' : 'unreachable');
+      if (!reported) {
+        onAttempt?.(err instanceof HttpError ? 'rejected' : isAbort(err) ? 'timeout' : 'unreachable', answered?.headers);
+      }
       lastErr = isAbort(err) ? new TimeoutError(url, timeoutMs) : err;
       // 4xx is a client error (bad URL, not found, unauthorized) — retrying
       // won't help, so fail fast. Retry only transient failures (5xx, network,

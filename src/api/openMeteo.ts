@@ -25,10 +25,11 @@ import type { UsageOutcome } from '../domain/openMeteoUsage';
 const OPEN_METEO_OPTS = { timeoutMs: 20_000, retries: 2 };
 
 /** The fetch options for one URL: the shared ones, plus the counter that
- *  records each attempt as a call Open-Meteo charges this address. */
+ *  records each attempt as a call Open-Meteo charges this address, and
+ *  keeps the server's own count off the answer's headers. */
 const optsFor = (url: string) => ({
   ...OPEN_METEO_OPTS,
-  onAttempt: (outcome: UsageOutcome) => recordOpenMeteoRequest(url, outcome),
+  onAttempt: (outcome: UsageOutcome, headers?: Headers) => recordOpenMeteoRequest(url, outcome, Date.now(), headers),
 });
 
 /** Fetch winds aloft and interpolate to the requested AGL jump altitudes.
