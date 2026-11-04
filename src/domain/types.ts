@@ -265,8 +265,9 @@ export interface NbmHour {
 
 export interface NbmForecast {
   station: string;
-  /** The bulletin's "NBM V5.0". */
-  version: string;
+  /** The bulletin's "NBM V5.0"; null when the header names none, as the
+   *  bucket's has not since the 2026-11-03 12Z cycle. */
+  version: string | null;
   /** The model cycle the header names, "0100 UTC": the hours run from the
    *  one after it. The file lands about an hour later, so this is not when
    *  it was published. */

@@ -217,7 +217,9 @@ precisely because they were colour and text rather than flags.
 - **Offutt's TAF comes through a relay of the maintainer's** (`relay/`, a
   Cloudflare Worker at `lspc-taf-relay.amelia-m.workers.dev`, deployed
   2026-10-27; `TAF_RELAY_URL` in `src/config/tafRelay.ts`;
-  docs/taf-relay.md, "Checked after deploying"). The
+  docs/taf-relay.md, "Checked after deploying"; Workers Builds deploys
+  `relay/` from `main` on merge, so a relay change needs no deploy step
+  of the maintainer's, seen on 2026-11-03). The
   USAF issues it, api.weather.gov does not carry it, and
   aviationweather.gov sends no CORS header. A workflow copying it was
   ruled out on GitHub's Actions terms, which name "part of a serverless

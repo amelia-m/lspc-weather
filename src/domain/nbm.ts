@@ -56,7 +56,11 @@ function percent(field: string | undefined): number | null {
  *  its data are missing for every hour. */
 export function parseNbhBlock(text: string): NbmForecast | null {
   const lines = text.split('\n').map((l) => l.replace(/\r$/, ''));
-  const head = /^ (\S+)\s+NBM V(\S+) NBH GUIDANCE\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2})(\d{2}) UTC/.exec(lines[0] ?? '');
+  // The version token ("V5.0") is optional: the bucket's header carried it
+  // through the 2026-11-03 11Z cycle and not from the 12Z one on ("NBM  NBH
+  // GUIDANCE"), and a pattern that required it parsed nothing for twelve
+  // hours (docs/nbm-lowest-cloud-base.md, "The header lost its version").
+  const head = /^ (\S+)\s+NBM(?: V(\S+))?\s+NBH GUIDANCE\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2})(\d{2}) UTC/.exec(lines[0] ?? '');
   if (!head) return null;
   const station = head[1];
   const cycleHour = Number(head[6]);
@@ -65,7 +69,7 @@ export function parseNbhBlock(text: string): NbmForecast | null {
   for (const line of lines.slice(1)) {
     // Another station's header ends this block: text cut loosely would
     // otherwise hand the next station's rows to this one.
-    if (/^ \S+\s+NBM V\S+ NB[A-Z] GUIDANCE/.test(line)) break;
+    if (/^ \S+\s+NBM(?: V\S+)?\s+NB[A-Z] GUIDANCE/.test(line)) break;
     const label = line.slice(1, LABEL).trim();
     if (label) rows.set(label, fields(line));
   }
@@ -92,5 +96,5 @@ export function parseNbhBlock(text: string): NbmForecast | null {
       skyCoverPct: percent(rows.get('SKY')?.[i]),
     });
   });
-  return { station, version: head[2], cycleMs, hours };
+  return { station, version: head[2] ?? null, cycleMs, hours };
 }

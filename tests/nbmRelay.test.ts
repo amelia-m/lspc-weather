@@ -61,6 +61,21 @@ describe('cutStationBlock', () => {
     expect(cut.complete).toBe(true);
     expect(parseNbhBlock(cut.block)!.hours).toHaveLength(25);
   });
+  it('cuts a block whose header has no version token, and ends at a neighbour’s header without one', () => {
+    // The bucket's header since the 2026-11-03 12Z cycle: "NBM  NBH", no
+    // "V5.0". The relay's pattern required it and found no block in a
+    // file that had one, answering 502 for twelve hours.
+    const b = bulletin(5000);
+    const bare = b.text.replace(/NBM V5\.0 NBH/g, 'NBM  NBH');
+    const cut = cutStationBlock(bare, 'KPMV')!;
+    // Every header lost four characters, so the block sits earlier than in
+    // the unchanged text; where the bare text's own KPMV header is.
+    expect(cut.at).toBe(bare.indexOf(' KPMV '));
+    expect(cut.block).toBe(KPMV.replace('NBM V5.0 NBH', 'NBM  NBH'));
+    expect(cut.complete).toBe(true);
+    expect(parseNbhBlock(cut.block)!.version).toBeNull();
+  });
+
   it('says when the text ends inside the block, as a window can, and finds nothing for a station not there', () => {
     const b = bulletin(5000);
     const cut = cutStationBlock(b.text.slice(0, b.at + 200), 'KPMV')!;
@@ -181,14 +196,20 @@ describe('the NBM path of the relay', () => {
     expect(d.fetch.mock.calls.length).toBeGreaterThan(n);
   });
 
-  it('answers 502, keeping nothing, when no file of the last hours is there, or the block is not in it', async () => {
+  it('answers 502, keeping nothing, when no file of the last hours is there; 500 when the block is not in the file', async () => {
     const none = deps(bulletin(NBM_KNOWN_OFFSET + 4000).text, { missingHours: NBM_LOOKBACK_HOURS + 2 });
     const res = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), none);
     expect(res.status).toBe(502);
     expect(((await res.json()) as { error: string }).error).toMatch(/NBM bucket has no NBH file/);
     expect(none.nbm.body).toBeNull();
+    // A file read with no KPMV block in it is the relay's own failure (a
+    // changed bulletin, a station gone), not the bucket's: 500, which the
+    // live-site check counts, where the bucket's 502 is a note.
     const without = deps(bulletin(NBM_KNOWN_OFFSET + 4000).text.replace(/ KPMV /g, ' KXXX '));
-    expect((await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), without)).status).toBe(502);
+    const missing = await handle(req(NBM_PATH, { origin: SITE_ORIGIN }), without);
+    expect(missing.status).toBe(500);
+    expect(((await missing.json()) as { error: string }).error).toMatch(/the relay found no KPMV block in blend\./);
+    expect(without.nbm.body).toBeNull();
   });
 
   it('keeps the relay’s rules: another origin refused, GET only, and the TAF path untouched', async () => {
