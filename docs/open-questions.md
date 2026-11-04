@@ -584,6 +584,29 @@ Open-Meteo's terms and licence were read on 2026-10-23
 quite: its comparison docs, two figures and `data/parity/` archives held
 Open-Meteo data with no credit beside them, and each now has one.
 
+The README's list was read on 2026-11-04 (the clone's `main` at b66bc9d,
+2026-11-03; the list unchanged since 2060d80): "Who is using
+Open-Meteo?", three groups (Apps, Repositories, Other), one line each,
+`- [Name](url) Description.`, the Apps alphabetical by name, hosted
+sites among them, a few with a second link in parentheses. The entry
+drafted for the maintainer to send, under Apps between Lively Weather
+and LunaLink:
+
+    - [LSPC Weather](https://amelia-m.github.io/lspc-weather/) Skydiving
+      weather dashboard for one drop zone (Lincoln Sport Parachute Club,
+      Nebraska): winds aloft by altitude for freefall drift, cloud cover
+      and a 10-day outlook from Open-Meteo beside the NWS forecast and
+      the nearest METAR, every flag cited to the published rule behind
+      it. Free, open source, no account.
+      ([source](https://github.com/amelia-m/lspc-weather))
+
+on one line in the file. The pull request's title, "Add LSPC Weather to
+the list of users", and its body: that the site reads Open-Meteo's
+pressure-level and 80 to 180 m winds, cloud cover and daily outlook,
+credits it beside each, and is under the maintainer's GitHub account.
+It goes to github.com/open-meteo/open-meteo under her name, so it is
+hers to open.
+
 ## Settled: the DZ's coordinates now sit on the landing area
 
 Raised 2026-10-08 by the maintainer, from Mark Schulze's map: the app's
