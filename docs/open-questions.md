@@ -272,10 +272,13 @@ not fail against the old code, since the rows it needs to exclude are
 listed under the test's fixtures; the hook's pending marking is held by
 `sourcesFetched`'s test instead.
 
-- **Waiting on the maintainer:** the relay change (a thrown HEAD moves on
-  to the older file; every HEAD thrown answers "unreachable") reaches the
-  deployed Worker only when she deploys it (docs/taf-relay.md); until
-  then the live relay still answers 502 on a stalled HEAD.
+- **The relay change (a thrown HEAD moves on to the older file; every
+  HEAD thrown answers "unreachable") was deployed by Workers Builds
+  itself** when the merge reached `main` (the "Workers Builds:
+  lspc-taf-relay" check on the merge commit, 2026-11-03 01:29Z): it
+  builds `relay/` from `main` (docs/taf-relay.md, "Setting it up"), so
+  nothing waited on the maintainer; this entry said it did until
+  2026-11-04.
 
 **The modules the first pass had not read**, reviewed in depth the same
 day at the maintainer's ask (the parity and wind-error summaries, the
@@ -1277,6 +1280,20 @@ the run from the sandbox on the 26th passed every check. It opened no
 second issue (one is open). Nothing for the code to fix.
 
 Both are the maintainer's to close: #209 with this section as the why.
+
+## Done: the NBM bulletin's header lost its version token (2026-11-03 12Z)
+
+Found 2026-11-04 about 00:30Z while checking whether the relay's HEAD
+fix was live: the relay answered `/nbm/KPMV` 502, "NOAA's NBM bucket has
+no KPMV block in blend.20261103/23/text/blend_nbhtx.t23z", and the file,
+fetched whole, had the block. Its header read " KPMV   NBM  NBH GUIDANCE"
+where every file through the 11Z cycle read " KPMV   NBM V5.0 NBH
+GUIDANCE"; the relay's and the app's patterns required the token. Both
+take it as optional now, the relay answers a block it cannot find in a
+file it read with 500 rather than the bucket's 502, and the live-site
+check counts that (it noted the 502s, three a page, on the 20:58Z run).
+docs/nbm-lowest-cloud-base.md, "The header lost its version", has the
+files read. Deployed by Workers Builds on merge.
 
 ## Done: the sky-parity run of 2026-11-03, a 1 hPa QNH and a label too long
 

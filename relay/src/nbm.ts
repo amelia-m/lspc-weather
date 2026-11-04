@@ -63,11 +63,18 @@ export function nbmFileFor(cycleMs: number): string {
   return `blend.${day}/${hh}/text/blend_nbhtx.t${hh}z`;
 }
 
-const HEADER = (station: string): RegExp => new RegExp(`(^|\\n) ${station}\\s+NBM V\\S+ NBH GUIDANCE[^\\n]*`);
+/** A station's header line: " KPMV   NBM V5.0 NBH GUIDANCE    11/03/2026
+ *  1100 UTC" through the 2026-11-03 11Z cycle, and " KPMV   NBM  NBH
+ *  GUIDANCE    11/03/2026  1200 UTC" from the 12Z one on: the version token
+ *  went, with no notice found, and a pattern that required it found no
+ *  block in a file that had one (the relay answered 502 for twelve hours
+ *  before it was read, docs/nbm-lowest-cloud-base.md, "The header lost its
+ *  version"). So the version is optional here and in the app's parser. */
+const HEADER = (station: string): RegExp => new RegExp(`(^|\\n) ${station}\\s+NBM(?: V\\S+)?\\s+NBH GUIDANCE[^\\n]*`);
 /** Any station's header: ids are mostly four characters, but the NBM's
  *  station list has buoys and C-MAN stations with five, which a tighter
  *  pattern ran past (found in review, 2026-10-27). */
-const ANY_HEADER = /\n \S+\s+NBM V\S+ NBH GUIDANCE/;
+const ANY_HEADER = /\n \S+\s+NBM(?: V\S+)?\s+NBH GUIDANCE/;
 /** The line of spaces between one station's block and the next's. */
 const BLANK_LINE = /\n[ \t]*\r?\n/;
 
@@ -91,6 +98,14 @@ export function cutStationBlock(text: string, station: string): { block: string;
 
 const upstreamFailed = (why: string, origin: string | null): Response =>
   json(502, JSON.stringify({ error: `NOAA's NBM bucket ${why}` }), origin);
+/** The file was there and read, and the station's block was not found in
+ *  it: the bulletin's shape has changed, or the station has gone from it.
+ *  Not the bucket's 502, which the app names as the bucket's and the
+ *  live-site check only notes; a 500 is the relay's own and counts as a
+ *  fault there, so a format change is seen the day it happens (the 12Z
+ *  header change of 2026-11-03 was a note for twelve hours). */
+const notFoundInFile = (file: string, origin: string | null): Response =>
+  json(500, JSON.stringify({ error: `the relay found no ${NBM_STATION} block in ${file}` }), origin);
 
 /** All the bucket requests of one answer share this much time, so the
  *  app's own wait (25 s, src/api/nbm.ts) outlasts the relay's worst case:
@@ -188,7 +203,7 @@ export async function nbmHandle(request: Request, origin: string | null, deps: N
   } catch (err) {
     return upstreamFailed(`unreachable: ${String(err)}`, origin);
   }
-  if (!cut) return upstreamFailed(`has no ${NBM_STATION} block in ${found.file}`, origin);
+  if (!cut) return notFoundInFile(found.file, origin);
 
   deps.memo.offset = base + cut.at;
   const body = JSON.stringify({

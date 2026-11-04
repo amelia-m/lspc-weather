@@ -21,17 +21,21 @@ export async function fetchNbm(relayBase: string | null = TAF_RELAY_URL, now = D
   if (USE_FIXTURES) return withFile(parseNbhBlock(nbhFixtureText(now)), 'fixture');
   const url = nbmRelayUrl(relayBase);
   if (url == null) return null;
-  // As the TAF path: no retry after the relay's own 502, which it answers
-  // after its own waits on the bucket; one retry for anything else. The
+  // As the TAF path: no retry after the relay's own answers, which come
+  // after its waits on the bucket: its 502 (the bucket unreachable, no
+  // file, a bad status) and its 500 (a file read and the station's block
+  // not found in it, since 2026-11-04). One retry for anything else. The
   // wait outlasts the relay's time budget (relay/src/nbm.ts, 20 s), so a
   // slow whole-file read is not abandoned here while the relay finishes
-  // it. A 502 is named as the bucket's, which Data health shows and the
-  // live-site check notes rather than counts (src/domain/liveSite.ts).
+  // it. The 502 is named as the bucket's, which Data health shows and the
+  // live-site check notes rather than counts (src/domain/liveSite.ts); the
+  // 500 is thrown as the HTTP error it is, which that check counts.
   let body: RelayNbm;
   try {
     body = await fetchJson<RelayNbm>(url, { retries: 0, timeoutMs: NBM_FETCH_TIMEOUT_MS });
   } catch (err) {
     if (err instanceof HttpError && err.status === 502) throw new Error(`NOAA's NBM bucket failed behind the relay (relay answered 502)`);
+    if (err instanceof HttpError && err.status === 500) throw err;
     body = await fetchJson<RelayNbm>(url, { retries: 0, timeoutMs: NBM_FETCH_TIMEOUT_MS });
   }
   if (typeof body.text !== 'string' || typeof body.file !== 'string') throw new Error('relay answered something other than an NBM block');

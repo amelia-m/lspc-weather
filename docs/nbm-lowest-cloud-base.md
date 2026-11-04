@@ -77,6 +77,30 @@ block to the hour before now (`src/api/fixtures/nbm.ts`). Data health
 has a row for it, shown only with the relay set; the source log records
 the cycle and file.
 
+## The header lost its version (2026-11-03)
+
+Every station's block in the bucket's NBH text began " KPMV   NBM V5.0
+NBH GUIDANCE    11/03/2026  1100 UTC" through the 2026-11-03 11Z cycle,
+and " KPMV   NBM  NBH GUIDANCE    11/03/2026  1200 UTC" from the 12Z one
+on: the version token went, two spaces where " V5.0 " was, with no
+notice found (read in the bucket's files for 10-28 12Z, 10-31 12Z, 11-01
+12Z, 11-02 12Z, 11-03 00Z to 11Z, 12Z, 22Z and 23Z on 2026-11-04 about
+00:30Z). The relay's pattern for the station's header required the
+token, so from the 12Z file on it found no block in a file that had one
+and answered 502, "NOAA's NBM bucket has no KPMV block in
+blend.20261103/23/text/blend_nbhtx.t23z" (the 23Z file, 28,399,674
+bytes, with KPMV's header 18,216,536 bytes in, 26 KB before the
+remembered offset and well inside the window). The app's parser required
+it too. Both patterns take the token as optional now, `version` is null
+when the header has none, and a block the relay cannot find in a file it
+read answers 500, the relay's own, which the live-site check counts as a
+fault; the bucket's 502 stays a note, which is why the twelve hours of
+502s showed only as notes on that day's check (the deploy's run at
+20:58Z, three per page) and the error reached nobody until the run list
+was read. `tests/nbm.test.ts` and `tests/nbmRelay.test.ts` carry the bare
+header. Workers Builds deploys the relay from `main` (docs/taf-relay.md,
+"Setting it up"), so the fix is live once merged.
+
 ## Checked
 
 - `npm test`: the parser, the relay path (a stand-in bucket: HEAD, the

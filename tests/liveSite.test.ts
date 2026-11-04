@@ -91,6 +91,9 @@ describe('judgeLoad', () => {
       notes: ["NBM cloud base: error: NOAA's NBM bucket failed behind the relay (relay answered 502)"],
     });
     expect(judgeLoad(row('error: HTTP 530 for lspc-taf-relay.amelia-m.workers.dev')).faults).toEqual(['NBM cloud base: error: HTTP 530 for lspc-taf-relay.amelia-m.workers.dev']);
+    // The relay's own 500 (a file read, the block not found: the bulletin's
+    // header changed on 2026-11-03) is a fault, not the bucket's note.
+    expect(judgeLoad(row('error: HTTP 500 for lspc-taf-relay.amelia-m.workers.dev/nbm/KPMV')).faults).toHaveLength(1);
   });
 
   it('reads the chip on the TAF row only', () => {

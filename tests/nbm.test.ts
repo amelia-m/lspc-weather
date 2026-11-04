@@ -39,10 +39,27 @@ describe('parseNbhBlock', () => {
     expect(g.hours[24].time).toBe(Date.UTC(2026, 9, 28, 0));
   });
 
+  it('reads a header with no version token, as the bucket’s has read since the 2026-11-03 12Z cycle', () => {
+    // " KPMV   NBM  NBH GUIDANCE    11/03/2026  1200 UTC": two spaces where
+    // " V5.0 " was. A pattern that required the token parsed nothing, and
+    // the relay answered 502 for twelve hours.
+    // The fixture's hours are the 03Z cycle's, so only the header changes.
+    const bare = NBH.replace('NBM V5.0 NBH GUIDANCE', 'NBM  NBH GUIDANCE');
+    const g = parseNbhBlock(bare)!;
+    expect(g.station).toBe('KPMV');
+    expect(g.version).toBeNull();
+    expect(g.cycleMs).toBe(Date.UTC(2026, 9, 24, 3));
+    expect(g.hours).toHaveLength(25);
+    expect(g.hours[0].time).toBe(Date.UTC(2026, 9, 24, 4));
+  });
+
   it('stops at another station’s header, so loosely cut text cannot hand it the neighbour’s rows', () => {
     const two = `${NBH}\n KPMZ   NBM V5.0 NBH GUIDANCE    10/24/2026  0300 UTC\n UTC  04 05\n LCB  10 10`;
     expect(parseNbhBlock(two)!.hours[0].lowestBaseFtAgl).toBe(20000);
     expect(parseNbhBlock(two)!.hours).toHaveLength(25);
+    // And at one with no version token.
+    const bareNext = `${NBH}\n KPMZ   NBM  NBH GUIDANCE    10/24/2026  0300 UTC\n UTC  04 05\n LCB  10 10`;
+    expect(parseNbhBlock(bareNext)!.hours).toHaveLength(25);
   });
 
   it('reads the fields by position in hundreds of feet: "-88-88140" is unlimited, unlimited, 14,000', () => {
