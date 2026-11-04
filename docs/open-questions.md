@@ -468,8 +468,16 @@ pruned to the last fourteen UTC days). Data health shows, under the
 rows, today's and this hour's requests and calls beside the free limits
 (10,000 a day, 5,000 an hour, per address), says that other browsers on
 the same address share the limits unseen, and lists the last fortnight by
-UTC day. The limiter's windows are the clock's minute, hour and UTC day
-(RateLimiter.swift, read 2026-10-31), so the summary uses the same. Two
+UTC day. The summary's windows are the clock's minute, hour and UTC day;
+the limiter's are not quite (`RateLimiter.swift`, read again 2026-11-04:
+the reading of 2026-10-31 that called them the clock's was wrong, and
+the code it read already had this): each client's windows roll from the
+second of its first request, so a client first seen at 14:23:37 has its
+minute end at :37 past, its hour at 23:37 past, and its day at 14:23:37,
+and an address idle until every window is empty starts afresh. The
+summary's UTC day is therefore an approximation of the server's day
+window for this address, close while the site is used around the
+clock, up to a day's worth apart otherwise. Two
 tabs of one browser merge their records on each write, so the count is
 the browser's and not the last tab's; the records are read from storage
 on the first read, so a restored fortnight shows on the first render; and
@@ -485,6 +493,29 @@ browser can read a custom response header only if the server names it in
 sandbox cannot see a reader's count either: it is in their browser. To
 read typical usage, open Data health on a phone or a display that has
 been showing the site, and expand "By day".
+
+**The headers appeared, and are exposed (read 2026-11-04 07:35Z).** The
+deployed API answered the app's own winds request from here with
+`X-RateLimit-Cost: 9.6` (the formula's figure exactly), `X-RateLimit-Limit:
+600.0`, `X-RateLimit-Remaining: 577.4`, `X-RateLimit-Reset: <epoch
+seconds>` and `X-RateLimit-Window: 60`, and with an `Origin` header set,
+`access-control-expose-headers: x-ratelimit-cost, x-ratelimit-limit,
+x-ratelimit-remaining, x-ratelimit-reset, x-ratelimit-window,
+retry-after`, so a browser may read all of them. Which window the headers
+carry is the one with the least remaining, ties to the later reset
+(`quota()` in `RateLimiter.swift`, the same reading): on a quiet address
+that is the minute window (600 less a few), and the hour's or the day's
+only once its remaining falls under the minute's, that is, once the day
+has about 9,400 calls on it. So the headers are the server's own view of
+this address, every browser on it included, and they name the day window
+exactly when it is the one about to bind, which is the signal the
+refresh-slowing idea ("Maybe, later", below) asked for. Not built yet:
+reading them means `fetchJson` handing the response's headers to its
+caller (`onAttempt` sees only the outcome), the Open-Meteo path keeping
+the last answer's figures, and Data health printing them beside the
+browser's own count, as the server's, with the window they are for. A
+reader's browser sees the server's tally for its own address, which is
+the count that matters; the sandbox still cannot see a reader's.
 
 ## Maybe, later: slow the refresh when calls run high
 

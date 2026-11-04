@@ -58,7 +58,12 @@ the pages. Not in it until now:
   `X-RateLimit-Cost` and `X-RateLimit-Remaining` headers, but the deployed
   API did not send them on 2026-10-31 at 04:35Z (the app's two requests
   made from here answered with Date, Content-Type, Transfer-Encoding and
-  Connection only), so the cost cannot yet be read off a response. By the
+  Connection only), so the cost could not then be read off a response. It
+  can since: on 2026-11-04 at 07:35Z the winds request answered
+  `X-RateLimit-Cost: 9.6`, with the limit, remaining, reset and window
+  of the tightest window, and `Access-Control-Expose-Headers` naming them
+  all (docs/open-questions.md, "Done: counting this browser's Open-Meteo
+  calls", "The headers appeared"). By the
   formula the winds request costs 9.6 and the outlook 1 (seven daily
   variables, rounded up to the minimum), 10.6 a refresh. The day count
   changes nothing below fourteen days, so `forecast_days=2` is free; only
