@@ -605,7 +605,11 @@ the list of users", and its body: that the site reads Open-Meteo's
 pressure-level and 80 to 180 m winds, cloud cover and daily outlook,
 credits it beside each, and is under the maintainer's GitHub account.
 It goes to github.com/open-meteo/open-meteo under her name, so it is
-hers to open.
+hers to open. One entry, not a second under Repositories (asked
+2026-11-04): nothing in the list appears twice, apps with public code
+are listed once under Apps with the repository as the entry's link or a
+second one in parentheses, and the Repositories group holds things used
+as code (an Emacs client, an Arduino station, command-line tools).
 
 ## Settled: the DZ's coordinates now sit on the landing area
 
