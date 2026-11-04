@@ -596,11 +596,11 @@ and LunaLink:
       weather dashboard for one drop zone (Lincoln Sport Parachute Club,
       Nebraska): winds aloft by altitude for freefall drift, cloud cover
       and a 10-day outlook from Open-Meteo beside the NWS forecast and
-      the nearest METAR, every flag cited to the published rule behind
-      it. Free, open source, no account.
+      the nearest METAR. Free, open source, no account.
       ([source](https://github.com/amelia-m/lspc-weather))
 
-on one line in the file. The pull request's title, "Add LSPC Weather to
+on one line in the file; the maintainer's wording of 2026-11-04, which
+dropped the clause on cited flags from the first draft. The pull request's title, "Add LSPC Weather to
 the list of users", and its body: that the site reads Open-Meteo's
 pressure-level and 80 to 180 m winds, cloud cover and daily outlook,
 credits it beside each, and is under the maintainer's GitHub account.
