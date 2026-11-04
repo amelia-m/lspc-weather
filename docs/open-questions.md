@@ -567,9 +567,12 @@ resets at midnight UTC; nothing crashes. The second forecast day turns
 out to cost nothing (the weight scales with days only above fourteen),
 so that lever is gone; the other two stand.
 
-## To do, eventually: add this app to Open-Meteo's list of users
+## Sent: this app on Open-Meteo's list of users (open-meteo/open-meteo#2300)
 
-Raised 2026-10-08. Open-Meteo's README
+Sent by the maintainer on 2026-11-04 as
+<https://github.com/open-meteo/open-meteo/pull/2300>, "Update README.md:
+Add LSPC Weather to the list of users", one commit, no conflicts; it
+waits on Open-Meteo's maintainers. Raised 2026-10-08. Open-Meteo's README
 (<https://github.com/open-meteo/open-meteo>) asks: "Do you use Open-Meteo?
 Please open a pull request and add your repository or app to the list!"
 This app reads its winds aloft (pressure levels, the 80 to 180 m winds and
