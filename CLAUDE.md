@@ -559,7 +559,14 @@ of the limit itself. Since 2026-10-31 each browser counts its own
 requests the same way (`src/domain/openMeteoUsage.ts`, every attempt
 through `fetchJson`'s `onAttempt`) and Data health shows the count
 beside the limits, by UTC day for a fortnight; it cannot see other
-browsers on the same address, and says so.
+browsers on the same address, and says so. Since 2026-11-04 the API
+sends its own count in `X-RateLimit-*` headers and exposes them to
+browsers (read that day; its windows roll per client from its first
+request, not by the clock), so under that count Data health also prints
+the server's figures for the address from the newest answer
+(`parseRateLimitHeaders`, `ServerQuota`): what is left of whichever
+window has the least remaining, its age, and the request's cost. The
+refresh-slowing idea in docs/open-questions.md would read that.
 
 ## Conventions
 
