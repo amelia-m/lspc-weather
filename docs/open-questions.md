@@ -530,6 +530,18 @@ the address included; that request cost 9.6" (600 less the two
 requests' 10.6, so the sandbox's address was otherwise quiet that
 minute); at 320 px the same line, no sideways scroll, no page errors.
 
+The maintainer, 2026-11-04: are we logging how much we use over time?
+The browser's own count is, for fourteen UTC days in its storage; the
+server's figures are not: only the newest answer's reading is kept, in
+memory, gone on reload, so a reader sees today's state of the address
+and not whether it ran near a limit last Saturday. Nothing is logged
+centrally, since the app has no backend and no browser can see another.
+Proposed, not built: keep per UTC day the tightest reading the server
+gave this browser (the fewest calls remaining, with its window and
+time) beside the request records, pruned with them, and show it as a
+column of the By-day table, so the address's nearest approach to a
+limit is on record without a backend.
+
 ## Maybe, later: slow the refresh when calls run high
 
 The maintainer, 2026-10-31: could the refresh slow to every 15 minutes
