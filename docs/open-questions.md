@@ -536,11 +536,18 @@ server's figures are not: only the newest answer's reading is kept, in
 memory, gone on reload, so a reader sees today's state of the address
 and not whether it ran near a limit last Saturday. Nothing is logged
 centrally, since the app has no backend and no browser can see another.
-Proposed, not built: keep per UTC day the tightest reading the server
-gave this browser (the fewest calls remaining, with its window and
-time) beside the request records, pruned with them, and show it as a
-column of the By-day table, so the address's nearest approach to a
-limit is on record without a backend.
+Built 2026-11-05 at the maintainer's word: each request record carries
+the server's reading from its answer when the answer had one (`s`:
+remaining, limit, window), stored and pruned with the record, so the
+day's tightest reading survives a reload where the newest alone does
+not; the summary picks per UTC day the fewest calls the server reported
+left, the later reading on a tie (`tightestOf`, `UsageDay.tightest`),
+and the By-day table has a fourth column, "Server's tightest", "412 of
+10,000 calls left today" or a dash, with a line under it saying what it is.
+Every browser on the address is in the server's figure, so the column
+is the address's nearest approach to a limit as this browser saw it,
+without a backend. Checked in a production build without fixtures in
+Chromium at 320 and 390 px: the table fits, no sideways scroll.
 
 ## Maybe, later: slow the refresh when calls run high
 

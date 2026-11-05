@@ -66,6 +66,12 @@ export interface UsageRecord {
   w: number;
   k: string;
   o: UsageOutcome;
+  /** What the server said of the address in this attempt's answer, when
+   *  the answer carried its headers (since 2026-11-04): calls remaining
+   *  (`r`) of the limit (`l`) in the window (`win`, seconds) with the
+   *  least left. Kept on the record so a day's tightest reading survives
+   *  a reload, where the newest reading alone (`ServerQuota`) does not. */
+  s?: { r: number; l: number; win: number };
 }
 
 /** A short key for a request's URL (djb2, base 36): the same URL gives the
@@ -123,9 +129,22 @@ export interface UsageWindow {
   calls: number;
 }
 
+/** The server's tightest reading of a day: the fewest calls it reported
+ *  remaining, in the window it named then. Readings are compared as the
+ *  server gives them, since it already names the window nearest its
+ *  limit; a later reading wins a tie. */
+export interface TightestReading {
+  at: number;
+  remaining: number;
+  limit: number;
+  window: number;
+}
+
 export interface UsageDay extends UsageWindow {
   /** The UTC day, "2026-10-31". */
   day: string;
+  /** Null when no answer that day carried the server's headers. */
+  tightest: TightestReading | null;
 }
 
 /** What the server said of this address in one answer's `X-RateLimit-*`
@@ -195,6 +214,18 @@ const sum = (records: readonly UsageRecord[]): UsageWindow => ({
   calls: records.reduce((acc, r) => acc + r.w, 0),
 });
 
+/** The day's tightest server reading among its records, or null. */
+export function tightestOf(records: readonly UsageRecord[]): TightestReading | null {
+  let best: TightestReading | null = null;
+  for (const r of records) {
+    if (!r.s) continue;
+    if (best == null || r.s.r < best.remaining || (r.s.r === best.remaining && r.t > best.at)) {
+      best = { at: r.t, remaining: r.s.r, limit: r.s.l, window: r.s.win };
+    }
+  }
+  return best;
+}
+
 /** The records read against the clock at `now`, with the server's newest
  *  figures beside them when an answer carried any. */
 export function summarizeUsage(records: readonly UsageRecord[], now: number, server: ServerQuota | null = null): UsageSummary {
@@ -210,7 +241,7 @@ export function summarizeUsage(records: readonly UsageRecord[], now: number, ser
   }
   const days = [...byDay.entries()]
     .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
-    .map(([day, rs]) => ({ day, ...sum(rs) }));
+    .map(([day, rs]) => ({ day, ...sum(rs), tightest: tightestOf(rs) }));
   return {
     hour: sum(inWindow(hourStart, 3_600_000)),
     day: sum(inWindow(dayStart, 86_400_000)),
@@ -253,5 +284,15 @@ export function toUsageRecord(value: unknown): UsageRecord | null {
   if (typeof raw.w !== 'number' || !Number.isFinite(raw.w) || raw.w < 0) return null;
   if (typeof raw.k !== 'string') return null;
   if (!USAGE_OUTCOMES.includes(raw.o as UsageOutcome)) return null;
-  return { t: raw.t, w: raw.w, k: raw.k, o: raw.o as UsageOutcome };
+  const out: UsageRecord = { t: raw.t, w: raw.w, k: raw.k, o: raw.o as UsageOutcome };
+  // The server's reading is optional, and dropped rather than kept half:
+  // a record without it still counts the attempt.
+  if (raw.s != null) {
+    const s = raw.s as Record<string, unknown>;
+    const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+    if (typeof s === 'object' && finite(s.r) && finite(s.l) && finite(s.win) && s.r >= 0 && s.l > 0 && s.win > 0) {
+      out.s = { r: s.r, l: s.l, win: s.win };
+    }
+  }
+  return out;
 }
