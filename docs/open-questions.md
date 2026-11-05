@@ -1569,7 +1569,10 @@ to 300 px in a row ending at 289 while the page stayed 320 wide, so the
 page-width rule alone would have passed it there. Run from here on
 2026-11-05: the fixed site passed every page; with the weekday put back
 inside the nowrap span, Jumpers and Pilots failed at 320 px on the
-stepper rule, every other page and width passed. The check passed on the fix's
+stepper rule, every other page and width passed. Dispatched on the
+branch before merging (run 42112228274, 2026-11-05): both legs passed
+on the runner, the late-evening one in about seven minutes with no
+notes, in DejaVu Sans. The check passed on the fix's
 deploy (b9482b0) at about 05:00Z, which was already past midnight Central,
 so that run met the bare time, not the weekday; the weekday case is held
 by the fixture-build measurement and the markup test.
