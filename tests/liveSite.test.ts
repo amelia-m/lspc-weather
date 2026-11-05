@@ -46,6 +46,21 @@ describe('judgeLoad', () => {
     ]);
   });
 
+  it('counts the forecast hour stepper past its row as a fault before the page widens', () => {
+    // Issue #249: at 320 px in the last half hour before midnight Central
+    // the +1 h button sat past its row's box (298 px in the sandbox's font
+    // against a box ending at 289) while the page was still 320 wide; the
+    // page-width rule saw it only in the runner's wider font (323 px).
+    const v = judgeLoad({ ...clean, width: 320, hourNavs: [{ box: 289, content: 280 }, { box: 289, content: 298 }] });
+    expect(v.faults).toEqual(['forecast hour stepper 2 of 2 past its row: content to 298 px in a row ending at 289 px']);
+    expect(judgeLoad({ ...clean, hourNavs: [{ box: 289, content: 298 }] }).faults).toEqual([
+      'forecast hour stepper past its row: content to 298 px in a row ending at 289 px',
+    ]);
+    // A pixel of rounding, and a page with no stepper, count nothing.
+    expect(judgeLoad({ ...clean, hourNavs: [{ box: 289, content: 290 }] }).faults).toEqual([]);
+    expect(judgeLoad({ ...clean, hourNavs: [] }).faults).toEqual([]);
+  });
+
   it('notes what may be the network or a late source, and does not count it', () => {
     const v = judgeLoad({
       ...clean,

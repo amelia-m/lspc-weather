@@ -10,7 +10,7 @@
  */
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
-import type { OverflowingBox } from '../src/domain/liveSite';
+import type { HourNavBox, OverflowingBox } from '../src/domain/liveSite';
 
 /** Every element whose right edge lies past the viewport's and that the
  *  page cannot clip, in document order (ancestors before their
@@ -65,6 +65,25 @@ export function collectOverflowing(): OverflowingBox[] {
       width: Math.round(r.width),
       parent,
     });
+  }
+  return out;
+}
+
+/** Every forecast hour stepper row on the page (`.fc-nav`): where its box
+ *  ends and where its farthest-right child ends, rounded. The same rules
+ *  as above: no helper, nothing from this scope. */
+export function measureHourNavs(): HourNavBox[] {
+  const out: HourNavBox[] = [];
+  for (const nav of document.querySelectorAll('.fc-nav')) {
+    // A stepper the page did not lay out (another tab's card, hidden) has
+    // no box to be past; it is not a row the reader meets.
+    if (nav.getBoundingClientRect().width === 0) continue;
+    let content = 0;
+    for (const child of nav.children) {
+      const r = child.getBoundingClientRect();
+      if (r.width > 0 && r.right > content) content = r.right;
+    }
+    out.push({ box: Math.round(nav.getBoundingClientRect().right), content: Math.round(content) });
   }
   return out;
 }

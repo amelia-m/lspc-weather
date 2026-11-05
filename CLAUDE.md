@@ -687,7 +687,21 @@ relay's fetch failing once the relay is set (read from the TAF row's chip,
 since 2026-10-21; the NBM row the same way since 2026-10-27, NOAA's bucket
 failing behind the relay a note, anything else on the row a fault), the
 radar image not drawn, the parity summary or the
-ceiling page's data not loaded.
+ceiling page's data not loaded, and since 2026-11-05 the forecast hour
+stepper's content past its row (`hourNavs`, measured by
+`measureHourNavs`), a fault before it widens the page. The same workflow
+has a second leg (the matrix's `late-evening` target, run after the live
+one so two failures do not race to open the issue): it builds the
+fixture site, serves it on the runner and checks every page with the
+browser's clock at 2026-10-31T04:45Z, 11:45 PM Central (`LIVE_CLOCK`,
+`LIVE_SITE_URL`), the half hour in which the stepper's readout carries a
+weekday and issue #249 showed; the fixtures anchor their hours to the
+page's clock, so the pinned date still finds an hour, and the live leg
+never pins one, since against live data it would pick an hour the data
+does not hold. Run from the sandbox on 2026-11-05 it passed every page,
+and with the #249 fix reverted it failed Jumpers and Pilots at 320 px on
+the stepper rule alone (content to 300 px in a row ending at 289, the
+page still 320 wide in the sandbox's font).
 Its loads are not counted as page views: the app's GoatCounter count
 skips any browser under automation (docs/page-counts.md).
 Another host's failed request and console errors are printed as notes,

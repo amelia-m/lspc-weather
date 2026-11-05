@@ -2,11 +2,20 @@ name: Live site check
 
 # Load the deployed site in a browser, every page at 1280, 390 and 320 px
 # on live data, and fail when a reader would meet a fault: a script error,
-# the crash screen, a page wider than the phone, a site file not served, a
-# Data health source in error or still loading, the radar image not drawn,
-# the parity summary or the ceiling page's data not loaded
-# (scripts/liveSite.ts; what counts is src/domain/liveSite.ts). A page
-# failing on its first load is loaded once more before it counts.
+# the crash screen, a page wider than the phone, the forecast hour stepper
+# past its row, a site file not served, a Data health source in error or
+# still loading, the radar image not drawn, the parity summary or the
+# ceiling page's data not loaded (scripts/liveSite.ts; what counts is
+# src/domain/liveSite.ts). A page failing on its first load is loaded once
+# more before it counts.
+# A second leg (the matrix's late-evening target) builds the fixture site,
+# serves it on the runner and checks it with the browser's clock at
+# 11:45 PM Central: the half hour in which the stepper's readout carries a
+# weekday and once pushed its +1 h button off a 320 px page (issue #249,
+# 2026-10-31), which the live leg, in the morning, never meets; against
+# live data a pinned clock would pick a forecast hour the data does not
+# hold. The legs run one at a time so two failures do not race to open
+# the issue.
 # Daily, after every deploy, and on demand. Opens (or updates) one issue
 # labelled live-site on failure. Not part of CI: it needs the network and
 # the deployed site, and the PR suite stays hermetic.
@@ -44,6 +53,11 @@ jobs:
     # before the check started (issue #237). Move the pin only after
     # `npx playwright install` is known to work on the newer image.
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        target: [live, late-evening]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -64,12 +78,32 @@ jobs:
       # Pages can serve the previous build for a minute or two after a deploy
       # finishes.
       - name: Let a fresh deploy reach the CDN
-        if: inputs.after_deploy
+        if: inputs.after_deploy && matrix.target == 'live'
         run: sleep 120
-      - name: Check the live site
+      # The fixture build at the site root, served over plain http on the
+      # runner; its cross-origin fetches (the radar image) go out as the
+      # live leg's do. The TAF relay refuses this origin by design, and the
+      # check does not count that (relayServesOrigin).
+      - name: Build and serve the fixture site
+        if: matrix.target == 'late-evening'
+        shell: bash
+        run: |
+          BASE_PATH=/ VITE_USE_FIXTURES=true npm run build
+          # Output detached: a background process holding the step's output
+          # pipe would keep the step from finishing.
+          npx --yes http-server@14.1.1 dist -p 8788 -s > /dev/null 2>&1 &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:8788/ && break; sleep 1; done
+          curl -sf -o /dev/null http://localhost:8788/
+      - name: Check the site
         shell: bash
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright/index.mjs
+          LIVE_SITE_URL: ${{ matrix.target == 'late-evening' && 'http://localhost:8788/' || '' }}
+          # Friday 2026-10-30 at 11:45 PM CDT, the clock the #249 fix was
+          # verified at: the nearest forecast hour is Saturday's midnight,
+          # so the readout reads "Sat 12:00 AM local". The fixtures anchor
+          # their hours to the page's clock, so the date can stay fixed.
+          LIVE_CLOCK: ${{ matrix.target == 'late-evening' && '2026-10-31T04:45:00Z' || '' }}
         run: |
           set -o pipefail
           npx tsx scripts/liveSite.ts 2>&1 | tee live.log
@@ -85,9 +119,13 @@ jobs:
           gh label create live-site --color D93F0B --force \
             --description "The deployed site showed a fault in the live-site check"
           {
-            echo "The live-site check failed on $(date -u +%Y-%m-%d). Run: $RUN_URL"
+            echo "The live-site check (${{ matrix.target }}) failed on $(date -u +%Y-%m-%d). Run: $RUN_URL"
             echo
-            echo "A page of the deployed site showed a fault on two loads in a row (scripts/liveSite.ts; what counts is src/domain/liveSite.ts). The log names the page, the width and the fault; notes are not faults."
+            if [ "${{ matrix.target }}" = late-evening ]; then
+              echo "A page of the fixture build, served on the runner with the browser's clock at 11:45 PM Central, showed a fault on two loads in a row (scripts/liveSite.ts; what counts is src/domain/liveSite.ts). The log names the page, the width and the fault; notes are not faults."
+            else
+              echo "A page of the deployed site showed a fault on two loads in a row (scripts/liveSite.ts; what counts is src/domain/liveSite.ts). The log names the page, the width and the fault; notes are not faults."
+            fi
             echo
             echo '```'
             # The log exists only if the check itself ran; a failed setup

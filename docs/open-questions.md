@@ -1558,7 +1558,18 @@ near midnight Central will show it. It cannot be given a near-midnight
 clock itself: against live data a faked clock would pick a forecast hour
 the data does not hold. A check of the fixture build at 320 px with the
 clock pinned to 04:45Z, as the fix was verified, would be the guard for
-the next clock-dependent width; not built. The check passed on the fix's
+the next clock-dependent width. **Built 2026-11-05:** the live-site
+workflow's second leg (`late-evening` in its matrix) builds the fixture
+site, serves it on the runner and runs the same script over every page
+and width with the browser's clock at 2026-10-31T04:45Z in the DZ's
+zone (`LIVE_CLOCK`), and the script now also measures each forecast
+hour stepper row against its box (`hourNavs`, `measureHourNavs`), a
+fault before the page widens: in the sandbox's font the old markup ran
+to 300 px in a row ending at 289 while the page stayed 320 wide, so the
+page-width rule alone would have passed it there. Run from here on
+2026-11-05: the fixed site passed every page; with the weekday put back
+inside the nowrap span, Jumpers and Pilots failed at 320 px on the
+stepper rule, every other page and width passed. The check passed on the fix's
 deploy (b9482b0) at about 05:00Z, which was already past midnight Central,
 so that run met the bare time, not the weekday; the weekday case is held
 by the fixture-build measurement and the markup test.
