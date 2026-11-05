@@ -3,7 +3,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CitationsPage } from '../src/components/CitationsPage';
 import { CITATIONS } from '../src/config/thresholds';
-import { CHECKLIST } from '../src/config/citationsChecklist';
+import { CHECKLIST, JUDGEMENTS, REVIEW_ENTRIES } from '../src/config/citationsChecklist';
+import { FLIGHT_CATEGORY_LEVEL, LEVEL_LABEL, OVERCAST_LEVEL } from '../src/domain/advisories';
 
 /* The page is read at the DZ as a checklist: the claim, what the source says,
  * the questions. It is not a changelog. Sentences about what the app used to
@@ -24,10 +25,11 @@ describe('CitationsPage', () => {
     // One "Verdict:" line under two or three questions muddled the rulings;
     // each claim and each question now has its own input, and the page keeps
     // them in the browser until they are sent.
-    const claimRadios = html.match(/name="claim-A\d+"/g) ?? [];
-    const questionRadios = html.match(/name="q-A\d+:\d+"/g) ?? [];
+    const claimRadios = html.match(/name="claim-[AB]\d+"/g) ?? [];
+    const questionRadios = html.match(/name="q-[AB]\d+:\d+"/g) ?? [];
     const notes = html.match(/class="cite-note"/g) ?? [];
-    const asks = CHECKLIST.reduce((n, e) => n + e.asks.length, 0);
+    const asks = REVIEW_ENTRIES.reduce((n, e) => n + e.asks.length, 0);
+    // Part A only: a Part B entry cites nothing, so it has no verdict.
     expect(claimRadios).toHaveLength(CHECKLIST.length * 4);
     expect(questionRadios).toHaveLength(asks * 3);
     expect(notes).toHaveLength(asks);
@@ -47,13 +49,40 @@ describe('CitationsPage', () => {
     // A screen reader names a radio group by its label; "A1 question 1" said
     // which group, not what was asked. Each group is labelled by the element
     // that carries the question text.
-    for (const entry of CHECKLIST) {
+    for (const entry of REVIEW_ENTRIES) {
       entry.asks.forEach((_ask, i) => {
         const id = `q-${entry.id}:${i}-text`;
         expect(html).toContain(`id="${id}"`);
         expect(html).toContain(`aria-labelledby="${id}"`);
       });
     }
+  });
+
+  it('puts the flag levels to the instructor as a Part B call, with questions and no verdict', () => {
+    // The flight-category and overcast flags carry a level no source grades
+    // (docs/open-questions.md, "For the maintainer's judgement"). B2 states
+    // what the app does and asks; it cites nothing, so the Correct / Wrong
+    // section verdict is not offered, and the report prints no verdict line
+    // for it (tests/citationAnswers.test.ts).
+    const b2 = JUDGEMENTS.find((e) => e.id === 'B2')!;
+    expect(b2.kind).toBe('judgement');
+    expect(b2.sources).toEqual([]);
+    // Its level words are the flags' own constants, so the question cannot
+    // say one thing while the badges show another.
+    expect(b2.claim).toContain(
+      `a ${LEVEL_LABEL[FLIGHT_CATEGORY_LEVEL.MVFR]} under MVFR and a ${LEVEL_LABEL[FLIGHT_CATEGORY_LEVEL.IFR]} under IFR or LIFR`,
+    );
+    expect(b2.claim).toContain(`The Sky cover flag, on a reported overcast layer, is a ${LEVEL_LABEL[OVERCAST_LEVEL]} at any height`);
+    expect(b2.claim).toContain('Watch under MVFR and a Caution under IFR or LIFR');
+    expect(b2.asks[2]).toContain(`${LEVEL_LABEL[OVERCAST_LEVEL]} on the overcast, ${LEVEL_LABEL[FLIGHT_CATEGORY_LEVEL.IFR]} on the IFR category`);
+    expect(html).toContain('B2 · Flag levels');
+    expect(html).toContain('Your call:');
+    expect(html).not.toContain('name="claim-B2"');
+    expect(html).toContain('name="q-B2:0"');
+    // Its "Cites" row would be empty, so it is not drawn.
+    const panel = html.slice(html.indexOf('B2 · Flag levels'), html.indexOf('How each source was read'));
+    expect(panel).not.toContain('<dt>Cites</dt>');
+    expect(panel).toContain('<dt>Where</dt>');
   });
 
   it('links every claim to the section it cites', () => {

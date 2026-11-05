@@ -126,8 +126,11 @@ export function countAnswered(
   let answered = 0;
   let total = 0;
   for (const entry of checklist) {
-    total += 1;
-    if (answers.claims[answerKey(entry)] !== undefined) answered += 1;
+    // A judgement entry (Part B) has no claim verdict to count.
+    if (entry.kind !== 'judgement') {
+      total += 1;
+      if (answers.claims[answerKey(entry)] !== undefined) answered += 1;
+    }
     entry.asks.forEach((_, i) => {
       total += 1;
       if (isAnswered(answers.questions[questionKey(answerKey(entry), i)])) answered += 1;
@@ -145,7 +148,10 @@ export function formatAnswers(answers: Answers, checklist: readonly ChecklistEnt
   lines.push(`Citations review by ${who}, ${when}.`, '');
   let any = false;
   for (const entry of checklist) {
-    const verdict = answers.claims[answerKey(entry)];
+    // A judgement entry cites nothing, so it has no verdict: a stray one
+    // under its key (an older store) would print a section with nothing in
+    // it, and "(not given)" would read as a ruling the reviewer skipped.
+    const verdict = entry.kind === 'judgement' ? undefined : answers.claims[answerKey(entry)];
     const qs = entry.asks
       .map((ask, i) => ({ ask, i, r: answers.questions[questionKey(answerKey(entry), i)] }))
       .filter((q): q is { ask: string; i: number; r: QuestionResponse } => isAnswered(q.r));
@@ -156,7 +162,7 @@ export function formatAnswers(answers: Answers, checklist: readonly ChecklistEnt
     // The claim is not repeated, so where the wording follows a setting the
     // figure is: it says which wording was answered (A8: which 105.17 row).
     if (entry.otherWordings !== undefined && entry.value !== undefined) lines.push(`Figure: ${entry.value}`);
-    lines.push(`Verdict: ${verdict !== undefined ? CLAIM_VERDICT_LABEL[verdict] : '(not given)'}`);
+    if (entry.kind !== 'judgement') lines.push(`Verdict: ${verdict !== undefined ? CLAIM_VERDICT_LABEL[verdict] : '(not given)'}`);
     for (const { ask, i, r } of qs) {
       lines.push(responseLine(i, r));
       lines.push(`  > ${ask}`);

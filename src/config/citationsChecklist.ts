@@ -1,4 +1,5 @@
-import type { Citation } from '../domain/types';
+import type { AdvisoryLevel, Citation } from '../domain/types';
+import { FLIGHT_CATEGORY_LEVEL, LEVEL_LABEL, OVERCAST_LEVEL } from '../domain/advisories';
 import {
   CITATIONS,
   FAR_91155_ROWS,
@@ -60,6 +61,11 @@ export interface ChecklistEntry {
   /** What the reader is asked to confirm or decide — the things a document
    *  could not settle, because they are about how this DZ applies a rule. */
   asks: string[];
+  /** A Part B entry: a call the app made with no source behind it, put to
+   *  an instructor. It states what the app does, cites nothing, and takes
+   *  no claim verdict (Correct, Wrong section, Wrong authority are rulings
+   *  on a citation): only its questions are answered. */
+  kind?: 'judgement';
   /** The key the reviewer's answers are stored under, when it is not `id`.
    *  An entry whose claim and questions follow a setting (A8, with
    *  `VISIBILITY_ROW`) has a key per wording, so a verdict given to one
@@ -363,3 +369,44 @@ export const CHECKLIST: ChecklistEntry[] = [
     ],
   },
 ];
+
+/** The badge's word with its article, as B2 quotes it: "a Watch". */
+const badge = (level: AdvisoryLevel): string => `a ${LEVEL_LABEL[level]}`;
+/** The flight-category flag's levels under IFR and LIFR, worded once when
+ *  they are the same level. */
+const ifrLifr =
+  FLIGHT_CATEGORY_LEVEL.IFR === FLIGHT_CATEGORY_LEVEL.LIFR
+    ? `${badge(FLIGHT_CATEGORY_LEVEL.IFR)} under IFR or LIFR`
+    : `${badge(FLIGHT_CATEGORY_LEVEL.IFR)} under IFR and ${badge(FLIGHT_CATEGORY_LEVEL.LIFR)} under LIFR`;
+
+/** Part B of `#citations`: the app's own calls, for an instructor's
+ *  judgement rather than a lookup. B1 is the one invented number still on
+ *  screen (the bar scale, a table on the page). B2 is the two flag levels
+ *  the app grades itself: no source grades the flight categories or an
+ *  overcast, so the Watch and Caution on those flags are this app's word
+ *  and colour, and the maintainer's review of 2026-11-03 left whether they
+ *  sit with the no-verdict rule to the S&TA (docs/open-questions.md). Its
+ *  level words are the flags' own constants, so the question cannot say
+ *  one thing while the badges show another. */
+export const JUDGEMENTS: ChecklistEntry[] = [
+  {
+    id: 'B2',
+    kind: 'judgement',
+    title: 'Flag levels',
+    claim: `The Flight-category flag is ${badge(FLIGHT_CATEGORY_LEVEL.MVFR)} under MVFR and ${ifrLifr}. The Sky cover flag, on a reported overcast layer, is ${badge(OVERCAST_LEVEL)} at any height. Every other flag that fires on the latest report is a Caution, and a flag on the hourly forecast is a Forecast.`,
+    value: `${LEVEL_LABEL[FLIGHT_CATEGORY_LEVEL.MVFR]} and ${LEVEL_LABEL[FLIGHT_CATEGORY_LEVEL.IFR]}: two words and two badge colours, the app’s own`,
+    where:
+      'Conditions to note, on the Jumpers tab: the badge at the head of each flag and its colour. The flight-category flag is A9; the overcast flag cites 105.17 (A8) and fires on the layer alone.',
+    sources: [],
+    asks: [
+      `No source grades the categories: AIM 7-1-7 defines them and attaches no severity, and 105.17 sets rows, not grades. The split, MVFR ${badge(FLIGHT_CATEGORY_LEVEL.MVFR)} and IFR or LIFR ${badge(FLIGHT_CATEGORY_LEVEL.IFR)}, is the app’s own reading that the IFR bands are the worse case. Should the flag carry one level at every category instead, and leave the weight to the figures it prints?`,
+      `If one level: the neutral ${LEVEL_LABEL.info} badge, which no flag uses today, rather than ${LEVEL_LABEL.caution}? (If another, say which in the note.)`,
+      `The Sky cover flag is ${badge(OVERCAST_LEVEL)} for an overcast at any height, since 105.17 bars a jump into or through cloud at any height. So an overcast at 800 ft shows one sky under two badges in two colours: ${LEVEL_LABEL[OVERCAST_LEVEL]} on the overcast, ${LEVEL_LABEL[FLIGHT_CATEGORY_LEVEL.IFR]} on the IFR category. Should the overcast flag take the flight-category flag’s level at the same ceiling?`,
+      `The words are this app’s: ${LEVEL_LABEL.watch} and ${LEVEL_LABEL.caution} are not NWS products (an NWS watch is a forecast product with a definition of its own) and not SIM terms. Do they read as the weight of a reported condition, and not as a verdict on jumping? If other words would serve, say which in the note.`,
+    ],
+  },
+];
+
+/** Every entry the page takes answers on, Part A then Part B, in the order
+ *  the report prints them. */
+export const REVIEW_ENTRIES: readonly ChecklistEntry[] = [...CHECKLIST, ...JUDGEMENTS];

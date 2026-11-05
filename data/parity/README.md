@@ -20,7 +20,9 @@ Open-Meteo's terms ask for a credit next to wherever its data are shown
   and GFS domains.
 - `surface-rows-*.md` (`scripts/surfaceRows.ts`): this app's 10 m row and
   Mark Schulze's Surface row, both worked from Open-Meteo's forecast, set
-  against KPMV's measured wind.
+  against KPMV's measured wind. `kpmv-wind-*.csv.gz` are the reports it
+  is set against: IEM's ASOS archive of KPMV, wind speed only, one file
+  per span fetched.
 - `surfacewind-*` (the surface-wind sampler: two dated files for its
   first three weeks, then one a month, `surfacewind-<YYYY-MM>`, written
   daily by the parity summary workflow) and `schulze-logs-*`,

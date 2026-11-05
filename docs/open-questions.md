@@ -45,9 +45,18 @@ These cannot be settled from the code.
    held until 2026-10-31 at the earliest (the maintainer, 2026-10-27).
 
 3. **The app's own thresholds, for an instructor's judgement rather than a
-   lookup.** Part B of the citations page — currently one entry, the 25 kt
-   licensed bar scale, which triggers nothing and only sets how long a bar is
-   drawn.
+   lookup.** Part B of the citations page: B1, the 25 kt licensed bar
+   scale, which triggers nothing and only sets how long a bar is drawn
+   (a table); and since 2026-11-05 B2, the flag levels (`JUDGEMENTS`,
+   `src/config/citationsChecklist.ts`): the flight-category flag's Watch
+   under MVFR and Caution under IFR or LIFR, and the overcast flag's Watch,
+   neither graded by any source. B2 states what the app does and asks four
+   questions (one level at every category; the neutral Note badge, which no
+   flag uses, or Caution; the overcast flag taking the category's level at
+   the same ceiling, so one sky shows one colour; whether Watch and Caution
+   read as a weight and not a verdict). It cites nothing, so it offers no
+   claim verdict (`kind: 'judgement'`): only its questions are answered,
+   counted and reported. Waiting on the S&TA with Part A.
 
 ## Settled: the visibility flag holds the reading to both 105.17 rows
 
@@ -331,7 +340,9 @@ caller's.
   with the no-verdict rule, or the two flags should carry one neutral
   level, is the maintainer's call. (The categories against 105.17 and
   BSR 2-1 I, and the 91.155 citation the flag now carries, are the
-  section above.)
+  section above.) Put to the S&TA on 2026-11-05 as B2 on `#citations`
+  (item 3 at the top of this file); the levels are unchanged until
+  answered.
 
 Reviewed and found sound: the advisories and thresholds (band and limit
 gating, the forecast flag's whole knots, the visibility rows, the waiver
@@ -635,7 +646,9 @@ so that lever is gone; the other two stand.
 Sent by the maintainer on 2026-11-04 as
 <https://github.com/open-meteo/open-meteo/pull/2300>, "Update README.md:
 Add LSPC Weather to the list of users", one commit, no conflicts; it
-waits on Open-Meteo's maintainers. Raised 2026-10-08. Open-Meteo's README
+waits on Open-Meteo's maintainers (read 2026-11-05: open, no review yet;
+from the sandbox only the page renders, github.com and api.github.com
+answer a script 403 for a repository outside the session's scope). Raised 2026-10-08. Open-Meteo's README
 (<https://github.com/open-meteo/open-meteo>) asks: "Do you use Open-Meteo?
 Please open a pull request and add your repository or app to the list!"
 This app reads its winds aloft (pressure levels, the 80 to 180 m winds and
@@ -710,6 +723,15 @@ over 79 hours at the landing area it found what the old point did
 Run again 2026-10-28 over the logs to 10-27: 306 hours from 2026-09-24,
 five weeks of one autumn, the 10 m row nearer in 202, his in 41, tied in
 63 (`docs/markschulze-altitude-reference.md`, "Again, to 2026-10-27").
+Run again 2026-11-05 over the logs to 11-04, when the maintainer asked
+whether the week's changed weather was worth a look: 369 hours, the 10 m
+row nearer in 249, his in 47, tied in 73, and over the eight new days
+alone (61 hours, windier: a KPMV median of 7.7 kt) 47, 6 and 8, both rows
+further above the measured wind than before (same doc, "Again, to
+2026-11-04"). The script now takes `--from` and `--to` so a new span is
+tabled on its own. Nothing to gather by hand: the comparison workflows
+log about nine hours a day and the parity summary archives them daily,
+so a re-run is the KPMV fetch and the script.
 Still worth re-running in other seasons. The logs it needs are the
 comparison records, archived daily since 2026-10-19 as
 `data/parity/parity-logs-<day>.jsonl.gz`, so nothing expires; pass those
