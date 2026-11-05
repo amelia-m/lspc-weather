@@ -56,6 +56,30 @@ const cited = (first: Citation, ...rest: (Citation | undefined)[]): [Citation, .
   ...rest.filter((c): c is Citation => c != null),
 ];
 
+/** The badge's word for each level, as Conditions to note prints it and
+ *  as `#citations` B2 quotes it. `info` is the neutral badge: no flag uses
+ *  it today, which B2 asks about. */
+export const LEVEL_LABEL: Record<AdvisoryLevel, string> = {
+  caution: 'Caution',
+  watch: 'Watch',
+  forecast: 'Forecast',
+  info: 'Note',
+};
+
+/** The flight-category flag's level per category, and the overcast flag's.
+ *  These are the app's own: AIM 7-1-7 defines the categories and no source
+ *  grades them, and 105.17 bars a jump through cloud at any height without
+ *  grading an overcast. Both are put to the S&TA as B2 on `#citations`
+ *  (`JUDGEMENTS`, src/config/citationsChecklist.ts), which derives its
+ *  wording from these so the question cannot drift from the flags. Change
+ *  neither before that answer (CLAUDE.md). */
+export const FLIGHT_CATEGORY_LEVEL: Record<Exclude<FlightCategory, 'VFR'>, AdvisoryLevel> = {
+  MVFR: 'watch',
+  IFR: 'caution',
+  LIFR: 'caution',
+};
+export const OVERCAST_LEVEL: AdvisoryLevel = 'watch';
+
 export function evaluateAdvisories(
   snapshot: WeatherSnapshot,
   thresholds: Thresholds,
@@ -188,7 +212,7 @@ export function evaluateAdvisories(
       const comparison = flightCategoryComparison(current);
       out.push({
         id: 'flight-category',
-        level: category === 'MVFR' ? 'watch' : 'caution',
+        level: FLIGHT_CATEGORY_LEVEL[category],
         metric: 'Flight category',
         value: `${category} (${CATEGORY_LABEL[category]})`,
         // The AIM defines these categories and nothing else; it is not
@@ -233,7 +257,7 @@ export function evaluateAdvisories(
       const lower = lowest != null && (base == null || lowest.baseFtAgl < base) ? lowest : null;
       out.push({
         id: 'overcast',
-        level: 'watch',
+        level: OVERCAST_LEVEL,
         metric: 'Sky cover',
         value: base != null ? `Overcast at ${ft(base)} AGL` : 'Overcast, base not reported',
         guidance:

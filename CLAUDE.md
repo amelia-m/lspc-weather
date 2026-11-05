@@ -155,7 +155,10 @@ precisely because they were colour and text rather than flags.
   verdict; MVFR gets none, since the figures do not settle it. The
   readings behind it are in docs/open-questions.md, "Settled: the flight
   categories against 105.17 and BSR 2-1 I". The flag's level is still the
-  app's.
+  app's, and so is the overcast flag's Watch: since 2026-11-05 both are
+  put to the S&TA as B2 on `#citations` (`JUDGEMENTS`, a `judgement`
+  entry: questions only, no claim verdict, since it cites nothing).
+  Change neither level before that answer.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`). The club
   waiver posts gust ceilings one mph apart at the top (19 and 20 mph); rounded
   to whole knots both printed "17 kt", so the tier a jumper earned changed
@@ -250,7 +253,8 @@ precisely because they were colour and text rather than flags.
   ran high, his by more, most at night (same doc, "Which Surface row is
   nearer the measured wind"). At the landing area over 79 hours to
   2026-10-17 the result held: 51, 11 and 17 (`scripts/surfaceRows.ts`,
-  same doc, "Again, at the landing area"). That is a point about heights,
+  same doc, "Again, at the landing area"), and over 369 hours to
+  2026-11-04, 249, 47 and 73 (same doc, "Again, to 2026-11-04"). That is a point about heights,
   not a fault in his tool.
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; from 2026-09-23 the app sampled the same

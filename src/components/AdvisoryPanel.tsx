@@ -1,4 +1,5 @@
 import type { Advisory } from '../domain/types';
+import { LEVEL_LABEL } from '../domain/advisories';
 import { Panel } from './common/Panel';
 import { SourceLinks } from './common/SourceLinks';
 import { SourceLink } from './common/SourceLink';
@@ -6,12 +7,6 @@ import { SimTerm, SimTermSegments } from './common/SimTerm';
 import { DATA_SOURCES } from '../config/sources';
 import { GLOSSARY_KEYS, citesTerm, splitGlossaryTermsAcross } from '../config/simGlossary';
 
-const LEVEL_LABEL: Record<Advisory['level'], string> = {
-  caution: 'Caution',
-  watch: 'Watch',
-  forecast: 'Forecast',
-  info: 'Note',
-};
 
 /**
  * "Conditions to note" — the headline panel. It lists flagged conditions with

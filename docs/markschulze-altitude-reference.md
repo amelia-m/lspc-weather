@@ -494,3 +494,41 @@ To take it again, download the unexpired `parity-*` artifacts (as
 `.github/workflows/parity-summary.yml` does), archive their Schulze lines
 under `data/parity/`, fetch KPMV's reports for the span from IEM, and run
 the script with every archive.
+
+### Again, to 2026-11-04 (run 2026-11-05)
+
+The maintainer asked whether the week's changed weather was worth a
+look. The same script over every record archived to 11-04 (the daily
+`parity-logs-*` files now reach 11-04, so nothing had to be downloaded)
+against KPMV's reports to 11-04 (the three `kpmv-wind-*` files, the new
+one 10-28 to 11-04, 559 reports): 1,934 records, 373 valid hours from
+2026-09-24T05Z to 2026-11-04T20Z. Output:
+`data/parity/surface-rows-2026-11-05.md`. Every hour:
+
+| hours | n | KPMV median | this app: bias, mean abs error | Schulze: bias, mean abs error | nearer (this app, Schulze, tied) |
+|---|---|---|---|---|---|
+| all | 369 | 5.7 kt | +1.4, 2.2 kt | +3.6, 3.8 kt | 249, 47, 73 |
+| night, 7 PM to 7 AM | 157 | 5.0 kt | +1.3, 2.3 kt | +4.6, 4.8 kt | 125, 14, 18 |
+| day, 7 AM to 7 PM | 212 | 6.8 kt | +1.5, 2.2 kt | +3.0, 3.2 kt | 124, 33, 55 |
+| 9 AM to 6 PM | 164 | 7.0 kt | +1.7, 2.2 kt | +2.7, 3.0 kt | 89, 27, 48 |
+
+The script now takes `--from` and `--to` (ISO dates, UTC) so a span can
+be tabled on its own. The eight new days, 2026-10-28 to 11-04, alone (61
+hours, all at the landing area):
+
+| hours | n | KPMV median | this app: bias, mean abs error | Schulze: bias, mean abs error | nearer (this app, Schulze, tied) |
+|---|---|---|---|---|---|
+| all | 61 | 7.7 kt | +1.9, 2.6 kt | +4.2, 4.2 kt | 47, 6, 8 |
+| night, 7 PM to 7 AM | 23 | 6.0 kt | +1.3, 2.5 kt | +4.5, 4.6 kt | 17, 2, 4 |
+| day, 7 AM to 7 PM | 38 | 8.7 kt | +2.2, 2.6 kt | +4.0, 4.0 kt | 30, 4, 4 |
+| 9 AM to 6 PM | 28 | 9.7 kt | +2.6, 2.7 kt | +4.2, 4.2 kt | 24, 1, 3 |
+
+A windier week (a KPMV median of 7.7 kt against 5.7 over the whole run,
+9.7 kt in jumping hours), and the pattern held: both rows above the
+measured wind, the 10 m row nearer in 47 of 61 hours. Both ran further
+above it than before, the 10 m row by +1.9 kt (+2.6 in jumping hours)
+and his by +4.2, so on these days the 10 m row's bias was about half
+his rather than a third. Eight days is too few to call that a change of
+season; the whole-run figures moved by a tenth of a knot. The question
+stays open for winter and spring, and nothing needs gathering by hand:
+the comparison workflows log the hours and the summary archives them.

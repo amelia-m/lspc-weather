@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CHECKLIST, type ChecklistEntry } from '../config/citationsChecklist';
+import { CHECKLIST, JUDGEMENTS, REVIEW_ENTRIES, type ChecklistEntry } from '../config/citationsChecklist';
 import { REPO_URL } from '../config/site';
 import { READING_LOG, SIM_EDITION, SIM_LAST_READ } from '../config/readingLog';
 import { CITATIONS, simUrl } from '../config/thresholds';
@@ -100,16 +100,26 @@ export function CitationsPage(): JSX.Element {
   };
   const copy = async (): Promise<void> => {
     try {
-      await navigator.clipboard.writeText(formatAnswers(answers, CHECKLIST));
+      await navigator.clipboard.writeText(formatAnswers(answers, REVIEW_ENTRIES));
       setCopied('copied');
     } catch {
       setCopied('failed');
     }
   };
 
-  const { answered, total } = countAnswered(answers, CHECKLIST);
-  const issue = issueUrl(REPO_URL, answers, CHECKLIST);
-  const exportText = formatAnswers(answers, CHECKLIST);
+  const { answered, total } = countAnswered(answers, REVIEW_ENTRIES);
+  const issue = issueUrl(REPO_URL, answers, REVIEW_ENTRIES);
+  const exportText = formatAnswers(answers, REVIEW_ENTRIES);
+  // One wiring for Part A and Part B: the panel differs by the entry's kind.
+  const entryPanel = (item: ChecklistEntry): JSX.Element => (
+    <ChecklistPanel
+      key={item.id}
+      item={item}
+      answers={answers}
+      onClaim={(v) => setClaim(answerKey(item), v)}
+      onQuestion={(i, patch) => setQuestion(answerKey(item), i, patch)}
+    />
+  );
 
   return (
     <div className="app">
@@ -202,21 +212,14 @@ export function CitationsPage(): JSX.Element {
       <h2 className="cite-heading">Part A · the USPA and FAA claims</h2>
       <p className="muted small cite-intro">Ordered by what a jumper could act on.</p>
 
-      {CHECKLIST.map((item) => (
-        <ChecklistPanel
-          key={item.id}
-          item={item}
-          answers={answers}
-          onClaim={(v) => setClaim(answerKey(item), v)}
-          onQuestion={(i, patch) => setQuestion(answerKey(item), i, patch)}
-        />
-      ))}
+      {CHECKLIST.map(entryPanel)}
 
       <h2 className="cite-heading">Part B · instructor judgement, no lookup needed</h2>
       <p className="muted small cite-intro">
-        One number invented for this dashboard is still on screen. It is not claimed to come from
-        USPA or the FAA, and it triggers nothing — it only decides how long a bar is drawn. Worth a
-        glance rather than a ruling.
+        Two things on the dashboard are its own rather than a source’s. One number invented for it is
+        still on screen: not claimed to come from USPA or the FAA, and it triggers nothing — it only
+        decides how long a bar is drawn. Worth a glance rather than a ruling. And two flags carry a
+        level no source grades (B2, below): a call for an instructor, with no document to look up.
       </p>
 
       <Panel title="App thresholds" subtitle="not published limits">
@@ -243,9 +246,9 @@ export function CitationsPage(): JSX.Element {
           </table>
         </div>
         <p className="muted small">
-          Every wind flag fires at a published limit or not at all. The <strong>Watch</strong>{' '}
-          badge appears on the two flags that fire on a reported condition rather than on a number:
-          MVFR flight category (AIM 7-1-7) and an overcast layer (14 CFR 105.17).
+          Every wind flag fires at a published limit or not at all. The two flags that fire on a
+          reported condition rather than on a number, the flight category (AIM 7-1-7) and an overcast
+          layer (14 CFR 105.17), are B2’s.
         </p>
         <p className="muted small">
           The club waiver tiers (0–5 jumps: 15 mph wind / 16 mph gust · 6–10: 16/18 · 10–20: 18/19 ·
@@ -253,6 +256,8 @@ export function CitationsPage(): JSX.Element {
           heuristics — please confirm the transcription matches the current posted sign.
         </p>
       </Panel>
+
+      {JUDGEMENTS.map(entryPanel)}
 
       <h2 className="cite-heading">How each source was read</h2>
       <p className="muted small cite-intro">
@@ -329,16 +334,20 @@ function ChecklistPanel({
         )}
         <dt>Where</dt>
         <dd>{item.where}</dd>
-        <dt>Cites</dt>
-        <dd>
-          {item.sources.map((s, i) => (
-            <span key={s.url}>
-              {i > 0 && ' · '}
-              <SourceLink citation={s} />
-            </span>
-          ))}
-          {item.citesNote && <> — {item.citesNote}</>}
-        </dd>
+        {item.kind !== 'judgement' && (
+          <>
+            <dt>Cites</dt>
+            <dd>
+              {item.sources.map((s, i) => (
+                <span key={s.url}>
+                  {i > 0 && ' · '}
+                  <SourceLink citation={s} />
+                </span>
+              ))}
+              {item.citesNote && <> — {item.citesNote}</>}
+            </dd>
+          </>
+        )}
       </dl>
       {item.found && (
         <>
@@ -361,24 +370,30 @@ function ChecklistPanel({
             not shown below.
           </p>
         )}
-        <p className="cite-answer-head">Your verdict on the claim:</p>
-        <div className="cite-choices" role="radiogroup" aria-label={`Verdict on ${item.id}`}>
-          {CLAIM_VERDICTS.map((v) => (
-            <label key={v}>
-              <input
-                type="radio"
-                name={`claim-${item.id}`}
-                value={v}
-                checked={verdict === v}
-                onChange={() => onClaim(v)}
-              />
-              {CLAIM_VERDICT_LABEL[v]}
-            </label>
-          ))}
-        </div>
+        {/* A judgement entry (Part B) cites nothing: there is no citation to
+            rule Correct or Wrong section, so only its questions are asked. */}
+        {item.kind !== 'judgement' && (
+          <>
+            <p className="cite-answer-head">Your verdict on the claim:</p>
+            <div className="cite-choices" role="radiogroup" aria-label={`Verdict on ${item.id}`}>
+              {CLAIM_VERDICTS.map((v) => (
+                <label key={v}>
+                  <input
+                    type="radio"
+                    name={`claim-${item.id}`}
+                    value={v}
+                    checked={verdict === v}
+                    onChange={() => onClaim(v)}
+                  />
+                  {CLAIM_VERDICT_LABEL[v]}
+                </label>
+              ))}
+            </div>
+          </>
+        )}
         {item.asks.length > 0 && (
           <>
-            <p className="cite-answer-head">Please confirm:</p>
+            <p className="cite-answer-head">{item.kind === 'judgement' ? 'Your call:' : 'Please confirm:'}</p>
             <ol className="cite-question">
               {item.asks.map((ask, i) => {
                 // Stored under the answer key; the form's names stay on the id.
@@ -409,7 +424,11 @@ function ChecklistPanel({
                     </div>
                     <textarea
                       className="cite-note"
-                      placeholder="Notes — what the DZ does, or what the source should say"
+                      placeholder={
+                        item.kind === 'judgement'
+                          ? 'Notes — which level or which words, and why'
+                          : 'Notes — what the DZ does, or what the source should say'
+                      }
                       value={response?.note ?? ''}
                       aria-label={`${item.id} question ${i + 1} notes`}
                       onChange={(e) => onQuestion(i, { note: e.target.value })}

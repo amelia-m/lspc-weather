@@ -16,7 +16,11 @@
  * reports, wind speed only:
  *   https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=PMV&data=sknt&tz=Etc/UTC&format=onlycomma&latlon=no&missing=M&report_type=3&report_type=4&year1=…
  * The hours are tabled by the point each record was read at (its `dz`;
- * records without one are the point before 2026-10-08).
+ * records without one are the point before 2026-10-08). `--from <date>`
+ * and `--to <date>` (ISO, UTC) keep only the valid hours from the first
+ * date up to but not including the second, so a new span can be tabled
+ * on its own beside the whole run; the records and reports read are the
+ * same either way.
  */
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
@@ -55,7 +59,21 @@ for (const f of args.kpmv) {
 }
 const reports: WindReport[] = [...byTime].map(([t, kt]) => ({ t, kt }));
 
-const hours = groundHours(records);
+const bound = (key: 'from' | 'to'): number | null => {
+  if (args[key] === undefined) return null;
+  const v = args[key][0];
+  // A flag with no value is a forgotten one, not "no bound": tabling the
+  // whole run under a heading meant for a span would misreport it.
+  const t = v === undefined ? NaN : Date.parse(v);
+  if (!Number.isFinite(t)) {
+    console.error(`--${key} takes an ISO date, not ${v ?? 'nothing'}`);
+    process.exit(2);
+  }
+  return t;
+};
+const from = bound('from');
+const to = bound('to');
+const hours = groundHours(records).filter((h) => (from == null || h.t >= from) && (to == null || h.t < to));
 // Rounded before the sign is chosen, so a bias under 0.05 kt prints 0.0.
 const fmt = (x: number) => {
   const r = Math.round(x * 10) / 10;

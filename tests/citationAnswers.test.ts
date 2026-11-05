@@ -12,7 +12,7 @@ import {
 } from '../src/domain/citationAnswers';
 import { clearAnswers, loadAnswers, saveAnswers } from '../src/api/citationAnswers';
 import type { ChecklistEntry } from '../src/config/citationsChecklist';
-import { CHECKLIST } from '../src/config/citationsChecklist';
+import { CHECKLIST, JUDGEMENTS, REVIEW_ENTRIES } from '../src/config/citationsChecklist';
 import { CITATIONS, VISIBILITY_ROW, VISIBILITY_ROWS } from '../src/config/thresholds';
 
 const REPO = 'https://github.com/amelia-m/lspc-weather';
@@ -90,9 +90,32 @@ describe('countAnswered', () => {
     expect(countAnswered(some, checklist)).toEqual({ answered: 2, total: 5 });
   });
 
-  it('matches the real checklist: every entry has a verdict slot and at least one question', () => {
-    const { total } = countAnswered(emptyAnswers(), CHECKLIST);
-    const asks = CHECKLIST.reduce((n, e) => n + e.asks.length, 0);
+  it('counts no verdict slot and prints no verdict line for a judgement entry', () => {
+    // A Part B entry cites nothing, so there is no citation to rule on:
+    // "(not given)" under it would read as a ruling the reviewer skipped,
+    // and a slot for it would leave the count short by one on every review.
+    const b = { ...entry('B9', ['Should it?', 'Which word?']), kind: 'judgement' as const, sources: [] };
+    const a = entry('A1', ['Is it?']);
+    expect(countAnswered(emptyAnswers(), [a, b])).toEqual({ answered: 0, total: 2 + 2 });
+    const answers = emptyAnswers();
+    answers.questions['B9:1'] = { answer: 'no', note: 'Caution at every category' };
+    answers.claims['A1'] = 'correct';
+    expect(countAnswered(answers, [a, b])).toEqual({ answered: 2, total: 4 });
+    // A stray verdict under the judgement's key (an older store) is not a
+    // section of its own.
+    answers.claims['B9'] = 'correct';
+    const text = formatAnswers(answers, [a, b]);
+    expect(formatAnswers({ ...emptyAnswers(), claims: { B9: 'correct' } }, [a, b])).toContain('(no answers yet)');
+    expect(text).toContain('### A1 · Entry A1\nVerdict: Correct');
+    expect(text).toContain('### B9 · Entry B9\n- Q2: No — Caution at every category\n  > Which word?');
+    expect(text.match(/Verdict:/g)).toHaveLength(1);
+  });
+
+  it('matches the real checklist: every Part A entry has a verdict slot, every entry at least one question', () => {
+    const { total } = countAnswered(emptyAnswers(), REVIEW_ENTRIES);
+    const asks = REVIEW_ENTRIES.reduce((n, e) => n + e.asks.length, 0);
+    expect(JUDGEMENTS.length).toBeGreaterThan(0);
+    for (const e of JUDGEMENTS) expect(e.kind, e.id).toBe('judgement');
     expect(total).toBe(CHECKLIST.length + asks);
     expect(CHECKLIST.every((e) => e.asks.length > 0)).toBe(true);
   });
