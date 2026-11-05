@@ -15,6 +15,17 @@
  *   CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
  * A GitHub runner needs none of that.
  *
+ * LIVE_SITE_URL names another site to check, such as a local build served
+ * over http. LIVE_CLOCK (an ISO instant) pins the browser's clock, in the
+ * DZ's time zone, before each load: the workflow's second leg builds the
+ * fixture site and checks it with the clock at 11:45 PM Central, the half
+ * hour in which the forecast hour stepper's readout carries a weekday and
+ * once pushed its +1 h button off a 320 px page (issue #249, 2026-10-31),
+ * which the daily run, in the morning, never met. The fixtures anchor
+ * their hours to the page's Date.now(), so a pinned clock still finds an
+ * hour. Against live data a pinned clock would pick a forecast hour the
+ * data does not hold, so the live leg never sets it.
+ *
  * Exit status 1 when any page fails at any width (on both of its loads).
  */
 // The functions handed to page.evaluate run in the page, so they need the
@@ -23,10 +34,18 @@
 /// <reference lib="dom.iterable" />
 import { judgeLoad, pagePasses, type LoadObservation, type LoadVerdict, type SourceRow } from '../src/domain/liveSite';
 import { TAF_RELAY_SET } from '../src/config/tafRelay';
-import { collectOverflowing } from './liveSiteDom';
+import { collectOverflowing, measureHourNavs } from './liveSiteDom';
 import { ALLOWED_ORIGINS as RELAY_ORIGINS } from '../relay/src/station';
+import { SITE } from '../src/config/site';
 
-const BASE = process.env.LIVE_SITE_URL ?? 'https://amelia-m.github.io/lspc-weather/';
+// `||`, not `??`: the workflow sets both from a matrix expression that is
+// the empty string on the live leg.
+const BASE = process.env.LIVE_SITE_URL || 'https://amelia-m.github.io/lspc-weather/';
+const CLOCK = process.env.LIVE_CLOCK ? new Date(process.env.LIVE_CLOCK) : null;
+if (CLOCK && Number.isNaN(CLOCK.getTime())) {
+  console.error(`LIVE_CLOCK is not an ISO instant: ${process.env.LIVE_CLOCK}`);
+  process.exit(2);
+}
 const PAGES: { name: string; path: string }[] = [
   { name: 'Jumpers', path: '' },
   { name: 'Pilots', path: '#pilots' },
@@ -59,7 +78,11 @@ const browser = await pw.chromium.launch({
 const siteOrigin = new URL(BASE).origin;
 
 async function load(page: { name: string; path: string }, width: number): Promise<LoadObservation> {
-  const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+  const ctx = await browser.newContext({ viewport: { width, height: 900 }, ...(CLOCK ? { timezoneId: SITE.timeZone } : {}) });
+  // Installed before the page loads, so the fixtures (anchored to
+  // Date.now() at import) and the hour chosen as nearest the clock both
+  // see the pinned time; the clock runs on from it.
+  if (CLOCK) await ctx.clock.install({ time: CLOCK });
   const p = await ctx.newPage();
   const o: LoadObservation = {
     page: page.name,
@@ -159,8 +182,10 @@ async function observe(
       ceilingMeta: document.querySelector('#meta .error')?.textContent ?? null,
       ceilingCharts: document.querySelectorAll('#ch-size svg, #ch-spread svg, #ch-band svg').length,
       panels: document.querySelectorAll('.panel').length,
+      hourNavs: document.querySelector('.fc-nav') != null,
     };
   });
+  if (seen.hourNavs) o.hourNavs = await p.evaluate(measureHourNavs);
   o.scrollWidth = seen.scrollWidth;
   o.viewportWidth = seen.viewportWidth;
   // Which elements, when the page is wider than the viewport: issue #208
@@ -195,6 +220,7 @@ async function observe(
 // being checked: a local build on another port is refused by design.
 const relayServesOrigin = TAF_RELAY_SET && RELAY_ORIGINS.includes(new URL(BASE).origin);
 
+console.log(`Checking ${BASE}${CLOCK ? ` with the clock at ${CLOCK.toISOString()} (${SITE.timeZone})` : ''}`);
 let failed = 0;
 for (const page of PAGES) {
   for (const width of WIDTHS) {

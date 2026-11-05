@@ -46,6 +46,10 @@ export interface LoadObservation {
   /** The elements past the viewport's right edge, read only when the page
    *  is wider than it (scripts/liveSiteDom.ts); absent otherwise. */
   overflowing?: OverflowingBox[];
+  /** The forecast hour stepper rows (`.fc-nav`, on the Winds aloft and
+   *  drift cards), each as where its box ends and where its content ends,
+   *  in CSS px from the page's left; absent on a page without one. */
+  hourNavs?: HourNavBox[];
   /** The error boundary's screen was showing. */
   crashed: boolean;
   /** The Data health card's rows, or null on a page without the card. */
@@ -79,6 +83,17 @@ export function overflowReport(boxes: OverflowingBox[], max = 5): string[] {
     .map(({ b }) => `${b.path} (right edge ${b.right} px, ${b.width} px wide)`);
 }
 
+/** One forecast hour stepper row: the right edge of its box and of the
+ *  farthest-right thing in it (its +1 h button, normally). Issue #249
+ *  (2026-10-31): the row's content ran past its box, then past the page,
+ *  only in the last half hour before midnight Central, when the readout
+ *  carries a weekday; the page-width rule saw it only once the page itself
+ *  widened, and in the sandbox's narrower font it never did. */
+export interface HourNavBox {
+  box: number;
+  content: number;
+}
+
 export interface LoadVerdict {
   faults: string[];
   notes: string[];
@@ -105,6 +120,16 @@ export function judgeLoad(o: LoadObservation, opts: JudgeOptions = {}): LoadVerd
         (past.length ? `; past the edge: ${past.join('; ')}` : ''),
     );
   }
+  // The stepper's content past its own box is a fault before it widens the
+  // page: a button half outside its row is what a reader meets. A pixel of
+  // rounding is not past.
+  const navs = o.hourNavs ?? [];
+  navs.forEach((n, i) => {
+    // Numbered when the page has more than one (the Winds aloft and drift
+    // cards each carry one), so two faults are not one line said twice.
+    const which = navs.length > 1 ? ` ${i + 1} of ${navs.length}` : '';
+    if (n.content > n.box + 1) faults.push(`forecast hour stepper${which} past its row: content to ${n.content} px in a row ending at ${n.box} px`);
+  });
   for (const s of o.sources ?? []) {
     // The NBM row reads NOAA's bucket through the relay: the bucket failing
     // behind it (the relay's 502, which the app names as the bucket's) is
