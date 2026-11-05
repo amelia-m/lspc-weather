@@ -9,6 +9,7 @@ import {
   parseRateLimitHeaders,
   pruneUsage,
   quotaWindowLabel,
+  tightestOf,
   summarizeUsage,
   toUsageRecord,
   usageCharge,
@@ -108,9 +109,24 @@ describe('summarizeUsage', () => {
     expect(s.hour).toEqual({ requests: 2, calls: 10.6 });
     expect(s.day).toEqual({ requests: 3, calls: 20.2 });
     expect(s.days).toEqual([
-      { day: '2026-10-31', requests: 3, calls: 20.2 },
-      { day: '2026-10-30', requests: 2, calls: 10.6 },
+      { day: '2026-10-31', requests: 3, calls: 20.2, tightest: null },
+      { day: '2026-10-30', requests: 2, calls: 10.6, tightest: null },
     ]);
+  });
+
+  it('keeps each day’s tightest server reading: the fewest calls left, the later on a tie, none without one', () => {
+    const withS = (t: number, r: number, l = 600, win = 60): UsageRecord => ({ ...rec(t, 9.6), s: { r, l, win } });
+    const records = [
+      withS(T0 - 30_000, 590.4), // today, later
+      withS(T0 - 3 * 3_600_000, 12, 10_000, 86_400), // today, earlier, the day window with 12 left
+      withS(T0 - 4 * 3_600_000, 12, 10_000, 86_400), // today, earlier still, a tie
+      rec(T0 - 2 * 3_600_000, 1), // today, no reading
+      rec(T0 - 5 * 3_600_000, 9.6), // yesterday, no reading at all
+    ];
+    const s = summarizeUsage(records, T0);
+    expect(s.days[0].tightest).toEqual({ at: T0 - 3 * 3_600_000, remaining: 12, limit: 10_000, window: 86_400 });
+    expect(s.days[1].tightest).toBeNull();
+    expect(tightestOf([])).toBeNull();
   });
 
   it('is empty with no records', () => {
@@ -160,6 +176,14 @@ describe('pruneUsage', () => {
 });
 
 describe('toUsageRecord', () => {
+  it('keeps a server reading on a record when it is whole, and drops a broken one without the record', () => {
+    const base = { t: T0, w: 9.6, k: 'winds', o: 'answered' };
+    expect(toUsageRecord({ ...base, s: { r: 577.4, l: 600, win: 60 } })).toEqual({ ...base, s: { r: 577.4, l: 600, win: 60 } });
+    expect(toUsageRecord({ ...base, s: { r: 577.4, l: 600 } })).toEqual(base);
+    expect(toUsageRecord({ ...base, s: { r: -1, l: 600, win: 60 } })).toEqual(base);
+    expect(toUsageRecord({ ...base, s: 'many' })).toEqual(base);
+  });
+
   it('accepts a well-formed record and rejects the rest', () => {
     expect(toUsageRecord({ t: 1, w: 9.6, k: 'a', o: 'answered', extra: 1 })).toEqual({ t: 1, w: 9.6, k: 'a', o: 'answered' });
     for (const bad of [
@@ -203,7 +227,7 @@ describe('the recorder', () => {
     store.set(STORAGE_KEY, JSON.stringify([...stored, { t: 'bad' }, { t: T0 - 30 * 86_400_000, w: 1, k: 'x', o: 'answered' }]));
     loadPersistedUsage(T0);
     // The malformed record and the one past fourteen days are dropped.
-    expect(openMeteoUsage(T0).days).toEqual([{ day: '2026-10-31', requests: 3, calls: 10.6 }]);
+    expect(openMeteoUsage(T0).days).toEqual([{ day: '2026-10-31', requests: 3, calls: 10.6, tightest: null }]);
   });
 
   it('keeps another tab’s records when it writes', () => {
@@ -221,7 +245,7 @@ describe('the recorder', () => {
 
   it('reads storage on the first read without an explicit load, so a restored fortnight shows at once', () => {
     installStorage(JSON.stringify([{ t: T0 - 86_400_000, w: 9.6, k: 'winds', o: 'answered' }]));
-    expect(openMeteoUsage(T0).days).toEqual([{ day: '2026-10-30', requests: 1, calls: 9.6 }]);
+    expect(openMeteoUsage(T0).days).toEqual([{ day: '2026-10-30', requests: 1, calls: 9.6, tightest: null }]);
   });
 
   it('is call-safe without storage and with a stored value that is not an array', () => {
@@ -254,7 +278,11 @@ describe('Data health shows the count beside the limits', () => {
     expect(out).toContain('today 3, about 20.2 calls of its 10,000 a day for one address');
     expect(out).toContain('this hour 2, about 10.6 of 5,000');
     expect(out).toContain('Other browsers on the same address share those limits and are not counted here');
-    expect(out).toContain('<td>2026-10-31</td><td>3</td><td>20.2</td>');
+    expect(out).toContain('<td>2026-10-31</td><td>3</td><td>20.2</td><td>—</td>');
+    // The day's tightest server reading, in its window, when a record has one.
+    const withServer = summarizeUsage([{ ...rec(T0 - 30_000, 9.6), s: { r: 412, l: 10_000, win: 86_400 } }, rec(T0 - 40_000, 1)], T0);
+    expect(html(withServer)).toContain('<td>2026-10-31</td><td>2</td><td>10.6</td><td>412 of 10,000 calls left today</td>');
+    expect(html(withServer)).toContain('Server’s tightest: the fewest calls Open-Meteo reported left');
     // A sum of fractions prints whole when it is whole: 9.6 × 5 + 1 × 2.
     const whole = summarizeUsage([...Array.from({ length: 5 }, (_, i) => rec(T0 - i, 9.6)), rec(T0 - 9, 1), rec(T0 - 8, 1)], T0);
     expect(html(whole)).toContain('today 7, about 50 calls');
@@ -392,11 +420,13 @@ describe('the recorder keeps the server’s newest figures', () => {
   });
 
   it('takes them off an answer’s headers, keeps the last when an answer has none, and clears with the rest', () => {
-    installStorage();
+    const store = installStorage();
     const winds = openMeteoWindsUrl(40.8703, -96.1085);
     expect(openMeteoUsage(T0).server).toBeNull();
     recordOpenMeteoRequest(winds, 'answered', T0 - 1000, new Headers(HEADERS));
     expect(openMeteoUsage(T0).server).toMatchObject({ at: T0 - 1000, cost: 9.6, remaining: 577.4, window: 60 });
+    // And on the record itself, so the day's tightest survives a reload.
+    expect(openMeteoUsage(T0).days[0].tightest).toEqual({ at: T0 - 1000, remaining: 577.4, limit: 600, window: 60 });
     // A rejected attempt carries headers too (a 429 says what is left).
     recordOpenMeteoRequest(winds, 'rejected', T0 - 500, new Headers({ ...HEADERS, 'x-ratelimit-remaining': '0', 'x-ratelimit-cost': '1.0' }));
     expect(openMeteoUsage(T0).server).toMatchObject({ at: T0 - 500, cost: 1, remaining: 0 });
@@ -406,6 +436,15 @@ describe('the recorder keeps the server’s newest figures', () => {
     recordOpenMeteoRequest(winds, 'timeout', T0);
     expect(openMeteoUsage(T0).server).toMatchObject({ at: T0 - 500 });
     expect(openMeteoUsage(T0).day.requests).toBe(4);
+    expect(openMeteoUsage(T0).days[0].tightest).toMatchObject({ at: T0 - 500, remaining: 0 });
+    // Stored with the record, and read back by a later session (clearing
+    // empties storage too, so what was stored is put back first).
+    const kept = store.get(STORAGE_KEY)!;
+    clearOpenMeteoUsage();
+    store.set(STORAGE_KEY, kept);
+    loadPersistedUsage(T0);
+    expect(openMeteoUsage(T0).server).toBeNull();
+    expect(openMeteoUsage(T0).days[0].tightest).toMatchObject({ remaining: 0, limit: 600, window: 60 });
     clearOpenMeteoUsage();
     expect(openMeteoUsage(T0).server).toBeNull();
   });

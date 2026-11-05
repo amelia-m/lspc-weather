@@ -36,6 +36,10 @@ const ROWS = sourcesFetched(TAF_RELAY_SET || USE_FIXTURES);
 /** Calls to a tenth, whole when whole, thousands separated: 9.6, 50,
  *  577.4, 10,000. The browser's count and the server's figures alike. */
 const fmtCalls = (n: number): string => n.toLocaleString('en-US', { maximumFractionDigits: 1 });
+/** A server reading as the card words it, on the server line and in the
+ *  By-day column alike: "577.4 of 600 calls left this minute". */
+const fmtQuota = (q: { remaining: number; limit: number; window: number }): string =>
+  `${fmtCalls(q.remaining)} of ${fmtCalls(q.limit)} calls left ${quotaWindowLabel(q.window)}`;
 
 export function DataFreshness({
   status,
@@ -131,21 +135,25 @@ export function DataFreshness({
               // server gave them, with their age; no judgement of them.
               <p className="muted small">
                 <strong>Open-Meteo’s own count for this address</strong>, from its answer{' '}
-                {fmtAgo(openMeteoUsage.server.at)}: {fmtCalls(openMeteoUsage.server.remaining)} of{' '}
-                {fmtCalls(openMeteoUsage.server.limit)} calls left {quotaWindowLabel(openMeteoUsage.server.window)}, every
-                browser on the address included
+                {fmtAgo(openMeteoUsage.server.at)}: {fmtQuota(openMeteoUsage.server)}, every browser on the address
+                included
                 {openMeteoUsage.server.cost != null && `; that request cost ${fmtCalls(openMeteoUsage.server.cost)}`}. The server
                 names whichever of its minute, hour and day windows has the least left.
               </p>
             )}
             <details className="om-usage-days">
               <summary className="muted small">By UTC day, the last {USAGE_KEEP_DAYS} days</summary>
+              {/* The last column is the server's tightest reading that day
+                  for this browser: the fewest calls it reported remaining,
+                  in the window it named, so the address's nearest approach
+                  to a limit is on record without a backend. */}
               <table className="om-usage-table">
                 <thead>
                   <tr>
                     <th scope="col">UTC day</th>
                     <th scope="col">Requests</th>
                     <th scope="col">Calls</th>
+                    <th scope="col">Server’s tightest</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -154,10 +162,15 @@ export function DataFreshness({
                       <td>{d.day}</td>
                       <td>{d.requests}</td>
                       <td>{fmtCalls(d.calls)}</td>
+                      <td>{d.tightest ? fmtQuota(d.tightest) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <p className="muted small">
+                Server’s tightest: the fewest calls Open-Meteo reported left for this address that day, in the
+                window it named, every browser on the address included; — before 2026-11-04 or with no answer.
+              </p>
             </details>
           </div>
         )}

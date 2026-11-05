@@ -64,14 +64,16 @@ export function loadPersistedUsage(now: number = Date.now()): void {
  *  browser's, so neither may overwrite the other's; and the first record
  *  of a session is the load, not a load and then a re-read. */
 export function recordOpenMeteoRequest(url: string, outcome: UsageOutcome, now: number = Date.now(), headers?: Headers): void {
+  // An answer without the headers (another host's, or the API before
+  // 2026-11-04) leaves the last reading in place rather than blanking it,
+  // and the record carries none.
+  const quota = headers ? parseRateLimitHeaders((name) => headers.get(name), now) : null;
+  if (quota) server = quota;
   const fresh: UsageRecord = { t: now, w: usageCharge(url, outcome), k: usageKey(url), o: outcome };
+  if (quota) fresh.s = { r: quota.remaining, l: quota.limit, win: quota.window };
   records = pruneUsage(mergeUsage(readStored(), [...records, fresh]), now);
   loaded = true;
   safeLocalSet(STORAGE_KEY, JSON.stringify(records));
-  // An answer without the headers (another host's, or the API before
-  // 2026-11-04) leaves the last reading in place rather than blanking it.
-  const quota = headers ? parseRateLimitHeaders((name) => headers.get(name), now) : null;
-  if (quota) server = quota;
 }
 
 /** What this browser has asked Open-Meteo, read against the clock. */

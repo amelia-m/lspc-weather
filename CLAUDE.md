@@ -565,7 +565,9 @@ browsers (read that day; its windows roll per client from its first
 request, not by the clock), so under that count Data health also prints
 the server's figures for the address from the newest answer
 (`parseRateLimitHeaders`, `ServerQuota`): what is left of whichever
-window has the least remaining, its age, and the request's cost. The
+window has the least remaining, its age, and the request's cost, and
+since 2026-11-05 keeps each answer's reading on its request record so
+the By-day table shows the day's tightest (`tightestOf`). The
 refresh-slowing idea in docs/open-questions.md would read that.
 
 ## Conventions
