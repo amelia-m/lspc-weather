@@ -1571,8 +1571,10 @@ page-width rule alone would have passed it there. Run from here on
 inside the nowrap span, Jumpers and Pilots failed at 320 px on the
 stepper rule, every other page and width passed. Dispatched on the
 branch before merging (run 42112228274, 2026-11-05): both legs passed
-on the runner, the late-evening one in about seven minutes with no
-notes, in DejaVu Sans. The check passed on the fix's
+on the runner, the live one in five minutes and the late-evening one in
+two and a half, with no notes, in DejaVu Sans. The first run on `main`,
+after the merge's deploy the same evening, passed both legs again (the
+live leg in seven minutes, the fixture leg in under three). The check passed on the fix's
 deploy (b9482b0) at about 05:00Z, which was already past midnight Central,
 so that run met the bare time, not the weekday; the weekday case is held
 by the fixture-build measurement and the markup test.
