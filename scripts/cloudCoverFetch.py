@@ -297,29 +297,50 @@ def main() -> None:
     parts = set(os.environ.get('PARTS', 'metar,om,ndfd').split(','))
     if eccodes is None and parts & set(NDFD_PARTS):
         sys.exit('the NDFD parts need ecCodes: pip install eccodes eccodeslib')
-    records = metar_records(start, end) if 'metar' in parts else []
-    for sid, lat, lon in (SITES if 'om' in parts else []):
-        # Spaced, so a run of fourteen sites does not meet the archive host's
-        # dropped handshakes back to back.
-        records += om_records(start, end, sid, lat, lon)
-        time.sleep(3)
-    for sid, lat, lon in (SITES if 'omwind' in parts else []):
-        records += om_wind_records(start, end, sid, lat, lon)
-        time.sleep(3)
-    jobs = [(d, p) for p in NDFD_PARTS if p in parts for d in days]
-    with ThreadPoolExecutor(8) as pool:
-        keys = [k for ks in pool.map(ndfd_keys, jobs) for k in ks]
-    print(f'{len(keys)} NDFD files', file=sys.stderr)
-    # Processes, not threads: one ecCodes handle per process is the safe use.
-    with ProcessPoolExecutor(int(os.environ.get('WORKERS', '6'))) as pool:
-        for i, recs in enumerate(pool.map(ndfd_records, keys)):
-            records.extend(recs)
-            if i % 50 == 0:
-                print(f'  {i}/{len(keys)}', file=sys.stderr)
+    # Written as each fetch comes back, not once at the end: a request
+    # that still fails after its retries ends the run (non-zero), and the
+    # file then holds every record fetched before it, so a six-month
+    # fetch that dies in its last hour keeps the months before. A caller
+    # that must not keep a partial file reads the exit status (the weekly
+    # refresh moves the file into data/parity/ only after a clean exit).
+    written = 0
     with gzip.open(path, 'wt') as f:
-        for r in records:
-            f.write(json.dumps(r, separators=(',', ':')) + '\n')
-    print(f'{len(records)} records to {path}', file=sys.stderr)
+        def emit(recs: list[dict]) -> None:
+            nonlocal written
+            for r in recs:
+                f.write(json.dumps(r, separators=(',', ':')) + '\n')
+            f.flush()
+            written += len(recs)
+
+        try:
+            if 'metar' in parts:
+                emit(metar_records(start, end))
+            for sid, lat, lon in (SITES if 'om' in parts else []):
+                # Spaced, so a run of fourteen sites does not meet the archive
+                # host's dropped handshakes back to back.
+                emit(om_records(start, end, sid, lat, lon))
+                time.sleep(3)
+            for sid, lat, lon in (SITES if 'omwind' in parts else []):
+                emit(om_wind_records(start, end, sid, lat, lon))
+                time.sleep(3)
+            jobs = [(d, p) for p in NDFD_PARTS if p in parts for d in days]
+            with ThreadPoolExecutor(8) as pool:
+                keys = [k for ks in pool.map(ndfd_keys, jobs) for k in ks]
+            print(f'{len(keys)} NDFD files', file=sys.stderr)
+            # Processes, not threads: one ecCodes handle per process is the
+            # safe use. map yields in order, so the file holds whole files
+            # in order up to the first that failed.
+            with ProcessPoolExecutor(int(os.environ.get('WORKERS', '6'))) as pool:
+                for i, recs in enumerate(pool.map(ndfd_records, keys)):
+                    emit(recs)
+                    if i % 50 == 0:
+                        print(f'  {i}/{len(keys)}', file=sys.stderr)
+        except BaseException as e:
+            # Said on the run's page too, so a partial file is never taken
+            # for a whole one.
+            print(f'::warning::fetch stopped by {type(e).__name__}: {path} holds the {written} records fetched before it', file=sys.stderr)
+            raise
+    print(f'{written} records to {path}', file=sys.stderr)
 
 
 if __name__ == '__main__':

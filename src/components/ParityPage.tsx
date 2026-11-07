@@ -637,8 +637,9 @@ function ArrivalTable({ lags }: { lags: ArrivalLag[] }): JSX.Element | null {
         Minutes from the time a KPMV report was taken to the first sample that found it at each
         source. The samples were two minutes apart, taken by a sampler that ran from Sep 30 to
         Oct 5, so each figure is up to two minutes later than the report really arrived, never
-        earlier. The comparison runs since are hours apart and add a report only when two land
-        within five minutes of each other.
+        earlier. A source that gained two reports between two samples (a feed catching up) has both
+        timed, the older’s lag the longer. The comparison runs since are hours apart and add a report
+        only when two land within five minutes of each other.
       </p>
     </>
   );

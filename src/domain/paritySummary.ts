@@ -183,7 +183,9 @@ export interface UsairnetTiming {
 export interface ArrivalLag {
   source: ArrivalSource;
   /** Reports timed: the sample before the first to find it had not, and was
-   *  at most MAX_ARRIVAL_BRACKET_MIN earlier. */
+   *  at most MAX_ARRIVAL_BRACKET_MIN earlier. Every report a source gained
+   *  between those two samples counts, not only the newest (since
+   *  2026-11-07). */
   reports: number;
   lagMin: Spread | null;
 }
@@ -767,14 +769,46 @@ export const MAX_ARRIVAL_BRACKET_MIN = 5;
  * minutes (a 20-second trace of three cycles on 2026-09-27). This counts the
  * same thing across every sampled cycle, beside usairnet and both NWS
  * endpoints, with NOAA's raw file as the quickest reference.
+ *
+ * When a source gains two reports between two samples (a feed that was
+ * behind catching up), both are timed, each to the sample that first
+ * showed the source past it: the report times are every report any source
+ * showed in the whole set. Timing only the newest, as this did until
+ * 2026-11-07, left the older, slower one out, so a slow source read a
+ * little quicker and its count a little lower. A report no source ever
+ * showed cannot be timed at any.
  */
+/** The index of the first value above `x` in a sorted list, or its length.
+ *  The archive's brackets and report times both grow with every daily run,
+ *  so each bracket searches rather than scans. */
+function firstAfter(sorted: readonly number[], x: number): number {
+  let lo = 0;
+  let hi = sorted.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sorted[mid] <= x) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 export function arrivalLags(records: readonly UsairnetRecord[]): ArrivalLag[] {
   const samples = records
     .filter((r) => !r.error && typeof r.at === 'string')
     .map((r) => ({ r, at: Date.parse(r.at) }))
     .filter((x) => Number.isFinite(x.at))
     .sort((a, b) => a.at - b.at);
-  return (Object.keys(ARRIVAL_TIME) as ArrivalSource[]).map((source) => {
+  const sources = Object.keys(ARRIVAL_TIME) as ArrivalSource[];
+  const known = new Set<number>();
+  for (const { r } of samples) {
+    for (const source of sources) {
+      const t = ARRIVAL_TIME[source](r);
+      const ms = t ? Date.parse(t) : NaN;
+      if (Number.isFinite(ms)) known.add(ms);
+    }
+  }
+  const reportTimes = [...known].sort((a, b) => a - b);
+  return sources.map((source) => {
     const seen = samples
       .map(({ r, at }) => {
         const t = ARRIVAL_TIME[source](r);
@@ -785,10 +819,12 @@ export function arrivalLags(records: readonly UsairnetRecord[]): ArrivalLag[] {
     for (let i = 1; i < seen.length; i++) {
       const prev = seen[i - 1];
       const cur = seen[i];
-      // A new report appeared between these two samples.
+      // One or more new reports appeared between these two samples.
       if (cur.obs <= prev.obs) continue;
       if (cur.at - prev.at > MAX_ARRIVAL_BRACKET_MIN * 60_000) continue;
-      lags.push(Math.round((cur.at - cur.obs) / 60_000));
+      for (let k = firstAfter(reportTimes, prev.obs); k < reportTimes.length && reportTimes[k] <= cur.obs; k++) {
+        lags.push(Math.round((cur.at - reportTimes[k]) / 60_000));
+      }
     }
     return { source, reports: lags.length, lagMin: spreadOf(lags) };
   });

@@ -234,6 +234,32 @@ describe('summarizeParity', () => {
     expect(lag).toEqual({ rawFile: 5, iem: 7, usairnet: 17, nwsList: 21, nwsLatest: 27 });
   });
 
+  it('times every report a source gained in one bracket, not only the newest', () => {
+    // IEM shows 13:35Z then, two minutes later, 13:52Z, having skipped past
+    // 13:45Z, which the raw file showed in between: IEM gained both reports
+    // in that bracket, so both are timed to the sample that first showed it
+    // past them (the older's lag the longer). Before 2026-11-07 only 13:52Z
+    // was, so a feed catching up read quicker than it was.
+    const rec = (at: string, iemObsAt: string, rawFileObsAt: string): UsairnetRecord => ({
+      kind: 'usairnet',
+      at,
+      v: 2,
+      iemObsAt,
+      rawFileObsAt,
+      fields: [],
+    });
+    const lags = arrivalLags([
+      rec('2026-09-30T13:50:00Z', '2026-09-30T13:35:00Z', '2026-09-30T13:45:00Z'),
+      rec('2026-09-30T13:52:00Z', '2026-09-30T13:35:00Z', '2026-09-30T13:45:00Z'),
+      rec('2026-09-30T13:54:00Z', '2026-09-30T13:52:00Z', '2026-09-30T13:52:00Z'),
+    ]);
+    const iem = lags.find((x) => x.source === 'iem')!;
+    expect(iem.reports).toBe(2);
+    expect(iem.lagMin).toMatchObject({ minAbs: 2, maxAbs: 9 });
+    // The raw file gained only 13:52Z in its last bracket.
+    expect(lags.find((x) => x.source === 'rawFile')!).toMatchObject({ reports: 1, lagMin: { minAbs: 2, maxAbs: 2 } });
+  });
+
   it('times nothing across a gap longer than the bracket, or from a source’s first sample', () => {
     const rec = (at: string, iemObsAt: string): UsairnetRecord => ({ kind: 'usairnet', at, v: 2, iemObsAt, fields: [] });
     const a = arrivalLags([

@@ -322,14 +322,22 @@ breaking the fix where the code is pure:
   now, as an error record the summary counts under `unreadable`. The
   usairnet comparison's parse was already inside its try.
 
-Not changed, recorded: `arrivalLags` times only the newest report a
-source gained between two samples, so a feed catching up two reports at
-once has the older, slower one untimed, and a slow source reads a
-little quicker (docs/source-parity.md, beside the figures; the samples
-that gave them are not running). `scripts/cloudCoverFetch.py` writes
-its records only after every download, so one that fails past its
-attempts loses the rest of the part; low, and the parts are the
-caller's.
+Two more, recorded on 2026-11-03 and changed on 2026-11-07 at the
+maintainer's word: `arrivalLags` timed only the newest report a source
+gained between two samples, so a feed catching up two reports at once
+had the older, slower one untimed; it now times every report gained in
+the bracket (docs/source-parity.md, beside the figures: four more
+reports timed over the archive, no median moved, usairnet's longest lag
+28 to 48 minutes). And `scripts/cloudCoverFetch.py` wrote its records
+only after every download, so one that failed past its attempts lost
+the rest of the part; it now writes each fetch as it comes back, says on
+the run's page how many records a failed run kept, and the by-hand
+workflow uploads the file on failure too. The weekly refresh is
+unchanged: it moves a file into `data/parity/` only after a clean exit,
+so a partial fetch is never committed. Checked on 2026-11-07 with a
+one-day METAR fetch from IEM, and the same with an Open-Meteo site at an
+impossible latitude: the METAR records were in the file, the run failed
+on the 400 and said so.
 - **For the maintainer's judgement, not changed:** the flight-category
   flag's level is the app's (`MVFR` a watch, `IFR`/`LIFR` a caution,
   `src/domain/advisories.ts`), and so is the overcast flag's watch; AIM
@@ -646,7 +654,7 @@ so that lever is gone; the other two stand.
 Sent by the maintainer on 2026-11-04 as
 <https://github.com/open-meteo/open-meteo/pull/2300>, "Update README.md:
 Add LSPC Weather to the list of users", one commit, no conflicts; it
-waits on Open-Meteo's maintainers (read 2026-11-05: open, no review yet;
+waits on Open-Meteo's maintainers (read 2026-11-05 and again 2026-11-07: open, no review yet;
 from the sandbox only the page renders, github.com and api.github.com
 answer a script 403 for a repository outside the session's scope). Raised 2026-10-08. Open-Meteo's README
 (<https://github.com/open-meteo/open-meteo>) asks: "Do you use Open-Meteo?
