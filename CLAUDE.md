@@ -716,6 +716,13 @@ environment), against the live site or a local build: on 2026-10-17 it
 failed the live `#citations` at 320 px, before the fix deployed, and passed
 every page of a local build with the fix.
 
+How often each of the two network-facing checks has failed on `main`,
+and what each failure was, is tallied in docs/live-checks-tally.md
+(taken 2026-11-07: sky-parity 12 of 45 scheduled runs, 7 of them real,
+5 one bad answer from another host; live-site 8 of 148, 1 of them the
+site's, 6 the runner image); take it again after a month of the retry
+rules.
+
 `.github/workflows/sky-parity.yml` is not a gate: it runs daily and on
 dispatch, needs the network, and lives under `scripts/*.live.ts` with its own
 `vitest.live.config.ts` so `npm test` stays hermetic. It fails when the

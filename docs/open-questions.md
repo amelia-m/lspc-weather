@@ -117,6 +117,18 @@ trailing slash the app sends is dropped in the listing), so the whole
 path from a reader's browser to the dashboard is proven on the
 `amelia-m` site. Nothing waits here.
 
+## Done: how often each check cried wolf (2026-11-07)
+
+Tallied at the maintainer's word in docs/live-checks-tally.md, from the
+issues, the closing comments, this file's write-ups and the run lists:
+sky-parity failed 12 of 45 scheduled runs, four on the app's TAF decoder
+(never shown to a reader), three on the check's own strictness, five on
+one bad answer from another host, all of which the retry rules since
+2026-10-31 and 11-01 cover but the 403; the live-site check failed 8 of
+148, one the site's (#249), six the runner image (#237), one unexplained
+(#208). Nothing in either check's rules needs loosening on this record.
+Take it again after a month of the retry rules.
+
 ## Settled: the flight categories against 105.17 and BSR 2-1 I; 91.155 cited (2026-11-03)
 
 The maintainer asked, of AIM 7-1-7's LIFR (ceiling under 500 ft and/or
