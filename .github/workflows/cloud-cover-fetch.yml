@@ -55,7 +55,12 @@ jobs:
         # The script splits PARTS on commas as given, so "metar, om" would
         # skip " om" without a word; spaces go first. It writes gzip.
         run: PARTS="${PARTS// /}" python scripts/cloudCoverFetch.py "$START" "$END" cloud-cover-fetch.jsonl.gz
+      # Kept on failure too: the script writes as each fetch comes back, so
+      # a run that dies late holds everything before the failure, and its
+      # ::warning:: line on the run's page says how much. The run still
+      # fails, so the file is not taken for a whole one.
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: cloud-cover-fetch-${{ github.run_id }}
           path: cloud-cover-fetch.jsonl.gz

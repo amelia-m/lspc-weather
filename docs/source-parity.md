@@ -288,14 +288,22 @@ batches and the hours between comparison runs time nothing, so these
 figures come from the sampler's archived logs and since then grow only when
 two runs happen to land within five minutes (a late start beside the next
 one, or a run dispatched by hand)
-(`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`). One more caveat, read in a
-review on 2026-11-03: a bracket times the newest report a source gained
-in it, and only that one. When two reports reach a source between two
-samples (a feed that was behind catching up), the older of the two is
-not timed, and its lag was the longer, so a slow source reads a little
-quicker than it was and its report count a little lower. Not changed:
-the figures published are the readings described, and the two-minute
-samples that gave them are not running.
+(`arrivalLags`, `MAX_ARRIVAL_BRACKET_MIN`). Since 2026-11-07 every
+report a source gained in a bracket is timed, not only the newest: when
+two reports reach a source between two samples (a feed that was behind
+catching up), both are timed to the sample that first showed the source
+past them, the older's lag the longer. The report times are every report
+any source showed in the whole set, so a report no source ever showed is
+timed at none. Until then a bracket timed only its newest report (read
+in a review on 2026-11-03), so a slow source read a little quicker than
+it was and its count a little lower. Over the whole archive to
+2026-11-06, run both ways from the sandbox on 2026-11-07, the change is
+small: NOAA's raw file and IEM are unchanged (233 and 234 reports),
+usairnet times 239 reports instead of 237 and its longest lag goes from
+28 to 48 minutes, NWS's list 238 for 237 and its `latest` 247 for 246;
+every median and 90th percentile is the same, and the means move by at
+most a quarter of a minute. The summary workflow publishes the new
+figures with its next run.
 
 And **runs that could not read one side**: usairnet's page (unreachable or
 unparsed) apart from this dashboard's own feeds, with the number of unbroken
