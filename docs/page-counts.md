@@ -84,6 +84,14 @@ count.js's filters, read from its source on 2026-10-31
 A background tab is counted when it is first shown, as count.js does; if
 its page changes first, the earlier page is dropped, not counted late.
 
+## Whose views the count leaves out
+
+Since 2026-11-07 the maintainer's personal laptop is opted out with the
+toggle above (her word that day), so the dashboard's counts from then on
+do not include her own views from it; views from any other browser of
+hers still count until it is opted out too. Read the counts before that
+date as including hers.
+
 ## Checked
 
 2026-10-31, the production build with fixtures served locally in
