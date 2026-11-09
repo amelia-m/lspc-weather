@@ -1,26 +1,26 @@
 {
-  "generatedAt": "2026-11-08T18:14:58.805Z",
+  "generatedAt": "2026-11-09T22:54:45.215Z",
   "from": "2026-09-24T05:09:51.010Z",
-  "to": "2026-11-08T18:08:14.775Z",
+  "to": "2026-11-09T22:45:38.964Z",
   "schulze": {
-    "runs": 1970,
+    "runs": 1979,
     "unreadable": 48,
-    "aligned": 1884,
+    "aligned": 1893,
     "byAltitude": [
       {
         "ft": 0,
-        "n": 1880,
+        "n": 1889,
         "dir": {
-          "n": 1880,
-          "meanAbs": 9.78,
+          "n": 1889,
+          "meanAbs": 9.81,
           "medianAbs": 5,
           "p90Abs": 22,
           "minAbs": 0,
           "maxAbs": 178,
-          "mean": -5.84
+          "mean": -5.88
         },
         "spd": {
-          "n": 1880,
+          "n": 1889,
           "meanAbs": 2.13,
           "medianAbs": 1,
           "p90Abs": 6,
@@ -31,9 +31,9 @@
       },
       {
         "ft": 1000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 1.52,
           "medianAbs": 1,
           "p90Abs": 2,
@@ -42,7 +42,7 @@
           "mean": 1.09
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.21,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -53,9 +53,9 @@
       },
       {
         "ft": 2000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 1.25,
           "medianAbs": 1,
           "p90Abs": 2,
@@ -64,7 +64,7 @@
           "mean": 0.74
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.22,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -75,32 +75,32 @@
       },
       {
         "ft": 3000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
-          "meanAbs": 1.82,
+          "n": 1893,
+          "meanAbs": 1.84,
           "medianAbs": 1,
           "p90Abs": 3,
           "minAbs": 0,
           "maxAbs": 93,
-          "mean": 0.53
+          "mean": 0.52
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.3,
           "medianAbs": 0,
           "p90Abs": 1,
           "minAbs": 0,
           "maxAbs": 11,
-          "mean": 0.02
+          "mean": 0.03
         }
       },
       {
         "ft": 4000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
-          "meanAbs": 1.05,
+          "n": 1893,
+          "meanAbs": 1.06,
           "medianAbs": 1,
           "p90Abs": 2,
           "minAbs": 0,
@@ -108,7 +108,7 @@
           "mean": 0.26
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.21,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -119,10 +119,10 @@
       },
       {
         "ft": 5000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
-          "meanAbs": 1.1,
+          "n": 1893,
+          "meanAbs": 1.11,
           "medianAbs": 1,
           "p90Abs": 2,
           "minAbs": 0,
@@ -130,7 +130,7 @@
           "mean": 0.43
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.19,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -141,9 +141,9 @@
       },
       {
         "ft": 6000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 1.27,
           "medianAbs": 1,
           "p90Abs": 2,
@@ -152,7 +152,7 @@
           "mean": 0.08
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.19,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -163,9 +163,9 @@
       },
       {
         "ft": 7000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 1.1,
           "medianAbs": 0,
           "p90Abs": 2,
@@ -174,7 +174,7 @@
           "mean": 0.33
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.18,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -185,18 +185,18 @@
       },
       {
         "ft": 8000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
-          "meanAbs": 1.03,
+          "n": 1893,
+          "meanAbs": 1.04,
           "medianAbs": 0,
           "p90Abs": 2,
           "minAbs": 0,
           "maxAbs": 43,
-          "mean": 0.38
+          "mean": 0.37
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.19,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -207,9 +207,9 @@
       },
       {
         "ft": 9000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.94,
           "medianAbs": 0,
           "p90Abs": 2,
@@ -218,7 +218,7 @@
           "mean": 0.39
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.18,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -229,18 +229,18 @@
       },
       {
         "ft": 10000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 1.09,
           "medianAbs": 1,
           "p90Abs": 2,
           "minAbs": 0,
           "maxAbs": 103,
-          "mean": 0.5
+          "mean": 0.49
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.18,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -251,9 +251,9 @@
       },
       {
         "ft": 11000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 1.04,
           "medianAbs": 0,
           "p90Abs": 2,
@@ -262,7 +262,7 @@
           "mean": 0.38
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.17,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -273,10 +273,10 @@
       },
       {
         "ft": 12000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
-          "meanAbs": 1.04,
+          "n": 1893,
+          "meanAbs": 1.03,
           "medianAbs": 1,
           "p90Abs": 2,
           "minAbs": 0,
@@ -284,7 +284,7 @@
           "mean": 0.37
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.17,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -295,9 +295,9 @@
       },
       {
         "ft": 13000,
-        "n": 1884,
+        "n": 1893,
         "dir": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.84,
           "medianAbs": 0,
           "p90Abs": 2,
@@ -306,7 +306,7 @@
           "mean": 0.39
         },
         "spd": {
-          "n": 1884,
+          "n": 1893,
           "meanAbs": 0.12,
           "medianAbs": 0,
           "p90Abs": 0,
@@ -317,14 +317,14 @@
       }
     ],
     "asSchulze": {
-      "runs": 269,
+      "runs": 278,
       "notBuilt": 0,
       "byAltitude": [
         {
           "ft": 0,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.91,
             "medianAbs": 0,
             "p90Abs": 1,
@@ -333,7 +333,7 @@
             "mean": 0.62
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.03,
             "medianAbs": 0,
             "p90Abs": 0,
@@ -344,10 +344,10 @@
         },
         {
           "ft": 1000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.73,
+            "n": 278,
+            "meanAbs": 0.72,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
@@ -355,7 +355,7 @@
             "mean": 0.58
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.07,
             "medianAbs": 0,
             "p90Abs": 0,
@@ -366,62 +366,62 @@
         },
         {
           "ft": 2000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.6,
+            "n": 278,
+            "meanAbs": 0.59,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 11,
-            "mean": 0.33
+            "mean": 0.32
           },
           "spd": {
-            "n": 269,
-            "meanAbs": 0.08,
+            "n": 278,
+            "meanAbs": 0.09,
             "medianAbs": 0,
             "p90Abs": 0,
             "minAbs": 0,
             "maxAbs": 2,
-            "mean": -0.01
+            "mean": -0.02
           }
         },
         {
           "ft": 3000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.72,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 29,
-            "mean": 0.29
+            "mean": 0.27
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.09,
             "medianAbs": 0,
             "p90Abs": 0,
             "minAbs": 0,
             "maxAbs": 3,
-            "mean": 0
+            "mean": -0.01
           }
         },
         {
           "ft": 4000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.87,
+            "n": 278,
+            "meanAbs": 0.86,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 44,
-            "mean": 0.26
+            "mean": 0.22
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.11,
             "medianAbs": 0,
             "p90Abs": 0,
@@ -432,18 +432,18 @@
         },
         {
           "ft": 5000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.64,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 15,
-            "mean": 0.36
+            "mean": 0.33
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.12,
             "medianAbs": 0,
             "p90Abs": 0,
@@ -454,18 +454,18 @@
         },
         {
           "ft": 6000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.63,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 13,
-            "mean": 0.42
+            "mean": 0.4
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.13,
             "medianAbs": 0,
             "p90Abs": 1,
@@ -476,18 +476,18 @@
         },
         {
           "ft": 7000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.69,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 17,
-            "mean": 0.49
+            "mean": 0.46
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.15,
             "medianAbs": 0,
             "p90Abs": 1,
@@ -498,40 +498,40 @@
         },
         {
           "ft": 8000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.73,
+            "n": 278,
+            "meanAbs": 0.72,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 29,
-            "mean": 0.51
+            "mean": 0.48
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.13,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 3,
-            "mean": -0.02
+            "mean": -0.01
           }
         },
         {
           "ft": 9000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.84,
+            "n": 278,
+            "meanAbs": 0.82,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 47,
-            "mean": 0.56
+            "mean": 0.54
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.14,
             "medianAbs": 0,
             "p90Abs": 0,
@@ -542,21 +542,21 @@
         },
         {
           "ft": 10000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.82,
+            "n": 278,
+            "meanAbs": 0.8,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 51,
-            "mean": 0.57
+            "mean": 0.55
           },
           "spd": {
-            "n": 269,
-            "meanAbs": 0.13,
+            "n": 278,
+            "meanAbs": 0.12,
             "medianAbs": 0,
-            "p90Abs": 1,
+            "p90Abs": 0,
             "minAbs": 0,
             "maxAbs": 3,
             "mean": -0.02
@@ -564,18 +564,18 @@
         },
         {
           "ft": 11000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.81,
+            "n": 278,
+            "meanAbs": 0.78,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 52,
-            "mean": 0.55
+            "mean": 0.53
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.11,
             "medianAbs": 0,
             "p90Abs": 0,
@@ -586,18 +586,18 @@
         },
         {
           "ft": 12000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.74,
+            "n": 278,
+            "meanAbs": 0.72,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 35,
-            "mean": 0.48
+            "mean": 0.46
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.11,
             "medianAbs": 0,
             "p90Abs": 0,
@@ -608,59 +608,59 @@
         },
         {
           "ft": 13000,
-          "n": 269,
+          "n": 278,
           "dir": {
-            "n": 269,
-            "meanAbs": 0.67,
+            "n": 278,
+            "meanAbs": 0.65,
             "medianAbs": 0,
             "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 12,
-            "mean": 0.34
+            "mean": 0.33
           },
           "spd": {
-            "n": 269,
+            "n": 278,
             "meanAbs": 0.14,
             "medianAbs": 0,
-            "p90Abs": 0,
+            "p90Abs": 1,
             "minAbs": 0,
             "maxAbs": 3,
             "mean": 0.05
           }
         }
       ],
-      "runsAllWithin1": 241,
+      "runsAllWithin1": 248,
       "runsWithRowOver10Deg": 9,
       "runsWithRowOver3Kt": 1
     },
-    "runsWithRowOver10Deg": 584,
-    "runsWithRowOver3Kt": 464,
+    "runsWithRowOver10Deg": 587,
+    "runsWithRowOver3Kt": 465,
     "overCauses": {
       "dir": {
-        "surfaceOnly": 472,
+        "surfaceOnly": 474,
         "newerRun": 79,
-        "sameRunAloft": 33,
+        "sameRunAloft": 34,
         "unjudgedAloft": 0
       },
       "spd": {
-        "surfaceOnly": 413,
+        "surfaceOnly": 414,
         "newerRun": 47,
         "sameRunAloft": 4,
         "unjudgedAloft": 0
       }
     },
     "unaligned": {
-      "runs": 1883,
-      "hoursDiffered": 948,
+      "runs": 1892,
+      "hoursDiffered": 955,
       "medianMaxDirWhenDiffer": 17,
       "p90MaxDirWhenDiffer": 44
     },
     "rawMismatch": {
-      "judged": 1884,
-      "mismatched": 131
+      "judged": 1893,
+      "mismatched": 132
     },
     "ground": {
-      "n": 1884,
+      "n": 1893,
       "medianOurKt": 6,
       "medianTheirKt": 9,
       "medianRatio": 1.2
@@ -668,17 +668,17 @@
     "groundByLocalHour": [
       {
         "fromHour": 0,
-        "runs": 216,
+        "runs": 217,
         "medianOurKt": 5,
         "medianTheirKt": 9,
         "medianGapKt": 3
       },
       {
         "fromHour": 3,
-        "runs": 292,
+        "runs": 293,
         "medianOurKt": 5,
         "medianTheirKt": 10,
-        "medianGapKt": 3.5
+        "medianGapKt": 4
       },
       {
         "fromHour": 6,
@@ -689,28 +689,28 @@
       },
       {
         "fromHour": 9,
-        "runs": 303,
+        "runs": 304,
         "medianOurKt": 7,
         "medianTheirKt": 8,
         "medianGapKt": 1
       },
       {
         "fromHour": 12,
-        "runs": 258,
+        "runs": 260,
         "medianOurKt": 10,
         "medianTheirKt": 10,
         "medianGapKt": 1
       },
       {
         "fromHour": 15,
-        "runs": 191,
+        "runs": 194,
         "medianOurKt": 8,
         "medianTheirKt": 9,
         "medianGapKt": 1
       },
       {
         "fromHour": 18,
-        "runs": 339,
+        "runs": 340,
         "medianOurKt": 5,
         "medianTheirKt": 7,
         "medianGapKt": 1
@@ -1041,18 +1041,25 @@
       },
       {
         "date": "2026-11-08",
+        "runs": 9,
+        "medianOurKt": 6,
+        "medianTheirKt": 7,
+        "medianGapKt": 0
+      },
+      {
+        "date": "2026-11-09",
         "runs": 6,
-        "medianOurKt": 7,
-        "medianTheirKt": 9,
+        "medianOurKt": 6,
+        "medianTheirKt": 7.5,
         "medianGapKt": 1
       }
     ],
     "byTimeGap": [
       {
         "key": "same-hour-same-run",
-        "runs": 1753,
+        "runs": 1761,
         "dir": {
-          "n": 22789,
+          "n": 22893,
           "meanAbs": 0.68,
           "medianAbs": 0,
           "p90Abs": 1,
@@ -1061,7 +1068,7 @@
           "mean": 0.31
         },
         "spd": {
-          "n": 22789,
+          "n": 22893,
           "meanAbs": 0.1,
           "medianAbs": 0,
           "p90Abs": 0,
@@ -1072,18 +1079,18 @@
       },
       {
         "key": "same-hour-different-run",
-        "runs": 131,
+        "runs": 132,
         "dir": {
-          "n": 1703,
-          "meanAbs": 7.66,
+          "n": 1716,
+          "meanAbs": 7.63,
           "medianAbs": 4,
           "p90Abs": 15,
           "minAbs": 0,
           "maxAbs": 172,
-          "mean": 2.3
+          "mean": 2.26
         },
         "spd": {
-          "n": 1703,
+          "n": 1716,
           "meanAbs": 1.44,
           "medianAbs": 1,
           "p90Abs": 3,
@@ -1094,18 +1101,18 @@
       },
       {
         "key": "one-hour-apart",
-        "runs": 925,
+        "runs": 932,
         "dir": {
-          "n": 12025,
-          "meanAbs": 8.27,
+          "n": 12116,
+          "meanAbs": 8.26,
           "medianAbs": 5,
           "p90Abs": 18,
           "minAbs": 0,
           "maxAbs": 179,
-          "mean": 3.18
+          "mean": 3.17
         },
         "spd": {
-          "n": 12025,
+          "n": 12116,
           "meanAbs": 1.58,
           "medianAbs": 1,
           "p90Abs": 3,
@@ -1117,44 +1124,44 @@
     ]
   },
   "usairnet": {
-    "runs": 3001,
+    "runs": 3010,
     "unreadable": 239,
-    "sameReport": 1326,
+    "sameReport": 1335,
     "fieldsSameReport": [
       {
         "name": "dew point °F",
-        "n": 1326,
-        "agree": 673,
+        "n": 1335,
+        "agree": 677,
         "spread": {
-          "n": 1324,
+          "n": 1333,
           "meanAbs": 0.49,
           "medianAbs": 0,
           "p90Abs": 1,
           "minAbs": 0,
           "maxAbs": 1,
-          "mean": -0.18
+          "mean": -0.19
         }
       },
       {
         "name": "humidity % (derived)",
-        "n": 1326,
-        "agree": 253,
+        "n": 1335,
+        "agree": 257,
         "spread": {
-          "n": 1324,
-          "meanAbs": 1.73,
+          "n": 1333,
+          "meanAbs": 1.72,
           "medianAbs": 2,
           "p90Abs": 4,
           "minAbs": 0,
           "maxAbs": 5,
-          "mean": 0.27
+          "mean": 0.26
         }
       },
       {
         "name": "pressure inHg",
-        "n": 1326,
-        "agree": 1326,
+        "n": 1335,
+        "agree": 1335,
         "spread": {
-          "n": 1325,
+          "n": 1334,
           "meanAbs": 0,
           "medianAbs": 0,
           "p90Abs": 0,
@@ -1165,10 +1172,10 @@
       },
       {
         "name": "wind mph",
-        "n": 1326,
-        "agree": 1325,
+        "n": 1335,
+        "agree": 1334,
         "spread": {
-          "n": 1324,
+          "n": 1333,
           "meanAbs": 0,
           "medianAbs": 0,
           "p90Abs": 0,
@@ -1179,8 +1186,8 @@
       },
       {
         "name": "ceiling ft (theirs implied)",
-        "n": 1326,
-        "agree": 1326,
+        "n": 1335,
+        "agree": 1335,
         "spread": {
           "n": 452,
           "meanAbs": 0,
@@ -1193,16 +1200,16 @@
       },
       {
         "name": "flight rule",
-        "n": 1326,
-        "agree": 1324,
+        "n": 1335,
+        "agree": 1333,
         "spread": null
       },
       {
         "name": "temperature °F",
-        "n": 1206,
-        "agree": 527,
+        "n": 1215,
+        "agree": 533,
         "spread": {
-          "n": 1206,
+          "n": 1215,
           "meanAbs": 0.56,
           "medianAbs": 1,
           "p90Abs": 1,
@@ -1213,10 +1220,10 @@
       },
       {
         "name": "wind gust mph",
-        "n": 1206,
-        "agree": 1206,
+        "n": 1215,
+        "agree": 1215,
         "spread": {
-          "n": 115,
+          "n": 116,
           "meanAbs": 0,
           "medianAbs": 0,
           "p90Abs": 0,
@@ -1227,16 +1234,16 @@
       },
       {
         "name": "clouds",
-        "n": 1206,
-        "agree": 1206,
+        "n": 1215,
+        "agree": 1215,
         "spread": null
       },
       {
         "name": "visibility mi",
-        "n": 562,
-        "agree": 562,
+        "n": 571,
+        "agree": 571,
         "spread": {
-          "n": 562,
+          "n": 571,
           "meanAbs": 0,
           "medianAbs": 0,
           "p90Abs": 0,
@@ -1247,10 +1254,10 @@
       },
       {
         "name": "wind dir °",
-        "n": 562,
-        "agree": 562,
+        "n": 571,
+        "agree": 571,
         "spread": {
-          "n": 501,
+          "n": 510,
           "meanAbs": 0,
           "medianAbs": 0,
           "p90Abs": 0,
@@ -1261,30 +1268,30 @@
       },
       {
         "name": "sunrise (min past midnight)",
-        "n": 562,
-        "agree": 445,
+        "n": 571,
+        "agree": 451,
         "spread": {
-          "n": 562,
+          "n": 571,
           "meanAbs": 0.21,
           "medianAbs": 0,
           "p90Abs": 1,
           "minAbs": 0,
           "maxAbs": 1,
-          "mean": 0.13
+          "mean": 0.14
         }
       },
       {
         "name": "sunset (min past midnight)",
-        "n": 562,
+        "n": 571,
         "agree": 428,
         "spread": {
-          "n": 562,
-          "meanAbs": 0.36,
+          "n": 571,
+          "meanAbs": 0.37,
           "medianAbs": 0,
           "p90Abs": 2,
           "minAbs": 0,
           "maxAbs": 2,
-          "mean": -0.24
+          "mean": -0.25
         }
       }
     ],
@@ -1491,7 +1498,7 @@
       "dashboardBehindNwsListLacked": 0
     },
     "feeds": {
-      "iem": 2597,
+      "iem": 2606,
       "nws": 0
     },
     "arrival": [
