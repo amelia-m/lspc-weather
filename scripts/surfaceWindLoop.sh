@@ -8,7 +8,7 @@
 #   SAMPLE_ANCHOR=<epoch seconds> scripts/surfaceWindLoop.sh <minutes> <out.jsonl> [end-iso]
 #
 # The samples are paced from SAMPLE_ANCHOR (the job's start, which the
-# workflow sets once for its five slices; this slice's start when unset),
+# workflow sets once for its slices; this slice's start when unset),
 # not from the slice's start: paced from each one-hour slice, the samples
 # fell on the same minutes of every hour of a job, whatever the cadence,
 # and with a cadence that divides sixty (five, fifteen) on the same
@@ -34,7 +34,9 @@
 #
 # Never fails: a sample that cannot read a source logs that in its record
 # (the script does), and a crashed sample is skipped. The workflow uploads
-# whatever the file holds after each slice.
+# whatever the file holds after each slice; since 2026-11-10 a slice is one
+# cadence long, so each sample is uploaded as soon as it is taken and a
+# runner that dies (2026-11-07) takes at most the sample in hand with it.
 set -u
 
 minutes="$1"
@@ -54,12 +56,17 @@ touch "$out"
 # The first tick at or after this slice's start on the anchor's grid, then
 # every `every` seconds on that grid: a slow sample shortens the wait after
 # it instead of pushing every later sample back, and a slice boundary adds
-# no sample of its own. A tick the slice started a little after (the
-# workflow writes the anchor a second or two before the first slice) still
-# counts, so a job's first sample is at once, not a cadence later.
+# no sample of its own. The one tick the slice started a little after (the
+# workflow writes the anchor a second or two before the first slice, and
+# each upload step between slices takes a second or two) still counts, so
+# a job's first sample is at once, not a cadence later, and a slice of one
+# cadence gets its one sample. Only the latest such tick: catching up every
+# missed tick would take them back to back (seen with a 30-second cadence
+# under test, where the grace spans four ticks), which is not sampling.
 grace=120
-k=$(( (start - anchor + every - 1 - grace) / every ))
-[ "$k" -lt 0 ] && k=0
+last=$(( (start - anchor) / every ))
+[ "$last" -lt 0 ] && last=0
+if [ $((anchor + last * every)) -ge $((start - grace)) ]; then k=$last; else k=$((last + 1)); fi
 while :; do
   next=$((anchor + k * every))
   now=$(date -u +%s)

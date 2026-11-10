@@ -361,6 +361,12 @@ every hour of every job that started on time, which would have sampled
 KPMV's reports (:15, :35, :55) at fixed ages and the minutes when new
 runs reach Open-Meteo always or never (the maintainer's question,
 2026-10-30).
+Since 2026-11-10 each job samples in eighteen slices of one cadence and
+uploads after each, one artifact per sample, and queues its successor
+before it starts, so a runner that dies (as one did on 2026-11-07, taking
+an hour's unuploaded samples and the four hours to the next scheduled
+start with it) costs one sample and the minutes to the successor's
+setup.
 `parity-summary.yml` archives the artifacts daily as
 `data/parity/surfacewind-<YYYY-MM>.jsonl.gz` (`scripts/surfaceWindArchive.ts`,
 one record per run), and the weekly ceiling data refresh rebuilds the
