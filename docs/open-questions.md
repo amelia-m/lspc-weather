@@ -960,6 +960,55 @@ at the top of this section, and the workflow is deleted.
 
 ## Surface wind: which forecast source
 
+**The maintainer asked, 2026-11-10:** the Hourly wind card reads the NWS
+and "Open-Meteo seems to have less error"; can the card take a toggle, or
+was there a reason for keeping the NWS? Read that day from the figures on
+file (`public/wind-errors/summary.json` as rebuilt 2026-11-09, and the
+sections of docs/surface-wind-sources.md they come from), forecast minus
+KPMV's report, in knots:
+
+| series, against KPMV | hours | speed: median, mean | gust (where reported): mean |
+|---|---|---|---|
+| NWS from NOAA's archive, latest issuance, 2026-04-01 to 11-09 | 5,189 | 0, +0.1 | +1.7 (1,050 h) |
+| Open-Meteo's archive, start of run, the same span | 5,189 | +1, +0.6 | +2.9 (1,051 h) |
+| NWS hour, the standing sample, 2026-10-09 to 11-08 | 1,595 | −1, −0.6 | +2.6 (396) |
+| Open-Meteo hourly, the same sample | 1,595 | +1.2, +1.2 | +5.2 (396) |
+
+The median miss, sign aside, is about 2 kt for every series in every
+reading (docs/surface-wind-sources.md, "The first three weeks" and
+"Open-Meteo's archive"). What differs is the lean: the NWS a little low
+or centred, Open-Meteo a knot high, and on gusts Open-Meteo about twice
+as far above the report as the NWS. On direction Open-Meteo leans less
+(+5° against +9° over the archive). So the data on file do not say that
+Open-Meteo has less error; they say neither is clearly nearer, and that
+Open-Meteo's gust runs higher.
+
+Why the card reads the NWS, as the code and the notes have it: the
+Hourly wind chart and the Forecast flag read one series
+(`snapshot.hourly`, the NWS gridpoint), so what the flag says about the
+coming hours is what the chart draws, which is the fault the flag was
+built to close (CLAUDE.md, "The wind and gust limits are read against
+the forecast too"); the maintainer's call of 2026-10-30 put Open-Meteo's
+10 m wind on the Winds aloft card's Surface row and nowhere else; and
+the card's standing note on the forecast gust (`FORECAST_GUST_NOTE`) is
+the NWS gust's six-month record. A toggle that switched the chart alone
+would put the chart and the flag on different forecasts; one that
+switched both would move when the flag fires (Open-Meteo's gust is about
+2.5 kt higher on average), and the flag's figures beside a published
+limit would then depend on a reader's setting. The app's Open-Meteo
+request carries hourly 10 m speed and direction for two days and no
+gust; the card's horizons run to seven days, so Open-Meteo on the card
+means one more hourly variable and seven days in that request.
+
+Options, for the maintainer: (a) leave it, and put the comparison above
+on the card as a standing note beside the NWS series, the pattern of the
+gust note; (b) draw Open-Meteo's 10 m wind as a second line on the chart,
+labelled, with the flag staying on the NWS, so a reader sees the spread
+without choosing; (c) a toggle that switches the chart and the flag
+together, with the flag naming its source. Not started: the
+recommendation is (a) or (b), since neither changes when a flag fires on
+a reader's setting, and the figures do not favour a switch.
+
 **A first reading, 2026-10-30; the sampler runs on** (docs/surface-wind-sources.md,
 "The first three weeks"): over three weeks of one autumn none of the four
 is clearly nearer KPMV's measured speed. Over 1,217 reports from 2026-10-09
