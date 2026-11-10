@@ -8,3 +8,6 @@ coverage
 *.tsbuildinfo
 
 __pycache__/
+
+# scripts/surfaceWindLoop.sh writes the last sample's output here when run by hand
+sample.log
