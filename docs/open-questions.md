@@ -117,6 +117,48 @@ trailing slash the app sends is dropped in the listing), so the whole
 path from a reader's browser to the dashboard is proven on the
 `amelia-m` site. Nothing waits here.
 
+## Issue #283: uspa.org behind a Cloudflare challenge, the SIM check cannot read it
+
+The sky-parity run of 2026-11-09 (22:45Z, run 42714634052) failed every
+SIM-text test, 31 of them, and opened #283: uspa.org answered each
+request `403` with `cf-mitigated: challenge` and the title "Just a
+moment..." (Cloudflare's browser check), from a runner in ORD. Every
+other check in the run passed (the sky parse, the flight category, the
+TAF decode, the Pilots tab links, the two comparisons). The run of
+2026-11-08 had passed, so the challenge began between 18:07Z on the 8th
+and 22:45Z on the 9th. Read from the sandbox on 2026-11-10 at 01:08Z:
+the same answer to `/sim` and `/sim/2-1`, from IAD, so it is not one
+runner's address. The same thing happened on 2026-10-09 (#135, before
+the refusal's detail was logged) and was gone the next day.
+
+Nothing in the code is wrong, and nothing in it should change to get
+past the challenge: it is uspa.org's choice who reads its pages by
+script, the check already sends an honest User-Agent naming itself, and
+working around a bot check is not something this project does. What the
+check loses while the challenge stands is its daily fingerprint of the
+cited SIM parts; the citations themselves are unaffected (the links are
+for a reader's browser, which passes the challenge). **For the
+maintainer:** if the next run (2026-11-10) passes, close #283 as the
+one-day refusal it was on 10-09, and nothing changes. If it keeps
+failing, the SIM check becomes a by-hand read until uspa.org answers
+scripts again, and the question is whether a daily issue for a standing
+`cf-mitigated: challenge` is wanted or the check should log that refusal
+as a note and fail only on a changed part; that is a change to what the
+check promises (CLAUDE.md, "Citations": it fails when uspa.org cannot
+be fetched), so it is yours to call.
+
+## The surface-wind sampler lost its runner once (2026-11-07)
+
+The sampler's job of 2026-11-07 16:37Z (run 42392240606) failed in its
+fourth hour: GitHub's annotation reads "The hosted runner lost
+communication with the server", the first three hours' artifacts were
+uploaded, hours 4 and 5 were not run, and the five-hourly schedule
+started the next job at 23:57Z. About four hours of samples (19:38 to
+23:57Z) are missing from `surfacewind-2026-11`; nothing in the script
+failed, and the job's own log had expired by 2026-11-10. The first such
+loss in the sampler's 1,000-odd hours; noted so a gap in the archive
+that day is not read as a fault of the sources.
+
 ## Done: how often each check cried wolf (2026-11-07)
 
 Tallied at the maintainer's word in docs/live-checks-tally.md, from the
@@ -666,7 +708,7 @@ so that lever is gone; the other two stand.
 Sent by the maintainer on 2026-11-04 as
 <https://github.com/open-meteo/open-meteo/pull/2300>, "Update README.md:
 Add LSPC Weather to the list of users", one commit, no conflicts; it
-waits on Open-Meteo's maintainers (read 2026-11-05 and again 2026-11-07: open, no review yet;
+waits on Open-Meteo's maintainers (read 2026-11-05, 11-07 and 11-10: open, no review yet;
 from the sandbox only the page renders, github.com and api.github.com
 answer a script 403 for a repository outside the session's scope). Raised 2026-10-08. Open-Meteo's README
 (<https://github.com/open-meteo/open-meteo>) asks: "Do you use Open-Meteo?
