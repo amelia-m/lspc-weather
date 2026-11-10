@@ -96,3 +96,14 @@ reason that was not the site's. Nothing in either check's rules needs
 loosening on this record; the retry rules are set to the failures seen,
 and the thing to improve is not the checks but who reads them. Take the
 tally again after a month of the retry rules.
+
+## Since the tally
+
+- 2026-11-09, sky-parity: the SIM text check failed all 31 tests on a
+  Cloudflare challenge from uspa.org (`cf-mitigated: challenge`), the
+  same refusal as 2026-10-09; every other check passed (#283,
+  docs/open-questions.md). Another host's refusal, by the check's own
+  rule a failure, since a cited part cannot be checked while it stands.
+- 2026-11-07, the surface-wind sampler (not one of the two checks, and
+  it opens no issue): GitHub's runner lost communication in the job's
+  fourth hour; the schedule restarted it seven hours on.
