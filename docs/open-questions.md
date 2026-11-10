@@ -177,7 +177,13 @@ one-minute slices: two samples in each, on the one grid, and slices 0 to
 take their own tick. The archiver reads any `surfacewind-*`
 artifact and paginates the listing, so eighteen a run instead of five
 changes nothing there; about 110 artifacts a day, each a few kilobytes,
-kept thirty days.
+kept thirty days. The first run of the new workflow (42736056524,
+dispatched on `main` 2026-11-10 01:28Z, started 02:07Z when the old-style
+job ended) queued its successor (42740517396, pending from 02:07Z) and
+uploaded one artifact per slice at 02:24, 02:41 and 02:58Z, seventeen
+minutes apart, about a kilobyte each. The 00:41Z scheduled start that
+night never appeared in the run list, GitHub's throttling of a cron
+line, which is what the queued successor is for.
 
 ## Done: how often each check cried wolf (2026-11-07)
 
