@@ -827,7 +827,11 @@ sixty, and the samples are paced from one anchor per job, so they walk
 through every minute of the hour instead of sitting on the same few) it
 runs `scripts/surfaceWindCompare.live.ts`
 through `scripts/surfaceWindLoop.sh` and uploads `surfacewind-*` artifacts
-the parity summary never reads; `parity-summary.yml` archives them daily
+the parity summary never reads (since 2026-11-10 one artifact per
+sample, in eighteen one-cadence slices, and each run queues its
+successor as the keeper does: on 2026-11-07 a lost runner took an hour's
+unuploaded samples and the four hours to the next scheduled start with
+it); `parity-summary.yml` archives them daily
 as `data/parity/surfacewind-<YYYY-MM>.jsonl.gz` (`scripts/surfaceWindArchive.ts`,
 beside the first sample's two dated files), and the weekly refresh rebuilds
 the `#wind-errors` page's sample section from every `surfacewind-*`

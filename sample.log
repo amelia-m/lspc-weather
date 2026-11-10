@@ -1,0 +1,24 @@
+(node:778) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:793) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ RUN  v4.1.9 /home/user/lspc-weather
+
+(node:816) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+=== surface wind at 40.8703,-96.1085, run 2026-11-10T01:25:45Z ===
+METAR KPMV (iem): 31004KT 310° 4 kt @01:15Z
+NWS gridpoint hour: 320° 4 kt G10 @01:00Z  updateTime 2026-11-10T00:35:26+00:00  hourly product updateTime 2026-11-10T00:35:26+00:00
+Open-Meteo hourly (nearest): 328° 7.2 kt G14.4 @01:00Z
+Open-Meteo current: 330° 7.2 kt G14.4 @01:15Z  same as HRRR: true
+  ncep_hrrr_conus: init 2026-11-09T23:00:00.000Z avail 2026-11-10T00:41:36.000Z
+  ncep_hrrr_conus_15min: init 2026-11-10T00:00:00.000Z avail 2026-11-10T01:19:03.000Z
+@@parity {"kind":"surfacewind","v":2,"at":"2026-11-10T01:25:45.249Z","dz":"40.8703,-96.1085","metar":{"source":"iem","obsAt":"2026-11-10T01:15:00.000Z","wind":{"t":"2026-11-10T01:15:00.000Z","dir":310,"spd":4,"gust":null},"group":"31004KT","iemObsAt":"2026-11-10T01:15:00.000Z","nwsObsAt":"2026-11-09T23:15:00.000Z"},"nws":{"fetchedAt":"2026-11-10T01:25:45.715Z","updateTime":"2026-11-10T00:35:26+00:00","lastModified":"Tue, 10 Nov 2026 00:35:26 GMT","expires":"Tue, 10 Nov 2026 02:21:37 GMT","maxAgeS":3352,"hourlyUpdateTime":"2026-11-10T00:35:26+00:00","hourlyGeneratedAt":"2026-11-10T01:21:38+00:00","hours":[{"t":"2026-11-09T23:00:00.000Z","dir":270,"spd":5,"gust":11},{"t":"2026-11-10T00:00:00.000Z","dir":300,"spd":5,"gust":9},{"t":"2026-11-10T01:00:00.000Z","dir":320,"spd":4,"gust":10},{"t":"2026-11-10T02:00:00.000Z","dir":330,"spd":4,"gust":10},{"t":"2026-11-10T03:00:00.000Z","dir":330,"spd":4,"gust":9}]},"om":{"fetchedAt":"2026-11-10T01:25:45.927Z","generationMs":0.08893013000488281,"gridLat":40.862823,"gridLon":-96.11679,"elevationM":355,"current":{"t":"2026-11-10T01:15:00.000Z","dir":330,"spd":7.2,"gust":14.4,"intervalS":900},"hourly":[{"t":"2026-11-09T23:00:00.000Z","dir":284,"spd":5.8,"gust":9.3},{"t":"2026-11-10T00:00:00.000Z","dir":320,"spd":5.7,"gust":13.2},{"t":"2026-11-10T01:00:00.000Z","dir":328,"spd":7.2,"gust":14.4},{"t":"2026-11-10T02:00:00.000Z","dir":332,"spd":7.3,"gust":14},{"t":"2026-11-10T03:00:00.000Z","dir":333,"spd":6.2,"gust":12.1}],"m15":[{"t":"2026-11-09T23:15:00.000Z","dir":299,"spd":6.2,"gust":12.1},{"t":"2026-11-09T23:30:00.000Z","dir":316,"spd":6.6,"gust":14.4},{"t":"2026-11-09T23:45:00.000Z","dir":318,"spd":7.4,"gust":14.8},{"t":"2026-11-10T00:00:00.000Z","dir":320,"spd":5.7,"gust":13.2},{"t":"2026-11-10T00:15:00.000Z","dir":320,"spd":6.5,"gust":14},{"t":"2026-11-10T00:30:00.000Z","dir":322,"spd":6.8,"gust":14.4},{"t":"2026-11-10T00:45:00.000Z","dir":326,"spd":7.1,"gust":14.8},{"t":"2026-11-10T01:00:00.000Z","dir":328,"spd":7.2,"gust":14.4},{"t":"2026-11-10T01:15:00.000Z","dir":330,"spd":7.2,"gust":14.4},{"t":"2026-11-10T01:30:00.000Z","dir":330,"spd":7.2,"gust":14},{"t":"2026-11-10T01:45:00.000Z","dir":330,"spd":7.2,"gust":13.8},{"t":"2026-11-10T02:00:00.000Z","dir":332,"spd":7.3,"gust":14},{"t":"2026-11-10T02:15:00.000Z","dir":332,"spd":7.1,"gust":13.8}],"lastModified":null,"cacheControl":null,"sameAsHrrr":true},"omMeta":{"ncep_hrrr_conus":{"init":"2026-11-09T23:00:00.000Z","modified":"2026-11-10T00:28:32.000Z","avail":"2026-11-10T00:41:36.000Z","stepS":3600},"ncep_hrrr_conus_15min":{"init":"2026-11-10T00:00:00.000Z","modified":"2026-11-10T01:15:17.000Z","avail":"2026-11-10T01:19:03.000Z","stepS":900}}}
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  01:25:44
+   Duration  24.07s (transform 175ms, setup 0ms, import 207ms, tests 23.69s, environment 0ms)
+

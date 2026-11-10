@@ -159,6 +159,26 @@ failed, and the job's own log had expired by 2026-11-10. The first such
 loss in the sampler's 1,000-odd hours; noted so a gap in the archive
 that day is not read as a fault of the sources.
 
+**Done 2026-11-10, at the maintainer's word (the findings are to be
+logged durably):** the job now samples in eighteen slices of one
+cadence, seventeen minutes, with an upload after each, so a sample is an
+artifact within seconds of being taken and a lost runner costs at most
+the sample in hand; and each run queues its successor before it starts,
+as the forecast keeper does, so the successor begins the moment a run
+ends, however it ends, instead of at the next five-hourly start. The
+loop script's grid logic takes only the latest tick within its grace
+when a slice starts a little late (the upload step between slices takes
+a second or two): the old arithmetic took every tick in the grace window
+back to back, which a 30-second cadence under test showed (four samples
+in a one-minute slice) and the 17-minute cadence never could, since the
+grace is two minutes. Checked locally with a 30-second cadence over two
+one-minute slices: two samples in each, on the one grid, and slices 0 to
+17 of the production grid, each starting two seconds a slice late, each
+take their own tick. The archiver reads any `surfacewind-*`
+artifact and paginates the listing, so eighteen a run instead of five
+changes nothing there; about 110 artifacts a day, each a few kilobytes,
+kept thirty days.
+
 ## Done: how often each check cried wolf (2026-11-07)
 
 Tallied at the maintainer's word in docs/live-checks-tally.md, from the
