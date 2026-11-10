@@ -104,6 +104,8 @@ tally again after a month of the retry rules.
   same refusal as 2026-10-09; every other check passed (#283,
   docs/open-questions.md). Another host's refusal, by the check's own
   rule a failure, since a cited part cannot be checked while it stands.
+  Over by 14:40Z on 2026-11-10, when a dispatched run passed all 32 SIM
+  tests: a one-day refusal again, the second a month apart.
 - 2026-11-07, the surface-wind sampler (not one of the two checks, and
   it opens no issue): GitHub's runner lost communication in the job's
   fourth hour; the schedule restarted it seven hours on.

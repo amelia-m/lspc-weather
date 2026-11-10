@@ -117,7 +117,19 @@ trailing slash the app sends is dropped in the listing), so the whole
 path from a reader's browser to the dashboard is proven on the
 `amelia-m` site. Nothing waits here.
 
-## Issue #283: uspa.org behind a Cloudflare challenge, the SIM check cannot read it
+## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
+
+**Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
+200 again, and a sky-parity run dispatched on `main` at 14:41Z (run
+42836524194) passed every test, the 32 SIM-text ones included: the
+fingerprint of every cited part matched, the page still names the 2026
+SIM. So it was a one-day refusal, as #135 was, from some time between
+18:07Z on the 8th and 22:45Z on the 9th to some time between 01:20Z and
+14:40Z on the 10th. Nothing changed in the code; #283 is the
+maintainer's to close (the sandbox cannot). Two such days a month apart
+(10-09, 11-09) are worth a line in the tally; if a third comes, the
+question below of what the check should do with a standing challenge is
+live again.
 
 The sky-parity run of 2026-11-09 (22:45Z, run 42714634052) failed every
 SIM-text test, 31 of them, and opened #283: uspa.org answered each
