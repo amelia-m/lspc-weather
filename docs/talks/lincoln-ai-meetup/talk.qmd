@@ -135,7 +135,7 @@ These are the questions the dashboard was built around: cloud, winds aloft, gust
 .reveal .kicker { color: var(--accent-2); font-size: 0.8em; font-weight: 600; margin: 0 0 0.2em; }
 </style>
 
-What a jumper at this drop zone used to open one by one, and what the dashboard reads or is checked against. Every link is the one the live site offers.
+The club: [Lincoln Sport Parachute Club](https://skydivelspc.com/), Brown's Airport, Weeping Water, Nebraska. Below, what a jumper there used to open one by one, and what the dashboard reads or is checked against; every other link is the one the live site offers. [C37]{.ref}
 
 :::: {.columns}
 ::: {.column width="50%"}
