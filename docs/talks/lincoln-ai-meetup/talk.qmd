@@ -1,5 +1,5 @@
 ---
-title: "Built to be checked"
+title: "Trust, but verify"
 subtitle: "How a skydiving weather dashboard was developed with AI agents"
 author: "Amelia Miramonti · Lincoln AI meetup"
 date: "November 2026"

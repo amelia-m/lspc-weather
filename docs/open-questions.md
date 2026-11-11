@@ -143,7 +143,11 @@ look, the drop zone's point, why several stations, the hourly chart
 before and after night shading, "trusting and skeptical", and a link to
 the club's website), the mock redrawn partly cloudy to sit beside the
 thread's "low" clouds, the thread's three screens as fragments, and the
-title "Built to be checked". The club's link, skydivelspc.com, is from
+title "Built to be checked", then "Trust, but verify" (her word, the same
+day). The deployed deck was loaded in the sandbox's browser that night
+(title, 26 slides, the three fragments, the club's link, every image
+decoding on its slide, no console error) and the live-site check passed
+on the deploy of the mock and title. The club's link, skydivelspc.com, is from
 an Omaha Magazine article and the club's listed email domain (a web
 search that day): the host is outside the sandbox's network, so the
 link was not opened from here; the maintainer gave the same address
