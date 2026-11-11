@@ -1,0 +1,253 @@
+---
+title: "Built with the brakes on"
+subtitle: "How a skydiving weather dashboard was developed with AI agents"
+author: "Amelia Miramonti · Lincoln AI meetup"
+date: "2026-11"
+format:
+  revealjs:
+    theme: white
+    slide-number: true
+    transition: none
+    embed-resources: true
+    width: 1280
+    height: 800
+    footer: "LSPC Weather · amelia-m.github.io/lspc-weather"
+---
+
+
+## What it is {.smaller}
+
+<style>
+/* The same look under Quarto and pandoc's reveal.js writer: a 1280 by 800
+   slide, plain headings, tables that fit. */
+.reveal { font-size: 30px; }
+.reveal h1 { font-size: 1.9em; text-transform: none; }
+.reveal h2 { font-size: 1.35em; text-transform: none; margin-bottom: 0.5em; }
+.reveal p, .reveal li { line-height: 1.35; }
+.reveal ul { margin-left: 1em; }
+.reveal blockquote { font-size: 0.95em; width: 92%; box-shadow: none; border-left: 4px solid #999; padding-left: 0.6em; font-style: normal; }
+.reveal table { font-size: 0.74em; width: 100%; line-height: 1.3; }
+.reveal table th, .reveal table td { padding: 0.2em 0.45em; vertical-align: top; }
+/* pandoc puts a heading's {.smaller} on the section and on the h2; the
+   heading keeps its size. */
+.reveal section.smaller { font-size: 0.9em; }
+.reveal h2.smaller { font-size: 1.35em; }
+.reveal section.smaller table { font-size: 0.74em; }
+.reveal .ref { font-size: 0.6em; color: #8a8a8a; }
+.reveal .columns { display: flex; gap: 1.5em; align-items: flex-start; text-align: left; }
+.reveal .column { min-width: 0; }
+.reveal .column img { max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 0.3em; }
+.reveal section img { margin: 0; max-width: 100%; }
+.reveal section { text-align: left; }
+.reveal h1, .reveal h2 { text-align: left; }
+.reveal .center, .reveal .center h1, .reveal .center h2, .reveal .title-slide { text-align: center; }
+.reveal .center h1 { margin-top: 2em; }
+</style>
+
+:::: {.columns}
+::: {.column width="55%"}
+![](img/dashboard-1280.png)
+:::
+::: {.column width="45%"}
+**LSPC Weather**: a weather dashboard for one drop zone, the Lincoln Sport Parachute Club at Brown's Airport (NE69), Weeping Water, Nebraska.
+
+- One page in place of a three-site routine: the NWS forecast, a cloud forecast and the KPMV METAR.
+- Adds winds aloft for freefall drift and density altitude for the jump plane.
+- Public, open source, on GitHub Pages. No account, no server of its own.
+
+First commit 26 June 2026. 626 commits since; 275 pull requests, every one merged. [C1, C3]{.ref}
+:::
+::::
+
+::: notes
+Open with the screenshot: this is what jumpers see on a Saturday morning. Point at "Flags only, not a go/no-go call. You decide." That line is the whole talk. Say the three sites it replaced and that it is a static page reading public data in the browser.
+:::
+
+## The rule that shaped everything
+
+> The dashboard never gives a go/no-go verdict. It flags a condition and hands the reader the rule behind it, so a human can check it and decide.
+
+> A flag fires on a limit some published source sets, or on a plain observed fact, or it does not fire at all.
+
+A threshold nobody published cannot be checked, so it gets no flag, no warning colour, no worded judgement. [C6]{.ref}
+
+Written down on 22 September, after four commits from 12 to 21 September that removed every number the app had invented. [C7, C10]{.ref}
+
+::: notes
+The first version had its own thresholds, like any weather app. The problem is the domain: a skydiver reading "caution" from an app wants to know whose caution. The fix was a rule, not a feature: if no published source sets the number, the app does not get to assert it. Quote the two lines. The rule is the first thing in the working notes every agent reads.
+:::
+
+## What the rule threw out
+
+Ceiling bands · dew-point spread · precipitation chance · forecast storm chance · gust spread · winds-aloft speed bands · density-altitude bands · the last-load countdown · every "watch" band · two colour highlights · a storm colour · a "fog favorable" verdict · a derived sky verdict [C8]{.ref}
+
+Each is listed in the notes by name, "so nobody reintroduces them believing they were an oversight."
+
+The one exception: a licensed jumper's own limits, which the app always calls theirs. [C24]{.ref}
+
+::: notes
+Two of these survived an earlier sweep because they were colour and text rather than flags. A number is not the only way to assert something. That sentence is also in the notes. The list exists because an agent, or a reviewer bot, will suggest "add a caution when gusts exceed 20 knots" as a helpful small change, and it has to be refused with a reason the next agent can find.
+:::
+
+## Six months, dated from the history {.smaller}
+
+| when | what |
+|---|---|
+| 26 Jun | first commit; features through the summer (17, 20 and 25 commits a month) |
+| 12 Sep | the citations page: every USPA and FAA claim, with what the source says |
+| 19 to 21 Sep | the no-verdict rule; invented thresholds removed |
+| 22 Sep | the working notes (CLAUDE.md) and the open-questions file begin |
+| 23 Sep | a daily check compares the app's METAR and TAF decoding with aviationweather.gov's |
+| Oct | samplers and archives: forecasts kept to score later, sources compared every few hours (399 commits) |
+| 17 Oct | the deployed site loaded in a browser every day at three widths |
+| 20 Oct | a relay for the Air Force base's TAF, which no browser-readable feed carries |
+| 5 Nov | the app's own flag levels put to the club's safety officer as a question |
+
+[C1, C2, C10]{.ref}
+
+::: notes
+Every date here is the first commit touching the file, read from git log. The shape: a summer of features, then September turned into a question of trust, and October into measuring. The commit count jumped in October because measuring generates a lot of small, checked changes.
+:::
+
+## Who did what
+
+**Amelia decided.** 29 dated decisions are quoted in the notes as "the maintainer, <date>": own thresholds on Licensed only (10 Oct); "make it very clear" the wind card shows a report, not a forecast (30 Oct); hold visibility to both rows of the rule (31 Oct); keep the sampler logging over seasons (30 Oct); findings logged durably (10 Nov). [C23, C24]{.ref}
+
+**Agents did the work.** 520 of 626 commits are authored by an agent, in four long sessions; 87 by the project's own workflows; 12 by Amelia. [C4, C5]{.ref}
+
+**The notes are the contract.** Agents work under written rules: four gates before a push; prove a new test by breaking the thing it names; every finding goes in the repository in the same piece of work, and a hook repeats that on every prompt. [C22]{.ref}
+
+::: notes
+The split is not "AI writes code, human reviews code". It is "human decides what may be asserted and what the project is for; agents build, measure and write up; the repository is the shared memory". The decisions are dated and attributed in the notes so a later agent can tell a rule from a habit. The hook was added after two investigations were reported only in chat and lost until asked for.
+:::
+
+## What went wrong, and what each left behind {.smaller}
+
+| the fault | what changed |
+|---|---|
+| 23 Sep: seven observations arrived with an empty cloud decode; the dashboard showed "Clear" and VFR under a 2,700 ft overcast. Found from a screenshot of the live site. [C11]{.ref} | The sky is read from the METAR text first. A daily check compares the app's decode with another decoder's. |
+| usairnet redesigned its page; a comparison parsed nothing for 17 days, because it was built never to fail. [C12]{.ref} | A quiet comparison now shows as a count on the parity page, and the notes say to read it. |
+| 28 Oct: GitHub's runner image changed; the live-site check failed six times in two days before it started, and nobody read the issue. [C13]{.ref} | The runner is pinned. "A failing check that nobody reads is the same as no check." |
+| A button sat 3 px off a 320 px page, only in the half hour before midnight; the daily check ran in the morning. [C14]{.ref} | A second leg checks the fixture build with the clock at 11:45 PM. |
+| 7 Nov: a runner died with an hour of samples on it. [C15]{.ref} | One upload per sample; each run queues its successor. |
+
+::: notes
+Pick two to tell in full: the overcast, because it is the one that mattered to a jumper, and the runner image, because the lesson is about people, not code. Each row is a paragraph in the notes, dated, and the fix is a rule or a check, never "be more careful".
+:::
+
+## Checking the checkers
+
+Two checks watch the project every day: a decoder comparison against aviationweather.gov and uspa.org, and the live site in a browser.
+
+Tallied on 7 November, every failure against what it turned out to be: [C16]{.ref}
+
+| check | failed | real | the check's own | another host's bad minute |
+|---|---|---|---|---|
+| decoder comparison | 12 of 45 runs | 4 | 3 | 5 |
+| live site | 8 of 148 runs | 1 | 6 (one cause) | 1 unexplained |
+
+The five cries of wolf were each one bad answer from a server; one retry now covers them. uspa.org refused scripts for a day on 9 October and again on 9 November. [C27]{.ref}
+
+::: notes
+The point: a check that fails is only useful if someone reads why. Seven of twelve decoder failures found something, twice the app's own decoder, never shown to a reader. The live-site check was wrong six times for one reason that was not the site's. The verdict was: nothing to loosen, and take the tally again in a month.
+:::
+
+## The citations
+
+Every USPA, CFR and FAA reference began as an AI recollection. [C17]{.ref}
+
+- Each was then read at its source: the USPA manual on 22 September and every cited part again on 8 October; the federal regulations on 23 September and again on 3 November.
+- 21 citations; a page that shows, per claim, what the section says, when it was read, and what a reading could not settle. [C18]{.ref}
+- A daily check fingerprints every cited part, so a changed sentence at the source fails the build.
+- The page takes an instructor's answers. The review is still waiting on the club's safety officer. [C19]{.ref}
+
+::: notes
+"Began as an AI recollection" is in the README in those words. The honest version of citing is: here is what we read, when, and here is the question only an instructor can answer. The flag levels themselves, "watch" and "caution", are the app's own words, and on 5 November they became a question on that page rather than a thing the app asserts.
+:::
+
+## The stack, in one slide {.smaller}
+
+- **A static page**: React and TypeScript, built with Vite, deployed to GitHub Pages on every merge. 24,652 lines of source; 1,368 tests, all hermetic. [C20, C21]{.ref}
+- **Data read in the browser** from public sources: the National Weather Service, Open-Meteo (credited wherever its data show, as its licence asks), the Iowa Environmental Mesonet, usairnet, NOAA's archives. [C20, C25]{.ref}
+- **One small server**: a Cloudflare Worker relay for the Air Force base's TAF, which no browser-readable feed carries.
+- **Ten GitHub workflows** that are not CI: daily decoder checks, a browser check of the live site, samplers every 17 minutes, hourly forecast keeping, daily archiving, a weekly data refresh.
+- **The notes**: 22 documents, about 79,000 words, and a 9,200-word CLAUDE.md that every agent reads first. [C21]{.ref}
+- A winds-aloft table that reproduces a widely used tool's (Mark Schulze's) within 4° and 1 kt, and a written account of every way it can differ. [C26]{.ref}
+
+::: notes
+Keep this to a minute. The unusual part is not the app, it is the measurement machinery around it and the size of the notes relative to the code: more words of notes than lines of source.
+:::
+
+## AI disclosure
+
+- **Tools**: Claude Code, in cloud sessions, with GitHub, a sandbox with a browser, and an allowlisted network. Two commits on 1 October came from an OpenAI code agent. [C4]{.ref}
+- **Models**, from the commit trailers: Claude Opus 5.5 on 296 commits, Claude Fable 5.1 on 137, Claude Opus 5 on 38, Claude Opus 4.8 on 22, Claude Haiku 4.5 on 2. [C5]{.ref}
+- **What they did**: wrote the code, the tests, the workflows and the notes; ran the comparisons; read the sources and recorded when; drafted this deck and its claims table.
+- **How the work was reviewed**: four gates on every change; a code review on every pull request; the maintainer's decisions dated in the notes; the citations read at their sources and the review handed to an instructor; this deck's claims checked against the repository by a separate agent before it was shown.
+
+::: notes
+Say plainly which parts of this talk an agent wrote: the deck and the claims table, from the repository, and that you read both. The disclosure is itself one of the project's rules.
+:::
+
+## What you could reuse
+
+1. **A rule about what the software may assert**, written down, with the list of what it removed, so the next agent does not add it back.
+2. **The repository as the shared memory**: every finding in a file, dated and attributed; a hook that reminds the agent on every prompt.
+3. **Checks against other decoders and the live site**, not only against fixtures; then a tally of how often each cries wolf.
+4. **Prove a test by breaking the thing it names.**
+5. **Hand the questions a document cannot settle to the people who can**, on a page that takes their answers.
+
+::: notes
+Close on the first and the last. The rule is the design; the questions page is the humility. Everything in between is plumbing you can copy from the repository.
+:::
+
+## Appendix {.center}
+
+## The numbers, with their commands {.smaller}
+
+| figure | command, read 2026-11-11 |
+|---|---|
+| 626 commits on `main`, first 2026-06-26 | `git rev-list --count origin/main`; `git log --reverse --format=%ad` |
+| 17 / 20 / 25 / 118 / 399 / 47 by month | `git log --format=%ad --date=format:%Y-%m \| sort \| uniq -c` |
+| 275 PRs, all merged; 13 issues | GitHub REST, `pulls?state=all`, `issues?state=all` |
+| 520 / 87 / 12 / 4 / 2 commits by author | `git shortlog -sn --no-merges origin/main` |
+| models on 296 / 137 / 38 / 22 / 2 commits | `git log --format=%b \| grep -i Co-Authored-By` |
+| 1,368 tests in 90 files | `npm test` |
+| 24,652 source lines, 16,958 test lines | `find src tests -name '*.ts*' \| xargs wc -l` |
+| 22 docs, 79,000 words; CLAUDE.md 9,200 | `wc -w docs/*.md CLAUDE.md` |
+
+[C1 to C5, C20, C21]{.ref}
+
+## The workflows {.smaller}
+
+| workflow | when | what |
+|---|---|---|
+| Deploy to GitHub Pages | every push to `main` | builds and publishes the site, then starts the live-site check |
+| CI | pull requests | the four gates |
+| Sky decode parity | daily | the METAR and TAF decode against aviationweather.gov; the Pilots links; the SIM fingerprints |
+| Live site check | daily and after deploys | every page at 1280, 390 and 320 px; a second leg with the clock at 11:45 PM |
+| Source comparisons | eight times a day | the winds-aloft table against Mark Schulze's; the observation against usairnet |
+| Parity summary | daily | combines the comparisons, archives them, publishes the parity page |
+| Surface-wind sample | continuous, every 17 min | four forecasts against KPMV's reports |
+| Forecast keeper | hourly | keeps what the forecasts said, to score later |
+| Ceiling data refresh | weekly | NDFD and Open-Meteo archives, the error pages rebuilt |
+| Cloud-cover fetch | by hand | months of archives in minutes on a runner |
+
+[C20]{.ref}
+
+## The overcast of 23 September, in full {.smaller}
+
+api.weather.gov served seven consecutive KPMV observations with an empty cloud-layer decode and an empty description while the METAR text read OVC027 to OVC035. Re-read twenty minutes later the same seven were still empty while the next report was decoded: a gap, not a lag. usairnet's decode of the same METAR read "Solid Overcast at 2700 ft". The dashboard showed "Clear", "No ceiling" and VFR under a 2,700 ft overcast, with no flag, found from a screenshot of the deployed site, which no sandbox check had covered.
+
+Since then: the sky is parsed from the METAR text and the API's decode is used only when the text has none; an empty sky means *not reported*, and the app never shows VFR from a report with no ceiling in it; the Data health card grades the two decodes against each other; and a workflow compares the app's parse with aviationweather.gov's every morning. [C11]{.ref}
+
+## How a day's work goes (3 to 10 November) {.smaller}
+
+- A question from the maintainer ("is IFR structurally incompatible with the visibility rule? double check the CFR") became a reading of the regulation through the eCFR API, a comparison the flag now prints, and a new citation, with its reading date logged.
+- "Draft the flag levels question for the S&TA" became a Part B entry on the citations page that derives its wording from the flags' own constants, so the question cannot drift from the badges.
+- "Make sure this doesn't happen again" after a lost runner became one artifact per sample and a self-queuing job, checked locally at a 30-second cadence, which found a second bug in the loop's arithmetic.
+- Each change: four gates, a test proved by breaking, a code review, a pull request, a merge, a deploy, the live-site check, and a paragraph in the notes. 29 pull requests in eight days. [C28]{.ref}
+
+::: notes
+This is the session that drafted this deck, allowed as a source by the maintainer. The pattern is the same every day: a question, a measurement, a change held to a test, a note.
+:::
