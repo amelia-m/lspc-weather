@@ -53,6 +53,8 @@ const PAGES: { name: string; path: string }[] = [
   { name: 'Parity', path: '#parity' },
   { name: 'Wind errors', path: '#wind-errors' },
   { name: 'Ceiling errors', path: 'ceiling-errors/index.html' },
+  // The talk, a reveal.js deck in one file (public/talk/, scripts/renderTalk.sh).
+  { name: 'Talk', path: 'talk/index.html' },
 ];
 const WIDTHS = [1280, 390, 320];
 // How long a card may stay pending before the check counts it. The app
@@ -182,6 +184,7 @@ async function observe(
       ceilingMeta: document.querySelector('#meta .error')?.textContent ?? null,
       ceilingCharts: document.querySelectorAll('#ch-size svg, #ch-spread svg, #ch-band svg').length,
       panels: document.querySelectorAll('.panel').length,
+      slides: document.querySelectorAll('.reveal .slides section').length,
       hourNavs: document.querySelector('.fc-nav') != null,
     };
   });
@@ -211,6 +214,10 @@ async function observe(
   if (page.name === 'Ceiling errors') {
     o.checks.push({ name: 'ceiling data file loaded', ok: seen.ceilingMeta == null, detail: seen.ceilingMeta ?? undefined });
     o.checks.push({ name: 'ceiling charts drew', ok: seen.ceilingCharts === 3, detail: `${seen.ceilingCharts} of 3` });
+  } else if (page.name === 'Talk') {
+    // A deck, not the app: no cards, no Data health card. The slides are
+    // in the file, so fewer than a dozen means the file did not load whole.
+    o.checks.push({ name: 'the deck rendered', ok: seen.slides >= 12, detail: `${seen.slides} slides` });
   } else {
     o.checks.push({ name: 'cards rendered', ok: seen.panels > 0, detail: `${seen.panels} panels` });
   }

@@ -16,6 +16,32 @@ format:
 ---
 
 
+## What a weather app says {.app}
+
+:::: {.columns}
+::: {.column width="34%"}
+![](img/weather-app-mock.png)
+:::
+::: {.column width="66%"}
+**Sunny, Saturday and Sunday.** Highs in the sixties. Nothing to decide.
+
+A jumper's questions are different:
+
+- How low is the cloud at nine in the morning, and does it lift?
+- What is the wind doing at 3,000 feet, and at the top of the climb?
+- What will it gust to at noon, and against which limit?
+- Is any of that still true by the second load?
+
+A general app has no row for any of them. The thread on the next slide is what happened when someone asked.
+
+[The phone is a mock-up drawn for this talk, not any real app's forecast.]{.caption} [C31]{.ref}
+:::
+::::
+
+::: notes
+Set up the gap: a sunny icon is the whole forecast for most people. For a drop zone it is almost none of it. Say the mock is a mock. Then the thread.
+:::
+
 ## Why I built it
 
 ::: {.chat}
@@ -93,6 +119,7 @@ Read the thread aloud, or let the room read it. The routine it describes, the NO
 .reveal .chat img { max-height: 520px; width: auto; max-width: 32%; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(0,0,0,0.45); margin: 0; }
 .reveal .chat p { margin: 0; display: contents; }
 .reveal .caption { display: block; font-size: 0.7em; color: var(--muted); margin-top: 0.5em; }
+.reveal section.app .column img { max-height: 540px; width: auto; }
 .reveal .kicker { color: var(--accent-2); font-size: 0.8em; font-weight: 600; margin: 0 0 0.2em; }
 </style>
 

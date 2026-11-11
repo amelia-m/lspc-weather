@@ -117,18 +117,27 @@ trailing slash the app sends is dropped in the listing), so the whole
 path from a reader's browser to the dashboard is proven on the
 `amelia-m` site. Nothing waits here.
 
-## Waiting: the Lincoln AI meetup deck (2026-11-11)
+## Done: the Lincoln AI meetup deck, a page of the site (2026-11-11)
 
 Drafted at the maintainer's word of 2026-11-10 under
-`docs/talks/lincoln-ai-meetup/` on the working branch: the contract, the
-deck (`talk.qmd`, rendered `talk.html`), its claims table and a reviewer
-agent's report, which found four wrong figures and one unreproducible
-count, all fixed the same day and recorded at the end of `review.md`.
-The deck is the maintainer's to read, change, merge and present; nothing
-of it is on `main` or published. Quarto is not installable in the sandbox
-(GitHub's release downloads are outside the session's repository scope),
-so drafts render with pandoc's reveal.js writer from the same source; the
-README there has the commands.
+`docs/talks/lincoln-ai-meetup/`: the contract, the deck (`talk.qmd`, a
+draft render `talk.html` with its claim references), its claims table
+and a reviewer agent's report, which found four wrong figures and one
+unreproducible count, all fixed the same day and recorded at the end of
+`review.md`. Merged and deployed the next day at her word ("merge it,
+deploy as a page linked at the bottom of the main dashboard"):
+`scripts/renderTalk.sh` renders the site's copy, `public/talk/index.html`,
+one self-contained file with the references stripped and the images and
+icon embedded; the footer links it ("How this was built"); the live-site
+check loads it with the other pages and counts its slides;
+`tests/talkPage.test.ts` holds the link, the file and the contract's
+identifier rules. Quarto is not installable in the sandbox (GitHub's
+release downloads are outside the session's repository scope), so the
+render is pandoc's reveal.js writer from the same source; the README
+there has the commands. Two slides were added after the review at the
+maintainer's word: a mock-up of a generic weather app (a prop, labelled
+as one) and her text thread with a jumper (whose consent to show their
+messages is hers to have), claims C30 and C31.
 
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
