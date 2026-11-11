@@ -30,5 +30,7 @@ the YAML header. For the final render, the claim references can be dropped
 by `scripts/renderTalk.sh`, which renders the site's copy,
 `public/talk/index.html`, without them (and the draft here with `--draft`).
 
-The deck is not part of the site: the deploy workflow publishes `dist/`,
-which does not include `docs/`.
+The site's copy is `public/talk/index.html`, linked from the dashboard's
+footer as "How this was built" (the maintainer, 2026-11-11) and loaded by
+the live-site check with the other pages. Re-run `scripts/renderTalk.sh`
+after any change to the source, and `--draft` for the copy here.
