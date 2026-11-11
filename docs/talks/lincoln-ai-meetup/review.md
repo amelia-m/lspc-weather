@@ -122,3 +122,4 @@ partly cloudy, so the instructor's "low" clouds in the thread can sit
 beside it, and in larger, higher-contrast type (C31 updated); the three
 chat screens made fragments, one click each; the title changed from
 "Built with the brakes on" to "Built to be checked". No claim changed.
+Then, at her word, "Trust, but verify".
