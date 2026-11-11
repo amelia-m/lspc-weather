@@ -25,21 +25,16 @@ format:
 ::: {.column width="66%"}
 **Sunny, Saturday and Sunday.** Highs in the sixties. Nothing to decide.
 
-A jumper's questions are different:
+That is the whole forecast, for most people.
 
-- How low is the cloud at nine in the morning, and does it lift?
-- What is the wind doing at 3,000 feet, and at the top of the climb?
-- What will it gust to at noon, and against which limit?
-- Is any of that still true by the second load?
-
-A general app has no row for any of them. The thread on the next slide is what happened when someone asked.
+So I asked my instructor whether we would be jumping.
 
 [The phone is a mock-up drawn for this talk, not any real app's forecast.]{.caption} [C31]{.ref}
 :::
 ::::
 
 ::: notes
-Set up the gap: a sunny icon is the whole forecast for most people. For a drop zone it is almost none of it. Say the mock is a mock. Then the thread.
+Set up the gap: a sunny icon is the whole forecast for most people. Say the mock is a mock. Then the thread.
 :::
 
 ## Why I built it
@@ -50,10 +45,25 @@ Set up the gap: a sunny icon is the whole forecast for most people. For a drop z
 ![](img/chat-3.png)
 :::
 
-[A text thread, 2026: "Is there a better app?" The answer was three sites, read one by one. "I might play around with whether I can build a dashboard just for funsies."]{.caption} [C30]{.ref}
+[A text thread with my instructor, 2026: "Is there a better app?" The answer was three sites, read one by one. "I might play around with whether I can build a dashboard just for funsies."]{.caption} [C30]{.ref}
 
 ::: notes
-Read the thread aloud, or let the room read it. The routine it describes, the NOAA hourly graph, usairnet's cloud forecast and the KPMV METAR, is the one the dashboard replaced; the next slide has the links. "I don't even know what METAR is yet" is where this started.
+Read the thread aloud, or let the room read it. "Low and dense first thing, then windy all weekend" under a sunny icon. The routine it describes, the NOAA hourly graph, usairnet's cloud forecast and the KPMV METAR, is the one the dashboard replaced; the slide after next has the links. "I don't even know what METAR is yet" is where this started.
+:::
+
+## What a jumper needs to know
+
+The sunny icon answered none of these:
+
+- How low is the cloud at nine in the morning, and does it lift?
+- What is the wind doing at 3,000 feet, and at the top of the climb?
+- What will it gust to at noon, and against which limit?
+- Is any of that still true by the second load?
+
+A general app has no row for any of them. Three sites between them did, if you knew where to look and what the codes meant.
+
+::: notes
+These are the questions the dashboard was built around: cloud, winds aloft, gusts against a limit, and whether the answer holds for the day. Each one became a card. The next slide is the three sites, and what the dashboard is checked against.
 :::
 
 ## The sites behind it {.smaller}
