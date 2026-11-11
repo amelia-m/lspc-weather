@@ -47,4 +47,4 @@ repository before the deck is called done (`review.md`).
 What the deck does not claim: anything about how long the work took in
 hours, what it cost, or who else uses the site (the page count's
 figures are the maintainer's to quote, docs/page-counts.md).
-| C37 | The club's website is skydivelspc.com (the link on "The sites behind it") | an Omaha Magazine article on the club points readers to skydivelspc.com, and the club's listed email is at that domain (web search, 2026-11-11); the site itself could not be opened from the sandbox, whose network does not allow the host, so the link was not checked here | the maintainer, a member, to confirm the link opens the club's site |
+| C37 | The club's website is skydivelspc.com (the link on "The sites behind it") | an Omaha Magazine article on the club points readers to skydivelspc.com, and the club's listed email is at that domain (web search, 2026-11-11); the site itself could not be opened from the sandbox, whose network does not allow the host, so the link was not checked here; the maintainer gave the same address, https://skydivelspc.com/, later that day | confirmed by the maintainer, a member, 2026-11-11 |

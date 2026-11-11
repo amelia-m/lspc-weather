@@ -146,7 +146,8 @@ thread's "low" clouds, the thread's three screens as fragments, and the
 title "Built to be checked". The club's link, skydivelspc.com, is from
 an Omaha Magazine article and the club's listed email domain (a web
 search that day): the host is outside the sandbox's network, so the
-link was not opened from here and is the maintainer's to confirm. Still
+link was not opened from here; the maintainer gave the same address
+later that day. Still
 waiting on her: Mark Schulze's page as a screenshot file, for "Two of
 them, as they look".
 
