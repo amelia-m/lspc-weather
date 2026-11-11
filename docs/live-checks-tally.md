@@ -99,6 +99,19 @@ tally again after a month of the retry rules.
 
 ## Since the tally
 
+- 2026-11-11, live-site: the run after the parity summary's deploy
+  (20:07Z, run 43093550048, issue #297) failed Jumpers at 1280 and 320 px
+  on both loads with "Winds aloft: error: HTTP 503 for api.open-meteo.com";
+  every other page passed, and the late-evening leg passed. Another host's
+  outage, not the site's: Open-Meteo answered 200 again from the sandbox
+  at 21:50Z. The seventh live-site failure that was not the site's; #297
+  is the maintainer's to close (the sandbox cannot). The same hour,
+  GitHub's runner queue was slow for this account: the keeper's job
+  started 2 h 6 min after its run was created (17:17Z to 19:23Z), the
+  sampler's 5 h 6 min (13:57Z to 19:03Z), and PR #298's CI run sat
+  queued with no job for over 76 minutes (from 20:33Z); the deploy and
+  parity runs of 19:47Z to 20:17Z did start within a minute. Not a
+  failure of either check, but worth knowing when a run "has not run".
 - 2026-11-09, sky-parity: the SIM text check failed all 31 tests on a
   Cloudflare challenge from uspa.org (`cf-mitigated: challenge`), the
   same refusal as 2026-10-09; every other check passed (#283,
