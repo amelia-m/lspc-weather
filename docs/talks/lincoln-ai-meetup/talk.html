@@ -427,10 +427,11 @@ Water, Nebraska.</p>
 forecast and the KPMV METAR.</li>
 <li>Adds winds aloft for freefall drift and density altitude for the
 jump plane.</li>
-<li>Public, open source, on GitHub Pages. No account, no server of its
-own.</li>
+<li>Public, open source, on GitHub Pages. No account; the page reads
+public data in the browser, with one small relay for the one feed a
+browser cannot read.</li>
 </ul>
-<p>First commit 26 June 2026. 626 commits since; 275 pull requests,
+<p>First commit 26 June 2026. 626 commits since; 276 pull requests,
 every one merged. <span class="ref">C1, C3</span></p>
 </div>
 </div>
@@ -518,7 +519,7 @@ says</td>
 <td>the working notes (CLAUDE.md) and the open-questions file begin</td>
 </tr>
 <tr class="odd">
-<td>23 Sep</td>
+<td>23 to 24 Sep</td>
 <td>a daily check compares the app’s METAR and TAF decoding with
 aviationweather.gov’s</td>
 </tr>
@@ -554,15 +555,16 @@ changes.</p>
 </section>
 <section id="who-did-what" class="slide level2">
 <h2>Who did what</h2>
-<p><strong>Amelia decided.</strong> 29 dated decisions are quoted in the
-notes as “the maintainer, <date>”: own thresholds on Licensed only (10
-Oct); “make it very clear” the wind card shows a report, not a forecast
-(30 Oct); hold visibility to both rows of the rule (31 Oct); keep the
-sampler logging over seasons (30 Oct); findings logged durably (10 Nov).
-<span class="ref">C23, C24</span></p>
-<p><strong>Agents did the work.</strong> 520 of 626 commits are authored
-by an agent, in four long sessions; 87 by the project’s own workflows;
-12 by Amelia. <span class="ref">C4, C5</span></p>
+<p><strong>Amelia decided.</strong> The notes quote her decisions by
+date, 31 times, as “the maintainer, <date>” or “the maintainer’s call”:
+own thresholds on Licensed only (10 Oct); “make it very clear” the wind
+card shows a report, not a forecast (30 Oct); hold visibility to both
+rows of the rule (31 Oct); keep the sampler logging over seasons (30
+Oct); findings logged durably (10 Nov). <span class="ref">C23,
+C24</span></p>
+<p><strong>Agents did the work.</strong> Of 626 commits, 520 are
+authored by a Claude agent, in four long sessions, and 2 by an OpenAI
+agent; 91 by the project’s own workflows; 13 by Amelia. <span class="ref">C4, C5</span></p>
 <p><strong>The notes are the contract.</strong> Agents work under
 written rules: four gates before a push; prove a new test by breaking
 the thing it names; every finding goes in the repository in the same
@@ -617,7 +619,8 @@ midnight; the daily check ran in the morning. <span class="ref">C14</span></td>
 PM.</td>
 </tr>
 <tr class="odd">
-<td>7 Nov: a runner died with an hour of samples on it. <span class="ref">C15</span></td>
+<td>7 Nov: a runner died with an hour’s samples on it, unuploaded, and
+the next start was four hours off. <span class="ref">C15</span></td>
 <td>One upload per sample; each run queues its successor.</td>
 </tr>
 </tbody>
@@ -663,8 +666,8 @@ be: <span class="ref">C16</span></p>
 </tbody>
 </table>
 <p>The five cries of wolf were each one bad answer from a server; one
-retry now covers them. uspa.org refused scripts for a day on 9 October
-and again on 9 November. <span class="ref">C27</span></p>
+retry now covers four of the five kinds. uspa.org refused scripts for a
+day on 9 October and again on 9 November. <span class="ref">C27</span></p>
 <aside class="notes">
 <p>The point: a check that fails is only useful if someone reads why.
 Seven of twelve decoder failures found something, twice the app’s own
@@ -680,10 +683,10 @@ to loosen, and take the tally again in a month.</p>
 <li>Each was then read at its source: the USPA manual on 22 September
 and every cited part again on 8 October; the federal regulations on 23
 September and again on 3 November.</li>
-<li>21 citations; a page that shows, per claim, what the section says,
+<li>19 citations; a page that shows, per claim, what the section says,
 when it was read, and what a reading could not settle. <span class="ref">C18</span></li>
 <li>A daily check fingerprints every cited part, so a changed sentence
-at the source fails the build.</li>
+at the source fails the daily check.</li>
 <li>The page takes an instructor’s answers. The review is still waiting
 on the club’s safety officer. <span class="ref">C19</span></li>
 </ul>
@@ -735,15 +738,14 @@ Opus 4.8 on 22, Claude Haiku 4.5 on 2. <span class="ref">C5</span></li>
 workflows and the notes; ran the comparisons; read the sources and
 recorded when; drafted this deck and its claims table.</li>
 <li><strong>How the work was reviewed</strong>: four gates on every
-change; a code review on every pull request; the maintainer’s decisions
-dated in the notes; the citations read at their sources and the review
-handed to an instructor; this deck’s claims checked against the
-repository by a separate agent before it was shown.</li>
+change, run again by CI on every pull request; the maintainer’s
+decisions dated in the notes; the citations read at their sources and
+the review handed to an instructor; this deck’s claims checked against
+the repository by a separate agent before it was shown.</li>
 </ul>
 <aside class="notes">
 <p>Say plainly which parts of this talk an agent wrote: the deck and the
-claims table, from the repository, and that you read both. The
-disclosure is itself one of the project’s rules.</p>
+claims table, from the repository, and that you read both.</p>
 </aside>
 </section>
 <section id="what-you-could-reuse" class="slide level2">
@@ -928,9 +930,9 @@ constants, so the question cannot drift from the badges.</li>
 artifact per sample and a self-queuing job, checked locally at a
 30-second cadence, which found a second bug in the loop’s
 arithmetic.</li>
-<li>Each change: four gates, a test proved by breaking, a code review, a
+<li>Each change: four gates, a test proved by breaking, a review pass, a
 pull request, a merge, a deploy, the live-site check, and a paragraph in
-the notes. 29 pull requests in eight days. <span class="ref">C28</span></li>
+the notes. 28 pull requests in eight days. <span class="ref">C28</span></li>
 </ul>
 <aside class="notes">
 <p>This is the session that drafted this deck, allowed as a source by

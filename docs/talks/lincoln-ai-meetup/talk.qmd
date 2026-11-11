@@ -53,9 +53,9 @@ format:
 
 - One page in place of a three-site routine: the NWS forecast, a cloud forecast and the KPMV METAR.
 - Adds winds aloft for freefall drift and density altitude for the jump plane.
-- Public, open source, on GitHub Pages. No account, no server of its own.
+- Public, open source, on GitHub Pages. No account; the page reads public data in the browser, with one small relay for the one feed a browser cannot read.
 
-First commit 26 June 2026. 626 commits since; 275 pull requests, every one merged. [C1, C3]{.ref}
+First commit 26 June 2026. 626 commits since; 276 pull requests, every one merged. [C1, C3]{.ref}
 :::
 ::::
 
@@ -97,7 +97,7 @@ Two of these survived an earlier sweep because they were colour and text rather 
 | 12 Sep | the citations page: every USPA and FAA claim, with what the source says |
 | 19 to 21 Sep | the no-verdict rule; invented thresholds removed |
 | 22 Sep | the working notes (CLAUDE.md) and the open-questions file begin |
-| 23 Sep | a daily check compares the app's METAR and TAF decoding with aviationweather.gov's |
+| 23 to 24 Sep | a daily check compares the app's METAR and TAF decoding with aviationweather.gov's |
 | Oct | samplers and archives: forecasts kept to score later, sources compared every few hours (399 commits) |
 | 17 Oct | the deployed site loaded in a browser every day at three widths |
 | 20 Oct | a relay for the Air Force base's TAF, which no browser-readable feed carries |
@@ -111,9 +111,9 @@ Every date here is the first commit touching the file, read from git log. The sh
 
 ## Who did what
 
-**Amelia decided.** 29 dated decisions are quoted in the notes as "the maintainer, <date>": own thresholds on Licensed only (10 Oct); "make it very clear" the wind card shows a report, not a forecast (30 Oct); hold visibility to both rows of the rule (31 Oct); keep the sampler logging over seasons (30 Oct); findings logged durably (10 Nov). [C23, C24]{.ref}
+**Amelia decided.** The notes quote her decisions by date, 31 times, as "the maintainer, <date>" or "the maintainer's call": own thresholds on Licensed only (10 Oct); "make it very clear" the wind card shows a report, not a forecast (30 Oct); hold visibility to both rows of the rule (31 Oct); keep the sampler logging over seasons (30 Oct); findings logged durably (10 Nov). [C23, C24]{.ref}
 
-**Agents did the work.** 520 of 626 commits are authored by an agent, in four long sessions; 87 by the project's own workflows; 12 by Amelia. [C4, C5]{.ref}
+**Agents did the work.** Of 626 commits, 520 are authored by a Claude agent, in four long sessions, and 2 by an OpenAI agent; 91 by the project's own workflows; 13 by Amelia. [C4, C5]{.ref}
 
 **The notes are the contract.** Agents work under written rules: four gates before a push; prove a new test by breaking the thing it names; every finding goes in the repository in the same piece of work, and a hook repeats that on every prompt. [C22]{.ref}
 
@@ -129,7 +129,7 @@ The split is not "AI writes code, human reviews code". It is "human decides what
 | usairnet redesigned its page; a comparison parsed nothing for 17 days, because it was built never to fail. [C12]{.ref} | A quiet comparison now shows as a count on the parity page, and the notes say to read it. |
 | 28 Oct: GitHub's runner image changed; the live-site check failed six times in two days before it started, and nobody read the issue. [C13]{.ref} | The runner is pinned. "A failing check that nobody reads is the same as no check." |
 | A button sat 3 px off a 320 px page, only in the half hour before midnight; the daily check ran in the morning. [C14]{.ref} | A second leg checks the fixture build with the clock at 11:45 PM. |
-| 7 Nov: a runner died with an hour of samples on it. [C15]{.ref} | One upload per sample; each run queues its successor. |
+| 7 Nov: a runner died with an hour's samples on it, unuploaded, and the next start was four hours off. [C15]{.ref} | One upload per sample; each run queues its successor. |
 
 ::: notes
 Pick two to tell in full: the overcast, because it is the one that mattered to a jumper, and the runner image, because the lesson is about people, not code. Each row is a paragraph in the notes, dated, and the fix is a rule or a check, never "be more careful".
@@ -146,7 +146,7 @@ Tallied on 7 November, every failure against what it turned out to be: [C16]{.re
 | decoder comparison | 12 of 45 runs | 4 | 3 | 5 |
 | live site | 8 of 148 runs | 1 | 6 (one cause) | 1 unexplained |
 
-The five cries of wolf were each one bad answer from a server; one retry now covers them. uspa.org refused scripts for a day on 9 October and again on 9 November. [C27]{.ref}
+The five cries of wolf were each one bad answer from a server; one retry now covers four of the five kinds. uspa.org refused scripts for a day on 9 October and again on 9 November. [C27]{.ref}
 
 ::: notes
 The point: a check that fails is only useful if someone reads why. Seven of twelve decoder failures found something, twice the app's own decoder, never shown to a reader. The live-site check was wrong six times for one reason that was not the site's. The verdict was: nothing to loosen, and take the tally again in a month.
@@ -157,8 +157,8 @@ The point: a check that fails is only useful if someone reads why. Seven of twel
 Every USPA, CFR and FAA reference began as an AI recollection. [C17]{.ref}
 
 - Each was then read at its source: the USPA manual on 22 September and every cited part again on 8 October; the federal regulations on 23 September and again on 3 November.
-- 21 citations; a page that shows, per claim, what the section says, when it was read, and what a reading could not settle. [C18]{.ref}
-- A daily check fingerprints every cited part, so a changed sentence at the source fails the build.
+- 19 citations; a page that shows, per claim, what the section says, when it was read, and what a reading could not settle. [C18]{.ref}
+- A daily check fingerprints every cited part, so a changed sentence at the source fails the daily check.
 - The page takes an instructor's answers. The review is still waiting on the club's safety officer. [C19]{.ref}
 
 ::: notes
@@ -183,10 +183,10 @@ Keep this to a minute. The unusual part is not the app, it is the measurement ma
 - **Tools**: Claude Code, in cloud sessions, with GitHub, a sandbox with a browser, and an allowlisted network. Two commits on 1 October came from an OpenAI code agent. [C4]{.ref}
 - **Models**, from the commit trailers: Claude Opus 5.5 on 296 commits, Claude Fable 5.1 on 137, Claude Opus 5 on 38, Claude Opus 4.8 on 22, Claude Haiku 4.5 on 2. [C5]{.ref}
 - **What they did**: wrote the code, the tests, the workflows and the notes; ran the comparisons; read the sources and recorded when; drafted this deck and its claims table.
-- **How the work was reviewed**: four gates on every change; a code review on every pull request; the maintainer's decisions dated in the notes; the citations read at their sources and the review handed to an instructor; this deck's claims checked against the repository by a separate agent before it was shown.
+- **How the work was reviewed**: four gates on every change, run again by CI on every pull request; the maintainer's decisions dated in the notes; the citations read at their sources and the review handed to an instructor; this deck's claims checked against the repository by a separate agent before it was shown.
 
 ::: notes
-Say plainly which parts of this talk an agent wrote: the deck and the claims table, from the repository, and that you read both. The disclosure is itself one of the project's rules.
+Say plainly which parts of this talk an agent wrote: the deck and the claims table, from the repository, and that you read both.
 :::
 
 ## What you could reuse
@@ -246,7 +246,7 @@ Since then: the sky is parsed from the METAR text and the API's decode is used o
 - A question from the maintainer ("is IFR structurally incompatible with the visibility rule? double check the CFR") became a reading of the regulation through the eCFR API, a comparison the flag now prints, and a new citation, with its reading date logged.
 - "Draft the flag levels question for the S&TA" became a Part B entry on the citations page that derives its wording from the flags' own constants, so the question cannot drift from the badges.
 - "Make sure this doesn't happen again" after a lost runner became one artifact per sample and a self-queuing job, checked locally at a 30-second cadence, which found a second bug in the loop's arithmetic.
-- Each change: four gates, a test proved by breaking, a code review, a pull request, a merge, a deploy, the live-site check, and a paragraph in the notes. 29 pull requests in eight days. [C28]{.ref}
+- Each change: four gates, a test proved by breaking, a review pass, a pull request, a merge, a deploy, the live-site check, and a paragraph in the notes. 28 pull requests in eight days. [C28]{.ref}
 
 ::: notes
 This is the session that drafted this deck, allowed as a source by the maintainer. The pattern is the same every day: a question, a measurement, a change held to a test, a note.
