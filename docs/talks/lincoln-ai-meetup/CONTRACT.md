@@ -87,7 +87,9 @@ table itself.
   airport, the station, the data services and vendors, and Mark Schulze's
   winds-aloft tool, as the live site names them. The maintainer's own
   name as the presenter.
-- Not shown: hostnames other than the public site's, usernames, session
+- Not shown: hostnames other than the public site's and the public data
+  services' own (uspa.org, aviationweather.gov, api.weather.gov are the
+  services named above, by their addresses), usernames, session
   links, run and issue IDs, full local paths, other people's names, the
   club's waiver sign (the photo in docs is a transcription source, not a
   slide), anything about individual jumpers or instructors.

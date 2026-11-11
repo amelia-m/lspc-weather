@@ -117,6 +117,19 @@ trailing slash the app sends is dropped in the listing), so the whole
 path from a reader's browser to the dashboard is proven on the
 `amelia-m` site. Nothing waits here.
 
+## Waiting: the Lincoln AI meetup deck (2026-11-11)
+
+Drafted at the maintainer's word of 2026-11-10 under
+`docs/talks/lincoln-ai-meetup/` on the working branch: the contract, the
+deck (`talk.qmd`, rendered `talk.html`), its claims table and a reviewer
+agent's report, which found four wrong figures and one unreproducible
+count, all fixed the same day and recorded at the end of `review.md`.
+The deck is the maintainer's to read, change, merge and present; nothing
+of it is on `main` or published. Quarto is not installable in the sandbox
+(GitHub's release downloads are outside the session's repository scope),
+so drafts render with pandoc's reveal.js writer from the same source; the
+README there has the commands.
+
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
 **Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
