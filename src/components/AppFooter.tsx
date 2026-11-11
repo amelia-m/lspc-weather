@@ -7,6 +7,13 @@ import { OpenMeteoCredit } from './OpenMeteoCredit';
  *  its data file relative to this. */
 export const CEILING_ERRORS_URL = `${import.meta.env.BASE_URL}ceiling-errors/index.html`;
 
+/** The talk on how this dashboard was built, served from public/talk/: a
+ *  reveal.js deck rendered by scripts/renderTalk.sh from
+ *  docs/talks/lincoln-ai-meetup/talk.qmd (the maintainer, 2026-11-11: a
+ *  page linked at the bottom of the main dashboard). By its file, as the
+ *  ceiling page is. */
+export const TALK_URL = `${import.meta.env.BASE_URL}talk/index.html`;
+
 /** The dashboard's footer: where the data come from, Open-Meteo's licence
  *  credit, the pages behind the dashboard, and a sign-off. */
 export function AppFooter(): JSX.Element {
@@ -27,6 +34,9 @@ export function AppFooter(): JSX.Element {
           it reads its own data file and draws its own charts. */}
       <a href={CEILING_ERRORS_URL}>Ceiling forecast errors</a> — the NWS forecast ceiling, and the
       rain and thunder chances, against KPMV&rsquo;s reports, hour by hour.
+      <br />
+      <a href={TALK_URL}>How this was built</a> — a short talk on the project&rsquo;s development
+      with AI agents, with every claim traced to the repository.
       <br />
       <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
         Source on GitHub

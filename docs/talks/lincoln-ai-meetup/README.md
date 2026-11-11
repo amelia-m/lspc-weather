@@ -27,8 +27,8 @@ pandoc -f markdown talk.qmd -t revealjs -s --embed-resources \
 
 With Quarto installed, `quarto render talk.qmd` gives the same deck from
 the YAML header. For the final render, the claim references can be dropped
-with `sed -E 's/ ?\[C[0-9, to]+\]\{\.ref\}//g' talk.qmd > talk-final.qmd`
-before rendering.
+by `scripts/renderTalk.sh`, which renders the site's copy,
+`public/talk/index.html`, without them (and the draft here with `--draft`).
 
 The deck is not part of the site: the deploy workflow publishes `dist/`,
 which does not include `docs/`.
