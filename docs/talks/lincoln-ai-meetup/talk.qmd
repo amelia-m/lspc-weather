@@ -2,12 +2,13 @@
 title: "Built with the brakes on"
 subtitle: "How a skydiving weather dashboard was developed with AI agents"
 author: "Amelia Miramonti · Lincoln AI meetup"
-date: "2026-11"
+date: "November 2026"
 format:
   revealjs:
     theme: white
     slide-number: true
     transition: none
+    controls: false
     embed-resources: true
     width: 1280
     height: 800
@@ -15,34 +16,99 @@ format:
 ---
 
 
-## What it is {.smaller}
+## The sites behind it {.smaller}
 
 <style>
-/* The same look under Quarto and pandoc's reveal.js writer: a 1280 by 800
-   slide, plain headings, tables that fit. */
-.reveal { font-size: 30px; }
-.reveal h1 { font-size: 1.9em; text-transform: none; }
-.reveal h2 { font-size: 1.35em; text-transform: none; margin-bottom: 0.5em; }
-.reveal p, .reveal li { line-height: 1.35; }
+/* One look under Quarto and pandoc's reveal.js writer. The palette is the
+   dashboard's own: its navy, panel grey-blue and accent blue. */
+:root {
+  --bg: #0f1420; --panel: #182033; --panel-2: #1f2940; --line: #2c3850;
+  --text: #e8edf7; --muted: #9aa6ba; --accent: #4ea3ff; --accent-2: #ffd166;
+}
+.reveal, .reveal .slides, .reveal-viewport { background: var(--bg); }
+.reveal { font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; font-size: 30px; color: var(--text); }
+.reveal .slides section { text-align: left; padding: 0 20px; }
+.reveal h1, .reveal h2, .reveal h3 { font-family: inherit; color: var(--text); text-transform: none; letter-spacing: -0.01em; font-weight: 700; text-align: left; }
+.reveal h1 { font-size: 2.1em; line-height: 1.1; }
+.reveal h2 { font-size: 1.3em; margin: 0 0 0.7em; padding-bottom: 0.3em; position: relative; }
+.reveal h2::after { content: ""; display: block; width: 2.2em; height: 4px; background: var(--accent); border-radius: 2px; margin-top: 0.35em; }
+.reveal p, .reveal li { line-height: 1.4; }
 .reveal ul { margin-left: 1em; }
-.reveal blockquote { font-size: 0.95em; width: 92%; box-shadow: none; border-left: 4px solid #999; padding-left: 0.6em; font-style: normal; }
-.reveal table { font-size: 0.74em; width: 100%; line-height: 1.3; }
-.reveal table th, .reveal table td { padding: 0.2em 0.45em; vertical-align: top; }
-/* pandoc puts a heading's {.smaller} on the section and on the h2; the
-   heading keeps its size. */
+.reveal li { margin-bottom: 0.25em; }
+.reveal strong { color: #fff; }
+.reveal a { color: var(--accent); }
+.reveal blockquote { font-size: 1.05em; width: 94%; margin: 0.4em 0 0.8em; padding: 0.5em 0.9em; background: var(--panel); border-left: 5px solid var(--accent); border-radius: 0 10px 10px 0; box-shadow: none; font-style: normal; color: #fff; }
+.reveal table { font-size: 0.72em; width: 100%; line-height: 1.3; border-collapse: collapse; }
+.reveal table th { color: var(--accent); font-weight: 600; text-align: left; border-bottom: 2px solid var(--line); }
+.reveal table th, .reveal table td { padding: 0.35em 0.5em; vertical-align: top; border-bottom: 1px solid var(--line); }
+.reveal table tr:last-child td { border-bottom: none; }
+.reveal table td:first-child { color: #fff; }
 .reveal section.smaller { font-size: 0.9em; }
-.reveal h2.smaller { font-size: 1.35em; }
+.reveal h2.smaller { font-size: 1.3em; }
 .reveal section.smaller table { font-size: 0.74em; }
-.reveal .ref { font-size: 0.6em; color: #8a8a8a; }
-.reveal .columns { display: flex; gap: 1.5em; align-items: flex-start; text-align: left; }
+.reveal section.tight table { font-size: 0.62em; }
+.reveal section.tight table th, .reveal section.tight table td { padding: 0.25em 0.45em; }
+.reveal .ref { font-size: 0.55em; color: var(--muted); }
+.reveal .columns { display: flex; gap: 1.4em; align-items: flex-start; }
 .reveal .column { min-width: 0; }
-.reveal .column img { max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 0.3em; }
-.reveal section img { margin: 0; max-width: 100%; }
-.reveal section { text-align: left; }
-.reveal h1, .reveal h2 { text-align: left; }
-.reveal .center, .reveal .center h1, .reveal .center h2, .reveal .title-slide { text-align: center; }
-.reveal .center h1 { margin-top: 2em; }
+.reveal .column img, .reveal section img { max-width: 100%; height: auto; margin: 0.2em 0 0; border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(0,0,0,0.45); }
+/* big-number tiles */
+.reveal .tiles { display: flex; gap: 0.8em; margin: 0.3em 0 0.6em; }
+.reveal .tile { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 0.55em 0.8em; }
+.reveal .tile p { margin: 0; line-height: 1.15; }
+.reveal .tile .n { font-size: 1.7em; font-weight: 700; color: var(--accent); display: block; }
+.reveal .tile .l { font-size: 0.68em; color: var(--muted); display: block; margin-top: 0.15em; }
+/* two cards */
+.reveal .cards { display: flex; gap: 0.8em; margin-top: 0.3em; }
+.reveal .card { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 0.6em 0.9em; font-size: 0.86em; }
+.reveal .card p:first-child { margin-top: 0; }
+.reveal .card strong { color: var(--accent); }
+/* the title slide */
+.reveal #title-slide, .reveal .title-slide, .reveal section.center { text-align: left; }
+.reveal #title-slide h1, .reveal #title-slide p.title, .reveal .title-slide h1 { font-size: 2.3em; margin: 2.4em 0 0; line-height: 1.1; font-weight: 700; color: #fff; }
+.reveal #title-slide h1::after, .reveal #title-slide p.title::after { content: ""; display: block; width: 2.2em; height: 5px; background: var(--accent); border-radius: 3px; margin-top: 0.3em; }
+.reveal #title-slide p.subtitle, .reveal .title-slide .subtitle { font-size: 1.15em; color: var(--text); margin: 0.6em 0 1.6em; }
+.reveal #title-slide p.author, .reveal #title-slide p.date, .reveal .title-slide .author, .reveal .title-slide .date { font-size: 0.75em; color: var(--muted); margin: 0.1em 0; }
+.reveal .center h2 { margin-top: 3.2em; font-size: 2em; }
+.reveal .center h2::after { display: none; }
+.reveal .progress { color: var(--accent); height: 4px; }
+.reveal .slide-number { background: transparent; color: var(--muted); font-size: 0.5em; }
+.reveal .controls { color: var(--accent); }
+.reveal .footer, .reveal .footer p { color: var(--muted); font-size: 0.5em; }
+.reveal .kicker { color: var(--accent-2); font-size: 0.8em; font-weight: 600; margin: 0 0 0.2em; }
 </style>
+
+What a jumper at this drop zone used to open one by one, and what the dashboard reads or is checked against. Every link is the one the live site offers.
+
+:::: {.columns}
+::: {.column width="50%"}
+**Read by the dashboard**
+
+- [NWS forecast for the drop zone](https://forecast.weather.gov/MapClick.php?lat=40.8703&lon=-96.1085) (forecast.weather.gov)
+- [KPMV observations, NWS](https://forecast.weather.gov/data/obhistory/KPMV.html) and [at the Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/sites/site.php?station=PMV&network=NE_ASOS)
+- [Open-Meteo](https://open-meteo.com/), winds aloft, cloud cover and the 10-day outlook (CC BY 4.0)
+- [TAFs at aviationweather.gov](https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK) and [NOAA's winds aloft (FD)](https://aviationweather.gov/data/windtemp/)
+- [NWS radar, KOAX](https://radar.weather.gov/station/KOAX/standard)
+:::
+::: {.column width="50%"}
+**Compared against, every day**
+
+- [Mark Schulze's Winds Aloft](https://www.markschulze.net/winds/?lat=40.8703&lon=-96.1085), the tool jumpers already use
+- [usairnet, KPMV](https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=KPMV), a second decode of the same METAR
+- [aviationweather.gov's decoder](https://aviationweather.gov/data/metar/?ids=KPMV&hours=0), for the METAR and TAF parse
+- [the USPA Skydiver's Information Manual](https://www.uspa.org/sim), fingerprinted daily
+- [the dashboard itself](https://amelia-m.github.io/lspc-weather/), loaded in a browser at three widths
+:::
+::::
+
+[C20, C26]{.ref}
+
+::: notes
+A quick orientation for anyone who flies or jumps: these are the sites. Mark Schulze's winds page is what the winds-aloft table is checked against; usairnet is where the club looked up the cloud forecast. Everything on the left is read in the reader's own browser.
+:::
+
+## What it is {.smaller}
+
 
 :::: {.columns}
 ::: {.column width="55%"}
@@ -53,9 +119,16 @@ format:
 
 - One page in place of a three-site routine: the NWS forecast, a cloud forecast and the KPMV METAR.
 - Adds winds aloft for freefall drift and density altitude for the jump plane.
-- Public, open source, on GitHub Pages. No account; the page reads public data in the browser, with one small relay for the one feed a browser cannot read.
+- Public, open source, on GitHub Pages. No account; the page reads public data in the browser, plus one small relay.
 
-First commit 26 June 2026. 626 commits since; 276 pull requests, every one merged. [C1, C3]{.ref}
+::: {.tiles}
+::: {.tile}
+[626]{.n} [commits since 26 June 2026]{.l}
+:::
+::: {.tile}
+[276]{.n} [pull requests, every one merged]{.l} [C1, C3]{.ref}
+:::
+:::
 :::
 ::::
 
@@ -64,6 +137,8 @@ Open with the screenshot: this is what jumpers see on a Saturday morning. Point 
 :::
 
 ## The rule that shaped everything
+
+[From the working notes every agent reads first]{.kicker}
 
 > The dashboard never gives a go/no-go verdict. It flags a condition and hands the reader the rule behind it, so a human can check it and decide.
 
@@ -111,11 +186,29 @@ Every date here is the first commit touching the file, read from git log. The sh
 
 ## Who did what
 
-**Amelia decided.** The notes quote her decisions by date, 31 times, as "the maintainer, <date>" or "the maintainer's call": own thresholds on Licensed only (10 Oct); "make it very clear" the wind card shows a report, not a forecast (30 Oct); hold visibility to both rows of the rule (31 Oct); keep the sampler logging over seasons (30 Oct); findings logged durably (10 Nov). [C23, C24]{.ref}
+::: {.tiles}
+::: {.tile}
+[520]{.n} [commits by a Claude agent, in four long sessions]{.l}
+:::
+::: {.tile}
+[91]{.n} [by the project's own workflows]{.l}
+:::
+::: {.tile}
+[13]{.n} [by Amelia, who decided]{.l}
+:::
+::: {.tile}
+[31]{.n} [dated decisions quoted in the notes]{.l} [C4, C5, C23]{.ref}
+:::
+:::
 
-**Agents did the work.** Of 626 commits, 520 are authored by a Claude agent, in four long sessions, and 2 by an OpenAI agent; 91 by the project's own workflows; 13 by Amelia. [C4, C5]{.ref}
-
-**The notes are the contract.** Agents work under written rules: four gates before a push; prove a new test by breaking the thing it names; every finding goes in the repository in the same piece of work, and a hook repeats that on every prompt. [C22]{.ref}
+::: {.cards}
+::: {.card}
+**Amelia decided.** Own thresholds on Licensed only (10 Oct). "Make it very clear" the wind card shows a report, not a forecast (30 Oct). Keep the sampler logging over seasons (30 Oct). Hold visibility to both rows of the rule (31 Oct). Findings logged durably (10 Nov). [C24]{.ref}
+:::
+::: {.card}
+**Agents worked under written rules.** Four gates before a push. Prove a new test by breaking the thing it names. Every finding goes in the repository in the same piece of work, and a hook repeats that on every prompt. Two commits came from an OpenAI agent. [C22, C4]{.ref}
+:::
+:::
 
 ::: notes
 The split is not "AI writes code, human reviews code". It is "human decides what may be asserted and what the project is for; agents build, measure and write up; the repository is the shared memory". The decisions are dated and attributed in the notes so a later agent can tell a rule from a habit. The hook was added after two investigations were reported only in chat and lost until asked for.
@@ -138,6 +231,15 @@ Pick two to tell in full: the overcast, because it is the one that mattered to a
 ## Checking the checkers
 
 Two checks watch the project every day: a decoder comparison against aviationweather.gov and uspa.org, and the live site in a browser.
+
+::: {.tiles}
+::: {.tile}
+[7 of 12]{.n} [decoder-check failures found something real]{.l}
+:::
+::: {.tile}
+[1 of 8]{.n} [live-site failures was the site's]{.l}
+:::
+:::
 
 Tallied on 7 November, every failure against what it turned out to be: [C16]{.ref}
 
@@ -218,7 +320,7 @@ Close on the first and the last. The rule is the design; the questions page is t
 
 [C1 to C5, C20, C21]{.ref}
 
-## The workflows {.smaller}
+## The workflows {.smaller .tight}
 
 | workflow | when | what |
 |---|---|---|

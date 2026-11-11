@@ -20,8 +20,8 @@ pandoc's reveal.js writer, which reads the same source:
 
 ```
 pandoc -f markdown talk.qmd -t revealjs -s --embed-resources \
-  -V revealjs-url=<unpacked reveal.js 5.1.0> -V theme=white \
-  -V width=1280 -V height=800 -V margin=0.06 -V slideNumber=true -V transition=none \
+  -V revealjs-url=<unpacked reveal.js 5.1.0> -V theme=black \
+  -V width=1280 -V height=800 -V margin=0.06 -V slideNumber=true -V transition=none -V controls=false \
   -o talk.html
 ```
 

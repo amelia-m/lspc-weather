@@ -101,3 +101,8 @@ of the five kinds" of retry; "a code review on every pull request" and
 the disclosure-as-rule line cut; the session's three bullets marked in
 C28 as from the transcript. `CONTRACT.md` now says the data services'
 own hostnames may be shown, which is what the "names allowed" line meant.
+
+Added after the review, 2026-11-11, at the maintainer's word: a sources
+slide after the title with the live site's own links (claim C29, read
+from `src/config/sources.ts`), and a restyle in the dashboard's palette;
+no other claim changed.
