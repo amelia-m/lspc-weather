@@ -11,3 +11,6 @@ __pycache__/
 
 # scripts/surfaceWindLoop.sh writes the last sample's output here when run by hand
 sample.log
+
+# Worktrees that agents run in from this checkout
+.claude/worktrees/

@@ -130,6 +130,8 @@ These are the questions the dashboard was built around: cloud, winds aloft, gust
 .reveal .chat p { margin: 0; display: contents; }
 .reveal .caption { display: block; font-size: 0.7em; color: var(--muted); margin-top: 0.5em; }
 .reveal section.app .column img { max-height: 540px; width: auto; }
+.reveal section.pair .column img { max-height: 400px; width: auto; display: block; }
+.reveal section.pair .column p { font-size: 0.9em; }
 .reveal .kicker { color: var(--accent-2); font-size: 0.8em; font-weight: 600; margin: 0 0 0.2em; }
 </style>
 
@@ -162,6 +164,35 @@ What a jumper at this drop zone used to open one by one, and what the dashboard 
 A quick orientation for anyone who flies or jumps: these are the sites. Mark Schulze's winds page is what the winds-aloft table is checked against; usairnet is where the club looked up the cloud forecast. Everything on the left is read in the reader's own browser.
 :::
 
+## Two of them, as they look {.smaller}
+
+:::: {.columns}
+::: {.column width="62%"}
+![](img/usairnet-kpmv.png)
+:::
+::: {.column width="38%"}
+**usairnet's aviation forecast for KPMV**: cloud cover, wind, gusts, ceiling and the lowest cloud base, hour by hour. The club's cloud forecast before the dashboard, and still a second decode of the same METAR. [C32]{.ref}
+
+**Mark Schulze's Winds Aloft**: direction and speed every thousand feet from the surface up, for a pin on his map. The winds-aloft table the dashboard reproduces, and is checked against eight times a day. [C32]{.ref}
+:::
+::::
+
+::: notes
+Both pages are what a jumper opens on a phone at the DZ. The dashboard's job was to put the parts that matter side by side, and then to prove, every day, that its own decode and its own winds table say the same as these.
+:::
+
+## Where exactly is the drop zone?
+
+The app's point for the drop zone, and Mark Schulze's own pin for the club, both sat at 40.8675° N, 96.11° W: a field south-west of the runway, downhill from it. Nobody lands there. [C33]{.ref}
+
+On 8 October the point moved to the middle of the main landing area by the pea gravel (40.8703° N, 96.1085° W). Checked that day: the same Open-Meteo forecast cell and the same NWS gridpoint, so no forecast changed; only the ground the heights are measured from moved, 1,132 ft to 1,165 ft on the model's terrain. [C33]{.ref}
+
+The dashboard's link to his page carries the new point. His own list's pin for the club is still in the field, so a reader who picks the club from his list sees a table measured from 33 ft lower. The comparison logs record which point each hour was taken at, so the two are never pooled. [C33]{.ref}
+
+::: notes
+A small thing that shows the method: a coordinate nobody questions, found wrong from a map, moved, and then every consequence checked and written down: same forecast cell, different ground, the link updated, the logs told apart. The pin on his map is still where it was; his tool is right about its pin, the pin is just not where people land.
+:::
+
 ## What it is {.smaller}
 
 
@@ -189,6 +220,29 @@ A quick orientation for anyone who flies or jumps: these are the sites. Mark Sch
 
 ::: notes
 Open with the screenshot: this is what jumpers see on a Saturday morning. Point at "Flags only, not a go/no-go call. You decide." That line is the whole talk. Say the three sites it replaced and that it is a static page reading public data in the browser.
+:::
+
+## Why so many stations? {.smaller}
+
+:::: {.columns}
+::: {.column width="50%"}
+**The nearest report is not at the drop zone.** KPMV, Plattsmouth, is the closest station with a METAR: 11 mi east-north-east, on different ground. The Surface wind card says so in its first line. [C34]{.ref}
+
+**One report from two feeds.** The observation is read from the Iowa Environmental Mesonet first and the NWS second, and the newer wins: timed on 27 September, IEM had each report 4 to 6 minutes after it was taken, the NWS 24 to 33. [C34]{.ref}
+
+**The text, not the decode.** On 23 September the NWS served seven observations with an empty cloud decode under a 2,700 ft overcast. The sky is parsed from the METAR text first, and a daily check compares the parse with another decoder. [C11]{.ref}
+:::
+::: {.column width="50%"}
+**Six METARs on the Pilots tab**: KPMV, Offutt, Omaha Eppley, Millard, Lincoln, Nebraska City, so a reader can see whether the sky at Plattsmouth is the region's or Plattsmouth's. [C34]{.ref}
+
+**Three TAFs in a chain.** KPMV issues none. The nearest is Offutt's, written by the Air Force and carried on no feed a browser can read, so a relay fetches it; when it is missing, cancelled or ended, the card falls back to Omaha's, then Lincoln's, and says which it shows. [C34]{.ref}
+
+**Winds aloft from two sources too**: Open-Meteo's model levels, with NOAA's FD winds as the fallback when the request fails. [C34]{.ref}
+:::
+::::
+
+::: notes
+The honest answer to "why not just one API" is that no one source is at the drop zone, complete, or always up. Every card names the station and the feed it came from, and the fallbacks say they are fallbacks.
 :::
 
 ## The rule that shaped everything
@@ -281,6 +335,39 @@ The split is not "AI writes code, human reviews code". It is "human decides what
 
 ::: notes
 Pick two to tell in full: the overcast, because it is the one that mattered to a jumper, and the runner image, because the lesson is about people, not code. Each row is a paragraph in the notes, dated, and the fix is a rule or a check, never "be more careful".
+:::
+
+## Which hours are daytime? {.smaller .pair}
+
+:::: {.columns}
+::: {.column width="50%"}
+![](img/hourly-before.png)
+
+**Before 3 October**: two days of hourly wind, every hour drawn alike. Which stretches were daylight, when a jump could happen, took counting back from the axis.
+:::
+::: {.column width="50%"}
+![](img/hourly-after.png)
+
+**Since**: night shaded darker than day, the sun and moon marking the turns, the weekday under each midnight, and the wind limit drawn where the flag reads it. [C35]{.ref}
+:::
+::::
+
+[Both from the fixture build with the same 48 hours of data and the clock set to the same hour; the older code built with today's fixture.]{.caption}
+
+::: notes
+A small, visible example of a change a reader asked for: the chart over several days was hard to read because nothing said which hours were daytime. Two commits, 3 and 4 October. The point for the talk: the fix reused the sun arithmetic the night flag already trusted.
+:::
+
+## Trusting, and skeptical
+
+Skydivers are both: they trust the sources they already use, and they are skeptical of a new one. A dashboard that said something different from Mark Schulze's page would be the one that was wrong. [C36]{.ref}
+
+So the first thing to show was sameness. The app's winds-aloft table is built from the same Open-Meteo levels his tool reads; on the same hour the two agree within 4° and 1 kt at every altitude, and eight comparisons a day log it, with the observation's decode set against usairnet's the same way. [C26, C36]{.ref}
+
+Then, carefully, slightly better: three more levels below 1,000 ft for the canopy layer, which his table does not have; seven more pressure levels; the ground the heights are measured from; an "As Schulze" view kept exactly his method, so a reader can see the sameness and the difference apart. [C36]{.ref}
+
+::: notes
+This is the maintainer's framing of why the comparison machinery exists: not to grade his tool, but to earn the right to be read beside it. Every change to the default table is logged against the "As Schulze" view, so the agreement is checked every day, not claimed once.
 :::
 
 ## Checking the checkers

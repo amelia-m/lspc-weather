@@ -110,3 +110,10 @@ Also added 2026-11-11 at the maintainer's word: a "Why I built it" slide
 after the title, three screenshots of a text thread she supplied (claim
 C30; the other party is unnamed, and showing their messages in a public
 room is for her to have agreed with them).
+Added 2026-11-11 at the maintainer's word, after the page went live: the
+two sites as they look (usairnet's page, C32; Mark Schulze's page in words
+until a screenshot arrives as a file), where the drop zone's point is
+(C33), why several stations are read (C34, with C11), the hourly chart
+before and after night shading (C35), and the maintainer's framing of
+the comparisons, trusting and skeptical (C36). Each claim's sources are
+in the table; none of the earlier claims changed.
