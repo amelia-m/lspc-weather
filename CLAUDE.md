@@ -768,7 +768,9 @@ days). `.github/workflows/parity-summary.yml` combines them daily with
 is `src/domain/paritySummary.ts`, pure and tested — commits that file to
 `main` and dispatches the Pages deploy (a push made with the workflow token
 starts no other workflow). The in-app page at `#parity`, "How different from
-other sources", renders it: counts and spreads, never a grade. The
+other sources", renders it: counts and spreads, never a grade, and
+since 2026-11-11 draws each table's figures above it (`paritySvg.ts`,
+pure; docs/source-parity.md, "What the page shows"). The
 summary runs when the daily sky-parity run finishes and also reads
 `data/parity/logs-to-2026-10-05.jsonl.gz`, every line of a temporary sampler
 that ran the usairnet comparison every two minutes and the Schulze one every

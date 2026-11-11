@@ -12,6 +12,8 @@ import type {
   UsairnetOutages,
   UsairnetTiming,
 } from '../domain/paritySummary';
+import type { AltitudeSpread } from '../domain/paritySummary';
+import { dayLinesSvg, dumbbellSvg, shareBarsSvg, spreadRowsSvg } from '../domain/paritySvg';
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import type { SiteJsonState } from '../hooks/useSiteJson';
 import { Panel } from './common/Panel';
@@ -184,6 +186,110 @@ function GlancePanel({ s }: { s: ParitySummary }): JSX.Element | null {
   );
 }
 
+/**
+ * A chart above the table that holds the same figures (since 2026-11-11,
+ * the maintainer's ask that day: visuals of the same counts and spreads).
+ * The markup is the domain's (paritySvg.ts), built and escaped there from
+ * the summary's figures, and set as HTML because React takes an SVG string
+ * no other way; the figcaption says what the chart is, and the table under
+ * it keeps every figure the chart draws.
+ */
+function Chart({ svg, caption }: { svg: string; caption: string }): JSX.Element {
+  return (
+    <figure className="pty-fig">
+      <div dangerouslySetInnerHTML={{ __html: svg }} />
+      <figcaption className="pty-cap">{caption}</figcaption>
+    </figure>
+  );
+}
+
+/** What a spread row's marks are, printed once above the first spread
+ *  charts of a panel. A list, so a screen reader gets the items and the
+ *  label; each item keeps its swatch beside its words however they wrap. */
+function SpreadKey(): JSX.Element {
+  return (
+    <ul className="pty-key muted small" aria-label="Key to the spread marks">
+      <li className="werr-key-item">
+        <span className="pty-mark median" aria-hidden="true" />
+        <span>median</span>
+      </li>
+      <li className="werr-key-item">
+        <span className="pty-mark core" aria-hidden="true" />
+        <span>median to 90th percentile</span>
+      </li>
+      <li className="werr-key-item">
+        <span className="pty-mark range" aria-hidden="true" />
+        <span>smallest to largest</span>
+      </li>
+    </ul>
+  );
+}
+
+const SIDES: readonly [string, string] = ['this dashboard', 'Schulze’s'];
+
+/** The two ground rows' hues, above the charts that draw both. */
+function SidesKey(): JSX.Element {
+  return (
+    <ul className="pty-key muted small" aria-label="Key to the two sides">
+      <li className="werr-key-item">
+        <span className="pty-mark ours" aria-hidden="true" />
+        <span>{SIDES[0]}</span>
+      </li>
+      <li className="werr-key-item">
+        <span className="pty-mark theirs" aria-hidden="true" />
+        <span>{SIDES[1]}</span>
+      </li>
+    </ul>
+  );
+}
+
+/** The largest difference in either winds table, per quantity: both
+ *  tables' direction charts share one axis, and both speed charts, so a bar
+ *  reads the same length for the same figure in each. */
+function altitudeAxisMax(tables: readonly (readonly AltitudeSpread[])[]): { dir: number; spd: number } {
+  const rows = tables.flat();
+  return { dir: Math.max(0, ...rows.map((r) => r.dir.maxAbs)), spd: Math.max(0, ...rows.map((r) => r.spd.maxAbs)) };
+}
+
+/** The spreads per altitude as a profile, highest row first, direction and
+ *  speed side by side, above the two tables that print the same figures. */
+function AltitudeCharts({
+  rows,
+  suffix,
+  axisMax,
+}: {
+  rows: readonly AltitudeSpread[];
+  suffix: string;
+  axisMax: { dir: number; spd: number };
+}): JSX.Element {
+  const profile = [...rows].sort((a, b) => b.ft - a.ft);
+  const label = (ft: number): string => ft.toLocaleString();
+  return (
+    <div className="pty-grid-row">
+      <Chart
+        svg={spreadRowsSvg({
+          title: `Direction${suffix}`,
+          unit: '°',
+          unitWord: 'runs',
+          rows: profile.map((r) => ({ label: label(r.ft), spread: r.dir })),
+          axisMax: axisMax.dir,
+        })}
+        caption={`Direction${suffix}: degrees apart by altitude (ft AGL, highest row first)`}
+      />
+      <Chart
+        svg={spreadRowsSvg({
+          title: `Speed${suffix}`,
+          unit: ' kt',
+          unitWord: 'runs',
+          rows: profile.map((r) => ({ label: label(r.ft), spread: r.spd })),
+          axisMax: axisMax.spd,
+        })}
+        caption={`Speed${suffix}: knots apart by altitude (ft AGL, highest row first)`}
+      />
+    </div>
+  );
+}
+
 /** One quantity per table, six columns, so a phone can read it without the
  *  eight-column squeeze one combined table would need. Old summaries without a
  *  spread for a row render dashes rather than failing. */
@@ -235,6 +341,32 @@ const GAP_LABEL: Record<TimeGapKey, string> = {
   'one-hour-apart': 'One hour apart',
 };
 
+/** The same groups, short enough for a chart's label column. */
+const GAP_SHORT: Record<TimeGapKey, string> = {
+  'same-hour-same-run': 'Same run',
+  'same-hour-different-run': 'Newer run one side',
+  'one-hour-apart': 'One hour apart',
+};
+
+/** The three groups' spreads, direction and speed side by side, above the
+ *  table. */
+function TimeGapCharts({ groups }: { groups: TimeGapGroup[] }): JSX.Element {
+  // A group with no runs has a null spread, drawn as its label alone.
+  const rows = (pick: (g: TimeGapGroup) => Spread | null) => groups.map((g) => ({ label: GAP_SHORT[g.key], spread: pick(g) }));
+  return (
+    <div className="pty-grid-row">
+      <Chart
+        svg={spreadRowsSvg({ title: 'Direction by time gap', unit: '°', unitWord: 'rows', rows: rows((g) => g.dir), labelWidth: 104 })}
+        caption="Direction: degrees apart, every row from 1,000 ft up, by the time the tables represent"
+      />
+      <Chart
+        svg={spreadRowsSvg({ title: 'Speed by time gap', unit: ' kt', unitWord: 'rows', rows: rows((g) => g.spd), labelWidth: 104 })}
+        caption="Speed: knots apart, the same rows"
+      />
+    </div>
+  );
+}
+
 /** The differences grouped by the time the two tables represented, one row
  *  per group, direction and speed side by side so the rows compare at a
  *  glance. Dashes where a group has no runs yet. */
@@ -281,8 +413,10 @@ function TimeGapTable({ groups }: { groups: TimeGapGroup[] }): JSX.Element {
 
 function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
   const w = s.schulze;
+  const axisMax = altitudeAxisMax([w.byAltitude, w.asSchulze?.byAltitude ?? []]);
   return (
     <Panel title="Winds aloft vs Mark Schulze’s" subtitle={`${w.runs} runs, ${w.aligned} with a same-hour table`}>
+      <SpreadKey />
       {w.byTimeGap && (
         <>
           <p className="muted small">
@@ -291,6 +425,7 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
             line below). &ldquo;One hour apart&rdquo; is what a reader comparing both pages sees
             after half past each hour, and fills from runs logged since Sep 26.
           </p>
+          <TimeGapCharts groups={w.byTimeGap} />
           <TimeGapTable groups={w.byTimeGap} />
         </>
       )}
@@ -318,6 +453,7 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
           </p>
           {w.asSchulze.runs > 0 && (
             <>
+              <AltitudeCharts rows={w.asSchulze.byAltitude} suffix=", as Schulze" axisMax={axisMax} />
               <SpreadTable title="Direction, as Schulze" unit="°" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.dir])} />
               <SpreadTable title="Speed, as Schulze" unit=" kt" rows={w.asSchulze.byAltitude.map((r) => [r.ft, r.spd])} />
             </>
@@ -332,6 +468,7 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
         pressure levels his does not, so from then these spreads include what those add.{' '}
         {w.unreadable > 0 && `${w.unreadable} runs could not read one side.`}
       </p>
+      <AltitudeCharts rows={w.byAltitude} suffix="" axisMax={axisMax} />
       <SpreadTable title="Direction" unit="°" rows={w.byAltitude.map((r) => [r.ft, r.dir])} />
       <SpreadTable title="Speed" unit=" kt" rows={w.byAltitude.map((r) => [r.ft, r.spd])} />
       {/* Sentences, not a key-value grid: the kv layout is for short values
@@ -447,6 +584,30 @@ function GroundSection({
         up in <code>docs/markschulze-altitude-reference.md</code>). So Schulze&rsquo;s reads more like the wind a
         couple of hundred feet up.
       </p>
+      {((bands && bands.some((b) => b.runs > 0)) || (days && days.length > 0)) && (
+        <>
+          <SidesKey />
+          <div className="pty-grid-row">
+            {bands && bands.some((b) => b.runs > 0) && (
+              <Chart
+                svg={dumbbellSvg({
+                  title: 'Ground row by local time',
+                  unit: ' kt',
+                  names: SIDES,
+                  rows: bands.map((b) => ({ label: blockLabel(b.fromHour), a: b.medianOurKt, b: b.medianTheirKt, runs: b.runs })),
+                })}
+                caption="Median of each ground row, kt, by three-hour block of the local day (the first table below)"
+              />
+            )}
+            {days && days.length > 0 && (
+              <Chart
+                svg={dayLinesSvg({ title: 'Ground row by local day', unit: ' kt', names: SIDES, days })}
+                caption="Median of each ground row, kt, by local day of the forecast hour (the second table below)"
+              />
+            )}
+          </div>
+        </>
+      )}
       {bands && bands.some((b) => b.runs > 0) && (
         <div className="sky-scroll">
           <table className="aloft-table">
@@ -538,10 +699,23 @@ function groupFields(fields: readonly UsairnetField[]): { title: string; fields:
 /** One field per row: runs, agreements, and the absolute gaps where both
  *  sides were numbers. */
 function FieldTable({ fields, caption }: { fields: UsairnetField[]; caption: string }): JSX.Element {
+  const groups = groupFields(fields);
   return (
-    <div className="sky-scroll">
-      <table className="aloft-table">
-        <caption className="parity-caption">{caption}</caption>
+    <>
+      {fields.length > 0 && (
+        <div className="pty-grid-row">
+          <Chart
+            svg={shareBarsSvg({
+              title: caption,
+              rows: groups.flatMap((g) => g.fields.map((f) => ({ label: f.name, agree: f.agree, n: f.n, group: g.title }))),
+            })}
+            caption={`${caption}: runs agreed of runs compared, per field (the table below)`}
+          />
+        </div>
+      )}
+      <div className="sky-scroll">
+        <table className="aloft-table">
+          <caption className="parity-caption">{caption}</caption>
         <thead>
           <tr>
             <th>field</th>
@@ -553,28 +727,29 @@ function FieldTable({ fields, caption }: { fields: UsairnetField[]; caption: str
             <th>max diff</th>
           </tr>
         </thead>
-        {groupFields(fields).map((g) => (
-          <tbody key={g.title}>
-            <tr className="parity-group">
-              <th colSpan={7} scope="rowgroup">
-                {g.title}
-              </th>
-            </tr>
-            {g.fields.map((f) => (
-              <tr key={f.name}>
-                <td>{f.name}</td>
-                <td>{f.n}</td>
-                <td>{f.agree}</td>
-                <td>{pct(f.agree, f.n)}</td>
-                <td>{f.spread ? num(f.spread.meanAbs) : '—'}</td>
-                <td>{f.spread ? num(f.spread.minAbs) : '—'}</td>
-                <td>{f.spread ? num(f.spread.maxAbs) : '—'}</td>
+          {groups.map((g) => (
+            <tbody key={g.title}>
+              <tr className="parity-group">
+                <th colSpan={7} scope="rowgroup">
+                  {g.title}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        ))}
-      </table>
-    </div>
+              {g.fields.map((f) => (
+                <tr key={f.name}>
+                  <td>{f.name}</td>
+                  <td>{f.n}</td>
+                  <td>{f.agree}</td>
+                  <td>{pct(f.agree, f.n)}</td>
+                  <td>{f.spread ? num(f.spread.meanAbs) : '—'}</td>
+                  <td>{f.spread ? num(f.spread.minAbs) : '—'}</td>
+                  <td>{f.spread ? num(f.spread.maxAbs) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          ))}
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -606,6 +781,19 @@ function ArrivalTable({ lags }: { lags: ArrivalLag[] }): JSX.Element | null {
   if (!lags.some((a) => a.reports > 0)) return null;
   return (
     <>
+      <SpreadKey />
+      <div className="pty-grid-row">
+        <Chart
+          svg={spreadRowsSvg({
+            title: 'Minutes from a report to each source',
+            unit: ' min',
+            unitWord: 'reports',
+            rows: lags.map((a) => ({ label: ARRIVAL_SHORT[a.source], spread: a.reports > 0 ? a.lagMin : null })),
+            labelWidth: 78,
+          })}
+          caption="Minutes from a report's time to the first sample that found it at each source (the table below)"
+        />
+      </div>
       <div className="sky-scroll">
         <table className="aloft-table">
           <caption className="parity-caption">How soon each source had each report</caption>
