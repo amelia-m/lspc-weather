@@ -1,5 +1,5 @@
 ---
-title: "Built with the brakes on"
+title: "Built to be checked"
 subtitle: "How a skydiving weather dashboard was developed with AI agents"
 author: "Amelia Miramonti · Lincoln AI meetup"
 date: "November 2026"
@@ -19,11 +19,11 @@ format:
 ## What a weather app says {.app}
 
 :::: {.columns}
-::: {.column width="34%"}
+::: {.column width="40%"}
 ![](img/weather-app-mock.png)
 :::
-::: {.column width="66%"}
-**Sunny, Saturday and Sunday.** Highs in the sixties. Nothing to decide.
+::: {.column width="60%"}
+**Partly cloudy, Saturday and Sunday.** Highs in the sixties. Nothing to decide.
 
 That is the whole forecast, for most people.
 
@@ -34,26 +34,26 @@ So I asked my instructor whether we would be jumping.
 ::::
 
 ::: notes
-Set up the gap: a sunny icon is the whole forecast for most people. Say the mock is a mock. Then the thread.
+Set up the gap: a partly-cloudy icon is the whole forecast for most people. Say the mock is a mock. Then the thread.
 :::
 
 ## Why I built it
 
 ::: {.chat}
-![](img/chat-1.png)
-![](img/chat-2.png)
-![](img/chat-3.png)
+![](img/chat-1.png){.fragment}
+![](img/chat-2.png){.fragment}
+![](img/chat-3.png){.fragment}
 :::
 
 [A text thread with my instructor, 2026: "Is there a better app?" The answer was three sites, read one by one. "I might play around with whether I can build a dashboard just for funsies."]{.caption} [C30]{.ref}
 
 ::: notes
-Read the thread aloud, or let the room read it. "Low and dense first thing, then windy all weekend" under a sunny icon. The routine it describes, the NOAA hourly graph, usairnet's cloud forecast and the KPMV METAR, is the one the dashboard replaced; the slide after next has the links. "I don't even know what METAR is yet" is where this started.
+Read the thread aloud, or let the room read it. "Low and dense first thing, then windy all weekend" under a partly-cloudy icon. The three screens come one click at a time. The routine it describes, the NOAA hourly graph, usairnet's cloud forecast and the KPMV METAR, is the one the dashboard replaced; the slide after next has the links. "I don't even know what METAR is yet" is where this started.
 :::
 
 ## What a jumper needs to know
 
-The sunny icon answered none of these:
+The partly-cloudy icon answered none of these:
 
 - How low is the cloud at nine in the morning, and does it lift?
 - What is the wind doing at 3,000 feet, and at the top of the climb?
@@ -129,7 +129,7 @@ These are the questions the dashboard was built around: cloud, winds aloft, gust
 .reveal .chat img { max-height: 520px; width: auto; max-width: 32%; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(0,0,0,0.45); margin: 0; }
 .reveal .chat p { margin: 0; display: contents; }
 .reveal .caption { display: block; font-size: 0.7em; color: var(--muted); margin-top: 0.5em; }
-.reveal section.app .column img { max-height: 540px; width: auto; }
+.reveal section.app .column img { max-height: 620px; width: auto; }
 .reveal section.pair .column img { max-height: 400px; width: auto; display: block; }
 .reveal section.pair .column p { font-size: 0.9em; }
 .reveal .kicker { color: var(--accent-2); font-size: 0.8em; font-weight: 600; margin: 0 0 0.2em; }

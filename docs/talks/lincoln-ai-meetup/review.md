@@ -117,3 +117,8 @@ until a screenshot arrives as a file), where the drop zone's point is
 before and after night shading (C35), and the maintainer's framing of
 the comparisons, trusting and skeptical (C36). Each claim's sources are
 in the table; none of the earlier claims changed.
+Later on 2026-11-11, at the maintainer's word: the mock phone redrawn
+partly cloudy, so the instructor's "low" clouds in the thread can sit
+beside it, and in larger, higher-contrast type (C31 updated); the three
+chat screens made fragments, one click each; the title changed from
+"Built with the brakes on" to "Built to be checked". No claim changed.
