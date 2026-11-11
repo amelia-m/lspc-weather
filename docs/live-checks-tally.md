@@ -109,9 +109,12 @@ tally again after a month of the retry rules.
   GitHub's runner queue was slow for this account: the keeper's job
   started 2 h 6 min after its run was created (17:17Z to 19:23Z), the
   sampler's 5 h 6 min (13:57Z to 19:03Z), and PR #298's CI run sat
-  queued with no job for over 76 minutes (from 20:33Z); the deploy and
-  parity runs of 19:47Z to 20:17Z did start within a minute. Not a
-  failure of either check, but worth knowing when a run "has not run".
+  queued with no job for over 76 minutes (from 20:33Z) while the run for
+  the next push to the same PR (21:50Z) started at once and passed in a
+  minute, and the deploy and parity runs of 19:47Z to 20:17Z had started
+  within a minute: a stuck run, then, not a slow queue, since a later run
+  passed it. Not a failure of either check, but worth knowing when a run
+  "has not run": push again, or dispatch one, rather than wait.
 - 2026-11-09, sky-parity: the SIM text check failed all 31 tests on a
   Cloudflare challenge from uspa.org (`cf-mitigated: challenge`), the
   same refusal as 2026-10-09; every other check passed (#283,
