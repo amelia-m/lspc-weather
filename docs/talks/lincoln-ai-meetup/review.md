@@ -106,3 +106,7 @@ Added after the review, 2026-11-11, at the maintainer's word: a sources
 slide after the title with the live site's own links (claim C29, read
 from `src/config/sources.ts`), and a restyle in the dashboard's palette;
 no other claim changed.
+Also added 2026-11-11 at the maintainer's word: a "Why I built it" slide
+after the title, three screenshots of a text thread she supplied (claim
+C30; the other party is unnamed, and showing their messages in a public
+room is for her to have agreed with them).
