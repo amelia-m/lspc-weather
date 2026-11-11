@@ -16,6 +16,20 @@ format:
 ---
 
 
+## Why I built it
+
+::: {.chat}
+![](img/chat-1.png)
+![](img/chat-2.png)
+![](img/chat-3.png)
+:::
+
+[A text thread, 2026: "Is there a better app?" The answer was three sites, read one by one. "I might play around with whether I can build a dashboard just for funsies."]{.caption} [C30]{.ref}
+
+::: notes
+Read the thread aloud, or let the room read it. The routine it describes, the NOAA hourly graph, usairnet's cloud forecast and the KPMV METAR, is the one the dashboard replaced; the next slide has the links. "I don't even know what METAR is yet" is where this started.
+:::
+
 ## The sites behind it {.smaller}
 
 <style>
@@ -75,6 +89,10 @@ format:
 .reveal .slide-number { background: transparent; color: var(--muted); font-size: 0.5em; }
 .reveal .controls { color: var(--accent); }
 .reveal .footer, .reveal .footer p { color: var(--muted); font-size: 0.5em; }
+.reveal .chat { display: flex; gap: 0.6em; align-items: flex-start; justify-content: center; margin-top: 0.2em; }
+.reveal .chat img { max-height: 520px; width: auto; max-width: 32%; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(0,0,0,0.45); margin: 0; }
+.reveal .chat p { margin: 0; display: contents; }
+.reveal .caption { display: block; font-size: 0.7em; color: var(--muted); margin-top: 0.5em; }
 .reveal .kicker { color: var(--accent-2); font-size: 0.8em; font-weight: 600; margin: 0 0 0.2em; }
 </style>
 
