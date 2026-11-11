@@ -155,6 +155,15 @@ later that day. Still
 waiting on her: Mark Schulze's page as a screenshot file, for "Two of
 them, as they look".
 
+## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
+
+The live-site run after the parity summary's deploy (20:07Z) failed
+Jumpers at 1280 and 320 px on both loads: the Winds aloft card's fetch
+got HTTP 503 from api.open-meteo.com, every other page passed, and the
+late-evening leg passed. Open-Meteo answered 200 again at 21:50Z. Nothing
+in the code; #297 is the maintainer's to close, and it is on the tally
+(docs/live-checks-tally.md, "Since the tally").
+
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
 **Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
