@@ -138,6 +138,17 @@ there has the commands. Two slides were added after the review at the
 maintainer's word: a mock-up of a generic weather app (a prop, labelled
 as one) and her text thread with a jumper (whose consent to show their
 messages is hers to have), claims C30 and C31.
+Later that day, at her word, seven more (C32 to C37: the sites as they
+look, the drop zone's point, why several stations, the hourly chart
+before and after night shading, "trusting and skeptical", and a link to
+the club's website), the mock redrawn partly cloudy to sit beside the
+thread's "low" clouds, the thread's three screens as fragments, and the
+title "Built to be checked". The club's link, skydivelspc.com, is from
+an Omaha Magazine article and the club's listed email domain (a web
+search that day): the host is outside the sandbox's network, so the
+link was not opened from here and is the maintainer's to confirm. Still
+waiting on her: Mark Schulze's page as a screenshot file, for "Two of
+them, as they look".
 
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
