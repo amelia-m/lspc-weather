@@ -75,7 +75,7 @@ import { openMeteoUsage } from './api/openMeteoUsage';
  *  of forecastReach.ts's; an unknown or unset value is the default. */
 const THREE_DAY: ThreeDayLayout = (THREE_DAY_LAYOUTS as readonly string[]).includes(import.meta.env.VITE_THREE_DAY ?? '')
   ? (import.meta.env.VITE_THREE_DAY as ThreeDayLayout)
-  : 'strip';
+  : 'days';
 
 const PROFILE_KEY = 'lspc:windProfile';
 /** The student choice last made (BSR or a waiver tier), so Licensed and back

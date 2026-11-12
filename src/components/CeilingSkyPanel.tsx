@@ -9,6 +9,7 @@ import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
 import { CLOUD_COMPARISON } from '../config/cloudComparison';
 import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
 import { Panel } from './common/Panel';
+import { NbsDays } from './NbsDays';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
 import { fmtClock, fmtShortHour, fmtTime, fmtWeekday, localDateKey } from './format';
@@ -43,7 +44,7 @@ export function CeilingSkyPanel({
   omClouds = null,
   nbm = null,
   nbs = null,
-  threeDay = 'strip',
+  threeDay = 'days',
   thresholds,
   initialHours = SKY_HORIZONS[0],
 }: {
@@ -114,7 +115,8 @@ export function CeilingSkyPanel({
     h?.ceilingFtAgl === undefined ? 'No NBM ceiling figure for this hour' : h.ceilingFtAgl === null ? 'NBM: no ceiling' : `NBM ceiling ${h.ceilingFtAgl.toLocaleString()} ft AGL`;
   const spanH = columns.length > 1 ? Math.round((columns[columns.length - 1].time - columns[0].time) / 3_600_000) : 0;
   const showNbsStrip = threeDay === 'strip' && (nbs?.hours.length ?? 0) > 0;
-  const nbsShown = showNbsStrip || (onStrip && columns.some((c) => c.nbs));
+  const showNbsDays = threeDay === 'days' && (nbs?.hours.length ?? 0) > 0;
+  const nbsShown = showNbsStrip || showNbsDays || (onStrip && columns.some((c) => c.nbs));
   const category = current ? observedFlightCategory(current) : null;
 
   return (
@@ -328,6 +330,7 @@ export function CeilingSkyPanel({
         </div>
       )}
       {showNbsStrip && nbs && <NbsStrip nbs={nbs} />}
+      {showNbsDays && nbs && <NbsDays nbs={nbs} timeZone={SITE.timeZone} />}
       {/* Where the forecast ends is a fact of the copy the card has; why is
           not. Its usual reach is given as the usual, since a copy a day old
           (an outage, or an edge serving an older one) ends sooner. */}
@@ -361,7 +364,7 @@ export function CeilingSkyPanel({
       )}
       {nbsShown && nbs && (
         <p className="muted small">
-          {threeDay === 'strip' ? 'The three-day strip' : 'Past the NWS hourly forecast, and the 3-day option,'} {threeDay === 'strip' ? 'is' : 'the strip reads'} the
+          {threeDay === 'strip' || threeDay === 'days' ? 'The three-day block' : 'Past the NWS hourly forecast, and the 72h option,'} {threeDay === 'strip' || threeDay === 'days' ? 'is' : 'the strip reads'} the
           NWS National Blend of Models&rsquo; three-hourly bulletin for {nbs.station} (NBS, the{' '}
           {String(new Date(nbs.cycleMs).getUTCHours()).padStart(2, '0')}Z cycle, read through the relay): its sky cover, ceiling and lowest
           cloud base at three-hour steps, 6 to 72 hours from its cycle, the bulletin usairnet&rsquo;s three-day table reads.

@@ -77,7 +77,10 @@ export function nbsFixtureText(now: number): string {
   const mm = String(cycle.getUTCMonth() + 1).padStart(2, '0');
   const dd = String(cycle.getUTCDate()).padStart(2, '0');
   const hh = String(cycle.getUTCHours()).padStart(2, '0');
-  const fhr = (/^ FHR .*$/m.exec(NBS_BLOCK)?.[0] ?? '').slice(5).match(/.{1,3}/g) ?? [];
+  // The row's trailing spaces are not a field: left in, they became a
+  // 24th column at hour zero, dated the cycle's own hour, and drew a fourth
+  // day of one empty slot (seen in the days layout, 2026-11-12).
+  const fhr = (/^ FHR .*$/m.exec(NBS_BLOCK)?.[0] ?? '').slice(5).trimEnd().match(/.{1,3}/g) ?? [];
   const utc = fhr.map((f) => String((cycle.getUTCHours() + Number(f)) % 24).padStart(2, '0')).join(' ');
   return NBS_BLOCK.replace(/11\/12\/2026 {2}0100 UTC/, `${mm}/${dd}/${cycle.getUTCFullYear()}  ${hh}00 UTC`).replace(
     /^ UTC .*$/m,

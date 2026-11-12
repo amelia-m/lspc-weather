@@ -168,10 +168,12 @@ a KPMV block of the same layout (`data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`).
 
 **Built the same day at her word ("add it but let's try out a couple
 layouts"):** the relay's `/nbm/KPMV/nbs` path, the app's `nbs` source,
-and three layouts on the Ceiling & sky card, `horizon`, `continue` and
-`strip` (docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three
-days out", with a phone screenshot of each under docs/img). The build's
-`VITE_THREE_DAY` picks one; `strip` is the default until she picks.
+and four layouts on the Ceiling & sky card: `days` (her ask for something
+better than the first three: a block per local day, the heights drawn as
+a band, nothing scrolling), `horizon`, `continue` and `strip`
+(docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three days
+out", with a phone screenshot of each under docs/img). The build's
+`VITE_THREE_DAY` picks one; `days` is the default until she picks.
 
 Open, hers: which layout stays. The others, the env flag and
 `ThreeDayLayout` then go, and the chosen one's test keeps its name.

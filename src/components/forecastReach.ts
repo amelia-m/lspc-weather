@@ -54,14 +54,17 @@ export function reachChange(
 }
 
 /** How the Ceiling & sky card shows the NBM's three-day bulletin, while
- *  the maintainer tries the layouts (2026-11-12): `horizon` adds a 3-day
+ *  the maintainer tries the layouts (2026-11-12): `days` stacks one block
+ *  per local day, eight three-hour slots across, with the cloud heights
+ *  drawn as a band (NbsDays.tsx; her ask for something better than the
+ *  scrolling strips); `horizon` adds a 72 h
  *  option to the strip's toggle, with an NBM ceiling row under the base;
  *  `continue` adds the option too and lets the ceiling row carry on in
  *  the NBM's figures, marked, where the NWS ceiling ends; `strip` leaves
  *  the hourly strip as it is and draws a second, three-hourly strip under
  *  it; `none` shows nothing of it. */
-export type ThreeDayLayout = 'horizon' | 'continue' | 'strip' | 'none';
-export const THREE_DAY_LAYOUTS: readonly ThreeDayLayout[] = ['horizon', 'continue', 'strip', 'none'];
+export type ThreeDayLayout = 'days' | 'horizon' | 'continue' | 'strip' | 'none';
+export const THREE_DAY_LAYOUTS: readonly ThreeDayLayout[] = ['days', 'horizon', 'continue', 'strip', 'none'];
 
 /** The three-day horizon the NBM's three-hourly bulletin reaches (NBS,
  *  6 to 72 hours from its cycle); offered on the strip only where that

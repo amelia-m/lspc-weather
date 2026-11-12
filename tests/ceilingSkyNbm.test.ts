@@ -141,7 +141,7 @@ describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
     expect(html).toContain('class="sky-timeline ceiling-timeline extended nbs-timeline"');
     expect((html.match(/class="sky-col nbs-col"/g) ?? []).length).toBe(23);
     expect(html).toContain('Next three days, every 3 h: NBM three-hourly bulletin');
-    expect(html).toContain('The three-day strip is the');
+    expect(html).toContain('The three-day block is the');
     expect(html).toContain('now + next 11 h');
   });
 
@@ -153,5 +153,35 @@ describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
     const without = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly: hours(48), omClouds: null, nbm, nbs: null, threeDay: 'horizon' }));
     expect(without).not.toContain('>72h</button>');
     expect(without).not.toContain('class="sky-ceil sky-base">NBM<');
+  });
+});
+
+describe("the 'days' layout: one block per local day, eight three-hour slots, the heights drawn as a band", () => {
+  const html = cardWith('days');
+
+  it('draws three day blocks and no fourth, each with eight slots, no 72h option, and names the bulletin', () => {
+    expect((html.match(/class="nbs-day"/g) ?? []).length).toBe(3);
+    expect((html.match(/class="nbs-slot"/g) ?? []).length).toBe(24);
+    expect(html).not.toContain('>72h</button>');
+    expect(html).toContain('three-hourly bulletin (');
+    expect(html).toContain('The three-day block is the');
+    expect(html).toContain('NWS NBM three-hourly bulletin');
+  });
+
+  it('draws a base area for every slot with a base, a tick for the one ceiling, and prints the same figures under the band', () => {
+    // 23 columns: bases at 2,400 ft for 12, none for 10, 26,000 ft for one.
+    expect((html.match(/class="nbs-base-area"/g) ?? []).length).toBe(13);
+    expect((html.match(/class="nbs-ceil-tick"/g) ?? []).length).toBe(1);
+    expect(html).toContain('title="NBM ceiling 3,500 ft AGL">3.5<');
+    expect(html).toContain('title="NBM lowest cloud base 2,400 ft AGL">2.4<');
+    expect(html).toContain('title="NBM lowest cloud base 26,000 ft AGL">26<');
+    expect(html).toContain('title="NBM: no cloud layer">no<');
+    // A 26,000 ft base is drawn at the band's top, not past it.
+    expect(html).toMatch(/class="nbs-base-area" x="[0-9.]+" y="0" width="[0-9.]+" height="40"/);
+  });
+
+  it('is a picture of the figures in the muted colour: no warning class anywhere in the block', () => {
+    const block = html.slice(html.indexOf('class="nbs-days"'), html.indexOf('class="nbs-days-key"'));
+    expect(block).not.toMatch(/warn|caution|danger|alert/);
   });
 });
