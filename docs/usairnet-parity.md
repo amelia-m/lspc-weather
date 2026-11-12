@@ -142,6 +142,37 @@ from a second forecast that can disagree with it, as usairnet's
 "mismatch" popup shows; no flag, since no published limit applies to a
 FEW or SCT base.
 
+**Why usairnet's ceiling runs further out than the card's** (the
+maintainer's question, 2026-11-12, from a screenshot of usairnet's
+three-day table beside the card). Three forecasts, three reaches:
+
+- The card's **ceiling** row is the NWS gridpoint's `ceilingHeight`,
+  NDFD's ceiling grid, which NWS issues about a day and a half ahead;
+  the card says so where it ends, and shows sky cover only past it.
+- The card's **base** row is the NBM's hourly bulletin, NBH, 25 hours
+  from its cycle, through the relay.
+- usairnet's whole three-day table is the NBM's **three-hourly bulletin,
+  NBS**, 6 to 72 hours ahead: KPMV's block of the 01Z cycle of
+  2026-11-12 (`data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`, cut from
+  `blend.20261112/01/text/blend_nbstx.t01z` on NOAA's bucket, 29.6 MB,
+  which answered 200 from the sandbox) has `DT`, `UTC`, `FHR` 05 to 71,
+  `SKY`, `WDR`, `WSP`, `GST`, `CIG`, `LCB`, `VIS`, `IFC` and `IFV` in
+  columns three hours apart, and the shape of its `LCB` row (a run of
+  seven -88 then 260, -88, 260, 260) is the screenshot's "Unlim." run
+  then 26,000, Unlim., 26,000, 26,000, its figures a cycle apart since
+  the screenshot was earlier. So usairnet's "Ceiling" is the NBM's `CIG`
+  to 72 hours, and the card's is a different forecast that stops sooner.
+  Which bulletin usairnet reads for which hours is still inferred from
+  its columns, not read from the site.
+
+The card could reach as far: the relay's `/nbm/KPMV` path cuts the NBH
+block from the bucket, and the NBS file sits beside it with the same
+layout and a KPMV block of its own, so a second product would give
+`CIG`, `LCB` and `SKY` to 72 hours at three-hour steps. Whether to show
+it, and how (a third row, or the NBM's ceiling past the NWS one's end,
+labelled as another forecast), is the maintainer's call
+(docs/open-questions.md).
+
 Design rule reminder: every added metric flags a condition and cites a source,
 and none renders a go/no-go verdict. The stronger rule this app follows (CLAUDE.md): a
 metric only gets to raise a flag, or wear a warning colour, if a published
