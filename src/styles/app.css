@@ -2285,3 +2285,110 @@ a.sim-term {
 .om-usage-table th {
   font-weight: 600;
 }
+
+/* The NBM's three-day bulletin as day blocks (NbsDays.tsx): a grid of a
+   unit column and eight three-hour slots, one block per local day, so a
+   whole day fits the card at 320 px and nothing scrolls sideways. The
+   heights band is an SVG stretched over the eight slots. The second
+   forecast's muted colour throughout; no warning colour anywhere. */
+.nbs-days {
+  margin-top: 0.7rem;
+}
+.nbs-days-title {
+  margin: 0 0 0.3rem;
+  color: var(--muted);
+}
+.nbs-day {
+  margin-top: 0.4rem;
+}
+.nbs-day-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.nbs-grid {
+  display: grid;
+  grid-template-columns: 30px repeat(8, minmax(0, 1fr));
+  gap: 1px 2px;
+  align-items: end;
+  font-size: 0.58rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.nbs-unit {
+  text-align: right;
+  padding-right: 4px;
+  white-space: nowrap;
+  align-self: end;
+}
+.nbs-unit-band {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 40px;
+  line-height: 1;
+}
+.nbs-hour {
+  white-space: nowrap;
+  color: var(--text);
+}
+.nbs-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.nbs-pct {
+  color: var(--text);
+  margin-bottom: 1px;
+}
+.nbs-track {
+  display: flex;
+  align-items: flex-end;
+  height: 34px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.nbs-bar {
+  width: 100%;
+  background: var(--muted);
+  opacity: 0.7;
+}
+.nbs-band-cell {
+  grid-column: 2 / span 8;
+  display: block;
+}
+.nbs-band {
+  display: block;
+  width: 100%;
+  height: 40px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.nbs-band-grid {
+  stroke: var(--border);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+.nbs-base-area {
+  fill: var(--muted);
+  fill-opacity: 0.35;
+}
+.nbs-ceil-tick {
+  stroke: var(--text);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.nbs-fig {
+  white-space: nowrap;
+  color: var(--text);
+}
+.nbs-fig.muted {
+  color: var(--muted);
+}
+.nbs-days-key {
+  margin-top: 0.4rem;
+}

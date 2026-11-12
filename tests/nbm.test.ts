@@ -139,6 +139,8 @@ describe('parseNbsBlock', () => {
     const now = Date.UTC(2026, 10, 12, 4, 37);
     const g = parseNbsBlock(nbsFixtureText(now))!;
     expect(g.cycleMs).toBe(Date.UTC(2026, 10, 12, 3));
+    // 23 columns and no more: the FHR row's trailing spaces are not a 24th.
+    expect(g.hours).toHaveLength(23);
     expect(g.hours[0].time).toBe(Date.UTC(2026, 10, 12, 8));
     expect(g.hours[22].time).toBe(Date.UTC(2026, 10, 15, 2));
     expect(g.stepHours).toBe(3);

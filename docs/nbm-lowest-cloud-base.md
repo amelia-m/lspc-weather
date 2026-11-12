@@ -92,10 +92,24 @@ which the NBH lacks. KPMV's block of the 01Z cycle that day is
 `data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`; the fixture re-dates it to
 the hour before now, as the NBH's is.
 
-How the card shows it is the maintainer's to pick, and three layouts were
+How the card shows it is the maintainer's to pick, and four layouts were
 built to try (`ThreeDayLayout`, src/components/forecastReach.ts; the
-build's `VITE_THREE_DAY` names one, `strip` by default until she picks),
+build's `VITE_THREE_DAY` names one, `days` by default until she picks),
 each drawn from the fixture build at 390 px and kept beside this doc:
+
+- **days** (`docs/img/ceiling-sky-three-day-days-2026-11-12.png`; her
+  ask, after the first three, for something better): one block per
+  local day under the hourly strip, eight three-hour slots across it
+  (`NbsDays.tsx`), so a whole day fits the card at 320 px and nothing
+  scrolls sideways. Each block: the hours, the sky cover as a bar and a
+  figure per slot, then the cloud heights drawn as a band from the
+  ground to 12,000 ft (the lowest base a shaded area, a ceiling a tick)
+  and printed under it in thousands of feet. Slots are by local hour, so
+  the days line up down the card whatever hour the bulletin starts at,
+  and its first day's leading slots are empty. The fixture's `FHR` row
+  had a trailing blank that read as a 24th column at hour zero and drew
+  a fourth day of one empty slot; trimmed, and the parser's column count
+  pinned.
 
 - **horizon** (`docs/img/ceiling-sky-three-day-horizon-2026-11-12.png`):
   a "72h" option on the strip's toggle (labelled "3d" in the screenshot, renamed at the maintainer's word the same day). At it the strip runs past the NWS
@@ -115,8 +129,8 @@ never blended with it: a column with no NWS hour draws no NWS bar, and
 nothing is flagged or coloured (the rule, CLAUDE.md). `stripColumns`
 (forecastReach.ts, pure) builds the longer strip's columns: every NWS
 hour in the horizon, then the bulletin's times past the last of them.
-Checked in each layout's fixture build at 1280 and 390 px: no sideways
-scroll of the page, no console error.
+Checked in each layout's fixture build at 1280 and 390 px (the days
+layout at 320 too): no sideways scroll of the page, no console error.
 
 ## The header lost its version (2026-11-03)
 
