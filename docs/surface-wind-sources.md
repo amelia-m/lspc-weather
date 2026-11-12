@@ -169,7 +169,12 @@ values not served before.
   quarter hour's maximum, not the hour's; one hour of four shows the
   difference, and a longer sample would say how often it matters. The app
   does not request the hourly gust; the 10-day outlook's daily gust maximum
-  is built by Open-Meteo from its hourly values and was not checked.
+  is built by Open-Meteo from its hourly values and was not checked (on
+  the whole sample, 2026-10-30: never above the preceding hour's largest
+  15-minute gust, below it at 285 of 466 hours; the outlook's daily
+  maximum was still unchecked on 2026-11-12, when the sandbox's address
+  had no quota left for the one request it takes: docs/open-questions.md,
+  "The outlook's daily gust maximum").
 - **`current` is the `minutely_15` step at the start of the quarter hour in
   progress**, at 37 of 37 runs: at 00:43Z it was the 00:30Z step. So it is
   between 0 and 15 minutes old by construction, and read at a moment it is
@@ -547,9 +552,46 @@ read +0.8 kt over 742 reports. The pairs differ: the sample sets each
 report, not only the one at the hour, against the forecast Open-Meteo's
 live API returned while it was the newest, from whichever run was newest
 then; the archive sets the report at the hour against the first hours of
-a run made for that hour. Which of those makes the difference was not worked out. The
+a run made for that hour. The
 day-earlier row read +0.7 kt over the same days, and the gust +4 kt on
 both rows, as in the sample.
+
+**Worked out 2026-11-12: it is the run, not the pairing**
+(`scripts/omArchiveVsSample.ts`, from the files on file, no fetch). The
+sample's pairs were cut to the archive's rule, one report per hour
+within ten minutes of it and the forecast rounded to the knot, and the
+archive's start of run read on exactly those hours; then the two
+forecasts were set against each other with no report involved. Over
+2026-10-09 to 10-21 (forecast minus report, knots):
+
+| speed | hours or reports | mean | median |
+|---|---|---|---|
+| sample, every report, to the tenth (as summarised) | 745 | +0.82 | +0.8 |
+| sample, one report per hour, to the tenth | 246 | +0.69 | +0.8 |
+| sample, one report per hour, rounded to the knot | 246 | +0.75 | +1 |
+| archive start of run, every hour on file (as the page pairs it) | 311 | +0.01 | 0 |
+| archive start of run, the same 246 hours, rounded | 246 | +0.07 | 0 |
+| live hourly value minus archive start of run, same hour | 246 | +0.65 | +0.8 |
+
+So the pairing rule moves the sample's figure by a tenth or so, and the
+run moves it by two thirds of a knot: the value the live API served for
+an hour, read while that hour's report was the newest, sat above what
+the archive later held for the same hour in 176 of 246 hours, equal to
+the tenth in 6, within half a knot in 66 (median gap 1 kt, p90 2.5).
+The difference is the night's: +1.15 kt from 01Z to 12Z (above in 106 of
+121 hours) and +0.16 by day (70 above, 50 below, of 125), which is the
+shape the archive's own day/night split had and the sample's did not.
+Over the whole overlap, 2026-10-09 to 11-08 (534 hours, a windier
+spell from late October in it), the same: sample +1.11 (one report per
+hour, to the tenth) against archive +0.50 on the same hours, the live
+value +0.61 over the archive's (369 above, 154 below), +0.92 at night
+and +0.27 by day. What the archive's "start of run" is, in hours of
+lead, Open-Meteo's page does not say beyond "initial hours"; the live
+value is from a run one and a half to two hours old (above, "What
+changes"). The archive, then, is not what a reader saw: it is a knot
+nearer KPMV at night than the forecast the live API served, and the
+sample is the record of that. The page's two sections stay as they are,
+each labelled with what it reads.
 
 Counts and spreads only. Nothing on the dashboard reads them. Rebuilt by
 the weekly refresh; by hand:

@@ -196,6 +196,45 @@ late-evening leg passed. Open-Meteo answered 200 again at 21:50Z. Nothing
 in the code; #297 is the maintainer's to close, and it is on the tally
 (docs/live-checks-tally.md, "Since the tally").
 
+## The outlook's daily gust maximum: one request, the address refused (2026-11-12)
+
+Open since 2026-10-09 in docs/surface-wind-sources.md ("What changes, and
+how often"): Open-Meteo's hourly gust at the DZ is the 15-minute step on
+the hour, so it behaves as the last quarter hour's maximum rather than
+the preceding hour's its table describes, and on the whole three-week
+sample it sat below the hour's largest 15-minute gust at 285 of 466
+hours, by up to 6.8 kt. The 10-day outlook's `wind_gusts_10m_max`, which
+the Daily forecast card prints as each day's "g", is built by Open-Meteo
+from those hourly values, and whether a day's figure can therefore sit
+under the day's largest 15-minute gust "was not checked". It is one
+request: the outlook's own daily fields with `hourly=wind_gusts_10m` and
+`minutely_15=wind_gusts_10m` beside them, in the drop zone's time zone
+(five variables, so one call by Open-Meteo's formula), and a count per
+local day of the daily maximum against the largest of its 24 hourly
+values and of its 96 quarter-hour steps.
+
+Tried from the sandbox on 2026-11-12 at 06:56Z, the session's first
+Open-Meteo request: `429`, "Daily API request limit exceeded. Please try
+again tomorrow.", with `X-RateLimit-Limit: 10000.0`, `X-RateLimit-Remaining:
+0.0`, `X-RateLimit-Window: 86400` and `X-RateLimit-Reset: 1794528025`,
+which is 2026-11-13 00:00:25Z. So the shared address had spent its day
+on requests that were not this repo's, the third such day (2026-09-23,
+10-10, now 11-12; CLAUDE.md), and the first on which the answer carried
+the limiter's headers. The reset is 25 seconds past midnight UTC, which
+fits the reading of 2026-11-04 that a client's day window rolls from
+the second of its first request ("Done: counting this browser's
+Open-Meteo calls", below): an address busy around the clock has a first
+request moments after its last window ends. The request was not retried
+(the convention: give up on the daily-limit 429). Nothing on the
+dashboard is affected; each reader's browser has its own address.
+
+Still to do, on a day the address has quota, or as one step of a
+comparison run on a runner (which has never met the limit): the request
+above, and the counts. Whatever it finds changes no flag: the outlook's
+gust is Open-Meteo's figure printed as its own, under no limit, and a
+finding that the daily maximum reads under the day's largest 15-minute
+gust would be a note beside it, as the card's other comparisons are.
+
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
 **Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
@@ -1133,13 +1172,22 @@ hour, and the browser kept its own (measured and changed 2026-10-23,
 docs/nws-gridpoint-age.md); and, not acted on, Open-Meteo's hourly gust at the DZ always equalled the
 15-minute step on the hour, so it behaved as the last quarter hour's maximum
 rather than the hour's its docs describe (below the hour's largest 15-minute
-gust at one of four hours, by 2.5 kt).
+gust at one of four hours, by 2.5 kt, on the first evening; on the whole
+three-week sample, 285 of 466 hours, by up to 6.8 kt:
+docs/surface-wind-sources.md, "The first three weeks").
 Since 2026-10-23 Open-Meteo's own archive gives six months beside it
 (docs/surface-wind-sources.md, "Open-Meteo's archive"): its start-of-run
 10 m wind a knot high by day and centred at night, and its gust high in
 64% of the hours KPMV reported one. Over the sample's own days the
 archive's start of run was centred (mean 0.0 kt) where the sample's
-hourly read +0.8; why was not worked out.
+hourly read +0.8; worked out 2026-11-12 from the files on file
+(`scripts/omArchiveVsSample.ts`; docs/surface-wind-sources.md, "Worked
+out 2026-11-12"): the pairing rule moves the sample's figure a tenth,
+the run two thirds of a knot. The value the live API served for an hour
+sat +0.65 kt over what the archive later held for the same hour (246
+hours, above in 176), +1.15 at night and +0.16 by day; over 2026-10-09
+to 11-08, +0.61 over 534 hours. So the archive is not the forecast a
+reader saw, and reads a knot nearer KPMV at night than that forecast did.
 Nothing on the dashboard changed.
 
 ## Done: the observation beside the forecast; not the forecast beside the observation
