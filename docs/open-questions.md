@@ -155,6 +155,25 @@ later that day. Still
 waiting on her: Mark Schulze's page as a screenshot file, for "Two of
 them, as they look".
 
+## Reach the NBM's three-day bulletin for the Ceiling & sky card? (2026-11-12)
+
+The maintainer asked why usairnet's ceiling forecast runs further out
+than the card's. Answered in docs/usairnet-parity.md, "Why usairnet's
+ceiling runs further out": usairnet's table is the NBM's three-hourly
+NBS bulletin, 6 to 72 hours; the card's ceiling is the NWS gridpoint's,
+about a day and a half; its base row the NBM's hourly NBH, 25 hours. The
+NBS file is on the same bucket the relay already reads
+(`blend.YYYYMMDD/HH/text/blend_nbstx.tHHz`, 29.6 MB, 200 from here), with
+a KPMV block of the same layout (`data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`).
+
+Open, hers to decide: whether the card should show the NBM's `CIG`,
+`LCB` and `SKY` to 72 hours at three-hour steps (the relay would cut the
+NBS block as it does the NBH's; the card a third row, or the NBM's
+ceiling past the NWS one's end, labelled as a second forecast, never
+blended with the first), and whether a 36-hour card wants a three-day
+row at all. No flag either way: the rule stands, and the base row's note
+already says the NBM is a forecast that can disagree with the NWS one.
+
 ## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
 
 The live-site run after the parity summary's deploy (20:07Z) failed
