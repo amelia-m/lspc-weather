@@ -1,9 +1,9 @@
 /**
- * Where the dashboard reads Offutt's TAF and KPMV's NBM bulletin block:
+ * Where the dashboard reads Offutt's TAF and KPMV's NBM bulletin blocks:
  * the maintainer's relay (relay/, docs/taf-relay.md), deployed
- * 2026-10-27. Null would turn both off: the TAF card would read every TAF
- * from api.weather.gov, which has no Offutt TAF, and show Omaha's, and
- * the Ceiling & sky card's base row would go.
+ * 2026-10-27. Null would turn all of it off: the TAF card would read every
+ * TAF from api.weather.gov, which has no Offutt TAF, and show Omaha's, and
+ * the Ceiling & sky card's base row and three-day block would go.
  *
  * The Worker's address, with a trailing slash dropped. The build's
  * Content-Security-Policy takes its origin from here (`connectSources`),

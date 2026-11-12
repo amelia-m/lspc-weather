@@ -173,6 +173,12 @@ it, and how (a third row, or the NBM's ceiling past the NWS one's end,
 labelled as another forecast), is the maintainer's call
 (docs/open-questions.md).
 
+Built the same day at her word: the relay's third path, `/nbm/KPMV/nbs`,
+the app's "NBM three-day" source, and four layouts on the card to try,
+a block per local day the default (docs/nbm-lowest-cloud-base.md, "The
+three-hourly bulletin, three days out"). Which layout stays is still
+hers (docs/open-questions.md).
+
 Design rule reminder: every added metric flags a condition and cites a source,
 and none renders a go/no-go verdict. The stronger rule this app follows (CLAUDE.md): a
 metric only gets to raise a flag, or wear a warning colour, if a published

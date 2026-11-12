@@ -9,11 +9,12 @@ card showed Omaha's (about 32 mi) and linked Offutt's; since 2026-10-27 it
 reads Offutt's through the relay below. Why a relay and not a workflow:
 docs/open-questions.md, "KOFF's TAF".
 
-`relay/` is a Cloudflare Worker that fetches two fixed things, Offutt's
-TAF, `https://aviationweather.gov/api/data/taf?ids=KOFF&format=json`, and
-since 2026-10-27 KPMV's block of the NBM bulletin ("A second path",
-below), and hands each to the dashboard with the CORS header. It is the
-app's only server-side piece.
+`relay/` is a Cloudflare Worker that fetches three fixed things, Offutt's
+TAF, `https://aviationweather.gov/api/data/taf?ids=KOFF&format=json`,
+since 2026-10-27 KPMV's block of the NBM's hourly bulletin ("A second
+path", below) and since 2026-11-12 its block of the three-hourly one
+(the third path, same section), and hands each to the dashboard with
+the CORS header. It is the app's only server-side piece.
 
 - **Fixed paths only.** It cannot be pointed at anything else: three paths,
   `/taf/KOFF`, `/nbm/KPMV` and `/nbm/KPMV/nbs` (since 2026-11-12), GET
@@ -189,7 +190,7 @@ The same Worker serves `/nbm/KPMV` (`relay/src/nbm.ts`): the NWS
 National Blend of Models' hourly bulletin for KPMV, cut from NOAA's open
 data bucket, for the Ceiling & sky card's lowest cloud base
 (docs/nbm-lowest-cloud-base.md). The origin rule and the shape of the
-answer are the TAF path's (`relay/src/http.ts` holds what the two share);
+answer are the TAF path's (`relay/src/http.ts` holds what the paths share);
 each path fetches one fixed thing, so the relay can still fetch nothing
 else. Deployed by the same build on merge, with nothing to set up.
 
