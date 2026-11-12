@@ -123,3 +123,137 @@ beside it, and in larger, higher-contrast type (C31 updated); the three
 chat screens made fragments, one click each; the title changed from
 "Built with the brakes on" to "Built to be checked". No claim changed.
 Then, at her word, "Trust, but verify".
+
+## Fresh review of C30 to C37, 2026-11-12
+
+A second reviewer, given the deck, the table, the repository's history
+and the images, checked the eight rows added after the first review.
+Commits were read with `git show`; the images were opened; the
+maintainer's words and a web search cannot be checked from here and are
+marked so. Nothing in `talk.qmd`, the images or `public/talk/` was
+changed.
+
+- C30, confirmed, with three notes. The three screenshots are in `img/`
+  (added 4045b3b, 2026-11-11), the other party is unnamed in them, and
+  the maintainer's own messages read as the caption says: "I might play
+  around with whether I can build a dashboard just for funsies" is on
+  `chat-2.png` word for word, and the instructor's three sites ("NOAA
+  hourly forecast graph, usairnet aviation forecast, and a current METAR
+  for Plattsmouth") are on `chat-1.png`, with the links one by one on
+  the next two. The notes: the caption's "Is there a better app?" is a
+  shortened quote (the message reads "Is there a better app or something
+  to look at than general weather apps?"); the year "2026" in the
+  caption is on none of the screens, so it rests on the maintainer's
+  word (the thread precedes the first commit of 2026-06-26, which is
+  all the history shows); and `chat-3.png` shows `metar-taf.com`, a
+  hostname the live site does not name, while `chat-2.png` carries the
+  NOAA link's coordinates, which are not the drop zone's. The contract's
+  "Not shown" line is the maintainer's to rule on for those. Also,
+  `docs/open-questions.md`'s "Done" entry for the deck calls the other
+  party "a jumper" where the slide and the table say "my instructor".
+- C31, confirmed as a prop. `weather-app-mock.png` was added in f456a92
+  and redrawn in 59e628a, both 2026-11-11, matching the row; the image
+  reads "A MOCK-UP FOR A TALK · NOT ANY REAL APP" at its foot and the
+  slide's caption says the same; Saturday and Sunday carry the
+  partly-cloudy icon. The HTML the mock was drawn from is not in the
+  repository, so "drawn in Chromium from an HTML mock" rests on the
+  commit messages. One mismatch between the slide and its own prop: the
+  slide says "Highs in the sixties" and the mock's Sunday high is 70°.
+  Not a claim about anything real, but the author should change one or
+  the other.
+- C32, confirmed, with a note on the title. `usairnet-kpmv.png` (added
+  a1f19c7, 2026-11-11) is 2000 by 1240 px, the top 620 CSS px at 2x of
+  the page the live site links (its heading reads "Plattsmouth Municipal
+  Airport, KPMV", with the "Legacy view" toggle CLAUDE.md names). The
+  slide shows no image of Mark Schulze's page and its text asserts none;
+  a1f19c7's message records the reason the row gives (his page does not
+  fill its table under the sandbox's browser). But the slide is titled
+  "Two of them, as they look" and shows one of them as it looks; until
+  his screenshot arrives the title promises more than the slide shows.
+  Also, the screenshot is the page's head (navigation, banner, heading,
+  nearby stations), not the hour-by-hour table the slide's text
+  describes; the text describes the page, which is fair, but a reader
+  may take it as describing the picture.
+- C33, confirmed except one figure, corrected in the table. The two
+  points, the move on 2026-10-08, the same Open-Meteo cell and NWS
+  gridpoint, the link carrying the new point and his list's pin not, are
+  all in `docs/open-questions.md` ("Settled: the DZ's coordinates now sit
+  on the landing area"), `src/config/site.ts` lines 68 to 78 and
+  `docs/markschulze-altitude-reference.md` lines 370 to 382, as cited.
+  The row said "the model's ground 1,132 ft at the old point"; the
+  sources say 349 m (1,145 ft) at the app's old point and 345 m
+  (1,132 ft) at his pin, under a metre west of it, where Open-Meteo's
+  terrain steps 4 m. The row now gives all three figures. The slide's
+  second paragraph has the same slip, "1,132 ft to 1,165 ft" for the
+  app's point, which moved from 1,145 ft; the third paragraph's "33 ft
+  lower" for his pin against the new point is right. The author should
+  fix the slide. "Nobody lands there" is the slide's gloss on the
+  source's description of where jumpers land (north or east of the
+  fence); "the comparison logs record which point each hour was taken
+  at" holds: `scripts/schulzeCompare.live.ts` writes `dz` as the
+  coordinates on every record, and the source says logs before
+  2026-10-08 were at the old point.
+- C34, confirmed, with two wording notes. KPMV 11 mi ENE (CLAUDE.md
+  line 112, `SurfaceWindPanel`'s `.wind-observed` line), IEM 4 to 6
+  minutes and NWS 24 to 33 on 2026-09-27 (lines 195 to 205), the relay
+  (220 to 235), the FD fallback (421), the six stations
+  (`NEARBY_METAR_STATIONS`, lines 118 to 125), the three TAF stations
+  (lines 89 to 99) and the fall-back to Omaha's (`docs/taf-relay.md`
+  line 57) are where the row says; `src/domain/taf.ts` decodes ended,
+  CNL and NIL TAFs and `TafPanel` prints which station's TAF is shown
+  and why the nearer one is not. The row's "CLAUDE.md lines 93 to 97
+  (the card's first line)" points at the forecast-flag bullet; the
+  card's first line is at line 112, in the "Surface wind card is first"
+  bullet. And the slide's "on different ground" is not in that first
+  line, which gives the distance and bearing only; the elevations
+  (1,204 ft against 1,182 ft) are in `site.ts`. "Closest station with a
+  METAR" is `site.ts` line 9.
+- C35, confirmed. 8816b10 (2026-10-03 18:44Z, "Shade night on the hourly
+  wind chart, and link live traffic over the sectional") and 2c6fd91
+  (2026-10-04 00:41Z, "Shade night darker than day on the hourly wind
+  chart") exist on `main`, are the only two commits `git log -S'sunrise'
+  -- src/components/HourlyForecastPanel.tsx` finds, and their messages
+  describe the change the slide names. 8816b10's parent is b3cceb8
+  (2026-10-03 17:41Z, the sectional zoom buttons), and
+  `src/api/fixtures/gridpoint.ts` at that commit runs to 12 hours
+  (`interval(0, 12)`, `interval(6, 6)`), so "its own held only 12 hours"
+  holds. 2026-11-11 was a Wednesday and 18:00Z is noon Central: both
+  images start at 12pm and the after image's midnights read Wed, Thu,
+  Fri; both have 72H selected and "next ~48 h". Two notes: 2c6fd91's
+  date is UTC, the evening of 3 October in Central time, as the table's
+  dates are throughout; and the after image is the fixture build at
+  `main`, so the weekday labels (d122a4f, 2026-10-09) and the limit
+  line's placing are later than the two commits the speaker note names.
+  The slide's "Since" covers that; the note's "Two commits" does not
+  quite.
+- C36, the words unverifiable, the figures confirmed. The maintainer's
+  two sentences are in no file and cannot be checked from here. The
+  figures beside them are CLAUDE.md's: within 4° and 1 kt on the same
+  hour, the three height levels (80, 120 and 180 m, all below 1,000 ft)
+  since 2026-10-08, the seven extra pressure levels, the "As Schulze"
+  view kept to his method; `.github/workflows/comparisons.yml` has eight
+  cron lines. One nuance for "eight comparisons a day" (also on the C32
+  slide): the daily sky-parity job runs the Schulze comparison too, so
+  nine runs a day log it; the row's source says "also ... eight times a
+  day", which the slides shorten.
+- C37, the link confirmed, the sources unverifiable. The slide and
+  `public/talk/index.html` both carry `https://skydivelspc.com/`, the
+  address the row names. The web search and the maintainer's
+  confirmation are in no file beyond the commit messages (f72d3e1 names
+  the Omaha Magazine article and the email domain, a32e61a the
+  confirmation); from here the host is still refused (a 403 on the
+  proxy's CONNECT, 2026-11-12), so the link was not opened in this
+  review either. "Weeping Water, Nebraska" is README line 4 and
+  `site.ts` line 8.
+
+The public render: `public/talk/index.html` has no `class="ref"` and no
+`[C…]` marker, its `<title>` is "Trust, but verify" as `talk.qmd`'s, it
+carries the club's link, and `npx vitest run tests/talkPage.test.ts`
+passed its three tests on 2026-11-12.
+
+Changed in this review: C33's row in `claims.md`, the ground figures
+only. For the author: the slide's "1,132 ft to 1,165 ft" (C33), "Highs
+in the sixties" against the mock's 70° (C31), the "Two of them" title
+(C32), C34's "lines 93 to 97" and "on different ground", and the three
+hostnames and the year on the thread's screenshots (C30) for the
+maintainer to rule on.
