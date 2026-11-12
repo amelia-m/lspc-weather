@@ -109,7 +109,15 @@ card, the charts' limit lines and the flags, each marked as theirs.
   since 2026-10-27 a "base" row: the lowest cloud base in the NWS National
   Blend of Models' hourly bulletin for KPMV, read through the relay
   ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)). It is
-  not a ceiling and flags nothing.
+  not a ceiling and flags nothing. The strip's toggle offers 12h, 24h and
+  36h, and since 2026-11-12 the card also shows the NBM's three-hourly
+  bulletin (NBS, 6 to 72 hours ahead, the one usairnet's three-day table
+  reads), read through the relay's third path: as a block per local day
+  under the strip by default, one of four layouts the maintainer is
+  trying (`VITE_THREE_DAY`; two of them put a 72h option on the toggle
+  instead; same doc, "The three-hourly bulletin, three days out"). A
+  second forecast beside the NWS one, never blended with it, and
+  flagged no more than the base is.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline (narrow
   bars, a time under every third hour).
@@ -157,7 +165,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
 | [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/) (IEM) | the current KPMV observation (raw METAR + decoded), read first; the Nearby METARs card's six stations, from its Nebraska ASOS network |
 | [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ (its view of the NDFD, below), the current KPMV observation as the backup to IEM's, the Omaha and Lincoln TAFs, and the NOAA FD winds-aloft product as the winds card's fallback when Open-Meteo is unreachable |
 | [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels), the 10-day daily outlook and the second cloud-cover figure on Ceiling & sky; on `#parity` and `#wind-errors`, its winds set against other sources. Weather data by Open-Meteo.com under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The dashboard reworks it: winds and temperatures interpolated from pressure levels to heights above the drop zone, a drift estimate worked from those winds, the outlook's weather codes grouped into its own labels, and on the two pages differences from other sources. The outlook's hourly detail is the NWS gridpoint's. The repository's comparison docs and the archives under [`data/parity/`](data/parity/README.md) hold Open-Meteo data too, under the same licence; what this app does to meet Open-Meteo's terms is in [docs/open-meteo-terms.md](docs/open-meteo-terms.md) |
-| The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | two fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, and KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)) |
+| The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | three fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)), and since 2026-11-12 its block of the three-hourly bulletin (NBS) from the same bucket, for the card's three-day block |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 | [FAA VFR sectional](https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59) | Sectional chart tiles (image embed, no API) |
 | [GoatCounter](https://www.goatcounter.com/) | page counts, on the deployed site only: one image request per page shown, carrying the page's path and title, the referrer, the screen width and the query string; no cookies, and nothing from browsers opted out or under automation ([docs/page-counts.md](docs/page-counts.md)) |
@@ -238,7 +246,7 @@ pilots meet elsewhere. In the order they tend to come up:
 | **VFR**, **MVFR**, **IFR**, **LIFR** | the FAA's flight categories from ceiling and visibility, best to worst |
 | **NWS**, **NOAA**, **WFO** | the National Weather Service, its parent agency, and a Weather Forecast Office (Omaha's is OAX) |
 | **NDFD** | National Digital Forecast Database: the NWS's gridded forecast of every element by the hour. api.weather.gov's gridpoint, which the hourly chart and the forecast wind flags read, is its view at the DZ; NOAA's archive of its grids is the forecast's past |
-| **NBM**, **NBH** | the National Blend of Models, the NWS's blended guidance, and its hourly text bulletin (NBH) per station; the "base" row on Ceiling & sky is its lowest cloud base for KPMV |
+| **NBM**, **NBH**, **NBS** | the National Blend of Models, the NWS's blended guidance, and its hourly (NBH) and three-hourly (NBS) text bulletins per station; the "base" row on Ceiling & sky is the NBH's lowest cloud base for KPMV, and the card's three-day block (since 2026-11-12) is the NBS's sky cover, ceiling and base |
 | **HRRR**, **GFS** | NOAA's High-Resolution Rapid Refresh and Global Forecast System, the two models behind the Open-Meteo request the winds-aloft table reads ([docs/run-split.md](docs/run-split.md)) |
 | **FD** | NOAA's winds-and-temperatures-aloft forecast (the "FD" product), the winds card's fallback |
 | **IEM** | the Iowa Environmental Mesonet, Iowa State University's archive and live feed of observations |
@@ -350,7 +358,9 @@ smallest and largest gap; how often any row was more than 10° apart; how often
 the two pages showed different hours; the two ground rows by time of day and by
 day; the observation fields grouped, with the known reasons a field differs;
 how long usairnet's page has gone unreadable; and, dated, the checks made by
-hand that the figures were read beside — and never a grade. A daily workflow
+hand that the figures were read beside — and never a grade. Since 2026-11-11
+each table's figures are also drawn above it (`src/domain/paritySvg.ts`),
+pictures of the printed figures and nothing more. A daily workflow
 writes its data from the logs. The pipeline and how to read the page are in
 [`docs/source-parity.md`](docs/source-parity.md).
 
@@ -364,6 +374,13 @@ whether KPMV measured rain or reported thunder in that hour
 ([`docs/forecast-chances.md`](docs/forecast-chances.md)). It
 is a static page beside the app (`public/ceiling-errors/`); how it is made and
 updated is in [`docs/ceiling-heights.md`](docs/ceiling-heights.md), "The chart".
+
+The footer also links, since 2026-11-11, **How this was built**: the
+maintainer's Lincoln AI meetup deck on how this dashboard was developed with
+AI agents, a page of the site (`public/talk/index.html`, rendered by
+`scripts/renderTalk.sh` from
+[`docs/talks/lincoln-ai-meetup/talk.qmd`](docs/talks/lincoln-ai-meetup/)),
+which the live-site check loads like any other page.
 
 Every USPA, CFR and FAA citation here began as an AI recollection; the club's
 posted wind-limit tiers did not — they are a transcription of an undated photo

@@ -9,7 +9,8 @@
  * card showed Omaha's TAF and linked Offutt's (docs/open-questions.md,
  * "KOFF's TAF").
  *
- * This fetches one fixed URL, so it cannot be used to fetch anything else.
+ * This path fetches one fixed URL, and the NBM paths (nbm.ts) one fixed
+ * file each, so the Worker cannot be used to fetch anything else.
  * It answers a browser only from the dashboard's own origins (`ALLOWED_ORIGINS`):
  * another site's page cannot read it. A request with no Origin header (a script,
  * curl) is answered, since an Origin can be forged outside a browser and

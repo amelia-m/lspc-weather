@@ -20,10 +20,12 @@
  * bulletin, forecast date and cycle; the `UTC` line the valid hours, "date
  * as in line 1, unless past 23Z - then the following date is valid".
  *
- * The card shows the base; the ceiling and sky are read too, so the block
- * can be set against the NWS gridpoint's later. Values print right-aligned
- * in three-character fields after a four-character label, so a row is cut
- * by position, not by spaces: "-88-88140" is three fields.
+ * The card shows the NBH's base, and since 2026-11-12 the NBS's sky,
+ * ceiling and base in its three-day block; the NBH's ceiling and sky are
+ * read too, so the block can be set against the NWS gridpoint's later.
+ * Values print right-aligned in three-character fields after a
+ * four-character label, so a row is cut by position, not by spaces:
+ * "-88-88140" is three fields.
  *
  * Pure: text in, hours out. Nothing here raises a flag: no published limit
  * applies to a lowest cloud base, and the card prints it plainly.
