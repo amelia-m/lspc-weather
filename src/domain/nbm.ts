@@ -109,7 +109,10 @@ export function parseNbmBlock(text: string, product: NbmProduct): NbmForecast | 
     if (!Number.isFinite(hh) || f.trim() === '') return;
     if (hh <= prev) day += 1;
     prev = hh;
-    const ahead = fhr == null ? NaN : Number(fhr[i]);
+    // A blank FHR field is no figure, not hour zero (Number('   ') is 0):
+    // the column then takes the UTC row's date, as the NBH's do.
+    const fhrField = fhr?.[i]?.trim();
+    const ahead = fhrField ? Number(fhrField) : NaN;
     const time = Number.isFinite(ahead)
       ? cycleMs + ahead * 3_600_000
       : Date.UTC(Number(head[5]), Number(head[3]) - 1, Number(head[4]) + day, hh);

@@ -23,7 +23,7 @@ format:
 ![](img/weather-app-mock.png)
 :::
 ::: {.column width="60%"}
-**Partly cloudy, Saturday and Sunday.** Highs in the sixties. Nothing to decide.
+**Partly cloudy, Saturday and Sunday.** Highs in the sixties, seventy on Sunday. Nothing to decide.
 
 That is the whole forecast, for most people.
 
@@ -164,28 +164,28 @@ The club: [Lincoln Sport Parachute Club](https://skydivelspc.com/), Brown's Airp
 A quick orientation for anyone who flies or jumps: these are the sites. Mark Schulze's winds page is what the winds-aloft table is checked against; usairnet is where the club looked up the cloud forecast. Everything on the left is read in the reader's own browser.
 :::
 
-## Two of them, as they look {.smaller}
+## One of them, as it looks {.smaller}
 
 :::: {.columns}
 ::: {.column width="62%"}
 ![](img/usairnet-kpmv.png)
 :::
 ::: {.column width="38%"}
-**usairnet's aviation forecast for KPMV**: cloud cover, wind, gusts, ceiling and the lowest cloud base, hour by hour. The club's cloud forecast before the dashboard, and still a second decode of the same METAR. [C32]{.ref}
+**usairnet's KPMV page**, its head: the latest report decoded, field by field. Further down the same page is its aviation forecast, cloud cover, wind, gusts, ceiling and the lowest cloud base every three hours for three days: the club's cloud forecast before the dashboard. Still a second decode of the same METAR. [C32]{.ref}
 
-**Mark Schulze's Winds Aloft**: direction and speed every thousand feet from the surface up, for a pin on his map. The winds-aloft table the dashboard reproduces, and is checked against eight times a day. [C32]{.ref}
+**Mark Schulze's Winds Aloft** (no screenshot yet): direction and speed every thousand feet from the surface up, for a pin on his map. The winds-aloft table the dashboard reproduces, and is checked against nine times a day: eight scheduled runs and the daily check. [C32]{.ref}
 :::
 ::::
 
 ::: notes
-Both pages are what a jumper opens on a phone at the DZ. The dashboard's job was to put the parts that matter side by side, and then to prove, every day, that its own decode and its own winds table say the same as these.
+Both pages, one shown here, are what a jumper opens on a phone at the DZ. The dashboard's job was to put the parts that matter side by side, and then to prove, every day, that its own decode and its own winds table say the same as these.
 :::
 
 ## Where exactly is the drop zone?
 
 The app's point for the drop zone, and Mark Schulze's own pin for the club, both sat at 40.8675° N, 96.11° W: a field south-west of the runway, downhill from it. Nobody lands there. [C33]{.ref}
 
-On 8 October the point moved to the middle of the main landing area by the pea gravel (40.8703° N, 96.1085° W). Checked that day: the same Open-Meteo forecast cell and the same NWS gridpoint, so no forecast changed; only the ground the heights are measured from moved, 1,132 ft to 1,165 ft on the model's terrain. [C33]{.ref}
+On 8 October the point moved to the middle of the main landing area by the pea gravel (40.8703° N, 96.1085° W). Checked that day: the same Open-Meteo forecast cell and the same NWS gridpoint, so no forecast changed; only the ground the heights are measured from moved, 1,145 ft to 1,165 ft on the model's terrain. [C33]{.ref}
 
 The dashboard's link to his page carries the new point. His own list's pin for the club is still in the field, so a reader who picks the club from his list sees a table measured from 33 ft lower. The comparison logs record which point each hour was taken at, so the two are never pooled. [C33]{.ref}
 

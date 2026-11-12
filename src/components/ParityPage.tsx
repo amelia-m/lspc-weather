@@ -248,7 +248,11 @@ function SidesKey(): JSX.Element {
  *  reads the same length for the same figure in each. */
 function altitudeAxisMax(tables: readonly (readonly AltitudeSpread[])[]): { dir: number; spd: number } {
   const rows = tables.flat();
-  return { dir: Math.max(0, ...rows.map((r) => r.dir.maxAbs)), spd: Math.max(0, ...rows.map((r) => r.spd.maxAbs)) };
+  // An old summary's row can lack a spread (the table prints dashes for
+  // it, SpreadTable); it must not take the page down here.
+  const dirs = rows.map((r) => (r.dir as Spread | undefined)?.maxAbs ?? 0);
+  const spds = rows.map((r) => (r.spd as Spread | undefined)?.maxAbs ?? 0);
+  return { dir: Math.max(0, ...dirs), spd: Math.max(0, ...spds) };
 }
 
 /** The spreads per altitude as a profile, highest row first, direction and
