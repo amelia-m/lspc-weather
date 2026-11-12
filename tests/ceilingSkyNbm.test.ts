@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
 import type { ThreeDayLayout } from '../src/components/forecastReach';
+import { localDateKey } from '../src/components/format';
 import { DATA_SOURCES } from '../src/config/sources';
 import { deriveProvenance } from '../src/domain/sourceProvenance';
 import type { HourlyPoint, NbmForecast } from '../src/domain/types';
@@ -160,9 +161,18 @@ describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
 describe("the 'days' layout: one block per local day, eight three-hour slots, the heights drawn as a band", () => {
   const html = cardWith('days');
 
-  it('draws three day blocks and no fourth, each with eight slots, no 72h option, and names the bulletin', () => {
-    expect((html.match(/class="nbs-day"/g) ?? []).length).toBe(3);
-    expect((html.match(/class="nbs-slot"/g) ?? []).length).toBe(24);
+  it('draws one block per local day the bulletin touches (three or four, by the cycle hour), each with eight slots, no 72h option, and names the bulletin by its span', () => {
+    // The fixture's cycle is an hour before now, so which local dates its
+    // 66 hours cross depends on the clock: three from a 01Z to 06Z cycle,
+    // four otherwise. The count is held to the fixture's own dates, not a
+    // literal (a literal 3 failed for eighteen hours of every day, found
+    // in review 2026-11-12).
+    const days = new Set(nbs.hours.map((h) => localDateKey(h.time))).size;
+    expect([3, 4]).toContain(days);
+    expect((html.match(/class="nbs-day"/g) ?? []).length).toBe(days);
+    expect((html.match(/class="nbs-slot"/g) ?? []).length).toBe(days * 8);
+    expect(html).not.toContain('Next three days');
+    expect(html).toMatch(/[A-Z][a-z]{2} \d{1,2}[ap]m to [A-Z][a-z]{2} \d{1,2}[ap]m, every 3 h: the NBM/);
     expect(html).not.toContain('>72h</button>');
     expect(html).toContain('three-hourly bulletin (');
     expect(html).toContain('The three-day block is the');

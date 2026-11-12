@@ -136,8 +136,8 @@ release downloads are outside the session's repository scope), so the
 render is pandoc's reveal.js writer from the same source; the README
 there has the commands. Two slides were added after the review at the
 maintainer's word: a mock-up of a generic weather app (a prop, labelled
-as one) and her text thread with a jumper (whose consent to show their
-messages is hers to have), claims C30 and C31.
+as one) and her text thread with her instructor (whose consent to show
+their messages is hers to have), claims C30 and C31.
 Later that day, at her word, seven more (C32 to C37: the sites as they
 look, the drop zone's point, why several stations, the hourly chart
 before and after night shading, "trusting and skeptical", and a link to
@@ -152,8 +152,17 @@ an Omaha Magazine article and the club's listed email domain (a web
 search that day): the host is outside the sandbox's network, so the
 link was not opened from here; the maintainer gave the same address
 later that day. Still
-waiting on her: Mark Schulze's page as a screenshot file, for "Two of
-them, as they look".
+waiting on her: Mark Schulze's page as a screenshot file, for the slide
+now titled "One of them, as it looks". A fresh reviewer's pass over
+C30 to C37 on 2026-11-12 (review.md, "Fresh review of C30 to C37")
+confirmed them and found three slips, fixed that day: the old point's
+ground is 1,145 ft, not 1,132 (the slide said 1,132 to 1,165); the
+mock's Sunday high is 70° under "highs in the sixties"; the comparison
+runs nine times a day with the daily check, not eight. Two things it
+raised are hers under the contract's "Not shown" line: chat-3 shows
+metar-taf.com, a hostname the live site does not name, and chat-2's NOAA
+link carries coordinates that are not the DZ's; both are in the
+screenshots as her instructor sent them.
 
 ## Reach the NBM's three-day bulletin for the Ceiling & sky card? (2026-11-12)
 

@@ -101,7 +101,13 @@ each drawn from the fixture build at 390 px and kept beside this doc:
   ask, after the first three, for something better): one block per
   local day under the hourly strip, eight three-hour slots across it
   (`NbsDays.tsx`), so a whole day fits the card at 320 px and nothing
-  scrolls sideways. Each block: the hours, the sky cover as a bar and a
+  scrolls sideways; three blocks from a cycle of 01Z to 06Z, four from
+  any other, since the bulletin's 66 hours start five hours after its
+  cycle, and the heading names the span rather than a count of days (a
+  "three days" heading sat over four blocks, found in review that day,
+  with a test that read the clock and would have failed CI for eighteen
+  hours of every day: the block count is now held to the fixture's own
+  local dates). Each block: the hours, the sky cover as a bar and a
   figure per slot, then the cloud heights drawn as a band from the
   ground to 12,000 ft (the lowest base a shaded area, a ceiling a tick)
   and printed under it in thousands of feet. Slots are by local hour, so

@@ -6,9 +6,14 @@ import { fmtShortHour, fmtTime, fmtWeekday, localDateKey } from './format';
 /**
  * The NBM's three-hourly bulletin (NBS) as stacked day blocks: one block
  * per local day, eight three-hour slots across it, so a phone shows a
- * whole day across the card and three days down it with nothing to scroll
- * sideways (the 'days' layout, forecastReach.ts; the maintainer's ask of
- * 2026-11-12 for something better than a second scrolling strip).
+ * whole day across the card and the bulletin's days down it with nothing
+ * to scroll sideways (the 'days' layout, forecastReach.ts; the
+ * maintainer's ask of 2026-11-12 for something better than a second
+ * scrolling strip). The bulletin's 66 hours start five hours after its
+ * cycle, so they cross three local dates from a cycle of 01Z to 06Z and
+ * four from any other, the first and last blocks partly filled: the
+ * heading names the span, not a count of days (found in review,
+ * 2026-11-12, when a "three days" heading sat over four blocks).
  *
  * Each block: the hours along the top, the sky cover as a bar and a figure
  * in each slot, then the cloud heights drawn as a band (the lowest cloud
@@ -76,10 +81,13 @@ export function NbsDays({ nbs, timeZone }: { nbs: NbmForecast; timeZone: string 
     days.set(key, slots);
   }
   const cycle = `${String(new Date(nbs.cycleMs).getUTCHours()).padStart(2, '0')}Z`;
+  const firstH = nbs.hours[0];
+  const lastH = nbs.hours[nbs.hours.length - 1];
+  const span = firstH && lastH ? `${fmtWeekday(firstH.time)} ${fmtShortHour(firstH.time)} to ${fmtWeekday(lastH.time)} ${fmtShortHour(lastH.time)}` : '';
   return (
     <div className="nbs-days">
       <p className="small nbs-days-title">
-        Next three days, every 3 h: the NBM&rsquo;s three-hourly bulletin ({cycle} cycle), a second forecast
+        {span}, every 3 h: the NBM&rsquo;s three-hourly bulletin ({cycle} cycle), a second forecast
       </p>
       {[...days.entries()].map(([key, slots]) => {
         const first = slots.find((s) => s != null);

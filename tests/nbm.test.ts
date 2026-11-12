@@ -135,6 +135,15 @@ describe('parseNbsBlock', () => {
     expect(parseNbmBlock(NBS, 'NBS')?.product).toBe('NBS');
   });
 
+  it('dates a column whose FHR field is blank by the UTC row, not as hour zero', () => {
+    // The UTC row's 24th column with no FHR under it: 03Z of the next day
+    // by the roll past 23Z, not the cycle's own hour (Number('   ') is 0).
+    const blankFhr = NBS.replace(/^( UTC .*00) $/m, '$1 03 ').replace(/^( FHR .*71) $/m, '$1    ');
+    const g = parseNbsBlock(blankFhr)!;
+    expect(g.hours).toHaveLength(24);
+    expect(g.hours[23].time).toBe(Date.UTC(2026, 10, 15, 3));
+  });
+
   it('dates the fixture’s columns from the hour before now by the FHR row, so the strip finds them', () => {
     const now = Date.UTC(2026, 10, 12, 4, 37);
     const g = parseNbsBlock(nbsFixtureText(now))!;

@@ -237,7 +237,11 @@ export function CeilingSkyPanel({
             // outlined track the second forecast uses.
             const nbsOnly = h == null;
             const nbmCeil = n?.ceilingFtAgl;
-            const continued = threeDay === 'continue' && (h == null || !h.ceilingForecast) && nbmCeil !== undefined;
+            // Only with the three-hourly bulletin on the strip (onStrip),
+            // as the note and the source link that explain the lighter
+            // figure are: without it an NBH ceiling in a gap of the NWS
+            // forecast would print unexplained (found in review, 2026-11-12).
+            const continued = onStrip && threeDay === 'continue' && (h == null || !h.ceilingForecast) && nbmCeil !== undefined;
             return (
             <div key={c.time} className={nbsOnly ? 'sky-col nbs-col' : 'sky-col'} title={h ? describeHour(h, om) : describeNbm(c.time, n)}>
               <span className={nbsOnly ? 'sky-pct nbm-pct' : 'sky-pct'}>
