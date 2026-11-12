@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { parseNbhBlock } from '../src/domain/nbm';
-import { nbhFixtureText } from '../src/api/fixtures/nbm';
+import { parseNbhBlock, parseNbmBlock, parseNbsBlock } from '../src/domain/nbm';
+import { nbhFixtureText, nbsFixtureText } from '../src/api/fixtures/nbm';
 
 /* KPMV's NBH block of 2026-10-24 03Z, as the relay cuts it: the first of
  * the two blocks in data/parity/nbm-kpmv-2026-10-24-03z.txt (the second is
  * the 3-hourly NBS, which the card does not read). */
 const FILES = import.meta.glob('../data/parity/nbm-kpmv-2026-10-24-03z.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const NBH = Object.values(FILES)[0].split('\n\n')[0];
+/* And KPMV's NBS block of 2026-11-12 01Z, the three-hourly bulletin
+ * usairnet's three-day table reads, kept the day the card began reading it. */
+const NBS_FILES = import.meta.glob('../data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const NBS = Object.values(NBS_FILES)[0].trimEnd();
 
 describe('parseNbhBlock', () => {
   const f = parseNbhBlock(NBH)!;
@@ -94,5 +98,51 @@ describe('nbhFixtureText', () => {
     expect(f.hours[0].time).toBe(Date.UTC(2026, 10, 3, 15));
     expect(f.hours[24].time).toBe(Date.UTC(2026, 10, 4, 15));
     expect(f.hours[0].lowestBaseFtAgl).toBe(20000);
+  });
+});
+
+describe('parseNbsBlock', () => {
+  const f = parseNbsBlock(NBS)!;
+
+  it('reads the header and names the product and its step', () => {
+    expect(f.station).toBe('KPMV');
+    expect(f.product).toBe('NBS');
+    expect(f.stepHours).toBe(3);
+    expect(f.version).toBeNull();
+    expect(f.cycleMs).toBe(Date.UTC(2026, 10, 12, 1));
+  });
+
+  it('dates each column by its FHR, three hours apart from 5 to 71 hours after the cycle, across the DT row’s three days', () => {
+    expect(f.hours).toHaveLength(23);
+    expect(f.hours[0].time).toBe(Date.UTC(2026, 10, 12, 6));
+    expect(f.hours[1].time).toBe(Date.UTC(2026, 10, 12, 9));
+    expect(f.hours[6].time).toBe(Date.UTC(2026, 10, 13, 0));
+    expect(f.hours[22].time).toBe(Date.UTC(2026, 10, 15, 0));
+  });
+
+  it('reads the ceiling, base and sky of the same three-character fields: a ceiling only at 15Z, bases of 16,000 down to 1,400 ft, then none, then 26,000', () => {
+    const at = (h: number) => f.hours.find((x) => x.time === Date.UTC(2026, 10, 12, h))!;
+    expect(at(6)).toMatchObject({ ceilingFtAgl: null, lowestBaseFtAgl: 16000, skyCoverPct: 22 });
+    expect(at(15)).toMatchObject({ ceilingFtAgl: 3500, lowestBaseFtAgl: 2400, skyCoverPct: 62 });
+    expect(f.hours[11]).toMatchObject({ lowestBaseFtAgl: 8000 });
+    expect(f.hours[12]).toMatchObject({ lowestBaseFtAgl: null, ceilingFtAgl: null });
+    expect(f.hours[19]).toMatchObject({ lowestBaseFtAgl: 26000 });
+  });
+
+  it('is strict about the product, as the relay’s paths are one each', () => {
+    expect(parseNbsBlock(NBH)).toBeNull();
+    expect(parseNbhBlock(NBS)).toBeNull();
+    expect(parseNbmBlock(NBS, 'NBS')?.product).toBe('NBS');
+  });
+
+  it('dates the fixture’s columns from the hour before now by the FHR row, so the strip finds them', () => {
+    const now = Date.UTC(2026, 10, 12, 4, 37);
+    const g = parseNbsBlock(nbsFixtureText(now))!;
+    expect(g.cycleMs).toBe(Date.UTC(2026, 10, 12, 3));
+    expect(g.hours[0].time).toBe(Date.UTC(2026, 10, 12, 8));
+    expect(g.hours[22].time).toBe(Date.UTC(2026, 10, 15, 2));
+    expect(g.stepHours).toBe(3);
+    // The UTC row was recomputed to match, as a reader of the text expects.
+    expect(nbsFixtureText(now)).toMatch(/\n UTC {2}08 11 14 17 20 23 02 05/);
   });
 });

@@ -14,6 +14,7 @@ const LABELS: Record<SourceKey, string> = {
   taf: 'TAF',
   daily: '10-day outlook',
   nbm: 'NBM cloud base',
+  nbs: 'NBM three-day',
 };
 
 const SOURCE_LINKS: Record<SourceKey, DataSource> = {
@@ -23,6 +24,7 @@ const SOURCE_LINKS: Record<SourceKey, DataSource> = {
   taf: DATA_SOURCES.taf,
   daily: DATA_SOURCES.openMeteo,
   nbm: DATA_SOURCES.nbm,
+  nbs: DATA_SOURCES.nbs,
 };
 
 /** The rows shown: the sources a refresh fetches (the NBM's only where the

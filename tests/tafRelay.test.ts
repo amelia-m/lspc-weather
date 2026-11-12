@@ -21,7 +21,7 @@ const T0 = Date.parse('2026-10-20T18:00:00Z');
 function deps(answer: () => Response | Promise<Response>) {
   const fetch = vi.fn<RelayDeps['fetch']>(async () => answer());
   const clock = { t: T0 };
-  return { fetch, memo: { body: null, at: 0 }, nbm: { body: null, at: 0, offset: 0 }, now: () => clock.t, clock } satisfies RelayDeps & { clock: { t: number } };
+  return { fetch, memo: { body: null, at: 0 }, nbm: { body: null, at: 0, offset: 0 }, nbs: { body: null, at: 0, offset: 0 }, now: () => clock.t, clock } satisfies RelayDeps & { clock: { t: number } };
 }
 
 const req = (path: string, init: { origin?: string; method?: string } = {}) =>

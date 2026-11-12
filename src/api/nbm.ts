@@ -1,12 +1,13 @@
-/** Offutt's TAF and KPMV's NBM bulletin come through the same relay
- *  (relay/, docs/taf-relay.md); this reads the bulletin's block from its
- *  `/nbm/KPMV` path and parses it (src/domain/nbm.ts). Nothing without the
- *  relay: the bucket's files hold every station, 28 MB each. */
+/** Offutt's TAF and KPMV's NBM bulletins come through the same relay
+ *  (relay/, docs/taf-relay.md); this reads a bulletin's block from its
+ *  `/nbm/KPMV` path (the hourly NBH) or `/nbm/KPMV/nbs` (the three-hourly
+ *  NBS, since 2026-11-12) and parses it (src/domain/nbm.ts). Nothing
+ *  without the relay: the bucket's files hold every station, 28 MB each. */
 import { USE_FIXTURES, fetchJson, HttpError } from './http';
-import { TAF_RELAY_URL, nbmRelayUrl } from '../config/tafRelay';
-import { parseNbhBlock } from '../domain/nbm';
-import type { NbmForecast } from '../domain/types';
-import { nbhFixtureText } from './fixtures/nbm';
+import { TAF_RELAY_URL, nbmRelayUrl, nbsRelayUrl } from '../config/tafRelay';
+import { parseNbhBlock, parseNbsBlock } from '../domain/nbm';
+import type { NbmForecast, NbmProduct } from '../domain/types';
+import { nbhFixtureText, nbsFixtureText } from './fixtures/nbm';
 
 export const NBM_FETCH_TIMEOUT_MS = 25_000;
 
@@ -17,9 +18,17 @@ interface RelayNbm {
   text?: unknown;
 }
 
-export async function fetchNbm(relayBase: string | null = TAF_RELAY_URL, now = Date.now()): Promise<NbmForecast | null> {
-  if (USE_FIXTURES) return withFile(parseNbhBlock(nbhFixtureText(now)), 'fixture');
-  const url = nbmRelayUrl(relayBase);
+export const fetchNbm = (relayBase: string | null = TAF_RELAY_URL, now = Date.now()): Promise<NbmForecast | null> =>
+  fetchBulletin('NBH', relayBase, now);
+
+/** The three-hourly bulletin, the same way, from the relay's NBS path. */
+export const fetchNbs = (relayBase: string | null = TAF_RELAY_URL, now = Date.now()): Promise<NbmForecast | null> =>
+  fetchBulletin('NBS', relayBase, now);
+
+async function fetchBulletin(product: NbmProduct, relayBase: string | null, now: number): Promise<NbmForecast | null> {
+  const parse = product === 'NBS' ? parseNbsBlock : parseNbhBlock;
+  if (USE_FIXTURES) return withFile(parse(product === 'NBS' ? nbsFixtureText(now) : nbhFixtureText(now)), 'fixture');
+  const url = product === 'NBS' ? nbsRelayUrl(relayBase) : nbmRelayUrl(relayBase);
   if (url == null) return null;
   // As the TAF path: no retry after the relay's own answers, which come
   // after its waits on the bucket: its 502 (the bucket unreachable, no
@@ -39,8 +48,8 @@ export async function fetchNbm(relayBase: string | null = TAF_RELAY_URL, now = D
     body = await fetchJson<RelayNbm>(url, { retries: 0, timeoutMs: NBM_FETCH_TIMEOUT_MS });
   }
   if (typeof body.text !== 'string' || typeof body.file !== 'string') throw new Error('relay answered something other than an NBM block');
-  const parsed = parseNbhBlock(body.text);
-  if (!parsed) throw new Error(`relay's NBM block for ${String(body.station)} did not parse`);
+  const parsed = parse(body.text);
+  if (!parsed) throw new Error(`relay's ${product} block for ${String(body.station)} did not parse`);
   return withFile(parsed, body.file);
 }
 

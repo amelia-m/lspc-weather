@@ -260,7 +260,7 @@ describe('the recorder', () => {
 
 describe('Data health shows the count beside the limits', () => {
   const status = Object.fromEntries(
-    (['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm'] as SourceKey[]).map((k) => [
+    (['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm', 'nbs'] as SourceKey[]).map((k) => [
       k,
       { ok: true, pending: false, stale: false, error: null, fetchedAt: T0 } as SourceStatus,
     ]),
@@ -452,7 +452,7 @@ describe('the recorder keeps the server’s newest figures', () => {
 
 describe('Data health shows the server’s own count', () => {
   const status = Object.fromEntries(
-    (['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm'] as SourceKey[]).map((k) => [
+    (['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm', 'nbs'] as SourceKey[]).map((k) => [
       k,
       { ok: true, pending: false, stale: false, error: null, fetchedAt: T0 } as SourceStatus,
     ]),

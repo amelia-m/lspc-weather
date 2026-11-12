@@ -162,6 +162,12 @@ export const DATA_SOURCES = {
     label: 'NWS NBM hourly bulletin',
     url: 'https://www.weather.gov/mdl/nbm_text',
   },
+  /** The same page for the three-hourly bulletin (NBS), which reaches three
+   *  days; since 2026-11-12. */
+  nbs: {
+    label: 'NWS NBM three-hourly bulletin',
+    url: 'https://www.weather.gov/mdl/nbm_text',
+  },
   /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source.
    *
    *  The label names no station even though the fetch uses SITE.fdWindsStation

@@ -77,6 +77,47 @@ block to the hour before now (`src/api/fixtures/nbm.ts`). Data health
 has a row for it, shown only with the relay set; the source log records
 the cycle and file.
 
+## The three-hourly bulletin, three days out (2026-11-12)
+
+The maintainer asked why usairnet's ceiling forecast runs further than
+the card's, and then to add it (docs/usairnet-parity.md, "Why usairnet's
+ceiling runs further out"): usairnet's three-day table is the NBM's
+three-hourly bulletin, NBS, 6 to 72 hours from its cycle, where the
+card's ceiling is the NWS gridpoint's (about a day and a half) and its
+base row the hourly NBH (25 hours). So the relay now cuts KPMV's NBS
+block too, on `/nbm/KPMV/nbs` (docs/taf-relay.md), the app reads it on
+its own Data health row ("NBM three-day", `nbs`), and `parseNbsBlock`
+dates its columns by the bulletin's `FHR` row (hours from the cycle),
+which the NBH lacks. KPMV's block of the 01Z cycle that day is
+`data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`; the fixture re-dates it to
+the hour before now, as the NBH's is.
+
+How the card shows it is the maintainer's to pick, and three layouts were
+built to try (`ThreeDayLayout`, src/components/forecastReach.ts; the
+build's `VITE_THREE_DAY` names one, `strip` by default until she picks),
+each drawn from the fixture build at 390 px and kept beside this doc:
+
+- **horizon** (`docs/img/ceiling-sky-three-day-horizon-2026-11-12.png`):
+  a "3d" option on the strip's toggle. At it the strip runs past the NWS
+  hours in the bulletin's own columns, wider, each with its time, the sky
+  bar in the second forecast's outlined track, a dash in the NWS rows,
+  and an "NBM" row under the base with the bulletin's ceiling.
+- **continue** (`…-continue-…png`): the "3d" option too, no extra row:
+  where the NWS ceiling forecast ends, the ceiling row goes on in the
+  NBM's figures, in lighter italic type, with a title naming them.
+- **strip** (`…-strip-…png`): the hourly strip as it was, no "3d"
+  option, and a second strip under it, every column one of the
+  bulletin's 23 times across three days, with its sky bar, ceiling and
+  base, a time under every column and the weekday under each day's first.
+
+In every layout the bulletin is a second forecast beside the NWS one,
+never blended with it: a column with no NWS hour draws no NWS bar, and
+nothing is flagged or coloured (the rule, CLAUDE.md). `stripColumns`
+(forecastReach.ts, pure) builds the longer strip's columns: every NWS
+hour in the horizon, then the bulletin's times past the last of them.
+Checked in each layout's fixture build at 1280 and 390 px: no sideways
+scroll of the page, no console error.
+
 ## The header lost its version (2026-11-03)
 
 Every station's block in the bucket's NBH text began " KPMV   NBM V5.0

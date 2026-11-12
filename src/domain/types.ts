@@ -263,8 +263,16 @@ export interface NbmHour {
   skyCoverPct: number | null;
 }
 
+/** The two NBM station bulletins the app reads: the hourly NBH, 25 hours
+ *  ahead, and the three-hourly NBS, 6 to 72 hours ahead (the one usairnet's
+ *  three-day table reads; since 2026-11-12). */
+export type NbmProduct = 'NBH' | 'NBS';
+
 export interface NbmForecast {
   station: string;
+  product: NbmProduct;
+  /** Hours between the bulletin's columns: 1 for the NBH, 3 for the NBS. */
+  stepHours: number;
   /** The bulletin's "NBM V5.0"; null when the header names none, as the
    *  bucket's has not since the 2026-11-03 12Z cycle. */
   version: string | null;
@@ -305,6 +313,9 @@ export interface WeatherSnapshot {
   /** The NBM's hourly bulletin for the METAR station, through the relay;
    *  null until it loads and without the relay. */
   nbm?: NbmForecast | null;
+  /** The NBM's three-hourly bulletin (NBS), the same way; its ceiling, base
+   *  and sky cover reach three days where the NWS ceiling and the NBH stop. */
+  nbs?: NbmForecast | null;
 }
 
 // ---- Advisories (flags, never a go/no-go verdict) ----
@@ -349,16 +360,16 @@ export type JumperClass = 'student' | 'licensed';
  *  The type is derived from the list so the two cannot drift: until
  *  2026-11-03 the source log kept a list of its own that lacked `nbm`, and
  *  dropped every NBM entry on reload. */
-export const SOURCE_KEYS = ['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm'] as const;
+export const SOURCE_KEYS = ['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm', 'nbs'] as const;
 export type SourceKey = (typeof SOURCE_KEYS)[number];
 
-/** The sources a refresh fetches: all of them, or all but the NBM when
- *  nothing fetches it (no relay set, no fixtures). The refresh marks only
+/** The sources a refresh fetches: all of them, or all but the two NBM
+ *  bulletins when nothing fetches them (no relay set, no fixtures). The refresh marks only
  *  these pending, and Data health lists only these: a source never fetched
  *  would otherwise sit pending for the life of the page, and the Refresh
  *  button, disabled while any source is pending, with it (2026-11-03). */
 export function sourcesFetched(nbmFetched: boolean): SourceKey[] {
-  return nbmFetched ? [...SOURCE_KEYS] : SOURCE_KEYS.filter((k) => k !== 'nbm');
+  return nbmFetched ? [...SOURCE_KEYS] : SOURCE_KEYS.filter((k) => k !== 'nbm' && k !== 'nbs');
 }
 
 export interface SourceStatus {

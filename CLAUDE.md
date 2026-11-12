@@ -229,8 +229,11 @@ precisely because they were colour and text rather than flags.
   application" (read 2026-10-20). The Worker fetches fixed things only
   (the TAF's URL; since 2026-10-27 also KPMV's block of the NBM's hourly
   bulletin from NOAA's bucket, `/nbm/KPMV`, for the Ceiling & sky card's
-  "base" row, docs/nbm-lowest-cloud-base.md) and answers only the site's
-  origins. Its entry module exports only the
+  "base" row, docs/nbm-lowest-cloud-base.md; since 2026-11-12 its
+  three-hourly bulletin too, `/nbm/KPMV/nbs`, 6 to 72 hours out, the one
+  usairnet's three-day table reads, for the card's three-day layout,
+  same doc, "The three-hourly bulletin, three days out") and answers
+  only the site's origins. Its entry module exports only the
   handler: Cloudflare's runtime refuses any other named export.
 - **Sunrise and sunset are NOAA's method, held to NOAA's own script.**
   `src/domain/sun.ts` ports the functions of NOAA's Solar Calculator
