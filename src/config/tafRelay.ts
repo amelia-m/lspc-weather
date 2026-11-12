@@ -12,7 +12,7 @@
  * vite.config.ts reads this file to build the policy, so it imports only
  * the relay's station file, which carries no Worker types.
  */
-import { NBM_PATH, PATH, STATION } from '../../relay/src/station';
+import { NBM_PATH, NBS_PATH, PATH, STATION } from '../../relay/src/station';
 
 export const TAF_RELAY_URL: string | null = 'https://lspc-taf-relay.amelia-m.workers.dev';
 
@@ -36,4 +36,10 @@ export function nbmRelayUrl(base: string | null = TAF_RELAY_URL): string | null 
 export function connectSources(relay: string | null = TAF_RELAY_URL): string[] {
   const apis = ['https://api.weather.gov', 'https://api.open-meteo.com', 'https://mesonet.agron.iastate.edu'];
   return relay != null ? [...apis, new URL(relay).origin] : apis;
+}
+
+/** The relay's NBS path (the three-hourly bulletin, relay/src/nbm.ts), or
+ *  null without the relay. */
+export function nbsRelayUrl(base: string | null = TAF_RELAY_URL): string | null {
+  return base != null ? `${base.replace(/\/+$/, '')}${NBS_PATH}` : null;
 }

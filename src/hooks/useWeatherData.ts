@@ -5,7 +5,7 @@ import { tafOnScreenGone } from '../domain/taf';
 import { TAF_RELAY_SET } from '../config/tafRelay';
 import { isLatest } from '../domain/latest';
 import { sourcesFetched } from '../domain/types';
-import { fetchNbm } from '../api/nbm';
+import { fetchNbm, fetchNbs } from '../api/nbm';
 import { USE_FIXTURES } from '../api/http';
 import {
   fetchDailyFromGridpoint,
@@ -88,6 +88,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
     taf: idleStatus(),
     daily: idleStatus(),
     nbm: idleStatus(),
+    nbs: idleStatus(),
   });
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -360,6 +361,28 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
             markStale('nbm', e);
           });
 
+    // The three-hourly bulletin the same way, on its own row: its reach is
+    // the point of it, so a day it fails is a day the card says so.
+    const nbsP = !nbmFetched
+      ? Promise.resolve()
+      : fetchNbs()
+          .then((nbs) => {
+            if (!latest('nbs')) return;
+            setSnapshot((prev) => ({ ...prev, nbs }));
+            if (nbs) {
+              logSource('nbs', 'success', `NBM NBS cycle ${new Date(nbs.cycleMs).toISOString()} (${nbs.hours.length} columns, ${nbs.file ?? 'no file'})`);
+              updateSource('nbs', okStatus());
+            } else {
+              const err = new Error('No NBM three-hourly bulletin');
+              logSource('nbs', 'failure', 'No NBM three-hourly bulletin', err);
+              markStale('nbs', err);
+            }
+          })
+          .catch((e) => {
+            logSource('nbs', 'failure', 'NBM NBS fetch failed', e);
+            markStale('nbs', e);
+          });
+
     const dailyP = fetchDailyForecast(dz.lat, dz.lon)
       .then((daily) => {
         if (!latest('daily')) return;
@@ -391,7 +414,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
     // Sun is computed locally and never fails.
     setSnapshot((prev) => ({ ...prev, sun: sunTimes(dz.lat, dz.lon, new Date(now)) }));
 
-    void Promise.allSettled([metarP, hourlyP, windsP, tafP, dailyP, nbmP]).then(() => {
+    void Promise.allSettled([metarP, hourlyP, windsP, tafP, dailyP, nbmP, nbsP]).then(() => {
       setLoading(false);
       if (failures === 0) {
         quickRetryUsed.current = false;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CurrentConditions, HourlyPoint, NbmForecast, OpenMeteoCloudHour } from '../domain/types';
+import type { CurrentConditions, HourlyPoint, NbmForecast, NbmHour, OpenMeteoCloudHour } from '../domain/types';
 import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
 import { ceilingState, type CeilingState } from '../domain/normalize';
@@ -12,7 +12,7 @@ import { Panel } from './common/Panel';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
 import { fmtClock, fmtShortHour, fmtTime, fmtWeekday, localDateKey } from './format';
-import { SKY_HORIZONS, ceilingCoverage, skyHorizonOptions } from './forecastReach';
+import { SKY_HORIZONS, THREE_DAY_H, ceilingCoverage, skyHorizonOptions, stripColumns, type StripColumn, type ThreeDayLayout } from './forecastReach';
 
 /** A time under every third hour, as on the Precip card: twelve labels do
  *  not fit a phone-width card. The hours between follow from them (and a
@@ -42,6 +42,8 @@ export function CeilingSkyPanel({
   hourly,
   omClouds = null,
   nbm = null,
+  nbs = null,
+  threeDay = 'strip',
   thresholds,
   initialHours = SKY_HORIZONS[0],
 }: {
@@ -58,6 +60,13 @@ export function CeilingSkyPanel({
    *  relay; null without it. Its lowest cloud base is a row under the
    *  ceiling, matched to each NWS hour by time. */
   nbm?: NbmForecast | null;
+  /** The NBM's three-hourly bulletin (`snapshot.nbs`), 6 to 72 hours from
+   *  its cycle, the one usairnet's three-day table reads; null without the
+   *  relay. Shown as `threeDay` says. */
+  nbs?: NbmForecast | null;
+  /** Which of the three-day layouts to draw (forecastReach.ts); the
+   *  maintainer is trying them (2026-11-12). */
+  threeDay?: ThreeDayLayout;
   /** The thresholds the flags are read against, for the sentence naming the
    *  figure the visibility flag fires at; without them the card names none
    *  rather than guess past a Settings edit. */
@@ -66,27 +75,46 @@ export function CeilingSkyPanel({
   const [hours, setHours] = useState<number>(initialHours);
   const now = Date.now();
   const future = hourly.filter((h) => h.time >= now - 3600_000);
-  const options = skyHorizonOptions(future.length);
+  // The three-day option only where the three-hourly bulletin is in hand
+  // and the layout draws it on this strip; the 'strip' layout draws it as
+  // a strip of its own below, whatever the toggle says.
+  const onStrip = (threeDay === 'horizon' || threeDay === 'continue') && (nbs?.hours.length ?? 0) > 0;
+  const options = [...skyHorizonOptions(future.length), ...(onStrip && future.length > SKY_HORIZONS[SKY_HORIZONS.length - 1] ? [THREE_DAY_H] : [])];
   const effectiveHours = options.includes(hours) ? hours : SKY_HORIZONS[0];
-  const upcoming = future.slice(0, effectiveHours);
   const extended = effectiveHours > SKY_HORIZONS[0];
+  // The strip's columns: the NWS hours in the horizon, and past the last of
+  // them the three-hourly bulletin's own times (only reached by the 3-day
+  // option, since the NWS hourly forecast runs well past 36 h).
+  const columns = future.length > 0 ? stripColumns(future[0].time, effectiveHours, future, nbm?.hours, onStrip ? nbs?.hours : null) : [];
+  const upcoming = columns.flatMap((c) => (c.nws ? [c.nws] : []));
   const coverage = ceilingCoverage(upcoming);
   // A strip that crosses midnight names the new day under its first hour:
   // 36 hours print the same clock times twice, and a phone shows no tooltip.
   // Each hour's date once: the card re-renders on every observation poll.
-  const dayKeys = upcoming.map((h) => localDateKey(h.time));
+  const dayKeys = columns.map((c) => localDateKey(c.time));
   const crossesDay = dayKeys.length > 0 && dayKeys[0] !== dayKeys[dayKeys.length - 1];
   // Matched hour for hour by valid time; an hour Open-Meteo did not serve
   // shows no second bar rather than a borrowed neighbour's.
   const omAt = new Map((omClouds ?? []).map((c) => [c.time, c]));
   const showOm = upcoming.some((h) => omAt.get(h.time)?.totalPct != null);
-  // The NBM's hours by time, as Open-Meteo's: a row only where its bulletin
-  // reaches this strip. The base is what its name says, the lowest layer
+  // The NBM's hours by time, as Open-Meteo's: a row only where a bulletin
+  // reaches this strip, the hourly one first and the three-hourly one at
+  // its times past it. The base is what its name says, the lowest layer
   // whether or not a ceiling is present, from a blend of models, so it can
   // sit under the NWS ceiling above it or disagree with "no". Printed, not
   // flagged: no published limit applies to a cloud base.
-  const nbmAt = new Map((nbm?.hours ?? []).map((h) => [h.time, h]));
-  const showBase = upcoming.some((h) => nbmAt.get(h.time)?.lowestBaseFtAgl !== undefined);
+  const nbmOf = (c: StripColumn): NbmHour | null => c.nbh ?? c.nbs;
+  const showBase = columns.some((c) => nbmOf(c)?.lowestBaseFtAgl !== undefined);
+  // The NBM's own ceiling: a row of its own under the base in the 'horizon'
+  // layout; in 'continue' it fills the ceiling row's dashes past the NWS
+  // ceiling's end, marked as the NBM's.
+  const showNbmCeil = onStrip && threeDay === 'horizon' && columns.some((c) => nbmOf(c)?.ceilingFtAgl !== undefined);
+  const nbmCeilText = (h: NbmHour | null): string => (h?.ceilingFtAgl === undefined ? '—' : h.ceilingFtAgl === null ? 'no' : fmtCeilK(h.ceilingFtAgl));
+  const nbmCeilTitle = (h: NbmHour | null): string =>
+    h?.ceilingFtAgl === undefined ? 'No NBM ceiling figure for this hour' : h.ceilingFtAgl === null ? 'NBM: no ceiling' : `NBM ceiling ${h.ceilingFtAgl.toLocaleString()} ft AGL`;
+  const spanH = columns.length > 1 ? Math.round((columns[columns.length - 1].time - columns[0].time) / 3_600_000) : 0;
+  const showNbsStrip = threeDay === 'strip' && (nbs?.hours.length ?? 0) > 0;
+  const nbsShown = showNbsStrip || (onStrip && columns.some((c) => c.nbs));
   const category = current ? observedFlightCategory(current) : null;
 
   return (
@@ -94,13 +122,14 @@ export function CeilingSkyPanel({
       title="Ceiling & sky"
       // The first column is the hour under way, so twelve columns look eleven
       // hours past it.
-      subtitle={upcoming.length > 1 ? `now + next ${upcoming.length - 1} h` : 'now + next hours'}
+      subtitle={spanH > 0 ? `now + next ${spanH} h` : 'now + next hours'}
       sources={[
         DATA_SOURCES.iemObservation,
         DATA_SOURCES.nwsObservation,
         DATA_SOURCES.nwsForecast,
         ...(showOm ? [DATA_SOURCES.openMeteo] : []),
         ...(showBase ? [DATA_SOURCES.nbm] : []),
+        ...(nbsShown ? [DATA_SOURCES.nbs] : []),
         DATA_SOURCES.usairnet,
       ]}
     >
@@ -158,7 +187,7 @@ export function CeilingSkyPanel({
           (Pilots tab). Source: <SourceLink citation={CITATIONS.far91155} />
         </p>
       )}
-      {upcoming.length > 0 && options.length > 1 && (
+      {columns.length > 0 && options.length > 1 && (
         <div className="range-toggle" role="group" aria-label="Sky forecast horizon">
           {options.map((o) => (
             <button
@@ -168,12 +197,12 @@ export function CeilingSkyPanel({
               aria-pressed={o === effectiveHours}
               onClick={() => setHours(o)}
             >
-              {o}h
+              {o === THREE_DAY_H ? '3d' : `${o}h`}
             </button>
           ))}
         </div>
       )}
-      {upcoming.length === 0 ? (
+      {columns.length === 0 ? (
         <p className="muted">No hourly forecast available.</p>
       ) : (
         <div className="sky-scroll">
@@ -193,16 +222,25 @@ export function CeilingSkyPanel({
             </div>
             <span className="sky-ceil">k ft</span>
             {showBase && <span className="sky-ceil sky-base">base</span>}
+            {showNbmCeil && <span className="sky-ceil sky-base">NBM</span>}
             <span className="sky-time">&nbsp;</span>
             {crossesDay && <span className="sky-time sky-day">&nbsp;</span>}
           </div>
-          {upcoming.map((h, i) => {
-            const om = omAt.get(h.time);
+          {columns.map((c, i) => {
+            const h = c.nws;
+            const om = h ? omAt.get(h.time) : undefined;
+            const n = nbmOf(c);
+            // A column past the NWS hours is the three-hourly bulletin's
+            // alone: wider, so its time label fits, and its sky bar in the
+            // outlined track the second forecast uses.
+            const nbsOnly = h == null;
+            const nbmCeil = n?.ceilingFtAgl;
+            const continued = threeDay === 'continue' && (h == null || !h.ceilingForecast) && nbmCeil !== undefined;
             return (
-            <div key={h.time} className="sky-col" title={describeHour(h, om)}>
-              <span className="sky-pct">
-                {h.skyCoverPct != null ? round(h.skyCoverPct) : '—'}
-                <span className="sr-only">{h.skyCoverPct != null ? '% sky cover, NWS' : 'sky cover not reported'}</span>
+            <div key={c.time} className={nbsOnly ? 'sky-col nbs-col' : 'sky-col'} title={h ? describeHour(h, om) : describeNbm(c.time, n)}>
+              <span className={nbsOnly ? 'sky-pct nbm-pct' : 'sky-pct'}>
+                {h ? (h.skyCoverPct != null ? round(h.skyCoverPct) : '—') : n?.skyCoverPct != null ? round(n.skyCoverPct) : '—'}
+                <span className="sr-only">{h ? (h.skyCoverPct != null ? '% sky cover, NWS' : 'sky cover not reported') : n?.skyCoverPct != null ? '% sky cover, NBM' : 'NBM sky cover not given'}</span>
               </span>
               {showOm && (
                 <span className="sky-pct om-pct">
@@ -214,39 +252,53 @@ export function CeilingSkyPanel({
                 {/* One colour whatever the amount: the bar shows how much
                     sky is covered and asserts no category. Which hours have
                     a ceiling the label under it says. */}
-                <div className="sky-bar" style={{ height: `${h.skyCoverPct ?? 0}%` }} />
+                {h ? (
+                  <div className="sky-bar" style={{ height: `${h.skyCoverPct ?? 0}%` }} />
+                ) : (
+                  <div className="om-track nbm-track">
+                    <div className="sky-bar om-bar" style={{ height: `${n?.skyCoverPct ?? 0}%` }} />
+                  </div>
+                )}
                 {/* Open-Meteo's in an outlined track of its own, so an
                     almost clear hour still shows as a column with little in
                     it rather than as nothing. Neutral, whatever the amount:
                     a second forecast beside the first. */}
-                {showOm && (
+                {showOm && h && (
                   <div className="om-track">
                     <div className="sky-bar om-bar" style={{ height: `${om?.totalPct ?? 0}%` }} />
                   </div>
                 )}
               </div>
               {/* "no" only inside the ceiling forecast, where a missing
-                  ceiling is NWS's "no ceiling"; past it, a dash. */}
+                  ceiling is NWS's "no ceiling"; past it, a dash, or in the
+                  'continue' layout the NBM's figure, marked as its. */}
+              {continued ? (
+                <span className="sky-ceil nbm-fig" title={nbmCeilTitle(n)}>
+                  {nbmCeilText(n)}
+                  <span className="sr-only">{nbmCeil === null ? ' NBM: no ceiling' : ' thousand ft NBM ceiling'}</span>
+                </span>
+              ) : (
               <span
                 className="sky-ceil"
                 title={
-                  h.ceilingFtAgl != null
+                  h?.ceilingFtAgl != null
                     ? undefined
-                    : h.ceilingForecast
+                    : h?.ceilingForecast
                       ? 'No ceiling (no broken/overcast layer)'
                       : 'No ceiling forecast for this hour'
                 }
               >
-                {h.ceilingFtAgl != null ? fmtCeilK(h.ceilingFtAgl) : h.ceilingForecast ? 'no' : '—'}
+                {h?.ceilingFtAgl != null ? fmtCeilK(h.ceilingFtAgl) : h?.ceilingForecast ? 'no' : '—'}
                 <span className="sr-only">
-                  {h.ceilingFtAgl != null ? ' thousand ft ceiling' : h.ceilingForecast ? ' ceiling' : ' ceiling not forecast'}
+                  {h?.ceilingFtAgl != null ? ' thousand ft ceiling' : h?.ceilingForecast ? ' ceiling' : ' ceiling not forecast'}
                 </span>
               </span>
+              )}
               {/* The NBM's lowest cloud base under the ceiling, in the same
                   units: "no" where the bulletin says no layer, a dash where
                   it gives no figure for the hour. */}
               {showBase && (() => {
-                const base = nbmAt.get(h.time)?.lowestBaseFtAgl;
+                const base = n?.lowestBaseFtAgl;
                 return (
                   <span
                     className="sky-base"
@@ -257,10 +309,16 @@ export function CeilingSkyPanel({
                   </span>
                 );
               })()}
-              <span className="sky-time">{i % LABEL_EVERY === 0 ? fmtShortHour(h.time) : '\u00a0'}</span>
+              {showNbmCeil && (
+                <span className="sky-base" title={nbmCeilTitle(n)}>
+                  {nbmCeilText(n)}
+                  <span className="sr-only">{nbmCeil === undefined ? ' NBM ceiling not given' : nbmCeil === null ? ' NBM no ceiling' : ' thousand ft NBM ceiling'}</span>
+                </span>
+              )}
+              <span className="sky-time">{nbsOnly || i % LABEL_EVERY === 0 ? fmtShortHour(c.time) : '\u00a0'}</span>
               {crossesDay && (
                 <span className="sky-time sky-day">
-                  {i > 0 && dayKeys[i] !== dayKeys[i - 1] ? fmtWeekday(h.time) : '\u00a0'}
+                  {i > 0 && dayKeys[i] !== dayKeys[i - 1] ? fmtWeekday(c.time) : '\u00a0'}
                 </span>
               )}
             </div>
@@ -269,6 +327,7 @@ export function CeilingSkyPanel({
           </div>
         </div>
       )}
+      {showNbsStrip && nbs && <NbsStrip nbs={nbs} />}
       {/* Where the forecast ends is a fact of the copy the card has; why is
           not. Its usual reach is given as the usual, since a copy a day old
           (an outage, or an edge serving an older one) ends sooner. */}
@@ -298,6 +357,17 @@ export function CeilingSkyPanel({
           and humidity (MDL&rsquo;s definition, read 2026-10-26). In thousands of ft AGL; “no” = no layer.
           A second forecast beside the NWS ceiling above it, which it can disagree with; it raises no
           flag.
+        </p>
+      )}
+      {nbsShown && nbs && (
+        <p className="muted small">
+          {threeDay === 'strip' ? 'The three-day strip' : 'Past the NWS hourly forecast, and the 3-day option,'} {threeDay === 'strip' ? 'is' : 'the strip reads'} the
+          NWS National Blend of Models&rsquo; three-hourly bulletin for {nbs.station} (NBS, the{' '}
+          {String(new Date(nbs.cycleMs).getUTCHours()).padStart(2, '0')}Z cycle, read through the relay): its sky cover, ceiling and lowest
+          cloud base at three-hour steps, 6 to 72 hours from its cycle, the bulletin usairnet&rsquo;s three-day table reads.
+          {threeDay === 'continue' && ' Where the NWS ceiling forecast ends, the ceiling row goes on in the NBM’s figures, in the lighter type.'}
+          {threeDay === 'horizon' && ' The “NBM” row is its ceiling, under its base.'}
+          {' '}A second forecast, never blended with the NWS one; it raises no flag.
         </p>
       )}
       <p className="muted small">
@@ -385,4 +455,72 @@ function describeHour(h: HourlyPoint, om?: OpenMeteoCloudHour): string {
   else if (!h.ceilingForecast) parts.push('ceiling not forecast');
   if (h.precipProbPct != null) parts.push(`${round(h.precipProbPct)}% precip`);
   return parts.join(' · ');
+}
+
+function describeNbm(time: number, n: NbmHour | null): string {
+  const parts = [fmtTime(time)];
+  if (n?.skyCoverPct != null) parts.push(`NBM ${round(n.skyCoverPct)}% cover`);
+  if (n?.ceilingFtAgl != null) parts.push(`NBM ceiling ${n.ceilingFtAgl.toLocaleString()} ft`);
+  else if (n?.ceilingFtAgl === null) parts.push('NBM: no ceiling');
+  if (n?.lowestBaseFtAgl != null) parts.push(`NBM base ${n.lowestBaseFtAgl.toLocaleString()} ft`);
+  if (!n) parts.push('no NBM figures');
+  return parts.join(' · ');
+}
+
+/** The 'strip' layout's second strip: the three-hourly bulletin on its
+ *  own, every column one of its times, the same rows as the hourly strip
+ *  (sky cover as a bar and a figure, ceiling, base) in the outlined track
+ *  the second forecasts use. A time under every column, since each is
+ *  three hours, and the weekday under the first of each day. */
+function NbsStrip({ nbs }: { nbs: NbmForecast }): JSX.Element {
+  const cols = nbs.hours;
+  const dayKeys = cols.map((h) => localDateKey(h.time));
+  const ceil = (h: NbmHour): string => (h.ceilingFtAgl === undefined ? '—' : h.ceilingFtAgl === null ? 'no' : fmtCeilK(h.ceilingFtAgl));
+  const base = (h: NbmHour): string => (h.lowestBaseFtAgl === undefined ? '—' : h.lowestBaseFtAgl === null ? 'no' : fmtCeilK(h.lowestBaseFtAgl));
+  return (
+    <div className="nbs-strip">
+      <p className="small nbs-strip-title">
+        Next three days, every 3 h: NBM three-hourly bulletin ({String(new Date(nbs.cycleMs).getUTCHours()).padStart(2, '0')}Z cycle)
+      </p>
+      <div className="sky-scroll">
+        <div className="sky-timeline ceiling-timeline extended nbs-timeline">
+          <div className="sky-col sky-axis-col" aria-hidden="true">
+            <span className="sky-pct nbm-pct">%</span>
+            <div className="sky-axis">
+              <span>100%</span>
+              <span>50%</span>
+              <span>0%</span>
+            </div>
+            <span className="sky-ceil">k ft</span>
+            <span className="sky-ceil sky-base">base</span>
+            <span className="sky-time">&nbsp;</span>
+            <span className="sky-time sky-day">&nbsp;</span>
+          </div>
+          {cols.map((h, i) => (
+            <div key={h.time} className="sky-col nbs-col" title={describeNbm(h.time, h)}>
+              <span className="sky-pct nbm-pct">
+                {h.skyCoverPct != null ? round(h.skyCoverPct) : '—'}
+                <span className="sr-only">{h.skyCoverPct != null ? '% sky cover, NBM' : 'NBM sky cover not given'}</span>
+              </span>
+              <div className="sky-bar-track">
+                <div className="om-track nbm-track">
+                  <div className="sky-bar om-bar" style={{ height: `${h.skyCoverPct ?? 0}%` }} />
+                </div>
+              </div>
+              <span className="sky-ceil" title={h.ceilingFtAgl === undefined ? 'No NBM ceiling figure' : h.ceilingFtAgl === null ? 'NBM: no ceiling' : `NBM ceiling ${h.ceilingFtAgl.toLocaleString()} ft AGL`}>
+                {ceil(h)}
+                <span className="sr-only">{h.ceilingFtAgl === undefined ? ' NBM ceiling not given' : h.ceilingFtAgl === null ? ' NBM no ceiling' : ' thousand ft NBM ceiling'}</span>
+              </span>
+              <span className="sky-base" title={h.lowestBaseFtAgl === undefined ? 'No NBM figure' : h.lowestBaseFtAgl === null ? 'NBM: no cloud layer' : `NBM lowest cloud base ${h.lowestBaseFtAgl.toLocaleString()} ft AGL`}>
+                {base(h)}
+                <span className="sr-only">{h.lowestBaseFtAgl === undefined ? ' NBM base not given' : h.lowestBaseFtAgl === null ? ' NBM no layer' : ' thousand ft NBM lowest base'}</span>
+              </span>
+              <span className="sky-time">{fmtShortHour(h.time)}</span>
+              <span className="sky-time sky-day">{i === 0 || dayKeys[i] !== dayKeys[i - 1] ? fmtWeekday(h.time) : '\u00a0'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }

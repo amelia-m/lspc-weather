@@ -166,13 +166,15 @@ NBS file is on the same bucket the relay already reads
 (`blend.YYYYMMDD/HH/text/blend_nbstx.tHHz`, 29.6 MB, 200 from here), with
 a KPMV block of the same layout (`data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`).
 
-Open, hers to decide: whether the card should show the NBM's `CIG`,
-`LCB` and `SKY` to 72 hours at three-hour steps (the relay would cut the
-NBS block as it does the NBH's; the card a third row, or the NBM's
-ceiling past the NWS one's end, labelled as a second forecast, never
-blended with the first), and whether a 36-hour card wants a three-day
-row at all. No flag either way: the rule stands, and the base row's note
-already says the NBM is a forecast that can disagree with the NWS one.
+**Built the same day at her word ("add it but let's try out a couple
+layouts"):** the relay's `/nbm/KPMV/nbs` path, the app's `nbs` source,
+and three layouts on the Ceiling & sky card, `horizon`, `continue` and
+`strip` (docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three
+days out", with a phone screenshot of each under docs/img). The build's
+`VITE_THREE_DAY` picks one; `strip` is the default until she picks.
+
+Open, hers: which layout stays. The others, the env flag and
+`ThreeDayLayout` then go, and the chosen one's test keeps its name.
 
 ## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
 

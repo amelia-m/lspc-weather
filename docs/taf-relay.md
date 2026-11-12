@@ -15,9 +15,9 @@ since 2026-10-27 KPMV's block of the NBM bulletin ("A second path",
 below), and hands each to the dashboard with the CORS header. It is the
 app's only server-side piece.
 
-- **Fixed paths only.** It cannot be pointed at anything else: two paths,
-  `/taf/KOFF` and `/nbm/KPMV`, GET only, and the query string is not
-  passed on.
+- **Fixed paths only.** It cannot be pointed at anything else: three paths,
+  `/taf/KOFF`, `/nbm/KPMV` and `/nbm/KPMV/nbs` (since 2026-11-12), GET
+  only, and the query string is not passed on.
 - **Your site only, in a browser.** It answers a page only from
   `https://amelia-m.github.io` and the local dev and preview servers
   (`ALLOWED_ORIGINS`). Another site's page gets a 403. A request with no
@@ -192,6 +192,13 @@ data bucket, for the Ceiling & sky card's lowest cloud base
 answer are the TAF path's (`relay/src/http.ts` holds what the two share);
 each path fetches one fixed thing, so the relay can still fetch nothing
 else. Deployed by the same build on merge, with nothing to set up.
+
+Since 2026-11-12 a third path, `/nbm/KPMV/nbs`, serves the same
+station's block of the NBM's three-hourly bulletin (NBS, 6 to 72 hours
+ahead, the one usairnet's three-day table reads) the same way, from the
+`blend_nbstx` file beside the `blend_nbhtx` one, with its own memory and
+offset (18,714,526 bytes in the 01Z file of 2026-11-12). The same handler,
+told the product (`relay/src/nbm.ts`, `NbmProduct`).
 
 ## Checked after deploying (2026-10-27)
 

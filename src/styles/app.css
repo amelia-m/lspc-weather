@@ -1252,6 +1252,37 @@ a.sim-term {
   display: block;
   color: var(--muted);
 }
+/* The three-day bulletin's columns (forecastReach.ts, the layouts the
+   maintainer is trying, 2026-11-12): a column past the NWS hours is the
+   NBM's alone and three hours wide in time, so it is wider on the strip
+   and carries its own time label; its figure and bar take the second
+   forecast's muted colour and outlined track. In the 'continue' layout a
+   ceiling figure that is the NBM's, not the NWS's, is in the lighter
+   italic type the note names. */
+.ceiling-timeline.extended .sky-col.nbs-col {
+  flex: 1 0 40px;
+}
+.ceiling-timeline .sky-col.nbs-col .sky-pct.nbm-pct,
+.nbs-timeline .sky-pct.nbm-pct {
+  color: var(--muted);
+}
+.ceiling-timeline .nbm-track {
+  width: 100%;
+}
+.ceiling-timeline .sky-ceil.nbm-fig {
+  color: var(--muted);
+  font-style: italic;
+}
+.nbs-strip {
+  margin-top: 0.6rem;
+}
+.nbs-strip-title {
+  margin: 0 0 0.2rem;
+  color: var(--muted);
+}
+.nbs-timeline .sky-col.nbs-col {
+  flex: 1 0 36px;
+}
 .ceiling-timeline .sky-time {
   display: flex;
   justify-content: center;
