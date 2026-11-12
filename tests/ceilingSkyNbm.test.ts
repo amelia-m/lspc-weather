@@ -111,7 +111,7 @@ const cardWith = (threeDay: 'horizon' | 'continue' | 'strip' | 'none', initialHo
 describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
   it("'horizon': a 3-day option, and at it the strip runs past the NWS hours in the bulletin's own wider columns, with an NBM ceiling row", () => {
     const html = cardWith('horizon', 72);
-    expect(html).toContain('>3d</button>');
+    expect(html).toContain('>72h</button>');
     // 48 NWS hours, then the bulletin's times past them: 72 - 47 = 25 h of
     // 3-h steps from the next one, 8 columns.
     expect((html.match(/class="sky-col nbs-col"/g) ?? []).length).toBe(8);
@@ -128,7 +128,7 @@ describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
 
   it("'continue': the 3-day option too, and past the NWS ceiling's end the ceiling row carries the NBM's figure in the marked type", () => {
     const html = cardWith('continue', 72);
-    expect(html).toContain('>3d</button>');
+    expect(html).toContain('>72h</button>');
     expect(html).not.toContain('class="sky-ceil sky-base">NBM<');
     expect((html.match(/class="sky-ceil nbm-fig"/g) ?? []).length).toBe(8);
     expect(html).toContain('title="NBM ceiling 3,500 ft AGL"');
@@ -137,7 +137,7 @@ describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
 
   it("'strip': the hourly strip as it was, no 3-day option, and a second three-hourly strip of every column of the bulletin under it", () => {
     const html = cardWith('strip');
-    expect(html).not.toContain('>3d</button>');
+    expect(html).not.toContain('>72h</button>');
     expect(html).toContain('class="sky-timeline ceiling-timeline extended nbs-timeline"');
     expect((html.match(/class="sky-col nbs-col"/g) ?? []).length).toBe(23);
     expect(html).toContain('Next three days, every 3 h: NBM three-hourly bulletin');
@@ -147,11 +147,11 @@ describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
 
   it("'none': nothing of the bulletin, and no 3-day option; and without the bulletin the other layouts offer none either", () => {
     const html = cardWith('none', 72);
-    expect(html).not.toContain('>3d</button>');
+    expect(html).not.toContain('>72h</button>');
     expect(html).not.toContain('nbs-col');
     expect(html).not.toContain('NWS NBM three-hourly bulletin');
     const without = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly: hours(48), omClouds: null, nbm, nbs: null, threeDay: 'horizon' }));
-    expect(without).not.toContain('>3d</button>');
+    expect(without).not.toContain('>72h</button>');
     expect(without).not.toContain('class="sky-ceil sky-base">NBM<');
   });
 });

@@ -197,7 +197,7 @@ export function CeilingSkyPanel({
               aria-pressed={o === effectiveHours}
               onClick={() => setHours(o)}
             >
-              {o === THREE_DAY_H ? '3d' : `${o}h`}
+              {o}h
             </button>
           ))}
         </div>

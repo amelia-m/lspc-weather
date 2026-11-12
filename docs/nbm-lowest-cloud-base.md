@@ -98,14 +98,14 @@ build's `VITE_THREE_DAY` names one, `strip` by default until she picks),
 each drawn from the fixture build at 390 px and kept beside this doc:
 
 - **horizon** (`docs/img/ceiling-sky-three-day-horizon-2026-11-12.png`):
-  a "3d" option on the strip's toggle. At it the strip runs past the NWS
+  a "72h" option on the strip's toggle (labelled "3d" in the screenshot, renamed at the maintainer's word the same day). At it the strip runs past the NWS
   hours in the bulletin's own columns, wider, each with its time, the sky
   bar in the second forecast's outlined track, a dash in the NWS rows,
   and an "NBM" row under the base with the bulletin's ceiling.
-- **continue** (`…-continue-…png`): the "3d" option too, no extra row:
+- **continue** (`…-continue-…png`): the "72h" option too, no extra row:
   where the NWS ceiling forecast ends, the ceiling row goes on in the
   NBM's figures, in lighter italic type, with a title naming them.
-- **strip** (`…-strip-…png`): the hourly strip as it was, no "3d"
+- **strip** (`…-strip-…png`): the hourly strip as it was, no "72h"
   option, and a second strip under it, every column one of the
   bulletin's 23 times across three days, with its sky bar, ceiling and
   base, a time under every column and the weekday under each day's first.
