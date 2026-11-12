@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
+import type { ThreeDayLayout } from '../src/components/forecastReach';
 import { DATA_SOURCES } from '../src/config/sources';
 import { deriveProvenance } from '../src/domain/sourceProvenance';
 import type { HourlyPoint, NbmForecast } from '../src/domain/types';
@@ -103,7 +104,7 @@ const nbs: NbmForecast = {
     skyCoverPct: 20 + i,
   })),
 };
-const cardWith = (threeDay: 'horizon' | 'continue' | 'strip' | 'none', initialHours?: number) =>
+const cardWith = (threeDay: ThreeDayLayout, initialHours?: number) =>
   renderToStaticMarkup(
     createElement(CeilingSkyPanel, { current: null, hourly: hours(48), omClouds: null, nbm, nbs, threeDay, initialHours }),
   );
