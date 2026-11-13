@@ -229,8 +229,11 @@ precisely because they were colour and text rather than flags.
   application" (read 2026-10-20). The Worker fetches fixed things only
   (the TAF's URL; since 2026-10-27 also KPMV's block of the NBM's hourly
   bulletin from NOAA's bucket, `/nbm/KPMV`, for the Ceiling & sky card's
-  "base" row, docs/nbm-lowest-cloud-base.md) and answers only the site's
-  origins. Its entry module exports only the
+  "base" row, docs/nbm-lowest-cloud-base.md; since 2026-11-12 its
+  three-hourly bulletin too, `/nbm/KPMV/nbs`, 6 to 72 hours out, the one
+  usairnet's three-day table reads, for the card's three-day layout,
+  same doc, "The three-hourly bulletin, three days out") and answers
+  only the site's origins. Its entry module exports only the
   handler: Cloudflare's runtime refuses any other named export.
 - **Sunrise and sunset are NOAA's method, held to NOAA's own script.**
   `src/domain/sun.ts` ports the functions of NOAA's Solar Calculator
@@ -538,10 +541,20 @@ anything there unchecked.
 Open-Meteo's daily request limit is per address, and the sandbox's address is
 shared, so the sandbox can be refused for a day by requests that are not this
 repo's: "Daily API request limit exceeded. Please try again tomorrow." It
-happened twice in this repo's sessions, on 2026-09-23 (the forecast API,
-partway through a Schulze comparison) and on 2026-10-10 (the
+happened four times in this repo's sessions, on 2026-09-23 (the forecast API,
+partway through a Schulze comparison), on 2026-10-10 (the
 historical-forecast archive, after an hour of plain 429s, which stopped the
-station cloud-cover fetch). The GitHub runners have not met it. In the
+station cloud-cover fetch) and on 2026-11-12 (the forecast API's first
+request of the session, at 06:56Z, with `X-RateLimit-Remaining: 0.0` of
+10,000 and a reset at 00:00:25Z the next day, before this repo had
+spent anything: docs/open-questions.md, "The outlook's daily gust
+maximum") and on 2026-11-13 (one request at 17:02Z, the same headers,
+reset at 00:00:44Z the next day). The reset times are the evidence that
+it is other tenants of the address: the API's window rolls from a
+client's first request of the day, and both windows opened within a
+minute of midnight UTC, when nothing of this repo was running. A key on
+Open-Meteo's paid tier would give the sandbox a quota of its own, the
+maintainer's call (same entry). The GitHub runners have not met it. In the
 comparison artifacts and the archived sampler log read on 2026-10-10 (about
 1,700 Schulze comparisons from 2026-09-24, and 300 surface-wind samples from
 2026-10-09), no Open-Meteo request got a 429. Its 40 failures were 32
@@ -768,7 +781,9 @@ days). `.github/workflows/parity-summary.yml` combines them daily with
 is `src/domain/paritySummary.ts`, pure and tested — commits that file to
 `main` and dispatches the Pages deploy (a push made with the workflow token
 starts no other workflow). The in-app page at `#parity`, "How different from
-other sources", renders it: counts and spreads, never a grade. The
+other sources", renders it: counts and spreads, never a grade, and
+since 2026-11-11 draws each table's figures above it (`paritySvg.ts`,
+pure; docs/source-parity.md, "What the page shows"). The
 summary runs when the daily sky-parity run finishes and also reads
 `data/parity/logs-to-2026-10-05.jsonl.gz`, every line of a temporary sampler
 that ran the usairnet comparison every two minutes and the Schulze one every

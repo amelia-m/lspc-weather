@@ -169,7 +169,12 @@ values not served before.
   quarter hour's maximum, not the hour's; one hour of four shows the
   difference, and a longer sample would say how often it matters. The app
   does not request the hourly gust; the 10-day outlook's daily gust maximum
-  is built by Open-Meteo from its hourly values and was not checked.
+  is built by Open-Meteo from its hourly values and was not checked (on
+  the whole sample, 2026-10-30: never above the preceding hour's largest
+  15-minute gust, below it at 285 of 466 hours; the outlook's daily
+  maximum was still unchecked on 2026-11-12, when the sandbox's address
+  had no quota left for the one request it takes: docs/open-questions.md,
+  "The outlook's daily gust maximum").
 - **`current` is the `minutely_15` step at the start of the quarter hour in
   progress**, at 37 of 37 runs: at 00:43Z it was the 00:30Z step. So it is
   between 0 and 15 minutes old by construction, and read at a moment it is
@@ -547,9 +552,144 @@ read +0.8 kt over 742 reports. The pairs differ: the sample sets each
 report, not only the one at the hour, against the forecast Open-Meteo's
 live API returned while it was the newest, from whichever run was newest
 then; the archive sets the report at the hour against the first hours of
-a run made for that hour. Which of those makes the difference was not worked out. The
+a run made for that hour. The
 day-earlier row read +0.7 kt over the same days, and the gust +4 kt on
 both rows, as in the sample.
+
+**Worked out 2026-11-12: it is the run, not the pairing**
+(`scripts/omArchiveVsSample.ts`, from the files on file, no fetch). The
+sample's pairs were cut to the archive's rule, one report per hour
+within ten minutes of it and the forecast rounded to the knot, and the
+archive's start of run read on exactly those hours; then the two
+forecasts were set against each other with no report involved. Over
+2026-10-09 to 10-21 (forecast minus report, knots):
+
+| speed | hours or reports | mean | median |
+|---|---|---|---|
+| sample, every report, to the tenth (as summarised) | 745 | +0.82 | +0.8 |
+| sample, one report per hour, to the tenth | 246 | +0.69 | +0.8 |
+| sample, one report per hour, rounded to the knot | 246 | +0.75 | +1 |
+| archive start of run, every hour on file (as the page pairs it) | 311 | +0.01 | 0 |
+| archive start of run, the same 246 hours, rounded | 246 | +0.07 | 0 |
+| live hourly value minus archive start of run, same hour | 246 | +0.65 | +0.8 |
+
+So the pairing rule moves the sample's figure by a tenth or so, and the
+run moves it by two thirds of a knot: the value the live API served for
+an hour, read while that hour's report was the newest, sat above what
+the archive later held for the same hour in 176 of 246 hours, equal to
+the tenth in 6, within half a knot in 66 (median gap 1 kt, p90 2.5).
+The difference is the night's: +1.15 kt from 01Z to 12Z (above in 106 of
+121 hours) and +0.16 by day (70 above, 50 below, of 125), which is the
+shape the archive's own day/night split had and the sample's did not.
+Over the whole overlap, 2026-10-09 to 11-08 (534 hours, a windier
+spell from late October in it), the same: sample +1.11 (one report per
+hour, to the tenth) against archive +0.50 on the same hours, the live
+value +0.61 over the archive's (369 above, 154 below), +0.92 at night
+and +0.27 by day. What the archive's "start of run" is, in hours of
+lead, Open-Meteo's page does not say beyond "initial hours"; the live
+value is from a run one and a half to two hours old (above, "What
+changes"). The archive, then, is not what a reader saw: it is a knot
+nearer KPMV at night than the forecast the live API served, and the
+sample is the record of that. The page's two sections stay as they are,
+each labelled with what it reads.
+
+**Addendum 2026-11-13: it is the lead, and the archive's "start of run"
+is the run's own hour** (`scripts/omArchiveLead.ts`, from the files on
+disk, no fetch; `src/domain/liveVsArchive.ts` holds the arithmetic). The
+maintainer asked why the archive differs from the live forecast, and
+the hypothesis was lead: the live value is from a run one and a half to
+two hours old, the archive's from a run started at the hour. If so,
+requests late in an hour, after the newer HRRR run has reached the
+servers (between about :20 and :59, docs/run-split.md), should read
+nearer the archive's value, and nearer KPMV's report, than requests
+early in the same hour. The sample can test that without a fetch: each
+record keeps Open-Meteo's hourly series for the two hours either side
+of the request and, beside it, the HRRR 15-minute domain's run metadata
+(`omMeta`; the hourly values follow that domain's runs, "What changes"
+above), so every hourly value carries a lead, its valid hour minus the
+run's initialisation. Over 2026-10-09 to 11-08, 5,614 runs, the archive
+holding 5,581 of their hour-under-way values over 580 hours (forecast
+minus, knots; "report" is KPMV's within ten minutes of the hour, the
+archive's pairing rule):
+
+| the hour under way, by the request's minute | values | live − archive, mean / median | above / below | live − report (paired) | archive − report |
+|---|---|---|---|---|---|
+| 0–19 | 1,856 | +0.65 / +0.7 | 1,299 / 516 | +1.04 (1,787) | +0.38 |
+| 20–39 | 1,860 | +0.60 / +0.6 | 1,280 / 528 | +1.02 (1,789) | +0.41 |
+| 40–59 | 1,865 | +0.51 / +0.5 | 1,251 / 549 | +0.97 (1,791) | +0.46 |
+| night (01Z–12Z), 0–19 | 953 | +0.98 / +1.1 | 762 / 178 | +0.71 (928) | −0.25 |
+| night, 20–39 | 941 | +0.88 / +0.9 | 724 / 194 | +0.63 (916) | −0.22 |
+| night, 40–59 | 931 | +0.73 / +0.8 | 687 / 219 | +0.54 (906) | −0.17 |
+| day, 0–19 | 903 | +0.31 / +0.4 | 537 / 338 | +1.40 (859) | +1.06 |
+| day, 20–39 | 919 | +0.31 / +0.4 | 556 / 334 | +1.42 (873) | +1.08 |
+| day, 40–59 | 934 | +0.29 / +0.4 | 564 / 330 | +1.41 (885) | +1.09 |
+
+The minute bands are the leads: by the metadata, a request at 0–19 was
+on the run two hours old in 1,803 of 1,852 (lead 2 h), at 40–59 on the
+run an hour old in 1,818 of 1,863 (lead 1 h), and 20–39 split 834 and
+1,020. Read by lead directly, the hour under way sat +0.65 over the
+archive at lead 2 h (2,682 values) and +0.53 at lead 1 h (2,872); at
+night +0.96 and +0.77, by day +0.33 and +0.28. The third reading needs
+no metadata: the clock hour split at the first request whose value
+moved (487 of the 558 hours with two or more requests moved) reads
++0.66 before the change and +0.53 from it, at night +1.01 and +0.77, by
+day +0.30 and +0.28. So the prediction holds in sign, and is small: a
+reader asking late in the hour gets a value about 0.15 kt nearer the
+archive, and 0.07 kt nearer the report, than one asking early; at
+night 0.25 and 0.17; by day nothing.
+
+Where the rest of the gap is, the fourth reading says. Every hourly
+value in every record, five per run, set against the archive for its
+valid hour, by the value's lead (a value counts once per record it is
+in, so these are values, not hours):
+
+| lead of the value | values | live − archive, mean / median | equal to the tenth | within 0.5 kt | night mean | day mean | live − report | archive − report |
+|---|---|---|---|---|---|---|---|---|
+| −1 h | 2,872 | 0.00 / 0 | 2,866 | 2,866 | 0.00 | 0.00 | +0.45 | +0.45 |
+| 0 h | 5,554 | +0.01 / 0 | 5,451 | 5,488 | +0.02 | 0.00 | +0.43 | +0.42 |
+| 1 h | 5,570 | +0.50 / +0.5 | 256 | 1,902 | +0.72 | +0.27 | +0.96 | +0.45 |
+| 2 h | 5,570 | +0.69 / +0.8 | 112 | 1,549 | +1.00 | +0.35 | +1.07 | +0.37 |
+| 3 h | 5,570 | +0.74 / +0.7 | 141 | 1,597 | +1.08 | +0.36 | +1.11 | +0.36 |
+| 4 h | 2,698 | +0.77 / +0.7 | 74 | 706 | +1.12 | +0.38 | +1.13 | +0.35 |
+
+(16 values at lead 5 h, from the few requests the metadata put on a
+run three hours old, left out.) **The archive's "start of run" value is
+the run's own initialisation hour, lead 0**: the live API served the
+same figure to the tenth in 5,451 of 5,554 values at that lead, and in
+2,866 of 2,872 at the hour before it, which the series carries as the
+run's past (the previous run's own hour, by the same token), against
+256 of 5,570 at lead 1. The same run, the same grid cell, and the same
+figures: the archive is not another model or another pairing; it is the
+hour of each run that the live API never serves as the hour under way,
+because a run reaches the servers about ninety minutes after its
+initialisation, by when that hour has passed. The gap is then the
+forecast's first hours against the run's own hour: +0.50 kt from lead 0
+to 1, +0.19 more to lead 2, +0.05 to 3 and +0.03 to 4. At night the
+first hours run a knot above the run's own hour and keep climbing a
+little (+0.72, +1.00, +1.08, +1.12); by day a third of a knot and flat
+(+0.27 to +0.38). That is why asking later in the hour moves so little:
+it trades lead 2 for lead 1, the smaller of the two steps, and by day
+there is no step after the first. Against KPMV the same order holds:
+lead 0 is +0.43 over the report, lead 1 +0.96, lead 4 +1.13; at night
+lead 0 is −0.21 and lead 1 +0.56.
+
+So the figures support the lead-time explanation, in a form the
+minute-of-hour test alone could not have shown: the archive is at a lead
+the live forecast cannot have. Why the model's first forecast hours blow
+more wind than its own initial hour, above all at night, is a question
+about HRRR, not about these files; a model's initial hour is built from
+observations of that hour, which may be why it reads nearer KPMV, but
+nothing here checks that. What the archive is not: a forecast a reader
+saw. The `#wind-errors` page's archive section is labelled "start of
+run"; "the run's own hour" would say what it is (docs/open-questions.md,
+the surface-wind entry). To reproduce:
+
+```
+npx tsx scripts/omArchiveLead.ts --from 2026-10-09 --to 2026-11-08 \
+  --sample data/parity/surfacewind-*.jsonl.gz \
+  --om data/parity/om-wind-*.jsonl.gz \
+  --reports data/parity/metar-*.jsonl.gz data/parity/kept-forecasts-kpmv-reports-*.jsonl.gz
+```
 
 Counts and spreads only. Nothing on the dashboard reads them. Rebuilt by
 the weekly refresh; by hand:

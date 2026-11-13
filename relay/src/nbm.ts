@@ -1,6 +1,13 @@
 /**
- * The relay's second path: the NWS National Blend of Models' hourly station
- * bulletin (NBH) for KPMV, cut from NOAA's open data bucket.
+ * The relay's second and third paths: the NWS National Blend of Models'
+ * station bulletins for KPMV, cut from NOAA's open data bucket: the hourly
+ * NBH (25 hours ahead) on `/nbm/KPMV`, and since 2026-11-12 the
+ * three-hourly NBS (6 to 72 hours ahead, the bulletin usairnet's three-day
+ * table reads) on `/nbm/KPMV/nbs`. One handler, told the product: the two
+ * files sit side by side on the bucket (`blend_nbhtx`, `blend_nbstx`), each
+ * hour's cycle, with the same layout and a KPMV block each, 18,242,995
+ * bytes in for the NBH and 18,714,526 for the NBS (the 01Z file of
+ * 2026-11-12, data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt).
  *
  * usairnet's "Lowest cloud base" row is the NBM's `LCB`, and the NWS
  * gridpoint the dashboard reads has no such element (docs/usairnet-parity.md,
@@ -26,7 +33,7 @@
  * the relay sends it as text, with the file it came from, so what the app
  * read can be checked against the bucket.
  */
-import { NBM_PATH, NBM_STATION } from './station';
+import { NBM_PATH, NBM_STATION, NBS_PATH } from './station';
 import { json, preflightOrMethod } from './http';
 
 export const NBM_BUCKET = 'https://noaa-nbm-grib2-pds.s3.amazonaws.com';
@@ -34,6 +41,11 @@ export const NBM_CACHE_SECONDS = 600;
 /** Per request to the bucket: a HEAD, a window, or the whole file. */
 export const NBM_TIMEOUT_MS = 8_000;
 export const NBM_KNOWN_OFFSET = 18_242_995;
+export const NBS_KNOWN_OFFSET = 18_714_526;
+
+/** The two bulletins the relay cuts; the letter is the bucket's file
+ *  name's and the header's. */
+export type NbmProduct = 'NBH' | 'NBS';
 /** Bytes read either side of the remembered offset: about 50 stations'
  *  blocks each way, more drift than any file read has shown. */
 export const NBM_WINDOW = 1_500_000;
@@ -54,13 +66,13 @@ export interface NbmDeps {
   now: () => number;
 }
 
-/** The bucket's key for the NBH text of a cycle:
- *  `blend.YYYYMMDD/HH/text/blend_nbhtx.tHHz`. */
-export function nbmFileFor(cycleMs: number): string {
+/** The bucket's key for a bulletin's text of a cycle:
+ *  `blend.YYYYMMDD/HH/text/blend_nbhtx.tHHz` (NBH), `…blend_nbstx…` (NBS). */
+export function nbmFileFor(cycleMs: number, product: NbmProduct = 'NBH'): string {
   const d = new Date(cycleMs);
   const day = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
   const hh = String(d.getUTCHours()).padStart(2, '0');
-  return `blend.${day}/${hh}/text/blend_nbhtx.t${hh}z`;
+  return `blend.${day}/${hh}/text/blend_nb${product === 'NBS' ? 's' : 'h'}tx.t${hh}z`;
 }
 
 /** A station's header line: " KPMV   NBM V5.0 NBH GUIDANCE    11/03/2026
@@ -70,11 +82,12 @@ export function nbmFileFor(cycleMs: number): string {
  *  block in a file that had one (the relay answered 502 for twelve hours
  *  before it was read, docs/nbm-lowest-cloud-base.md, "The header lost its
  *  version"). So the version is optional here and in the app's parser. */
-const HEADER = (station: string): RegExp => new RegExp(`(^|\\n) ${station}\\s+NBM(?: V\\S+)?\\s+NBH GUIDANCE[^\\n]*`);
+const HEADER = (station: string, product: NbmProduct): RegExp =>
+  new RegExp(`(^|\\n) ${station}\\s+NBM(?: V\\S+)?\\s+${product} GUIDANCE[^\\n]*`);
 /** Any station's header: ids are mostly four characters, but the NBM's
  *  station list has buoys and C-MAN stations with five, which a tighter
  *  pattern ran past (found in review, 2026-10-27). */
-const ANY_HEADER = /\n \S+\s+NBM(?: V\S+)?\s+NBH GUIDANCE/;
+const ANY_HEADER = /\n \S+\s+NBM(?: V\S+)?\s+NB[A-Z] GUIDANCE/;
 /** The line of spaces between one station's block and the next's. */
 const BLANK_LINE = /\n[ \t]*\r?\n/;
 
@@ -83,8 +96,12 @@ const BLANK_LINE = /\n[ \t]*\r?\n/;
  *  where the header begins in `text`. Null when the block is not there;
  *  `complete` false when the text ends before either marker, which a window
  *  can do and the whole file cannot. */
-export function cutStationBlock(text: string, station: string): { block: string; at: number; complete: boolean } | null {
-  const m = HEADER(station).exec(text);
+export function cutStationBlock(
+  text: string,
+  station: string,
+  product: NbmProduct = 'NBH',
+): { block: string; at: number; complete: boolean } | null {
+  const m = HEADER(station, product).exec(text);
   if (!m) return null;
   const at = m.index + (m[1] === '\n' ? 1 : 0);
   const rest = text.slice(at);
@@ -113,11 +130,13 @@ const notFoundInFile = (file: string, origin: string | null): Response =>
  *  5 + 1 + 1 timeouts. */
 export const NBM_BUDGET_MS = 20_000;
 
-/** The newest cycle whose NBH file the bucket has, looking back a few hours
+/** The newest cycle whose file the bucket has, looking back a few hours
  *  from `now`; null when none of them is there. A HEAD that fails or is
  *  refused moves on to the older file: a late or ailing bucket still has
- *  the hour before. */
-async function newestFile(deps: NbmDeps, left: () => number): Promise<{ file: string; cycleMs: number } | null> {
+ *  the hour before. The NBS is looked for from the same hour: its hours
+ *  begin five or six hours after its cycle, so no cycle covers the hour
+ *  under way and the newest file is simply the newest. */
+async function newestFile(deps: NbmDeps, left: () => number, product: NbmProduct): Promise<{ file: string; cycleMs: number } | null> {
   // From the hour before the one under way: a cycle's hours begin the hour
   // after it, so the newest file, once it lands, covers the next hour on
   // and never the one under way, and the card's first column (the hour
@@ -129,7 +148,7 @@ async function newestFile(deps: NbmDeps, left: () => number): Promise<{ file: st
   let lastThrown: unknown = null;
   for (let k = 0; k <= NBM_LOOKBACK_HOURS; k++) {
     const cycleMs = hour - k * 3_600_000;
-    const file = nbmFileFor(cycleMs);
+    const file = nbmFileFor(cycleMs, product);
     try {
       const res = await deps.fetch(`${NBM_BUCKET}/${file}`, {
         method: 'HEAD',
@@ -152,7 +171,7 @@ async function newestFile(deps: NbmDeps, left: () => number): Promise<{ file: st
   return null;
 }
 
-export async function nbmHandle(request: Request, origin: string | null, deps: NbmDeps): Promise<Response> {
+export async function nbmHandle(request: Request, origin: string | null, deps: NbmDeps, product: NbmProduct = 'NBH'): Promise<Response> {
   const early = preflightOrMethod(request, origin);
   if (early) return early;
 
@@ -165,11 +184,11 @@ export async function nbmHandle(request: Request, origin: string | null, deps: N
   const left = (): number => Math.max(1_000, NBM_BUDGET_MS - (deps.now() - now));
   let found: { file: string; cycleMs: number } | null;
   try {
-    found = await newestFile(deps, left);
+    found = await newestFile(deps, left, product);
   } catch (err) {
     return upstreamFailed(`unreachable: ${String(err)}`, origin);
   }
-  if (!found) return upstreamFailed(`has no NBH file for the last ${NBM_LOOKBACK_HOURS + 1} hours`, origin);
+  if (!found) return upstreamFailed(`has no ${product} file for the last ${NBM_LOOKBACK_HOURS + 1} hours`, origin);
   const url = `${NBM_BUCKET}/${found.file}`;
 
   // The window first, the whole file only when the block is not whole in
@@ -184,11 +203,11 @@ export async function nbmHandle(request: Request, origin: string | null, deps: N
       signal: AbortSignal.timeout(Math.min(NBM_TIMEOUT_MS, left())),
     });
     if (part.status === 206) {
-      cut = cutStationBlock(await part.text(), NBM_STATION);
+      cut = cutStationBlock(await part.text(), NBM_STATION, product);
       base = from;
       if (cut && !cut.complete) cut = null;
     } else if (part.status === 200) {
-      cut = cutStationBlock(await part.text(), NBM_STATION);
+      cut = cutStationBlock(await part.text(), NBM_STATION, product);
       base = 0;
     }
     if (!cut) {
@@ -197,7 +216,7 @@ export async function nbmHandle(request: Request, origin: string | null, deps: N
         signal: AbortSignal.timeout(Math.min(NBM_TIMEOUT_MS, left())),
       });
       if (!whole.ok) return upstreamFailed(`answered ${whole.status}`, origin);
-      cut = cutStationBlock(await whole.text(), NBM_STATION);
+      cut = cutStationBlock(await whole.text(), NBM_STATION, product);
       base = 0;
     }
   } catch (err) {
@@ -208,7 +227,7 @@ export async function nbmHandle(request: Request, origin: string | null, deps: N
   deps.memo.offset = base + cut.at;
   const body = JSON.stringify({
     station: NBM_STATION,
-    product: 'NBH',
+    product,
     file: found.file,
     cycle: new Date(found.cycleMs).toISOString(),
     text: cut.block,
@@ -218,4 +237,4 @@ export async function nbmHandle(request: Request, origin: string | null, deps: N
   return json(200, body, origin, NBM_CACHE_SECONDS);
 }
 
-export { NBM_PATH };
+export { NBM_PATH, NBS_PATH };

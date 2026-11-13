@@ -1252,6 +1252,37 @@ a.sim-term {
   display: block;
   color: var(--muted);
 }
+/* The three-day bulletin's columns (forecastReach.ts, the layouts the
+   maintainer is trying, 2026-11-12): a column past the NWS hours is the
+   NBM's alone and three hours wide in time, so it is wider on the strip
+   and carries its own time label; its figure and bar take the second
+   forecast's muted colour and outlined track. In the 'continue' layout a
+   ceiling figure that is the NBM's, not the NWS's, is in the lighter
+   italic type the note names. */
+.ceiling-timeline.extended .sky-col.nbs-col {
+  flex: 1 0 40px;
+}
+.ceiling-timeline .sky-col.nbs-col .sky-pct.nbm-pct,
+.nbs-timeline .sky-pct.nbm-pct {
+  color: var(--muted);
+}
+.ceiling-timeline .nbm-track {
+  width: 100%;
+}
+.ceiling-timeline .sky-ceil.nbm-fig {
+  color: var(--muted);
+  font-style: italic;
+}
+.nbs-strip {
+  margin-top: 0.6rem;
+}
+.nbs-strip-title {
+  margin: 0 0 0.2rem;
+  color: var(--muted);
+}
+.nbs-timeline .sky-col.nbs-col {
+  flex: 1 0 36px;
+}
 .ceiling-timeline .sky-time {
   display: flex;
   justify-content: center;
@@ -2086,6 +2117,152 @@ a.sim-term {
   font-size: 10px;
 }
 
+/* #parity's charts (domain/paritySvg.ts): each above the table that holds
+   the same figures, two side by side from 640px, one above another on a
+   phone. Each scales to its cell (viewBox, width 100%) and is capped so a
+   desktop cell does not blow its type up past the page's, and nothing sets
+   a page-wide width. The marks take the same two hues as #wind-errors'
+   sides (the accent and the second neutral hue), neither a warning colour,
+   and the muted grey for a range. */
+.pty-grid-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px 18px;
+  margin: 8px 0;
+}
+@media (min-width: 640px) {
+  .pty-grid-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.pty-fig {
+  margin: 0;
+  min-width: 0;
+  max-width: 460px;
+}
+.pty-cap {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 2px 0;
+}
+.pty-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pty-svg .pty-label,
+.pty-svg .pty-group {
+  fill: var(--text);
+  font-size: 11px;
+}
+.pty-svg .pty-group {
+  font-weight: 600;
+}
+.pty-svg .pty-tick,
+.pty-svg .pty-figure {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.pty-svg .pty-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.pty-svg .pty-base {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+/* A spread row: the smallest-to-largest line thin and grey, the
+   median-to-90th bar in the accent, the median a dot in the text colour
+   ringed in the panel's colour so it reads on the bar. */
+.pty-svg .pty-range {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.pty-svg .pty-core {
+  fill: var(--accent);
+}
+.pty-svg .pty-median {
+  fill: var(--text);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+/* The two ground rows: this dashboard in the accent, Schulze's in the
+   second hue, joined by a grey line; the same two for the day lines. */
+.pty-svg .pty-link {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.pty-svg .pty-dot.ours {
+  fill: var(--accent);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+.pty-svg .pty-dot.theirs {
+  fill: var(--accent-2);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+.pty-svg .pty-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.pty-svg .pty-line.ours {
+  stroke: var(--accent);
+}
+.pty-svg .pty-line.theirs {
+  stroke: var(--accent-2);
+}
+.pty-svg .pty-track {
+  fill: var(--border);
+}
+.pty-svg .pty-share {
+  fill: var(--accent);
+}
+/* The hover target is the whole row, not the mark. */
+.pty-svg .pty-hit {
+  fill: transparent;
+}
+.pty-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+}
+.pty-mark {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  transform: translateY(1px);
+}
+.pty-mark.median {
+  background: var(--text);
+  border-radius: 50%;
+  width: 9px;
+  height: 9px;
+}
+.pty-mark.core {
+  background: var(--accent);
+  height: 8px;
+}
+.pty-mark.range {
+  background: var(--muted);
+  height: 2px;
+  transform: translateY(-3px);
+}
+.pty-mark.ours {
+  background: var(--accent);
+  border-radius: 50%;
+}
+.pty-mark.theirs {
+  background: var(--accent-2);
+  border-radius: 50%;
+}
+
 /* This browser's Open-Meteo requests against the free limits, under the
    Data health rows: a count beside the limits, in the card's small type. */
 .om-usage {
@@ -2107,4 +2284,111 @@ a.sim-term {
 }
 .om-usage-table th {
   font-weight: 600;
+}
+
+/* The NBM's three-day bulletin as day blocks (NbsDays.tsx): a grid of a
+   unit column and eight three-hour slots, one block per local day, so a
+   whole day fits the card at 320 px and nothing scrolls sideways. The
+   heights band is an SVG stretched over the eight slots. The second
+   forecast's muted colour throughout; no warning colour anywhere. */
+.nbs-days {
+  margin-top: 0.7rem;
+}
+.nbs-days-title {
+  margin: 0 0 0.3rem;
+  color: var(--muted);
+}
+.nbs-day {
+  margin-top: 0.4rem;
+}
+.nbs-day-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.nbs-grid {
+  display: grid;
+  grid-template-columns: 30px repeat(8, minmax(0, 1fr));
+  gap: 1px 2px;
+  align-items: end;
+  font-size: 0.58rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.nbs-unit {
+  text-align: right;
+  padding-right: 4px;
+  white-space: nowrap;
+  align-self: end;
+}
+.nbs-unit-band {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 40px;
+  line-height: 1;
+}
+.nbs-hour {
+  white-space: nowrap;
+  color: var(--text);
+}
+.nbs-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.nbs-pct {
+  color: var(--text);
+  margin-bottom: 1px;
+}
+.nbs-track {
+  display: flex;
+  align-items: flex-end;
+  height: 34px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.nbs-bar {
+  width: 100%;
+  background: var(--muted);
+  opacity: 0.7;
+}
+.nbs-band-cell {
+  grid-column: 2 / span 8;
+  display: block;
+}
+.nbs-band {
+  display: block;
+  width: 100%;
+  height: 40px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.nbs-band-grid {
+  stroke: var(--border);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+.nbs-base-area {
+  fill: var(--muted);
+  fill-opacity: 0.35;
+}
+.nbs-ceil-tick {
+  stroke: var(--text);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.nbs-fig {
+  white-space: nowrap;
+  color: var(--text);
+}
+.nbs-fig.muted {
+  color: var(--muted);
+}
+.nbs-days-key {
+  margin-top: 0.4rem;
 }

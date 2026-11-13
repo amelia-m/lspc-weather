@@ -1,6 +1,12 @@
 /**
- * The NWS National Blend of Models' hourly station bulletin (NBH), as the
- * relay cuts it for KPMV (relay/src/nbm.ts), read into hours.
+ * The NWS National Blend of Models' station bulletins, as the relay cuts
+ * them for KPMV (relay/src/nbm.ts), read into hours: the hourly NBH, and
+ * since 2026-11-12 the three-hourly NBS (6 to 72 hours ahead, the bulletin
+ * usairnet's three-day table reads, docs/usairnet-parity.md, "Why
+ * usairnet's ceiling runs further out"). The NBS has the same rows in the
+ * same three-character fields, plus `DT` (the dates) and `FHR` (hours from
+ * the cycle), which date its columns here; the NBH has no `FHR`, so its
+ * hours are dated by the `UTC` row's roll past 23Z.
  *
  * What the rows mean is MDL's "NBM v5.0 Text Bulletin Card"
  * (vlab.noaa.gov/web/mdl/nbm-textcard-v5.0, read 2026-10-26; the hourly
@@ -14,15 +20,17 @@
  * bulletin, forecast date and cycle; the `UTC` line the valid hours, "date
  * as in line 1, unless past 23Z - then the following date is valid".
  *
- * The card shows the base; the ceiling and sky are read too, so the block
- * can be set against the NWS gridpoint's later. Values print right-aligned
- * in three-character fields after a four-character label, so a row is cut
- * by position, not by spaces: "-88-88140" is three fields.
+ * The card shows the NBH's base, and since 2026-11-12 the NBS's sky,
+ * ceiling and base in its three-day block; the NBH's ceiling and sky are
+ * read too, so the block can be set against the NWS gridpoint's later.
+ * Values print right-aligned in three-character fields after a
+ * four-character label, so a row is cut by position, not by spaces:
+ * "-88-88140" is three fields.
  *
  * Pure: text in, hours out. Nothing here raises a flag: no published limit
  * applies to a lowest cloud base, and the card prints it plainly.
  */
-import type { NbmForecast, NbmHour } from './types';
+import type { NbmForecast, NbmHour, NbmProduct } from './types';
 
 const FIELD = 3;
 /** A row is " CIG -88-88140…": a space, the three-letter label, a space,
@@ -54,13 +62,22 @@ function percent(field: string | undefined): number | null {
  *  no header, or no UTC row. A row the block lacks leaves its figures
  *  undefined for every hour; the key says such a row is not printed when
  *  its data are missing for every hour. */
-export function parseNbhBlock(text: string): NbmForecast | null {
+export const parseNbhBlock = (text: string): NbmForecast | null => parseNbmBlock(text, 'NBH');
+
+/** The same for an NBS block: three-hourly columns, dated by its `FHR`
+ *  row. Strict about the product, as the NBH parser is: the relay's two
+ *  paths serve one each, and a block of the other would date wrongly. */
+export const parseNbsBlock = (text: string): NbmForecast | null => parseNbmBlock(text, 'NBS');
+
+export function parseNbmBlock(text: string, product: NbmProduct): NbmForecast | null {
   const lines = text.split('\n').map((l) => l.replace(/\r$/, ''));
   // The version token ("V5.0") is optional: the bucket's header carried it
   // through the 2026-11-03 11Z cycle and not from the 12Z one on ("NBM  NBH
   // GUIDANCE"), and a pattern that required it parsed nothing for twelve
   // hours (docs/nbm-lowest-cloud-base.md, "The header lost its version").
-  const head = /^ (\S+)\s+NBM(?: V(\S+))?\s+NBH GUIDANCE\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2})(\d{2}) UTC/.exec(lines[0] ?? '');
+  const head = new RegExp(
+    `^ (\\S+)\\s+NBM(?: V(\\S+))?\\s+${product} GUIDANCE\\s+(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})\\s+(\\d{2})(\\d{2}) UTC`,
+  ).exec(lines[0] ?? '');
   if (!head) return null;
   const station = head[1];
   const cycleHour = Number(head[6]);
@@ -75,6 +92,10 @@ export function parseNbhBlock(text: string): NbmForecast | null {
   }
   const utc = rows.get('UTC');
   if (!utc) return null;
+  // The NBS says how far each column is from the cycle (" FHR  05 08 11
+  // …"), which dates it outright; the `DT` row above names the days but
+  // only at each change. The NBH has no such row.
+  const fhr = rows.get('FHR');
   const hours: NbmHour[] = [];
   let day = 0;
   // The hours run on from the cycle's own, so one not after the last is
@@ -88,7 +109,13 @@ export function parseNbhBlock(text: string): NbmForecast | null {
     if (!Number.isFinite(hh) || f.trim() === '') return;
     if (hh <= prev) day += 1;
     prev = hh;
-    const time = Date.UTC(Number(head[5]), Number(head[3]) - 1, Number(head[4]) + day, hh);
+    // A blank FHR field is no figure, not hour zero (Number('   ') is 0):
+    // the column then takes the UTC row's date, as the NBH's do.
+    const fhrField = fhr?.[i]?.trim();
+    const ahead = fhrField ? Number(fhrField) : NaN;
+    const time = Number.isFinite(ahead)
+      ? cycleMs + ahead * 3_600_000
+      : Date.UTC(Number(head[5]), Number(head[3]) - 1, Number(head[4]) + day, hh);
     hours.push({
       time,
       lowestBaseFtAgl: hundredsFt(rows.get('LCB')?.[i]),
@@ -96,5 +123,8 @@ export function parseNbhBlock(text: string): NbmForecast | null {
       skyCoverPct: percent(rows.get('SKY')?.[i]),
     });
   });
-  return { station, version: head[2] ?? null, cycleMs, hours };
+  // The step from the columns themselves, so a bulletin spaced otherwise
+  // is read as it is; the NBH's is 1, the NBS's 3.
+  const stepHours = hours.length > 1 ? Math.round((hours[1].time - hours[0].time) / 3_600_000) : product === 'NBS' ? 3 : 1;
+  return { station, product, stepHours, version: head[2] ?? null, cycleMs, hours };
 }

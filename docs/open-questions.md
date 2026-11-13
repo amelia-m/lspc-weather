@@ -136,8 +136,8 @@ release downloads are outside the session's repository scope), so the
 render is pandoc's reveal.js writer from the same source; the README
 there has the commands. Two slides were added after the review at the
 maintainer's word: a mock-up of a generic weather app (a prop, labelled
-as one) and her text thread with a jumper (whose consent to show their
-messages is hers to have), claims C30 and C31.
+as one) and her text thread with her instructor (whose consent to show
+their messages is hers to have), claims C30 and C31.
 Later that day, at her word, seven more (C32 to C37: the sites as they
 look, the drop zone's point, why several stations, the hourly chart
 before and after night shading, "trusting and skeptical", and a link to
@@ -152,8 +152,101 @@ an Omaha Magazine article and the club's listed email domain (a web
 search that day): the host is outside the sandbox's network, so the
 link was not opened from here; the maintainer gave the same address
 later that day. Still
-waiting on her: Mark Schulze's page as a screenshot file, for "Two of
-them, as they look".
+waiting on her: Mark Schulze's page as a screenshot file, for the slide
+now titled "One of them, as it looks". A fresh reviewer's pass over
+C30 to C37 on 2026-11-12 (review.md, "Fresh review of C30 to C37")
+confirmed them and found three slips, fixed that day: the old point's
+ground is 1,145 ft, not 1,132 (the slide said 1,132 to 1,165); the
+mock's Sunday high is 70° under "highs in the sixties"; the comparison
+runs nine times a day with the daily check, not eight. Two things it
+raised are hers under the contract's "Not shown" line: chat-3 shows
+metar-taf.com, a hostname the live site does not name, and chat-2's NOAA
+link carries coordinates that are not the DZ's; both are in the
+screenshots as her instructor sent them.
+
+## Reach the NBM's three-day bulletin for the Ceiling & sky card? (2026-11-12)
+
+The maintainer asked why usairnet's ceiling forecast runs further out
+than the card's. Answered in docs/usairnet-parity.md, "Why usairnet's
+ceiling runs further out": usairnet's table is the NBM's three-hourly
+NBS bulletin, 6 to 72 hours; the card's ceiling is the NWS gridpoint's,
+about a day and a half; its base row the NBM's hourly NBH, 25 hours. The
+NBS file is on the same bucket the relay already reads
+(`blend.YYYYMMDD/HH/text/blend_nbstx.tHHz`, 29.6 MB, 200 from here), with
+a KPMV block of the same layout (`data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`).
+
+**Built the same day at her word ("add it but let's try out a couple
+layouts"):** the relay's `/nbm/KPMV/nbs` path, the app's `nbs` source,
+and four layouts on the Ceiling & sky card: `days` (her ask for something
+better than the first three: a block per local day, the heights drawn as
+a band, nothing scrolling), `horizon`, `continue` and `strip`
+(docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three days
+out", with a phone screenshot of each under docs/img). The build's
+`VITE_THREE_DAY` picks one; `days` is the default until she picks.
+
+Open, hers: which layout stays. The others, the env flag and
+`ThreeDayLayout` then go, and the chosen one's test keeps its name.
+
+## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
+
+The live-site run after the parity summary's deploy (20:07Z) failed
+Jumpers at 1280 and 320 px on both loads: the Winds aloft card's fetch
+got HTTP 503 from api.open-meteo.com, every other page passed, and the
+late-evening leg passed. Open-Meteo answered 200 again at 21:50Z. Nothing
+in the code; #297 is the maintainer's to close, and it is on the tally
+(docs/live-checks-tally.md, "Since the tally").
+
+## The outlook's daily gust maximum: one request, the address refused (2026-11-12)
+
+Open since 2026-10-09 in docs/surface-wind-sources.md ("What changes, and
+how often"): Open-Meteo's hourly gust at the DZ is the 15-minute step on
+the hour, so it behaves as the last quarter hour's maximum rather than
+the preceding hour's its table describes, and on the whole three-week
+sample it sat below the hour's largest 15-minute gust at 285 of 466
+hours, by up to 6.8 kt. The 10-day outlook's `wind_gusts_10m_max`, which
+the Daily forecast card prints as each day's "g", is built by Open-Meteo
+from those hourly values, and whether a day's figure can therefore sit
+under the day's largest 15-minute gust "was not checked". It is one
+request: the outlook's own daily fields with `hourly=wind_gusts_10m` and
+`minutely_15=wind_gusts_10m` beside them, in the drop zone's time zone
+(five variables, so one call by Open-Meteo's formula), and a count per
+local day of the daily maximum against the largest of its 24 hourly
+values and of its 96 quarter-hour steps.
+
+Tried from the sandbox on 2026-11-12 at 06:56Z, the session's first
+Open-Meteo request: `429`, "Daily API request limit exceeded. Please try
+again tomorrow.", with `X-RateLimit-Limit: 10000.0`, `X-RateLimit-Remaining:
+0.0`, `X-RateLimit-Window: 86400` and `X-RateLimit-Reset: 1794528025`,
+which is 2026-11-13 00:00:25Z. So the shared address had spent its day
+on requests that were not this repo's, the third such day (2026-09-23,
+10-10, now 11-12; CLAUDE.md), and the first on which the answer carried
+the limiter's headers. The reset is 25 seconds past midnight UTC, which
+fits the reading of 2026-11-04 that a client's day window rolls from
+the second of its first request ("Done: counting this browser's
+Open-Meteo calls", below): an address busy around the clock has a first
+request moments after its last window ends. The request was not retried
+(the convention: give up on the daily-limit 429). Nothing on the
+dashboard is affected; each reader's browser has its own address.
+
+Still to do, on a day the address has quota, or as one step of a
+comparison run on a runner (which has never met the limit): the request
+above, and the counts. Whatever it finds changes no flag: the outlook's
+gust is Open-Meteo's figure printed as its own, under no limit, and a
+finding that the daily maximum reads under the day's largest 15-minute
+gust would be a note beside it, as the card's other comparisons are.
+
+**2026-11-13, refused again** (the maintainer asked why): one request at
+17:02Z got the same 429, `X-RateLimit-Remaining 0.0` of 10,000, reset
+1794614444 (2026-11-14T00:00:44Z). The window rolls from the address's
+first request of the day, so it opened at 00:00:44Z, when nothing of this
+repo was running: the day's quota is spent by other tenants of the
+sandbox's shared egress address, as the day before (window from
+00:00:25Z). Four days in all, the last two in a row. The runners have
+their own addresses and have never met it, and readers' browsers call
+from their own. The one way to give the sandbox a quota of its own is a
+key on Open-Meteo's paid tier (its API counts per key, not per address);
+a cost, so the maintainer's call. Until then this request, and any
+Open-Meteo work from here, runs on a runner.
 
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
@@ -1092,14 +1185,41 @@ hour, and the browser kept its own (measured and changed 2026-10-23,
 docs/nws-gridpoint-age.md); and, not acted on, Open-Meteo's hourly gust at the DZ always equalled the
 15-minute step on the hour, so it behaved as the last quarter hour's maximum
 rather than the hour's its docs describe (below the hour's largest 15-minute
-gust at one of four hours, by 2.5 kt).
+gust at one of four hours, by 2.5 kt, on the first evening; on the whole
+three-week sample, 285 of 466 hours, by up to 6.8 kt:
+docs/surface-wind-sources.md, "The first three weeks").
 Since 2026-10-23 Open-Meteo's own archive gives six months beside it
 (docs/surface-wind-sources.md, "Open-Meteo's archive"): its start-of-run
 10 m wind a knot high by day and centred at night, and its gust high in
 64% of the hours KPMV reported one. Over the sample's own days the
 archive's start of run was centred (mean 0.0 kt) where the sample's
-hourly read +0.8; why was not worked out.
+hourly read +0.8; worked out 2026-11-12 from the files on file
+(`scripts/omArchiveVsSample.ts`; docs/surface-wind-sources.md, "Worked
+out 2026-11-12"): the pairing rule moves the sample's figure a tenth,
+the run two thirds of a knot. The value the live API served for an hour
+sat +0.65 kt over what the archive later held for the same hour (246
+hours, above in 176), +1.15 at night and +0.16 by day; over 2026-10-09
+to 11-08, +0.61 over 534 hours. So the archive is not the forecast a
+reader saw, and reads a knot nearer KPMV at night than that forecast did.
 Nothing on the dashboard changed.
+**Why, asked by the maintainer and worked out 2026-11-13** (lead time;
+`scripts/omArchiveLead.ts`, `src/domain/liveVsArchive.ts`;
+docs/surface-wind-sources.md, "Addendum 2026-11-13"): every hourly
+value in the sample carries a lead from the HRRR run metadata beside
+it, and the archive's "start of run" value equals the live API's value
+at lead 0, the run's own initialisation hour, to the tenth in 5,451 of
+5,554 values, against 256 of 5,570 at lead 1. The hour under way is
+always at lead 1 or 2 (a run arrives about ninety minutes after its
+hour), so the gap is the forecast's first hours against the run's own
+hour: +0.50 kt at lead 1, +0.69 at 2, +0.74 at 3; at night +0.72 to
++1.12, by day +0.27 to +0.38. Asking later in the hour, once the newer
+run is in, moves the live value only about 0.15 kt nearer the archive
+(+0.65 at minutes 0–19, +0.51 at 40–59) and 0.07 kt nearer KPMV, since
+it trades lead 2 for lead 1, the smaller step. Supports the lead
+explanation; the archive is at a lead no live forecast has. Open, for
+the maintainer: the `#wind-errors` page's archive section is labelled
+"start of run" (`omArchiveSection`); "the run's own hour" would say
+what it is. Not changed.
 
 ## Done: the observation beside the forecast; not the forecast beside the observation
 

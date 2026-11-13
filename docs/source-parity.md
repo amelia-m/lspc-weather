@@ -225,6 +225,22 @@ dashboard had the newer report since it read IEM first; and the median
 minutes from a report to each source. They move with the summary and carry no
 judgement.
 
+Since 2026-11-11 (the maintainer's ask that day: visuals) each section's
+figures are also drawn, above the table that prints them, by
+`src/domain/paritySvg.ts`, pure SVG from the summary's figures. A spread
+is a row with a dot at the median, a bar from the median to the 90th
+percentile and a thin line from the smallest to the largest; the two
+ground rows are a dumbbell per three-hour block (equal medians a two-tone
+dot, so neither side reads as missing) and two lines over the days; an
+observation field is a bar of its share agreed with the counts beside it.
+Every mark carries a title with the row's figures, no chart adds a figure
+its table lacks, and nothing is coloured as a warning: the rule above
+holds for the pictures as for the tables. The label column widens to the
+longest label (`labelColumn`, allowing DejaVu Sans's width, the runner's
+font); a fixed column clipped "Newer run one side" the day the charts
+were drawn. Checked in the fixture build at 1280, 390 and 320 px: eleven
+charts, no sideways scroll, no console error.
+
 Then the winds differences **by the time the two tables represent**: same
 hour on the same forecast run, same hour with one side on a newer run, and
 one hour apart as the two pages show it after half past. Each is pooled over

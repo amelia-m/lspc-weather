@@ -9,7 +9,8 @@
  * card showed Omaha's TAF and linked Offutt's (docs/open-questions.md,
  * "KOFF's TAF").
  *
- * This fetches one fixed URL, so it cannot be used to fetch anything else.
+ * This path fetches one fixed URL, and the NBM paths (nbm.ts) one fixed
+ * file each, so the Worker cannot be used to fetch anything else.
  * It answers a browser only from the dashboard's own origins (`ALLOWED_ORIGINS`):
  * another site's page cannot read it. A request with no Origin header (a script,
  * curl) is answered, since an Origin can be forged outside a browser and
@@ -35,11 +36,11 @@
  * `rawTAF` and `issueTime`); the app reads it with `tafFromAwcJson`.
  */
 
-import { ALLOWED_ORIGINS, NBM_PATH, PATH, STATION } from './station';
+import { ALLOWED_ORIGINS, NBM_PATH, NBS_PATH, PATH, STATION } from './station';
 import { json, preflightOrMethod, refuseOrigin } from './http';
 import { nbmHandle, type NbmMemo } from './nbm';
 
-export { ALLOWED_ORIGINS, PATH, NBM_PATH };
+export { ALLOWED_ORIGINS, PATH, NBM_PATH, NBS_PATH };
 export const UPSTREAM = `https://aviationweather.gov/api/data/taf?ids=${STATION}&format=json`;
 export const CACHE_SECONDS = 300;
 /** Give up on aviationweather.gov after this long and answer 502, so a
@@ -57,23 +58,26 @@ export interface RelayMemo {
 export interface RelayDeps {
   fetch: (url: string, init: RequestInit) => Promise<Response>;
   memo: RelayMemo;
-  /** The NBM path's own memory (nbm.ts). */
+  /** The NBM paths' own memory (nbm.ts), one per bulletin: the block of
+   *  each sits at its own place in its own file. */
   nbm: NbmMemo;
+  nbs: NbmMemo;
   now: () => number;
 }
 
 const upstreamFailed = (why: string, origin: string | null): Response =>
   json(502, JSON.stringify({ error: `aviationweather.gov ${why}` }), origin);
 
-/** The Worker's one entry: the origin rule, then the path. Two paths, each
+/** The Worker's one entry: the origin rule, then the path. Three paths, each
  *  one fixed upstream URL (or file), so the relay can fetch nothing else. */
 export async function handle(request: Request, deps: RelayDeps): Promise<Response> {
   const origin = request.headers.get('origin');
   const refused = refuseOrigin(origin);
   if (refused) return refused;
   const url = new URL(request.url);
-  if (url.pathname === NBM_PATH) return nbmHandle(request, origin, { fetch: deps.fetch, memo: deps.nbm, now: deps.now });
-  if (url.pathname !== PATH) return json(404, JSON.stringify({ error: `only ${PATH} and ${NBM_PATH}` }), origin);
+  if (url.pathname === NBM_PATH) return nbmHandle(request, origin, { fetch: deps.fetch, memo: deps.nbm, now: deps.now }, 'NBH');
+  if (url.pathname === NBS_PATH) return nbmHandle(request, origin, { fetch: deps.fetch, memo: deps.nbs, now: deps.now }, 'NBS');
+  if (url.pathname !== PATH) return json(404, JSON.stringify({ error: `only ${PATH}, ${NBM_PATH} and ${NBS_PATH}` }), origin);
   return tafHandle(request, origin, deps);
 }
 
