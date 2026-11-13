@@ -1202,6 +1202,24 @@ hours, above in 176), +1.15 at night and +0.16 by day; over 2026-10-09
 to 11-08, +0.61 over 534 hours. So the archive is not the forecast a
 reader saw, and reads a knot nearer KPMV at night than that forecast did.
 Nothing on the dashboard changed.
+**Why, asked by the maintainer and worked out 2026-11-13** (lead time;
+`scripts/omArchiveLead.ts`, `src/domain/liveVsArchive.ts`;
+docs/surface-wind-sources.md, "Addendum 2026-11-13"): every hourly
+value in the sample carries a lead from the HRRR run metadata beside
+it, and the archive's "start of run" value equals the live API's value
+at lead 0, the run's own initialisation hour, to the tenth in 5,451 of
+5,554 values, against 256 of 5,570 at lead 1. The hour under way is
+always at lead 1 or 2 (a run arrives about ninety minutes after its
+hour), so the gap is the forecast's first hours against the run's own
+hour: +0.50 kt at lead 1, +0.69 at 2, +0.74 at 3; at night +0.72 to
++1.12, by day +0.27 to +0.38. Asking later in the hour, once the newer
+run is in, moves the live value only about 0.15 kt nearer the archive
+(+0.65 at minutes 0–19, +0.51 at 40–59) and 0.07 kt nearer KPMV, since
+it trades lead 2 for lead 1, the smaller step. Supports the lead
+explanation; the archive is at a lead no live forecast has. Open, for
+the maintainer: the `#wind-errors` page's archive section is labelled
+"start of run" (`omArchiveSection`); "the run's own hour" would say
+what it is. Not changed.
 
 ## Done: the observation beside the forecast; not the forecast beside the observation
 
