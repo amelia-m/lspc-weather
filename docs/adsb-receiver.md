@@ -30,6 +30,18 @@ The feeder kit for adsb.fi is <https://github.com/adsbfi/adsb-fi-scripts>
 as readsb on a Raspberry Pi) to feed adsb.fi, plus an optional local
 tar1090 map. It does not install the decoder.
 
+**Asked 2026-11-13 whether tar1090 (github.com/wiedehopf/tar1090) is
+useful.** Only with a receiver at the field: it is the map that runs on
+one (readsb decodes, tar1090 draws), and the adsb.fi kit installs it
+beside the feed. With one it answers this doc's open question directly,
+whether the networks drop the plane low over the field (its `?pTracks`
+view against the range outline below), and shows a load's climb to anyone
+on the club's network. It cannot put aircraft on the dashboard: it is on
+the club's network, which a public https page cannot read, as the networks'
+feeds cannot be. The most the dashboard could offer is a link a reader
+sets to the receiver's own address; not built, the maintainer's call. The
+cheap step first is still to watch a load on both networks' maps.
+
 ## The panorama
 
 A heywhatsthat.com panorama gives the theoretical range from an antenna: how
