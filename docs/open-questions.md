@@ -235,6 +235,19 @@ gust is Open-Meteo's figure printed as its own, under no limit, and a
 finding that the daily maximum reads under the day's largest 15-minute
 gust would be a note beside it, as the card's other comparisons are.
 
+**2026-11-13, refused again** (the maintainer asked why): one request at
+17:02Z got the same 429, `X-RateLimit-Remaining 0.0` of 10,000, reset
+1794614444 (2026-11-14T00:00:44Z). The window rolls from the address's
+first request of the day, so it opened at 00:00:44Z, when nothing of this
+repo was running: the day's quota is spent by other tenants of the
+sandbox's shared egress address, as the day before (window from
+00:00:25Z). Four days in all, the last two in a row. The runners have
+their own addresses and have never met it, and readers' browsers call
+from their own. The one way to give the sandbox a quota of its own is a
+key on Open-Meteo's paid tier (its API counts per key, not per address);
+a cost, so the maintainer's call. Until then this request, and any
+Open-Meteo work from here, runs on a runner.
+
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
 **Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
