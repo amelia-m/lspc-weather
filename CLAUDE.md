@@ -541,14 +541,20 @@ anything there unchecked.
 Open-Meteo's daily request limit is per address, and the sandbox's address is
 shared, so the sandbox can be refused for a day by requests that are not this
 repo's: "Daily API request limit exceeded. Please try again tomorrow." It
-happened three times in this repo's sessions, on 2026-09-23 (the forecast API,
+happened four times in this repo's sessions, on 2026-09-23 (the forecast API,
 partway through a Schulze comparison), on 2026-10-10 (the
 historical-forecast archive, after an hour of plain 429s, which stopped the
 station cloud-cover fetch) and on 2026-11-12 (the forecast API's first
 request of the session, at 06:56Z, with `X-RateLimit-Remaining: 0.0` of
 10,000 and a reset at 00:00:25Z the next day, before this repo had
 spent anything: docs/open-questions.md, "The outlook's daily gust
-maximum"). The GitHub runners have not met it. In the
+maximum") and on 2026-11-13 (one request at 17:02Z, the same headers,
+reset at 00:00:44Z the next day). The reset times are the evidence that
+it is other tenants of the address: the API's window rolls from a
+client's first request of the day, and both windows opened within a
+minute of midnight UTC, when nothing of this repo was running. A key on
+Open-Meteo's paid tier would give the sandbox a quota of its own, the
+maintainer's call (same entry). The GitHub runners have not met it. In the
 comparison artifacts and the archived sampler log read on 2026-10-10 (about
 1,700 Schulze comparisons from 2026-09-24, and 300 surface-wind samples from
 2026-10-09), no Open-Meteo request got a 429. Its 40 failures were 32
