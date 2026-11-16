@@ -58,6 +58,20 @@ These cannot be settled from the code.
    claim verdict (`kind: 'judgement'`): only its questions are answered,
    counted and reported. Waiting on the S&TA with Part A.
 
+## To do: day and night on the Ceiling & sky card (the maintainer, 2026-11-16)
+
+The hourly wind chart has shaded its night hours since 2026-10-03 (the
+deck's "Which hours are daytime?" slide shows the before and after), so
+a reader can tell which columns are a jump day's. The Ceiling & sky
+card's hourly strip and its three-day blocks have no such mark: a 36 h
+strip or a day block reads the same at 2am as at 2pm. The maintainer
+asked for the same day/night indicator there. Shape to follow the wind
+chart's: the night hours from the card's own sunrise and sunset
+(src/domain/sun.ts, NOAA's method, the times the night flag uses), a
+muted shading on the night columns and slots, no figure and no flag
+changed, and the fixture build checked at 1280, 390 and 320 px with the
+clock set, as the late-evening leg of the live-site check does.
+
 ## Settled: the visibility flag holds the reading to both 105.17 rows
 
 Asked since 2026-09-23 (item 1 above, A8 on `#citations`): the section's
