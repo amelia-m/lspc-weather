@@ -1,6 +1,6 @@
 {
  "version": 2,
- "generatedAt": "2026-11-09T17:49:29.412Z",
+ "generatedAt": "2026-11-16T17:27:14.864Z",
  "sources": {
   "ceiling": [
    "ceiling-2026-04-01-to-2026-10-09.jsonl.gz",
@@ -8,7 +8,8 @@
    "ceiling-2026-10-16-to-2026-10-18.jsonl.gz",
    "ceiling-2026-10-18-to-2026-10-25.jsonl.gz",
    "ceiling-2026-10-25-to-2026-11-01.jsonl.gz",
-   "ceiling-2026-11-01-to-2026-11-08.jsonl.gz"
+   "ceiling-2026-11-01-to-2026-11-08.jsonl.gz",
+   "ceiling-2026-11-08-to-2026-11-15.jsonl.gz"
   ],
   "cover": [
    "cloud-cover-2026-04-01-to-2026-10-09.jsonl.gz",
@@ -17,16 +18,17 @@
    "metar-2026-10-16-to-2026-10-18.jsonl.gz",
    "metar-2026-10-18-to-2026-10-25.jsonl.gz",
    "metar-2026-10-25-to-2026-11-01.jsonl.gz",
-   "metar-2026-11-01-to-2026-11-08.jsonl.gz"
+   "metar-2026-11-01-to-2026-11-08.jsonl.gz",
+   "metar-2026-11-08-to-2026-11-15.jsonl.gz"
   ],
-  "kept": 592
+  "kept": 760
  },
  "reports": {
   "station": "KPMV",
-  "count": 15560,
+  "count": 16063,
   "span": {
    "from": "2026-04-01T00:15Z",
-   "to": "2026-11-08T23:55Z"
+   "to": "2026-11-15T23:55Z"
   }
  },
  "bands": [
@@ -60,29 +62,29 @@
    "place": "the drop zone",
    "gridKm": 0.87,
    "issuances": {
-    "count": 887,
+    "count": 915,
     "span": {
      "from": "2026-04-01T00:47Z",
-     "to": "2026-11-08T18:47Z"
+     "to": "2026-11-15T18:47Z"
     }
    },
    "rows": [
     {
      "label": "NWS, latest issuance",
      "minLeadH": 0,
-     "hours": 5183,
+     "hours": 5350,
      "span": {
       "from": "2026-04-01T02:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
-     "leadH": {"min":0.8833333333333333,"max":12.233333333333333},
-     "call": {"both":1144,"forecastOnly":342,"reportedOnly":436,"neither":3261},
+     "leadH": {"min":0.7333333333333333,"max":12.233333333333333},
+     "call": {"both":1144,"forecastOnly":342,"reportedOnly":440,"neither":3424},
      "bands": {
       "LIFR": {"LIFR":35,"IFR":78,"MVFR":29,"VFR":5,"none":13},
       "IFR": {"LIFR":2,"IFR":106,"MVFR":69,"VFR":12,"none":27},
       "MVFR": {"LIFR":3,"IFR":66,"MVFR":235,"VFR":61,"none":85},
-      "VFR": {"LIFR":0,"IFR":14,"MVFR":92,"VFR":337,"none":311},
-      "none": {"LIFR":1,"IFR":9,"MVFR":51,"VFR":281,"none":3261}
+      "VFR": {"LIFR":0,"IFR":14,"MVFR":92,"VFR":337,"none":315},
+      "none": {"LIFR":1,"IFR":9,"MVFR":51,"VFR":281,"none":3424}
      },
      "byForecast": {
       "LIFR": {
@@ -188,19 +190,19 @@
     {
      "label": "NWS, 6 h or more ahead",
      "minLeadH": 6,
-     "hours": 5178,
+     "hours": 5345,
      "span": {
       "from": "2026-04-01T07:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
      "leadH": {"min":6.216666666666667,"max":17.233333333333334},
-     "call": {"both":1122,"forecastOnly":361,"reportedOnly":458,"neither":3237},
+     "call": {"both":1122,"forecastOnly":361,"reportedOnly":462,"neither":3400},
      "bands": {
       "LIFR": {"LIFR":35,"IFR":82,"MVFR":26,"VFR":6,"none":11},
       "IFR": {"LIFR":2,"IFR":110,"MVFR":64,"VFR":15,"none":25},
       "MVFR": {"LIFR":3,"IFR":72,"MVFR":214,"VFR":65,"none":96},
-      "VFR": {"LIFR":1,"IFR":15,"MVFR":92,"VFR":320,"none":326},
-      "none": {"LIFR":2,"IFR":17,"MVFR":63,"VFR":279,"none":3237}
+      "VFR": {"LIFR":1,"IFR":15,"MVFR":92,"VFR":320,"none":330},
+      "none": {"LIFR":2,"IFR":17,"MVFR":63,"VFR":279,"none":3400}
      },
      "byForecast": {
       "LIFR": {
@@ -306,19 +308,19 @@
     {
      "label": "NWS, 24 h or more ahead",
      "minLeadH": 24,
-     "hours": 4789,
+     "hours": 4936,
      "span": {
       "from": "2026-04-02T01:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
      "leadH": {"min":24.216666666666665,"max":30.233333333333334},
-     "call": {"both":908,"forecastOnly":324,"reportedOnly":522,"neither":3035},
+     "call": {"both":908,"forecastOnly":324,"reportedOnly":525,"neither":3179},
      "bands": {
       "LIFR": {"LIFR":8,"IFR":48,"MVFR":37,"VFR":19,"none":30},
       "IFR": {"LIFR":4,"IFR":80,"MVFR":62,"VFR":20,"none":27},
       "MVFR": {"LIFR":2,"IFR":43,"MVFR":162,"VFR":77,"none":119},
-      "VFR": {"LIFR":0,"IFR":11,"MVFR":63,"VFR":272,"none":346},
-      "none": {"LIFR":0,"IFR":4,"MVFR":56,"VFR":264,"none":3035}
+      "VFR": {"LIFR":0,"IFR":11,"MVFR":63,"VFR":272,"none":349},
+      "none": {"LIFR":0,"IFR":4,"MVFR":56,"VFR":264,"none":3179}
      },
      "byForecast": {
       "LIFR": {
@@ -429,29 +431,29 @@
    "place": "KPMV",
    "gridKm": 1.08,
    "issuances": {
-    "count": 887,
+    "count": 915,
     "span": {
      "from": "2026-04-01T00:47Z",
-     "to": "2026-11-08T18:47Z"
+     "to": "2026-11-15T18:47Z"
     }
    },
    "rows": [
     {
      "label": "NWS, latest issuance",
      "minLeadH": 0,
-     "hours": 5183,
+     "hours": 5350,
      "span": {
       "from": "2026-04-01T02:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
-     "leadH": {"min":0.8833333333333333,"max":12.233333333333333},
-     "call": {"both":1158,"forecastOnly":330,"reportedOnly":422,"neither":3273},
+     "leadH": {"min":0.7333333333333333,"max":12.233333333333333},
+     "call": {"both":1158,"forecastOnly":330,"reportedOnly":426,"neither":3436},
      "bands": {
       "LIFR": {"LIFR":38,"IFR":81,"MVFR":25,"VFR":5,"none":11},
       "IFR": {"LIFR":2,"IFR":111,"MVFR":69,"VFR":12,"none":22},
       "MVFR": {"LIFR":1,"IFR":59,"MVFR":246,"VFR":65,"none":79},
-      "VFR": {"LIFR":0,"IFR":13,"MVFR":78,"VFR":353,"none":310},
-      "none": {"LIFR":0,"IFR":7,"MVFR":56,"VFR":267,"none":3273}
+      "VFR": {"LIFR":0,"IFR":13,"MVFR":78,"VFR":353,"none":314},
+      "none": {"LIFR":0,"IFR":7,"MVFR":56,"VFR":267,"none":3436}
      },
      "byForecast": {
       "LIFR": {
@@ -557,19 +559,19 @@
     {
      "label": "NWS, 6 h or more ahead",
      "minLeadH": 6,
-     "hours": 5178,
+     "hours": 5345,
      "span": {
       "from": "2026-04-01T07:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
      "leadH": {"min":6.216666666666667,"max":17.233333333333334},
-     "call": {"both":1139,"forecastOnly":356,"reportedOnly":441,"neither":3242},
+     "call": {"both":1139,"forecastOnly":356,"reportedOnly":445,"neither":3405},
      "bands": {
       "LIFR": {"LIFR":34,"IFR":84,"MVFR":27,"VFR":6,"none":9},
       "IFR": {"LIFR":3,"IFR":110,"MVFR":67,"VFR":13,"none":23},
       "MVFR": {"LIFR":0,"IFR":79,"MVFR":215,"VFR":68,"none":88},
-      "VFR": {"LIFR":0,"IFR":16,"MVFR":87,"VFR":330,"none":321},
-      "none": {"LIFR":2,"IFR":13,"MVFR":65,"VFR":276,"none":3242}
+      "VFR": {"LIFR":0,"IFR":16,"MVFR":87,"VFR":330,"none":325},
+      "none": {"LIFR":2,"IFR":13,"MVFR":65,"VFR":276,"none":3405}
      },
      "byForecast": {
       "LIFR": {
@@ -675,19 +677,19 @@
     {
      "label": "NWS, 24 h or more ahead",
      "minLeadH": 24,
-     "hours": 4789,
+     "hours": 4936,
      "span": {
       "from": "2026-04-02T01:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
      "leadH": {"min":24.216666666666665,"max":30.233333333333334},
-     "call": {"both":914,"forecastOnly":325,"reportedOnly":516,"neither":3034},
+     "call": {"both":914,"forecastOnly":325,"reportedOnly":519,"neither":3178},
      "bands": {
       "LIFR": {"LIFR":11,"IFR":49,"MVFR":38,"VFR":19,"none":25},
       "IFR": {"LIFR":4,"IFR":80,"MVFR":59,"VFR":20,"none":30},
       "MVFR": {"LIFR":2,"IFR":44,"MVFR":155,"VFR":93,"none":109},
-      "VFR": {"LIFR":0,"IFR":10,"MVFR":61,"VFR":269,"none":352},
-      "none": {"LIFR":0,"IFR":6,"MVFR":56,"VFR":263,"none":3034}
+      "VFR": {"LIFR":0,"IFR":10,"MVFR":61,"VFR":269,"none":355},
+      "none": {"LIFR":0,"IFR":6,"MVFR":56,"VFR":263,"none":3178}
      },
      "byForecast": {
       "LIFR": {
@@ -798,29 +800,29 @@
    "place": "the drop zone",
    "gridKm": null,
    "issuances": {
-    "count": 413,
+    "count": 534,
     "span": {
      "from": "2026-10-13T15:35Z",
-     "to": "2026-11-09T15:35Z"
+     "to": "2026-11-16T17:01Z"
     }
    },
    "rows": [
     {
      "label": "NWS, latest issuance",
      "minLeadH": 0,
-     "hours": 621,
+     "hours": 788,
      "span": {
       "from": "2026-10-13T16:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
      "leadH": {"min":0.03333333333333333,"max":6.409722222222222},
-     "call": {"both":246,"forecastOnly":30,"reportedOnly":37,"neither":308},
+     "call": {"both":246,"forecastOnly":30,"reportedOnly":41,"neither":471},
      "bands": {
       "LIFR": {"LIFR":1,"IFR":10,"MVFR":0,"VFR":0,"none":0},
       "IFR": {"LIFR":1,"IFR":20,"MVFR":22,"VFR":0,"none":4},
       "MVFR": {"LIFR":0,"IFR":17,"MVFR":83,"VFR":21,"none":7},
-      "VFR": {"LIFR":0,"IFR":2,"MVFR":22,"VFR":47,"none":26},
-      "none": {"LIFR":0,"IFR":4,"MVFR":8,"VFR":18,"none":308}
+      "VFR": {"LIFR":0,"IFR":2,"MVFR":22,"VFR":47,"none":30},
+      "none": {"LIFR":0,"IFR":4,"MVFR":8,"VFR":18,"none":471}
      },
      "byForecast": {
       "LIFR": {
@@ -926,19 +928,19 @@
     {
      "label": "NWS, 6 h or more ahead",
      "minLeadH": 6,
-     "hours": 615,
+     "hours": 782,
      "span": {
       "from": "2026-10-13T22:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
      "leadH": {"min":6.033333333333333,"max":12.409722222222221},
-     "call": {"both":236,"forecastOnly":42,"reportedOnly":41,"neither":296},
+     "call": {"both":236,"forecastOnly":42,"reportedOnly":45,"neither":459},
      "bands": {
       "LIFR": {"LIFR":0,"IFR":11,"MVFR":0,"VFR":0,"none":0},
       "IFR": {"LIFR":0,"IFR":26,"MVFR":17,"VFR":1,"none":3},
       "MVFR": {"LIFR":0,"IFR":28,"MVFR":72,"VFR":15,"none":7},
-      "VFR": {"LIFR":0,"IFR":2,"MVFR":26,"VFR":38,"none":31},
-      "none": {"LIFR":0,"IFR":10,"MVFR":9,"VFR":23,"none":296}
+      "VFR": {"LIFR":0,"IFR":2,"MVFR":26,"VFR":38,"none":35},
+      "none": {"LIFR":0,"IFR":10,"MVFR":9,"VFR":23,"none":459}
      },
      "byForecast": {
       "LIFR": {
@@ -1044,19 +1046,19 @@
     {
      "label": "NWS, 24 h or more ahead",
      "minLeadH": 24,
-     "hours": 586,
+     "hours": 751,
      "span": {
       "from": "2026-10-14T16:00Z",
-      "to": "2026-11-09T00:00Z"
+      "to": "2026-11-16T00:00Z"
      },
      "leadH": {"min":24.033333333333335,"max":29.910555555555554},
-     "call": {"both":209,"forecastOnly":37,"reportedOnly":53,"neither":287},
+     "call": {"both":209,"forecastOnly":37,"reportedOnly":57,"neither":448},
      "bands": {
       "LIFR": {"LIFR":0,"IFR":9,"MVFR":1,"VFR":0,"none":0},
       "IFR": {"LIFR":0,"IFR":25,"MVFR":14,"VFR":3,"none":3},
       "MVFR": {"LIFR":1,"IFR":7,"MVFR":63,"VFR":27,"none":20},
-      "VFR": {"LIFR":0,"IFR":5,"MVFR":11,"VFR":43,"none":30},
-      "none": {"LIFR":0,"IFR":1,"MVFR":12,"VFR":24,"none":287}
+      "VFR": {"LIFR":0,"IFR":5,"MVFR":11,"VFR":43,"none":34},
+      "none": {"LIFR":0,"IFR":1,"MVFR":12,"VFR":24,"none":448}
      },
      "byForecast": {
       "LIFR": {
@@ -1186,15 +1188,15 @@
      {
       "label": "NWS, latest issuance",
       "minLeadH": 0,
-      "hours": 622,
+      "hours": 789,
       "events": 38,
-      "chanceSum": 7522,
+      "chanceSum": 7638,
       "nearMiss": 23,
       "leadH": {"min":0.03333333333333333,"max":6.409722222222222},
       "bins": [
-       {"lo":0,"hi":0,"hours":240,"events":0,"chanceSum":0},
-       {"lo":1,"hi":9,"hours":178,"events":0,"chanceSum":626},
-       {"lo":10,"hi":19,"hours":83,"events":0,"chanceSum":1231},
+       {"lo":0,"hi":0,"hours":384,"events":0,"chanceSum":0},
+       {"lo":1,"hi":9,"hours":198,"events":0,"chanceSum":712},
+       {"lo":10,"hi":19,"hours":86,"events":0,"chanceSum":1261},
        {"lo":20,"hi":29,"hours":35,"events":1,"chanceSum":840},
        {"lo":30,"hi":39,"hours":22,"events":2,"chanceSum":758},
        {"lo":40,"hi":49,"hours":10,"events":4,"chanceSum":469},
@@ -1206,21 +1208,21 @@
       ],
       "span": {
        "from": "2026-10-13T16:00Z",
-       "to": "2026-11-08T23:00Z"
+       "to": "2026-11-15T23:00Z"
       }
      },
      {
       "label": "NWS, 6 h or more ahead",
       "minLeadH": 6,
-      "hours": 616,
+      "hours": 783,
       "events": 38,
-      "chanceSum": 7444,
+      "chanceSum": 7558,
       "nearMiss": 23,
       "leadH": {"min":6.033333333333333,"max":12.409722222222221},
       "bins": [
-       {"lo":0,"hi":0,"hours":217,"events":0,"chanceSum":0},
-       {"lo":1,"hi":9,"hours":202,"events":0,"chanceSum":610},
-       {"lo":10,"hi":19,"hours":74,"events":2,"chanceSum":1084},
+       {"lo":0,"hi":0,"hours":367,"events":0,"chanceSum":0},
+       {"lo":1,"hi":9,"hours":214,"events":0,"chanceSum":674},
+       {"lo":10,"hi":19,"hours":79,"events":2,"chanceSum":1134},
        {"lo":20,"hi":29,"hours":39,"events":1,"chanceSum":958},
        {"lo":30,"hi":39,"hours":17,"events":2,"chanceSum":590},
        {"lo":40,"hi":49,"hours":13,"events":2,"chanceSum":584},
@@ -1232,20 +1234,20 @@
       ],
       "span": {
        "from": "2026-10-13T22:00Z",
-       "to": "2026-11-08T23:00Z"
+       "to": "2026-11-15T23:00Z"
       }
      },
      {
       "label": "NWS, 24 h or more ahead",
       "minLeadH": 24,
-      "hours": 598,
+      "hours": 765,
       "events": 38,
-      "chanceSum": 5932,
+      "chanceSum": 5938,
       "nearMiss": 23,
       "leadH": {"min":24.033333333333335,"max":30.40972222222222},
       "bins": [
-       {"lo":0,"hi":0,"hours":258,"events":0,"chanceSum":0},
-       {"lo":1,"hi":9,"hours":179,"events":7,"chanceSum":530},
+       {"lo":0,"hi":0,"hours":419,"events":0,"chanceSum":0},
+       {"lo":1,"hi":9,"hours":185,"events":7,"chanceSum":536},
        {"lo":10,"hi":19,"hours":45,"events":2,"chanceSum":695},
        {"lo":20,"hi":29,"hours":46,"events":1,"chanceSum":1111},
        {"lo":30,"hi":39,"hours":22,"events":8,"chanceSum":732},
@@ -1258,7 +1260,7 @@
       ],
       "span": {
        "from": "2026-10-14T16:00Z",
-       "to": "2026-11-08T23:00Z"
+       "to": "2026-11-15T23:00Z"
       }
      }
     ]
@@ -1272,13 +1274,13 @@
      {
       "label": "NWS, latest issuance",
       "minLeadH": 0,
-      "hours": 622,
+      "hours": 789,
       "events": 1,
       "chanceSum": 2299,
       "nearMiss": 5,
       "leadH": {"min":0.03333333333333333,"max":11.410833333333333},
       "bins": [
-       {"lo":0,"hi":0,"hours":354,"events":0,"chanceSum":0},
+       {"lo":0,"hi":0,"hours":521,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":191,"events":0,"chanceSum":685},
        {"lo":10,"hi":19,"hours":39,"events":0,"chanceSum":538},
        {"lo":20,"hi":29,"hours":26,"events":0,"chanceSum":626},
@@ -1292,19 +1294,19 @@
       ],
       "span": {
        "from": "2026-10-13T16:00Z",
-       "to": "2026-11-08T23:00Z"
+       "to": "2026-11-15T23:00Z"
       }
      },
      {
       "label": "NWS, 6 h or more ahead",
       "minLeadH": 6,
-      "hours": 616,
+      "hours": 783,
       "events": 1,
       "chanceSum": 2492,
       "nearMiss": 5,
       "leadH": {"min":6.033333333333333,"max":17.410833333333333},
       "bins": [
-       {"lo":0,"hi":0,"hours":345,"events":0,"chanceSum":0},
+       {"lo":0,"hi":0,"hours":512,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":185,"events":0,"chanceSum":652},
        {"lo":10,"hi":19,"hours":35,"events":0,"chanceSum":481},
        {"lo":20,"hi":29,"hours":38,"events":0,"chanceSum":904},
@@ -1318,19 +1320,19 @@
       ],
       "span": {
        "from": "2026-10-13T22:00Z",
-       "to": "2026-11-08T23:00Z"
+       "to": "2026-11-15T23:00Z"
       }
      },
      {
       "label": "NWS, 24 h or more ahead",
       "minLeadH": 24,
-      "hours": 598,
+      "hours": 765,
       "events": 1,
       "chanceSum": 2057,
       "nearMiss": 5,
       "leadH": {"min":24.033333333333335,"max":35.410833333333336},
       "bins": [
-       {"lo":0,"hi":0,"hours":336,"events":0,"chanceSum":0},
+       {"lo":0,"hi":0,"hours":503,"events":0,"chanceSum":0},
        {"lo":1,"hi":9,"hours":194,"events":0,"chanceSum":597},
        {"lo":10,"hi":19,"hours":30,"events":0,"chanceSum":452},
        {"lo":20,"hi":29,"hours":31,"events":0,"chanceSum":771},
@@ -1344,7 +1346,7 @@
       ],
       "span": {
        "from": "2026-10-14T16:00Z",
-       "to": "2026-11-08T23:00Z"
+       "to": "2026-11-15T23:00Z"
       }
      }
     ]
