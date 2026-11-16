@@ -164,6 +164,16 @@ header. Workers Builds deploys the relay from `main` (docs/taf-relay.md,
 
 ## Checked
 
+- **The three-day path after deploying, 2026-11-16** (PR #298 merged
+  at 04:43Z; Workers Builds deployed the relay with it): at 04:50Z
+  `/nbm/KPMV/nbs` from the site's origin answered 200 with the 04Z
+  cycle's block (`blend.20261116/04/text/blend_nbstx.t04z`, 3,127
+  bytes, FHR 05 to 71). The deployed dashboard, loaded in the sandbox's
+  browser with live data at 390 and 1280 px: three day blocks, "Mon 3am
+  to Wed 9pm, every 3 h", 24 slots, both NBM rows green on Data health
+  ("NBM cloud base … KPMV NBH 04Z", "NBM three-day"), no console error,
+  no sideways scroll. The live-site check passed on the deploy (runs on
+  3ab1ccd and 58da43c, 04:48Z and 04:49Z).
 - `npm test`: the parser, the relay path (a stand-in bucket: HEAD, the
   window, the whole-file fallback, the memo, the refusals) and the card,
   each test proven by breaking what it names.
