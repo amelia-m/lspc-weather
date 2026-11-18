@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ceiling &amp; sky mock: day rows</title>
+<!--
+  Mock-up C, "day rows" (docs/ceiling-sky-layout-review.md, 2026-11-18).
+  The card collapsed to one row per local day, each a line of the day's
+  eight NBM sky-cover figures and the heights printed as plain ranges
+  ("ceiling no; base 2 to 3.7"), as the 10-day outlook card has a row per
+  day. Opening a day shows mock-up A's table for it (Thursday open here).
+  A range is the figures restated, lowest to highest, not a verdict; the
+  rows carry no bar, no band and no colour. Static figures from the
+  fixture build of 2026-11-18 at 20:00Z; no script.
+-->
+<style>
+:root { --bg:#0e1116; --panel:#171c24; --panel-2:#1f2630; --border:#2a323d; --text:#e6edf3; --muted:#93a1b0; --accent:#4aa8ff; --sky-cover:#b3c2d1; --hc-night:rgba(0,0,0,.5); }
+* { box-sizing:border-box }
+body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:14px }
+.panel { max-width:390px; margin:0 auto; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px }
+.head { display:flex; justify-content:space-between; align-items:baseline; gap:8px }
+h2 { margin:0; font-size:1.1rem }
+.sub { color:var(--muted); font-size:.8rem }
+.now { display:flex; justify-content:space-between; margin:10px 0 2px; font-size:.95rem }
+.now .l { color:var(--muted) }
+.pill { background:#1f6b35; color:#dff5e3; border-radius:5px; padding:1px 7px; font-size:.75rem; font-weight:600 }
+.key { color:var(--muted); font-size:.74rem; margin:10px 0 6px }
+.row { border-top:1px solid var(--border); padding:7px 0 }
+.row summary { list-style:none; cursor:pointer; display:grid; grid-template-columns:52px 1fr; gap:2px 6px; align-items:baseline }
+.row summary::-webkit-details-marker { display:none }
+.wd { font-weight:600; font-size:.82rem }
+.wd .d { display:block; color:var(--muted); font-weight:400; font-size:.68rem }
+.pcts { display:grid; grid-template-columns:repeat(8,1fr); font-size:.72rem; font-variant-numeric:tabular-nums; text-align:center; color:var(--muted) }
+.pcts .n { background:var(--hc-night); border-radius:3px }
+.pcts .t { font-size:.62rem; color:var(--text) }
+.hts { grid-column:2; font-size:.74rem; color:var(--text) }
+.hts .m { color:var(--muted) }
+.open { margin:8px 0 0 0 }
+table { border-collapse:separate; border-spacing:0; width:100%; table-layout:fixed; font-size:.72rem; font-variant-numeric:tabular-nums }
+th, td { padding:1px 0; text-align:center; font-weight:400; line-height:1.25; white-space:nowrap }
+th.lab, td.lab { text-align:left; width:52px; color:var(--muted) }
+tr.time th { color:var(--text); font-size:.7rem }
+tr.src td { text-align:left; color:var(--muted); font-size:.66rem; padding-top:4px }
+tr.src td span { color:var(--text) }
+td.night, th.night { background:var(--hc-night) }
+td.nbm { color:var(--muted) }
+tr.bar td { height:22px; vertical-align:bottom; padding:0 2px }
+.b { display:block; margin:0 auto; width:70%; background:var(--sky-cover); opacity:.8 }
+.b.nbm { background:var(--muted); opacity:.75 }
+details.about summary { color:var(--accent); font-size:.78rem; cursor:pointer; margin-top:8px }
+details.about p { color:var(--muted); font-size:.74rem }
+.foot { color:var(--muted); font-size:.7rem; border-top:1px solid var(--border); margin-top:10px; padding-top:6px }
+.ann { color:#ffd166; font-size:.68rem; font-style:italic; margin:2px 0 0 }
+</style>
+</head>
+<body>
+<section class="panel">
+  <div class="head"><h2>Ceiling &amp; sky</h2><span class="sub">now to Sat 9pm</span></div>
+  <div class="now"><span class="l">Flight category</span><span class="pill">VFR</span></div>
+  <div class="now"><span class="l">Ceiling</span><span><b>4,500 ft AGL</b></span></div>
+
+  <p class="key">One row per day: the NBM bulletin's sky cover % at 12am, 3, 6, 9, 12pm, 3, 6, 9 (dark = night at the DZ), then its ceiling and lowest base, lowest to highest, in thousands of ft AGL. Open a day for both forecasts, every 3 h, and the NWS hourly figures.</p>
+  <p class="ann">annotation: four rows of about 60 px replace 730 px of day blocks; the figures are the same, restated as ranges</p>
+
+  <details class="row">
+    <summary>
+      <span class="wd">Wed <span class="d">today</span></span>
+      <span class="pcts"><span></span><span></span><span></span><span></span><span class="t">2pm</span><span class="t">5pm</span><span class="t n">8pm</span><span class="t n">11pm</span><span></span><span></span><span></span><span></span><span>—</span><span>—</span><span class="n">22</span><span class="n">26</span></span>
+      <span class="hts">NWS now: 4.5 to 8, then no ceiling from 11pm &nbsp;<span class="m">·</span>&nbsp; NBM from 8pm: ceiling no; base 16, 6</span>
+    </summary>
+  </details>
+
+  <details class="row" open>
+    <summary>
+      <span class="wd">Thu <span class="d">Nov 19</span></span>
+      <span class="pcts"><span class="n">45</span><span class="n">62</span><span>26</span><span>20</span><span>14</span><span>14</span><span class="n">22</span><span class="n">33</span></span>
+      <span class="hts">ceiling no, except 3.5 at 3am &nbsp;<span class="m">·</span>&nbsp; base 2 to 3.7 all day</span>
+    </summary>
+    <div class="open">
+      <table>
+        <tr class="time"><th class="lab"></th><th class="night">12am</th><th class="night">3am</th><th>6am</th><th>9am</th><th>12pm</th><th>3pm</th><th class="night">6pm</th><th class="night">9pm</th></tr>
+        <tr class="src"><td colspan="9"><span>NWS</span> hourly forecast at these hours · <a href="#" style="color:var(--accent);text-decoration:none">all 24 hours</a></td></tr>
+        <tr class="bar"><td class="lab">sky</td><td class="night"><span class="b" style="height:5px"></span></td><td class="night"><span class="b" style="height:7px"></span></td><td><span class="b" style="height:7px"></span></td><td><span class="b" style="height:7px"></span></td><td><span class="b" style="height:7px"></span></td><td><span class="b" style="height:7px"></span></td><td class="night"><span class="b" style="height:7px"></span></td><td class="night"><span class="b" style="height:7px"></span></td></tr>
+        <tr><td class="lab">%</td><td class="night">25</td><td class="night">35</td><td>35</td><td>35</td><td>35</td><td>35</td><td class="night">35</td><td class="night">35</td></tr>
+        <tr><td class="lab">ceiling</td><td class="night">no</td><td class="night">10</td><td>10</td><td>10</td><td>10</td><td>10</td><td class="night">10</td><td class="night"></td></tr>
+        <tr class="src"><td colspan="9"><span>NBM</span> three-hourly bulletin (19Z)</td></tr>
+        <tr class="bar"><td class="lab">sky</td><td class="night"><span class="b nbm" style="height:10px"></span></td><td class="night"><span class="b nbm" style="height:14px"></span></td><td><span class="b nbm" style="height:6px"></span></td><td><span class="b nbm" style="height:4px"></span></td><td><span class="b nbm" style="height:3px"></span></td><td><span class="b nbm" style="height:3px"></span></td><td class="night"><span class="b nbm" style="height:5px"></span></td><td class="night"><span class="b nbm" style="height:7px"></span></td></tr>
+        <tr><td class="lab">%</td><td class="night nbm">45</td><td class="night nbm">62</td><td class="nbm">26</td><td class="nbm">20</td><td class="nbm">14</td><td class="nbm">14</td><td class="night nbm">22</td><td class="night nbm">33</td></tr>
+        <tr><td class="lab">ceiling</td><td class="night nbm">no</td><td class="night nbm">3.5</td><td class="nbm">no</td><td class="nbm">no</td><td class="nbm">no</td><td class="nbm">no</td><td class="night nbm">no</td><td class="night nbm">no</td></tr>
+        <tr><td class="lab">base</td><td class="night nbm">2</td><td class="night nbm">2.4</td><td class="nbm">3.7</td><td class="nbm">3.1</td><td class="nbm">3</td><td class="nbm">2.9</td><td class="night nbm">2.2</td><td class="night nbm">2.2</td></tr>
+      </table>
+      <p class="ann">annotation: the open day is mock-up A's table for that day; "all 24 hours" opens the NWS hourly row under it</p>
+    </div>
+  </details>
+
+  <details class="row">
+    <summary>
+      <span class="wd">Fri <span class="d">Nov 20</span></span>
+      <span class="pcts"><span class="n">46</span><span class="n">37</span><span>18</span><span>3</span><span>2</span><span>8</span><span class="n">10</span><span class="n">24</span></span>
+      <span class="hts">ceiling no &nbsp;<span class="m">·</span>&nbsp; base 1.4, 8 overnight, then no layer from 6am</span>
+    </summary>
+  </details>
+
+  <details class="row">
+    <summary>
+      <span class="wd">Sat <span class="d">to 12pm</span></span>
+      <span class="pcts"><span class="n">26</span><span class="n">29</span><span>23</span><span>39</span><span>48</span><span></span><span></span><span></span></span>
+      <span class="hts">ceiling no &nbsp;<span class="m">·</span>&nbsp; base no, or 26</span>
+    </summary>
+  </details>
+
+  <details class="about"><summary>About these forecasts</summary>
+    <p>NWS: the gridpoint forecast for the DZ, hourly; its ceiling runs about a day and a half. NBM: the National Blend of Models&rsquo; bulletins for KPMV through the relay, the three-hourly one 6 to 72 h, the one usairnet&rsquo;s three-day table reads; its base is the lowest layer whether or not it is a ceiling. Two forecasts, never blended; neither raises a flag. &hellip;</p>
+  </details>
+  <div class="foot">Data: IEM observation · NWS observation · NWS forecast · Open-Meteo · NWS NBM bulletins · usairnet</div>
+</section>
+</body>
+</html>

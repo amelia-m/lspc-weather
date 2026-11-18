@@ -217,6 +217,16 @@ out", with a phone screenshot of each under docs/img). The build's
 Open, hers: which layout stays. The others, the env flag and
 `ThreeDayLayout` then go, and the chosen one's test keeps its name.
 
+**2026-11-18, her word: "I think we need to do more work on the
+layouts."** All four were built with fixtures and screenshotted at 320,
+390 and 1280 px at two clocks, critiqued against the reader's question
+("which day looks clear, when does a low layer come in"), and three
+alternatives drawn as mock-ups for her to pick from:
+docs/ceiling-sky-layout-review.md (the problems in order of weight; the
+heaviest, that the heights band fills from the ground to the base, so a
+26,000 ft base draws the darkest column in the card; the mock-ups under
+docs/design/ceiling-sky/, their pictures in docs/img). Still hers.
+
 ## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
 
 The live-site run after the parity summary's deploy (20:07Z) failed
