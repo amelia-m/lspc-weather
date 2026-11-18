@@ -262,9 +262,27 @@ docs/nbm-lowest-cloud-base.md has the shape. Checked in the fixture
 build with the clock at 20:00Z and 05:30Z at 1280, 390 and 320 px: four
 day tables, nothing scrolling but the hourly detail, no console error.
 
+**Read again the same day** (docs/ceiling-sky-rebuild-review.md, a
+second agent's reading of the rebuild): of the layout review's eleven
+problems seven fixed and four partly; seven new, by weight, each
+verified in the fixture build or the code, and fixed the same day
+(docs/nbm-lowest-cloud-base.md, "Read again the same day"): one bulletin
+per band column and base cell, a top-edge strip for a ceiling at or
+above 12,000 ft, "12a" under 360 px, rows only where a day has figures,
+one "ends" line for the whole card read over the whole list (an end at
+local midnight was unnamed), today as its hours alone from 6 PM, the NWS
+line across the column and the base bar narrower. Not fixed, and hers:
+the card's height, about 1,950 px at 390 px with today's hourly open
+(the review measured 1,933 before the fixes and the `days` layout's
+1,826; the key under the tables is 650 px of it), and the one-screen
+answer per day (C), which the review's first finding says the tables
+still do not give without scrolling where only the NWS forecasts a
+ceiling.
+
 Open, hers: whether a one-line summary per day (C) is wanted, and what
 wording of printed figures it would carry ("lowest base 2,400 ft at
-3 AM; no ceiling" is figures; "clear" is not).
+3 AM; no ceiling" is figures; "clear" is not); and whether the key under
+the tables should be cut (it is the card's largest single piece).
 
 ## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
 

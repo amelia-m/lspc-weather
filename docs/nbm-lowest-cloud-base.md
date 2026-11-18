@@ -100,15 +100,36 @@ docs/img/ceiling-sky-day-tables-2026-11-18.png is the fixture build at
 390 px). Eight three-hour columns a day, the same hour in the same column
 of every day; the NWS rows (sky cover as a bar and a figure, Open-Meteo's
 figure beside it, the ceiling) and the NBM rows (the three-hourly
-bulletin's sky cover and ceiling, the base from the hourly bulletin where
-it reaches and the three-hourly one past it, titled as such); between
-them the heights band, ground to 12,000 ft, the base a bar at its height,
-the NBM ceiling as cloud above it, the NWS ceiling a tick, night shaded
-behind; a blank cell where a forecast does not reach, never a dash; the
-day's NWS hours under each table ("hourly", today's open); figures at
+bulletin's sky cover and ceiling, and its base where the slot has its
+column, the hourly bulletin's base alone in the slots before it begins,
+dotted); between them the heights band, ground to 12,000 ft, each column
+one bulletin's, the base a short bar at its height, the NBM ceiling as
+cloud above it, the NWS ceiling a line across the column, a height at or
+above 12,000 ft a strip on the top edge, night shaded behind; a blank
+cell where a forecast does not reach, never a dash, and a row only on a
+day with a figure in it; where the NWS ceiling forecast ends, one line
+under the tables, day and hour; the day's NWS hours under each table
+("hourly", today's open), and today as its hours alone when two slots or
+fewer remain by the clock; "12a" for "12am" under 360 px; figures at
 0.72 rem. The four layouts tried before it, the hourly strip, its
-12/24/36 toggle and the `VITE_THREE_DAY` flag went with it. What follows
-is the record of those four.
+12/24/36 toggle and the `VITE_THREE_DAY` flag went with it.
+
+Read again the same day (docs/ceiling-sky-rebuild-review.md: a second
+agent's reading of the rebuild, as the phone reader and as a code
+review), which found the hourly bulletin's base bar drawn inside the
+three-hourly's cloud, a ceiling at or above 12,000 ft drawing nothing,
+"12am" clipped to "12ar" at 320 px, labelled rows with nothing in them,
+a 287 px table for one column at 11:30 PM, the NWS tick and the base
+bar alike, and an end of the NWS ceiling forecast at local midnight
+unnamed; the rules in the paragraph above are its fixes, checked in the
+fixture build at 320, 390 and 1280 px with the clock at 20:00Z and
+05:30Z in DejaVu Sans (no cell clipped, no page wider than its viewport,
+no console error; docs/img/ceiling-sky-rebuild2-day-390-2026-11-18.png
+and …-night-320-….png). The card is still about 1,950 px tall at 390 px
+with today's hourly open (1,760 at the night clock), and the review's
+one-screen answer per day (the layout review's C) is not built: both are
+on docs/open-questions.md. What follows is the record of the four
+layouts.
 
 How the card showed it was the maintainer's to pick, and four layouts were
 built to try (`ThreeDayLayout` in src/components/forecastReach.ts and
