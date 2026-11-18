@@ -95,6 +95,21 @@ export function skySpans(
   return out;
 }
 
+/**
+ * Whether a span of time is night for a column that stands for it: true
+ * when the span's middle falls in one of `nights` (as nightIntervals gives
+ * them). A strip's column is an hour, a three-hourly block's slot three,
+ * and either can straddle sunset or sunrise; the middle decides, so an
+ * hour that is mostly dark reads as night and one mostly light as day,
+ * and no column is both. The Ceiling & sky card shades its columns and
+ * slots by this (the maintainer's ask of 2026-11-16, the hourly wind
+ * chart's band for a strip of discrete columns).
+ */
+export function spanIsNight(nights: readonly (readonly [number, number])[], startMs: number, endMs: number): boolean {
+  const mid = (startMs + endMs) / 2;
+  return nights.some(([a, b]) => mid >= a && mid < b);
+}
+
 /** Day or night at the point, and how far through it `now` is. */
 export interface SkyPhase {
   phase: 'day' | 'night';

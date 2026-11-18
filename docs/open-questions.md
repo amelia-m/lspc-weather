@@ -58,7 +58,7 @@ These cannot be settled from the code.
    claim verdict (`kind: 'judgement'`): only its questions are answered,
    counted and reported. Waiting on the S&TA with Part A.
 
-## To do: day and night on the Ceiling & sky card (the maintainer, 2026-11-16)
+## Done 2026-11-18: day and night on the Ceiling & sky card (the maintainer, 2026-11-16)
 
 The hourly wind chart has shaded its night hours since 2026-10-03 (the
 deck's "Which hours are daytime?" slide shows the before and after), so
@@ -71,6 +71,22 @@ chart's: the night hours from the card's own sunrise and sunset
 muted shading on the night columns and slots, no figure and no flag
 changed, and the fixture build checked at 1280, 390 and 320 px with the
 clock set, as the late-evening leg of the live-site check does.
+
+**Built 2026-11-18.** `spanIsNight` (src/domain/sun.ts, pure, beside
+`nightIntervals`): a column or slot is night when the middle of its span
+falls between the drop zone's sunset and sunrise, so an hour that
+straddles one goes by its greater part and none is both. The hourly
+strip's columns (`sky-col night`) and the day blocks' slots, figures and
+band (`nbs-slot night`, `nbs-band-night`, drawn before the base area and
+the ceiling tick) take the hourly chart's shade, `--hc-night`; each
+night column's title ends "· night", and the card's notes say what the
+darker columns are. No figure or flag changed. Tests: the helper's rule
+at the straddles; the card's 36 columns held to `nightIntervals` on the
+same hours; the day blocks at a fixed cycle (01Z on 2026-11-12), eleven
+of 23 slots night; each proven by breaking what it names. The fixture
+build with the clock at 20:00Z and 05:30Z, at 1280, 390 and 320 px: 23
+and 22 of 36 columns shaded, 12 and 11 slots, no sideways scroll, no
+console error; the afternoon one is docs/img/ceiling-sky-night-2026-11-18.png.
 
 ## Settled: the visibility flag holds the reading to both 105.17 rows
 

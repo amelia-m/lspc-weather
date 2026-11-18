@@ -1,6 +1,7 @@
 import type { NbmForecast, NbmHour } from '../domain/types';
 import { round } from '../domain/units';
 import { AUTOMATED_TOP_FT } from '../domain/stationPairs';
+import { nightIntervals, spanIsNight } from '../domain/sun';
 import { fmtShortHour, fmtTime, fmtWeekday, localDateKey } from './format';
 
 /**
@@ -47,9 +48,14 @@ const yOf = (ft: number): number => BAND_H - (Math.min(ft, TOP_FT) / TOP_FT) * B
  *  slots that have one, the ceiling as a tick where there is one. SVG in
  *  the slots' own coordinates (one slot = BAND_W / 8 wide), scaled to the
  *  block's width by the stylesheet. */
-function band(slots: (NbmHour | null)[]): JSX.Element {
+function band(slots: (NbmHour | null)[], night: boolean[]): JSX.Element {
   const w = BAND_W / SLOTS;
   const parts: JSX.Element[] = [];
+  // The night slots shaded under the marks, as the hourly chart shades its
+  // band: drawn first so the base area and the ceiling tick sit on top.
+  night.forEach((isNight, i) => {
+    if (isNight) parts.push(<rect key={`n${i}`} className="nbs-band-night" x={i * w} y={0} width={w} height={BAND_H} />);
+  });
   slots.forEach((h, i) => {
     const x = i * w;
     const base = h?.lowestBaseFtAgl;
@@ -71,7 +77,7 @@ function band(slots: (NbmHour | null)[]): JSX.Element {
   );
 }
 
-export function NbsDays({ nbs, timeZone }: { nbs: NbmForecast; timeZone: string }): JSX.Element {
+export function NbsDays({ nbs, timeZone, dz }: { nbs: NbmForecast; timeZone: string; dz: { lat: number; lon: number } }): JSX.Element {
   // The bulletin's columns by local day, each day's by slot.
   const days = new Map<string, (NbmHour | null)[]>();
   for (const h of nbs.hours) {
@@ -83,6 +89,12 @@ export function NbsDays({ nbs, timeZone }: { nbs: NbmForecast; timeZone: string 
   const cycle = `${String(new Date(nbs.cycleMs).getUTCHours()).padStart(2, '0')}Z`;
   const firstH = nbs.hours[0];
   const lastH = nbs.hours[nbs.hours.length - 1];
+  // Night at the drop zone over the bulletin's span (domain/sun.ts, the
+  // night flag's sunrise and sunset); a three-hour slot goes by its middle.
+  const stepMs = nbs.stepHours * 3_600_000;
+  const nights = firstH && lastH ? nightIntervals(dz.lat, dz.lon, firstH.time, lastH.time + stepMs) : [];
+  const slotNight = (h: NbmHour | null): boolean => h != null && spanIsNight(nights, h.time, h.time + stepMs);
+  const cls = (base: string, h: NbmHour | null): string => (slotNight(h) ? `${base} night` : base);
   const span = firstH && lastH ? `${fmtWeekday(firstH.time)} ${fmtShortHour(firstH.time)} to ${fmtWeekday(lastH.time)} ${fmtShortHour(lastH.time)}` : '';
   return (
     <div className="nbs-days">
@@ -100,13 +112,13 @@ export function NbsDays({ nbs, timeZone }: { nbs: NbmForecast; timeZone: string 
             <div className="nbs-grid">
               <span className="nbs-unit">&nbsp;</span>
               {slots.map((h, i) => (
-                <span key={`t${i}`} className="nbs-hour">
+                <span key={`t${i}`} className={cls('nbs-hour', h)}>
                   {h ? fmtShortHour(h.time) : ' '}
                 </span>
               ))}
               <span className="nbs-unit">sky %</span>
               {slots.map((h, i) => (
-                <span key={`s${i}`} className="nbs-slot" title={h ? describe(h) : undefined}>
+                <span key={`s${i}`} className={cls('nbs-slot', h)} title={h ? `${describe(h)}${slotNight(h) ? ' · night' : ''}` : undefined}>
                   <span className="nbs-pct">{h?.skyCoverPct != null ? round(h.skyCoverPct) : h ? '—' : ' '}</span>
                   <span className="nbs-track">
                     {h?.skyCoverPct != null && <span className="nbs-bar" style={{ height: `${h.skyCoverPct}%` }} />}
@@ -117,16 +129,16 @@ export function NbsDays({ nbs, timeZone }: { nbs: NbmForecast; timeZone: string 
                 <span>12k</span>
                 <span>0</span>
               </span>
-              <span className="nbs-band-cell">{band(slots)}</span>
+              <span className="nbs-band-cell">{band(slots, slots.map(slotNight))}</span>
               <span className="nbs-unit">ceil</span>
               {slots.map((h, i) => (
-                <span key={`c${i}`} className="nbs-fig" title={h ? (h.ceilingFtAgl == null ? (h.ceilingFtAgl === null ? 'NBM: no ceiling' : 'No NBM ceiling figure') : `NBM ceiling ${h.ceilingFtAgl.toLocaleString()} ft AGL`) : undefined}>
+                <span key={`c${i}`} className={cls('nbs-fig', h)} title={h ? (h.ceilingFtAgl == null ? (h.ceilingFtAgl === null ? 'NBM: no ceiling' : 'No NBM ceiling figure') : `NBM ceiling ${h.ceilingFtAgl.toLocaleString()} ft AGL`) : undefined}>
                   {h ? (h.ceilingFtAgl === undefined ? '—' : h.ceilingFtAgl === null ? 'no' : fmtK(h.ceilingFtAgl)) : ' '}
                 </span>
               ))}
               <span className="nbs-unit">base</span>
               {slots.map((h, i) => (
-                <span key={`b${i}`} className="nbs-fig muted" title={h ? (h.lowestBaseFtAgl == null ? (h.lowestBaseFtAgl === null ? 'NBM: no cloud layer' : 'No NBM base figure') : `NBM lowest cloud base ${h.lowestBaseFtAgl.toLocaleString()} ft AGL`) : undefined}>
+                <span key={`b${i}`} className={cls('nbs-fig muted', h)} title={h ? (h.lowestBaseFtAgl == null ? (h.lowestBaseFtAgl === null ? 'NBM: no cloud layer' : 'No NBM base figure') : `NBM lowest cloud base ${h.lowestBaseFtAgl.toLocaleString()} ft AGL`) : undefined}>
                   {h ? (h.lowestBaseFtAgl === undefined ? '—' : h.lowestBaseFtAgl === null ? 'no' : fmtK(h.lowestBaseFtAgl)) : ' '}
                 </span>
               ))}
@@ -137,7 +149,8 @@ export function NbsDays({ nbs, timeZone }: { nbs: NbmForecast; timeZone: string 
       <p className="muted small nbs-days-key">
         Sky % and bar = the bulletin&rsquo;s sky cover. The band is its cloud heights, ground to 12,000 ft: the
         shaded area the lowest cloud base (any layer, a few or scattered one included), the tick a ceiling.
-        Under it the same in thousands of ft AGL; &ldquo;no&rdquo; = no layer, or no ceiling.
+        Under it the same in thousands of ft AGL; &ldquo;no&rdquo; = no layer, or no ceiling. The darker slots
+        are night at the drop zone, sunset to sunrise, as the hourly strip and the night flag have it.
       </p>
     </div>
   );

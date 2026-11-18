@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nightIntervals, skyPhase, skySpans, sunTimes } from '../src/domain/sun';
+import { nightIntervals, skyPhase, skySpans, spanIsNight, sunTimes } from '../src/domain/sun';
 
 // LSPC / Weeping Water, NE
 const LAT = 40.8675;
@@ -161,5 +161,25 @@ describe('skySpans', () => {
 
   it('is one day when there is no night in the range', () => {
     expect(skySpans([], 0, 100)).toEqual([{ kind: 'day', start: 0, end: 100 }]);
+  });
+});
+
+describe('spanIsNight', () => {
+  // One night, 23:00Z to 13:00Z the next day (a November night at the DZ,
+  // rounded), as nightIntervals gives it.
+  const night: [number, number][] = [[Date.UTC(2026, 10, 12, 23), Date.UTC(2026, 10, 13, 13)]];
+  const h = 3_600_000;
+
+  it('is night when the middle of the span is in a night, by the greater part of a straddling hour', () => {
+    expect(spanIsNight(night, Date.UTC(2026, 10, 13, 3), Date.UTC(2026, 10, 13, 4))).toBe(true);
+    expect(spanIsNight(night, Date.UTC(2026, 10, 12, 15), Date.UTC(2026, 10, 12, 16))).toBe(false);
+    // The hour 22:30 to 23:30 straddles the 23:00 sunset: its middle, 23:00,
+    // is the first instant of night, so it is night; 22:20 to 23:20 is not.
+    expect(spanIsNight(night, Date.UTC(2026, 10, 12, 22, 30), Date.UTC(2026, 10, 12, 23, 30))).toBe(true);
+    expect(spanIsNight(night, Date.UTC(2026, 10, 12, 22, 20), Date.UTC(2026, 10, 12, 23, 20))).toBe(false);
+    // A three-hour slot 12:00 to 15:00 has its middle at 13:30, after the
+    // 13:00 sunrise: day, though it began in the dark.
+    expect(spanIsNight(night, Date.UTC(2026, 10, 13, 12), Date.UTC(2026, 10, 13, 12) + 3 * h)).toBe(false);
+    expect(spanIsNight([], Date.UTC(2026, 10, 13, 3), Date.UTC(2026, 10, 13, 4))).toBe(false);
   });
 });

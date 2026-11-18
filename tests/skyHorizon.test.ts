@@ -59,7 +59,8 @@ const hours = (n: number, ceilingHours: number): HourlyPoint[] =>
   }));
 const card = (hourly: HourlyPoint[], initialHours?: number) =>
   renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds: null, initialHours }));
-const columns = (html: string) => (html.match(/<div class="sky-col" title=/g) ?? []).length;
+// A column with or without the night shade (the class "sky-col night" since 2026-11-18).
+const columns = (html: string) => (html.match(/<div class="sky-col(?: night)?" title=/g) ?? []).length;
 
 describe('the Ceiling & sky horizon', () => {
   it('opens on twelve hours, with the switch to the longer ones the forecast reaches', () => {
