@@ -159,15 +159,20 @@ describe('the hourly table', () => {
   });
 });
 
-describe('the Ceiling & sky strip', () => {
-  it('says "no" for a forecast hour with no ceiling, and a dash for one the ceiling forecast does not reach', () => {
-    const t0 = Math.ceil(Date.now() / 3_600_000) * 3_600_000;
+describe('the Ceiling & sky day tables', () => {
+  it('says "no" for a forecast hour with no ceiling, and leaves blank one the ceiling forecast does not reach', () => {
+    // 2026-11-18 20:00Z, 2 PM Central: the hour under way, and the next.
+    const t0 = Date.UTC(2026, 10, 18, 20);
     const hourly = [
       { ...point(0, true, 10), time: t0 },
       { ...point(1, false, null), time: t0 + 3_600_000 },
     ];
-    const html = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds: null }));
-    expect(html).toMatch(/<span class="sky-ceil" title="No ceiling \(no broken\/overcast layer\)">no/);
-    expect(html).toMatch(/<span class="sky-ceil" title="No ceiling forecast for this hour">—/);
+    const html = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds: null, now: t0 }));
+    const at = html.indexOf('>NWS ceil</th>');
+    const row = [...html.slice(at, html.indexOf('</tr>', at)).matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
+    // The 2 PM slot "no"; the 3 PM slot, past the ceiling forecast, blank.
+    expect(row).toEqual(['', '', '', '', 'no', '', '', '']);
+    expect(html).toContain('NWS ceiling forecast ends 3pm; its sky row runs on');
+    expect(html.slice(html.indexOf('class="csd-day"'))).not.toContain('—');
   });
 });

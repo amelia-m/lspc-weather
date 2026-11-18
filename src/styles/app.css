@@ -1200,123 +1200,10 @@ a.sim-term {
   white-space: nowrap;
   margin: 0 -8px;
 }
-/* The Ceiling & sky card's timeline: twelve hours across the card without
-   scrolling, from 320 px up. Columns share the width and may shrink; the
-   figures are a size smaller, and a time sits under every third hour,
-   centred even when wider than its column (as on the Precip card). */
-.ceiling-timeline {
-  gap: 2px;
-  min-width: 0;
-  padding-right: 8px;
-}
-.ceiling-timeline .sky-col:not(.sky-axis-col) {
-  flex: 1 1 0;
-  min-width: 0;
-}
-/* 24 and 36 hours: each column keeps the width twelve get on a phone, and
-   the strip scrolls inside the card (.sky-scroll) instead of shrinking them
-   until the figures overlap. On a wide screen the columns still share the
-   width. */
-.ceiling-timeline.extended {
-  min-width: min-content;
-}
-.ceiling-timeline.extended .sky-col:not(.sky-axis-col) {
-  flex: 1 0 20px;
-}
-/* The figures carry no units (the axis column prints them once), so the
-   axis stays in view while the longer strips scroll under it. */
-.ceiling-timeline.extended .sky-axis-col {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--panel);
-  /* The strip's 2 px flex gap beside the axis is the container's, not the
-     column's, so the background alone left a sliver of each passing column
-     showing through it. */
-  box-shadow: 2px 0 0 var(--panel);
-}
 /* The weekday under the first hour of a new day, centred on its column
    even where wider than it, as the times are. */
 .sky-day {
   font-weight: 600;
-}
-.ceiling-timeline .sky-pct,
-.ceiling-timeline .sky-ceil,
-.ceiling-timeline .sky-base {
-  font-size: 0.55rem;
-  white-space: nowrap;
-}
-/* The NBM's lowest cloud base, a row under the NWS ceiling in the muted
-   colour: a second forecast, set apart from the first without a verdict. */
-.ceiling-timeline .sky-base {
-  display: block;
-  color: var(--muted);
-}
-/* The three-day bulletin's columns (forecastReach.ts, the layouts the
-   maintainer is trying, 2026-11-12): a column past the NWS hours is the
-   NBM's alone and three hours wide in time, so it is wider on the strip
-   and carries its own time label; its figure and bar take the second
-   forecast's muted colour and outlined track. In the 'continue' layout a
-   ceiling figure that is the NBM's, not the NWS's, is in the lighter
-   italic type the note names. */
-.ceiling-timeline.extended .sky-col.nbs-col {
-  flex: 1 0 40px;
-}
-.ceiling-timeline .sky-col.nbs-col .sky-pct.nbm-pct,
-.nbs-timeline .sky-pct.nbm-pct {
-  color: var(--muted);
-}
-.ceiling-timeline .nbm-track {
-  width: 100%;
-}
-.ceiling-timeline .sky-ceil.nbm-fig {
-  color: var(--muted);
-  font-style: italic;
-}
-.nbs-strip {
-  margin-top: 0.6rem;
-}
-.nbs-strip-title {
-  margin: 0 0 0.2rem;
-  color: var(--muted);
-}
-.nbs-timeline .sky-col.nbs-col {
-  flex: 1 0 36px;
-}
-.ceiling-timeline .sky-time {
-  display: flex;
-  justify-content: center;
-  white-space: nowrap;
-  margin: 0 -8px;
-}
-/* NWS sky cover: one colour whatever the amount (no few/scattered/broken/
-   overcast colours, which would read as a verdict). */
-.ceiling-timeline .sky-bar:not(.om-bar) {
-  flex: 1 1 0;
-  background: var(--sky-cover);
-  opacity: 0.8;
-}
-/* Open-Meteo's cloud cover beside it: a fixed-width track outlined in the
-   border colour, so 0 to 5% reads as an almost empty column rather than as
-   nothing, filled in neutral grey. */
-.om-track {
-  flex: none;
-  width: 6px;
-  height: 100%;
-  margin-left: 2px;
-  display: flex;
-  align-items: flex-end;
-  box-sizing: border-box;
-  border: 1px solid var(--border);
-  border-bottom: none;
-  border-radius: 2px 2px 0 0;
-}
-.sky-bar.om-bar {
-  background: var(--muted);
-}
-.sky-pct.om-pct {
-  color: var(--muted);
-  margin-top: -2px;
 }
 .sky-bar.precip-bar {
   background: linear-gradient(180deg, var(--accent), #2f6db5);
@@ -2286,129 +2173,182 @@ a.sim-term {
   font-weight: 600;
 }
 
-/* The NBM's three-day bulletin as day blocks (NbsDays.tsx): a grid of a
-   unit column and eight three-hour slots, one block per local day, so a
-   whole day fits the card at 320 px and nothing scrolls sideways. The
-   heights band is an SVG stretched over the eight slots. The second
-   forecast's muted colour throughout; no warning colour anywhere. */
-.nbs-days {
+
+/* The Ceiling & sky card's day tables (CeilingSkyDays.tsx, since
+   2026-11-18): one table per local day, a 52 px label column and eight
+   equal columns that share the card's width (30 px each at 320), so a day
+   fits a phone with nothing to scroll. Figures at 0.72 rem, up from the
+   strip's 0.55 (docs/data-viz-notes.md: the figures are load-bearing and
+   were under an 8-point floor). The night shade is the hourly chart's
+   (--hc-night), behind the cells and the band's slots. One colour per
+   source, none per value: the NWS bar in the sky-cover tone, the NBM's in
+   the muted one; nothing is a warning colour. */
+.csd-day {
   margin-top: 0.7rem;
 }
-.nbs-days-title {
-  margin: 0 0 0.3rem;
-  color: var(--muted);
-}
-.nbs-day {
-  margin-top: 0.4rem;
-}
-.nbs-day-title {
-  font-size: 0.72rem;
+.csd-day-h {
+  font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 2px;
 }
-.nbs-grid {
-  display: grid;
-  grid-template-columns: 30px repeat(8, minmax(0, 1fr));
-  gap: 1px 2px;
-  align-items: end;
-  font-size: 0.58rem;
-  color: var(--muted);
+.csd-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  table-layout: fixed;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+.csd-table th,
+.csd-table td {
+  padding: 1px 0;
   text-align: center;
-}
-.nbs-unit {
-  text-align: right;
-  padding-right: 4px;
+  font-weight: 400;
+  overflow: hidden;
   white-space: nowrap;
-  align-self: end;
 }
-.nbs-unit-band {
+.csd-table .csd-lab {
+  text-align: left;
+  width: 52px;
+  color: var(--muted);
+  padding-right: 4px;
+  font-size: 0.66rem;
+}
+.csd-time th {
+  color: var(--text);
+  font-size: 0.7rem;
+}
+.csd-time th.night {
+  border-radius: 4px 4px 0 0;
+}
+.csd-table .night {
+  background: var(--hc-night);
+}
+.csd-table td.muted {
+  color: var(--muted);
+}
+.csd-row-bar td {
+  height: 32px;
+  vertical-align: bottom;
+  padding: 0 2px;
+}
+.csd-barcell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+.csd-track {
+  display: flex;
+  align-items: flex-end;
+  width: 70%;
+  height: 16px;
+}
+.csd-bar {
+  display: block;
+  width: 100%;
+  background: var(--sky-cover);
+  opacity: 0.8;
+  border-radius: 1px 1px 0 0;
+}
+.nbm .csd-bar {
+  background: var(--muted);
+  opacity: 0.75;
+}
+.csd-fig {
+  display: block;
+}
+.nbm .csd-fig {
+  color: var(--muted);
+}
+.csd-row-band td {
+  padding: 2px 0;
+}
+.csd-ylab {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 40px;
+  height: 84px;
   line-height: 1;
+  font-size: 0.62rem;
 }
-.nbs-hour {
-  white-space: nowrap;
-  color: var(--text);
-}
-.nbs-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-.nbs-pct {
-  color: var(--text);
-  margin-bottom: 1px;
-}
-.nbs-track {
-  display: flex;
-  align-items: flex-end;
-  height: 34px;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.nbs-bar {
-  width: 100%;
-  background: var(--muted);
-  opacity: 0.7;
-}
-.nbs-band-cell {
-  grid-column: 2 / span 8;
-  display: block;
-}
-.nbs-band {
+.csd-band {
   display: block;
   width: 100%;
-  height: 40px;
+  height: 84px;
   background: var(--panel-2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 4px;
 }
-.nbs-band-grid {
+.csd-night {
+  fill: var(--hc-night);
+}
+.csd-grid {
   stroke: var(--border);
-  stroke-width: 0.5;
+  stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
-.nbs-base-area {
+/* The NBM ceiling as cloud above it, the base a bar at its height, the
+   NWS ceiling a lighter tick: three marks a reader tells apart by shape,
+   named in the card's note. */
+.csd-oc {
   fill: var(--muted);
   fill-opacity: 0.35;
 }
-.nbs-ceil-tick {
-  stroke: var(--text);
+.csd-base {
+  fill: var(--muted);
+}
+.csd-nws-ceil {
+  stroke: var(--sky-cover);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
-.nbs-fig {
-  white-space: nowrap;
-  color: var(--text);
+.csd-ends td {
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-style: italic;
+  padding: 2px 0 0;
 }
-.nbs-fig.muted {
+.csd-hourly {
+  margin: 4px 0 0 52px;
+  font-size: 0.68rem;
+}
+.csd-hourly summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.72rem;
+}
+.csd-hourly-scroll {
+  overflow-x: auto;
+  position: relative;
+  border-left: 2px solid var(--border);
+  padding-left: 6px;
+  margin-top: 2px;
+}
+.csd-hourly-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
-.nbs-days-key {
-  margin-top: 0.4rem;
+.csd-hourly-table th,
+.csd-hourly-table td {
+  min-width: 24px;
+  padding: 0 1px;
+  text-align: center;
+  font-weight: 400;
+  white-space: nowrap;
 }
-
-/* Night on the Ceiling & sky card (the maintainer's ask, 2026-11-16): the
-   hourly strip's columns and the day blocks' slots whose span is mostly
-   between sunset and sunrise at the drop zone take the hourly chart's
-   night shade (--hc-night) behind their contents, so a reader can tell a
-   jump day's hours from the dark ones at a glance. A fact of the sky in a
-   neutral shade, as the chart's band is; no figure or flag changes. */
-.ceiling-timeline .sky-col.night {
+.csd-hourly-table thead th {
+  color: var(--text);
+}
+.csd-hourly-table .csd-lab {
+  text-align: left;
+  min-width: 34px;
+  padding-right: 4px;
+}
+.csd-hourly-table .night {
   background: var(--hc-night);
-  border-radius: 4px;
-}
-.nbs-grid .night {
-  background: var(--hc-night);
-}
-.nbs-grid .nbs-slot.night .nbs-track {
-  background: var(--panel);
-}
-.nbs-band-night {
-  fill: var(--hc-night);
 }

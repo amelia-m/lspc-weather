@@ -109,15 +109,17 @@ card, the charts' limit lines and the flags, each marked as theirs.
   since 2026-10-27 a "base" row: the lowest cloud base in the NWS National
   Blend of Models' hourly bulletin for KPMV, read through the relay
   ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)). It is
-  not a ceiling and flags nothing. The strip's toggle offers 12h, 24h and
-  36h, and since 2026-11-12 the card also shows the NBM's three-hourly
-  bulletin (NBS, 6 to 72 hours ahead, the one usairnet's three-day table
-  reads), read through the relay's third path: as a block per local day
-  under the strip by default, one of four layouts the maintainer is
-  trying (`VITE_THREE_DAY`; two of them put a 72h option on the toggle
-  instead; same doc, "The three-hourly bulletin, three days out"). A
-  second forecast beside the NWS one, never blended with it, and
-  flagged no more than the base is.
+  not a ceiling and flags nothing. Since 2026-11-18 the card is one
+  table per local day, eight three-hour columns, in usairnet's day-table
+  form, which jumpers know: the NWS forecast's sky cover and ceiling,
+  Open-Meteo's cloud cover beside it, and the NBM's two bulletins' sky
+  cover, ceiling and lowest base (the three-hourly NBS, 6 to 72 hours
+  ahead, the one usairnet's three-day table reads, through the relay's
+  third path since 2026-11-12), with the cloud heights drawn as a band
+  the right way up and the day's NWS hours opening under each table
+  (docs/ceiling-sky-layout-review.md, docs/data-viz-notes.md). Night
+  at the drop zone is shaded. A second forecast beside the NWS one,
+  never blended with it, and flagged no more than the base is.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline (narrow
   bars, a time under every third hour).

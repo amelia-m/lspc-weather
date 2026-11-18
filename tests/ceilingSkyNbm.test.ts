@@ -2,25 +2,25 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
-import type { ThreeDayLayout } from '../src/components/forecastReach';
-import { localDateKey } from '../src/components/format';
 import { DATA_SOURCES } from '../src/config/sources';
+import { SITE } from '../src/config/site';
 import { deriveProvenance } from '../src/domain/sourceProvenance';
 import { nightIntervals, spanIsNight } from '../src/domain/sun';
-import { SITE } from '../src/config/site';
-import { NbsDays } from '../src/components/NbsDays';
 import type { HourlyPoint, NbmForecast } from '../src/domain/types';
 
-/* The NBM's lowest cloud base on the Ceiling & sky card: a row under the
- * ceiling, in the NWS hours the bulletin reaches, printed and not flagged. */
-
-const t0 = Math.ceil(Date.now() / 3_600_000) * 3_600_000;
+/* The NBM's two bulletins on the Ceiling & sky card's day tables (since
+ * 2026-11-18): the hourly one's base, the three-hourly one's sky cover,
+ * ceiling and base, the heights drawn as a band the right way up, every
+ * figure printed, nothing flagged. A fixed clock: 2026-11-18 20:00Z, 2 PM
+ * Central Standard Time. */
+const H = 3_600_000;
+const NOW = Date.UTC(2026, 10, 18, 20);
 const hours = (n: number): HourlyPoint[] =>
   Array.from({ length: n }, (_, i) => ({
-    time: t0 + i * 3_600_000,
+    time: NOW + i * H,
     skyCoverPct: 40,
     ceilingFtAgl: i === 1 ? 4500 : null,
-    ceilingForecast: true,
+    ceilingForecast: i < 30,
     visibilitySm: 10,
     visibilityForecast: true,
     windSpeedKt: 8,
@@ -31,210 +31,129 @@ const hours = (n: number): HourlyPoint[] =>
     precipAmountIn: 0,
     tempC: 15,
   }));
+/** The hourly bulletin: a base, no layer, no figure, from the hour under way. */
 const nbm: NbmForecast = {
   station: 'KPMV',
   product: 'NBH',
   stepHours: 1,
   version: '5.0',
-  cycleMs: t0 - 3_600_000,
-  file: 'blend.20261027/01/text/blend_nbhtx.t01z',
-  // Three hours only: a base, no layer, no figure; the rest of the strip is past it.
+  cycleMs: NOW - H,
+  file: 'blend.20261118/19/text/blend_nbhtx.t19z',
   hours: [
-    { time: t0, lowestBaseFtAgl: 2500, ceilingFtAgl: null, skyCoverPct: 40 },
-    { time: t0 + 3_600_000, lowestBaseFtAgl: null, ceilingFtAgl: null, skyCoverPct: 10 },
-    { time: t0 + 2 * 3_600_000, lowestBaseFtAgl: undefined, ceilingFtAgl: undefined, skyCoverPct: null },
+    { time: NOW, lowestBaseFtAgl: 2500, ceilingFtAgl: null, skyCoverPct: 40 },
+    { time: NOW + H, lowestBaseFtAgl: null, ceilingFtAgl: null, skyCoverPct: 10 },
+    { time: NOW + 2 * H, lowestBaseFtAgl: undefined, ceilingFtAgl: undefined, skyCoverPct: null },
   ],
 };
-const card = (n: NbmForecast | null) => renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly: hours(12), omClouds: null, nbm: n }));
-
-describe('the NBM base row on the Ceiling & sky card', () => {
-  it('prints the base under each hour in thousands of feet, "no" for no layer, a dash where it gives none, and names the source', () => {
-    const html = card(nbm);
-    expect(html).toContain('class="sky-ceil sky-base">base<');
-    const cells = [...html.matchAll(/<span class="sky-base" title="([^"]*)">([^<]*)</g)].map((m) => [m[1], m[2]]);
-    expect(cells.slice(0, 3)).toEqual([
-      ['NBM lowest cloud base 2,500 ft AGL', '2.5'],
-      ['NBM: no cloud layer', 'no'],
-      ['No NBM figure for this hour', '—'],
-    ]);
-    expect(cells).toHaveLength(12);
-    expect(cells[11]).toEqual(['No NBM figure for this hour', '—']);
-    expect(html).toContain('lowest cloud base in the NWS National Blend of Models');
-    // The cycle, not an issue time: the file lands about an hour after it.
-    expect(html).toContain(`(the ${String(new Date(nbm.cycleMs).getUTCHours()).padStart(2, '0')}Z cycle, read through the relay)`);
-    expect(html).not.toContain('issued');
-    expect(html).toContain('it raises no');
-    expect(html).toContain(DATA_SOURCES.nbm.url);
-  });
-
-  it('shows no row, no note and no source without the bulletin, or with one that reaches none of the hours', () => {
-    for (const html of [card(null), card({ ...nbm, hours: nbm.hours.map((h) => ({ ...h, time: h.time - 48 * 3_600_000 })) })]) {
-      expect(html).not.toContain('sky-base');
-      expect(html).not.toContain('National Blend');
-      expect(html).not.toContain(DATA_SOURCES.nbm.url);
-    }
-  });
-
-  it('is a plain figure: no colour class, no flag word', () => {
-    const html = card(nbm);
-    expect(html).not.toMatch(/sky-base[^>]*(caution|watch|warn)/);
-    expect(html).not.toMatch(/\b(low cloud warning|unsafe|go|no-go)\b/i);
-  });
-});
-
-describe('Data health names the NBM bulletin', () => {
-  it('as the station’s NBH cycle through the relay', () => {
-    const prov = deriveProvenance({ current: null, hourly: [], daily: [], windsAloft: [], sun: null, densityAltitude: null, taf: null, nbm: { ...nbm, cycleMs: Date.UTC(2026, 9, 27, 1) } }, true);
-    expect(prov.nbm).toEqual({ detail: "KPMV NBH 01Z · NOAA's bucket via the relay", fallback: false });
-  });
-});
-
-/* The three-hourly bulletin (NBS) on the card, in the layouts the
- * maintainer is trying (forecastReach.ts, ThreeDayLayout, 2026-11-12). The
- * NWS hours run 48 h; the NBS's columns run 6 to 72 h from a cycle an hour
- * before now, three hours apart, so past the NWS hours the strip's columns
- * are the bulletin's alone. */
+/** The three-hourly bulletin: 23 columns from 00Z on the 19th, a ceiling
+ *  in one, bases of 2,400 ft then none then 26,000. */
 const nbs: NbmForecast = {
   station: 'KPMV',
   product: 'NBS',
   stepHours: 3,
   version: null,
-  cycleMs: t0 - 3_600_000,
-  file: 'blend.20261112/01/text/blend_nbstx.t01z',
+  cycleMs: NOW - H,
+  file: 'blend.20261118/19/text/blend_nbstx.t19z',
   hours: Array.from({ length: 23 }, (_, i) => ({
-    time: t0 - 3_600_000 + (5 + 3 * i) * 3_600_000,
+    time: Date.UTC(2026, 10, 19, 0) + i * 3 * H,
     lowestBaseFtAgl: i === 20 ? 26000 : i > 11 ? null : 2400,
-    ceilingFtAgl: i === 18 ? 3500 : null,
+    ceilingFtAgl: i === 5 ? 3500 : null,
     skyCoverPct: 20 + i,
   })),
 };
-const cardWith = (threeDay: ThreeDayLayout, initialHours?: number) =>
-  renderToStaticMarkup(
-    createElement(CeilingSkyPanel, { current: null, hourly: hours(48), omClouds: null, nbm, nbs, threeDay, initialHours }),
-  );
+const card = (o: { nbm?: NbmForecast | null; nbs?: NbmForecast | null; n?: number }) =>
+  renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly: hours(o.n ?? 48), omClouds: null, nbm: o.nbm ?? null, nbs: o.nbs ?? null, now: NOW }));
+const rowOf = (html: string, label: string, from = 0): string[] => {
+  const at = html.indexOf(`>${label}</th>`, from);
+  if (at < 0) return [];
+  return [...html.slice(at, html.indexOf('</tr>', at)).matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
+};
 
-describe('the NBM three-hourly bulletin on the Ceiling & sky card', () => {
-  it("'horizon': a 3-day option, and at it the strip runs past the NWS hours in the bulletin's own wider columns, with an NBM ceiling row", () => {
-    const html = cardWith('horizon', 72);
-    expect(html).toContain('>72h</button>');
-    // 48 NWS hours, then the bulletin's times past them: 72 - 47 = 25 h of
-    // 3-h steps from the next one, 8 columns.
-    expect((html.match(/class="sky-col nbs-col( night)?"/g) ?? []).length).toBe(8);
-    expect((html.match(/class="sky-col( night)?"/g) ?? []).length).toBe(48);
-    expect(html).toContain('class="sky-ceil sky-base">NBM<');
-    expect(html).toContain('now + next 70 h');
-    expect(html).toContain('three-hourly bulletin for KPMV (NBS');
-    expect(html).toContain('NWS NBM three-hourly bulletin');
-    // A column of the bulletin's alone draws no NWS bar and no NWS figure.
-    const past = html.slice(html.indexOf('class="sky-col nbs-col"'));
-    expect(past).not.toContain('class="sky-bar" style');
-    expect(past).toContain('class="sky-pct nbm-pct"');
+describe('the NBM hourly bulletin’s base on the day tables', () => {
+  it('prints the base in thousands of feet at each slot’s hour, "no" for no layer, blank where it gives none, and names the source', () => {
+    const html = card({ nbm });
+    // Wednesday's table: the 2 PM slot (NOW) 2.5; 3 PM "no"; 6 PM and 9 PM blank.
+    expect(rowOf(html, 'NBM base')).toEqual(['', '', '', '', '2.5', 'no', '', '']);
+    expect(html).toContain('title="from the hourly bulletin"');
+    expect(html).toContain('NWS National Blend of Models’ bulletins for KPMV');
+    expect(html).toContain('(hourly, the 19Z cycle, 25 hours)');
+    expect(html).not.toContain('issued');
+    expect(html).toContain('lowest cloud base whether or not a ceiling is present');
+    expect(html).toContain(DATA_SOURCES.nbm.url);
   });
 
-  it("'continue': the 3-day option too, and past the NWS ceiling's end the ceiling row carries the NBM's figure in the marked type", () => {
-    const html = cardWith('continue', 72);
-    expect(html).toContain('>72h</button>');
-    expect(html).not.toContain('class="sky-ceil sky-base">NBM<');
-    expect((html.match(/class="sky-ceil nbm-fig"/g) ?? []).length).toBe(8);
-    expect(html).toContain('title="NBM ceiling 3,500 ft AGL"');
-    expect(html).toContain('goes on in the NBM’s figures');
-  });
-
-  it("'strip': the hourly strip as it was, no 3-day option, and a second three-hourly strip of every column of the bulletin under it", () => {
-    const html = cardWith('strip');
-    expect(html).not.toContain('>72h</button>');
-    expect(html).toContain('class="sky-timeline ceiling-timeline extended nbs-timeline"');
-    expect((html.match(/class="sky-col nbs-col( night)?"/g) ?? []).length).toBe(23);
-    expect(html).toContain('Next three days, every 3 h: NBM three-hourly bulletin');
-    expect(html).toContain('The three-day block is the');
-    expect(html).toContain('now + next 11 h');
-  });
-
-  it("'none': nothing of the bulletin, and no 3-day option; and without the bulletin the other layouts offer none either", () => {
-    const html = cardWith('none', 72);
-    expect(html).not.toContain('>72h</button>');
-    expect(html).not.toContain('nbs-col');
-    expect(html).not.toContain('NWS NBM three-hourly bulletin');
-    const without = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly: hours(48), omClouds: null, nbm, nbs: null, threeDay: 'horizon' }));
-    expect(without).not.toContain('>72h</button>');
-    expect(without).not.toContain('class="sky-ceil sky-base">NBM<');
+  it('has no base row and no NBM note without a bulletin, and never a dash', () => {
+    const html = card({});
+    expect(html).not.toContain('>NBM base</th>');
+    expect(html).not.toContain('>NBM %</th>');
+    expect(html).not.toContain('National Blend');
+    expect(html.slice(html.indexOf('class="csd-day"'))).not.toContain('—');
+    const prov = deriveProvenance({ current: null, hourly: hours(3), daily: [], windsAloft: [], sun: null, densityAltitude: null, taf: null, nbm: null }, true);
+    expect(prov.nbm).toBeUndefined();
   });
 });
 
-describe("the 'days' layout: one block per local day, eight three-hour slots, the heights drawn as a band", () => {
-  const html = cardWith('days');
+describe('the NBM three-hourly bulletin on the day tables', () => {
+  const html = card({ nbm, nbs });
 
-  it('draws one block per local day the bulletin touches (three or four, by the cycle hour), each with eight slots, no 72h option, and names the bulletin by its span', () => {
-    // The fixture's cycle is an hour before now, so which local dates its
-    // 66 hours cross depends on the clock: three from a 01Z to 06Z cycle,
-    // four otherwise. The count is held to the fixture's own dates, not a
-    // literal (a literal 3 failed for eighteen hours of every day, found
-    // in review 2026-11-12).
-    const days = new Set(nbs.hours.map((h) => localDateKey(h.time))).size;
-    expect([3, 4]).toContain(days);
-    expect((html.match(/class="nbs-day"/g) ?? []).length).toBe(days);
-    expect((html.match(/class="nbs-slot( night)?"/g) ?? []).length).toBe(days * 8);
-    expect(html).not.toContain('Next three days');
-    expect(html).toMatch(/[A-Z][a-z]{2} \d{1,2}[ap]m to [A-Z][a-z]{2} \d{1,2}[ap]m, every 3 h: the NBM/);
-    expect(html).not.toContain('>72h</button>');
-    expect(html).toContain('three-hourly bulletin (');
-    expect(html).toContain('The three-day block is the');
-    expect(html).toContain('NWS NBM three-hourly bulletin');
+  it('makes a block per local day the bulletins reach, the same slot in the same column, and reads the three-hourly figures at their own times', () => {
+    expect((html.match(/class="csd-day"/g) ?? []).length).toBe(4);
+    // Thursday: 12 AM to 9 PM Central are 06Z to 03Z, columns 2 to 9: sky 22..29.
+    const thu = html.indexOf('class="csd-day"', html.indexOf('class="csd-day"') + 1);
+    const figs = [...html.slice(thu, html.indexOf('class="csd-day"', thu + 1)).matchAll(/<span class="csd-barcell nbm"><span class="csd-track">.*?<span class="csd-fig">([^<]*)/g)].map((m) => m[1]);
+    expect(figs).toEqual(['22', '23', '24', '25', '26', '27', '28', '29']);
+    expect(rowOf(html, 'NBM ceil', thu)).toEqual(['no', 'no', 'no', '3.5', 'no', 'no', 'no', 'no']);
+    expect(html).toContain('three-hourly, the 19Z cycle, 6 to 72 hours, the bulletin usairnet’s three-day table reads');
+    expect(html).toContain(DATA_SOURCES.nbs.url);
   });
 
-  it('draws a base area for every slot with a base, a tick for the one ceiling, and prints the same figures under the band', () => {
-    // 23 columns: bases at 2,400 ft for 12, none for 10, 26,000 ft for one.
-    expect((html.match(/class="nbs-base-area"/g) ?? []).length).toBe(13);
-    expect((html.match(/class="nbs-ceil-tick"/g) ?? []).length).toBe(1);
-    expect(html).toContain('title="NBM ceiling 3,500 ft AGL">3.5<');
-    expect(html).toContain('title="NBM lowest cloud base 2,400 ft AGL">2.4<');
-    expect(html).toContain('title="NBM lowest cloud base 26,000 ft AGL">26<');
-    expect(html).toContain('title="NBM: no cloud layer">no<');
-    // A 26,000 ft base is drawn at the band's top, not past it.
-    expect(html).toMatch(/class="nbs-base-area" x="[0-9.]+" y="0" width="[0-9.]+" height="40"/);
+  it('takes the base from the hourly bulletin where it reaches and the three-hourly one past it, saying which', () => {
+    // Wednesday 6 PM (00Z): the hourly bulletin has no figure (its third hour is undefined and
+    // it ends there), the three-hourly's 2,400 ft stands, titled as its.
+    const wed = rowOf(html, 'NBM base');
+    expect(wed).toEqual(['', '', '', '', '2.5', 'no', '2.4', '2.4']);
+    expect(html).toContain('title="from the three-hourly bulletin"');
   });
 
-  it('is a picture of the figures in the muted colour: no warning class anywhere in the block', () => {
-    const block = html.slice(html.indexOf('class="nbs-days"'), html.indexOf('class="nbs-days-key"'));
-    expect(block).not.toMatch(/warn|caution|danger|alert/);
-  });
-});
-
-describe('night on the Ceiling & sky card (the maintainer, 2026-11-16)', () => {
-  it('shades exactly the hourly columns whose hour is mostly between sunset and sunrise at the drop zone, and says so', () => {
-    const pts = hours(36);
-    const html = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly: pts, omClouds: null, nbm: null, nbs: null, initialHours: 36 }));
-    const nights = nightIntervals(SITE.dz.lat, SITE.dz.lon, pts[0].time, pts[pts.length - 1].time + 3_600_000);
-    const expected = pts.map((h) => spanIsNight(nights, h.time, h.time + 3_600_000));
-    const cols = [...html.matchAll(/<div class="(sky-col(?: night)?)" title="([^"]*)"/g)].map((m) => m[1].endsWith('night'));
-    expect(cols).toHaveLength(36);
-    expect(cols).toEqual(expected);
-    // Any 36 hours hold both a night and a day at this latitude.
-    expect(expected).toContain(true);
-    expect(expected).toContain(false);
-    expect(html).toContain('The darker columns are night at the drop zone, sunset to sunrise');
-    // The title of a night column says so.
-    expect(html).toMatch(/class="sky-col night" title="[^"]* · night"/);
+  it('draws the band the right way up: the base a bar at its height, the NBM ceiling as cloud above it, the NWS ceiling a tick, night behind', () => {
+    const bandH = 120;
+    const y = (ft: number) => bandH - (Math.min(ft, 12000) / 12000) * bandH;
+    // 2,400 ft: a 4-unit bar centred on y(2400) = 96, so at 94.
+    expect(html).toContain(`<rect class="csd-base" x="2" y="${y(2400) - 2}" width="96" height="4">`);
+    // 26,000 ft clamps to the top edge: column 20 is 6 AM Saturday, slot 2.
+    expect(html).toContain('<rect class="csd-base" x="202" y="0" width="96" height="4">');
+    // 3,500 ft NBM ceiling: cloud from y(3500) = 85 up to the top.
+    expect(html).toContain(`<rect class="csd-oc" x="302" y="0" width="96" height="${y(3500)}">`);
+    // The NWS 4,500 ft ceiling at 3 PM Wednesday, slot 5: a tick at y(4500) = 75.
+    expect(html).toContain(`<line class="csd-nws-ceil" x1="502" x2="598" y1="${y(4500)}" y2="${y(4500)}">`);
+    // Night rects come first in the band, before the gridlines and marks.
+    const band = html.slice(html.indexOf('<svg class="csd-band"'), html.indexOf('</svg>', html.indexOf('<svg class="csd-band"')));
+    expect(band.indexOf('csd-night')).toBeLessThan(band.indexOf('csd-grid'));
+    expect(band.indexOf('csd-grid')).toBeLessThan(band.indexOf('csd-base'));
   });
 
-  it('shades the day blocks’ night slots by the same rule, the band behind the marks', () => {
-    // A fixed cycle, so the count is a fact of the calendar: 01Z on
-    // 2026-11-12, columns 06Z that day to 00Z on the 15th, three hours
-    // each. November nights at the DZ run about 23Z to 13Z, so the slots
-    // whose middle falls in them are 06 and 09Z on the 12th, then 00, 03,
-    // 06 and 09Z on the 13th and 14th, and 00Z on the 15th: eleven of 23.
-    const fixed: NbmForecast = { ...nbs, cycleMs: Date.UTC(2026, 10, 12, 1), hours: nbs.hours.map((h, i) => ({ ...h, time: Date.UTC(2026, 10, 12, 6) + i * 3 * 3_600_000 })) };
-    const html = renderToStaticMarkup(createElement(NbsDays, { nbs: fixed, timeZone: SITE.timeZone, dz: SITE.dz }));
-    expect((html.match(/class="nbs-slot night"/g) ?? []).length).toBe(11);
-    // The twelve day slots and the one empty slot (06Z on the 12th is
-    // midnight Central, so the three local days hold 24 slots for 23 columns).
-    expect((html.match(/class="nbs-slot"/g) ?? []).length).toBe(13);
-    expect((html.match(/class="nbs-band-night"/g) ?? []).length).toBe(11);
-    // Shaded before the marks, so the base area and the tick sit on top.
-    const band = html.indexOf('class="nbs-band-night"');
-    const area = html.indexOf('class="nbs-base-area"');
-    expect(band).toBeGreaterThan(-1);
-    expect(band).toBeLessThan(area);
-    expect(html).toContain('The darker slots are night at the drop zone');
+  it('shades night cells by the drop zone’s sunset and sunrise, a slot by its greater part, and says so', () => {
+    const nights = nightIntervals(SITE.dz.lat, SITE.dz.lon, NOW, NOW + 80 * H);
+    // Thursday's time row: 12 AM, 3 AM night; 6 AM to 3 PM day; 6 PM, 9 PM night (November at the DZ).
+    const thu = html.indexOf('class="csd-day"', html.indexOf('class="csd-day"') + 1);
+    const head = html.slice(html.indexOf('<tr class="csd-time">', thu), html.indexOf('</tr>', html.indexOf('<tr class="csd-time">', thu)));
+    const nightFlags = [...head.matchAll(/<th class="(night)?" scope="col">([^<]*)<\/th>/g)].map((m) => Boolean(m[1]));
+    const expected = nbs.hours.filter((h) => h.time >= Date.UTC(2026, 10, 19, 6) && h.time < Date.UTC(2026, 10, 20, 6)).map((h) => spanIsNight(nights, h.time, h.time + 3 * H));
+    expect(nightFlags).toEqual(expected);
+    expect(nightFlags).toEqual([true, true, false, false, false, false, true, true]);
+    expect(html).toContain('the dark columns are night there, sunset to sunrise, the same times the night flag uses');
+    expect(html).toMatch(/title="[^"]*· night"/);
+  });
+
+  it('opens today’s hourly detail and leaves the other days’ closed, and names where the NWS ceiling forecast ends', () => {
+    expect(html).toContain('<details class="csd-hourly" open=""><summary>hourly</summary>');
+    expect((html.match(/<details class="csd-hourly"><summary>hourly<\/summary>/g) ?? []).length).toBe(2);
+    // ceilingForecast false from hour 30: 02Z on the 20th, 8 PM Thursday.
+    expect(html).toContain('NWS ceiling forecast ends 8pm; its sky row runs on');
+  });
+
+  it('is a picture of the figures in the muted colour: no warning class in the tables', () => {
+    const tables = html.slice(html.indexOf('class="csd-day"'), html.indexOf('Each day across'));
+    expect(tables).not.toMatch(/warn|caution|danger|alert|ok\b/);
   });
 });

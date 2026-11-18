@@ -694,12 +694,11 @@ something new, though not always its full length (25 hours of forecast
 offer 36h and draw 25 columns, and the subtitle counts the columns, less
 the hour under way). It stops at 36: the ceiling reaches about a day and a
 half (above), so past that the strip would be sky cover alone. (Since
-2026-11-12 two of the four three-day layouts being tried, `horizon` and
-`continue`, add a 72h option when the NBM's three-hourly bulletin is in
-hand and the forecast runs past 36 h; past the NWS hours the strip then
-reads that bulletin, a second forecast, at its own three-hour steps:
-docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three days
-out". The default layout leaves the toggle at 12, 24 and 36.) Where the
+2026-11-18 the strip and its toggle are gone: the card is one table per
+local day, the NWS rows and the NBM bulletins' rows side by side, and
+where the NWS ceiling forecast ends inside a day the table says so in a
+line of its own: docs/nbm-lowest-cloud-base.md, "The three-hourly
+bulletin, three days out".) Where the
 chosen horizon runs past the ceiling forecast, the card says from which
 hour (weekday and time, since 36 hours can name the same clock time
 twice), and that the ceiling column shows a dash from there. It says

@@ -60,10 +60,14 @@ These cannot be settled from the code.
 
 ## Done 2026-11-18: day and night on the Ceiling & sky card (the maintainer, 2026-11-16)
 
+(Since 2026-11-18 the card is day tables, and the shading is on their
+cells and the band's slots by the same rule, `spanIsNight`; the strip
+and the blocks below are the card as it was that day.)
+
 The hourly wind chart has shaded its night hours since 2026-10-03 (the
 deck's "Which hours are daytime?" slide shows the before and after), so
 a reader can tell which columns are a jump day's. The Ceiling & sky
-card's hourly strip and its three-day blocks have no such mark: a 36 h
+card's hourly strip and its three-day blocks had no such mark: a 36 h
 strip or a day block reads the same at 2am as at 2pm. The maintainer
 asked for the same day/night indicator there. Shape to follow the wind
 chart's: the night hours from the card's own sunrise and sunset
@@ -248,7 +252,19 @@ needs a wording rule to stay a figure and not a verdict; its day table
 band alone. The session's recommendation: A's table as the body with
 B's profile as its heights row, the hourly strip folded into it (the
 NWS hours by opening a day), and C's one-line day summary only if its
-wording can be held to printed figures. Hers to pick.
+wording can be held to printed figures. **Built 2026-11-18 at her word
+("merge it and build your recommendation"):** A's table with B's band as
+its heights row and the hourly strip folded in; C's summary left out,
+since no wording for it was held to figures yet (open below). The four
+layouts, the strip, its toggle and the flag went; `src/domain/skyDays.ts`
+(pure, tested at a fixed clock) and `CeilingSkyDays.tsx` replace them;
+docs/nbm-lowest-cloud-base.md has the shape. Checked in the fixture
+build with the clock at 20:00Z and 05:30Z at 1280, 390 and 320 px: four
+day tables, nothing scrolling but the hourly detail, no console error.
+
+Open, hers: whether a one-line summary per day (C) is wanted, and what
+wording of printed figures it would carry ("lowest base 2,400 ft at
+3 AM; no ceiling" is figures; "clear" is not).
 
 ## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
 

@@ -38,29 +38,33 @@ describe('Open-Meteo cloud cover', () => {
 });
 
 describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
-  const t0 = Math.ceil(Date.now() / 3_600_000) * 3_600_000;
+  // A fixed clock: 2026-11-18 20:00Z, 2 PM Central; three hours from it.
+  const NOW = Date.UTC(2026, 10, 18, 20);
   const hourly = [0, 1, 2].map((i) => ({
-    time: t0 + i * 3_600_000,
+    time: NOW + i * 3_600_000,
     skyCoverPct: 55,
     ceilingFtAgl: 4500,
+    ceilingForecast: true,
     precipProbPct: 0,
   })) as unknown as HourlyPoint[];
   const om: OpenMeteoCloudHour[] = [
-    { time: t0, totalPct: 40, lowPct: 10, midPct: 30, highPct: 5 },
-    // t0 + 1 h not served; t0 + 2 h served.
-    { time: t0 + 2 * 3_600_000, totalPct: 85, lowPct: 60, midPct: 40, highPct: 20 },
+    { time: NOW, totalPct: 40, lowPct: 10, midPct: 30, highPct: 5 },
+    // NOW + 1 h not served; NOW + 2 h served.
+    { time: NOW + 2 * 3_600_000, totalPct: 85, lowPct: 60, midPct: 40, highPct: 20 },
   ];
   const card = (omClouds: OpenMeteoCloudHour[] | null): string =>
-    renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds }));
+    renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds, now: NOW }));
 
-  it('puts each hour’s Open-Meteo figure under the NWS one, matched by time, and credits it', () => {
+  it('prints Open-Meteo’s figure in its own row at the slot’s hour, and every hour in the hourly detail, matched by time, and credits it', () => {
     const html = card(om);
-    const figures = [...html.matchAll(/<span class="sky-pct om-pct">([^<]*)/g)].map((m) => m[1]);
-    // The axis column's unit first, then one per hour.
-    expect(figures).toEqual(['%', '40', '—', '85']);
-    expect(html.match(/class="sky-bar om-bar"/g)).toHaveLength(3);
-    expect(html).toContain('Open-Meteo’s cloud');
-    expect(html).toContain('says nothing about a cloud base');
+    // The table's OM row: the 2 PM slot holds NOW's figure; the other slots are blank.
+    const omRow = html.slice(html.indexOf('>OM %</th>'), html.indexOf('</tr>', html.indexOf('>OM %</th>')));
+    expect([...omRow.matchAll(/<td class="muted(?: night)?">([^<]*)<\/td>/g)].map((m) => m[1]).filter(Boolean)).toEqual(['40']);
+    // The hourly detail: 40, blank, 85.
+    const detail = html.slice(html.indexOf('csd-hourly-table'));
+    const omDetail = detail.slice(detail.indexOf('>OM %</th>'), detail.indexOf('</tr>', detail.indexOf('>OM %</th>')));
+    expect([...omDetail.matchAll(/<td class="muted(?: night)?">([^<]*)<\/td>/g)].map((m) => m[1])).toEqual(['40', '', '85']);
+    expect(html).toContain('Open-Meteo’s cloud cover');
     expect(html).toContain('open-meteo.com');
   });
 
@@ -70,8 +74,7 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
 
   it('shows the NWS forecast alone when Open-Meteo did not answer', () => {
     const html = card(null);
-    expect(html).not.toContain('om-bar');
-    expect(html).not.toContain('om-pct');
+    expect(html).not.toContain('>OM %</th>');
     expect(html).not.toContain('Open-Meteo');
     expect(html).not.toContain('sky-compare');
   });
@@ -152,62 +155,50 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
  * carried no key). Twelve hours fit the card with a time under every third,
  * and Open-Meteo's bar sits in an outlined track so a near-clear hour still
  * shows. */
-describe('the Ceiling & sky timeline', () => {
-  const t0 = Math.ceil(Date.now() / 3_600_000) * 3_600_000;
+describe('the Ceiling & sky day tables', () => {
+  const NOW = Date.UTC(2026, 10, 18, 20);
   const covers = [0, 10, 30, 60, 95, 100, 20, 40, 70, 90, 5, 50];
   const hourly = covers.map((pct, i) => ({
-    time: t0 + i * 3_600_000,
+    time: NOW + i * 3_600_000,
     skyCoverPct: pct,
-    ceilingFtAgl: pct >= 50 ? 4500 : null,
+    ceilingFtAgl: pct >= 50 ? (pct === 100 ? 11_000 : 4500) : null,
     // Inside the ceiling forecast, so a null ceiling is NWS's "no ceiling".
     ceilingForecast: true,
     visibilityForecast: true,
     precipProbPct: 0,
   })) as unknown as HourlyPoint[];
   const om: OpenMeteoCloudHour[] = hourly.map((h) => ({ time: h.time, totalPct: 2, lowPct: 1, midPct: 1, highPct: 0 }));
-  const html = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds: om }));
+  const html = renderToStaticMarkup(createElement(CeilingSkyPanel, { current: null, hourly, omClouds: om, now: NOW }));
 
-  it('draws every NWS bar alike, whatever the cover', () => {
-    // Overcast and clear hours carry the same markup apart from their height.
-    expect(html).not.toContain('data-cover');
-    const bars = [...html.matchAll(/<div class="sky-bar" style="height:([\d.]+)%"><\/div>/g)].map((m) => Number(m[1]));
-    expect(bars).toEqual(covers);
+  it('draws every NWS bar alike, whatever the cover: its height is its only mark', () => {
+    const bars = [...html.matchAll(/<i class="csd-bar" style="height:([\d.]+)%"><\/i>/g)].map((m) => Number(m[1]));
+    // Wednesday's slots from the hour under way: 2 PM (the noon slot's
+    // hour under way), 3 PM, 6 PM and 9 PM, covers 0, 10, 95 and 40; then
+    // Thursday's midnight slot, 5.
+    expect(bars).toEqual([0, 10, 95, 40, 5]);
+    expect(html).not.toMatch(/csd-bar [a-z-]*(few|scattered|broken|overcast|clear|warn)/);
   });
 
-  it('puts each Open-Meteo bar in a track of its own, even at 2%', () => {
-    expect(html.match(/<div class="om-track"><div class="sky-bar om-bar" style="height:2%"><\/div><\/div>/g)).toHaveLength(12);
+  it('prints the figures the bars stand for, and a ceiling of 10,000 ft or more in whole thousands', () => {
+    const row = (label: string) => {
+      const at = html.indexOf(`>${label}</th>`);
+      return [...html.slice(at, html.indexOf('</tr>', at)).matchAll(/<td[^>]*>(?:<span[^>]*>.*?<span class="csd-fig">)?([^<]*)/g)].map((m) => m[1]);
+    };
+    // Wednesday's table (the first): 2 PM, 3 PM, 6 PM, 9 PM.
+    expect(row('NWS ceil').filter(Boolean)).toEqual(['no', 'no', '4.5', 'no']);
+    // The hourly detail has every hour: 11,000 ft prints "11".
+    const detail = html.slice(html.indexOf('csd-hourly-table'));
+    expect(detail).toContain('>11</td>');
+    expect(detail).toContain('>4.5</td>');
+    expect(detail).toContain('>no</td>');
   });
 
-  it('labels every third hour and leaves the rest blank', () => {
-    const times = [...html.matchAll(/<span class="sky-time">([^<]*)<\/span>/g)].map((m) => m[1]);
-    // The axis column's blank first, then twelve hours.
-    expect(times).toHaveLength(13);
-    const hours = times.slice(1);
-    hours.forEach((t, i) => (i % 3 === 0 ? expect(t).toMatch(/^\d{1,2}(am|pm)$/) : expect(t).toBe(' ')));
-  });
-
-  it('says “no” for an hour with no ceiling, apart from the “—” of a figure not reported', () => {
-    const ceil = [...html.matchAll(/<span class="sky-ceil"[^>]*>([^<]*)/g)].map((m) => m[1]).slice(1);
-    expect(ceil[0]).toBe('no');
-    expect(ceil[3]).toBe('4.5');
-  });
-
-  it('reads every figure to a screen reader with its unit, which the hidden axis column prints', () => {
-    expect(html).toContain('60<span class="sr-only">% sky cover, NWS</span>');
-    expect(html).toContain('2<span class="sr-only">% cloud cover, Open-Meteo</span>');
-    expect(html).toContain('4.5<span class="sr-only"> thousand ft ceiling</span>');
-    expect(html).toContain('no<span class="sr-only"> ceiling</span>');
-  });
-
-  it('prints a ceiling of 10,000 ft or more in whole thousands, to fit a phone column', () => {
-    const high = renderToStaticMarkup(
-      createElement(CeilingSkyPanel, {
-        current: null,
-        hourly: [{ time: t0, skyCoverPct: 70, ceilingFtAgl: 10_600, precipProbPct: 0 }] as unknown as HourlyPoint[],
-        omClouds: null,
-      }),
-    );
-    expect(high).toContain('11<span class="sr-only"> thousand ft ceiling</span>');
+  it('labels every slot with its hour and leaves the slots before now blank, not dashed', () => {
+    const head = html.slice(html.indexOf('<tr class="csd-time">'), html.indexOf('</tr>', html.indexOf('<tr class="csd-time">')));
+    const labels = [...head.matchAll(/<th class="(?:night)?" scope="col">([^<]*)<\/th>/g)].map((m) => m[1]);
+    expect(labels).toEqual(['', '', '', '', '2pm', '3pm', '6pm', '9pm']);
+    // No dash anywhere in the tables (the head's "—" for no observation is another thing).
+    expect(html.slice(html.indexOf('class="csd-day"'))).not.toContain('—');
   });
 
   it('colours the NWS bars from one rule in the stylesheet, not by amount', async () => {
@@ -217,7 +208,7 @@ describe('the Ceiling & sky timeline', () => {
     // over as an empty string.
     const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
     const css = fs.readFileSync(decodeURIComponent(new URL('../src/styles/app.css', import.meta.url).pathname), 'utf8');
-    expect(css).not.toMatch(/sky-bar\[/);
-    expect(css).toMatch(/\.ceiling-timeline \.sky-bar:not\(\.om-bar\) \{[^}]*background: var\(--sky-cover\)/);
+    expect(css).not.toMatch(/csd-bar\[/);
+    expect(css).toMatch(/\.csd-bar \{[^}]*background: var\(--sky-cover\)/);
   });
 });
