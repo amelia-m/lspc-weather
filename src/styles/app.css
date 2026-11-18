@@ -2392,3 +2392,23 @@ a.sim-term {
 .nbs-days-key {
   margin-top: 0.4rem;
 }
+
+/* Night on the Ceiling & sky card (the maintainer's ask, 2026-11-16): the
+   hourly strip's columns and the day blocks' slots whose span is mostly
+   between sunset and sunrise at the drop zone take the hourly chart's
+   night shade (--hc-night) behind their contents, so a reader can tell a
+   jump day's hours from the dark ones at a glance. A fact of the sky in a
+   neutral shade, as the chart's band is; no figure or flag changes. */
+.ceiling-timeline .sky-col.night {
+  background: var(--hc-night);
+  border-radius: 4px;
+}
+.nbs-grid .night {
+  background: var(--hc-night);
+}
+.nbs-grid .nbs-slot.night .nbs-track {
+  background: var(--panel);
+}
+.nbs-band-night {
+  fill: var(--hc-night);
+}

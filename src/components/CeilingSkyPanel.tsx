@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { CurrentConditions, HourlyPoint, NbmForecast, NbmHour, OpenMeteoCloudHour } from '../domain/types';
 import { round } from '../domain/units';
 import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
+import { nightIntervals, spanIsNight } from '../domain/sun';
 import { ceilingState, type CeilingState } from '../domain/normalize';
 import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS, FAR_91155_ROWS, visibilityFigure, type Thresholds } from '../config/thresholds';
@@ -114,6 +115,15 @@ export function CeilingSkyPanel({
   const nbmCeilTitle = (h: NbmHour | null): string =>
     h?.ceilingFtAgl === undefined ? 'No NBM ceiling figure for this hour' : h.ceilingFtAgl === null ? 'NBM: no ceiling' : `NBM ceiling ${h.ceilingFtAgl.toLocaleString()} ft AGL`;
   const spanH = columns.length > 1 ? Math.round((columns[columns.length - 1].time - columns[0].time) / 3_600_000) : 0;
+  // Night at the drop zone, sunset to sunrise, the times the 14 CFR 105.19
+  // night flag and the hourly wind chart use (domain/sun.ts): a column
+  // whose hour is mostly dark is shaded, as the chart's band is. A fact of
+  // the sky in a neutral shade, no figure changed and nothing flagged.
+  const colSpanMs = (c: StripColumn): number => (c.nws ? 1 : nbs?.stepHours ?? 3) * 3_600_000;
+  const nights =
+    columns.length > 0 ? nightIntervals(SITE.dz.lat, SITE.dz.lon, columns[0].time, columns[columns.length - 1].time + colSpanMs(columns[columns.length - 1])) : [];
+  const isNightCol = (c: StripColumn): boolean => spanIsNight(nights, c.time, c.time + colSpanMs(c));
+  const anyNight = columns.some(isNightCol);
   const showNbsStrip = threeDay === 'strip' && (nbs?.hours.length ?? 0) > 0;
   const showNbsDays = threeDay === 'days' && (nbs?.hours.length ?? 0) > 0;
   const nbsShown = showNbsStrip || showNbsDays || (onStrip && columns.some((c) => c.nbs));
@@ -236,6 +246,8 @@ export function CeilingSkyPanel({
             // alone: wider, so its time label fits, and its sky bar in the
             // outlined track the second forecast uses.
             const nbsOnly = h == null;
+            const night = isNightCol(c);
+            const colClass = `sky-col${nbsOnly ? ' nbs-col' : ''}${night ? ' night' : ''}`;
             const nbmCeil = n?.ceilingFtAgl;
             // Only with the three-hourly bulletin on the strip (onStrip),
             // as the note and the source link that explain the lighter
@@ -243,7 +255,7 @@ export function CeilingSkyPanel({
             // forecast would print unexplained (found in review, 2026-11-12).
             const continued = onStrip && threeDay === 'continue' && (h == null || !h.ceilingForecast) && nbmCeil !== undefined;
             return (
-            <div key={c.time} className={nbsOnly ? 'sky-col nbs-col' : 'sky-col'} title={h ? describeHour(h, om) : describeNbm(c.time, n)}>
+            <div key={c.time} className={colClass} title={`${h ? describeHour(h, om) : describeNbm(c.time, n)}${night ? ' · night' : ''}`}>
               <span className={nbsOnly ? 'sky-pct nbm-pct' : 'sky-pct'}>
                 {h ? (h.skyCoverPct != null ? round(h.skyCoverPct) : '—') : n?.skyCoverPct != null ? round(n.skyCoverPct) : '—'}
                 <span className="sr-only">{h ? (h.skyCoverPct != null ? '% sky cover, NWS' : 'sky cover not reported') : n?.skyCoverPct != null ? '% sky cover, NBM' : 'NBM sky cover not given'}</span>
@@ -334,7 +346,7 @@ export function CeilingSkyPanel({
         </div>
       )}
       {showNbsStrip && nbs && <NbsStrip nbs={nbs} />}
-      {showNbsDays && nbs && <NbsDays nbs={nbs} timeZone={SITE.timeZone} />}
+      {showNbsDays && nbs && <NbsDays nbs={nbs} timeZone={SITE.timeZone} dz={SITE.dz} />}
       {/* Where the forecast ends is a fact of the copy the card has; why is
           not. Its usual reach is given as the usual, since a copy a day old
           (an outage, or an edge serving an older one) ends sooner. */}
@@ -380,6 +392,13 @@ export function CeilingSkyPanel({
       <p className="muted small">
         Bar height and the figure above it = sky cover %. Label under it = ceiling in thousands of
         ft AGL; “no” = no broken/overcast layer, so no ceiling. A time under every {LABEL_EVERY} hours.
+        {anyNight && (
+          <>
+            {' '}
+            The darker columns are night at the drop zone, sunset to sunrise, the same times the night
+            flag uses; an hour that straddles one goes by its greater part.
+          </>
+        )}
         {showOm && (
           <>
             {' '}
