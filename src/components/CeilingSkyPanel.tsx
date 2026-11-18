@@ -8,7 +8,7 @@ import { CLOUD_COMPARISON } from '../config/cloudComparison';
 import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
 import { Panel } from './common/Panel';
 import { CeilingSkyDays } from './CeilingSkyDays';
-import { buildDayBlocks } from '../domain/skyDays';
+import { buildDayBlocks, nwsCeilingForecastEnd } from '../domain/skyDays';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
 import { fmtShortHour, fmtWeekday } from './format';
@@ -70,8 +70,8 @@ export function CeilingSkyPanel({
   const showBase = blocks.some((b) => b.slots.some((s) => s.nbh?.lowestBaseFtAgl !== undefined || s.nbs?.lowestBaseFtAgl !== undefined));
   const nbsShown = blocks.some((b) => b.slots.some((s) => s.nbs));
   const lastSlot = blocks.flatMap((b) => b.slots).filter((s) => s.time != null).pop();
+  const ceilingEnds = nwsCeilingForecastEnd(hourly, now);
   const category = current ? observedFlightCategory(current) : null;
-  const cycleOf = (f: NbmForecast): string => `${String(new Date(f.cycleMs).getUTCHours()).padStart(2, '0')}Z`;
 
   return (
     <Panel
@@ -146,23 +146,36 @@ export function CeilingSkyPanel({
       ) : (
         <CeilingSkyDays blocks={blocks} showOm={showOm} timeZone={SITE.timeZone} />
       )}
+      {ceilingEnds != null && (
+        // One line for the whole card, day and hour: a later day with no
+        // ceiling row then needs no explaining of its own, and an end at
+        // local midnight is named (nwsCeilingForecastEnd).
+        <p className="muted small csd-ends">
+          NWS ceiling forecast ends {fmtWeekday(ceilingEnds)} {fmtShortHour(ceilingEnds)}; its sky row runs on.
+        </p>
+      )}
       <p className="muted small">
         Each day across, every 3 h, in the drop zone&rsquo;s time; the dark columns are night there, sunset to
         sunrise, the same times the night flag uses, a three-hour slot going by its greater part. Sky cover
-        % as a bar and a figure: the NWS forecast&rsquo;s{showOm && ', Open-Meteo\u2019s cloud cover as a figure beside it,'} and
+        % as a bar and a figure: the NWS forecast&rsquo;s{showOm && ', Open-Meteo\u2019s cloud cover (OM) as a figure beside it,'} and
         the NBM&rsquo;s. Heights in thousands of ft AGL; &ldquo;no&rdquo; = no broken/overcast layer (ceiling)
-        or no layer at all (base); a blank cell is a slot that forecast does not cover. The band is the heights,
-        ground to 12,000 ft: the NBM&rsquo;s lowest base a bar at its height, its ceiling as cloud above it, the
-        NWS ceiling a lighter tick while that forecast runs. &ldquo;hourly&rdquo; opens the day&rsquo;s NWS hours.
+        or no layer at all (base); a blank cell is a slot that forecast does not cover or gives no figure for, and a
+        row is left out of a day it has no figure in. The band is the heights, ground to 12,000 ft: the NBM&rsquo;s
+        lowest base a short bar at its height, its ceiling as cloud above it, the NWS ceiling a line across the
+        column while that forecast runs; a mark on the top edge is a height at or above 12,000 ft, the row has the
+        figure. &ldquo;hourly&rdquo; opens the day&rsquo;s NWS hours, scrolling sideways; today is its hours alone
+        when two slots or fewer remain.
       </p>
       {(showBase || nbsShown) && (nbm || nbs) && (
         <p className="muted small">
           The NBM rows are the NWS National Blend of Models&rsquo; bulletins for {(nbs ?? nbm)!.station}, read through the
-          relay{nbm && ` (hourly, the ${cycleOf(nbm)} cycle, 25 hours`}{nbm && nbs && '; '}{nbs && `${nbm ? '' : ' ('}three-hourly, the ${cycleOf(nbs)} cycle, 6 to 72 hours, the bulletin usairnet\u2019s three-day table reads`}
-          {(nbm || nbs) && ')'}. Their base is the lowest cloud base whether or not a ceiling is present, a few or
-          scattered layer included, from a blend of models and humidity (MDL&rsquo;s definition, read 2026-10-26); the
-          hourly bulletin&rsquo;s where it reaches, the three-hourly one&rsquo;s past it. A second forecast beside the NWS
-          one, which it can disagree with; neither raises a flag.
+          relay{nbm && ' (hourly, 25 hours'}{nbm && nbs && '; '}{nbs && `${nbm ? '' : ' ('}three-hourly, 6 to 72 hours, the bulletin usairnet\u2019s three-day table reads`}
+          {(nbm || nbs) && ')'}; each bulletin&rsquo;s cycle is on Data health. Their base is the lowest cloud base
+          whether or not a ceiling is present, a few or scattered layer included, from a blend of models and humidity
+          (MDL&rsquo;s definition, read 2026-10-26). A column is one bulletin&rsquo;s: the three-hourly one&rsquo;s where
+          it has a column there, the hourly one&rsquo;s base alone before it begins, dotted; the hourly rows&rsquo; base
+          is the hourly bulletin&rsquo;s. A second forecast beside the NWS one, which it can disagree with; neither
+          raises a flag.
         </p>
       )}
       {/* How each forecast compared with KPMV, so a reader can weigh them by

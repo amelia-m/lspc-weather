@@ -195,8 +195,10 @@ describe('the Ceiling & sky day tables', () => {
 
   it('labels every slot with its hour and leaves the slots before now blank, not dashed', () => {
     const head = html.slice(html.indexOf('<tr class="csd-time">'), html.indexOf('</tr>', html.indexOf('<tr class="csd-time">')));
-    const labels = [...head.matchAll(/<th class="(?:night)?" scope="col">([^<]*)<\/th>/g)].map((m) => m[1]);
-    expect(labels).toEqual(['', '', '', '', '2pm', '3pm', '6pm', '9pm']);
+    const labels = [...head.matchAll(/<th class="(?:night)?" scope="col">(?:<span class="csd-tl">([^<]*)<\/span><span class="csd-ts">([^<]*)<\/span>)?<\/th>/g)].map((m) => [m[1] ?? '', m[2] ?? '']);
+    // The long form, and the short one a phone under 360 px shows instead (the stylesheet picks).
+    expect(labels.map((l) => l[0])).toEqual(['', '', '', '', '2pm', '3pm', '6pm', '9pm']);
+    expect(labels.map((l) => l[1])).toEqual(['', '', '', '', '2p', '3p', '6p', '9p']);
     // No dash anywhere in the tables (the head's "—" for no observation is another thing).
     expect(html.slice(html.indexOf('class="csd-day"'))).not.toContain('—');
   });

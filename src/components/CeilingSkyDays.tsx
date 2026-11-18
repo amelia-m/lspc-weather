@@ -1,5 +1,5 @@
 import type { DayBlock, DaySlot } from '../domain/skyDays';
-import { SLOTS_PER_DAY } from '../domain/skyDays';
+import { SLOTS_PER_DAY, slotBase } from '../domain/skyDays';
 import type { HourlyPoint, NbmHour, OpenMeteoCloudHour } from '../domain/types';
 import { round } from '../domain/units';
 import { AUTOMATED_TOP_FT } from '../domain/stationPairs';
@@ -10,21 +10,31 @@ import { fmtShortHour, fmtTime, fmtWeekday } from './format';
  * columns, the rows grouped by source, and the cloud heights drawn as a
  * band the way up a jumper sees them (the "day table" and "cloud profile"
  * mock-ups of docs/ceiling-sky-layout-review.md, built together at the
- * maintainer's word of 2026-11-18). The blocks come from
- * src/domain/skyDays.ts; this only draws them.
+ * maintainer's word of 2026-11-18; read again the same day in
+ * docs/ceiling-sky-rebuild-review.md, whose findings shaped what follows).
+ * The blocks come from src/domain/skyDays.ts; this only draws them.
  *
  * Rows: the time of each slot; the NWS forecast's sky cover as a bar and
  * a figure; Open-Meteo's cloud cover figure where it answered; the NBM
  * three-hourly bulletin's sky cover the same way; the heights band; then
  * the heights printed, the NWS ceiling, the NBM ceiling and the NBM base,
- * in thousands of feet, "no" for none. The band: ground at the bottom,
- * 12,000 ft (the ceilometer's reach at KPMV) at the top, the NBM base a
- * short bar at its height, the NBM ceiling a fill from it up (cloud above
- * it), the NWS ceiling a tick while that forecast runs, night slots shaded
- * behind. It is a picture of the printed rows and adds no figure; an
- * empty band under a low sky-cover row is the clear day it is. A cell
- * with nothing in it is blank, not a dash: a dash read as missing data.
- * The day's NWS hours open under the table ("hourly"), today's open.
+ * in thousands of feet, "no" for none. A row is drawn only on a day with
+ * a figure in it: a labelled row with nothing across a whole day read as
+ * missing data, and so did a dash, so an empty cell is blank.
+ *
+ * The band: ground at the bottom, 12,000 ft (the ceilometer's reach at
+ * KPMV) at the top. Each column is one bulletin's: the three-hourly one's
+ * base and ceiling where the slot has its column, the hourly one's base
+ * alone before that (slotBase). The base is a short bar at its height,
+ * the NBM ceiling a fill from it up (cloud above it), the NWS ceiling a
+ * line across the column while that forecast runs; a height at or above
+ * 12,000 ft is a mark on the top edge, the row has the figure, since a
+ * ceiling there drew nothing and read as a clear day. Night slots are
+ * shaded behind. It is a picture of the printed rows and adds no figure.
+ *
+ * The day's NWS hours open under the table ("hourly"), today's open; when
+ * two slots or fewer of today remain, today is its hours alone, since a
+ * full table for one column said the same thing twice.
  *
  * Every bar is one colour whatever its amount, every figure one colour
  * per source, and nothing here is a warning or a verdict (CLAUDE.md).
@@ -33,6 +43,10 @@ const BAND_W = 800;
 const BAND_H = 120;
 const TOP_FT = AUTOMATED_TOP_FT;
 const yOf = (ft: number): number => BAND_H - (Math.min(ft, TOP_FT) / TOP_FT) * BAND_H;
+/** Today is its hourly rows alone with this many slots or fewer left by
+ *  the clock (from 6 PM): a full table for one or two columns said the
+ *  same hours twice, the slots and the open detail. */
+const HOURS_ALONE_SLOTS = 2;
 
 /** A height in thousands of feet: a decimal under 10,000 ("4.5"), whole
  *  thousands from there ("11"), to fit a column a phone makes 30 px. */
@@ -46,6 +60,19 @@ function nwsCeilingText(h: HourlyPoint | null): string {
   return h.ceilingFtAgl != null ? fmtK(h.ceilingFtAgl) : 'no';
 }
 
+/** "3pm" and "3p": the long form on a phone wider than 360 px, the short
+ *  one under it, where "12am" clipped to "12ar" in a 26 px column (the
+ *  stylesheet shows one). */
+function HourLabel({ time }: { time: number }): JSX.Element {
+  const long = fmtShortHour(time);
+  return (
+    <>
+      <span className="csd-tl">{long}</span>
+      <span className="csd-ts">{long.replace('am', 'a').replace('pm', 'p')}</span>
+    </>
+  );
+}
+
 function Band({ slots }: { slots: DaySlot[] }): JSX.Element {
   const w = BAND_W / SLOTS_PER_DAY;
   const night: JSX.Element[] = [];
@@ -55,17 +82,22 @@ function Band({ slots }: { slots: DaySlot[] }): JSX.Element {
     if (s.night) night.push(<rect key={`n${i}`} className="csd-night" x={x} y={0} width={w} height={BAND_H} />);
     const ceil = s.nbs?.ceilingFtAgl;
     if (ceil != null) {
-      const y = yOf(ceil);
-      marks.push(<rect key={`c${i}`} className="csd-oc" x={x + 2} y={0} width={w - 4} height={Math.max(0, y)} />);
+      marks.push(
+        ceil >= TOP_FT ? (
+          <rect key={`c${i}`} className="csd-oc csd-edge" x={x + 2} y={0} width={w - 4} height={4} />
+        ) : (
+          <rect key={`c${i}`} className="csd-oc" x={x + 2} y={0} width={w - 4} height={yOf(ceil)} />
+        ),
+      );
     }
-    const base = baseOf(s);
+    const base = slotBase(s)?.ft;
     if (base != null) {
       const y = Math.min(BAND_H - 4, Math.max(0, yOf(base) - 2));
-      marks.push(<rect key={`b${i}`} className="csd-base" x={x + 2} y={y} width={w - 4} height={4} />);
+      marks.push(<rect key={`b${i}`} className="csd-base" x={x + 10} y={y} width={w - 20} height={4} />);
     }
     if (s.nws?.ceilingForecast && s.nws.ceilingFtAgl != null) {
       const y = yOf(s.nws.ceilingFtAgl);
-      marks.push(<line key={`w${i}`} className="csd-nws-ceil" x1={x + 2} x2={x + w - 2} y1={y} y2={y} />);
+      marks.push(<line key={`w${i}`} className="csd-nws-ceil" x1={x} x2={x + w} y1={y} y2={y} />);
     }
   });
   return (
@@ -87,22 +119,13 @@ function slotTitle(s: DaySlot): string | undefined {
   if (s.nbs?.skyCoverPct != null) parts.push(`NBM ${round(s.nbs.skyCoverPct)}% cover`);
   if (s.nws?.ceilingForecast) parts.push(s.nws.ceilingFtAgl != null ? `NWS ceiling ${s.nws.ceilingFtAgl.toLocaleString()} ft` : 'NWS: no ceiling');
   if (s.nbs?.ceilingFtAgl !== undefined) parts.push(s.nbs?.ceilingFtAgl != null ? `NBM ceiling ${s.nbs.ceilingFtAgl.toLocaleString()} ft` : 'NBM: no ceiling');
-  const base = baseOf(s);
-  if (base !== undefined) parts.push(base != null ? `NBM base ${base.toLocaleString()} ft` : 'NBM: no layer');
+  const base = slotBase(s);
+  if (base) parts.push(base.ft != null ? `NBM base ${base.ft.toLocaleString()} ft` : 'NBM: no layer');
   if (s.night) parts.push('night');
   return parts.join(' · ');
 }
 
 const cell = (s: DaySlot, extra = ''): string => `${extra}${s.night ? ' night' : ''}`.trim();
-
-/** The slot's NBM base: the hourly bulletin's where it gives one (null,
- *  "no layer", is a figure too), else the three-hourly bulletin's.
- *  `??` would skip the hourly null and print the three-hourly figure for
- *  an hour the hourly bulletin called clear (found in test, 2026-11-18). */
-const baseOf = (s: DaySlot): number | null | undefined =>
-  s.nbh?.lowestBaseFtAgl !== undefined ? s.nbh.lowestBaseFtAgl : s.nbs?.lowestBaseFtAgl;
-const baseSource = (s: DaySlot): string | undefined =>
-  s.nbh?.lowestBaseFtAgl !== undefined ? 'from the hourly bulletin' : s.nbs?.lowestBaseFtAgl !== undefined ? 'from the three-hourly bulletin' : undefined;
 
 function BarCell({ pct, cls }: { pct: number | null | undefined; cls: string }): JSX.Element {
   return (
@@ -118,36 +141,52 @@ export function CeilingSkyDays({ blocks, showOm, timeZone }: { blocks: DayBlock[
     <div className="csd">
       {blocks.map((b) => {
         const date = new Date(b.firstTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone });
+        const heading = (
+          <div className="csd-day-h">
+            <span>
+              {fmtWeekday(b.firstTime)} <span className="muted">{date}{b.today ? ' · today' : ''}</span>
+            </span>
+          </div>
+        );
+        if (b.today && b.slotsLeft <= HOURS_ALONE_SLOTS && b.hours.length > 0) {
+          return (
+            <div key={b.key} className="csd-day csd-today-hours">
+              {heading}
+              <HourlyDetail hours={b.hours} showOm={showOm} />
+            </div>
+          );
+        }
+        const anyNws = b.slots.some((s) => s.nws);
+        const anyOm = showOm && b.slots.some((s) => s.om?.totalPct != null);
         const anyNbs = b.slots.some((s) => s.nbs);
-        const anyBase = b.slots.some((s) => baseOf(s) !== undefined);
+        const anyNwsCeil = b.slots.some((s) => nwsCeilingText(s.nws) !== '');
+        const anyBase = b.slots.some((s) => slotBase(s) !== undefined);
         return (
           <div key={b.key} className="csd-day">
-            <div className="csd-day-h">
-              <span>
-                {fmtWeekday(b.firstTime)} <span className="muted">{date}{b.today ? ' · today' : ''}</span>
-              </span>
-            </div>
+            {heading}
             <table className="csd-table">
               <thead>
                 <tr className="csd-time">
                   <th className="csd-lab" scope="row"></th>
                   {b.slots.map((s) => (
                     <th key={s.index} className={cell(s)} scope="col">
-                      {s.time != null ? fmtShortHour(s.time) : ''}
+                      {s.time != null && <HourLabel time={s.time} />}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <tr className="csd-row-bar">
-                  <th className="csd-lab" scope="row">NWS %</th>
-                  {b.slots.map((s) => (
-                    <td key={s.index} className={cell(s)} title={slotTitle(s)}>
-                      {s.nws && <BarCell pct={s.nws.skyCoverPct} cls="nws" />}
-                    </td>
-                  ))}
-                </tr>
-                {showOm && (
+                {anyNws && (
+                  <tr className="csd-row-bar">
+                    <th className="csd-lab" scope="row">NWS %</th>
+                    {b.slots.map((s) => (
+                      <td key={s.index} className={cell(s)} title={slotTitle(s)}>
+                        {s.nws && <BarCell pct={s.nws.skyCoverPct} cls="nws" />}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+                {anyOm && (
                   <tr>
                     <th className="csd-lab" scope="row">OM %</th>
                     {b.slots.map((s) => (
@@ -170,21 +209,25 @@ export function CeilingSkyDays({ blocks, showOm, timeZone }: { blocks: DayBlock[
                 <tr className="csd-row-band">
                   <th className="csd-lab csd-ylab" scope="row">
                     <span>12k</span>
+                    <span>9</span>
                     <span>6</span>
+                    <span>3</span>
                     <span>0</span>
                   </th>
                   <td colSpan={SLOTS_PER_DAY} className="csd-band-cell">
                     <Band slots={b.slots} />
                   </td>
                 </tr>
-                <tr>
-                  <th className="csd-lab" scope="row">NWS ceil</th>
-                  {b.slots.map((s) => (
-                    <td key={s.index} className={cell(s)}>
-                      {nwsCeilingText(s.nws)}
-                    </td>
-                  ))}
-                </tr>
+                {anyNwsCeil && (
+                  <tr>
+                    <th className="csd-lab" scope="row">NWS ceil</th>
+                    {b.slots.map((s) => (
+                      <td key={s.index} className={cell(s)}>
+                        {nwsCeilingText(s.nws)}
+                      </td>
+                    ))}
+                  </tr>
+                )}
                 {anyNbs && (
                   <tr>
                     <th className="csd-lab" scope="row">NBM ceil</th>
@@ -198,23 +241,23 @@ export function CeilingSkyDays({ blocks, showOm, timeZone }: { blocks: DayBlock[
                 {anyBase && (
                   <tr>
                     <th className="csd-lab" scope="row">NBM base</th>
-                    {b.slots.map((s) => (
-                      <td key={s.index} className={cell(s, 'muted')} title={baseSource(s)}>
-                        {heightText(baseOf(s))}
-                      </td>
-                    ))}
-                  </tr>
-                )}
-                {b.nwsCeilingEnds != null && (
-                  <tr className="csd-ends">
-                    <td colSpan={SLOTS_PER_DAY + 1}>NWS ceiling forecast ends {fmtShortHour(b.nwsCeilingEnds)}; its sky row runs on</td>
+                    {b.slots.map((s) => {
+                      const base = slotBase(s);
+                      // The hourly bulletin's figures carry a dotted underline:
+                      // the key names it, and a phone shows no tooltip.
+                      return (
+                        <td key={s.index} className={cell(s, base?.from === 'nbh' ? 'muted csd-hb' : 'muted')}>
+                          {heightText(base === undefined ? undefined : base.ft)}
+                        </td>
+                      );
+                    })}
                   </tr>
                 )}
               </tbody>
             </table>
             {b.hours.length > 0 && (
               <details className="csd-hourly" open={b.today}>
-                <summary>hourly</summary>
+                <summary>hourly ({b.hours.length} h)</summary>
                 <HourlyDetail hours={b.hours} showOm={showOm} />
               </details>
             )}
@@ -226,15 +269,20 @@ export function CeilingSkyDays({ blocks, showOm, timeZone }: { blocks: DayBlock[
 }
 
 /** The day's NWS hours: time, sky cover, Open-Meteo's, the NWS ceiling
- *  and the NBM hourly base, in a grid that scrolls sideways inside the
- *  card when a full day's 24 columns are more than a phone holds. */
+ *  and the NBM hourly bulletin's base (the only one it has by the hour),
+ *  in a grid that scrolls sideways inside the card when a full day's 24
+ *  columns are more than a phone holds. */
 function HourlyDetail({ hours, showOm }: { hours: DayBlock['hours']; showOm: boolean }): JSX.Element {
-  const rows: { label: string; cls: string; of: (h: DayBlock['hours'][number]) => string }[] = [
-    { label: 'NWS %', cls: '', of: (h) => (h.nws.skyCoverPct != null ? String(round(h.nws.skyCoverPct)) : '') },
-    ...(showOm ? [{ label: 'OM %', cls: 'muted', of: (h: DayBlock['hours'][number]) => (h.om?.totalPct != null ? String(round(h.om.totalPct)) : '') }] : []),
-    { label: 'ceil', cls: '', of: (h) => nwsCeilingText(h.nws) },
-    { label: 'base', cls: 'muted', of: (h) => heightText(h.nbh?.lowestBaseFtAgl) },
-  ];
+  type Hour = DayBlock['hours'][number];
+  // A row only where the day has a figure in it, as the tables above.
+  const rows = (
+    [
+      { label: 'NWS %', cls: '', of: (h: Hour) => (h.nws.skyCoverPct != null ? String(round(h.nws.skyCoverPct)) : '') },
+      ...(showOm ? [{ label: 'OM %', cls: 'muted', of: (h: Hour) => (h.om?.totalPct != null ? String(round(h.om.totalPct)) : '') }] : []),
+      { label: 'NWS ceil', cls: '', of: (h: Hour) => nwsCeilingText(h.nws) },
+      { label: 'NBM base', cls: 'muted csd-hb', of: (h: Hour) => heightText(h.nbh?.lowestBaseFtAgl) },
+    ] as { label: string; cls: string; of: (h: Hour) => string }[]
+  ).filter((r) => hours.some((h) => r.of(h) !== ''));
   return (
     <div className="csd-hourly-scroll">
       <table className="csd-hourly-table">
