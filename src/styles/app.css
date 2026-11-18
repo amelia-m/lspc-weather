@@ -2210,7 +2210,7 @@ a.sim-term {
 }
 .csd-table .csd-lab {
   text-align: left;
-  width: 52px;
+  width: 60px;
   color: var(--muted);
   padding-right: 4px;
   font-size: 0.66rem;
@@ -2218,6 +2218,26 @@ a.sim-term {
 .csd-time th {
   color: var(--text);
   font-size: 0.7rem;
+}
+/* "12am" is 32 px in DejaVu Sans and a 320 px phone gives a column 28,
+   so under 360 px the header shows "12a" (the rebuild review, 2026-11-18). */
+.csd-ts {
+  display: none;
+}
+@media (max-width: 359px) {
+  .csd-tl {
+    display: none;
+  }
+  .csd-ts {
+    display: inline;
+  }
+}
+/* The hourly bulletin's base, in the slots before the three-hourly one
+   begins: a mark the key names, since a phone shows no tooltip. */
+.csd-table td.csd-hb,
+.csd-hourly-table td.csd-hb {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
 }
 .csd-time th.night {
   border-radius: 4px 4px 0 0;
@@ -2289,9 +2309,12 @@ a.sim-term {
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
-/* The NBM ceiling as cloud above it, the base a bar at its height, the
-   NWS ceiling a lighter tick: three marks a reader tells apart by shape,
-   named in the card's note. */
+/* The NBM ceiling as cloud above it, the base a short bar at its height
+   (60% of the column), the NWS ceiling a line across the whole column: at
+   one height and nearly one tone the two bars were told apart only by the
+   key's word "lighter" (the rebuild review), so now by width. A ceiling at
+   or above 12,000 ft is a strip on the top edge (.csd-edge), where a
+   height-0 fill drew nothing. */
 .csd-oc {
   fill: var(--muted);
   fill-opacity: 0.35;
@@ -2304,15 +2327,16 @@ a.sim-term {
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
-.csd-ends td {
-  text-align: left;
-  color: var(--muted);
-  font-size: 0.66rem;
+.csd-ends {
   font-style: italic;
-  padding: 2px 0 0;
+}
+.csd-today-hours .csd-hourly-scroll {
+  margin-left: 0;
+  border-left: 0;
+  padding-left: 0;
 }
 .csd-hourly {
-  margin: 4px 0 0 52px;
+  margin: 4px 0 0 60px;
   font-size: 0.68rem;
 }
 .csd-hourly summary {
@@ -2346,7 +2370,7 @@ a.sim-term {
 }
 .csd-hourly-table .csd-lab {
   text-align: left;
-  min-width: 34px;
+  min-width: 60px;
   padding-right: 4px;
 }
 .csd-hourly-table .night {

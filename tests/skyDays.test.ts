@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_DAYS, SLOTS_PER_DAY, buildDayBlocks } from '../src/domain/skyDays';
+import { MAX_DAYS, SLOTS_PER_DAY, buildDayBlocks, nwsCeilingForecastEnd, slotBase } from '../src/domain/skyDays';
 import { nightIntervals, spanIsNight } from '../src/domain/sun';
 import { SITE } from '../src/config/site';
 import type { HourlyPoint, NbmHour } from '../src/domain/types';
@@ -44,6 +44,9 @@ describe('buildDayBlocks', () => {
     expect(blocks[0].today).toBe(true);
     expect(blocks[1].today).toBe(false);
     for (const b of blocks) expect(b.slots).toHaveLength(SLOTS_PER_DAY);
+    // 2 PM: the noon slot and three more are left of today; every other day has eight.
+    expect(blocks.map((b) => b.slotsLeft)).toEqual([4, 8, 8, 8]);
+    expect(buildDayBlocks({ now: Date.UTC(2026, 10, 19, 5, 30), hourly, dz: SITE.dz, timeZone: SITE.timeZone })[0].slotsLeft).toBe(1);
   });
 
   it('leaves today’s slots before the hour under way empty, and fills from it: 2 PM Central is slot 4', () => {
@@ -84,15 +87,40 @@ describe('buildDayBlocks', () => {
     expect(blocks[1].slots[4].night).toBe(false);
   });
 
-  it('lists each day’s NWS hours for the hourly detail, and names where the NWS ceiling forecast ends', () => {
+  it('lists each day’s NWS hours for the hourly detail', () => {
     expect(blocks[0].hours).toHaveLength(10); // 2 PM to 11 PM Central
     expect(blocks[0].hours[0].nws.time).toBe(NOW);
     expect(blocks[0].hours[0].nbh?.lowestBaseFtAgl).toBe(2000);
     expect(blocks[1].hours).toHaveLength(24);
-    // ceilingForecast is false from the 31st hour: 02Z on the 20th, 8 PM Thursday.
-    expect(blocks[1].nwsCeilingEnds).toBe(NOW + 30 * H);
-    expect(blocks[0].nwsCeilingEnds).toBeNull();
     expect(blocks[3].hours).toHaveLength(0);
+  });
+
+  it('takes a slot’s base from the bulletin its column is drawn from: the three-hourly where the slot has its column, else the hourly', () => {
+    // 12 AM Thursday (06Z): both bulletins have it; the three-hourly's 2,400 stands over the hourly's 3,000.
+    expect(blocks[1].slots[0].nbh?.lowestBaseFtAgl).toBe(3000);
+    expect(slotBase(blocks[1].slots[0])).toEqual({ ft: 2400, from: 'nbs' });
+    // 2 PM Wednesday, before the three-hourly begins: the hourly's.
+    expect(slotBase(blocks[0].slots[4])).toEqual({ ft: 2000, from: 'nbh' });
+    // Saturday noon (i = 22, the last column): the three-hourly says no layer, a figure, not a fall-through to anything.
+    expect(slotBase(blocks[3].slots[4])).toEqual({ ft: null, from: 'nbs' });
+    // A slot with no time has none.
+    expect(slotBase(blocks[0].slots[0])).toBeUndefined();
+    // The hourly's null ("no layer") is a figure too: `??` would skip it.
+    const nbhNo: NbmHour[] = [{ time: NOW, lowestBaseFtAgl: null, ceilingFtAgl: null, skyCoverPct: 0 }];
+    expect(slotBase(buildDayBlocks({ now: NOW, hourly, nbh: nbhNo, dz: SITE.dz, timeZone: SITE.timeZone })[0].slots[4])).toEqual({ ft: null, from: 'nbh' });
+  });
+
+  it('names where the NWS ceiling forecast ends, over the whole list, a midnight end included', () => {
+    // ceilingForecast is false from the 31st hour: 02Z on the 20th, 8 PM Thursday.
+    expect(nwsCeilingForecastEnd(hourly, NOW)).toBe(NOW + 30 * H);
+    // Every hour forecast: nothing to name.
+    expect(nwsCeilingForecastEnd(hourly.map((h) => ({ ...h, ceilingForecast: true })), NOW)).toBeNull();
+    // An end at local midnight (06Z on the 19th, NOW + 10 h): the last covered hour is
+    // Wednesday 11 PM, so no day holds a transition inside it; the whole-list read names it.
+    const midnight = hourly.map((h, i) => ({ ...h, ceilingForecast: i < 10 }));
+    expect(nwsCeilingForecastEnd(midnight, NOW)).toBe(Date.UTC(2026, 10, 19, 6));
+    // Hours before the hour under way are not read: a stale false there names nothing.
+    expect(nwsCeilingForecastEnd([{ ...hour(NOW - H, 0), ceilingForecast: false }, ...hourly.map((h) => ({ ...h, ceilingForecast: true }))], NOW)).toBeNull();
   });
 
   it('gives no block at all with no forecast, and only the NWS days without the bulletins', () => {

@@ -62,9 +62,10 @@ export interface DayBlock {
    *  block's hourly detail, each with Open-Meteo's and the NBH's figures
    *  at the same hour. */
   hours: { nws: HourlyPoint; om: OpenMeteoCloudHour | null; nbh: NbmHour | null; night: boolean }[];
-  /** Where the NWS ceiling forecast ends inside this day, if it does: the
-   *  first hour with no ceiling forecast after one with. */
-  nwsCeilingEnds: number | null;
+  /** The slots left in the day by the clock, the hour under way's
+   *  included: eight for any day but today. The card shows today as its
+   *  hourly rows alone when two or fewer remain, whatever they hold. */
+  slotsLeft: number;
 }
 
 export interface SkyDaysInput {
@@ -155,14 +156,37 @@ export function buildDayBlocks(input: SkyDaysInput): DayBlock[] {
     const hours = nws
       .filter((h) => dateKey(h.time) === key)
       .map((h) => ({ nws: h, om: omAt.get(h.time) ?? null, nbh: nbhAt.get(h.time) ?? null, night: spanIsNight(nights, h.time, h.time + HOUR) }));
-    let nwsCeilingEnds: number | null = null;
-    for (let i = 1; i < hours.length; i++) {
-      if (hours[i - 1].nws.ceilingForecast && !hours[i].nws.ceilingForecast) {
-        nwsCeilingEnds = hours[i].nws.time;
-        break;
-      }
-    }
     const firstTime = slots.find((s) => s.time != null)?.time ?? hours[0]?.nws.time ?? now;
-    return { key, firstTime, today: key === todayKey, slots, hours, nwsCeilingEnds };
+    const today = key === todayKey;
+    const slotsLeft = today ? SLOTS_PER_DAY - Math.floor(localHour(hourUnderWay) / SLOT_HOURS) : SLOTS_PER_DAY;
+    return { key, firstTime, today, slots, hours, slotsLeft };
   });
+}
+
+/** Where the NWS ceiling forecast ends, from the hour under way: the first
+ *  hour with no ceiling forecast, or null while every hour has one. Read
+ *  over the whole list, not a day at a time: the gridpoint's ceiling ends
+ *  on a UTC hour, and 06Z is local midnight in Central Standard Time, so a
+ *  per-day search found no transition inside either day and named nothing
+ *  (the rebuild review, 2026-11-18, its seventh finding). The card prints
+ *  it once under the tables, day and hour, so a later day's missing
+ *  ceiling row needs no explaining of its own. */
+export function nwsCeilingForecastEnd(hourly: readonly HourlyPoint[], now: number): number | null {
+  const hourUnderWay = Math.floor(now / HOUR) * HOUR;
+  const h = hourly.find((p) => p.time >= hourUnderWay && !p.ceilingForecast);
+  return h ? h.time : null;
+}
+
+/** The slot's NBM base, from the bulletin the band's column is drawn from:
+ *  the three-hourly bulletin's where the slot has its column (its sky
+ *  cover, ceiling and base are then one forecast), else the hourly
+ *  bulletin's, in the slots before the three-hourly one begins. Drawing
+ *  the hourly base inside the three-hourly ceiling put a bar at 8,000 ft
+ *  inside cloud from 3,500 ft up (the rebuild review's first finding).
+ *  null is a figure ("no layer"); undefined is no figure, so `??` would be
+ *  wrong on the hourly null (found in test, 2026-11-18). */
+export function slotBase(s: DaySlot): { ft: number | null; from: 'nbs' | 'nbh' } | undefined {
+  if (s.nbs) return s.nbs.lowestBaseFtAgl === undefined ? undefined : { ft: s.nbs.lowestBaseFtAgl, from: 'nbs' };
+  if (s.nbh && s.nbh.lowestBaseFtAgl !== undefined) return { ft: s.nbh.lowestBaseFtAgl, from: 'nbh' };
+  return undefined;
 }

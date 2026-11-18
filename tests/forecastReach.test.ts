@@ -172,7 +172,7 @@ describe('the Ceiling & sky day tables', () => {
     const row = [...html.slice(at, html.indexOf('</tr>', at)).matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
     // The 2 PM slot "no"; the 3 PM slot, past the ceiling forecast, blank.
     expect(row).toEqual(['', '', '', '', 'no', '', '', '']);
-    expect(html).toContain('NWS ceiling forecast ends 3pm; its sky row runs on');
+    expect(html).toContain('NWS ceiling forecast ends Wed 3pm; its sky row runs on.');
     expect(html.slice(html.indexOf('class="csd-day"'))).not.toContain('—');
   });
 });
