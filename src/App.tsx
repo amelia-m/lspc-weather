@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { THREE_DAY_LAYOUTS, type ThreeDayLayout } from './components/forecastReach';
 import { SITE } from './config/site';
 import {
   resolveThresholds,
@@ -70,12 +69,6 @@ import { countPage } from './api/pageCount';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 import { openMeteoUsage } from './api/openMeteoUsage';
 
-/** The Ceiling & sky card's three-day layout, from the build's environment
- *  while the maintainer tries them (2026-11-12): `VITE_THREE_DAY` names one
- *  of forecastReach.ts's; an unknown or unset value is the default. */
-const THREE_DAY: ThreeDayLayout = (THREE_DAY_LAYOUTS as readonly string[]).includes(import.meta.env.VITE_THREE_DAY ?? '')
-  ? (import.meta.env.VITE_THREE_DAY as ThreeDayLayout)
-  : 'days';
 
 const PROFILE_KEY = 'lspc:windProfile';
 /** The student choice last made (BSR or a waiver tier), so Licensed and back
@@ -310,7 +303,6 @@ export default function App(): JSX.Element {
         omClouds={snapshot.openMeteoClouds ?? null}
         nbm={snapshot.nbm ?? null}
         nbs={snapshot.nbs ?? null}
-        threeDay={THREE_DAY}
         thresholds={advisoryThresholds}
       />
     ),

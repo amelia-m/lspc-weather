@@ -92,10 +92,29 @@ which the NBH lacks. KPMV's block of the 01Z cycle that day is
 `data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`; the fixture re-dates it to
 the hour before now, as the NBH's is.
 
-How the card shows it is the maintainer's to pick, and four layouts were
-built to try (`ThreeDayLayout`, src/components/forecastReach.ts; the
-build's `VITE_THREE_DAY` names one, `days` by default until she picks),
-each drawn from the fixture build at 390 px and kept beside this doc:
+**Since 2026-11-18 the card is one table per local day** (the readings'
+recommendation, built at the maintainer's word: docs/ceiling-sky-layout-review.md's
+"day table" with its "cloud profile" as the heights row; src/domain/skyDays.ts
+builds the blocks, src/components/CeilingSkyDays.tsx draws them,
+docs/img/ceiling-sky-day-tables-2026-11-18.png is the fixture build at
+390 px). Eight three-hour columns a day, the same hour in the same column
+of every day; the NWS rows (sky cover as a bar and a figure, Open-Meteo's
+figure beside it, the ceiling) and the NBM rows (the three-hourly
+bulletin's sky cover and ceiling, the base from the hourly bulletin where
+it reaches and the three-hourly one past it, titled as such); between
+them the heights band, ground to 12,000 ft, the base a bar at its height,
+the NBM ceiling as cloud above it, the NWS ceiling a tick, night shaded
+behind; a blank cell where a forecast does not reach, never a dash; the
+day's NWS hours under each table ("hourly", today's open); figures at
+0.72 rem. The four layouts tried before it, the hourly strip, its
+12/24/36 toggle and the `VITE_THREE_DAY` flag went with it. What follows
+is the record of those four.
+
+How the card showed it was the maintainer's to pick, and four layouts were
+built to try (`ThreeDayLayout` in src/components/forecastReach.ts and
+`NbsDays.tsx`, both gone since 2026-11-18; the build's `VITE_THREE_DAY`
+named one, `days` by default), each drawn from the fixture build at
+390 px and kept beside this doc:
 
 - **days** (`docs/img/ceiling-sky-three-day-days-2026-11-12.png`; her
   ask, after the first three, for something better): one block per

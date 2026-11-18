@@ -131,6 +131,24 @@ precisely because they were colour and text rather than flags.
   printed, so they add up in mph. The fill is one colour: a green end read
   as "fine". Do not bring back a legend in place of the labels, or a bar
   per limit.
+- **The Ceiling & sky card is one table per local day** (since
+  2026-11-18, the maintainer's word after three readings:
+  docs/ceiling-sky-layout-review.md, docs/data-viz-notes.md,
+  docs/cloud-forecast-layouts-elsewhere.md): eight three-hour columns,
+  the same hour in the same column of every day, usairnet's form, which
+  jumpers know and which, like NWS's and MDL's tables, does not fit a
+  phone as one wide table. `src/domain/skyDays.ts` builds the blocks
+  (pure; a slot's time is the three-hourly bulletin's column or the
+  earliest hour a forecast has in it; figures read at that time exactly),
+  `CeilingSkyDays.tsx` draws them. Rules that came out of the readings
+  and should stay: every figure printed; a blank cell where a forecast
+  does not reach, never a dash, which read as missing data; the heights
+  band drawn the right way up (the base a bar at its height, cloud above
+  a ceiling), the first version filled from the ground to the base and
+  read backwards; one colour per source, none per value; night shaded by
+  the slot's greater part (`spanIsNight`); no chip, icon or sky word for
+  a slot. The strip, its 12/24/36 toggle and the four trial layouts are
+  gone; do not bring a scrolling strip back for the three days.
 - **The visibility flag holds the surface reading to both 105.17 rows**
   (`VISIBILITY_ROW = 'both'`, the maintainer's answer of 2026-10-31 to A8:
   the rows are MSL, so a 10,000 ft AGL exit from this DZ is above 10,000 ft
