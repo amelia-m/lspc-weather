@@ -147,8 +147,20 @@ precisely because they were colour and text rather than flags.
   a ceiling), the first version filled from the ground to the base and
   read backwards; one colour per source, none per value; night shaded by
   the slot's greater part (`spanIsNight`); no chip, icon or sky word for
-  a slot. The strip, its 12/24/36 toggle and the four trial layouts are
-  gone; do not bring a scrolling strip back for the three days.
+  a slot. From the same day's second reading
+  (docs/ceiling-sky-rebuild-review.md): a band column and its base cell
+  are one bulletin's (`slotBase`: the three-hourly's where the slot has
+  its column, else the hourly's, dotted), since the hourly's bar drawn
+  inside the three-hourly's cloud contradicted the band's own rule; a
+  height at or above 12,000 ft is a strip on the top edge, not a
+  height-0 fill; a row is drawn only on a day with a figure in it, and
+  where the NWS ceiling forecast ends is one line under the tables, read
+  over the whole list (`nwsCeilingForecastEnd`), since a per-day search
+  missed an end at local midnight; today is its hourly rows alone from
+  6 PM (`slotsLeft`, by the clock, not the forecast's reach, or a short
+  fixture trips it). The strip, its 12/24/36 toggle and the four trial
+  layouts are gone; do not bring a scrolling strip back for the three
+  days.
 - **The visibility flag holds the surface reading to both 105.17 rows**
   (`VISIBILITY_ROW = 'both'`, the maintainer's answer of 2026-10-31 to A8:
   the rows are MSL, so a 10,000 ft AGL exit from this DZ is above 10,000 ft

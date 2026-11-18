@@ -311,3 +311,22 @@ rule reads the document's `scrollWidth`, which equals the viewport).
 - The Playwright script ran from the scratchpad and is not kept;
   CLAUDE.md, "Verifying UI work", has everything it did, and the
   measurements are in the table above.
+
+## Acted on, the same day
+
+The seven new problems and the names (8), the key's two claims (9) and
+the scroller's sign (10) were fixed in the commit after this review
+(docs/nbm-lowest-cloud-base.md, "Read again the same day", has the
+rules as they now stand; CLAUDE.md the ones that should stay). The
+recommendations were taken as written, with two readings of the
+session's own: the "hours alone" rule counts the slots left by the
+clock, not the slots with a forecast in them, since a short fixture
+would otherwise trip it at 2 PM; and the time header carries both
+"12am" and "12a" with the stylesheet choosing under 360 px, rather than
+one form everywhere. Checked again in the fixture build at 320, 390 and
+1280 px at both clocks in DejaVu Sans: no table cell wider than its
+box, no page wider than its viewport, no console error;
+`docs/img/ceiling-sky-rebuild2-day-390-2026-11-18.png` and
+`…-night-320-…`. Left open, on docs/open-questions.md: the card's height
+(problem 5's second half, about 1,950 px at 390 with today's hourly
+open) and the one-screen answer (problem 1).
