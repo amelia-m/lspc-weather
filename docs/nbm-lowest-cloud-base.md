@@ -125,7 +125,9 @@ unnamed; the rules in the paragraph above are its fixes, checked in the
 fixture build at 320, 390 and 1280 px with the clock at 20:00Z and
 05:30Z in DejaVu Sans (no cell clipped, no page wider than its viewport,
 no console error; docs/img/ceiling-sky-rebuild2-day-390-2026-11-18.png
-and …-night-320-….png). The card is still about 1,950 px tall at 390 px
+and …-night-320-….png), and on the deployed site after the merge (PR
+#304, main 27a0885, about 21:00Z, live data at 390 and 1280 px: four
+day tables, the live-site check green). The card is still about 1,950 px tall at 390 px
 with today's hourly open (1,760 at the night clock), and the review's
 one-screen answer per day (the layout review's C) is not built: both are
 on docs/open-questions.md. What follows is the record of the four
