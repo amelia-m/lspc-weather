@@ -225,7 +225,30 @@ alternatives drawn as mock-ups for her to pick from:
 docs/ceiling-sky-layout-review.md (the problems in order of weight; the
 heaviest, that the heights band fills from the ground to the base, so a
 26,000 ft base draws the darkest column in the card; the mock-ups under
-docs/design/ceiling-sky/, their pictures in docs/img). Still hers.
+docs/design/ceiling-sky/, their pictures in docs/img). Two more
+readings the same day: docs/data-viz-notes.md (twelve principles with
+their sources and whether each page was read or only its search
+summary, applied to the card) and docs/cloud-forecast-layouts-elsewhere.md
+(usairnet's table, NWS's hourly graph and tabular forecast,
+aviationweather.gov's TAF board and GFA, MDL's NBM viewer and Mark
+Schulze's page, loaded in a browser at 390 and 1280 px, screenshots
+under docs/img/survey-*). Where the three agree: one block per local
+day with the same hour in the same column of every block, since no
+strip and none of the six sites fits 390 px; a figure in every height
+slot with a word for none; the night band behind the data as NWS draws
+it; the heights band drawn the right way up (the base as a mark at its
+height, the sky above it), not filled from the ground; larger figures
+(the strip's are about 9 px, under an 8-point floor); the source named
+on each block's rows; no chip, colour, icon or sky word that grades an
+hour (usairnet's VFR chips and "!" badge, the GFA's fills, "Clear" and
+"Cloudy" labels, all out under the rule). Where they differ: the
+reviewer's day-rows mock-up (C) answers the question in one screen but
+needs a wording rule to stay a figure and not a verdict; its day table
+(A) is the form jumpers know; its cloud profile (B) is the fix for the
+band alone. The session's recommendation: A's table as the body with
+B's profile as its heights row, the hourly strip folded into it (the
+NWS hours by opening a day), and C's one-line day summary only if its
+wording can be held to printed figures. Hers to pick.
 
 ## Issue #297: Open-Meteo 503 under the live-site check, 2026-11-11
 
