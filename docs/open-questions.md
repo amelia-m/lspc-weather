@@ -358,6 +358,48 @@ the two days were a few card loads in Playwright, two or three requests
 each, some tens of calls against a quota of 10,000. Five days in all
 (09-23, 10-10, 11-12, 11-13, 11-19). The dashboard is not affected.
 
+**How the sandbox hits the limit, worked out 2026-11-19** (the
+maintainer asked why and how). The sandbox does not leave by one
+address but by a pool. Cloudflare's `/cdn-cgi/trace` on any host it
+fronts answers with the client's address (`ip=`), and two allowlisted
+hosts are on it (developers.cloudflare.com and the TAF relay's
+workers.dev domain): thirty requests a moment apart at 21:08Z left by
+eight different addresses, 160.79.106.145, .147, .148, .149, .150, .151,
+.152 and .159, the two commonest 9 and 7 times. Open-Meteo's limiter
+counts per IPv4 address (docs/open-meteo-terms.md, `RateLimiter.swift`),
+so each address of the pool has its own 10,000 a day and its own
+window, and six one-variable probes at 21:01Z and 21:09Z answered 429
+with four different reset seconds, 00:00:01Z, 00:00:21Z, 00:00:24Z and
+00:00:32Z on the 20th: at least four addresses of the pool spent, each
+window reopened within half a minute of the last one ending, and the
+probes never found an address with quota left. (One of the six was cut
+off by the proxy, "Connection reset by peer", before any answer; the
+others got a 429, which costs nothing.) So the quota is not one
+address's but the pool's, and every address in it is spent, by
+requests that keep each address busy across midnight UTC. This repo's
+sessions send some tens of calls on a busy day; a pool of at least
+eight addresses with 10,000 each is tens of thousands a day of
+Open-Meteo requests from whoever else shares the pool. Whose the
+160.79.106.0/24 range is was not read from here: the addresses have no
+reverse record, no whois tool is installed, and docs.anthropic.com is
+not on the allowlist (the web-fetch agent's lookup did not resolve).
+It is the egress the session proxy uses for every cloud session on
+this platform, as far as the sandbox can see, which is as much as the
+shape of the refusals says: other tenants, not this repo.
+
+What would settle how fast the pool burns, not done: a probe a few
+minutes after 00:00Z (`X-RateLimit-Remaining` on a 200), then one an
+hour later and one at 04:00Z, each a one-variable request costing one
+call. A scheduled wake for it was declined by the session's permission
+check on 2026-11-19, so it waits for a session awake after midnight
+UTC, or the maintainer's word. A runner cannot measure it: runners
+have their own addresses and have never met the limit. What would end
+it: a key on Open-Meteo's paid tier, counted per key, the maintainer's
+call as above; its key goes in the request's query string
+(`apikey=`), which the session's credential store cannot inject (it
+sets headers), so it would be an environment variable the scripts
+read, never committed.
+
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
 **Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
