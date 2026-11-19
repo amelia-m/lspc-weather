@@ -93,6 +93,23 @@ export const CHECK_LABELS: readonly { label: string; description: string }[] = [
 export const isTimeoutError = (err: unknown): boolean =>
   err instanceof Error && (err.name === 'TimeoutError' || /aborted due to timeout/i.test(err.message));
 
+/** Whether an error is a connection the far end reset: Node's fetch throws
+ *  "TypeError: fetch failed" with the socket error as its cause, code
+ *  ECONNRESET. The SIM check met one from uspa.org on 2026-11-18 (every
+ *  part failed on that one fetch; the next day's run passed), the same
+ *  kind of brief trouble as a timeout, and since then it earns the same
+ *  one more try. A refused connection (ECONNREFUSED) or a host that does
+ *  not resolve is not this: that is the finding. */
+export const isConnectionReset = (err: unknown): boolean => {
+  if (!(err instanceof Error)) return false;
+  const cause = (err as { cause?: unknown }).cause;
+  const code = cause instanceof Error ? (cause as { code?: unknown }).code : undefined;
+  return code === 'ECONNRESET' || /ECONNRESET/.test(err.message);
+};
+
+/** The fetch errors the live checks try once more: a timeout or a reset. */
+export const isRetriedFetchError = (err: unknown): boolean => isTimeoutError(err) || isConnectionReset(err);
+
 const TIMEOUT_TEXT = /TimeoutError|aborted due to timeout/i;
 
 /** Vitest's reporter keeps the console's colour codes in the messages. */

@@ -99,6 +99,25 @@ tally again after a month of the retry rules.
 
 ## Since the tally
 
+- 2026-11-19, the parity summary (not one of the two checks, and it
+  opens no issue): the run after the daily sky-parity run (21:03Z, run
+  44614920278) built the summary and the archive and had its push to
+  main rejected, "fetch first": main had moved under it (PR #305
+  merged at 21:13Z, the push at 21:14Z). Nothing was committed; the
+  next day's run takes the same records (the archive step archives
+  whatever is not yet archived, and the artifacts last fourteen days),
+  so the day's figures are late, not lost. The commit step now fetches,
+  rebases onto main and pushes, up to three times, as the ceiling
+  refresh already did.
+- 2026-11-18, sky-parity: the SIM text check failed seven tests on one
+  fetch of uspa.org/sim/2-1 cut off by a connection reset
+  (`TypeError: fetch failed (ECONNRESET)`, 20:57Z, run 44396227583,
+  added to #283 as a comment); every other check passed, and the next
+  day's scheduled run (21:02Z) passed everything. Another host's brief
+  trouble, the same kind as a timeout; the live fetch did not retry a
+  reset (only a timeout or a 502, 503 or 504), and since 2026-11-19 it
+  does, once (`isConnectionReset`, `scripts/liveFetch.ts`). The third
+  sky-parity failure that was one bad answer from uspa.org.
 - 2026-11-11, live-site: the run after the parity summary's deploy
   (20:07Z, run 43093550048, issue #297) failed Jumpers at 1280 and 320 px
   on both loads with "Winds aloft: error: HTTP 503 for api.open-meteo.com";

@@ -143,6 +143,18 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git commit -m "Update the source-parity summary ($(date -u +%Y-%m-%d))" \
             -m "Written by .github/workflows/parity-summary.yml from the comparison logs: the summary the #parity page reads, and the records not yet archived (data/parity/parity-logs-*, and the surface-wind sampler's data/parity/surfacewind-<month>)."
-          git push origin HEAD:main
+          # main moves while the summary is built (a PR merged at 21:13Z on
+          # 2026-11-19 had the push rejected, "fetch first", and the day's
+          # summary and archive were not committed): rebase onto it and push,
+          # up to three times. A conflict (someone else wrote the summary or
+          # an archive file meanwhile) fails here, loudly.
+          for attempt in 1 2 3; do
+            git fetch --quiet origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then break; fi
+            echo "push rejected (attempt $attempt); main moved again"
+            [ "$attempt" = 3 ] && exit 1
+            sleep 10
+          done
           # The archive is not part of the site; only a new summary needs a deploy.
           if [ "$summary_changed" = yes ]; then gh workflow run deploy.yml --ref main; fi
