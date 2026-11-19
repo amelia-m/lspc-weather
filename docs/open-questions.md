@@ -345,6 +345,19 @@ key on Open-Meteo's paid tier (its API counts per key, not per address);
 a cost, so the maintainer's call. Until then this request, and any
 Open-Meteo work from here, runs on a runner.
 
+**2026-11-19, refused again** (the maintainer asked whether we hit the
+limit): the rebuild review's live load at 1280 px got a 429 about 19:00Z,
+the session's live-card captures at 21:00Z and 22:00Z the day before
+drew the card with no Open-Meteo row, and one one-variable request from
+the sandbox at 21:01Z on the 19th answered 429 with
+`X-RateLimit-Remaining 0.0` of 10,000 and reset 1795132821, which is
+2026-11-20T00:00:21Z: the window opened 21 seconds past midnight UTC,
+when nothing of this repo was running, the same shape as 11-12 and
+11-13. Not us: this repo's Open-Meteo requests from the sandbox over
+the two days were a few card loads in Playwright, two or three requests
+each, some tens of calls against a quota of 10,000. Five days in all
+(09-23, 10-10, 11-12, 11-13, 11-19). The dashboard is not affected.
+
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
 **Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
