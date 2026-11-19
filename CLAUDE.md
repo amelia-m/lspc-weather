@@ -584,7 +584,14 @@ reset at 00:00:44Z the next day) and on 2026-11-19 (21:01Z, reset at
 again"). The reset times are the evidence that
 it is other tenants of the address: the API's window rolls from a
 client's first request of the day, and both windows opened within a
-minute of midnight UTC, when nothing of this repo was running. A key on
+minute of midnight UTC, when nothing of this repo was running. The
+address is a pool: Cloudflare's `/cdn-cgi/trace` on an allowlisted host
+it fronts (developers.cloudflare.com, the relay's workers.dev domain)
+names the client's address, and thirty requests on 2026-11-19 left by
+eight addresses in 160.79.106.0/24, while six Open-Meteo probes that
+day answered 429 with four different reset seconds, one per address:
+the whole pool spent, by other tenants (docs/open-questions.md, "How
+the sandbox hits the limit"). A key on
 Open-Meteo's paid tier would give the sandbox a quota of its own, the
 maintainer's call (same entry). The GitHub runners have not met it. In the
 comparison artifacts and the archived sampler log read on 2026-10-10 (about
