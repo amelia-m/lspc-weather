@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHECK_LABELS, LABEL_DESCRIPTION_MAX, failureExcerpt, isTimeoutError, liveIssues, type VitestJsonReport } from '../src/domain/liveIssue';
+import { CHECK_LABELS, LABEL_DESCRIPTION_MAX, failureExcerpt, isConnectionReset, isRetriedFetchError, isTimeoutError, liveIssues, type VitestJsonReport } from '../src/domain/liveIssue';
 
 /* The shape Vitest's JSON reporter wrote on 2026-10-31 (vitest 4), with
  * #238's failure as its message: a TimeoutError from the fetch, colour
@@ -136,6 +136,21 @@ describe('failureExcerpt', () => {
     expect(cut.split('\n')).toHaveLength(13);
     expect(cut.endsWith('…')).toBe(true);
     expect(failureExcerpt('x'.repeat(2000)).length).toBe(1501);
+  });
+});
+
+describe('isConnectionReset', () => {
+  it('recognises Node’s fetch failure whose cause is ECONNRESET, and the code in a message, and nothing else', () => {
+    const reset = Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }) });
+    expect(isConnectionReset(reset)).toBe(true);
+    expect(isConnectionReset(new Error('request failed: TypeError: fetch failed (ECONNRESET)'))).toBe(true);
+    expect(isConnectionReset(Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }) }))).toBe(false);
+    expect(isConnectionReset(new TypeError('fetch failed'))).toBe(false);
+    expect(isConnectionReset('ECONNRESET')).toBe(false);
+    // The retried set is the two kinds together.
+    expect(isRetriedFetchError(reset)).toBe(true);
+    expect(isRetriedFetchError(new DOMException('The operation was aborted due to timeout', 'TimeoutError'))).toBe(true);
+    expect(isRetriedFetchError(new TypeError('fetch failed'))).toBe(false);
   });
 });
 

@@ -789,8 +789,9 @@ titled by the failed test and carrying the failure's own message, from
 Vitest's JSON report (`src/domain/liveIssue.ts`, since 2026-10-31, the
 maintainer's call: one broad body for three checks said too little; a run
 dispatched on a branch opens none). The checks' fetches are tried twice on
-a timeout or a 502, 503 or 504 (`scripts/liveFetch.ts`): #147 and #238
-were one timeout each, #256 one 502; any other status is the finding;
+a timeout, a connection reset or a 502, 503 or 504 (`scripts/liveFetch.ts`):
+#147 and #238 were one timeout each, #256 one 502, and 2026-11-18's SIM
+failure one reset from uspa.org; any other status is the finding;
 it also prints whether the TAF the card shows is the issuance
 aviationweather.gov currently has (informational). It also fails, through
 `scripts/pilotLinks.live.ts`, when a Pilots tab deep link stops opening
@@ -818,7 +819,9 @@ which every comparison run uploads as a `parity-<run id>` artifact (kept 14
 days). `.github/workflows/parity-summary.yml` combines them daily with
 `scripts/paritySummary.ts` into `public/parity/summary.json` — the arithmetic
 is `src/domain/paritySummary.ts`, pure and tested — commits that file to
-`main` and dispatches the Pages deploy (a push made with the workflow token
+`main` (rebased onto main first, up to three tries: a PR merged while it
+ran had its push rejected on 2026-11-19, docs/live-checks-tally.md) and
+dispatches the Pages deploy (a push made with the workflow token
 starts no other workflow). The in-app page at `#parity`, "How different from
 other sources", renders it: counts and spreads, never a grade, and
 since 2026-11-11 draws each table's figures above it (`paritySvg.ts`,
