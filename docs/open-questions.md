@@ -439,6 +439,11 @@ what changed and what was left:
   undated present tense brought to the code as it is, dated readings
   left alone; one finding (the dead export above, since removed).
 
+The four together, on one branch: the four gates green (95 files, 1,428
+tests), and `scripts/liveSite.ts` run from the sandbox against the
+combined fixture build, both legs (live, and the clock at 11:45 PM
+Central), every page passed at every width; CI green on PR #307.
+
 Left for the maintainer, the heaviest first (the docs have the rest):
 
 - **parity-summary.yml downloads every unexpired surface-wind artifact
