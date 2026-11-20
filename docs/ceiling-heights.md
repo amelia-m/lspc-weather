@@ -714,9 +714,8 @@ edge serving an older one, docs/nws-gridpoint-age.md) ends sooner, and
 the card cannot tell why. A gridpoint with no ceiling in any of the
 hours shown got "no ceiling for any of these hours", and a hole the
 forecast resumed after "for some of these hours" (`ceilingCoverage`,
-still exported from `forecastReach.ts` and tested in
-`tests/skyHorizon.test.ts`, but read by no component since the
-rebuild). A strip that crossed midnight named the new day under its first
+which outlived the strip as an export read by no component until the
+2026-11-20 review removed it with its test). A strip that crossed midnight named the new day under its first
 hour, and in the 24 and 36 hour strips the units column stayed in view
 as the hours scrolled under it: the figures carry no units of their own.
 The subtitle counted the hours drawn. The category pill and the flag

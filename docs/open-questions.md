@@ -409,6 +409,71 @@ call as above; its key goes in the request's query string
 sets headers), so it would be an environment variable the scripts
 read, never committed.
 
+## Code review and docs audit of the whole project (2026-11-20)
+
+Four agents at the maintainer's word ("dispatch code review and docs
+update agents for the whole project"), each in its own worktree with a
+scope no other could edit, each fixing only verified, small, local bugs
+with a test proved by breaking, and writing the rest down. Their
+write-ups, each with what was looked at, each finding with file:line,
+what changed and what was left:
+
+- docs/code-review-2026-11-20-domain.md (src/domain and its tests): four
+  fixed, among them usairnet's METAR dated a month ahead in the first
+  minutes of a month (`metarObservedMs` used a TAF's day rule) and a
+  blank NBM sky field read as 0% cover; six left.
+- docs/code-review-2026-11-20-ui-api.md (components, hooks, api, config,
+  styles): eight fixed, among them the 10-day outlook's "Today" taken by
+  position, which after local midnight on the gridpoint fallback
+  labelled yesterday "Today", and the daily fixture anchored at 12:00
+  UTC; duplicate React keys on the Ceiling & sky card's two NBM sources
+  (one URL); a TAF error printing its whole URL; dead CSS and dead
+  `ceilingCoverage`; seven stale comments; seven left.
+- docs/code-review-2026-11-20-ops.md (scripts, workflows, relay): one
+  fixed by the agent (the sky-parity issue step commented on any open
+  issue when the label was refused) and three more by the session the
+  same day (parity-summary's checkout takes the whole history for its
+  rebase, its artifact listing no longer swallows a failure, live-site's
+  issue step guards its label); five left.
+- docs/docs-audit-2026-11-20.md: 17 corrections in 11 documents, the
+  undated present tense brought to the code as it is, dated readings
+  left alone; one finding (the dead export above, since removed).
+
+Left for the maintainer, the heaviest first (the docs have the rest):
+
+- **parity-summary.yml downloads every unexpired surface-wind artifact
+  daily**: about 1,100 zips in 14 minutes on 2026-11-18 and 1,165 the
+  next day, heading for about 2,500 a day around 2026-12-10 (one
+  artifact per sample since 11-10, 30-day retention), against GitHub's
+  documented 1,000 requests an hour for the workflow token (read at
+  docs.github.com 2026-11-20; the 11-19 run made about 1,300 in 16
+  minutes without a 403, so whether zip downloads count is unclear). A
+  `created_at` window of about seven days in the listing would hold it;
+  a policy call beside the 2026-10-30 word not to time-box the sample.
+- **`fmtLimitSpeed` prints a whole-knot limit without the decimal**
+  CLAUDE.md says limits render with ("12 kt" beside "16.5 kt"); a
+  wording call, and tests/advisories.test.ts pins "use 12 kt".
+- **`comingHours` "next 12 hours" takes 13 points** (the hour under way
+  and twelve more, the last ending 12.5 h out); the test pins it; a
+  wording call.
+- **`useWeatherData`: an older refresh's late timeout can mark a newer
+  report stale** for up to two minutes (the observation's success does
+  not record its refresh sequence); and `withStaleness`'s memo omits
+  `now`, so the 30-minute age rule is latent. Both in the UI review
+  doc with the shape of a fix.
+- **`spot.ts` `integrate`** takes the mean of a layer's two bounding
+  winds over a partly crossed layer, not the mean over the crossed
+  part: inside the estimate's stated tolerance, and a change would
+  move a figure readers compare with Schulze's.
+- **Artifact names `parity-<run id>`** carry no run attempt (the
+  surfacewind names do); upload-artifact v4 may reject a duplicate on a
+  re-run; unverified from here, no re-run in the last 100 runs.
+- The advisory list's empty state with no observation loaded, the gust
+  readout's colour being the Watch badge's, `SourceLink`'s ⓘ label on a
+  role-less span, the keeper's three retries of a 429 (runners only),
+  the refresh's single push after its rebase, the sampler loop's 120 s
+  grace: each a note in its doc.
+
 ## Issue #283: uspa.org behind a Cloudflare challenge for a day, as on 10-09
 
 **Over, 2026-11-10:** at 14:40Z uspa.org answered the check's own request
