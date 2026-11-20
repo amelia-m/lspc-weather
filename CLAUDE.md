@@ -638,6 +638,18 @@ refresh-slowing idea in docs/open-questions.md would read that.
   were reported only there until the maintainer asked. A project hook
   (`.claude/settings.json`, UserPromptSubmit) repeats this reminder on
   every prompt.
+- **Record it briefly.** A record is the outcome and what it rests on:
+  the date, the figure, the file, the run or issue number, who decided.
+  Not the process: no narrative of the attempts, no restating a question
+  once it is settled (replace the history with the result and a pointer
+  to the doc or commit that has it), no repeating in open-questions what
+  a doc already says (one line and the doc's section name), no "what
+  follows is the question as it stood" tail. A sentence over a paragraph,
+  a figure over an adjective. Every session reads these files, so their
+  length is a cost: on 2026-11-20, at the maintainer's word, this
+  convention was added and docs/open-questions.md cut from 25,000 words
+  to 15,000 with nothing lost, after notes and questions had grown wordy.
+  An entry that outgrows a screen is the sign to condense it.
 - **Comments explain WHY, with domain context.** Calibrate on
   `src/domain/densityAltitude.ts`. Never write a comment describing behaviour
   the code does not have — several did, and each one misled a later reader.
