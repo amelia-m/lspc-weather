@@ -165,7 +165,8 @@ docs/cloud-forecast-layouts-elsewhere.md
    since the 2026-11-18 rebuild took the strip's "no ceiling for any of
    these hours" sentence with it. docs/ceiling-heights.md described it
    as the card's; it now says it is unused. The function and its test
-   are dead code, the code's owners' to remove or keep.
+   are dead code, the code's owners' to remove or keep. Removed the
+   same day by the UI review (docs/code-review-2026-11-20-ui-api.md).
 2. docs/open-questions.md, "KOFF's TAF" (the 2026-10-20 reading's
    Cloudflare bullet): the relay-load figures are the two-path ones.
    Not a code fault; recorded here rather than edited, since the
