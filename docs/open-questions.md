@@ -387,12 +387,21 @@ It is the egress the session proxy uses for every cloud session on
 this platform, as far as the sandbox can see, which is as much as the
 shape of the refusals says: other tenants, not this repo.
 
-What would settle how fast the pool burns, not done: a probe a few
-minutes after 00:00Z (`X-RateLimit-Remaining` on a 200), then one an
-hour later and one at 04:00Z, each a one-variable request costing one
-call. A scheduled wake for it was declined by the session's permission
-check on 2026-11-19, so it waits for a session awake after midnight
-UTC, or the maintainer's word. A runner cannot measure it: runners
+What would settle how fast the pool burns: a probe a few minutes after
+00:00Z (`X-RateLimit-Remaining` on a 200), then one an hour later and
+one at 04:00Z, each a one-variable request costing one call. A
+scheduled wake for it was declined by the session's permission check on
+2026-11-19. **Probed 2026-11-20 at 01:36Z**, the session being awake:
+three one-variable requests all answered 200, cost 1.0 each, and the
+tightest window the API reported was the minute's (600, remaining 599,
+596 and 595, two reset seconds, so two addresses), which means the day
+window on those addresses had a larger share left than 99% of 10,000:
+96 minutes after the reset the pool's day spend was under about 70
+calls. So the quota is not burnt steadily around the clock; a window
+that reopens seconds after midnight needs only one request then, and
+the 10,000 can go in one bulk job later in the day. When in the day it
+goes is still unmeasured: a probe every few hours on a day the session
+is awake would show it. A runner cannot measure it: runners
 have their own addresses and have never met the limit. What would end
 it: a key on Open-Meteo's paid tier, counted per key, the maintainer's
 call as above; its key goes in the request's query string
