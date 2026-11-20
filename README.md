@@ -104,22 +104,24 @@ card, the charts' limit lines and the flags, each marked as theirs.
   forecast runs past the one before it, and past 72 h the axis names days).
 - 📅 **10-day outlook** — daily sky, high/low, max wind/gust, dominant wind direction, precip chance; tap a
   day for its hourly detail.
-- ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline, with
-  Open-Meteo's cloud cover for the same hours beside the NWS figure, and
-  since 2026-10-27 a "base" row: the lowest cloud base in the NWS National
-  Blend of Models' hourly bulletin for KPMV, read through the relay
-  ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)). It is
-  not a ceiling and flags nothing. Since 2026-11-18 the card is one
-  table per local day, eight three-hour columns, in usairnet's day-table
-  form, which jumpers know: the NWS forecast's sky cover and ceiling,
-  Open-Meteo's cloud cover beside it, and the NBM's two bulletins' sky
-  cover, ceiling and lowest base (the three-hourly NBS, 6 to 72 hours
-  ahead, the one usairnet's three-day table reads, through the relay's
-  third path since 2026-11-12), with the cloud heights drawn as a band
-  the right way up and the day's NWS hours opening under each table
-  (docs/ceiling-sky-layout-review.md, docs/data-viz-notes.md). Night
-  at the drop zone is shaded. A second forecast beside the NWS one,
-  never blended with it, and flagged no more than the base is.
+- ☁️ **Ceiling & sky** — the latest report's flight category and ceiling,
+  then one table per local day of the forecasts (since 2026-11-18; until
+  then an hourly sky-cover/ceiling strip): eight three-hour columns, in
+  usairnet's day-table form, which jumpers know, with the NWS forecast's
+  sky cover and ceiling, Open-Meteo's cloud cover beside it, and the NWS
+  National Blend of Models' two bulletins for KPMV, read through the relay
+  ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)): the
+  hourly NBH's lowest cloud base (on the card since 2026-10-27) and the
+  three-hourly NBS's sky cover, ceiling and base (6 to 72 hours ahead,
+  the bulletin usairnet's three-day table reads, through the relay's third
+  path since 2026-11-12). The cloud heights are drawn as a band the right
+  way up, the day's NWS hours open under each table, a blank cell is a
+  slot a forecast does not reach, and one line under the tables names
+  where the NWS ceiling forecast ends
+  (docs/ceiling-sky-layout-review.md, docs/ceiling-sky-rebuild-review.md,
+  docs/data-viz-notes.md). Night at the drop zone is shaded. The NBM's
+  base is not a ceiling; it and the NBS are a second forecast beside the
+  NWS one, never blended with it, and neither flags anything.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline (narrow
   bars, a time under every third hour).
@@ -154,9 +156,10 @@ card, the charts' limit lines and the flags, each marked as theirs.
   the other feed's report was, and whether the feed's decode of the report
   agreed with the METAR text the app parses, amber when it did not. The
   TAF row says which station is shown and, when it is Offutt's, that it
-  came from aviationweather.gov via the relay; an NBM row, since
-  2026-10-27, names the bulletin cycle and says NOAA's bucket answered
-  through the relay.
+  came from aviationweather.gov via the relay; two NBM rows ("NBM cloud
+  base" since 2026-10-27, "NBM three-day" since 2026-11-12) each name
+  their bulletin's cycle and say NOAA's bucket answered through the
+  relay.
 
 ## 🔗 Data sources (all free, no API key)
 
@@ -167,7 +170,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
 | [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/) (IEM) | the current KPMV observation (raw METAR + decoded), read first; the Nearby METARs card's six stations, from its Nebraska ASOS network |
 | [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ (its view of the NDFD, below), the current KPMV observation as the backup to IEM's, the Omaha and Lincoln TAFs, and the NOAA FD winds-aloft product as the winds card's fallback when Open-Meteo is unreachable |
 | [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels), the 10-day daily outlook and the second cloud-cover figure on Ceiling & sky; on `#parity` and `#wind-errors`, its winds set against other sources. Weather data by Open-Meteo.com under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The dashboard reworks it: winds and temperatures interpolated from pressure levels to heights above the drop zone, a drift estimate worked from those winds, the outlook's weather codes grouped into its own labels, and on the two pages differences from other sources. The outlook's hourly detail is the NWS gridpoint's. The repository's comparison docs and the archives under [`data/parity/`](data/parity/README.md) hold Open-Meteo data too, under the same licence; what this app does to meet Open-Meteo's terms is in [docs/open-meteo-terms.md](docs/open-meteo-terms.md) |
-| The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | three fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)), and since 2026-11-12 its block of the three-hourly bulletin (NBS) from the same bucket, for the card's three-day block |
+| The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | three fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)), and since 2026-11-12 its block of the three-hourly bulletin (NBS) from the same bucket, for the card's day tables |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 | [FAA VFR sectional](https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59) | Sectional chart tiles (image embed, no API) |
 | [GoatCounter](https://www.goatcounter.com/) | page counts, on the deployed site only: one image request per page shown, carrying the page's path and title, the referrer, the screen width and the query string; no cookies, and nothing from browsers opted out or under automation ([docs/page-counts.md](docs/page-counts.md)) |
@@ -215,11 +218,15 @@ sanity-check the dashboard against sources you already trust:
 
 - **Ceiling & sky ↔ [usairnet KPMV aviation
   forecast](https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=KPMV)**
-  — a page many jumpers use. usairnet has no public API and presents NWS
-  forecast data; this dashboard pulls that data directly from the NWS gridpoint
-  API instead. One difference: usairnet's page is for the KPMV station, while
-  the dashboard's forecast grid is centered on the DZ itself (only the METAR
-  observation comes from KPMV).
+  — a page many jumpers use. usairnet has no public API; its three-day
+  table is the NWS National Blend of Models' bulletins for KPMV
+  ([docs/usairnet-parity.md](docs/usairnet-parity.md), "Where usairnet's
+  rows come from"). The card reads the NWS gridpoint API for the drop
+  zone's own grid cell and, through the relay, the same two NBM bulletins
+  for KPMV, kept apart as two forecasts. One difference to keep in mind:
+  usairnet's page is for the KPMV station, while the dashboard's NWS
+  forecast grid is centered on the DZ itself (the METAR observation and
+  the NBM rows are KPMV's).
 - **Winds aloft ↔ [Mark Schulze's Winds
   Aloft](https://www.markschulze.net/winds/?lat=40.8703&lon=-96.1085)** — the popular
   skydiving winds tool; same Open-Meteo model source. After half past the two
@@ -248,7 +255,7 @@ pilots meet elsewhere. In the order they tend to come up:
 | **VFR**, **MVFR**, **IFR**, **LIFR** | the FAA's flight categories from ceiling and visibility, best to worst |
 | **NWS**, **NOAA**, **WFO** | the National Weather Service, its parent agency, and a Weather Forecast Office (Omaha's is OAX) |
 | **NDFD** | National Digital Forecast Database: the NWS's gridded forecast of every element by the hour. api.weather.gov's gridpoint, which the hourly chart and the forecast wind flags read, is its view at the DZ; NOAA's archive of its grids is the forecast's past |
-| **NBM**, **NBH**, **NBS** | the National Blend of Models, the NWS's blended guidance, and its hourly (NBH) and three-hourly (NBS) text bulletins per station; the "base" row on Ceiling & sky is the NBH's lowest cloud base for KPMV, and the card's three-day block (since 2026-11-12) is the NBS's sky cover, ceiling and base |
+| **NBM**, **NBH**, **NBS** | the National Blend of Models, the NWS's blended guidance, and its hourly (NBH) and three-hourly (NBS) text bulletins per station; the "NBM base" row of Ceiling & sky's day tables is the NBH's lowest cloud base for KPMV, and the "NBM %" and "NBM ceil" rows (since 2026-11-12) the NBS's sky cover and ceiling |
 | **HRRR**, **GFS** | NOAA's High-Resolution Rapid Refresh and Global Forecast System, the two models behind the Open-Meteo request the winds-aloft table reads ([docs/run-split.md](docs/run-split.md)) |
 | **FD** | NOAA's winds-and-temperatures-aloft forecast (the "FD" product), the winds card's fallback |
 | **IEM** | the Iowa Environmental Mesonet, Iowa State University's archive and live feed of observations |

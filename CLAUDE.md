@@ -118,7 +118,8 @@ precisely because they were colour and text rather than flags.
   the observation). The other way round, yes: since 2026-10-31 the Winds
   aloft card shows the same report under its table as its one measured
   figure, labelled as a report with the station, distance and time
-  (`observedWind`, `observed` prop), so a reader compares the two where
+  (the `observed` prop, drawn as `.wind-observed`;
+  `tests/windsObserved.test.ts`), so a reader compares the two where
   the forecast is read.
   One bar with a legend left the marks unnamed: a reader could not tell
   the yellow tick was the gust or what the red and purple marks were. A bar

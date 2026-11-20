@@ -1,7 +1,15 @@
 # The Ceiling & sky card's layouts: a review (2026-11-18)
 
+> What came of it, the same day: proposal A was built with B's band as
+> its heights row, at the maintainer's word; the four layouts, the
+> hourly strip, its toggle, `VITE_THREE_DAY`, `ThreeDayLayout` and
+> `NbsDays.tsx` are gone (docs/nbm-lowest-cloud-base.md, "Since
+> 2026-11-18 the card is one table per local day"; the rebuild's own
+> review is docs/ceiling-sky-rebuild-review.md). The text below describes
+> the card as it stood that morning.
+
 The maintainer, 2026-11-18: "I think we need to do more work on the
-layouts." This is a look at the four three-day layouts the card can be
+layouts." This is a look at the four three-day layouts the card could be
 built with (`VITE_THREE_DAY`: `days`, `strip`, `horizon`, `continue`;
 docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three days
 out"), as a reader would meet them, and three alternatives drawn as

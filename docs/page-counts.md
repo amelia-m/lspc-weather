@@ -116,4 +116,6 @@ check intercepts, answered the real requests with a 400 (above).
 ## Not counted
 
 `public/ceiling-errors/` is a standalone page with its own policy and no
-build step; it is not counted.
+build step; it is not counted. Neither is the talk page
+(`public/talk/index.html`, "How this was built", since 2026-11-11): a
+self-contained render that carries no count request.

@@ -1,9 +1,17 @@
 # Data-visualisation notes for the dashboard
 
+> Read before the card was rebuilt later the same day: the `days`
+> layout these notes favour became one table per local day with the
+> heights band drawn the right way up, the hourly strip, its toggle and
+> `crossesDay` went, and the day tables' figures are 0.72 rem
+> (docs/nbm-lowest-cloud-base.md, "Since 2026-11-18 the card is one
+> table per local day"). The sizes, classes and layouts measured below
+> are the card's as it stood that morning.
+
 Read and written 2026-11-18, for the Ceiling & sky card's three-day
 layouts (docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three
 days out"; docs/open-questions.md, "Reach the NBM's three-day bulletin",
-open: which layout stays) and, in brief, the other charts. Everything
+then open: which layout stays) and, in brief, the other charts. Everything
 here is held inside the card's rules (CLAUDE.md, the first section): no
 verdict, no threshold or colour or word the sources do not set, counts
 and figures and never a grade. Where a source would say to colour a

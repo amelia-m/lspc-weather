@@ -671,8 +671,10 @@ ceiling and the visibility forecasts cover it (`HourlyPoint.ceilingForecast`,
 included, so a gap counts as well as the end). `forecastFlightCategory`
 gives VFR only where both are forecast, since AIM 7-1-7's VFR needs both
 halves; with one of them, that one can still give MVFR, IFR or LIFR; with
-neither, nothing. The Ceiling & sky card's hourly strip prints a dash
-past the ceiling forecast, not "no". And so that a dash is not read as a
+neither, nothing. The Ceiling & sky card's hourly strip printed a dash
+past the ceiling forecast, not "no" (until 2026-11-18; its day tables
+leave such a cell blank and name where the NWS ceiling forecast ends in
+one line under them, `nwsCeilingForecastEnd`). And so that a dash is not read as a
 blank category, the table marks every hour where what is forecast
 changes with a row of its own ("Ceiling and visibility not forecast from
 5:00 AM…", "Ceiling not forecast from…", "…forecast again from…"; a day
@@ -686,34 +688,40 @@ the visible width.
 
 ### The Ceiling & sky card's horizon
 
-Asked 2026-10-23: a button to take the card's strip further out. It now
-switches between 12, 24 and 36 hours (`skyHorizonOptions`,
-`src/components/forecastReach.ts`); a longer horizon is offered once the
-forecast runs past the one before it, so the switch always shows
+Asked 2026-10-23: a button to take the card's strip further out. From
+that day to 2026-11-18 it switched between 12, 24 and 36 hours
+(`skyHorizonOptions`, then in `src/components/forecastReach.ts`); a
+longer horizon was offered once the
+forecast ran past the one before it, so the switch always showed
 something new, though not always its full length (25 hours of forecast
-offer 36h and draw 25 columns, and the subtitle counts the columns, less
-the hour under way). It stops at 36: the ceiling reaches about a day and a
-half (above), so past that the strip would be sky cover alone. (Since
+offered 36h and drew 25 columns, and the subtitle counted the columns, less
+the hour under way). It stopped at 36: the ceiling reaches about a day and a
+half (above), so past that the strip would have been sky cover alone. Since
 2026-11-18 the strip and its toggle are gone: the card is one table per
-local day, the NWS rows and the NBM bulletins' rows side by side, and
-where the NWS ceiling forecast ends inside a day the table says so in a
-line of its own: docs/nbm-lowest-cloud-base.md, "The three-hourly
-bulletin, three days out".) Where the
-chosen horizon runs past the ceiling forecast, the card says from which
+local day, the NWS rows and the NBM bulletins' rows side by side, a
+blank cell where a forecast does not reach, and one line under the
+tables naming where the NWS ceiling forecast ends, read over the whole
+list (`nwsCeilingForecastEnd`, `src/domain/skyDays.ts`;
+docs/nbm-lowest-cloud-base.md, "The three-hourly bulletin, three days
+out"). What the strip did until then, kept here for the record: where the
+chosen horizon ran past the ceiling forecast, the card said from which
 hour (weekday and time, since 36 hours can name the same clock time
-twice), and that the ceiling column shows a dash from there. It says
-that only when the ceiling stops and does not come back within the
-strip, and gives the day-and-a-half reach as the usual, from issuance,
+twice), and that the ceiling column showed a dash from there. It said
+that only when the ceiling stopped and did not come back within the
+strip, and gave the day-and-a-half reach as the usual, from issuance,
 not as the cause: a copy of the gridpoint a day old (an outage, or an
 edge serving an older one, docs/nws-gridpoint-age.md) ends sooner, and
 the card cannot tell why. A gridpoint with no ceiling in any of the
-hours shown gets "no ceiling for any of these hours", and a hole the
-forecast resumes after "for some of these hours" (`ceilingCoverage`). A strip that crosses midnight names the new day under its first
-hour, and in the 24 and 36 hour strips the units column stays in view
-as the hours scroll under it: the figures carry no units of their own.
-The subtitle counts the hours drawn. The category pill and the flag
+hours shown got "no ceiling for any of these hours", and a hole the
+forecast resumed after "for some of these hours" (`ceilingCoverage`,
+still exported from `forecastReach.ts` and tested in
+`tests/skyHorizon.test.ts`, but read by no component since the
+rebuild). A strip that crossed midnight named the new day under its first
+hour, and in the 24 and 36 hour strips the units column stayed in view
+as the hours scrolled under it: the figures carry no units of their own.
+The subtitle counted the hours drawn. The category pill and the flag
 still read the current hour only. The Hourly wind card offers its
-horizons by the same rule (`horizonOptions`).
+horizons by the rule the strip's toggle used (`horizonOptions`).
 
 At 390 px the 36-hour strip first widened the whole page, to 847 px,
 though the strip scrolls sideways in its own box. Each column's
