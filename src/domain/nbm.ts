@@ -53,8 +53,11 @@ function hundredsFt(field: string | undefined): number | null | undefined {
   return Number.isFinite(n) ? n * 100 : undefined;
 }
 
+/** A field in percent, or null for -99 (missing) and for a blank: as with
+ *  the FHR row below, Number('   ') is 0, and a blank sky field read that
+ *  way would print a clear sky the bulletin did not forecast. */
 function percent(field: string | undefined): number | null {
-  const n = field == null ? NaN : Number(field);
+  const n = field == null || field.trim() === '' ? NaN : Number(field);
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 

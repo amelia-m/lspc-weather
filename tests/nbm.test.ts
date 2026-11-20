@@ -84,6 +84,15 @@ describe('parseNbhBlock', () => {
     expect(parseNbhBlock(missing)!.hours[1].lowestBaseFtAgl).toBe(20000);
   });
 
+  it('reads a blank sky field as no figure, not as 0% cover', () => {
+    // Number('   ') is 0, which the FHR row already guards against; a sky
+    // field left blank would otherwise print a clear sky the bulletin did
+    // not forecast (until 2026-11-20).
+    const blank = NBH.replace(/^ SKY {2}44/m, ' SKY    ');
+    expect(parseNbhBlock(blank)!.hours[0].skyCoverPct).toBeNull();
+    expect(parseNbhBlock(blank)!.hours[1].skyCoverPct).toBe(55);
+  });
+
   it('is null for text that is not an NBH block', () => {
     expect(parseNbhBlock('KPMV 260935Z AUTO 02007KT 10SM CLR 12/08 A3029')).toBeNull();
     expect(parseNbhBlock(NBH.split('\n')[0])).toBeNull();
