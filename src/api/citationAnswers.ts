@@ -1,9 +1,10 @@
 /** Browser storage for the citations checklist answers — the one place the
  *  answers live until the reviewer sends them, since the site has no backend.
  *  In the api layer because it is I/O; the shape and formatting are pure and
- *  live in domain/citationAnswers.ts. Storage access mirrors the safeLocal*
- *  helpers in nws.ts: localStorage can throw, and a failure must degrade to
- *  in-memory answers rather than a blank page. */
+ *  live in domain/citationAnswers.ts. Storage access is guarded as
+ *  safeStorage.ts guards it (each call here also parses or stringifies, so
+ *  the try covers that too): localStorage can throw, and a failure must
+ *  degrade to in-memory answers rather than a blank page. */
 
 import { type Answers, sanitizeAnswers } from '../domain/citationAnswers';
 

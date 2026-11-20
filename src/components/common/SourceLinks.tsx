@@ -7,7 +7,11 @@ export function SourceLinks({ sources }: { sources: DataSource[] }): JSX.Element
   return (
     <>
       {sources.map((s, i) => (
-        <span key={s.url}>
+        // Not the URL alone: two sources can share one (the NBM's hourly
+        // and three-hourly bulletins both link MDL's text-bulletin page,
+        // and the Ceiling & sky card lists both), and React needs each
+        // child's key unique to keep them apart across an update.
+        <span key={`${s.label}|${s.url}`}>
           {i > 0 && ' · '}
           <a href={s.url} target="_blank" rel="noopener noreferrer">
             {s.label}

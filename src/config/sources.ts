@@ -84,8 +84,10 @@ export const DATA_SOURCES = {
    *  `ll` (the centre), `chart` (the chart's protoid) and `zoom` (its scale),
    *  and zooming in lowers the scale to a minimum of 1, so 2 is one step out
    *  from the closest view; its chart service names protoid 301 "World VFR"
-   *  (type vfr) at the drop zone's coordinates. The view itself has not been
-   *  seen in a browser: the sandbox's browser cannot load https pages. */
+   *  (type vfr) at the drop zone's coordinates. The view itself was not
+   *  seen in a browser when this was written: on 2026-10-03 the sandbox's
+   *  browser could not load https pages (it can since 2026-10-17, CLAUDE.md,
+   *  "The deployed site in a browser"; nothing here records a look since). */
   skyvector: {
     label: 'Sectional chart · SkyVector',
     url: `https://skyvector.com/?ll=${SITE.dz.lat},${SITE.dz.lon}&chart=301&zoom=2`,

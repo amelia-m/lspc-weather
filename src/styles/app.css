@@ -602,13 +602,15 @@ a.sim-term {
 .wind-unit {
   color: var(--muted);
 }
-.wind-mph,
-.wind-gust {
+.wind-mph {
   color: var(--muted);
   font-size: 0.85rem;
 }
+/* The gust readout in the gust's own colour, the one its tick on the bar,
+   its figure under the bar and the hourly chart's gust line share. */
 .wind-gust {
   margin-left: auto;
+  font-size: 0.85rem;
   color: var(--watch);
 }
 .wind-bar {
@@ -1145,34 +1147,10 @@ a.sim-term {
   );
 }
 
-/* Y-axis column: labels aligned to the top / middle / bottom of the tracks. */
-.sky-axis-col {
-  flex: none;
-  width: 28px;
-}
-.sky-axis {
-  height: 70px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding-right: 3px;
-  font-size: 0.58rem;
-  line-height: 1;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
 .sky-bar {
   width: 100%;
   background: var(--muted);
   transition: height 0.2s;
-}
-.sky-pct {
-  display: block;
-  font-size: 0.6rem;
-  margin-bottom: 2px;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
 }
 .sky-ceil {
   display: block;
@@ -1199,11 +1177,6 @@ a.sim-term {
   justify-content: center;
   white-space: nowrap;
   margin: 0 -8px;
-}
-/* The weekday under the first hour of a new day, centred on its column
-   even where wider than it, as the times are. */
-.sky-day {
-  font-weight: 600;
 }
 .sky-bar.precip-bar {
   background: linear-gradient(180deg, var(--accent), #2f6db5);
@@ -1669,13 +1642,6 @@ a.sim-term {
   text-align: left;
   font-variant-numeric: normal;
 }
-.cite-asks {
-  margin: 0 0 10px;
-  padding-left: 18px;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: var(--muted);
-}
 .cite-found {
   margin: 0 0 10px;
   padding-left: 18px;
@@ -1683,8 +1649,7 @@ a.sim-term {
   line-height: 1.5;
   color: var(--muted);
 }
-.cite-found-head,
-.cite-asks-head {
+.cite-found-head {
   margin: 10px 0 2px;
   font-weight: 600;
   font-size: 0.85rem;
@@ -1695,19 +1660,6 @@ a.sim-term {
    reading a confirmed quote as another unanswered question. */
 .cite-found li {
   color: var(--text);
-}
-
-.cite-asks li + li {
-  margin-top: 6px;
-}
-/* A ruled line to write on — this page is meant to be worked through with a
-   SIM open, on paper or on a phone. */
-.cite-verdict {
-  margin: 0;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
-  font-size: 0.8rem;
-  color: var(--muted);
 }
 
 /* Answer controls on the citations page. The page is worked through with a

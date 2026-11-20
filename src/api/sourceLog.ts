@@ -29,8 +29,9 @@ const STATUSES: readonly SourceLogStatus[] = ['attempted', 'success', 'fallback'
 
 /** Gates the CONSOLE output only. The deployed GitHub Pages build would
  *  otherwise emit hundreds of emoji lines a day and bury ErrorBoundary's
- *  console.error, so the same gate http.ts uses for its debug output applies
- *  here. Recording and persistence stay on in production regardless: there is
+ *  console.error, so the lines print only in the dev build, or when
+ *  VITE_DEBUG_LOGS is set at build time (nothing else in src reads that
+ *  flag). Recording and persistence stay on in production regardless: there is
  *  no in-page log viewer, so this buffer — published on `window.LSPC_DEBUG` by
  *  App — is the only way to answer "which provider actually served this, and
  *  when did it fall back?", and that question is usually asked from a laptop
