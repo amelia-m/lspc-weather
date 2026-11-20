@@ -223,11 +223,12 @@ they were colour and text rather than flags.
   level, underground at this DZ, and 975 hPa), matched in 72 of 72 hours at
   four sites on 2026-10-03; it reads like the wind a couple of hundred feet
   up and runs above the 10 m wind this app shows, most at night
-  (`docs/markschulze-altitude-reference.md`, "How the surface row was
-  worked out"). Against KPMV's measured wind the 10 m row was nearer in 104
-  of 156 hours to 2026-10-08 (his 23, tied 29), 51/11/17 over 79 hours at
-  the landing area to 10-17 (`scripts/surfaceRows.ts`), and 249/47/73 over
-  369 hours to 11-04 (same doc). A point about heights, not a fault in his
+  (`docs/markschulze-altitude-reference.md`, "How the surface row was worked
+out"). Against KPMV's measured wind the 10 m row was nearer in 104
+  of 156 hours to 2026-10-08 (his 23, tied 29; same doc, "Which Surface row
+is nearer the measured wind"), 51/11/17 over 79 hours at the landing area
+to 10-17 (`scripts/surfaceRows.ts`), and 249/47/73 over 369 hours to 11-04
+(same doc, "Again, to 2026-11-04"). A point about heights, not a fault in his
   tool.
 - **The winds-aloft table can differ from Mark Schulze's, and each cause is
   known.** Both read Open-Meteo; from 2026-09-23 the app sampled the same
@@ -512,8 +513,9 @@ keeps per request so the By-day table shows the day's tightest
   set built from `CITATIONS` contained a `CITATIONS` url.
 - **Changing a function's contract stales comments that describe it
   elsewhere.** `interpolateWindsAloft` stopped extrapolating and silently
-  falsified a comment in `spot.ts`, a rationale in `useWeatherData.ts` and
-  the card text in `WindsAloftPanel`. After changing what a function
+  falsified a comment in `spot.ts` justifying its own extrapolation
+"matching `sampleAt`", a rationale in `useWeatherData.ts` and the card
+text in `WindsAloftPanel`. After changing what a function
   guarantees, grep for its name and read every hit.
 - **Before writing that something was not checked, search the docs for
   it.** On 2026-10-23 an open question said the NDFD gust's match to the API
