@@ -68,6 +68,10 @@ import { TAF_RELAY_SET } from './config/tafRelay';
 import { countPage } from './api/pageCount';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 import { openMeteoUsage } from './api/openMeteoUsage';
+// localStorage can throw (private mode, disabled cookies, quota). Every
+// access goes through these guards so a storage failure degrades to
+// in-memory state instead of a white screen on mount.
+import { safeLocalGet, safeLocalSet } from './api/safeStorage';
 
 
 const PROFILE_KEY = 'lspc:windProfile';
@@ -82,24 +86,6 @@ const UNIT_KEY = 'lspc:windUnit';
 const TEMP_UNIT_KEY = 'lspc:tempUnit';
 const WINDS_METHOD_KEY = 'lspc:windsMethod';
 
-
-// localStorage can throw (private mode, disabled cookies, quota). Guard every
-// access so a storage failure degrades to in-memory state instead of a
-// white-screen on mount. Mirrors the helpers in api/nws.ts.
-function safeLocalGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-function safeLocalSet(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* private mode / quota — ignore */
-  }
-}
 
 /** Validate a persisted profile id; anything unknown falls back to 'student'. */
 function toWindProfileId(raw: string | null): WindProfileId {

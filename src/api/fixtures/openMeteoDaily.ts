@@ -1,9 +1,11 @@
 import type { RawOpenMeteoDaily } from '../../domain/normalize';
+import { SITE } from '../../config/site';
+import { localDayStartSec } from './_time';
 
-/** Anchor each fixture day at 12:00 UTC (06:00/07:00 America/Chicago) so the
- *  weekday label rendered in the DZ time zone matches the intended UTC day. */
-const dayStartSec = (offsetDays: number): number =>
-  Math.floor(Date.now() / 86_400_000) * 86_400 + 12 * 3600 + offsetDays * 86_400;
+/** Each fixture day starts at the drop zone's local midnight, as the API's
+ *  days do with `timezone` set (the first is today's), so the outlook's
+ *  "Today" row, which goes by the local date, is the first row at any hour. */
+const dayStartSec = (offsetDays: number): number => localDayStartSec(offsetDays, SITE.timeZone);
 
 /** Sample Open-Meteo daily response (wind_speed_unit=kn, timeformat=unixtime)
  *  for a 10-day outlook anchored to today: a jumpable stretch, a windy spell,

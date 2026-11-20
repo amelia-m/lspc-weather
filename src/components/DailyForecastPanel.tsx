@@ -10,7 +10,7 @@ import { HourlyChart, HourlyLegend } from './common/HourlyChart';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { HourlyKey } from './HourlyKey';
 import { reachChange } from './forecastReach';
-import { fmtTime } from './format';
+import { fmtTime, localDateKey } from './format';
 import type { Thresholds } from '../config/thresholds';
 
 /** 10-day outlook: daily sky, temps, wind/gust maxima, dominant wind direction,
@@ -69,6 +69,13 @@ export function DailyForecastPanel({
 }): JSX.Element {
   const fallback = source === 'nws-gridpoint';
   const [selected, setSelected] = useState<string | null>(null);
+  // Today and on, by the drop zone's calendar. Open-Meteo's days start at
+  // today, but the gridpoint fallback aggregates every hour the grid
+  // carries, and the grid starts some hours back (six at 01Z on
+  // 2026-11-20), so after local midnight its first day was yesterday's,
+  // and "Today" by row position named it. A row is today's by its date.
+  const todayKey = localDateKey(Date.now());
+  const days = daily.filter((d) => localDateKey(d.date) >= todayKey);
 
   // Group hourly points by local (DZ) calendar day so a selected outlook day
   // maps to its hours regardless of the UTC boundary.
@@ -101,7 +108,7 @@ export function DailyForecastPanel({
       tempUnit={tempUnit}
       onTempUnitChange={onTempUnitChange}
     >
-      {daily.length === 0 ? (
+      {days.length === 0 ? (
         <p className="muted">No daily forecast available.</p>
       ) : (
         <div className="daily-scroll">
@@ -118,9 +125,9 @@ export function DailyForecastPanel({
               </tr>
             </thead>
             <tbody>
-              {daily.map((d, i) => {
+              {days.map((d) => {
                 const wx = weatherCode(d.weatherCode);
-                const key = localDayKey(d.date);
+                const key = localDateKey(d.date);
                 // Fallback path: the same hourlies these days were aggregated
                 // from are already grouped here, so the cover figure comes from
                 // the grid rather than from anything derived about the day.
@@ -144,7 +151,7 @@ export function DailyForecastPanel({
                     <td className="daily-caret" aria-hidden>
                       {isOpen ? '▾' : '▸'}
                     </td>
-                    <td>{dayLabel(d.date, i)}</td>
+                    <td>{dayLabel(d.date, key === todayKey)}</td>
                     {fallback ? (
                       <td className="daily-sky" title="Mean cloud cover over the day’s forecast hours">
                         {skyAvgPct != null ? `${round(skyAvgPct)}% cover` : '—'}
@@ -323,20 +330,13 @@ export function DayDetail({
 /* ---- helpers ---- */
 
 
-const dayKeyFmt = new Intl.DateTimeFormat('en-CA', {
-  timeZone: SITE.timeZone,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
-/** yyyy-mm-dd in the DZ time zone — a stable per-local-day key. */
-const localDayKey = (ms: number): string => dayKeyFmt.format(ms);
+/* The per-local-day key is format.ts's `localDateKey` ("2026-10-09" in the
+ * DZ time zone), the one the hourly chart groups its days by. */
 
 function groupByLocalDay(points: HourlyPoint[]): Map<string, HourlyPoint[]> {
   const map = new Map<string, HourlyPoint[]>();
   for (const h of points) {
-    const key = localDayKey(h.time);
+    const key = localDateKey(h.time);
     const arr = map.get(key);
     if (arr) arr.push(h);
     else map.set(key, [h]);
@@ -351,7 +351,7 @@ const keyToNoonUtc = (key: string): number => {
 
 /** Whole days from today (DZ local) to the given day key — the hourly horizon. */
 const horizonDays = (lastKey: string): number => {
-  const today = keyToNoonUtc(localDayKey(Date.now()));
+  const today = keyToNoonUtc(localDateKey(Date.now()));
   return Math.max(1, Math.round((keyToNoonUtc(lastKey) - today) / 86_400_000));
 };
 
@@ -365,8 +365,9 @@ const dayHeading = (key: string): string =>
     timeZone: SITE.timeZone,
   });
 
-const dayLabel = (ms: number, index: number): string =>
-  index === 0
+/** "Today" for the row on today's local date, else "Fri 11/20". */
+const dayLabel = (ms: number, today: boolean): string =>
+  today
     ? 'Today'
     : new Date(ms).toLocaleDateString('en-US', {
         weekday: 'short',

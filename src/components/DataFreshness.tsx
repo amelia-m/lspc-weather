@@ -3,12 +3,14 @@ import type { SourceProvenance } from '../domain/sourceProvenance';
 import { USE_FIXTURES } from '../api/http';
 import { DATA_SOURCES, type DataSource } from '../config/sources';
 import { TAF_RELAY_SET } from '../config/tafRelay';
+import { SITE } from '../config/site';
 import { Panel } from './common/Panel';
 import { fmtAgo, shortError } from './format';
 import { OPEN_METEO_FREE_LIMITS, USAGE_KEEP_DAYS, quotaWindowLabel, type UsageSummary } from '../domain/openMeteoUsage';
 
 const LABELS: Record<SourceKey, string> = {
-  metar: 'METAR (KPMV)',
+  // The station from the config, as every other card names it.
+  metar: `METAR (${SITE.metarStation.id})`,
   nws: 'NWS forecast',
   windsAloft: 'Winds aloft',
   taf: 'TAF',

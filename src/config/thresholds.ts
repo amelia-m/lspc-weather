@@ -200,13 +200,13 @@ export const CITATIONS = {
    *  1,000 ft / 1 mile. Brown's is at 1,182 ft MSL, so a 10,000 ft AGL exit is
    *  in the 5 SM row and the freefall drops into the 3 SM row on the way down.
    *
-   *  The visibility flag fires at the row `VISIBILITY_ROW` picks, which
-   *  waits on the S&TA's or pilot's answer to A8 on #citations, unless the
-   *  reader edits it in Settings, and says which. The METAR reports surface
-   *  visibility and the reg's measure is flight visibility at altitude, so
-   *  which row a surface reading should be held to is the open question;
-   *  both rows are printed so the reader can check the exit against the
-   *  right one. */
+   *  The visibility flag holds the reading to the rows `VISIBILITY_ROW`
+   *  picks (both, since the maintainer's answer of 2026-10-31 to A8 on
+   *  #citations, which still asks an instructor to confirm it), unless the
+   *  reader edits the figure in Settings, and says which. The METAR
+   *  reports surface visibility and the reg's measure is flight visibility
+   *  at altitude; both rows are printed so the reader can check the exit
+   *  against the right one. */
   far10517: {
     source: '14 CFR § 105.17',
     ref: 'Flight visibility and clearance from cloud — never into or through cloud; below 10,000 ft MSL 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft MSL 5 SM and 1,000 / 1,000 ft / 1 mile',
