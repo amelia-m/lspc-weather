@@ -51,10 +51,13 @@ the CORS header. It is the app's only server-side piece.
   - At this club's scale none of that matters: each open dashboard asks
     every 10 minutes, far under the limit with no cache at all.
 - **Within the free plan.** Workers Free allows 100,000 requests a day
-  (Cloudflare's Workers limits page, read 2026-10-20). Since 2026-10-27
-  the card asks the relay twice every 10 minutes per open page, the TAF
-  and the NBM block, 288 a day, so the plan covers about 347 pages open
-  all day (one path, 144 and about 690). Past the limit, Cloudflare answers with its Error 1027 and
+  (Cloudflare's Workers limits page, read 2026-10-20). From 2026-10-27
+  the card asked the relay twice every 10 minutes per open page, the TAF
+  and the NBM block, 288 a day, so the plan covered about 347 pages open
+  all day (one path, 144 and about 690); since 2026-11-12 it asks three
+  times, the NBS block too (`fetchNbs`, in the same refresh,
+  `src/hooks/useWeatherData.ts`), 432 a day, about 231 pages. Past the
+  limit, Cloudflare answers with its Error 1027 and
   the card falls back to Omaha's TAF, as on any failed fetch.
 
 ## What the app does with it
@@ -302,8 +305,8 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    opens the PR; the deploy carries the new policy.
 
 To turn it off: `TAF_RELAY_URL` back to null (the TAF card returns to
-Omaha's, and the Ceiling & sky card's base row goes, since the NBM comes
-only through the relay), then delete the Worker in the dashboard.
+Omaha's, and the Ceiling & sky card's NBM rows go, since both bulletins
+come only through the relay), then delete the Worker in the dashboard.
 
 ## Handing it over
 

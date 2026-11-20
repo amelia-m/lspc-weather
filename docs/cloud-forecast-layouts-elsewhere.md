@@ -1,6 +1,11 @@
 # How other sites lay out a multi-day cloud and ceiling forecast
 
-A survey for the Ceiling & sky card's three-day part (the NBM's
+> Read before the card was rebuilt later the same day: since 2026-11-18
+> it is one table per local day in usairnet's form, and the hourly strip
+> this survey was made beside is gone (docs/nbm-lowest-cloud-base.md,
+> "Since 2026-11-18 the card is one table per local day").
+
+A survey for the Ceiling & sky card's three-day part (then the NBM's
 three-hourly bulletin under the hourly strip; docs/nbm-lowest-cloud-base.md,
 "The three-hourly bulletin, three days out"). Six sites were loaded in
 Playwright's Chromium from the sandbox on 2026-11-18 between about 16:05Z

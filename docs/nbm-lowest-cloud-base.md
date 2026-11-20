@@ -1,7 +1,8 @@
 # The NBM's lowest cloud base on the Ceiling & sky card
 
 Since 2026-10-27 the Ceiling & sky card has a "base" row under the NWS
-ceiling: the lowest cloud base in the NWS National Blend of Models'
+ceiling (since 2026-11-18 the "NBM base" row of its day tables, below):
+the lowest cloud base in the NWS National Blend of Models'
 hourly bulletin for KPMV (the NBH), the row usairnet plots as "Lowest
 cloud base" (docs/usairnet-parity.md, "Where usairnet's rows come from").
 Asked for by the maintainer on 2026-10-27, after the units were read
@@ -19,12 +20,13 @@ whether or not a ceiling is present (could be FEW or SCT layer)", "a
 So it is not the ceiling: a few or scattered layer counts, and it can sit
 under a ceiling, or under the NWS forecast's "no ceiling", without
 contradiction. The card says so in its note, and prints the figure in
-the same thousands of feet as the ceiling, "no" for -88, a dash where the
-bulletin gives none.
+the same thousands of feet as the ceiling, "no" for -88, and where the
+bulletin gives none a blank cell (since 2026-11-18, the day tables'
+rule; a dash until then, which read as missing data).
 
 It raises no flag and takes no colour: no published limit applies to a
-lowest cloud base, and the row is the muted colour the card's second
-forecast (Open-Meteo's cloud cover) already uses.
+lowest cloud base, and nothing on the card colours a figure by its
+value (one colour per source, none per value).
 
 ## How it reaches the browser
 
@@ -57,8 +59,9 @@ header; no reader should fetch that for a 2 KB block. The TAF relay
   finished rather than abandoned. A HEAD that fails moves on to the hour
   before; a bucket that answers a range with the whole file is read once;
   the block ends at the line of spaces after it or at any station's
-  header, five-character ids included. The card names the bulletin by its
-  cycle, not an issue time: the file lands about an hour after the cycle.
+  header, five-character ids included. Data health names the bulletin by
+  its cycle, not an issue time (the card's note sends the reader there):
+  the file lands about an hour after the cycle.
   The live-site check notes the bucket failing behind the relay (the
   app names the relay's 502 as the bucket's) and counts any other failure
   of the row, as the TAF row is judged.

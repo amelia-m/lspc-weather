@@ -176,8 +176,12 @@ labelled as another forecast), is the maintainer's call
 Built the same day at her word: the relay's third path, `/nbm/KPMV/nbs`,
 the app's "NBM three-day" source, and four layouts on the card to try,
 a block per local day the default (docs/nbm-lowest-cloud-base.md, "The
-three-hourly bulletin, three days out"). Which layout stays is still
-hers (docs/open-questions.md).
+three-hourly bulletin, three days out"). The four were read against
+each other and against six other sites on 2026-11-18
+(docs/ceiling-sky-layout-review.md, docs/cloud-forecast-layouts-elsewhere.md),
+and that day, at her word, the card became one table per local day in
+this page's own form; the four layouts went (docs/nbm-lowest-cloud-base.md,
+"Since 2026-11-18 the card is one table per local day").
 
 Design rule reminder: every added metric flags a condition and cites a source,
 and none renders a go/no-go verdict. The stronger rule this app follows (CLAUDE.md): a
