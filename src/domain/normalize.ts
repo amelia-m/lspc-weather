@@ -493,8 +493,11 @@ export function parseFdTiming(productText: string, referenceMs: number): FdBulle
  *  `referenceMs`, testing the previous, same and next month and keeping the
  *  candidate closest to the reference. Day codes that do not exist in a
  *  candidate month are rejected rather than letting Date.UTC roll them over
- *  into the following month. */
-function ddhhmmToEpoch(code: string, referenceMs: number): number | null {
+ *  into the following month. A METAR's time group is the same code, read
+ *  the same way by `metarObservedMs` (usairnet.ts): a report is near its
+ *  reference on either side of a month's turn, where a TAF's groups
+ *  (`resolveTafTime`, taf.ts) run forward from the issuance only. */
+export function ddhhmmToEpoch(code: string, referenceMs: number): number | null {
   const dd = Number(code.slice(0, 2));
   const hh = Number(code.slice(2, 4));
   const mm = Number(code.slice(4, 6));

@@ -294,6 +294,13 @@ describe('resolveTafTime', () => {
     expect(resolveTafTime(24, 24, 0, utc(9, 24, 5))).toBe(utc(9, 25, 0));
   });
 
+  it('keeps a day a little below the issuance day in the issuance month, not a month ahead', () => {
+    // A TAF reaches 30 hours, so only a day more than fifteen below the
+    // issuance day can be the next month; the 29th against an issuance on
+    // the 30th is the day before, as the comment on resolveTafTime says.
+    expect(resolveTafTime(29, 23, 0, utc(9, 30, 0, 5))).toBe(utc(9, 29, 23));
+  });
+
   it('is null without a reference time', () => {
     expect(resolveTafTime(24, 6, 0, null)).toBeNull();
   });

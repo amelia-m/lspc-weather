@@ -112,6 +112,24 @@ describe('liveIssues', () => {
   });
 });
 
+describe('the files an issue body names', () => {
+  it('exist, so the issue does not send the maintainer to a file that is not there', async () => {
+    // Every check's `what` names where to look; until 2026-11-20 the sky
+    // check's named src/domain/metar.ts, which has never existed (the METAR
+    // parse is in normalize.ts). The app's tsconfig has no Node types, so
+    // fs is loaded as the other file-reading tests load it.
+    const { existsSync } = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { existsSync: (p: string) => boolean };
+    const report: VitestJsonReport = {
+      testResults: ['skyParity.live.ts', 'pilotLinks.live.ts', 'simText.live.ts', 'other.live.ts'].map((f) =>
+        file(f, [{ title: 't', failed: 'x' }]),
+      ),
+    };
+    const named = liveIssues(report, run).flatMap((i) => i.body.match(/\b(?:src|scripts)\/[\w./-]+\.ts\b/g) ?? []);
+    expect(named.length).toBeGreaterThan(5);
+    for (const path of named) expect(existsSync(path), path).toBe(true);
+  });
+});
+
 describe('the labels', () => {
   it('keep every description within GitHub’s limit, so the label step cannot fail the issue', () => {
     // 2026-11-03: a 113-character description made `gh label create

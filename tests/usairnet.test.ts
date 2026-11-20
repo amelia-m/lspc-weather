@@ -169,6 +169,20 @@ describe('metarObservedMs', () => {
     expect(metarObservedMs(null, near)).toBeNull();
     expect(metarObservedMs('no time group here', near)).toBeNull();
   });
+
+  it('dates a report from the last day of the month before to that month, read in the first minutes of the next', () => {
+    // usairnet lags the dashboard by minutes, so at 00:10Z on the 1st its
+    // page still prints the 2355Z report of the 30th. Read against the
+    // dashboard's month alone, day 30 landed on the 30th of the NEW month,
+    // a month ahead, and the comparison logged the dashboard as some
+    // 44,000 minutes behind (until 2026-11-20).
+    const near = Date.UTC(2026, 10, 1, 0, 10);
+    expect(metarObservedMs('KPMV 302355Z AUTO 02007KT 10SM CLR 12/08 A3029', near)).toBe(Date.UTC(2026, 9, 30, 23, 55));
+    // And the other way: the dashboard's report still the 31st's, the page
+    // already on the 1st, is not a month behind.
+    const late = Date.UTC(2026, 11, 31, 23, 58);
+    expect(metarObservedMs('KPMV 010015Z AUTO 02007KT 10SM CLR 12/08 A3029', late)).toBe(Date.UTC(2027, 0, 1, 0, 15));
+  });
 });
 
 

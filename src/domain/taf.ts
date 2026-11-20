@@ -22,9 +22,9 @@
  * one derived figure, the ceiling, is the lowest broken, overcast or
  * vertical-visibility layer in the stated sky, the same rule the METAR side
  * uses. Time groups are day-of-month and hour, sometimes minutes, with no
- * month; the month and year come from the issuance time, and a day below the
- * issuance day is read as next month (a TAF issued on the 30th that runs to
- * the 1st).
+ * month; the month and year come from the issuance time, and a day more than
+ * fifteen below the issuance day is read as next month (a TAF issued on the
+ * 30th that runs to the 1st; see `resolveTafTime`).
  *
  * Nothing here judges. A flight category per period is the FAA's own
  * classification of a ceiling and visibility and is computed by the card
@@ -135,8 +135,13 @@ const CEILING: readonly SkyCover[] = ['BKN', 'OVC', 'VV'];
 const KT_PER_MPS = 1.943844;
 
 /** Resolve a TAF day/hour[/minute] against the issuance time. TAF groups name
- *  the day of the month only; a day smaller than the issuance day means the
- *  next month. Hour 24 is midnight ending that day. */
+ *  the day of the month only. A day more than fifteen below the issuance day
+ *  is the next month (issued the 30th, a group on the 1st): a TAF reaches 30
+ *  hours, so no group of it can be that far before the issuance. A day
+ *  within fifteen stays in the issuance month, one a little below the
+ *  issuance day included (a period that began before the issuance hour),
+ *  which a plain "below means next month" rule would put a month ahead.
+ *  Hour 24 is midnight ending that day. */
 export function resolveTafTime(
   day: number,
   hour: number,

@@ -52,7 +52,7 @@
  * Pure: HTML in, fields out.
  */
 import type { SkyLayer } from './types';
-import { resolveTafTime } from './taf';
+import { ddhhmmToEpoch } from './normalize';
 
 /** The fields usairnet prints for a station, as the page states them. */
 export interface UsairnetObs {
@@ -214,15 +214,20 @@ function parseLegacyBlock(block: string): UsairnetObs | null {
 }
 
 /** When the METAR usairnet's page prints was taken, from its own time
- *  group ("KPMV 260935Z …"), dated to the month of `nearMs` (the
- *  dashboard's report; a day at a month's end rolls as `resolveTafTime`
- *  does). The page's clock is a wall time with no date, so two reports a
- *  day apart read alike by it; the time group settles which report the
- *  page decoded. null when the text has no time group, or on the legacy
- *  layout, which prints no METAR. */
+ *  group ("KPMV 260935Z …"), on whichever of the previous, same and next
+ *  month puts it nearest `nearMs` (the dashboard's report), as the FD
+ *  bulletin's day codes are dated (`ddhhmmToEpoch`). Not `resolveTafTime`,
+ *  which reads a day below the reference's as the same month: the page lags
+ *  the dashboard by minutes, so in the first minutes of a month it prints
+ *  the last day of the month before, and read that way (until 2026-11-20)
+ *  the report dated a month ahead and the comparison logged the dashboard
+ *  as some 44,000 minutes behind. The page's clock is a wall time with no
+ *  date, so two reports a day apart read alike by it; the time group
+ *  settles which report the page decoded. null when the text has no time
+ *  group, or on the legacy layout, which prints no METAR. */
 export function metarObservedMs(raw: string | null, nearMs: number): number | null {
-  const m = raw?.match(/^\w{4} (\d{2})(\d{2})(\d{2})Z/);
-  return m ? resolveTafTime(Number(m[1]), Number(m[2]), Number(m[3]), nearMs) : null;
+  const m = raw?.match(/^\w{4} (\d{6})Z/);
+  return m ? ddhhmmToEpoch(m[1], nearMs) : null;
 }
 
 /** "10", "2.5", "1/2" or "1 1/4" as miles; null for anything else. */

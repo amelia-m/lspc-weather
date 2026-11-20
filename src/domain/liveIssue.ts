@@ -58,7 +58,7 @@ const CHECKS: Record<string, { label: string; name: string; description: string;
     name: 'Sky decode parity',
     description: "METAR sky, flight category or TAF decode disagreed with aviationweather.gov's, or its fetch failed",
     what:
-      "The app's METAR sky parse, its derived flight category or its TAF group decode (src/domain/metar.ts, src/domain/taf.ts) disagrees with aviationweather.gov's decoder on today's report, or the fetch of it failed (scripts/skyParity.live.ts).",
+      "The app's METAR sky parse, its derived flight category or its TAF group decode (src/domain/normalize.ts, src/domain/taf.ts) disagrees with aviationweather.gov's decoder on today's report, or the fetch of it failed (scripts/skyParity.live.ts).",
   },
   'pilotLinks.live.ts': {
     label: 'pilot-links',
