@@ -103,7 +103,15 @@ jobs:
             } > body.md
             # `.[0].number` on an empty list prints the word null, which is a
             # non-empty string; `// empty` prints nothing, which is what -n tests.
-            existing=$(gh issue list "${labelArgs[@]}" --state open --json number --jq '.[0].number // empty')
+            # Without the label there is nothing to find the check's open
+            # issue by: `gh issue list --state open` with no label lists
+            # every open issue, and the step would append this failure to
+            # the newest of them, whatever it was (found in review,
+            # 2026-11-20, running the step with a stub gh). Open a new one.
+            existing=""
+            if [ ${#labelArgs[@]} -gt 0 ]; then
+              existing=$(gh issue list "${labelArgs[@]}" --state open --json number --jq '.[0].number // empty')
+            fi
             if [ -n "$existing" ]; then
               gh issue comment "$existing" --body-file body.md
             else
