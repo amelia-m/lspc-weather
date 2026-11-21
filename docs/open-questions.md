@@ -296,6 +296,29 @@ above; it goes in the query string (`apikey=`), which the session's
 credential store cannot inject (it sets headers), so it would be an
 environment variable the scripts read, never committed.
 
+## Card wording: less wordy notes and explanations (2026-11-21)
+
+At the maintainer's word, a review of every user-facing string
+(docs/card-wording-review-2026-11-21.md: a table of note height against
+data height per card at 390 px, then current and proposed wording for
+every note over about 40 words, with word counts and the tests that pin
+each string). On the Student Jumpers page the notes are 1,669 words,
+proposed 1,308; the Ceiling & sky key is 606 px of prose under 1,101 px
+of tables, Surface wind's notes 346 px over 209 px of data. Nothing in
+the app changed. Hers to pick from; the doc's recommended order is the
+forecast wind flag (which repeats the observed flag's guidance beneath
+it, 161 to 76 words), the Ceiling & sky key as a list keyed by the row
+labels, the Winds aloft "About these numbers", the non-VFR note's 91.155
+rows into a `<details>`, then Density altitude. Flagged for her as the
+app's own judgements: the outlook's "confidence drops fast past a few
+days", the drift card's "deploy above your minimum, not at it" and
+"rougher half of the estimate", Winds aloft's "treat them as guidance",
+and "IFR: reduced ceiling/visibility". Flagged as stale: the `#citations`
+intro's CFR reading date (2026-09-23; the log says 2026-11-03 and names
+91.155), a "used to" history sentence on the outlook's fallback note, and
+the disclaimer's "read on 2026-09-22 and 2026-09-23" (pinned by
+tests/disclaimer.test.ts; "first read" proposed).
+
 ## Code review and docs audit of the whole project (2026-11-20)
 
 Four agents at the maintainer's word, each in its own worktree with a
