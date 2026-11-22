@@ -536,8 +536,11 @@ keys passed to `--ignore-certificate-errors-spki-list` (above, "The deployed
 site in a browser"); local `npm run dev` over http works either way. Do not
 report a live-site UI check as done on the strength of a Node render.
 
-The browser binary is `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`
-(the `chromium` symlink beside it is not the executable): pass it as
+The browser binary is under `/opt/pw-browsers/` and its path moves with the
+container image: `chromium-1194/chrome-linux/chrome` to 2026-11-21,
+`chromium-1243/real/chrome-linux64/chrome` on 2026-11-22; find it with
+`find /opt/pw-browsers/chromium-* -maxdepth 3 -type f -name chrome` (the
+`chromium` symlink beside it is not the executable), pass it as
 `executablePath` and do **not** run `playwright install`. Playwright is
 installed globally: import `/opt/node22/lib/node_modules/playwright/index.mjs`.
 `npm run dev` serves the app with fixtures. Run throwaway scripts from the

@@ -11,7 +11,7 @@ import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
-import { describeWind, fmtClock, fmtTime, fmtZulu } from './format';
+import { describeWind, fmtClock, fmtZulu } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
  *  around 10,000 ft, so the default view stops there and keeps the low levels
@@ -138,12 +138,11 @@ export function WindsAloftPanel({
             <>
               <ForecastHourNav validMs={validMs} now={now} hourNav={hourNav} />
               <p className="muted small">
-                Now {fmtTime(now)}.{' '}
                 {shifted
-                  ? 'You stepped to this hour, so the table no longer follows the clock. '
+                  ? 'You stepped to this hour, so the table no longer follows the clock.'
                   : fallback
                     ? 'The FD bulletin is issued every 6 hours, so the nearest one is used.'
-                    : 'The model steps hourly, so the table follows the hour nearest the clock and moves on at half past.'}
+                    : 'Follows the hour nearest the clock; moves on at half past.'}
               </p>
             </>
           ) : (
@@ -168,21 +167,9 @@ export function WindsAloftPanel({
                 ))}
               </div>
               <p className="muted small">
-                {method === 'schulze' ? (
-                  <>
-                    Built the way Mark Schulze&rsquo;s tool builds its table, to check this one against
-                    it: his pressure levels only (the thirteen below 18,000&nbsp;ft), altitudes above
-                    Open-Meteo&rsquo;s ground rather than the field, and his Surface row, a line through
-                    the levels either side of the ground (a rule inferred from his output, not read from
-                    his code).
-                  </>
-                ) : (
-                  <>
-                    Every level this app samples: the model&rsquo;s 10, 80, 120 and 180&nbsp;m winds, and
-                    pressure levels every 25&nbsp;hPa up through this table&rsquo;s altitudes, seven of them
-                    between the ones Mark Schulze&rsquo;s tool samples. &ldquo;As Schulze&rdquo; shows the table built his way.
-                  </>
-                )}
+                {method === 'schulze'
+                  ? 'As Schulze: his pressure levels only, his ground, his Surface row, to check this table against his.'
+                  : 'All levels: every sample this app takes. As Schulze: his pressure levels only, and his Surface row.'}
               </p>
             </>
           )}
@@ -313,8 +300,8 @@ export function WindsAloftPanel({
            line: that they are a forecast, what the Surface row is, and the
            two things that make Mark Schulze's table look different (its
            AGL scale and its hour). The why of each, and how the levels are
-           worked out, is folded below so the card leads with the table and
-           the guidance. The fallback note above, and the missing-levels
+           worked out, is the #winds-method page, linked below, so the card
+           leads with the table and the guidance. The fallback note above, and the missing-levels
            note under the table, are about this report and stay out too. */
         <>
           <p className="muted small">
@@ -327,126 +314,29 @@ export function WindsAloftPanel({
                   : 'The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.'}
               </>
             )}{' '}
-            Against Mark Schulze&rsquo;s tool: same data
+            Mark Schulze&rsquo;s tool reads the same data;{' '}
             {schulzeView
-              ? ', built his way'
-              : `, but this table also takes samples his does not${schulzeAvailable ? ' (the switch above the table rebuilds it his way)' : ''}`}
-            , and after half past his table is the hour before this one.
+              ? 'this view is built his way'
+              : `this table takes samples his does not${schulzeAvailable ? ' (“As Schulze” rebuilds it his way)' : ''}`}
+            , and after half past his is the hour before this one.
           </p>
-          <details className="aloft-about">
-            <summary className="small">
-              About these numbers: comparing with Mark Schulze&rsquo;s tool,
-              {source === 'open-meteo' ? ' the Surface row,' : ''} how levels are worked out
-            </summary>
-            <p className="muted small">
-              Same Open-Meteo data source as{' '}
-              <a href={DATA_SOURCES.markschulze.url} target="_blank" rel="noopener noreferrer">
-                Mark Schulze’s Winds Aloft
-              </a>
-              , the popular skydiving winds tool — so if its numbers differ from these, check its
-              stated valid time (it labels forecasts in Z, e.g. “1600Z”) against the one above
-              before assuming the data disagrees: this card follows the hour nearest the clock, that
-              tool the hour in progress, so after half past the two are an hour apart until one of
-              them is stepped with its hour buttons. Even on the same hour the two have shown
-              different forecast runs for a while, up to about half an hour, most often between
-              half past and ten to the hour, while a new forecast run reaches Open-Meteo’s servers
-              one copy at a time and either table can get the old run or the new; if they disagree
-              then, look again later. Its
-              altitudes are{' '}
-              <strong>
-                <SimTerm term="agl">AGL</SimTerm>, like these
-              </strong>
-              , so the two tables are directly comparable; the “MSL”
-              on its page is the ground elevation it looked up, not the scale of its wind table.
-            </p>
-            {/* Their Surface rows measure different things, and the gap is the
-                one readers notice first: worked out from 72 hours of that tool's
-                output at four sites on 2026-10-03, see
-                docs/markschulze-altitude-reference.md. No figure is quoted for
-                how far apart they run; it changes with the hour and the weather.
-                Gated on Open-Meteo, not on "not the fallback": with no source
-                loaded this branch still renders, beside "No winds-aloft data",
-                and the note would describe a Surface row and an hour that are
-                not there. */}
-            {source === 'open-meteo' && (
-              <p className="muted small">
-                The two tables&rsquo; <strong>Surface</strong> rows are different winds.{' '}
-                {schulzeView ? (
-                  <>
-                    In the <em>All levels</em> view it is
-                  </>
-                ) : (
-                  'Here it is'
-                )}{' '}
-                the model&rsquo;s forecast wind at 10&nbsp;m (33&nbsp;ft), the height an airport wind sensor
-                measures; the measured wind is on the Surface wind card. Mark Schulze&rsquo;s{' '}
-                <strong>Surface</strong> row is not a 10&nbsp;m wind. His tool draws a straight line
-                between two of the model&rsquo;s pressure levels (here one the model places below the
-                ground and the next one up) and reads it at ground level. That comes out nearer the wind
-                a couple of hundred feet up, so his row often shows more wind than the 10&nbsp;m one, most
-                of all at night, when the air near the ground goes calm while the air above keeps moving.
-                {schulzeView ? (
-                  <>
-                    {' '}
-                    This view, <em>As Schulze</em>, builds it his way.
-                  </>
-                ) : schulzeAvailable ? (
-                  <>
-                    {' '}
-                    The <em>As Schulze</em> view builds it his way.
-                  </>
-                ) : null}
-              </p>
-            )}
-            {/* His altitudes count from Open-Meteo's terrain at the map pin:
-                this dashboard's point when his page is opened from the link,
-                his own list's pin (in the field south-west of the runway,
-                below it; docs/markschulze-altitude-reference.md) when opened
-                from there. The default table counts from the published field
-                elevation. The two figures and their difference are read, not
-                typed: the field from SITE, his ground off the his-way table
-                this hour carries (useWindsHour). */}
+          {/* The why of each line above, and how the levels are worked out,
+              is a page of its own (#winds-method, since 2026-11-22: the card
+              folded 464 words here). The one figure that changes with the
+              hour stays on the card: which ground his table counts from,
+              read off the his-way table (useWindsHour), not typed. */}
+          <p className="muted small">
             {source === 'open-meteo' && schulzeGroundFtMsl != null && schulzeGroundFtMsl !== SITE.dz.elevationFt && (
-              <p className="muted small">
-                The two tables also count their altitudes from different ground.{' '}
-                {schulzeView ? (
-                  <>
-                    The <em>All levels</em> table
-                  </>
-                ) : (
-                  'This table'
-                )}{' '}
-                counts from the field&rsquo;s published
-                elevation, {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft. Mark Schulze&rsquo;s counts from
-                the ground Open-Meteo&rsquo;s terrain gives at the map pin: {schulzeGroundFtMsl.toLocaleString()}
-                &nbsp;ft at this dashboard&rsquo;s point, which the link above opens
-                {schulzeView ? ', and which this view counts from' : ''}. So a row of his is about{' '}
+              <>
+                His altitudes count from Open-Meteo&rsquo;s ground at the pin, {schulzeGroundFtMsl.toLocaleString()}&nbsp;ft,
+                against the field&rsquo;s {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft, so his rows sit about{' '}
                 {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft{' '}
-                {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'} than the row of the same name in{' '}
-                {schulzeView ? (
-                  <>
-                    the <em>All levels</em> table
-                  </>
-                ) : (
-                  'this one'
-                )}
-                . His own list&rsquo;s pin for the club
-                is elsewhere, in the field south-west of the runway, so his page opened from that list counts
-                from that pin&rsquo;s ground instead.
-              </p>
+                {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'}
+                {schulzeView ? ' than the All levels table’s' : ''}.{' '}
+              </>
             )}
-            <p className="muted small">
-              Each level is <strong>linearly interpolated</strong> from the model’s winds:{' '}
-              {schulzeView
-                ? 'in this view at his pressure surfaces only.'
-                : 'at 10, 80, 120 and 180\u00a0m above its ground and at pressure surfaces every 25\u00a0hPa through this table’s altitudes.'}{' '}
-              A pressure
-              surface comes with its geopotential height, which we convert to ft MSL and
-              interpolate to these AGL altitudes. Direction is interpolated along the shortest
-              compass arc. These are a model <strong>forecast</strong> for the DZ, not a measured
-              sounding, so treat them as guidance.
-            </p>
-          </details>
+            <a href="#winds-method">How this table is built, and how it compares with Mark Schulze&rsquo;s tool</a>.
+          </p>
         </>
       ) : null}
     </Panel>

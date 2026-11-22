@@ -1,5 +1,5 @@
 import type { CurrentConditions, HourlyPoint, NbmForecast, OpenMeteoCloudHour } from '../domain/types';
-import { observedFlightCategory, CATEGORY_LABEL } from '../domain/flightCategory';
+import { observedFlightCategory } from '../domain/flightCategory';
 import { ceilingState, type CeilingState } from '../domain/normalize';
 import { DATA_SOURCES } from '../config/sources';
 import { CITATIONS, FAR_91155_ROWS, visibilityFigure, type Thresholds } from '../config/thresholds';
@@ -127,19 +127,31 @@ export function CeilingSkyPanel({
         // 10,000 ft MSL, where the figures are the higher ones, and a
         // hop-and-pop is not; then how the flag holds the reading to them,
         // as the flag says it (`visibilityFigure`).
-        <p className="muted small">
-          {CATEGORY_LABEL[category]}: reduced ceiling/visibility. 14 CFR 105.17 bars parachute ops
-          into or through cloud and sets flight visibility and distance from cloud: below 10,000 ft
-          MSL, 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft
-          MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile horizontal.{' '}
-          {thresholds && `The visibility flag ${visibilityFigure(thresholds)} `}
-          Source:{' '}
-          <SourceLink citation={CITATIONS.far10517} />. The pilot&rsquo;s basic VFR weather minimums
-          are 14 CFR 91.155, by airspace class and altitude, for aircraft other than helicopters:{' '}
-          {FAR_91155_ROWS} 105.17&rsquo;s table has no airspace column, so the Class G figures do not
-          loosen the parachute operation. Which airspace is over the DZ is on the sectional chart
-          (Pilots tab). Source: <SourceLink citation={CITATIONS.far91155} />
-        </p>
+        // The category's own label is the pill above; "reduced
+        // ceiling/visibility" was the app's gloss on the AIM's label and went
+        // on 2026-11-22 with the fold of 91.155's rows, which a reader needs
+        // once (docs/card-wording-review-2026-11-21.md, C4): the rows stay in
+        // the HTML, closed, so the card's tests and the citation's ref read
+        // them as before.
+        <>
+          <p className="muted small">
+            14 CFR 105.17 bars parachute ops into or through cloud and sets flight visibility and
+            distance from cloud: below 10,000 ft MSL, 3 SM and 500 ft below / 1,000 ft above / 2,000 ft
+            horizontal; at or above 10,000 ft MSL, 5 SM and 1,000 ft below / 1,000 ft above / 1 mile
+            horizontal.{' '}
+            {thresholds && `The visibility flag ${visibilityFigure(thresholds)} `}
+            Source:{' '}
+            <SourceLink citation={CITATIONS.far10517} />. The pilot&rsquo;s basic VFR weather minimums
+            are 14 CFR 91.155, by airspace class and altitude (every row below); 105.17&rsquo;s table has
+            no airspace column, so the Class G figures do not loosen the parachute operation. Which
+            airspace is over the DZ is on the sectional chart (Pilots tab). Source:{' '}
+            <SourceLink citation={CITATIONS.far91155} />
+          </p>
+          <details className="far-rows">
+            <summary className="small">14 CFR 91.155&rsquo;s rows, for aircraft other than helicopters</summary>
+            <p className="muted small">{FAR_91155_ROWS}</p>
+          </details>
+        </>
       )}
       {blocks.length === 0 ? (
         <p className="muted">No hourly forecast available.</p>

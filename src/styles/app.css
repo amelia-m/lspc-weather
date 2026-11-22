@@ -1748,7 +1748,7 @@ a.sim-term {
   margin-top: 8px;
   font-size: 0.85rem;
 }
-.aloft-about summary,
+.far-rows summary,
 .sky-compare summary {
   cursor: pointer;
   color: var(--accent);

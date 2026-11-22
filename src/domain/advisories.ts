@@ -420,13 +420,21 @@ export function forecastWindAdvisories(
         level: 'forecast',
         metric: 'Forecast wind',
         value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
+        // The limit's own sentence from the profile (the figures and their
+        // source), then a pointer to the Surface wind card, which carries the
+        // rest: the waiver mechanics, which of the BSR's two figures the band
+        // uses and the round-reserve fact. Until 2026-11-22 the flag repeated
+        // all of it directly under the observed flag that already said it
+        // (docs/card-wording-review-2026-11-21.md, F2). The pointer names
+        // the band's figure, so the flag still stands alone on a calm morning
+        // when no observed flag is listed. The secondary citation (the
+        // waiver rule) went with the waiver sentence.
         guidance:
-          (`The NWS hourly forecast for the drop zone, gusts included, is at or above ${fmtLimitSpeed(t.windCautionKt, unit)}, ` +
-          `${which}, in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Surface wind')} ${t.windGuidance} ` +
-          // Which of the source's figures the flag uses, as the flag on the
-          // report says: on Student, the BSR's 14 mph and not its 10 mph.
-          windBandSentence(t, unit)).trim(),
-        citations: cited(t.windCitation, t.windSecondaryCitation),
+          `The NWS hourly forecast for the drop zone, gusts included, is at or above ${fmtLimitSpeed(t.windCautionKt, unit)}, ` +
+          `${which}, in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Surface wind')} ${firstSentence(t.windGuidance)} ` +
+          `The same ${fmtLimitSpeed(t.windCautionKt, unit)} band as the Surface wind card` +
+          (lowerLimitUnchecked(t) && t.windBandCaveat ? ', which says what it leaves unchecked.' : '.'),
+        citations: cited(t.windCitation),
       });
     }
   }
@@ -510,6 +518,13 @@ export function withNotHere(sentence: string, t: Thresholds): string {
 
 /** The flag's sentence: which figure it uses and, below it, what it leaves
  *  unchecked. */
+/** A guidance text's first sentence: up to the first full stop followed by
+ *  a space (the profiles' guidance has no abbreviation before one). */
+export function firstSentence(text: string): string {
+  const m = /^.*?\.(?=\s|$)/.exec(text);
+  return m ? m[0] : text;
+}
+
 export function windBandSentence(t: Thresholds, unit: SpeedUnit): string {
   const use = windBandUse(t, unit);
   if (!use) return '';

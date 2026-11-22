@@ -316,15 +316,17 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
 
   it('says what each Surface row is on the Open-Meteo path', () => {
     const html = markup('open-meteo', Array.from({ length: 14 }, (_, i) => level(i * 1000)));
-    expect(html).toContain('model\u2019s forecast wind at 10\u00a0m');
-    expect(html).toContain('Mark Schulze\u2019s <strong>Surface</strong> row is not a 10\u00a0m');
+    expect(html).toContain('The Surface row is the model\u2019s 10\u00a0m wind');
+    // The why of the two Surface rows is the method page since 2026-11-22.
+    expect(html).toContain('href="#winds-method"');
     // Words, not a verdict or a figure in a colour.
     expect(html).not.toMatch(/class="[^"]*(caution|watch|warn)/);
   });
 
   it('is absent on the FD fallback, which has no Surface row', () => {
     const html = markup('nws-fd', [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level));
-    expect(html).not.toContain('Mark Schulze\u2019s <strong>Surface</strong> row');
+    expect(html).not.toContain('The Surface row is');
+    expect(html).not.toContain('#winds-method');
   });
 
   it('is absent when no winds source has loaded, beside "No winds-aloft data"', () => {
