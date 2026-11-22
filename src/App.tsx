@@ -59,6 +59,7 @@ import { MasonryGrid } from './components/common/MasonryGrid';
 import { CitationsPage } from './components/CitationsPage';
 import { ParityPage } from './components/ParityPage';
 import { WindErrorsPage } from './components/WindErrorsPage';
+import { WindsMethodPage } from './components/WindsMethodPage';
 import type { ParitySummary } from './domain/paritySummary';
 import type { WindErrorsData } from './domain/windErrors';
 import { useSiteJson } from './hooks/useSiteJson';
@@ -94,9 +95,9 @@ function toWindProfileId(raw: string | null): WindProfileId {
 
 /** Which page or dashboard tab is showing. A hash rather than a router: the
  *  app is a single page served from a GitHub Pages subpath, and `#citations`,
- *  `#parity`, `#wind-errors` or `#pilots` needs no server rewrite, no dependency, and
+ *  `#parity`, `#wind-errors`, `#winds-method` or `#pilots` needs no server rewrite, no dependency, and
  *  survives a reload and a shared link. No hash is the Jumpers tab. */
-function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'pilots' | null {
+function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | 'pilots' | null {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHashChange = (): void => setHash(window.location.hash);
@@ -106,6 +107,7 @@ function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'pilots' | null {
   if (hash === '#citations') return 'citations';
   if (hash === '#parity') return 'parity';
   if (hash === '#wind-errors') return 'wind-errors';
+  if (hash === '#winds-method') return 'winds-method';
   if (hash === VIEW_HASH.pilots) return 'pilots';
   return null;
 }
@@ -270,6 +272,7 @@ export default function App(): JSX.Element {
   if (route === 'citations') return <CitationsPage />;
   if (route === 'parity') return <ParityRoute />;
   if (route === 'wind-errors') return <WindErrorsRoute />;
+  if (route === 'winds-method') return <WindsMethodPage />;
 
   const cards: Record<CardId, JSX.Element> = {
     metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} {...temp} />,

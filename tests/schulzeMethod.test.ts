@@ -120,12 +120,12 @@ describe('the Winds aloft card’s two views', () => {
   it('offers the switch on Open-Meteo, says how each table is built, and never calls his Surface row a 10 m wind', () => {
     const all = card('all');
     expect(all).toContain('aria-pressed="true">All levels</button>');
-    expect(all).toContain('seven of them between the ones Mark Schulze’s tool samples');
-    expect(all).toContain('but this table also takes samples his does not');
+    expect(all).toContain('All levels: every sample this app takes. As Schulze: his pressure levels only, and his Surface row.');
+    expect(all).toContain('this table takes samples his does not');
     expect(all).toContain('The Surface row is the model’s 10 m wind');
     const his = card('schulze');
     expect(his).toContain('aria-pressed="true">As Schulze</button>');
-    expect(his).toContain('a rule inferred from his output, not read from his code');
+    expect(his).toContain('As Schulze: his pressure levels only, his ground, his Surface row, to check this table against his.');
     expect(his).toContain('In this view the Surface row is built his way');
     expect(his).not.toContain('The Surface row is the model’s 10 m wind');
     // No switch where the hour has no Schulze table (the FD fallback).
@@ -155,8 +155,7 @@ describe('the Winds aloft card’s two views', () => {
 
   it('in the As Schulze view, sets his ground against the All levels table, not against itself', () => {
     const html = groundCard('schulze', 1165);
-    expect(html).toContain('than the row of the same name in the <em>All levels</em> table');
-    expect(html).toContain('which this view counts from');
+    expect(html).toContain('lower than the All levels table’s.');
   });
 
   it('says nothing about ground when his is the field’s', () => {
@@ -178,9 +177,10 @@ describe('the Winds aloft card’s two views', () => {
         schulzeGroundFtMsl: 1145,
       } as never),
     );
-    expect(html).toContain('published elevation, 1,182');
-    expect(html).toContain('1,145');
-    expect(html).toMatch(/about 37(<!-- -->)?\u00a0ft(<!-- -->)? (<!-- -->)?lower than the row of the same name in (<!-- -->)?this one\./);
+    expect(html).toContain('against the field’s 1,182\u00a0ft');
+    expect(html).toContain('ground at the pin, 1,145\u00a0ft');
+    expect(html).toContain('about 37\u00a0ft lower');
+    expect(html).toMatch(/about 37(<!-- -->)?\u00a0ft(<!-- -->)? (<!-- -->)?lower(<!-- -->)?\./);
     // Not where the ground is unknown.
     expect(card('all', false)).not.toContain('different ground');
   });
@@ -192,10 +192,9 @@ describe('the Winds aloft card’s two views', () => {
     const html = card('schulze', false);
     expect(html).not.toContain('As Schulze</button>');
     expect(html).toContain('The Surface row is the model’s 10\u00a0m wind');
-    expect(html).toContain('but this table also takes samples his does not');
-    expect(html).not.toContain('the switch above the table');
+    expect(html).toContain('this table takes samples his does not');
+    expect(html).not.toContain('As Schulze” rebuilds');
     expect(html).not.toContain('built his way');
     expect(html).not.toContain('As Schulze view');
-    expect(html).toContain('Here it is the model’s forecast wind at 10\u00a0m');
   });
 });

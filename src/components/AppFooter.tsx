@@ -30,6 +30,9 @@ export function AppFooter(): JSX.Element {
       <a href="#wind-errors">How far the wind forecasts were from KPMV</a> — forecast minus reported
       surface wind, NWS and Open-Meteo, as histograms.
       <br />
+      <a href="#winds-method">How the winds aloft table is built</a>: its levels, its Surface row, and
+      how it compares with Mark Schulze&rsquo;s tool.
+      <br />
       {/* A static page beside the app (public/ceiling-errors/), not a route:
           it reads its own data file and draws its own charts. */}
       <a href={CEILING_ERRORS_URL}>Ceiling forecast errors</a> — the NWS forecast ceiling, and the

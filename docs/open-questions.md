@@ -319,6 +319,8 @@ intro's CFR reading date (2026-09-23; the log says 2026-11-03 and names
 the disclaimer's "read on 2026-09-22 and 2026-09-23" (pinned by
 tests/disclaimer.test.ts; "first read" proposed).
 
+**Built 2026-11-22 at her word:** the Winds aloft card's four folded paragraphs are a page of their own, `#winds-method` ("How the winds aloft table is built", `src/components/WindsMethodPage.tsx`, linked from the card and the footer, on the live-site check's page list), and the card keeps one line per fact (W1 to W4; the ground figure for the hour stays on the card, since it changes); the Forecast wind flag carries the limit's own sentence and a pointer to the Surface wind card instead of repeating the observed flag (F2, 161 to about 70 words, the waiver citation gone with the waiver sentence); the Ceiling & sky non-VFR note folds 91.155's rows under a summary and drops "reduced ceiling/visibility" (C4). Fixture build: every page at every width passed `scripts/liveSite.ts` from the sandbox. Waiting on her: P3 (Density altitude's second note under "How the figures are worked") and the rest of the doc's proposals.
+
 ## Code review and docs audit of the whole project (2026-11-20)
 
 Four agents at the maintainer's word, each in its own worktree with a

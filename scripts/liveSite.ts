@@ -1,6 +1,6 @@
 /**
  * Load the deployed site in a browser and say whether a reader would meet a
- * fault: every page (Jumpers, Pilots, #citations, #parity, #wind-errors, the
+ * fault: every page (Jumpers, Pilots, #citations, #parity, #wind-errors, #winds-method, the
  * ceiling-error page and, since 2026-11-11, the talk) at 1280, 390 and 320 px,
  * live data. What counts as a fault is src/domain/liveSite.ts; this file
  * drives the browser and prints.
@@ -53,6 +53,7 @@ const PAGES: { name: string; path: string }[] = [
   { name: 'Citations', path: '#citations' },
   { name: 'Parity', path: '#parity' },
   { name: 'Wind errors', path: '#wind-errors' },
+  { name: 'Winds method', path: '#winds-method' },
   { name: 'Ceiling errors', path: 'ceiling-errors/index.html' },
   // The talk, a reveal.js deck in one file (public/talk/, scripts/renderTalk.sh).
   { name: 'Talk', path: 'talk/index.html' },

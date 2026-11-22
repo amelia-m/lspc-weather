@@ -111,10 +111,23 @@ describe('forecast wind flags', () => {
     expect(advisoriesFor('jumpers', out).some((a) => a.id === 'forecast-gust')).toBe(true);
   });
 
-  it('says which of the BSR’s two figures the Student flag uses, as the flag on the report does', () => {
+  it('carries the limit’s own sentence and points to the Surface wind card for the rest, instead of repeating the observed flag', () => {
     const flag = forecastWindAdvisories(hourly, resolveThresholds('student'), now, 'kt').find((a) => a.id === 'forecast-wind');
-    expect(flag?.guidance).toContain('The band and flag here use 12 kt');
-    expect(flag?.guidance).toContain('nothing on this page flags the lower limit');
+    // The figures and their source, in the profile's words.
+    expect(flag?.guidance).toContain('14 mph (~12 kt) on ram-air canopies, 10 mph on round reserves.');
+    // The pointer names the band, so the flag stands alone on a calm morning.
+    expect(flag?.guidance).toContain('The same 12 kt band as the Surface wind card, which says what it leaves unchecked.');
+    // What the observed flag and the card already say is not said again here.
+    expect(flag?.guidance).not.toContain('An S&TA or Examiner may waive it');
+    expect(flag?.guidance).not.toContain('nothing on this page flags the lower limit');
+    expect(flag?.guidance).not.toContain('No student rig at LSPC');
+    // The waiver rule's citation went with the waiver sentence.
+    expect(flag?.citations.map((c) => c.url)).toEqual([resolveThresholds('student').windCitation.url]);
+    // A profile with no lower limit to leave unchecked gets the plain pointer.
+    const own = forecastWindAdvisories(hourly, withOverrides(resolveThresholds('licensed'), { windCautionKt: 10 }), now, 'kt').find((a) => a.id === 'forecast-wind');
+    expect(own?.guidance).toContain('The same 10 kt band as the Surface wind card.');
+    expect(own?.guidance).toContain('No USPA ground-wind limit for licensed jumpers');
+    expect(own?.guidance).not.toContain('ask the pilot');
   });
 
   it('words the gust ceiling as the Gust limit flag does: own, edited, and the waiver’s measure', () => {

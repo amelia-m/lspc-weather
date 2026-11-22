@@ -358,6 +358,8 @@ Open-Meteo's three 10 m forms and the NWS hour against the same reports.
 Its data file is rebuilt by the weekly ceiling data refresh. Counts only,
 like the page below.
 
+A page, **How the winds aloft table is built** (`#winds-method`), explains the Winds aloft card's levels, its Surface row and how the table compares with Mark Schulze's tool; the card links it in place of a folded note (since 2026-11-22).
+
 A second page, **How different from other sources** (`#parity`), shows what
 the scheduled comparison logs add up to: the winds-aloft table against Mark
 Schulze's Winds Aloft at the same valid hour, row by row, and the dashboard's

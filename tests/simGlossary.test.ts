@@ -215,7 +215,7 @@ const CARDS: [string, () => string, GlossaryKey[]][] = [
         }),
       ),
     // Not the quoted “MSL”: that is the label on Schulze's page.
-    ['jumpRun', 'agl'],
+    ['jumpRun'],
   ],
   ['Exit weight & wing loading', () => r(createElement(WingLoadingPanel)), ['exitWeight']],
   [
