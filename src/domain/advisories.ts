@@ -516,8 +516,6 @@ export function withNotHere(sentence: string, t: Thresholds): string {
   return fact ? `${sentence} ${fact}` : sentence;
 }
 
-/** The flag's sentence: which figure it uses and, below it, what it leaves
- *  unchecked. */
 /** A guidance text's first sentence: up to the first full stop followed by
  *  a space (the profiles' guidance has no abbreviation before one). */
 export function firstSentence(text: string): string {
@@ -525,6 +523,8 @@ export function firstSentence(text: string): string {
   return m ? m[0] : text;
 }
 
+/** The flag's sentence: which figure it uses and, below it, what it leaves
+ *  unchecked. */
 export function windBandSentence(t: Thresholds, unit: SpeedUnit): string {
   const use = windBandUse(t, unit);
   if (!use) return '';
