@@ -144,7 +144,7 @@ The club: [Lincoln Sport Parachute Club](https://skydivelspc.com/), Brown's Airp
 - [NWS forecast for the drop zone](https://forecast.weather.gov/MapClick.php?lat=40.8703&lon=-96.1085) (forecast.weather.gov)
 - [KPMV observations, NWS](https://forecast.weather.gov/data/obhistory/KPMV.html) and [at the Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/sites/site.php?station=PMV&network=NE_ASOS)
 - [Open-Meteo](https://open-meteo.com/), winds aloft, cloud cover and the 10-day outlook (CC BY 4.0)
-- [TAFs at aviationweather.gov](https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK) and [NOAA's winds aloft (FD)](https://aviationweather.gov/data/windtemp/)
+- [TAFs at aviationweather.gov](https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK)
 - [NWS radar, KOAX](https://radar.weather.gov/station/KOAX/standard)
 :::
 ::: {.column width="50%"}
@@ -237,7 +237,7 @@ Open with the screenshot: this is what jumpers see on a Saturday morning. Point 
 
 **Three TAFs in a chain.** KPMV issues none. The nearest is Offutt's, written by the Air Force and carried on no feed a browser can read, so a relay fetches it; when it is missing, cancelled or ended, the card falls back to Omaha's, then Lincoln's, and says which it shows. [C34]{.ref}
 
-**Winds aloft from two sources too**: Open-Meteo's model levels, with NOAA's FD winds as the fallback when the request fails. [C34]{.ref}
+**Winds aloft from one source now**: Open-Meteo's model levels. NOAA's FD winds were the fallback until NOAA retired that bulletin with the NAM model on 3 November 2026; the dashboard dropped the fallback on the 23rd, when it was found it could only fail. [C34]{.ref}
 :::
 ::::
 

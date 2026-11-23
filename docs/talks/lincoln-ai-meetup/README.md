@@ -34,3 +34,7 @@ The site's copy is `public/talk/index.html`, linked from the dashboard's
 footer as "How this was built" (the maintainer, 2026-11-11) and loaded by
 the live-site check with the other pages. Re-run `scripts/renderTalk.sh`
 after any change to the source, and `--draft` for the copy here.
+
+## Kept up to date
+
+The deck is kept in step with the dashboard at the maintainer's word (2026-11-23), not frozen as given. The deck as given at the meetup is in the history at commit 60e8b95, the last change to the source before this one. Changed since: 2026-11-23, the sources slide and the "more than one station" slide, after the winds-aloft fallback was dropped (claims C29 and C34). `review.md` is the reviewer's check of the deck as given and is not revised.
