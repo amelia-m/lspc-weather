@@ -86,15 +86,16 @@ describe('estimateDrift', () => {
  * too short is the direction that hurts. But the assumption is invisible in the
  * result, so the estimate reports how far it reached.
  *
- * The arrangement that produces it is the NOAA FD fallback: its lowest level is
- * 3,000 ft MSL, so at this field elevation the winds-aloft table's lowest row is
- * 2,000 ft AGL and everything under that is assumed.
+ * The arrangement that produces it is a profile that starts above the ground
+ * (the NOAA FD bulletin's did, while the app read it, to 2026-11-23): the
+ * winds-aloft table's lowest row is then 2,000 ft AGL, say, and everything
+ * under that is assumed.
  */
 describe('estimateDrift reports how far below the levels it had to assume', () => {
   const opts = { exitFtAgl: 13000, deployFtAgl: 3000, fallRateMph: 120, canopyRateFpm: 1000 };
 
-  /** Levels as the FD path yields them at NE69: nothing below 2,000 ft AGL. */
-  const fdLevels = (): WindsAloftLevel[] =>
+  /** A profile with nothing below 2,000 ft AGL. */
+  const highLevels = (): WindsAloftLevel[] =>
     uniformLevels().filter((l) => l.altitudeFtAgl >= 2000);
 
   it('is zero when the levels reach the ground', () => {
@@ -102,7 +103,7 @@ describe('estimateDrift reports how far below the levels it had to assume', () =
   });
 
   it('is the lowest level when the source stops above the ground', () => {
-    expect(estimateDrift(fdLevels(), opts).lowestLevelFtAgl).toBe(2000);
+    expect(estimateDrift(highLevels(), opts).lowestLevelFtAgl).toBe(2000);
   });
 
   /* It reports the altitude the wind is taken FROM, not the depth of descent
@@ -110,7 +111,7 @@ describe('estimateDrift reports how far below the levels it had to assume', () =
    * reporting the depth made the card name a wind "at 1,500 ft" that had
    * actually come from the 2,000 ft level — an altitude no level sits at. */
   it('names the level the wind comes from, not the depth below deployment', () => {
-    const d = estimateDrift(fdLevels(), { ...opts, deployFtAgl: 1500 });
+    const d = estimateDrift(highLevels(), { ...opts, deployFtAgl: 1500 });
     expect(d.lowestLevelFtAgl).toBe(2000);
   });
 
@@ -123,33 +124,36 @@ describe('estimateDrift reports how far below the levels it had to assume', () =
    * same constant wind before and after. A uniform wind makes them identical. */
   it('leaves the drift figure unchanged under a uniform wind', () => {
     const withGround = estimateDrift(uniformLevels(), opts);
-    const withoutGround = estimateDrift(fdLevels(), opts);
+    const withoutGround = estimateDrift(highLevels(), opts);
     expect(withoutGround.canopy.distanceFt).toBeCloseTo(withGround.canopy.distanceFt, 5);
     expect(withoutGround.total.distanceFt).toBeCloseTo(withGround.total.distanceFt, 5);
   });
 });
 
 /* The card names its data source in the footer, and named Open-Meteo whatever
- * it was handed — so on the NOAA FD fallback it credited a source the numbers
- * had not come from, on the one path where the distinction matters most. */
+ * it was handed. It has one source since the NOAA FD fallback went
+ * (2026-11-23), so the line credits Open-Meteo when it answered and nobody
+ * when nothing has. */
 describe('the drift card credits the source the numbers came from', () => {
   const levels = uniformLevels();
-  const markup = (source?: 'open-meteo' | 'nws-fd'): string =>
-    renderToStaticMarkup(
-      createElement(DriftPanel, { levels, source } as never),
-    );
+  const dataLine = (source?: 'open-meteo'): string => {
+    const html = renderToStaticMarkup(createElement(DriftPanel, { levels, source } as never));
+    return html.slice(html.indexOf('panel-sources'));
+  };
 
-  it('names Open-Meteo on the primary path', () => {
-    expect(markup('open-meteo')).toContain('Open-Meteo');
+  it('names Open-Meteo when it answered', () => {
+    expect(dataLine('open-meteo')).toContain('Data: <');
+    expect(dataLine('open-meteo')).toContain('>Open-Meteo<');
   });
 
-  it('credits the NOAA FD product on the fallback path, naming Open-Meteo only as the usual source', () => {
-    const html = markup('nws-fd');
-    const [credited, usually] = html.slice(html.indexOf('panel-sources')).split(' · usually ');
-    expect(credited).toContain('NOAA winds aloft (FD)');
-    expect(credited).toContain('fallback in use');
+  it('credits nobody when no source has loaded, and offers no fallback', () => {
+    const line = dataLine(undefined);
+    const [credited, usually] = line.split(' · usually ');
+    expect(credited).toContain('Data: none loaded');
     expect(credited).not.toContain('>Open-Meteo<');
     expect(usually).toContain('>Open-Meteo<');
+    expect(line).not.toContain('fallback');
+    expect(line).not.toContain('NOAA winds aloft');
   });
 });
 

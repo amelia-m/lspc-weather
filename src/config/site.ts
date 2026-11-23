@@ -58,9 +58,6 @@ export interface SiteConfig {
     lat: number;
     lon: number;
   };
-  /** Nearest station in the NOAA winds-aloft (FD) bulletin — the fallback
-   *  winds source when Open-Meteo is unreachable. */
-  fdWindsStation: string;
   timeZone: string;
 }
 
@@ -103,7 +100,6 @@ export const SITE: SiteConfig = {
     lat: 41.3203,
     lon: -96.3667,
   },
-  fdWindsStation: 'OMA',
   timeZone: 'America/Chicago',
 };
 

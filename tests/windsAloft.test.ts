@@ -136,14 +136,14 @@ describe('interpolateWindsAloft', () => {
 
 /**
  * The collapsed winds table keeps a fixed set of key altitudes, chosen for the
- * primary path where the lowest row is the surface. The NOAA FD fallback's
- * profile starts at 2,000 ft AGL — not in that set — so the collapsed view
- * opened at 3,000 ft and hid the lowest wind the bulletin actually offers,
- * while the note beneath it said levels below the bulletin's floor are not
- * listed. A reader would read 3,000 ft as the floor.
+ * usual profile whose lowest row is the surface. A profile that starts at
+ * 2,000 ft AGL (the NOAA FD bulletin's did, while the app read it, to
+ * 2026-11-23; an hour whose low samples came back null would) is not in that
+ * set, so the collapsed view opened at 3,000 ft and hid the lowest wind
+ * there was. A reader would read 3,000 ft as the floor.
  */
 describe('the collapsed winds table never hides the lowest available level', () => {
-  const rows = (levels: WindsAloftLevel[], source: 'open-meteo' | 'nws-fd'): string[] => {
+  const rows = (levels: WindsAloftLevel[], source: 'open-meteo'): string[] => {
     const html = renderToStaticMarkup(
       createElement(WindsAloftPanel, {
         levels,
@@ -163,9 +163,9 @@ describe('the collapsed winds table never hides the lowest available level', () 
     tempC: 0,
   });
 
-  it('shows the 2,000 ft row on the FD path, where it is the lowest', () => {
-    const fd = [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level);
-    expect(rows(fd, 'nws-fd')).toContain('2,000 ft');
+  it('shows the 2,000 ft row where it is the lowest', () => {
+    const high = [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level);
+    expect(rows(high, 'open-meteo')).toContain('2,000 ft');
   });
 
   it('still collapses the primary path to the key altitudes', () => {
@@ -294,7 +294,7 @@ describe('the winds table says where its rows stop', () => {
  * model's 10 m wind, Mark Schulze's a line through the pressure levels read at
  * 0 ft (docs/markschulze-altitude-reference.md). Readers see his run higher
  * and need the reason on the card: what each row is shows always, the why in
- * the card's About section. The FD fallback has no Surface row. */
+ * the method page. */
 describe('the note on why the Surface row differs from Schulze’s', () => {
   const level = (agl: number): WindsAloftLevel => ({
     altitudeFtAgl: agl,
@@ -303,7 +303,7 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
     speedKt: 10,
     tempC: 0,
   });
-  const markup = (source: 'open-meteo' | 'nws-fd' | undefined, levels: WindsAloftLevel[]): string =>
+  const markup = (source: 'open-meteo' | undefined, levels: WindsAloftLevel[]): string =>
     renderToStaticMarkup(
       createElement(WindsAloftPanel, {
         levels,
@@ -321,12 +321,6 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
     expect(html).toContain('href="#winds-method"');
     // Words, not a verdict or a figure in a colour.
     expect(html).not.toMatch(/class="[^"]*(caution|watch|warn)/);
-  });
-
-  it('is absent on the FD fallback, which has no Surface row', () => {
-    const html = markup('nws-fd', [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level));
-    expect(html).not.toContain('The Surface row is');
-    expect(html).not.toContain('#winds-method');
   });
 
   it('is absent when no winds source has loaded, beside "No winds-aloft data"', () => {

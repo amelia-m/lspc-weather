@@ -10,8 +10,8 @@ import { SourceLinks } from './common/SourceLinks';
  * `scope` is what the page it sits on shows. The dashboard footer names
  * what Open-Meteo feeds (Winds aloft, Drift, the 10-day outlook's day rows
  * and the second cloud-cover figure on Ceiling & sky) and says the cards
- * name the fallback that answered, so it does not claim the NOAA FD bulletin
- * or the NWS gridpoint as Open-Meteo's.
+ * name the fallback that answered (the outlook's NWS gridpoint; the winds
+ * cards have none), so it does not claim the NWS gridpoint as Open-Meteo's.
  * #parity shows the winds comparison, and its context notes quote other
  * Open-Meteo figures, so it says that. #wind-errors shows only Open-Meteo's
  * 10 m wind, reworked into differences from KPMV's reports, so it says that,

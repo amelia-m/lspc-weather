@@ -1,8 +1,8 @@
 import { ForecastOffset } from './ForecastOffset';
 import { fmtTime, fmtWeekday, fmtZulu, localDateKey } from '../format';
 
-/** The hour buttons, when the winds source has more than one hour to offer.
- *  The NOAA FD fallback is one bulletin and gets none. One object, held by
+/** The hour buttons, when the winds answer has more than one hour to offer
+ *  (one with a single hour gets none). One object, held by
  *  `useWindsHour` and handed to every card that shows the winds hour, so a
  *  step on any of them moves all of them. */
 export interface WindsHourNav {

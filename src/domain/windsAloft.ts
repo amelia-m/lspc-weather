@@ -14,8 +14,7 @@ export interface RawWindSample {
    * 10 m wind is the ground wind, so the few tens of feet between the model's
    * own surface height and the DZ's published field elevation are a datum
    * mismatch, not a layer of atmosphere. A level aloft licenses nothing below
-   * itself, and the NOAA FD bulletin has no surface level at all — see
-   * `sampleAt`.
+   * itself: see `sampleAt`.
    *
    * `sampleAt` consults it only on the LOWEST sample. Since `normalizeOpenMeteo`
    * drops pressure levels below the model's terrain, the 10 m sample normally
@@ -100,9 +99,8 @@ export interface WindsAloftTop {
  * is invisible. If Open-Meteo served nulls above 700 hPa, the table would
  * end at 9,000 ft while the card's own text still offered every level "up to
  * 13k", and a reader would take the missing rows for a display choice rather
- * than a hole in the report. The bottom of the profile has long had its
- * counterpart (the FD fallback's note about the bulletin's lowest level); this
- * gives the top one.
+ * than a hole in the report. The bottom of the profile has its counterpart
+ * (the drift card's note about the lowest level); this gives the top one.
  *
  * The comparison is against the altitudes that were ASKED for, not a fixed
  * ceiling, so the card and the config cannot drift apart. Levels are

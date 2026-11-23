@@ -91,13 +91,6 @@ describe('Winds aloft hour buttons', () => {
     expect(stepped).toContain('>Back to the nearest hour</button>');
   });
 
-  it('offers no buttons on the one-bulletin FD fallback, but still shows the gap', () => {
-    const html = winds({ source: 'nws-fd', hourNav: null });
-    expect(html).not.toContain('fc-step');
-    expect(html).toContain('ahead of now</strong>');
-    expect(html).toContain('FD bulletin is issued every 6 hours');
-  });
-
   it('marks the gap in the interface accent only, never a warning colour', () => {
     const html = winds({ validity: { validMs: Date.now() + 9 * 3_600_000 }, hourNav: nav({ following: false }) });
     expect(html).not.toMatch(/class="[^"]*(caution|watch|warn|stale|error)/);
@@ -138,16 +131,10 @@ describe('Winds aloft explanatory text', () => {
     expect(noSource).toContain('href="#winds-method"');
     expect(noSource).not.toContain('The Surface row is');
   });
-
-  it('keeps the fallback source note out, since it is about this report', () => {
-    const html = winds({ source: 'nws-fd', hourNav: null });
-    expect(html).not.toContain('#winds-method');
-    expect(html).toContain('<strong>Fallback source:</strong>');
-  });
 });
 
 describe('Drift card follows the hour', () => {
-  const drift = (validMs: number | null, hourNav: WindsHourNav | null, source?: 'open-meteo' | 'nws-fd') =>
+  const drift = (validMs: number | null, hourNav: WindsHourNav | null, source?: 'open-meteo') =>
     renderToStaticMarkup(createElement(DriftPanel, { levels, validMs, hourNav, source }));
   // The hour row and the offset bar under it, as rendered, without the
   // attributes that are meant to differ between the two copies.
@@ -190,8 +177,8 @@ describe('Drift card follows the hour', () => {
     expect(stepped).toContain('>Back to the nearest hour</button>');
   });
 
-  it('shows the hour without buttons on the one-bulletin FD fallback, and does not call it selected', () => {
-    const html = drift(ahead(), null, 'nws-fd');
+  it('shows the hour without buttons when there are no hours to step through, and does not call it selected', () => {
+    const html = drift(ahead(), null, 'open-meteo');
     expect(html).not.toContain('fc-step');
     expect(html).toContain('ahead of now</strong>');
     expect(html).toContain('Worked from the same forecast hour as the Winds aloft card.');

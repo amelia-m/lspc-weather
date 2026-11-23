@@ -4,7 +4,8 @@ import { STATION as RELAY_STATION } from '../../relay/src/station';
 import { awcTafFor } from '../config/sources';
 
 /** Which provider a source is currently served from, and whether that is the
- *  primary source or a fallback (e.g. Open-Meteo unreachable → NOAA FD). */
+ *  primary source or a fallback (e.g. Open-Meteo unreachable → the NWS
+ *  gridpoint for the outlook). */
 export interface SourceProvenance {
   detail: string;
   fallback: boolean;
@@ -135,8 +136,6 @@ export function deriveProvenance(
 
   if (snapshot.windsAloftSource === 'open-meteo') {
     prov.windsAloft = { detail: 'Open-Meteo 10–180 m and pressure levels', fallback: false };
-  } else if (snapshot.windsAloftSource === 'nws-fd') {
-    prov.windsAloft = { detail: `NOAA FD winds · ${SITE.fdWindsStation}`, fallback: true };
   }
 
   if (snapshot.dailySource === 'open-meteo') {

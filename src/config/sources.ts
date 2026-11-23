@@ -170,19 +170,6 @@ export const DATA_SOURCES = {
     label: 'NWS NBM three-hourly bulletin',
     url: 'https://www.weather.gov/mdl/nbm_text',
   },
-  /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source.
-   *
-   *  The label names no station even though the fetch uses SITE.fdWindsStation
-   *  (OMA): this URL is the generic FD product page, and it does not open on
-   *  OMA. Labelling the link "· OMA" promised a station the reader would then
-   *  have to go and find for themselves — the same defect as a citation naming
-   *  a section its link does not open. The query parameters that would select
-   *  the station cannot be verified from this environment, so the label matches
-   *  what the link actually delivers instead of being guessed at. */
-  fdWinds: {
-    label: 'NOAA winds aloft (FD)',
-    url: 'https://aviationweather.gov/data/windtemp/',
-  },
   /** NWS radar (image loop + interactive viewer). */
   radar: {
     label: `NWS radar · ${SITE.radarSite.id}`,
@@ -292,7 +279,7 @@ export function dailySourceInUse(source: DailySource | null | undefined): Source
 }
 
 /** The winds-aloft source, as the Data line of the two cards built on it
- *  (Winds aloft, Drift) reads it. */
+ *  (Winds aloft, Drift) reads it. It has no fallback since 2026-11-23. */
 export function windsAloftSourceInUse(source: WindsAloftSource | null | undefined): SourceInUse {
-  return source === 'open-meteo' ? 'usual' : source === 'nws-fd' ? 'fallback' : null;
+  return source === 'open-meteo' ? 'usual' : null;
 }

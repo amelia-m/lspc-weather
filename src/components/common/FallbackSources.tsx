@@ -2,7 +2,8 @@ import type { DataSource, SourceInUse } from '../../config/sources';
 import { SourceLinks } from './SourceLinks';
 
 /**
- * The "Data:" line of a card that has a fallback source. The usual source is
+ * The "Data:" line of a card whose source can fail: one with a fallback (the
+ * outlook) or without (the winds cards). The usual source is
  * named whatever answered, so a reader always sees where the card normally
  * comes from (and Open-Meteo keeps its licence link), but only the source in
  * use is written as the card's data: on the fallback the line leads with the
@@ -16,12 +17,15 @@ import { SourceLinks } from './SourceLinks';
 export function FallbackSources({
   inUse,
   usual,
-  fallback,
+  fallback = [],
   withUsual = [],
 }: {
   inUse: SourceInUse;
   usual: DataSource[];
-  fallback: DataSource[];
+  /** Empty or left out for a card with one source and no fallback (the
+   *  winds cards since 2026-11-23): nothing loaded then names the usual
+   *  source alone. */
+  fallback?: DataSource[];
   withUsual?: DataSource[];
 }): JSX.Element {
   if (inUse === 'usual') {
@@ -36,6 +40,13 @@ export function FallbackSources({
       <>
         Data: <SourceLinks sources={fallback} /> · <span className="source-chip fallback">fallback in use</span>{' '}
         · usually <SourceLinks sources={usual} />
+      </>
+    );
+  }
+  if (fallback.length === 0) {
+    return (
+      <>
+        Data: none loaded · usually <SourceLinks sources={usual} />
       </>
     );
   }
