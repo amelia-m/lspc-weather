@@ -189,7 +189,7 @@ Every station's block in the bucket's NBH text began " KPMV   NBM V5.0
 NBH GUIDANCE    11/03/2026  1100 UTC" through the 2026-11-03 11Z cycle,
 and " KPMV   NBM  NBH GUIDANCE    11/03/2026  1200 UTC" from the 12Z one
 on: the version token went, two spaces where " V5.0 " was, with no
-notice found (read in the bucket's files for 10-28 12Z, 10-31 12Z, 11-01
+notice found at the time (read in the bucket's files for 10-28 12Z, 10-31 12Z, 11-01
 12Z, 11-02 12Z, 11-03 00Z to 11Z, 12Z, 22Z and 23Z on 2026-11-04 about
 00:30Z). The relay's pattern for the station's header required the
 token, so from the 12Z file on it found no block in a file that had one
@@ -206,6 +206,8 @@ fault; the bucket's 502 stays a note, which is why the twelve hours of
 was read. `tests/nbm.test.ts` and `tests/nbmRelay.test.ts` carry the bare
 header. Workers Builds deploys the relay from `main` (docs/taf-relay.md,
 "Setting it up"), so the fix is live once merged.
+
+Read 2026-11-23: that cycle is the one NWS Service Change Notice 26-89 (2026-10-02) names for the NBM's change of inputs, the NAM and HiresW models replaced by the RRFS and REFS from the 12Z run of 2026-11-03 (the NAM's retirement, SCN 26-47). The notice's NBM section says nothing of the header, so the token's loss is dated to the change, not explained by it; the base figures before and after that cycle come from different input models.
 
 ## Checked
 

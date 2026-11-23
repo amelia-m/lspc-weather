@@ -220,7 +220,7 @@ they were colour and text rather than flags.
   formula that put sunset 2 to 3 minutes late, so the 14 CFR 105.19 night
   flag fired late. Do not swap in a shorter formula without re-running that
   comparison.
-- **The winds aloft have one source, Open-Meteo, and no fallback** (since 2026-11-23, the maintainer's word). The fallback read NOAA's FD winds-aloft bulletin from api.weather.gov; NCEP's last CONUS bulletin was entered 2026-11-03 08:01Z (IEM's archive of NCEP's text products, read 2026-11-23; only the Pacific FBOC bulletins since), so it could only fail. When the request fails the last answer is kept and marked stale, and the cards say when there is none. Do not bring a fallback back without a bulletin that is being issued (docs/open-questions.md, "Dropped: the FD winds fallback").
+- **The winds aloft have one source, Open-Meteo, and no fallback** (since 2026-11-23, the maintainer's word). The fallback read NOAA's FD winds-aloft bulletin from api.weather.gov; NCEP discontinued the bulletin with the NAM model at 12Z on 2026-11-03 (NWS Service Change Notice 26-47, read 2026-11-23; the last CONUS issue in IEM's archive is 08:01Z that day, and aviationweather.gov's winds table answers that it is discontinued), so it could only fail. When the request fails the last answer is kept and marked stale, and the cards say when there is none. Do not bring a fallback back without a bulletin that is being issued (docs/open-questions.md, "Dropped: the FD winds fallback").
 - **Schulze's "Surface" row is not a surface wind.** It is a straight line
   through his raw pressure levels read at 0 ft (here between his 1000 hPa
   level, underground at this DZ, and 975 hPa), matched in 72 of 72 hours at
@@ -353,7 +353,7 @@ downloads redirect there); since 2026-10-08 `github.com`, the ADS-B networks
 its basemap art at
 `cdn.arcgis.com` is not, and the map draws without it). Reachable is not
 readable: `globe.adsb.fi`, `api.adsb.one` and `airplanes.live` answer a
-script with Cloudflare's 403. The list is the project's; the environment's own can differ: on 2026-11-23 the session's ("sandbox", read with `get_environment`) lacked `aviationweather.gov`, `tgftp.nws.noaa.gov`, `gml.noaa.gov`, the `*.weather.gov` wildcard (only `api.` and `radar.`), USPA, eCFR, FAA, FAASafety, usairnet, markschulze.net, the Naval Observatory and the NOAA S3 buckets, and the proxy answered each with a CONNECT 403 (docs/open-questions.md). Comparison artifacts can be read with
+script with Cloudflare's 403. The list is the project's; the environment's own can differ: on 2026-11-23 the session's ("sandbox", read with `get_environment`) lacked `aviationweather.gov`, `tgftp.nws.noaa.gov`, `gml.noaa.gov`, the `*.weather.gov` wildcard (only `api.` and `radar.`), USPA, eCFR, FAA, FAASafety, usairnet, markschulze.net, the Naval Observatory and the NOAA S3 buckets, and the proxy answered each with a CONNECT 403; fourteen exact hosts went back that day on the maintainer's approval, the wildcards not (docs/open-questions.md). Comparison artifacts can be read with
 `curl -sL https://api.github.com/repos/amelia-m/lspc-weather/actions/artifacts/<id>/zip`
 (the session's GitHub proxy supplies the credential); `gh api` refuses to
 follow that redirect.
