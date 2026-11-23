@@ -296,6 +296,10 @@ above; it goes in the query string (`apikey=`), which the session's
 credential store cannot inject (it sets headers), so it would be an
 environment variable the scripts read, never committed.
 
+## The FD winds fallback finds no CONUS bulletin in the products feed (2026-11-23)
+
+Found by the template-plan review, checked here the same day: `api.weather.gov/products?type=FD1&limit=30` (and FD3, FD5, FD8, FD9; FD2 empty) listed only FBOC31 to FBOC38 from KWNO, the Pacific bulletins, and `products?wmoid=FBUS31` returned nothing; `products/types/FD1/locations` is `{OC1: null}`. `fetchWindsAloftFd` (src/api/nws.ts) discovers the bulletin from those listings, so it cannot resolve OMA from the feed as served today (the listings were read; the fallback was not run). Whether the CONUS bulletins left the feed or were ever there is not known: CLAUDE.md says the fallback was checked by running it under Node, undated. For the maintainer: run the fallback under Node to confirm, then decide whether the Winds aloft card's fallback is dropped, or reads the bulletin from another host (NOAA's raw FB files at tgftp, which answered the sandbox 403 on 2026-11-22). The template plan's decision 5 is the same question for the template.
+
 ## Card wording: less wordy notes and explanations (2026-11-21)
 
 At the maintainer's word, a review of every user-facing string
