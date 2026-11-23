@@ -29,7 +29,7 @@ Local review first, hosted bots only when she asks by name (global rule). Amelia
 
 ## What agents do here
 
-For any disclosure statement. From 2026-07 the application code, tests, workflows, the relay, the comparison scripts and the documents under `docs/` have been written by Claude Code sessions at Amelia's direction; she sets the requirements, decides what ships and reviews it, and the DZ facts on the cards are hers, dated. The citations were read at their sources by agents; no instructor has signed them off (`#citations`). **To confirm:** the start date and the wording, which are the agent's from the repository, not from her. The README carries no AI disclosure as of 2026-11-23 (searched for "Claude", "AI-", "generated"); whether it should is on docs/open-questions.md.
+For any disclosure statement. The README's "Built with AI" section (added 2026-11-23 at Amelia's word, "Add the ai disclosure to the readme") is the public statement; keep the two in step. From the first commit, 2026-06-27, nearly all of the repository has been written by Claude Code sessions at Amelia's direction: application code, tests, workflows, the relay, the comparison scripts and the documents under `docs/`. Counted from the GitHub API on 2026-11-23: 700 commits on `main`, 580 authored by the agent identity (each with a model trailer), 103 by workflows, 15 under Amelia's name (seven with an agent trailer), two by OpenAI's Codex agent (pull request #80, 2026-10-01). She sets the requirements, decides what ships and supplies the DZ facts on the cards, dated. The citations were read at their sources by agents; no instructor has signed them off (`#citations`). **To confirm:** the description of her part, which is the agent's wording.
 
 ## Notes and open items
 

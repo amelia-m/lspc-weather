@@ -24,6 +24,12 @@ freefall drift and **density altitude** for jump-plane climb performance.
 > relying on it. Always confirm conditions with current official sources, the
 > S&TA, and the pilot in command.
 
+## 🤖 Built with AI
+
+Nearly all of this repository was written by AI coding agents at the maintainer's direction: the application code, the tests, the workflows, the relay, the comparison scripts and the documents under `docs/`, this README included. The agent is Anthropic's Claude Code. Of the 700 commits on `main` to 2026-11-23 (counted from the GitHub API that day), 580 have the agent as author, each with a `Co-Authored-By:` trailer naming the model that wrote it (Claude Opus 4.8, Opus 5, Opus 5.5, Fable 5.1 and Haiku 4.5 so far); 103 are scheduled workflows committing data; 15 are under the maintainer's name, seven of them carrying an agent's trailer; and two, one pull request of 2026-10-01 that fixed a TAF comparison, were written by OpenAI's Codex agent.
+
+The maintainer sets what the dashboard should do, decides what ships, and supplies the facts about the drop zone, which the cards date and attribute to her. The cited rules were read at their sources by the agents (Citations, below); no instructor or other licensed professional has reviewed them, as the notice above says. How the work was done is the subject of the maintainer's talk, **How this was built**, linked from the site's footer.
+
 ## 🌤️ What it shows
 
 The dashboard has two tabs. **Jumpers** (the plain address) has the wind
