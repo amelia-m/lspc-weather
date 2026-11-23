@@ -25,7 +25,7 @@ How a merge is done when she says so: the four gates on real exit codes, a local
 
 ## Reviews
 
-Local review first, hosted bots only when she asks by name (global rule). `CLAUDE.md` under "Gates" says to request Copilot review once per PR when the work is complete; the global rule is the stricter and holds. **To confirm:** that the `CLAUDE.md` line should be changed to match.
+Local review first, hosted bots only when she asks by name (global rule). Amelia, 2026-11-23, on changing the `CLAUDE.md` line that said to request Copilot review once per PR: "Yes update Claude. MD to match the global profile". Changed that day ("Gates").
 
 ## What agents do here
 

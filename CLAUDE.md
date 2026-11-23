@@ -571,10 +571,7 @@ real exit codes. CI runs on pull requests and on dispatch, never on a push
 (`.github/workflows/ci.yml`), so commits on a branch with no open PR are
 unchecked. `main` deploys to GitHub Pages on push.
 
-Copilot code review draws on a monthly quota that ran out mid-PR on
-2026-09-23. Request it once per PR when the work is complete, and once more
-after the batch of fixes it asks for; run the four gates and read your own
-diff first.
+Local review first; a hosted review bot (Copilot, Codex) only when the maintainer asks for one by name (her global rule, confirmed for this repository 2026-11-23). Before a pull request: the four gates, then a local review chosen from the global rules' table, with its findings and what was done about each in the PR body. Copilot's review draws on a monthly quota that ran out mid-PR on 2026-09-23.
 
 `.github/workflows/live-site.yml` is not a gate: daily, after every deploy
 (started by `check-live` in `deploy.yml`, since a `workflow_run` trigger

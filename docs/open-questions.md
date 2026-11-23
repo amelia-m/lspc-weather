@@ -298,7 +298,7 @@ environment variable the scripts read, never committed.
 
 ## The project profile: a draft, with lines to confirm (2026-11-23)
 
-The maintainer, 2026-11-23: "Y to attribution trailers and draft a project profile". The draft is `.agents/project-profile.md`. Her yes on commit trailers is recorded there. Waiting on her, each marked in the file: whether the yes also covers the PR footer and the GitHub comment footer; that the repository is classed as holding no work data; whether pushing and merging are delegated after a clean local review; whether `CLAUDE.md`'s "request Copilot review once per PR" gives way to the global rule (hosted bots only when asked by name); the wording of what agents do here, and whether the README should carry an AI disclosure (it has none); hard-wrapped or one-line Markdown paragraphs; adding a `.gitattributes`; `_scratch/` in `.gitignore`.
+The maintainer, 2026-11-23: "Y to attribution trailers and draft a project profile". The draft is `.agents/project-profile.md`. Her yes on commit trailers is recorded there. Settled the same day: `CLAUDE.md`'s Copilot line now follows the global rule (hosted bots only when asked by name). Waiting on her, each marked in the file: whether the yes also covers the PR footer and the GitHub comment footer; that the repository is classed as holding no work data; whether pushing and merging are delegated after a clean local review; the wording of what agents do here, and whether the README should carry an AI disclosure (it has none); hard-wrapped or one-line Markdown paragraphs; adding a `.gitattributes`; `_scratch/` in `.gitignore`.
 
 ## The FD winds fallback finds no CONUS bulletin in the products feed (2026-11-23)
 
