@@ -6,7 +6,7 @@ Draft, 2026-11-23, written by an agent at Amelia's word ("draft a project profil
 
 A personal project on Amelia's own GitHub account, public (visibility read from the GitHub API 2026-11-23), not a fork, MIT licensed. Its data are public weather observations and forecasts and published rules (USPA SIM, 14 CFR, FAA). No work data. **To confirm:** that this is her classification, which is what lets cloud sessions run here.
 
-Collaborators: none seen. `git shortlog -sne --all` on the session's shallow clone (2026-11-23) names Amelia, the agent identity and two workflow bots; the full history was not read.
+Collaborators: no other person. The authors of the 700 commits on `main`, from the GitHub API on 2026-11-23, are Amelia, the agent identity, two workflow identities and OpenAI's Codex agent bot.
 
 ## Attribution in commits and pull requests
 
