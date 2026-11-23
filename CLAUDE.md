@@ -4,6 +4,8 @@ A skydiving weather dashboard for the Lincoln Sport Parachute Club (Brown's
 Airport, NE69). Read `README.md` for what it shows. This file is the standing
 context for working on it.
 
+`.agents/project-profile.md` (a draft since 2026-11-23) holds what the maintainer's global rules ask a project to settle: attribution, who may push and merge, which review runs.
+
 ## The rule that governs everything here
 
 **The dashboard never gives a go/no-go verdict.** It flags a condition and
