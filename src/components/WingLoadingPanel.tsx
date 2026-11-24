@@ -168,8 +168,8 @@ export function WingLoadingPanel({
       {/* A pointer to USPA's own tool, not a figure of this card's: the quiz
           judges the jumper, which this app does not. */}
       <p className="muted small">
-        For choosing a canopy beyond its weight limits, USPA has its own self-assessment, the Canopy Risk
-        Quotient: a questionnaire on experience, currency, the canopy and training, scored on USPA&rsquo;s page.
+        Weight is all this card checks. For choosing a canopy, USPA has its own self-assessment, the Canopy
+        Risk Quotient: a questionnaire on experience, currency, the canopy and training, scored on USPA&rsquo;s page.
         This card works none of it.{' '}
         <a href={USPA_CANOPY_RISK_QUOTIENT.url} target="_blank" rel="noopener noreferrer">
           {USPA_CANOPY_RISK_QUOTIENT.label}
