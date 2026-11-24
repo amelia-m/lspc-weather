@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ageWords, agoText, overdueReportText, reportsOverdue } from '../src/domain/reportAge';
+import { fmtAgo } from '../src/components/format';
 import { evaluateAdvisories, forecastWindAdvisories } from '../src/domain/advisories';
 import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import { DataFreshness } from '../src/components/DataFreshness';
@@ -36,6 +37,14 @@ describe('a report’s age in words', () => {
     expect(agoText(at, at + 20_000)).toBe('just now');
     expect(agoText(at, at - 5 * MIN)).toBe('just now');
     expect(agoText(at, at + 12 * MIN)).toBe('12 min ago');
+  });
+});
+
+describe('every age on the page', () => {
+  it('uses the same words: the fetch ages and Nearby METARs read as the report ages do', () => {
+    expect(fmtAgo(Date.now() - 100 * MIN)).toBe('1 h 40 min ago');
+    expect(fmtAgo(Date.now() - 12 * MIN)).toBe('12 min ago');
+    expect(fmtAgo(null)).toBe('\u2014');
   });
 });
 
