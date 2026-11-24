@@ -9,6 +9,20 @@
 Live backlog. A closed item is kept for a while under a "Done" or "Settled"
 heading, then deleted; the repository history is the record.
 
+## High priority: say how old and how limited the data is, plainly (the maintainer, 2026-11-24)
+
+Her word on reading AXIS's page (docs/axis-conditions-tool.md), which says "No live data" and "Do not use this page at all, if wind conditions are volatile" in red where this app says the same accurately and quietly: "make this high priority". It goes ahead of the rest of the wording review (below, "Card wording").
+
+What the cards do now (read in the code 2026-11-24, not rendered with an old report): the Surface wind card's first line and the Winds aloft card's observed line print the report's clock time, not its age (`fmtClock`); only Nearby METARs prints "N min ago". Nothing on the Jumpers tab compares a report's time with now: `advisories.ts` never reads `observedAt`, so a flag fires the same on a report of any age, and Data health's "stale" is the time since the app's last successful fetch (30 minutes, `STALE_AFTER_MS`), so a three-hour-old report fetched a minute ago reads as fresh. The station's distance is on the card's first line; the disclaimer's sentence on it sits inside the folded "About the sources".
+
+Proposals, hers to pick from; none is built:
+
+1. **The report's age on the Surface wind card's first line**, beside the time: "Observed at KPMV (11 mi ENE of the DZ), 2:15 PM, 12 min ago: the latest report, not a forecast." A plain fact; `fmtAgo` exists. Recommended first.
+2. **One plain sentence at the top of that card, not in the small grey type:** "A report is the wind at KPMV when it was taken. It cannot show a wind that is changing now, or the wind at the DZ." Wording to her taste; a caveat, no threshold.
+3. **Each observed flag names its report:** "from the 2:15 PM report, 12 min ago", so a flag read late does not read as now.
+4. **A line when reports have stopped coming.** Needs a basis the app does not invent: KPMV's own cadence is an observed fact (its reports' times are in `data/parity/`), so the line could state it ("KPMV usually reports every N minutes; the newest report is 1 h 40 min old") with no colour and no judgement. Her call whether that is a fact or a threshold, and what N the archive shows.
+5. **The station and distance out of the disclaimer's fold**, into its first paragraph.
+
 ## Needs a human with a document
 
 The maintainer's word, 2026-10-27: the instructor's review of `#citations`
