@@ -790,7 +790,8 @@ a.sim-term {
 .nowrap {
   white-space: nowrap;
 }
-.fc-step {
+.fc-step,
+.jumprun-step {
   flex: none;
   background: var(--panel);
   color: var(--text);
@@ -802,10 +803,12 @@ a.sim-term {
   cursor: pointer;
   white-space: nowrap;
 }
-.fc-step:hover:not(:disabled) {
+.fc-step:hover:not(:disabled),
+.jumprun-step:hover:not(:disabled) {
   border-color: var(--accent);
 }
-.fc-step:disabled {
+.fc-step:disabled,
+.jumprun-step:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -1471,6 +1474,70 @@ a.sim-term {
   border-radius: 50%;
   box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.95);
   pointer-events: none;
+}
+/* The jump run over an aerial image, on the Drift card: the Sectional
+   card's frame and tiles, with an overlay drawn from the frame's centre. */
+.jumprun {
+  margin: 8px 0 10px;
+}
+.jumprun-frame {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+.jumprun-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  overflow: visible;
+}
+.jumprun-casing {
+  stroke: #000;
+  stroke-opacity: 0.65;
+  stroke-width: 6;
+}
+.jumprun-line {
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+.jumprun-arrow {
+  fill: #fff;
+  stroke: #000;
+  stroke-opacity: 0.65;
+  stroke-width: 1.5;
+}
+.jumprun-dz {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  paint-order: stroke;
+  filter: drop-shadow(0 0 1.5px #000);
+}
+.jumprun-north,
+.jumprun-scale {
+  position: absolute;
+  color: #fff;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+.jumprun-north {
+  top: 6px;
+  right: 8px;
+}
+/* The bar is the element's own bottom border, as wide as 1,000 ft. */
+.jumprun-scale {
+  left: 8px;
+  bottom: 8px;
+  border-bottom: 3px solid #fff;
+  box-shadow: 0 1px 0 #000;
+  white-space: nowrap;
+  text-align: center;
+}
+.jumprun figcaption {
+  margin-top: 6px;
 }
 .sectional-zoom {
   display: flex;
