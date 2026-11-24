@@ -5,6 +5,7 @@ import {
   FAR_91155_ROWS,
   FLIGHT_CATEGORY_GUIDANCE,
   flightCategoryComparisonText,
+  JUMP_RUN_AIRSPEED_FACT,
   OPENING_ALTITUDES_TEXT,
   STUDENT_ROUND_RESERVE_FACT,
   VISIBILITY_ROW,
@@ -213,7 +214,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     claim:
       'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
     where:
-      'Winds aloft card, standing note under the table, at any wind speed. Since 2026-11-24 the Freefall drift / spot card also works the section’s two distances into seconds between exits, from a jump-run bearing and airspeed the reader enters and the forecast wind at exit altitude, or from the pilot’s GPS ground speed',
+      'Winds aloft card, standing note under the table, at any wind speed. Since 2026-11-24 the Freefall drift / spot card also works the section’s two distances into seconds between exits, from a jump-run bearing and an indicated airspeed the reader can change and the forecast wind at exit altitude',
     sources: [CITATIONS.uspaSpotting],
     found: {
       read: SIM_READ,
@@ -225,7 +226,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     },
     asks: [
       'The drift card turns the 1,000 ft and 1,500 ft figures into seconds between exits (distance over the plane’s ground speed, rounded up). Is that how separation is counted at LSPC, and is anything the club teaches about it missing or contradicted?',
-      'The ground speed is estimated from a jump-run bearing and an indicated airspeed the reader enters. What indicated airspeed does the club’s plane fly on jump run, and should the card offer it as a starting value, dated and attributed to the club?',
+      `${JUMP_RUN_AIRSPEED_FACT.sentenceOnCitations} Is that so for each of the club’s planes, and does the airspeed indicator read knots or mph?`,
     ],
   },
   {

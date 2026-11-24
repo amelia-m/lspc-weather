@@ -12,14 +12,14 @@ import {
 } from '../src/domain/exitSeparation';
 import { ExitSeparation } from '../src/components/ExitSeparation';
 import { DriftPanel } from '../src/components/DriftPanel';
-import { EXIT_SEPARATION_FT } from '../src/config/thresholds';
+import { EXIT_SEPARATION_FT, JUMP_RUN_AIRSPEED_KT } from '../src/config/thresholds';
 import { CHECKLIST } from '../src/config/citationsChecklist';
 import type { WindsAloftLevel } from '../src/domain/types';
 
 /* Seconds between groups on jump run (the maintainer, 2026-11-24): SIM 4-7
  * C's two ground distances over a ground speed worked from the jump run's
  * bearing, the plane's indicated airspeed and the forecast wind at exit
- * altitude, or over the pilot's GPS ground speed. */
+ * altitude. */
 
 const FIELD_FT = 1182;
 const level = (agl: number, dir: number, kt: number, tempC: number | null = standardTempC(agl + FIELD_FT)): WindsAloftLevel => ({
@@ -128,18 +128,40 @@ describe('the Drift card’s exit separation', () => {
   const SOLO = 'Solo jumpers, at least 1,000 ft: between exits';
   const GROUPS = 'Small groups, at least 1,500 ft: between exits';
 
-  it('opens on a run into the forecast wind, says so, and counts nothing before a speed is entered', () => {
+  it('opens on a run into the forecast wind and on the club’s slower jump-run airspeed, and says where each came from', () => {
     const html = section();
     expect(html).toContain('Forecast wind at 10,000 ft AGL: from W (270°) at 35 kt.');
     expect(html).toContain('Jump run toward (° true; into the forecast wind)');
     expect(html).toContain('<option value="270" selected="">270° W</option>');
     expect(row(html, 'Headwind on a run toward 270° W')).toBe('35 kt');
     expect(row(html, 'Crosswind on it')).toBe('0 kt');
+    // The low end of the maintainer's 75 to 80 kt, dated and attributed.
+    expect(JUMP_RUN_AIRSPEED_KT).toEqual({ low: 75, high: 80 });
+    expect(html).toMatch(/Airspeed on jump run \(kt indicated\)<input[^>]*value="75"/);
+    expect(html).toContain(
+      'Jump run in LSPC’s Cessna 182s is typically flown at about 75 to 80 kt indicated (the maintainer, 2026-11-24; confirmation asked on the citations page), so the airspeed box opens on 75 kt, the slower end, which gives the longer count.',
+    );
+    // 75 kt indicated is 88.9 kt true there, 53.9 kt over the ground:
+    // 1,000 ft in 10.99 s, 1,500 ft in 16.48 s.
+    expect(row(html, 'True airspeed, from 75 kt indicated')).toBe('about 89 kt');
+    expect(row(html, 'Ground speed, an estimate')).toBe('about 54 kt');
+    expect(row(html, SOLO)).toBe('11 s');
+    expect(row(html, GROUPS)).toBe('17 s');
+  });
+
+  it('counts nothing with the airspeed box cleared, and asks for it', () => {
+    const html = section({ initialIndicatedKt: null });
+    expect(html).toMatch(/Airspeed on jump run \(kt indicated\)<input[^>]*value=""/);
     expect(html).not.toContain('<strong>');
     expect(row(html, SOLO)).toBeNull();
-    expect(html).toContain('Enter the plane’s indicated airspeed on jump run, or the pilot’s GPS ground speed');
-    // The airspeed is the reader's: no figure of the app's sits in the box.
-    expect(html).toMatch(/Airspeed on jump run \(kt indicated\)<input[^>]*value=""/);
+    expect(html).toContain('Enter the plane’s indicated airspeed on jump run for the seconds between groups.');
+  });
+
+  it('has no box for a ground speed: the estimate is the card’s, the measured one the pilot’s', () => {
+    const html = section();
+    expect(html.match(/<input/g)).toHaveLength(1);
+    expect(html).not.toMatch(/GPS ground speed/);
+    expect(html).toContain('The pilot’s GPS reads the real one.');
   });
 
   it('works the SIM’s two distances into seconds from the bearing and the indicated airspeed', () => {
@@ -164,16 +186,6 @@ describe('the Drift card’s exit separation', () => {
     expect(row(section({ initialIndicatedKt: 80, initialTrackDeg: 90 }), 'Tailwind on a run toward 90° E')).toBe('35 kt');
   });
 
-  it('counts from the pilot’s GPS ground speed in place of the estimate when one is entered', () => {
-    const html = section({ initialIndicatedKt: 80, initialGpsKt: 70 });
-    expect(row(html, 'Ground speed, from the pilot’s GPS')).toBe('70 kt');
-    expect(html).not.toContain('True airspeed');
-    // 70 kt is 118.1 ft/s: 8.46 s and 12.70 s.
-    expect(row(html, SOLO)).toBe('9 s');
-    expect(row(html, GROUPS)).toBe('13 s');
-    expect(html).not.toContain('The ground speed is an estimate');
-  });
-
   it('gives no count when the plane makes no ground, or cannot hold the line, and says which', () => {
     const calm = [level(10000, 270, 120)];
     const head = section({ levels: calm, initialIndicatedKt: 80 });
@@ -184,12 +196,12 @@ describe('the Drift card’s exit separation', () => {
     expect(row(cross, SOLO)).toBeNull();
   });
 
-  it('says when the table has no wind at the exit altitude, and still counts from a GPS ground speed', () => {
+  it('says when the table has no wind at the exit altitude, and offers nothing to enter', () => {
     const none = section({ exitFtAgl: 12500 });
-    expect(none).toContain('The winds table has no row at 12,500 ft AGL for this hour');
-    expect(none).not.toContain('Airspeed on jump run');
+    expect(none).toContain('The winds table has no row at 12,500 ft AGL for this hour, so there is no wind to work a ground speed from, and no count of seconds.');
+    expect(none).not.toContain('<input');
+    expect(none).not.toContain('<select');
     expect(row(none, SOLO)).toBeNull();
-    expect(row(section({ exitFtAgl: 12500, initialGpsKt: 70 }), SOLO)).toBe('9 s');
   });
 
   it('calls a calm a calm: no direction printed, and no bearing said to be into the wind', () => {
