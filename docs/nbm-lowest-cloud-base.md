@@ -1,7 +1,8 @@
 # The NBM's lowest cloud base on the Ceiling & sky card
 
 Since 2026-10-27 the Ceiling & sky card has a "base" row under the NWS
-ceiling: the lowest cloud base in the NWS National Blend of Models'
+ceiling (since 2026-11-18 the "NBM base" row of its day tables, below):
+the lowest cloud base in the NWS National Blend of Models'
 hourly bulletin for KPMV (the NBH), the row usairnet plots as "Lowest
 cloud base" (docs/usairnet-parity.md, "Where usairnet's rows come from").
 Asked for by the maintainer on 2026-10-27, after the units were read
@@ -19,12 +20,13 @@ whether or not a ceiling is present (could be FEW or SCT layer)", "a
 So it is not the ceiling: a few or scattered layer counts, and it can sit
 under a ceiling, or under the NWS forecast's "no ceiling", without
 contradiction. The card says so in its note, and prints the figure in
-the same thousands of feet as the ceiling, "no" for -88, a dash where the
-bulletin gives none.
+the same thousands of feet as the ceiling, "no" for -88, and where the
+bulletin gives none a blank cell (since 2026-11-18, the day tables'
+rule; a dash until then, which read as missing data).
 
 It raises no flag and takes no colour: no published limit applies to a
-lowest cloud base, and the row is the muted colour the card's second
-forecast (Open-Meteo's cloud cover) already uses.
+lowest cloud base, and nothing on the card colours a figure by its
+value (one colour per source, none per value).
 
 ## How it reaches the browser
 
@@ -57,8 +59,9 @@ header; no reader should fetch that for a 2 KB block. The TAF relay
   finished rather than abandoned. A HEAD that fails moves on to the hour
   before; a bucket that answers a range with the whole file is read once;
   the block ends at the line of spaces after it or at any station's
-  header, five-character ids included. The card names the bulletin by its
-  cycle, not an issue time: the file lands about an hour after the cycle.
+  header, five-character ids included. Data health names the bulletin by
+  its cycle, not an issue time (the card's note sends the reader there):
+  the file lands about an hour after the cycle.
   The live-site check notes the bucket failing behind the relay (the
   app names the relay's 502 as the bucket's) and counts any other failure
   of the row, as the TAF row is judged.
@@ -77,13 +80,116 @@ block to the hour before now (`src/api/fixtures/nbm.ts`). Data health
 has a row for it, shown only with the relay set; the source log records
 the cycle and file.
 
+## The three-hourly bulletin, three days out (2026-11-12)
+
+The maintainer asked why usairnet's ceiling forecast runs further than
+the card's, and then to add it (docs/usairnet-parity.md, "Why usairnet's
+ceiling runs further out"): usairnet's three-day table is the NBM's
+three-hourly bulletin, NBS, 6 to 72 hours from its cycle, where the
+card's ceiling is the NWS gridpoint's (about a day and a half) and its
+base row the hourly NBH (25 hours). So the relay now cuts KPMV's NBS
+block too, on `/nbm/KPMV/nbs` (docs/taf-relay.md), the app reads it on
+its own Data health row ("NBM three-day", `nbs`), and `parseNbsBlock`
+dates its columns by the bulletin's `FHR` row (hours from the cycle),
+which the NBH lacks. KPMV's block of the 01Z cycle that day is
+`data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt`; the fixture re-dates it to
+the hour before now, as the NBH's is.
+
+**Since 2026-11-18 the card is one table per local day** (the readings'
+recommendation, built at the maintainer's word: docs/ceiling-sky-layout-review.md's
+"day table" with its "cloud profile" as the heights row; src/domain/skyDays.ts
+builds the blocks, src/components/CeilingSkyDays.tsx draws them,
+docs/img/ceiling-sky-day-tables-2026-11-18.png is the fixture build at
+390 px). Eight three-hour columns a day, the same hour in the same column
+of every day; the NWS rows (sky cover as a bar and a figure, Open-Meteo's
+figure beside it, the ceiling) and the NBM rows (the three-hourly
+bulletin's sky cover and ceiling, and its base where the slot has its
+column, the hourly bulletin's base alone in the slots before it begins,
+dotted); between them the heights band, ground to 12,000 ft, each column
+one bulletin's, the base a short bar at its height, the NBM ceiling as
+cloud above it, the NWS ceiling a line across the column, a height at or
+above 12,000 ft a strip on the top edge, night shaded behind; a blank
+cell where a forecast does not reach, never a dash, and a row only on a
+day with a figure in it; where the NWS ceiling forecast ends, one line
+under the tables, day and hour; the day's NWS hours under each table
+("hourly", today's open), and today as its hours alone when two slots or
+fewer remain by the clock; "12a" for "12am" under 360 px; figures at
+0.72 rem. The four layouts tried before it, the hourly strip, its
+12/24/36 toggle and the `VITE_THREE_DAY` flag went with it.
+
+Read again the same day (docs/ceiling-sky-rebuild-review.md: a second
+agent's reading of the rebuild, as the phone reader and as a code
+review), which found the hourly bulletin's base bar drawn inside the
+three-hourly's cloud, a ceiling at or above 12,000 ft drawing nothing,
+"12am" clipped to "12ar" at 320 px, labelled rows with nothing in them,
+a 287 px table for one column at 11:30 PM, the NWS tick and the base
+bar alike, and an end of the NWS ceiling forecast at local midnight
+unnamed; the rules in the paragraph above are its fixes, checked in the
+fixture build at 320, 390 and 1280 px with the clock at 20:00Z and
+05:30Z in DejaVu Sans (no cell clipped, no page wider than its viewport,
+no console error; docs/img/ceiling-sky-rebuild2-day-390-2026-11-18.png
+and …-night-320-….png), and on the deployed site after the merge (PR
+#304, main 27a0885, about 21:00Z, live data at 390 and 1280 px: four
+day tables, the live-site check green). The card is still about 1,950 px tall at 390 px
+with today's hourly open (1,760 at the night clock), and the review's
+one-screen answer per day (the layout review's C) is not built: both are
+on docs/open-questions.md. What follows is the record of the four
+layouts.
+
+How the card showed it was the maintainer's to pick, and four layouts were
+built to try (`ThreeDayLayout` in src/components/forecastReach.ts and
+`NbsDays.tsx`, both gone since 2026-11-18; the build's `VITE_THREE_DAY`
+named one, `days` by default), each drawn from the fixture build at
+390 px and kept beside this doc:
+
+- **days** (`docs/img/ceiling-sky-three-day-days-2026-11-12.png`; her
+  ask, after the first three, for something better): one block per
+  local day under the hourly strip, eight three-hour slots across it
+  (`NbsDays.tsx`), so a whole day fits the card at 320 px and nothing
+  scrolls sideways; three blocks from a cycle of 01Z to 06Z, four from
+  any other, since the bulletin's 66 hours start five hours after its
+  cycle, and the heading names the span rather than a count of days (a
+  "three days" heading sat over four blocks, found in review that day,
+  with a test that read the clock and would have failed CI for eighteen
+  hours of every day: the block count is now held to the fixture's own
+  local dates). Each block: the hours, the sky cover as a bar and a
+  figure per slot, then the cloud heights drawn as a band from the
+  ground to 12,000 ft (the lowest base a shaded area, a ceiling a tick)
+  and printed under it in thousands of feet. Slots are by local hour, so
+  the days line up down the card whatever hour the bulletin starts at,
+  and its first day's leading slots are empty. The fixture's `FHR` row
+  had a trailing blank that read as a 24th column at hour zero and drew
+  a fourth day of one empty slot; trimmed, and the parser's column count
+  pinned.
+
+- **horizon** (`docs/img/ceiling-sky-three-day-horizon-2026-11-12.png`):
+  a "72h" option on the strip's toggle (labelled "3d" in the screenshot, renamed at the maintainer's word the same day). At it the strip runs past the NWS
+  hours in the bulletin's own columns, wider, each with its time, the sky
+  bar in the second forecast's outlined track, a dash in the NWS rows,
+  and an "NBM" row under the base with the bulletin's ceiling.
+- **continue** (`…-continue-…png`): the "72h" option too, no extra row:
+  where the NWS ceiling forecast ends, the ceiling row goes on in the
+  NBM's figures, in lighter italic type, with a title naming them.
+- **strip** (`…-strip-…png`): the hourly strip as it was, no "72h"
+  option, and a second strip under it, every column one of the
+  bulletin's 23 times across three days, with its sky bar, ceiling and
+  base, a time under every column and the weekday under each day's first.
+
+In every layout the bulletin is a second forecast beside the NWS one,
+never blended with it: a column with no NWS hour draws no NWS bar, and
+nothing is flagged or coloured (the rule, CLAUDE.md). `stripColumns`
+(forecastReach.ts, pure) builds the longer strip's columns: every NWS
+hour in the horizon, then the bulletin's times past the last of them.
+Checked in each layout's fixture build at 1280 and 390 px (the days
+layout at 320 too): no sideways scroll of the page, no console error.
+
 ## The header lost its version (2026-11-03)
 
 Every station's block in the bucket's NBH text began " KPMV   NBM V5.0
 NBH GUIDANCE    11/03/2026  1100 UTC" through the 2026-11-03 11Z cycle,
 and " KPMV   NBM  NBH GUIDANCE    11/03/2026  1200 UTC" from the 12Z one
 on: the version token went, two spaces where " V5.0 " was, with no
-notice found (read in the bucket's files for 10-28 12Z, 10-31 12Z, 11-01
+notice found at the time (read in the bucket's files for 10-28 12Z, 10-31 12Z, 11-01
 12Z, 11-02 12Z, 11-03 00Z to 11Z, 12Z, 22Z and 23Z on 2026-11-04 about
 00:30Z). The relay's pattern for the station's header required the
 token, so from the 12Z file on it found no block in a file that had one
@@ -101,8 +207,20 @@ was read. `tests/nbm.test.ts` and `tests/nbmRelay.test.ts` carry the bare
 header. Workers Builds deploys the relay from `main` (docs/taf-relay.md,
 "Setting it up"), so the fix is live once merged.
 
+Read 2026-11-23: that cycle is the one NWS Service Change Notice 26-89 (2026-10-02) names for the NBM's change of inputs, the NAM and HiresW models replaced by the RRFS and REFS from the 12Z run of 2026-11-03 (the NAM's retirement, SCN 26-47). The notice's NBM section says nothing of the header, so the token's loss is dated to the change, not explained by it; the base figures before and after that cycle come from different input models.
+
 ## Checked
 
+- **The three-day path after deploying, 2026-11-16** (PR #298 merged
+  at 04:43Z; Workers Builds deployed the relay with it): at 04:50Z
+  `/nbm/KPMV/nbs` from the site's origin answered 200 with the 04Z
+  cycle's block (`blend.20261116/04/text/blend_nbstx.t04z`, 3,127
+  bytes, FHR 05 to 71). The deployed dashboard, loaded in the sandbox's
+  browser with live data at 390 and 1280 px: three day blocks, "Mon 3am
+  to Wed 9pm, every 3 h", 24 slots, both NBM rows green on Data health
+  ("NBM cloud base … KPMV NBH 04Z", "NBM three-day"), no console error,
+  no sideways scroll. The live-site check passed on the deploy (runs on
+  3ab1ccd and 58da43c, 04:48Z and 04:49Z).
 - `npm test`: the parser, the relay path (a stand-in bucket: HEAD, the
   window, the whole-file fallback, the memo, the refusals) and the card,
   each test proven by breaking what it names.

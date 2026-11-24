@@ -30,7 +30,9 @@ export function HourlyChart({
   dayNames?: boolean;
   /** The jumper profile's limits, drawn as reference lines where a published
    *  source sets them (`limitLines`): the BSR student maximum, or a waiver
-   *  tier's wind limit and gust ceiling. Nothing for Licensed, which has none. */
+   *  tier's wind limit and gust ceiling. Nothing for Licensed, which has
+   *  none published, unless the reader set their own in Settings, which
+   *  `limitLines` marks as theirs and the legend calls "your". */
   limits?: Thresholds;
 }): JSX.Element {
   // Without the colons React puts in an id, so the url(#…) reference needs

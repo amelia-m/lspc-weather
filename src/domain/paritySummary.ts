@@ -19,6 +19,38 @@ import { extent } from './extent';
 import { SITE } from '../config/site';
 import type { RunsSeen } from './runAge';
 
+/** The same hour's table built from Open-Meteo's RRFS model, minus the app's
+ *  default table (scripts/schulzeCompare.live.ts, from 2026-11-24). `error`
+ *  set means no rows: the request failed, or the model answered for another
+ *  hour or with nothing usable. Logged, not yet summarised on `#parity`. */
+export interface RrfsLog {
+  /** Open-Meteo's name for the model asked (`OPEN_METEO_RRFS_MODEL`). */
+  model: string;
+  /** The model's run metadata while the request was made, as `omRuns`. */
+  run: RunsSeen | null;
+  error?: string;
+  /** Raw samples that came back with a wind, and the table rows they reach. */
+  samples?: number;
+  levels?: number;
+  /** RRFS minus default, at the altitudes both tables have. */
+  rows?: { ft: number; dDir: number; dSpd: number; dT: number | null }[];
+  /** Cloud cover for the same hour as each answer served it, percent of
+   *  the sky: the RRFS's, and the default's, which is the second cloud
+   *  figure on the Ceiling & sky card. As served, not differenced: the card
+   *  prints the figure, so the log keeps both. Absent when either answer
+   *  had no cloud cover for the hour. */
+  cloud?: { rrfs: CloudPct; default: CloudPct };
+}
+
+/** One hour of Open-Meteo cloud cover: total, and the low, mid and high
+ *  bands; null where not served. */
+export interface CloudPct {
+  total: number | null;
+  low: number | null;
+  mid: number | null;
+  high: number | null;
+}
+
 /** One run of the Schulze comparison. `aligned` is null when no Schulze table
  *  matched the app's hour; `error` set means nothing was compared. */
 export interface SchulzeRecord {
@@ -60,6 +92,9 @@ export interface SchulzeRecord {
    *  2026-10-21, to test whether `rawMismatch` follows a new run's arrival
    *  (src/domain/runAge.ts). null for a domain no read could get. */
   omRuns?: Record<string, RunsSeen | null>;
+  /** The RRFS's table against the default, from 2026-11-24; absent before
+   *  and on a record whose default request failed. */
+  rrfs?: RrfsLog;
   /** The point both sides were read at, "lat,lon", from 2026-10-08; absent
    *  on records taken at the earlier point (40.8675,-96.11). */
   dz?: string;

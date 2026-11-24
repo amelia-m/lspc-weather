@@ -140,6 +140,7 @@ const mvfr = normalizeMetar({
 const flags: Advisory[] = [
   {
     id: 'surface-wind',
+    basis: 'report',
     level: 'caution',
     metric: 'Surface wind',
     value: '20 kt',
@@ -148,6 +149,7 @@ const flags: Advisory[] = [
   },
   {
     id: 'other',
+    basis: 'clock',
     level: 'info',
     metric: 'Other',
     value: 'n/a',
@@ -215,7 +217,7 @@ const CARDS: [string, () => string, GlossaryKey[]][] = [
         }),
       ),
     // Not the quoted “MSL”: that is the label on Schulze's page.
-    ['jumpRun', 'agl'],
+    ['jumpRun'],
   ],
   ['Exit weight & wing loading', () => r(createElement(WingLoadingPanel)), ['exitWeight']],
   [

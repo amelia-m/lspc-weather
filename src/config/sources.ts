@@ -84,8 +84,10 @@ export const DATA_SOURCES = {
    *  `ll` (the centre), `chart` (the chart's protoid) and `zoom` (its scale),
    *  and zooming in lowers the scale to a minimum of 1, so 2 is one step out
    *  from the closest view; its chart service names protoid 301 "World VFR"
-   *  (type vfr) at the drop zone's coordinates. The view itself has not been
-   *  seen in a browser: the sandbox's browser cannot load https pages. */
+   *  (type vfr) at the drop zone's coordinates. The view itself was not
+   *  seen in a browser when this was written: on 2026-10-03 the sandbox's
+   *  browser could not load https pages (it can since 2026-10-17, CLAUDE.md,
+   *  "The deployed site in a browser"; nothing here records a look since). */
   skyvector: {
     label: 'Sectional chart · SkyVector',
     url: `https://skyvector.com/?ll=${SITE.dz.lat},${SITE.dz.lon}&chart=301&zoom=2`,
@@ -96,6 +98,16 @@ export const DATA_SOURCES = {
   faaSectional: {
     label: 'FAA VFR sectional',
     url: 'https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59',
+  },
+  /** The aerial image under the jump-run line on the Drift card: the US
+   *  Geological Survey's National Map orthoimagery, a work of the US
+   *  government (the tiles come from `DZ_IMAGERY_TILES`). The label is the
+   *  service's own credit line ("USDA, USGS The National Map:
+   *  Orthoimagery. Data refreshed June, 2024", its MapServer description,
+   *  read 2026-11-24). */
+  usgsImagery: {
+    label: 'USDA, USGS The National Map: Orthoimagery',
+    url: 'https://www.usgs.gov/programs/national-geospatial-program/national-map',
   },
   /** Live air traffic around the drop zone on adsb.lol, a community-run
    *  ADS-B network whose data is open (ODbL). Groundwork for a receiver at
@@ -162,18 +174,11 @@ export const DATA_SOURCES = {
     label: 'NWS NBM hourly bulletin',
     url: 'https://www.weather.gov/mdl/nbm_text',
   },
-  /** NOAA winds-and-temps-aloft (FD) forecast — fallback winds source.
-   *
-   *  The label names no station even though the fetch uses SITE.fdWindsStation
-   *  (OMA): this URL is the generic FD product page, and it does not open on
-   *  OMA. Labelling the link "· OMA" promised a station the reader would then
-   *  have to go and find for themselves — the same defect as a citation naming
-   *  a section its link does not open. The query parameters that would select
-   *  the station cannot be verified from this environment, so the label matches
-   *  what the link actually delivers instead of being guessed at. */
-  fdWinds: {
-    label: 'NOAA winds aloft (FD)',
-    url: 'https://aviationweather.gov/data/windtemp/',
+  /** The same page for the three-hourly bulletin (NBS), which reaches three
+   *  days; since 2026-11-12. */
+  nbs: {
+    label: 'NWS NBM three-hourly bulletin',
+    url: 'https://www.weather.gov/mdl/nbm_text',
   },
   /** NWS radar (image loop + interactive viewer). */
   radar: {
@@ -195,6 +200,23 @@ export const FAA_SECTIONAL_TILES = {
     `https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/${z}/${y}/${x}`,
   minZoom: 8,
   maxZoom: 12,
+} as const;
+
+/** USGS's imagery-only base map as tiles, z/y/x, 256 px, Web Mercator
+ *  (its MapServer description, read 2026-11-24: a fused cache of 256 px
+ *  tiles in WKID 102100, levels 0 to 23, "visible to the 1:9,028 zoom
+ *  scale", which is level 16; the drop zone's tile answered with a JPEG at
+ *  each of levels 12 to 16). Loaded as <img>, so no CORS is needed; the
+ *  CSP's img-src names the host, which a test holds to `origin`. */
+export const DZ_IMAGERY_TILES = {
+  origin: 'https://basemap.nationalmap.gov',
+  url: (z: number, y: number, x: number): string =>
+    `https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/${z}/${y}/${x}`,
+  minZoom: 12,
+  // One step in from the image's opening zoom and no further: at 16 the
+  // landing area, 1,100 ft from the GPS point at the centre, is out of the
+  // frame, and the caption would name a ring that is not there.
+  maxZoom: 15,
 } as const;
 
 /** A link on the Pilots tab's resources card: where a pilot briefs from. */
@@ -284,7 +306,7 @@ export function dailySourceInUse(source: DailySource | null | undefined): Source
 }
 
 /** The winds-aloft source, as the Data line of the two cards built on it
- *  (Winds aloft, Drift) reads it. */
+ *  (Winds aloft, Drift) reads it. It has no fallback since 2026-11-23. */
 export function windsAloftSourceInUse(source: WindsAloftSource | null | undefined): SourceInUse {
-  return source === 'open-meteo' ? 'usual' : source === 'nws-fd' ? 'fallback' : null;
+  return source === 'open-meteo' ? 'usual' : null;
 }

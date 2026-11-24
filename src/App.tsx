@@ -59,6 +59,7 @@ import { MasonryGrid } from './components/common/MasonryGrid';
 import { CitationsPage } from './components/CitationsPage';
 import { ParityPage } from './components/ParityPage';
 import { WindErrorsPage } from './components/WindErrorsPage';
+import { WindsMethodPage } from './components/WindsMethodPage';
 import type { ParitySummary } from './domain/paritySummary';
 import type { WindErrorsData } from './domain/windErrors';
 import { useSiteJson } from './hooks/useSiteJson';
@@ -68,6 +69,11 @@ import { TAF_RELAY_SET } from './config/tafRelay';
 import { countPage } from './api/pageCount';
 import { clearLogs, getLogs, loadPersistedLogs, type SourceLog } from './api/sourceLog';
 import { openMeteoUsage } from './api/openMeteoUsage';
+// localStorage can throw (private mode, disabled cookies, quota). Every
+// access goes through these guards so a storage failure degrades to
+// in-memory state instead of a white screen on mount.
+import { safeLocalGet, safeLocalSet } from './api/safeStorage';
+
 
 const PROFILE_KEY = 'lspc:windProfile';
 /** The student choice last made (BSR or a waiver tier), so Licensed and back
@@ -82,24 +88,6 @@ const TEMP_UNIT_KEY = 'lspc:tempUnit';
 const WINDS_METHOD_KEY = 'lspc:windsMethod';
 
 
-// localStorage can throw (private mode, disabled cookies, quota). Guard every
-// access so a storage failure degrades to in-memory state instead of a
-// white-screen on mount. Mirrors the helpers in api/nws.ts.
-function safeLocalGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-function safeLocalSet(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* private mode / quota — ignore */
-  }
-}
-
 /** Validate a persisted profile id; anything unknown falls back to 'student'. */
 function toWindProfileId(raw: string | null): WindProfileId {
   return WIND_PROFILE_IDS.includes(raw as WindProfileId) ? (raw as WindProfileId) : 'student';
@@ -107,9 +95,9 @@ function toWindProfileId(raw: string | null): WindProfileId {
 
 /** Which page or dashboard tab is showing. A hash rather than a router: the
  *  app is a single page served from a GitHub Pages subpath, and `#citations`,
- *  `#parity`, `#wind-errors` or `#pilots` needs no server rewrite, no dependency, and
+ *  `#parity`, `#wind-errors`, `#winds-method` or `#pilots` needs no server rewrite, no dependency, and
  *  survives a reload and a shared link. No hash is the Jumpers tab. */
-function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'pilots' | null {
+function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | 'pilots' | null {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHashChange = (): void => setHash(window.location.hash);
@@ -119,6 +107,7 @@ function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'pilots' | null {
   if (hash === '#citations') return 'citations';
   if (hash === '#parity') return 'parity';
   if (hash === '#wind-errors') return 'wind-errors';
+  if (hash === '#winds-method') return 'winds-method';
   if (hash === VIEW_HASH.pilots) return 'pilots';
   return null;
 }
@@ -283,6 +272,7 @@ export default function App(): JSX.Element {
   if (route === 'citations') return <CitationsPage />;
   if (route === 'parity') return <ParityRoute />;
   if (route === 'wind-errors') return <WindErrorsRoute />;
+  if (route === 'winds-method') return <WindsMethodPage />;
 
   const cards: Record<CardId, JSX.Element> = {
     metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} {...temp} />,
@@ -301,6 +291,7 @@ export default function App(): JSX.Element {
         hourly={snapshot.hourly}
         omClouds={snapshot.openMeteoClouds ?? null}
         nbm={snapshot.nbm ?? null}
+        nbs={snapshot.nbs ?? null}
         thresholds={advisoryThresholds}
       />
     ),
@@ -431,6 +422,7 @@ export default function App(): JSX.Element {
         editedLimits={editedLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].label)}
         ownLimits={ownLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].ownLabel)}
         forPilots={!VIEW_USES_PROFILE[view]}
+        report={snapshot.current ? { station: snapshot.current.station, observedAt: snapshot.current.observedAt } : null}
       />
 
       {/* The cards each tab shows, in its order: src/config/views.ts. Order
@@ -450,6 +442,7 @@ export default function App(): JSX.Element {
         lastUpdated={lastUpdated}
         onRefresh={refresh}
         openMeteoUsage={usage}
+        reportAt={snapshot.current?.observedAt ?? null}
       />
 
       {VIEW_USES_PROFILE[view] && (

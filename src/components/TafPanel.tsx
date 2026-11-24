@@ -164,7 +164,10 @@ export function TafPanel({
       {!taf ? (
         <p className="muted">
           {status.error
-            ? `TAF unavailable — ${status.error}. Retrying automatically; the raw TAF is on the AWC link below.`
+            ? /* Each URL in the message cut to its host, as Data health
+                 prints the same error: the fetch errors quote the whole
+                 request URL. */
+              `TAF unavailable — ${shortError(status.error)}. Retrying automatically; the raw TAF is on the AWC link below.`
             : status.pending
               ? 'Fetching TAF…'
               : `No current TAF available from ${tafStations.map((s) => s.id).join(', ')}.`}

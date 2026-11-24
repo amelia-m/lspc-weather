@@ -345,3 +345,7 @@ gusts, and the card-note decision stands as it was. The script's
 by-month list carries a "2026-03" row of 3 hours, which are the hours
 of 2026-04-01 before 06Z, March 31 in Central time, and the "by month"
 table above left it out; both readings include them in their totals.
+
+## Spot check, 2026-11-22 18Z
+
+Asked by the maintainer that hour (18:30Z). NWS gridpoint OAX/77,42, run 18:05Z: wind 10 kt, gust 20 kt, 330°. KPMV reported, in the hour before (IEM, 17:15Z to 18:15Z): wind 11 to 13 kt, gust 17 to 21 kt, 310° to 330°; the 18:15Z report 31011G18KT. The forecast gust sat 2 kt over the latest report and 1 kt under the hour's peak: inside the six-month pattern above, the forecast gust nearer the hour's peak than its latest report. One hour; a figure to compare, not a finding.

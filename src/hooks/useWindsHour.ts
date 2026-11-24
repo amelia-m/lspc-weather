@@ -15,7 +15,7 @@ import { useNow } from './useNow';
  * onto the hour nearest the clock returns to following it (see
  * `selectionAfterStep`).
  *
- * On a source with a single hour (the NOAA FD fallback) there is nothing to
+ * On an answer with a single hour there is nothing to
  * step: the snapshot's own levels and validity pass through and `nav` is null.
  *
  * `method` picks which of the hour's two tables both cards use: every sample

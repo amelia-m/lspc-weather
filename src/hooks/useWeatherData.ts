@@ -5,13 +5,12 @@ import { tafOnScreenGone } from '../domain/taf';
 import { TAF_RELAY_SET } from '../config/tafRelay';
 import { isLatest } from '../domain/latest';
 import { sourcesFetched } from '../domain/types';
-import { fetchNbm } from '../api/nbm';
+import { fetchNbm, fetchNbs } from '../api/nbm';
 import { USE_FIXTURES } from '../api/http';
 import {
   fetchDailyFromGridpoint,
   fetchHourly,
   fetchTafAny,
-  fetchWindsAloftFd,
 } from '../api/nws';
 import { fetchDailyForecast, fetchWindsAloft } from '../api/openMeteo';
 import { fetchObservation } from '../api/iem';
@@ -88,6 +87,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
     taf: idleStatus(),
     daily: idleStatus(),
     nbm: idleStatus(),
+    nbs: idleStatus(),
   });
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -254,51 +254,15 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
         logSource('windsAloft', 'success', `Open-Meteo winds aloft ${describeValidity(validity)}`);
         updateSource('windsAloft', okStatus());
       })
-      .catch(async (e) => {
-        // A superseded refresh spends no fallback request on an answer
-        // that would be dropped.
+      .catch((e) => {
+        // A superseded refresh's failure is not this one's to report.
         if (!stillLatest('windsAloft')) return;
-        logSource('windsAloft', 'failure', 'Open-Meteo unreachable, trying NOAA FD fallback', e);
-        // Open-Meteo unreachable (some networks block that host) — fall back
-        // to the NOAA FD winds-aloft product on api.weather.gov. The 0 AGL
-        // target is dropped here as well as by interpolateWindsAloft, which no
-        // longer extrapolates below the lowest sample: asking for a level the
-        // bulletin cannot answer and discarding the answer is wasted work, and
-        // leaving the filter also keeps this call honest if the interpolator's
-        // contract ever loosens again.
-        try {
-          const fd = await fetchWindsAloftFd(
-            SITE.fdWindsStation,
-            dz.elevationFt,
-            WINDS_ALOFT_LEVELS_AGL.filter((a) => a > 0),
-            now,
-          );
-          if (fd && fd.levels.length > 0) {
-            if (!latest('windsAloft')) return;
-            setSnapshot((prev) => ({
-              ...prev,
-              windsAloft: fd.levels,
-              windsAloftSource: 'nws-fd',
-              windsAloftValidity: fd.validity,
-              // One bulletin, one valid time: nothing to step through, and
-              // hours left over from an earlier Open-Meteo answer must not
-              // outlive the source that served them.
-              windsAloftHours: null,
-              // Nor its cloud cover: the FD bulletin has none.
-              openMeteoClouds: null,
-            }));
-            logSource(
-              'windsAloft',
-              'fallback',
-              `NOAA FD fallback (${fd.levels.length} levels) ${describeValidity(fd.validity)}`,
-            );
-            updateSource('windsAloft', okStatus());
-            return;
-          }
-        } catch (fdError) {
-          logSource('windsAloft', 'failure', 'NOAA FD fallback also failed', fdError);
-          /* report the original Open-Meteo error below */
-        }
+        // No second source. Until 2026-11-23 this fell back to NOAA's FD
+        // winds-aloft bulletin on api.weather.gov, whose products feed then
+        // held no CONUS bulletin at all (docs/open-questions.md), so the
+        // fallback could only fail. The earlier answer is kept and marked
+        // stale, and the cards say when there is none.
+        logSource('windsAloft', 'failure', 'Open-Meteo winds aloft fetch failed', e);
         markStale('windsAloft', e);
       });
 
@@ -360,6 +324,28 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
             markStale('nbm', e);
           });
 
+    // The three-hourly bulletin the same way, on its own row: its reach is
+    // the point of it, so a day it fails is a day the card says so.
+    const nbsP = !nbmFetched
+      ? Promise.resolve()
+      : fetchNbs()
+          .then((nbs) => {
+            if (!latest('nbs')) return;
+            setSnapshot((prev) => ({ ...prev, nbs }));
+            if (nbs) {
+              logSource('nbs', 'success', `NBM NBS cycle ${new Date(nbs.cycleMs).toISOString()} (${nbs.hours.length} columns, ${nbs.file ?? 'no file'})`);
+              updateSource('nbs', okStatus());
+            } else {
+              const err = new Error('No NBM three-hourly bulletin');
+              logSource('nbs', 'failure', 'No NBM three-hourly bulletin', err);
+              markStale('nbs', err);
+            }
+          })
+          .catch((e) => {
+            logSource('nbs', 'failure', 'NBM NBS fetch failed', e);
+            markStale('nbs', e);
+          });
+
     const dailyP = fetchDailyForecast(dz.lat, dz.lon)
       .then((daily) => {
         if (!latest('daily')) return;
@@ -391,7 +377,7 @@ export function useWeatherData(thresholds: Thresholds, unit: SpeedUnit = 'kt'): 
     // Sun is computed locally and never fails.
     setSnapshot((prev) => ({ ...prev, sun: sunTimes(dz.lat, dz.lon, new Date(now)) }));
 
-    void Promise.allSettled([metarP, hourlyP, windsP, tafP, dailyP, nbmP]).then(() => {
+    void Promise.allSettled([metarP, hourlyP, windsP, tafP, dailyP, nbmP, nbsP]).then(() => {
       setLoading(false);
       if (failures === 0) {
         quickRetryUsed.current = false;
@@ -446,11 +432,7 @@ function describeValidity(validity: WindsAloftValidity): string {
   const offsetMin = Math.round((validity.validMs - Date.now()) / 60_000);
   // ASCII sign, not a typographic minus: log lines get grepped and pasted.
   const offset = `${offsetMin >= 0 ? '+' : '-'}${Math.abs(offsetMin)} min vs now`;
-  const extra = [
-    validity.forUseRaw ? `for use ${validity.forUseRaw}Z` : null,
-    validity.basedOnMs != null ? `based on ${new Date(validity.basedOnMs).toISOString()}` : null,
-  ].filter((p): p is string => p != null);
-  return `valid ${d.toISOString()} (${zulu}, ${offset})${extra.length ? `, ${extra.join(', ')}` : ''}`;
+  return `valid ${d.toISOString()} (${zulu}, ${offset})`;
 }
 
 function withStaleness(status: Record<SourceKey, SourceStatus>): Record<SourceKey, SourceStatus> {

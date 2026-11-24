@@ -99,6 +99,41 @@ tally again after a month of the retry rules.
 
 ## Since the tally
 
+- 2026-11-19, the parity summary (not one of the two checks, and it
+  opens no issue): the run after the daily sky-parity run (21:03Z, run
+  44614920278) built the summary and the archive and had its push to
+  main rejected, "fetch first": main had moved under it (PR #305
+  merged at 21:13Z, the push at 21:14Z). Nothing was committed; the
+  next day's run takes the same records (the archive step archives
+  whatever is not yet archived, and the artifacts last fourteen days),
+  so the day's figures are late, not lost. The commit step now fetches,
+  rebases onto main and pushes, up to three times, as the ceiling
+  refresh already did.
+- 2026-11-18, sky-parity: the SIM text check failed seven tests on one
+  fetch of uspa.org/sim/2-1 cut off by a connection reset
+  (`TypeError: fetch failed (ECONNRESET)`, 20:57Z, run 44396227583,
+  added to #283 as a comment); every other check passed, and the next
+  day's scheduled run (21:02Z) passed everything. Another host's brief
+  trouble, the same kind as a timeout; the live fetch did not retry a
+  reset (only a timeout or a 502, 503 or 504), and since 2026-11-19 it
+  does, once (`isConnectionReset`, `scripts/liveFetch.ts`). The third
+  sky-parity failure that was one bad answer from uspa.org.
+- 2026-11-11, live-site: the run after the parity summary's deploy
+  (20:07Z, run 43093550048, issue #297) failed Jumpers at 1280 and 320 px
+  on both loads with "Winds aloft: error: HTTP 503 for api.open-meteo.com";
+  every other page passed, and the late-evening leg passed. Another host's
+  outage, not the site's: Open-Meteo answered 200 again from the sandbox
+  at 21:50Z. The seventh live-site failure that was not the site's; #297
+  is the maintainer's to close (the sandbox cannot). The same hour,
+  GitHub's runner queue was slow for this account: the keeper's job
+  started 2 h 6 min after its run was created (17:17Z to 19:23Z), the
+  sampler's 5 h 6 min (13:57Z to 19:03Z), and PR #298's CI run sat
+  queued with no job for over 76 minutes (from 20:33Z) while the run for
+  the next push to the same PR (21:50Z) started at once and passed in a
+  minute, and the deploy and parity runs of 19:47Z to 20:17Z had started
+  within a minute: a stuck run, then, not a slow queue, since a later run
+  passed it. Not a failure of either check, but worth knowing when a run
+  "has not run": push again, or dispatch one, rather than wait.
 - 2026-11-09, sky-parity: the SIM text check failed all 31 tests on a
   Cloudflare challenge from uspa.org (`cf-mitigated: challenge`), the
   same refusal as 2026-10-09; every other check passed (#283,

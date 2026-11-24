@@ -81,7 +81,7 @@ describe('Winds aloft hour buttons', () => {
 
   it('says it follows the clock until stepped, then says it does not and offers the way back', () => {
     const following = winds({ hourNav: nav() });
-    expect(following).toContain('follows the hour nearest the clock');
+    expect(following).toContain('Follows the hour nearest the clock');
     expect(following).not.toContain('Back to the nearest hour');
     expect(following).not.toContain('fc-shifted');
 
@@ -89,13 +89,6 @@ describe('Winds aloft hour buttons', () => {
     expect(stepped).toContain('<div class="fc-nav fc-shifted">');
     expect(stepped).toContain('no longer follows the clock');
     expect(stepped).toContain('>Back to the nearest hour</button>');
-  });
-
-  it('offers no buttons on the one-bulletin FD fallback, but still shows the gap', () => {
-    const html = winds({ source: 'nws-fd', hourNav: null });
-    expect(html).not.toContain('fc-step');
-    expect(html).toContain('ahead of now</strong>');
-    expect(html).toContain('FD bulletin is issued every 6 hours');
   });
 
   it('marks the gap in the interface accent only, never a warning colour', () => {
@@ -107,46 +100,41 @@ describe('Winds aloft hour buttons', () => {
 });
 
 describe('Winds aloft explanatory text', () => {
-  it('folds the background notes by default, and keeps the table and the guidance out', () => {
+  it('links the method page in place of folded notes, and keeps the table and the guidance in view', () => {
     const html = winds({ hourNav: nav() });
-    const about = /<details class="aloft-about">([\s\S]*?)<\/details>/.exec(withoutGlossaryLinks(html))?.[1] ?? '';
-    // Closed until opened: no `open` attribute.
-    expect(html).toContain('<details class="aloft-about"><summary');
-    for (const note of ['AGL, like these', 'Mark Schulze’s Winds Aloft', 'linearly interpolated', 'model’s forecast wind at 10']) {
-      expect(about).toContain(note);
-    }
-    const outside = html.replace(/<details class="aloft-about">[\s\S]*?<\/details>/, '');
+    // The background notes are a page of their own since 2026-11-22; the
+    // card carries one link to them and no folded text.
+    expect(html).toContain('<a href="#winds-method">How this table is built, and how it compares with Mark Schulze’s tool</a>');
+    expect(html).not.toContain('aloft-about');
+    expect(html).not.toContain('linearly interpolated');
     // The sourced spotting guidance stands where it is always readable.
-    expect(outside).toContain('Strong upper winds increase freefall drift');
-    expect(outside).toContain('<table class="aloft-table">');
-    expect(outside).toContain('Arrow shows drift direction');
-    // What reading the numbers right needs, unfolded: a forecast, what the
+    expect(html).toContain('Strong upper winds increase freefall drift');
+    expect(html).toContain('<table class="aloft-table">');
+    expect(html).toContain('Arrow shows drift direction');
+    // What reading the numbers right needs, in view: a forecast, what the
     // Surface row is, and why Schulze's table can look different.
-    expect(outside).toContain('A model <strong>forecast</strong> for the DZ, not a measurement.');
-    expect(outside).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.');
+    expect(html).toContain('A model <strong>forecast</strong> for the DZ, not a measurement.');
+    expect(html).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.');
     // The extra samples are said even with no switch to offer: the table
     // on screen still takes levels his does not.
-    expect(outside).toContain(
-      'Against Mark Schulze’s tool: same data, but this table also takes samples his does not, and after half past his table is the hour before this one.',
+    expect(withoutGlossaryLinks(html)).toContain(
+      'Mark Schulze’s tool reads the same data; this table takes samples his does not, and after half past his is the hour before this one.',
     );
+    // The clock line no longer repeats the time the offset bar marks.
+    expect(html).toContain('Follows the hour nearest the clock; moves on at half past.');
+    expect(html).not.toMatch(/Now \d/);
   });
 
-  it('offers no About section with no table, and no Surface row talk without one', () => {
-    expect(winds({ levels: [], source: undefined, validity: null })).not.toContain('aloft-about');
+  it('offers no method link with no table, and no Surface row talk without a source', () => {
+    expect(winds({ levels: [], source: undefined, validity: null })).not.toContain('#winds-method');
     const noSource = winds({ source: undefined, hourNav: nav() });
-    expect(noSource).toContain('About these numbers: comparing with Mark Schulze’s tool, how levels are worked out');
+    expect(noSource).toContain('href="#winds-method"');
     expect(noSource).not.toContain('The Surface row is');
-  });
-
-  it('keeps the fallback source note out, since it is about this report', () => {
-    const html = winds({ source: 'nws-fd', hourNav: null });
-    expect(html).not.toContain('aloft-about');
-    expect(html).toContain('<strong>Fallback source:</strong>');
   });
 });
 
 describe('Drift card follows the hour', () => {
-  const drift = (validMs: number | null, hourNav: WindsHourNav | null, source?: 'open-meteo' | 'nws-fd') =>
+  const drift = (validMs: number | null, hourNav: WindsHourNav | null, source?: 'open-meteo') =>
     renderToStaticMarkup(createElement(DriftPanel, { levels, validMs, hourNav, source }));
   // The hour row and the offset bar under it, as rendered, without the
   // attributes that are meant to differ between the two copies.
@@ -189,8 +177,8 @@ describe('Drift card follows the hour', () => {
     expect(stepped).toContain('>Back to the nearest hour</button>');
   });
 
-  it('shows the hour without buttons on the one-bulletin FD fallback, and does not call it selected', () => {
-    const html = drift(ahead(), null, 'nws-fd');
+  it('shows the hour without buttons when there are no hours to step through, and does not call it selected', () => {
+    const html = drift(ahead(), null, 'open-meteo');
     expect(html).not.toContain('fc-step');
     expect(html).toContain('ahead of now</strong>');
     expect(html).toContain('Worked from the same forecast hour as the Winds aloft card.');

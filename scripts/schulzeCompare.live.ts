@@ -27,10 +27,13 @@ import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../src/config/site';
 import {
   coerceOpenMeteoTimes,
   normalizeOpenMeteo,
+  normalizeOpenMeteoClouds,
+  OPEN_METEO_RRFS_MODEL,
   openMeteoWindsUrl,
   type RawOpenMeteo,
 } from '../src/domain/normalize';
 import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
+import { cloudAt, rrfsLogOf, type ModelAnswer } from '../src/domain/modelCompare';
 import { appRawLevels, rawGap, schulzeRawLevels } from '../src/domain/runSplit';
 import { RUN_DOMAINS, runMeta, schulze, type Schulze } from './schulzeFetch';
 
@@ -64,6 +67,22 @@ function rowDiff(
   };
 }
 
+/**
+ * The app's winds request with Open-Meteo's RRFS named as the model, started
+ * with the app's own so both are answered in the same minute. What is made
+ * of the answer, and why it is logged, is `rrfsLogOf`
+ * (src/domain/modelCompare.ts). Never throws: a failure is returned as one.
+ */
+async function rrfsAnswer(lat: number, lon: number): Promise<ModelAnswer> {
+  try {
+    const res = await fetch(openMeteoWindsUrl(lat, lon, OPEN_METEO_RRFS_MODEL), { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    return { raw: (await res.json()) as RawOpenMeteo };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
 it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same valid hour', async () => {
   const dz = SITE.dz;
   const now = Date.now();
@@ -74,6 +93,9 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   // Started with the request, so it says which runs the servers held while
   // the request was served. Awaited by every record, the failures too.
   const runsP = Promise.all(RUN_DOMAINS.map(async (d) => [d, await runMeta(d)] as const)).then(Object.fromEntries);
+  // The RRFS's answer and run, asked at once; read below, once the app's own
+  // table is built, and by no record of a failed default request.
+  const rrfsP = Promise.all([rrfsAnswer(dz.lat, dz.lon), runMeta(OPEN_METEO_RRFS_MODEL)]);
   let raw: RawOpenMeteo;
   try {
     const res = await fetch(openMeteoWindsUrl(dz.lat, dz.lon), { signal: AbortSignal.timeout(20_000) });
@@ -105,6 +127,11 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     return;
   }
   const appHour = new Date(validMs).getUTCHours();
+  const [rrfsRaw, rrfsRun] = await rrfsP;
+  // The default's cloud cover for the hour: the second figure on the
+  // Ceiling & sky card, logged beside the RRFS's.
+  const defaultCloud = cloudAt(normalizeOpenMeteoClouds(coerceOpenMeteoTimes(raw)), validMs);
+  const rrfs = rrfsLogOf(rrfsRaw, rrfsRun, now, validMs, levels, dz.elevationFt, defaultCloud);
 
   // The app snaps to the nearest hour; the tool's offset 0 is the hour in
   // progress. Fetch both candidates and use the one that matches.
@@ -168,7 +195,19 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     dz: `${SITE.dz.lat},${SITE.dz.lon}`,
     unaligned,
     omRuns: await runsP,
+    rrfs,
   };
+  out.push(
+    rrfs.error != null
+      ? `RRFS (${rrfs.model}) at the same hour: ${rrfs.error}`
+      : `RRFS (${rrfs.model}) minus the default table, same hour (${rrfs.samples} samples, ${rrfs.levels} rows): ` +
+          (rrfs.rows ?? []).map((r) => `${r.ft}: ${r.dDir}°/${r.dSpd} kt`).join('  '),
+  );
+  if (rrfs.cloud) {
+    const c = (x: { total: number | null; low: number | null; mid: number | null; high: number | null }): string =>
+      `${x.total ?? '-'}% (low ${x.low ?? '-'}, mid ${x.mid ?? '-'}, high ${x.high ?? '-'})`;
+    out.push(`cloud cover, same hour: RRFS ${c(rrfs.cloud.rrfs)} · default ${c(rrfs.cloud.default)}`);
+  }
   if (ms == null) {
     say([...out, 'No Schulze table for the same hour; nothing compared.', record({ ...base, aligned: null })]);
     return;

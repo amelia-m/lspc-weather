@@ -1,13 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import { handle, type RelayDeps } from '../relay/src/relay';
-import { NBM_BUCKET, NBM_CACHE_SECONDS, NBM_KNOWN_OFFSET, NBM_LOOKBACK_HOURS, NBM_PATH, NBM_WINDOW, cutStationBlock, nbmFileFor } from '../relay/src/nbm';
-import { nbmRelayUrl } from '../src/config/tafRelay';
+import { NBM_BUCKET, NBM_CACHE_SECONDS, NBM_KNOWN_OFFSET, NBM_LOOKBACK_HOURS, NBM_PATH, NBM_WINDOW, NBS_KNOWN_OFFSET, NBS_PATH, cutStationBlock, nbmFileFor } from '../relay/src/nbm';
+import { nbmRelayUrl, nbsRelayUrl } from '../src/config/tafRelay';
 import { parseNbhBlock } from '../src/domain/nbm';
 
 const SITE_ORIGIN = 'https://amelia-m.github.io';
 const BASE = 'https://lspc-taf-relay.example.workers.dev';
 const FILES = import.meta.glob('../data/parity/nbm-kpmv-2026-10-24-03z.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const KPMV = Object.values(FILES)[0].split('\n\n')[0];
+const NBS_FILES = import.meta.glob('../data/parity/nbm-kpmv-nbs-2026-11-12-01z.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+/** KPMV's NBS block as kept: its header has two spaces more than the NBH's
+ *  after the id, and no version token. */
+const KPMV_NBS = Object.values(NBS_FILES)[0].trimEnd();
 const other = (id: string) => KPMV.replace(/^ KPMV /, ` ${id} `.padEnd(6));
 
 /** A stand-in bulletin: filler, two other stations, KPMV, a buoy with a
@@ -46,7 +50,14 @@ function deps(
     return new Response(text, { status: 200 });
   });
   const clock = { t: T0 };
-  return { fetch, memo: { body: null, at: 0 }, nbm: { body: null, at: 0, offset: NBM_KNOWN_OFFSET }, now: () => clock.t, clock } satisfies RelayDeps & { clock: { t: number } };
+  return {
+    fetch,
+    memo: { body: null, at: 0 },
+    nbm: { body: null, at: 0, offset: NBM_KNOWN_OFFSET },
+    nbs: { body: null, at: 0, offset: NBS_KNOWN_OFFSET },
+    now: () => clock.t,
+    clock,
+  } satisfies RelayDeps & { clock: { t: number } };
 }
 
 const req = (path: string, init: { origin?: string; method?: string } = {}) =>
@@ -224,5 +235,57 @@ describe('the NBM path of the relay', () => {
   it('is where the app asks, under the relay’s address, and nowhere without one', () => {
     expect(nbmRelayUrl(`${BASE}/`)).toBe(`${BASE}${NBM_PATH}`);
     expect(nbmRelayUrl(null)).toBeNull();
+    expect(nbsRelayUrl(`${BASE}/`)).toBe(`${BASE}${NBS_PATH}`);
+    expect(nbsRelayUrl(null)).toBeNull();
+  });
+});
+
+describe('the NBS path of the relay', () => {
+  /** An NBS file: the same shape, KPMV's block among others, at the NBS offset. */
+  function nbsBulletin(at: number): { text: string; at: number } {
+    const otherNbs = (id: string) => KPMV_NBS.replace(/^ KPMV /, ` ${id} `.padEnd(6));
+    const before = `${otherNbs('KOMA')}${GAP}${otherNbs('KOFF')}${GAP}`;
+    const filler = 'x'.repeat(Math.max(0, at - before.length)) + '\n';
+    const text = `${filler}${before}${KPMV_NBS}${GAP}${otherNbs('KPMZ')}\n`;
+    return { text, at: text.indexOf(' KPMV ') };
+  }
+
+  it('cuts the NBS block by its own header, and the NBH cut does not take it', () => {
+    const b = nbsBulletin(100);
+    const cut = cutStationBlock(b.text, 'KPMV', 'NBS');
+    expect(cut).toMatchObject({ at: b.at, complete: true });
+    expect(cut?.block).toBe(KPMV_NBS);
+    expect(cut?.block).toMatch(/^ KPMV\s+NBM\s+NBS GUIDANCE\s+11\/12\/2026\s+0100 UTC/);
+    expect(cut?.block).toMatch(/\n FHR {2}05 08 11/);
+    expect(cutStationBlock(b.text, 'KPMV', 'NBH')).toBeNull();
+    expect(cutStationBlock(b.text, 'KPMV')).toBeNull();
+  });
+
+  it('answers the newest NBS file’s KPMV block from a window at the NBS offset, on its own path, with its own memory', async () => {
+    const b = nbsBulletin(NBS_KNOWN_OFFSET + 4000);
+    const d = deps(b.text);
+    const res = await handle(req(NBS_PATH, { origin: SITE_ORIGIN }), d);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { station: string; product: string; file: string; cycle: string; text: string };
+    expect(body).toMatchObject({ station: 'KPMV', product: 'NBS', cycle: '2026-10-27T01:00:00.000Z' });
+    expect(body.file).toBe(nbmFileFor(Date.UTC(2026, 9, 27, 1), 'NBS'));
+    expect(body.file).toMatch(/blend_nbstx\.t01z$/);
+    expect(body.text).toBe(KPMV_NBS);
+    const calls = d.fetch.mock.calls.map(([u, i]) => `${i.method ?? 'GET'} ${u.replace(NBM_BUCKET, '')} ${new Headers(i.headers).get('range') ?? ''}`.trim());
+    expect(calls).toEqual([
+      `HEAD /${nbmFileFor(Date.UTC(2026, 9, 27, 1), 'NBS')}`,
+      `GET /${nbmFileFor(Date.UTC(2026, 9, 27, 1), 'NBS')} bytes=${NBS_KNOWN_OFFSET - NBM_WINDOW}-${NBS_KNOWN_OFFSET + NBM_WINDOW}`,
+    ]);
+    expect(d.nbs.offset).toBe(b.at);
+    // The hourly path's memory is untouched, and the two answers are kept apart.
+    expect(d.nbm.offset).toBe(NBM_KNOWN_OFFSET);
+    expect(d.nbm.body).toBeNull();
+  });
+
+  it('names the NBS when the bucket has no file of the last hours', async () => {
+    const d = deps(nbsBulletin(NBS_KNOWN_OFFSET).text, { missingHours: NBM_LOOKBACK_HOURS + 2 });
+    const res = await handle(req(NBS_PATH, { origin: SITE_ORIGIN }), d);
+    expect(res.status).toBe(502);
+    expect(((await res.json()) as { error: string }).error).toMatch(/no NBS file/);
   });
 });

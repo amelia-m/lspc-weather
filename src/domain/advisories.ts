@@ -123,6 +123,7 @@ export function evaluateAdvisories(
         const gustDriven = gustKt != null && gustKt >= limitKt && (speedKt == null || speedKt < limitKt);
         out.push({
           id: 'surface-wind',
+          basis: 'report',
           level: 'caution',
           metric: 'Surface wind',
           // Says what the comparison is (at or above), and not "limit": the
@@ -150,6 +151,7 @@ export function evaluateAdvisories(
     if (thresholds.gustCautionKt != null && gustKt != null && gustKt >= thresholds.gustCautionKt) {
       out.push({
         id: 'gust-limit',
+        basis: 'report',
         level: 'caution',
         metric: 'Gust limit',
         // Both figures in the selected unit. The waiver states its ceiling in
@@ -198,6 +200,7 @@ export function evaluateAdvisories(
       const under = visibilityRowsUnder(thresholds, current.visibilitySm);
       out.push({
         id: 'visibility',
+        basis: 'report',
         level: 'caution',
         metric: 'Visibility',
         value: `${fmtVisibilitySm(current.visibilitySm)} SM${under ? `, ${under}` : ''}`,
@@ -212,6 +215,7 @@ export function evaluateAdvisories(
       const comparison = flightCategoryComparison(current);
       out.push({
         id: 'flight-category',
+        basis: 'report',
         level: FLIGHT_CATEGORY_LEVEL[category],
         metric: 'Flight category',
         value: `${category} (${CATEGORY_LABEL[category]})`,
@@ -257,6 +261,7 @@ export function evaluateAdvisories(
       const lower = lowest != null && (base == null || lowest.baseFtAgl < base) ? lowest : null;
       out.push({
         id: 'overcast',
+        basis: 'report',
         level: OVERCAST_LEVEL,
         metric: 'Sky cover',
         value: base != null ? `Overcast at ${ft(base)} AGL` : 'Overcast, base not reported',
@@ -275,6 +280,7 @@ export function evaluateAdvisories(
     if (current.wxString && /TS/.test(current.wxString)) {
       out.push({
         id: 'thunderstorm',
+        basis: 'report',
         level: 'caution',
         metric: 'Thunderstorm',
         value: current.wxString.trim(),
@@ -320,6 +326,7 @@ export function evaluateAdvisories(
     if (beforeSunrise || now >= sun.sunset) {
       out.push({
         id: 'daylight',
+        basis: 'clock',
         level: 'caution',
         metric: 'Daylight',
         value: beforeSunrise ? 'Before sunrise' : 'After sunset',
@@ -417,16 +424,25 @@ export function forecastWindAdvisories(
           : 'the surface-wind caution';
       out.push({
         id: 'forecast-wind',
+        basis: 'forecast',
         level: 'forecast',
         metric: 'Forecast wind',
         value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
+        // The limit's own sentence from the profile (the figures and their
+        // source), then a pointer to the Surface wind card, which carries the
+        // rest: the waiver mechanics, which of the BSR's two figures the band
+        // uses and the round-reserve fact. Until 2026-11-22 the flag repeated
+        // all of it directly under the observed flag that already said it
+        // (docs/card-wording-review-2026-11-21.md, F2). The pointer names
+        // the band's figure, so the flag still stands alone on a calm morning
+        // when no observed flag is listed. The secondary citation (the
+        // waiver rule) went with the waiver sentence.
         guidance:
-          (`The NWS hourly forecast for the drop zone, gusts included, is at or above ${fmtLimitSpeed(t.windCautionKt, unit)}, ` +
-          `${which}, in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Surface wind')} ${t.windGuidance} ` +
-          // Which of the source's figures the flag uses, as the flag on the
-          // report says: on Student, the BSR's 14 mph and not its 10 mph.
-          windBandSentence(t, unit)).trim(),
-        citations: cited(t.windCitation, t.windSecondaryCitation),
+          `The NWS hourly forecast for the drop zone, gusts included, is at or above ${fmtLimitSpeed(t.windCautionKt, unit)}, ` +
+          `${which}, in these hours of the next ${FORECAST_FLAG_HOURS}. ${asForecast('Surface wind')} ${firstSentence(t.windGuidance)} ` +
+          `The same ${fmtLimitSpeed(t.windCautionKt, unit)} band as the Surface wind card` +
+          (lowerLimitUnchecked(t) && t.windBandCaveat ? ', which says what it leaves unchecked.' : '.'),
+        citations: cited(t.windCitation),
       });
     }
   }
@@ -452,6 +468,7 @@ export function forecastWindAdvisories(
           : '';
       out.push({
         id: 'forecast-gust',
+        basis: 'forecast',
         level: 'forecast',
         metric: 'Forecast gusts',
         value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
@@ -506,6 +523,13 @@ export function lowerLimitPublished(t: Thresholds, unit: SpeedUnit): string {
 export function withNotHere(sentence: string, t: Thresholds): string {
   const fact = t.windBandCaveat?.notHere;
   return fact ? `${sentence} ${fact}` : sentence;
+}
+
+/** A guidance text's first sentence: up to the first full stop followed by
+ *  a space (the profiles' guidance has no abbreviation before one). */
+export function firstSentence(text: string): string {
+  const m = /^.*?\.(?=\s|$)/.exec(text);
+  return m ? m[0] : text;
 }
 
 /** The flag's sentence: which figure it uses and, below it, what it leaves

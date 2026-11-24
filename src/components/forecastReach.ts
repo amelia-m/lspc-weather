@@ -3,41 +3,19 @@
  * components (react-refresh). */
 import type { HourlyPoint } from '../domain/types';
 
-/** How far ahead the strip looks: twelve hours by default, and longer at the
- *  reader's choice (the maintainer, 2026-10-24). The NWS ceiling forecast
- *  runs about a day and a half, so 36 h reaches its end on most refreshes;
- *  the sky cover runs on, and the strip says where the ceiling stops. */
-export const SKY_HORIZONS = [12, 24, 36] as const;
-
 /** The horizons worth offering for `futureHours` hours of forecast: the
  *  first always, a longer one only when the forecast runs past the one
  *  before it, so it always shows something new, though not always its full
- *  length. The Hourly wind card and the Ceiling & sky card both offer
- *  theirs this way. */
+ *  length. The Hourly wind card offers its horizons this way (the Ceiling &
+ *  sky card did too until 2026-11-18, when its strip became day tables). */
 export function horizonOptions<T>(horizons: readonly T[], hoursOf: (h: T) => number, futureHours: number): T[] {
   return horizons.filter((_, i) => i === 0 || futureHours > hoursOf(horizons[i - 1]));
 }
 
-export const skyHorizonOptions = (futureHours: number): number[] =>
-  horizonOptions(SKY_HORIZONS, (h) => h, futureHours);
-
-/** What the Ceiling & sky card says about hours in its strip that the NWS
- *  ceiling forecast does not cover: `end` when the forecast stops partway
- *  and does not come back within the strip, `none` when it covers no hour
- *  of the strip (no ceiling element, or a copy so old it has run out),
- *  `gaps` for a hole it resumes after, null when every hour is covered.
- *  Each gets its own sentence: "from <hour>" names an end, and "some of
- *  these hours" would send a reader looking for the ones with a figure
- *  when there are none. */
-export function ceilingCoverage(
-  hours: readonly Pick<HourlyPoint, 'time' | 'ceilingForecast'>[],
-): { kind: 'end'; from: number } | { kind: 'none' } | { kind: 'gaps' } | null {
-  const first = hours.findIndex((h) => !h.ceilingForecast);
-  if (first < 0) return null;
-  const resumes = hours.slice(first).some((h) => h.ceilingForecast);
-  if (resumes) return { kind: 'gaps' };
-  return first > 0 ? { kind: 'end', from: hours[first].time } : { kind: 'none' };
-}
+/* `ceilingCoverage`, which named the hours of the Ceiling & sky card's
+ * strip the NWS ceiling forecast did not cover, went with the strip
+ * (2026-11-18): the day tables say where that forecast ends through
+ * `nwsCeilingForecastEnd` in src/domain/skyDays.ts. */
 
 /** What changed between two hours in what the NWS forecast covers, as the
  *  hourly table's marker row says it, or null for no change. Against no

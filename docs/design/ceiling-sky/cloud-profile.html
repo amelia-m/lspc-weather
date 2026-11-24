@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ceiling &amp; sky mock: cloud profile</title>
+<!--
+  Mock-up B, "cloud profile" (docs/ceiling-sky-layout-review.md, 2026-11-18).
+  One height chart per local day, eight three-hour columns, drawn the way
+  up a jumper sees it: the ground at the bottom, cloud ABOVE its base. The
+  NBM's lowest base is a short bar sitting at its height, the NBM ceiling
+  a filled area from the ceiling up to the top of the band (overcast above
+  it), the NWS ceiling a tick in the NWS colour where that forecast runs.
+  Sky cover % is printed above each column, both sources, and every height
+  is printed under the band. Static figures from the fixture build's
+  screenshots of 2026-11-18 at 20:00Z; no script. Nothing is flagged; the
+  gridlines are plain thousands of feet, not limits.
+-->
+<style>
+:root { --bg:#0e1116; --panel:#171c24; --panel-2:#1f2630; --border:#2a323d; --text:#e6edf3; --muted:#93a1b0; --accent:#4aa8ff; --sky-cover:#b3c2d1; --hc-night:rgba(0,0,0,.5); }
+* { box-sizing:border-box }
+body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:14px }
+.panel { max-width:390px; margin:0 auto; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px }
+.head { display:flex; justify-content:space-between; align-items:baseline; gap:8px }
+h2 { margin:0; font-size:1.1rem }
+.sub { color:var(--muted); font-size:.8rem }
+.now { display:flex; justify-content:space-between; margin:10px 0 2px; font-size:.95rem }
+.now .l { color:var(--muted) }
+.pill { background:#1f6b35; color:#dff5e3; border-radius:5px; padding:1px 7px; font-size:.75rem; font-weight:600 }
+.key { color:var(--muted); font-size:.74rem; margin:10px 0 4px }
+.day { margin-top:12px }
+.day-h { font-size:.8rem; font-weight:600; margin-bottom:2px }
+.day-h .d { color:var(--muted); font-weight:400 }
+.grid { display:grid; grid-template-columns:54px repeat(8, minmax(0,1fr)); gap:1px 2px; font-size:.72rem; font-variant-numeric:tabular-nums; text-align:center; align-items:end }
+.lab { text-align:right; padding-right:4px; color:var(--muted); font-size:.66rem; white-space:nowrap }
+.t { color:var(--text); font-size:.7rem }
+.nws { color:var(--text) }
+.nbm { color:var(--muted) }
+.night { background:var(--hc-night) }
+.band { grid-column:2 / span 8; height:84px; display:block; width:100%; background:var(--panel-2); border:1px solid var(--border); border-radius:4px }
+.ylab { display:flex; flex-direction:column; justify-content:space-between; height:84px; line-height:1; text-align:right; padding-right:4px; color:var(--muted); font-size:.62rem }
+.grid-l { stroke:var(--border); stroke-width:.4; vector-effect:non-scaling-stroke }
+.oc { fill:var(--muted); fill-opacity:.45 }
+.base { fill:var(--muted); fill-opacity:.9 }
+.nws-ceil { stroke:var(--sky-cover); stroke-width:2; vector-effect:non-scaling-stroke }
+.nightr { fill:var(--hc-night) }
+.notes { color:var(--muted); font-size:.74rem; margin-top:10px }
+details summary { color:var(--accent); font-size:.78rem; cursor:pointer; margin-top:8px }
+details p { color:var(--muted); font-size:.74rem }
+.foot { color:var(--muted); font-size:.7rem; border-top:1px solid var(--border); margin-top:10px; padding-top:6px }
+.ann { color:#ffd166; font-size:.68rem; font-style:italic; margin:2px 0 0 }
+.legend { display:flex; gap:10px; flex-wrap:wrap; font-size:.68rem; color:var(--muted); margin:4px 0 0 }
+.legend i { display:inline-block; width:14px; height:8px; vertical-align:middle; margin-right:3px }
+</style>
+</head>
+<body>
+<section class="panel">
+  <div class="head"><h2>Ceiling &amp; sky</h2><span class="sub">now to Sat 9pm</span></div>
+  <div class="now"><span class="l">Flight category</span><span class="pill">VFR</span></div>
+  <div class="now"><span class="l">Ceiling</span><span><b>4,500 ft AGL</b></span></div>
+
+  <p class="key">Each day, every 3 h, ground to 12,000 ft AGL. Sky cover % above each column: NWS (white) and NBM (grey). In the band: NBM lowest base as a bar at its height, NBM ceiling as grey sky above it, NWS ceiling a light tick while that forecast runs. Every height printed under the band in thousands of ft; "no" = none.</p>
+  <div class="legend"><span><i style="background:var(--muted)"></i>NBM base</span><span><i style="background:var(--muted);opacity:.45"></i>NBM ceiling and above</span><span><i style="border-top:2px solid var(--sky-cover);height:0"></i>NWS ceiling</span><span><i style="background:rgba(0,0,0,.5);border:1px solid var(--border)"></i>night</span></div>
+  <p class="ann">annotation: cloud drawn above its base, the way the sky is; a full column now means overcast, not a high base. Band 84 px (7 px per 1,000 ft) instead of 40.</p>
+
+  <!-- Thursday: the one day in the fixture with a ceiling (3.5k at 3am), so the marks show -->
+  <div class="day">
+    <div class="day-h">Thu <span class="d">Nov 19</span></div>
+    <div class="grid">
+      <span class="lab"></span><span class="t night">12am</span><span class="t night">3am</span><span class="t">6am</span><span class="t">9am</span><span class="t">12pm</span><span class="t">3pm</span><span class="t night">6pm</span><span class="t night">9pm</span>
+      <span class="lab">NWS %</span><span class="nws night">25</span><span class="nws night">35</span><span class="nws">35</span><span class="nws">35</span><span class="nws">35</span><span class="nws">35</span><span class="nws night">35</span><span class="nws night">35</span>
+      <span class="lab">NBM %</span><span class="nbm night">45</span><span class="nbm night">62</span><span class="nbm">26</span><span class="nbm">20</span><span class="nbm">14</span><span class="nbm">14</span><span class="nbm night">22</span><span class="nbm night">33</span>
+      <span class="ylab"><span>12k</span><span>9</span><span>6</span><span>3</span><span>0</span></span>
+      <svg class="band" viewBox="0 0 800 120" preserveAspectRatio="none" aria-hidden="true">
+        <!-- 1,000 ft = 10 units; y = 120 - ft/100 -->
+        <rect class="nightr" x="0" y="0" width="200" height="120"/><rect class="nightr" x="600" y="0" width="200" height="120"/>
+        <line class="grid-l" x1="0" x2="800" y1="30" y2="30"/><line class="grid-l" x1="0" x2="800" y1="60" y2="60"/><line class="grid-l" x1="0" x2="800" y1="90" y2="90"/>
+        <!-- NWS ceiling: no at 12am; 10k from 3am to 6pm; ends 8pm -->
+        <line class="nws-ceil" x1="102" x2="698" y1="20" y2="20"/>
+        <!-- NBM ceiling 3.5k at 3am: overcast from 3,500 up -->
+        <rect class="oc" x="102" y="0" width="96" height="85"/>
+        <!-- NBM base bars: 2, 2.4, 3.7, 3.1, 3, 2.9, 2.2, 2.2 -->
+        <rect class="base" x="2" y="96" width="96" height="4"/>
+        <rect class="base" x="102" y="92" width="96" height="4"/>
+        <rect class="base" x="202" y="79" width="96" height="4"/>
+        <rect class="base" x="302" y="85" width="96" height="4"/>
+        <rect class="base" x="402" y="86" width="96" height="4"/>
+        <rect class="base" x="502" y="87" width="96" height="4"/>
+        <rect class="base" x="602" y="94" width="96" height="4"/>
+        <rect class="base" x="702" y="94" width="96" height="4"/>
+      </svg>
+      <span class="lab">NWS ceil</span><span class="nws night">no</span><span class="nws night">10</span><span class="nws">10</span><span class="nws">10</span><span class="nws">10</span><span class="nws">10</span><span class="nws night">10</span><span class="nws night">ends</span>
+      <span class="lab">NBM ceil</span><span class="nbm night">no</span><span class="nbm night">3.5</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm night">no</span><span class="nbm night">no</span>
+      <span class="lab">NBM base</span><span class="nbm night">2</span><span class="nbm night">2.4</span><span class="nbm">3.7</span><span class="nbm">3.1</span><span class="nbm">3</span><span class="nbm">2.9</span><span class="nbm night">2.2</span><span class="nbm night">2.2</span>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="day-h">Fri <span class="d">Nov 20</span></div>
+    <div class="grid">
+      <span class="lab"></span><span class="t night">12am</span><span class="t night">3am</span><span class="t">6am</span><span class="t">9am</span><span class="t">12pm</span><span class="t">3pm</span><span class="t night">6pm</span><span class="t night">9pm</span>
+      <span class="lab">NWS %</span><span class="nws night">35</span><span class="nws night">35</span><span class="nws">35</span><span class="nws">35</span><span class="nws">35</span><span class="nws">35</span><span class="nws night">35</span><span class="nws night">35</span>
+      <span class="lab">NBM %</span><span class="nbm night">46</span><span class="nbm night">37</span><span class="nbm">18</span><span class="nbm">3</span><span class="nbm">2</span><span class="nbm">8</span><span class="nbm night">10</span><span class="nbm night">24</span>
+      <span class="ylab"><span>12k</span><span>9</span><span>6</span><span>3</span><span>0</span></span>
+      <svg class="band" viewBox="0 0 800 120" preserveAspectRatio="none" aria-hidden="true">
+        <rect class="nightr" x="0" y="0" width="200" height="120"/><rect class="nightr" x="600" y="0" width="200" height="120"/>
+        <line class="grid-l" x1="0" x2="800" y1="30" y2="30"/><line class="grid-l" x1="0" x2="800" y1="60" y2="60"/><line class="grid-l" x1="0" x2="800" y1="90" y2="90"/>
+        <!-- bases 1.4 and 8; the rest no layer -->
+        <rect class="base" x="2" y="102" width="96" height="4"/>
+        <rect class="base" x="102" y="36" width="96" height="4"/>
+      </svg>
+      <span class="lab">NWS ceil</span><span class="nws night"></span><span class="nws night"></span><span class="nws"></span><span class="nws"></span><span class="nws"></span><span class="nws"></span><span class="nws night"></span><span class="nws night"></span>
+      <span class="lab">NBM ceil</span><span class="nbm night">no</span><span class="nbm night">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm night">no</span><span class="nbm night">no</span>
+      <span class="lab">NBM base</span><span class="nbm night">1.4</span><span class="nbm night">8</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm night">no</span><span class="nbm night">no</span>
+    </div>
+    <p class="ann">annotation: an empty band under a 2–10% sky row reads as the clear day it is; the NWS ceiling row is blank, not dashes, past its end (said once, in the key or a one-line note)</p>
+  </div>
+
+  <div class="day">
+    <div class="day-h">Sat <span class="d">Nov 21 · to 12pm</span></div>
+    <div class="grid">
+      <span class="lab"></span><span class="t night">12am</span><span class="t night">3am</span><span class="t">6am</span><span class="t">9am</span><span class="t">12pm</span><span></span><span></span><span></span>
+      <span class="lab">NWS %</span><span class="nws night">35</span><span class="nws night">35</span><span class="nws">35</span><span class="nws">35</span><span class="nws">35</span><span></span><span></span><span></span>
+      <span class="lab">NBM %</span><span class="nbm night">26</span><span class="nbm night">29</span><span class="nbm">23</span><span class="nbm">39</span><span class="nbm">48</span><span></span><span></span><span></span>
+      <span class="ylab"><span>12k</span><span>9</span><span>6</span><span>3</span><span>0</span></span>
+      <svg class="band" viewBox="0 0 800 120" preserveAspectRatio="none" aria-hidden="true">
+        <rect class="nightr" x="0" y="0" width="200" height="120"/>
+        <line class="grid-l" x1="0" x2="500" y1="30" y2="30"/><line class="grid-l" x1="0" x2="500" y1="60" y2="60"/><line class="grid-l" x1="0" x2="500" y1="90" y2="90"/>
+        <!-- 26k bases: above the band's top, drawn as a bar pinned at the top edge with the figure under it saying 26 -->
+        <rect class="base" x="102" y="0" width="96" height="4"/>
+        <rect class="base" x="302" y="0" width="96" height="4"/>
+        <rect class="base" x="402" y="0" width="96" height="4"/>
+        <rect fill="var(--panel)" x="500" y="0" width="300" height="120"/>
+      </svg>
+      <span class="lab">NBM ceil</span><span class="nbm night">no</span><span class="nbm night">no</span><span class="nbm">no</span><span class="nbm">no</span><span class="nbm">no</span><span></span><span></span><span></span>
+      <span class="lab">NBM base</span><span class="nbm night">no</span><span class="nbm night">26</span><span class="nbm">no</span><span class="nbm">26</span><span class="nbm">26</span><span></span><span></span><span></span>
+    </div>
+    <p class="ann">annotation: a base above 12,000 ft sits on the band's top edge; the printed 26 says how far above. The day under way (Wed) would be first, hourly NWS figures in its 12 columns.</p>
+  </div>
+
+  <details><summary>About these forecasts</summary>
+    <p>NWS: the gridpoint forecast for the DZ, hourly; its ceiling runs about a day and a half. NBM: the National Blend of Models&rsquo; three-hourly bulletin for KPMV (19Z cycle), 6 to 72 h, the one usairnet&rsquo;s three-day table reads; its base is the lowest layer whether or not it is a ceiling. Two forecasts, never blended; neither raises a flag. &hellip;</p>
+  </details>
+  <div class="foot">Data: IEM observation · NWS observation · NWS forecast · Open-Meteo · NWS NBM bulletins · usairnet</div>
+</section>
+</body>
+</html>

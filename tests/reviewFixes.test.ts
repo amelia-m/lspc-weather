@@ -11,8 +11,9 @@ import { OBSERVATION_FIXTURE } from '../src/api/fixtures/observation';
 describe('sourcesFetched', () => {
   it('is every source with the NBM fetched, and all but the NBM without', () => {
     expect(sourcesFetched(true)).toEqual([...SOURCE_KEYS]);
-    expect(sourcesFetched(false)).toEqual(SOURCE_KEYS.filter((k) => k !== 'nbm'));
+    expect(sourcesFetched(false)).toEqual(SOURCE_KEYS.filter((k) => k !== 'nbm' && k !== 'nbs'));
     expect(sourcesFetched(false)).not.toContain('nbm');
+    expect(sourcesFetched(false)).not.toContain('nbs');
   });
 });
 

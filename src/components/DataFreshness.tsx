@@ -3,17 +3,22 @@ import type { SourceProvenance } from '../domain/sourceProvenance';
 import { USE_FIXTURES } from '../api/http';
 import { DATA_SOURCES, type DataSource } from '../config/sources';
 import { TAF_RELAY_SET } from '../config/tafRelay';
+import { SITE } from '../config/site';
 import { Panel } from './common/Panel';
 import { fmtAgo, shortError } from './format';
+import { ageWords, agoText, reportsOverdue } from '../domain/reportAge';
+import { useNow } from '../hooks/useNow';
 import { OPEN_METEO_FREE_LIMITS, USAGE_KEEP_DAYS, quotaWindowLabel, type UsageSummary } from '../domain/openMeteoUsage';
 
 const LABELS: Record<SourceKey, string> = {
-  metar: 'METAR (KPMV)',
+  // The station from the config, as every other card names it.
+  metar: `METAR (${SITE.metarStation.id})`,
   nws: 'NWS forecast',
   windsAloft: 'Winds aloft',
   taf: 'TAF',
   daily: '10-day outlook',
   nbm: 'NBM cloud base',
+  nbs: 'NBM three-day',
 };
 
 const SOURCE_LINKS: Record<SourceKey, DataSource> = {
@@ -23,6 +28,7 @@ const SOURCE_LINKS: Record<SourceKey, DataSource> = {
   taf: DATA_SOURCES.taf,
   daily: DATA_SOURCES.openMeteo,
   nbm: DATA_SOURCES.nbm,
+  nbs: DATA_SOURCES.nbs,
 };
 
 /** The rows shown: the sources a refresh fetches (the NBM's only where the
@@ -47,6 +53,8 @@ export function DataFreshness({
   lastUpdated,
   onRefresh,
   openMeteoUsage,
+  reportAt = null,
+  now: nowProp,
 }: {
   status: Record<SourceKey, SourceStatus>;
   provenance?: Partial<Record<SourceKey, SourceProvenance>>;
@@ -55,7 +63,25 @@ export function DataFreshness({
   /** This browser's requests to Open-Meteo against the free limits
    *  (src/domain/openMeteoUsage.ts); absent when none has been made. */
   openMeteoUsage?: UsageSummary | null;
+  /** When the report on the cards was taken. The METAR row prints its age
+   *  beside the fetch's: "fetched a minute ago" alone read as fresh for a
+   *  report hours old (2026-11-24). */
+  reportAt?: number | null;
+  /** The time ages are counted to; the minute's tick when left out. */
+  now?: number;
 }): JSX.Element {
+  const tick = useNow(60_000);
+  const now = nowProp ?? tick;
+  // Overdue by the station's own cadence (reportAge.ts): the row turns
+  // stale, as it does when the app's own fetch is old, since either way
+  // the cards are behind the station.
+  const reportOverdue = reportAt != null && reportsOverdue(reportAt, now, SITE.metarStation.reportIntervalMin);
+  const metarMeta = (fetched: string): string =>
+    reportAt == null
+      ? fetched
+      : reportOverdue
+        ? `no report for ${ageWords(reportAt, now)} · fetched ${fetched}`
+        : `report ${agoText(reportAt, now)} · fetched ${fetched}`;
   // Over the rows shown: a source never fetched is never pending, but a
   // status it carries must not hold the button either.
   const refreshing = ROWS.some((k) => status[k]?.pending);
@@ -79,7 +105,11 @@ export function DataFreshness({
           {ROWS.map((k) => {
             const prov = provenance?.[k];
             return (
-              <li key={k} className={statusClass(status[k])} data-flags={prov?.flags?.join(' ') || undefined}>
+              <li
+                key={k}
+                className={k === 'metar' && reportOverdue && status[k].ok && !status[k].pending && !status[k].error ? 'source stale' : statusClass(status[k])}
+                data-flags={prov?.flags?.join(' ') || undefined}
+              >
                 <span className="source-dot" aria-hidden />
                 <span className="source-info">
                   <span className="source-name">
@@ -103,7 +133,9 @@ export function DataFreshness({
                       ? `error: ${shortError(status[k].error)}`
                       : status[k].stale
                         ? 'stale'
-                        : fmtAgo(status[k].fetchedAt)}
+                        : k === 'metar'
+                          ? metarMeta(fmtAgo(status[k].fetchedAt))
+                          : fmtAgo(status[k].fetchedAt)}
                 </span>
               </li>
             );

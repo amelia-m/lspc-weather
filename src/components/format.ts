@@ -1,3 +1,4 @@
+import { agoText } from '../domain/reportAge';
 import { SITE } from '../config/site';
 import type { CurrentConditions } from '../domain/types';
 import { compass, fmtSpeed, type SpeedUnit } from '../domain/units';
@@ -66,15 +67,11 @@ export const fmtDateClock = (ms: number): string =>
     timeZone: SITE.timeZone,
   });
 
-export const fmtAgo = (ms: number | null): string => {
-  if (ms == null) return '—';
-  const mins = Math.round((Date.now() - ms) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins === 1) return '1 min ago';
-  if (mins < 60) return `${mins} min ago`;
-  const h = Math.round(mins / 60);
-  return h === 1 ? '1 hr ago' : `${h} hr ago`;
-};
+/** How long ago, to now, in the words every age on the page uses
+ *  (`agoText`): "12 min ago", "1 h 40 min ago". Until 2026-11-24 this
+ *  rounded to whole hours as "2 hr ago", which would have sat beside a
+ *  report's "1 h 45 min ago" on the same Data health row. */
+export const fmtAgo = (ms: number | null): string => (ms == null ? '\u2014' : agoText(ms, Date.now()));
 
 /** An error message for a one-line status: each URL cut to its host. The
  *  fetch errors quote the whole request URL, and Open-Meteo's runs to a

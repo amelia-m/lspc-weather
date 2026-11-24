@@ -22,13 +22,18 @@ describe('the dashboard banner', () => {
     expect(withoutGlossaryLinks(shown)).toContain('the S&amp;TA, and the pilot in command');
   });
 
-  it('moves the reading dates, the photo of the sign and the station offset into a section closed by default', () => {
+  it('moves the reading dates and the photo of the sign into a section closed by default', () => {
     expect(more).toBeDefined();
     expect(more).not.toMatch(/^[^>]*\bopen\b/);
-    const station = `${SITE.metarStation.id} (~${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass})`;
-    for (const detail of ['2026-09-22 and 2026-09-23', 'undated photo of the posted sign', station]) {
+    for (const detail of ['2026-09-22 and 2026-09-23', 'undated photo of the posted sign']) {
       expect(more).toContain(detail);
       expect(shown).not.toContain(detail);
     }
+  });
+
+  it('keeps where the observations are taken in view, not in the closed section (the maintainer, 2026-11-24)', () => {
+    const station = `Observations are from ${SITE.metarStation.id}, about ${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the drop zone, not from the field`;
+    expect(shown).toContain(station);
+    expect(more).not.toContain('Observations are from');
   });
 });

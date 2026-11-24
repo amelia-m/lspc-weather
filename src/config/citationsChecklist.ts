@@ -5,6 +5,7 @@ import {
   FAR_91155_ROWS,
   FLIGHT_CATEGORY_GUIDANCE,
   flightCategoryComparisonText,
+  JUMP_RUN_AIRSPEED_FACT,
   OPENING_ALTITUDES_TEXT,
   STUDENT_ROUND_RESERVE_FACT,
   VISIBILITY_ROW,
@@ -152,7 +153,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A4',
     title: 'No USPA wind limit for licensed jumpers',
     claim:
-      'No USPA ground-wind limit for licensed jumpers — the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
+      'No USPA ground-wind limit for licensed jumpers: the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
     where:
       'Surface wind card with Licensed selected — a standing note under the reading, at any wind speed. No surface-wind flag fires on this profile at any speed unless the jumper sets their own limit in Settings, which every surface calls theirs.',
     sources: [CITATIONS.uspaLicensedWinds],
@@ -212,17 +213,20 @@ export const CHECKLIST: ChecklistEntry[] = [
     title: 'Exit separation and spotting in strong upper winds',
     claim:
       'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
-    where: 'Winds aloft card, standing note under the table, at any wind speed',
+    where:
+      'Winds aloft card, standing note under the table, at any wind speed. Since 2026-11-24 the Freefall drift / spot card also works the section’s two distances into seconds between exits, from a jump-run bearing and an indicated airspeed the reader can change and the forecast wind at exit altitude',
     sources: [CITATIONS.uspaSpotting],
     found: {
       read: SIM_READ,
       says: [
         'SIM 4-7 C, “Exit Separation on Jump Run”: “On days with strong upper headwinds, allow more time between groups on the same pass to get sufficient horizontal separation over the ground.”',
-        'It also gives distances: at least 1,000 ft of ground separation between solo jumpers, at least 1,500 ft between small groups, more as groups grow; and that slower-falling groups, having longer exposure to upper headwinds, exit before faster-falling groups when jump run is into the wind.',
+        'It gives distances: “Provide at least 1,000 feet of ground separation between individuals jumping solo.” and “Provide at least 1,500 feet of ground separation between small groups, adding more as the size of the groups increase.” It gives no figure for larger groups.',
+        'It also says that slower-falling groups, having longer exposure to upper headwinds, exit before faster-falling groups when jump run is into the wind.',
       ],
     },
     asks: [
-      'Should the card print the 1,000 / 1,500 ft ground-separation figures? They are published and checkable, but they are an operational instruction rather than a weather reading.',
+      'The drift card turns the 1,000 ft and 1,500 ft figures into seconds between exits (distance over the plane’s ground speed, rounded up). Is that how separation is counted at LSPC, and is anything the club teaches about it missing or contradicted?',
+      `${JUMP_RUN_AIRSPEED_FACT.sentenceOnCitations} Is that so for each of the club’s planes, and does the airspeed indicator read knots or mph?`,
     ],
   },
   {

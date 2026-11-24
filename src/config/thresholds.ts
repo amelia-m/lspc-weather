@@ -125,6 +125,21 @@ export const FAR_91155_ROWS =
 export const FLIGHT_CATEGORY_GUIDANCE =
   'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, the rules to check are the pilot’s basic VFR weather minimums, 14 CFR 91.155 (by airspace class and altitude), and the flight-visibility and cloud-clearance rule for parachute operations that the Ceiling & sky card cites; that call belongs to the pilot in command.';
 
+/** SIM 4-7 C's ground separation between groups leaving on one pass, read
+ *  at uspa.org on 2026-11-24 ("Provide at least 1,000 feet of ground
+ *  separation between individuals jumping solo. Provide at least 1,500 feet
+ *  of ground separation between small groups, adding more as the size of
+ *  the groups increase."); the part's text still matched the fingerprint
+ *  taken on its last full reading (readingLog.ts). The SIM gives no figure
+ *  for larger groups, so there is no third row: the Drift card works these
+ *  two into seconds (src/domain/exitSeparation.ts) and quotes the rest.
+ *  #citations A7 carries the same quotes, which the daily SIM check holds
+ *  to the part's text. */
+export const EXIT_SEPARATION_FT = [
+  { ft: 1000, between: 'Solo jumpers' },
+  { ft: 1500, between: 'Small groups' },
+] as const;
+
 /** BSR 2-1 I's minimum container opening altitudes, ft AGL, as read at
  *  uspa.org on 2026-10-08 ("Tandem jumps: 5,000 feet AGL; All students and
  *  A-license holders: 3,000 feet AGL; B-license holders: 2,500 feet AGL;
@@ -200,13 +215,13 @@ export const CITATIONS = {
    *  1,000 ft / 1 mile. Brown's is at 1,182 ft MSL, so a 10,000 ft AGL exit is
    *  in the 5 SM row and the freefall drops into the 3 SM row on the way down.
    *
-   *  The visibility flag fires at the row `VISIBILITY_ROW` picks, which
-   *  waits on the S&TA's or pilot's answer to A8 on #citations, unless the
-   *  reader edits it in Settings, and says which. The METAR reports surface
-   *  visibility and the reg's measure is flight visibility at altitude, so
-   *  which row a surface reading should be held to is the open question;
-   *  both rows are printed so the reader can check the exit against the
-   *  right one. */
+   *  The visibility flag holds the reading to the rows `VISIBILITY_ROW`
+   *  picks (both, since the maintainer's answer of 2026-10-31 to A8 on
+   *  #citations, which still asks an instructor to confirm it), unless the
+   *  reader edits the figure in Settings, and says which. The METAR
+   *  reports surface visibility and the reg's measure is flight visibility
+   *  at altitude; both rows are printed so the reader can check the exit
+   *  against the right one. */
   far10517: {
     source: '14 CFR § 105.17',
     ref: 'Flight visibility and clearance from cloud — never into or through cloud; below 10,000 ft MSL 3 SM and 500 ft below / 1,000 ft above / 2,000 ft horizontal; at or above 10,000 ft MSL 5 SM and 1,000 / 1,000 ft / 1 mile',
@@ -340,6 +355,9 @@ export const CITATIONS = {
    * The card states the guidance at any wind speed. The trigger that used to
    * gate it (upper winds above 20 kt) was the app's own and is gone; 4-7 sets
    * separation distances, not a wind speed at which to start caring.
+   *
+   * Since 2026-11-24 the Drift card also works those distances into seconds
+   * between exits (`EXIT_SEPARATION_FT`, src/domain/exitSeparation.ts).
    */
   uspaSpotting: {
     source: 'USPA SIM, Section 4-7 (Spotting)',
@@ -917,6 +935,22 @@ const STUDENT_WIND_KT = 12; // BSR 2-1 H: 14 mph, rounded to whole knots
  *  dashboard's own 25 kt caution band, which fired a flag nobody could check. */
 const LICENSED_BAR_SCALE_KT = 25;
 
+/** The indicated airspeed LSPC's planes fly on jump run, kt: the
+ *  maintainer's figure of 2026-11-24 ("I believe it's typically 75-80kt",
+ *  for the club's Cessna 182s). Not held to a published figure: no pilot's
+ *  operating handbook for a 182 is on a host this project can read, and
+ *  USPA's flight operations handbook needs a login (tried 2026-11-24). The
+ *  Drift card's exit-separation box opens on the low end, since a slower
+ *  plane covers the SIM's distance in more seconds, and #citations A7 asks
+ *  an instructor to confirm it and whether the indicator reads knots. */
+export const JUMP_RUN_AIRSPEED_KT = { low: 75, high: 80 } as const;
+export const JUMP_RUN_AIRSPEED_FACT = dzFact({
+  source: 'the maintainer',
+  date: '2026-11-24',
+  claim: `jump run in LSPC’s Cessna 182s is typically flown at about ${JUMP_RUN_AIRSPEED_KT.low} to ${JUMP_RUN_AIRSPEED_KT.high} kt indicated`,
+  consequence: `so the airspeed box opens on ${JUMP_RUN_AIRSPEED_KT.low} kt, the slower end, which gives the longer count`,
+});
+
 /** The one fact about this drop zone the Student profile's wind figures
  *  rest on, with its source and date, so the card, the flag and the
  *  `#citations` asks all say the same thing and move together when an
@@ -996,7 +1030,7 @@ const STUDENT: Thresholds = {
 const LICENSED: Thresholds = {
   windCautionKt: LICENSED_BAR_SCALE_KT,
   windGuidance:
-    'No USPA ground-wind limit for licensed jumpers — the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. ' +
+    'No USPA ground-wind limit for licensed jumpers: the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. ' +
     'Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
   // Cites the BSR for the absence of a limit, not the student limit: a reader
   // who follows the link should land on the section that shows the wind rule is

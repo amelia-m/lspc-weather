@@ -21,6 +21,10 @@ export interface SiteConfig {
     lon: number;
     elevationFt: number;
   };
+  /** The drop zone's GPS point: the pin a jump run is flown on, which is
+   *  not the landing area (`dz`). The Drift card's jump-run image draws
+   *  the bearing through it and marks both. */
+  gpsPin: { lat: number; lon: number };
   /** Nearest reporting station for METARs. */
   metarStation: {
     id: string; // ICAO
@@ -33,6 +37,9 @@ export interface SiteConfig {
     lat: number;
     lon: number;
     elevationFt: number;
+    /** How often the station usually reports, in minutes: an observed fact
+     *  about it, which the "reports overdue" line states (reportAge.ts). */
+    reportIntervalMin: number;
   };
   /** TAF stations near the DZ, in preference order (KPMV issues no TAF).
    *  Offutt is closest, but its TAF is issued by the USAF and the NWS
@@ -58,9 +65,6 @@ export interface SiteConfig {
     lat: number;
     lon: number;
   };
-  /** Nearest station in the NOAA winds-aloft (FD) bulletin — the fallback
-   *  winds source when Open-Meteo is unreachable. */
-  fdWindsStation: string;
   timeZone: string;
 }
 
@@ -77,6 +81,14 @@ export const SITE: SiteConfig = {
     lon: -96.1085,
     elevationFt: 1182,
   },
+  // The point Mark Schulze's Winds Aloft uses for the club (40.8675006,
+  // -96.11001 in his dropzones.geojson, docs/markschulze-altitude-reference.md),
+  // in the field south-west of the runway, where this app's own point sat
+  // until 2026-10-08. The maintainer, 2026-11-24: the actual GPS pin is not
+  // the landing-area pin she dropped, and "I think it's the same as the
+  // point Mark Schulze's winds aloft uses". Her belief, not yet confirmed
+  // with a pilot's GPS (docs/open-questions.md); the image's caption says so.
+  gpsPin: { lat: 40.8675, lon: -96.11 },
   metarStation: {
     id: 'KPMV',
     iemId: 'PMV',
@@ -85,6 +97,14 @@ export const SITE: SiteConfig = {
     lat: 40.9502,
     lon: -95.9179,
     elevationFt: 1204,
+    // KPMV reports at 15, 35 and 55 past the hour. In IEM's archive of it
+    // from 2026-10-10 to 11-22 (data/parity/metar-*.jsonl.gz, 3,135
+    // reports) the gap to the next report was 20 minutes in 3,110 of
+    // 3,134, longer in 18, over 40 minutes in 4, the longest 6 h 5 min on
+    // 2026-11-03 (scripts/reportCadence.ts prints the count; measured
+    // 2026-11-24). A measured figure, not derived at build time: measure
+    // it again before changing it.
+    reportIntervalMin: 20,
   },
   tafStations: [
     { id: 'KOFF', name: 'Offutt AFB', lat: 41.1183, lon: -95.9124, nwsProductLocation: 'OFF' },
@@ -103,7 +123,6 @@ export const SITE: SiteConfig = {
     lat: 41.3203,
     lon: -96.3667,
   },
-  fdWindsStation: 'OMA',
   timeZone: 'America/Chicago',
 };
 

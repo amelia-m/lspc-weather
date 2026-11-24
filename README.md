@@ -24,6 +24,12 @@ freefall drift and **density altitude** for jump-plane climb performance.
 > relying on it. Always confirm conditions with current official sources, the
 > S&TA, and the pilot in command.
 
+## 🤖 Built with AI
+
+Nearly all of this repository was written by AI coding agents at the maintainer's direction: the application code, the tests, the workflows, the relay, the comparison scripts and the documents under `docs/`, this README included. The agent is Anthropic's Claude Code. Of the 700 commits on `main` to 2026-11-23 (counted from the GitHub API that day), 580 have the agent as author, each with a `Co-Authored-By:` trailer naming the model that wrote it (Claude Opus 4.8, Opus 5, Opus 5.5, Fable 5.1 and Haiku 4.5 so far); 103 are scheduled workflows committing data; 15 are under the maintainer's name, seven of them carrying an agent's trailer; and two, one pull request of 2026-10-01 that fixed a TAF comparison, were written by OpenAI's Codex agent.
+
+The maintainer sets what the dashboard should do, decides what ships, and supplies the facts about the drop zone, which the cards date and attribute to her. The cited rules were read at their sources by the agents (Citations, below); no instructor or other licensed professional has reviewed them, as the notice above says. How the work was done is the subject of the maintainer's talk, **How this was built**, linked from the site's footer.
+
 ## 🌤️ What it shows
 
 The dashboard has two tabs. **Jumpers** (the plain address) has the wind
@@ -56,25 +62,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
   against the NWS hourly forecast for the next 12 hours: a **Forecast** flag
   names the hours the forecast reaches the same limit, and ranks below every
   flag on a report.
-- 💨 **Surface wind** — the first card on the Jumpers tab, and the
-  observation, not a forecast: it says so first, with KPMV's distance and
-  the report's time. Sustained + gust,
-  kt/mph toggle, one bar with every mark labelled by its figure, and a line
-  per limit saying which reading it is held to (the caution takes the higher
-  of wind and gust, the gust ceiling the gust) and how far over or under the
-  limit that is. The limits
-  follow the profile in the header: Student or Licensed, then for a student
-  USPA BSR or the LSPC waiver, then the waiver's jump-count tier. A band is
-  drawn only where a published source sets it — the USPA ground-wind figure for
-  a student on the USPA BSR limits, the posted club policy for a student on an
-  LSPC waiver tier — and is labelled
-  with that source. The Licensed profile draws no band and says so: nobody
-  publishes a surface-wind limit for licensed jumpers. A licensed jumper who
-  sets their own limit gets a band labelled as theirs. A standing note gives
-  how the NWS forecast gust, which the Forecast flag reads, compared with
-  KPMV's reports over six months, side and typical size
-  ([docs/nws-gust-archive.md](docs/nws-gust-archive.md)); counts, not a
-  correction.
+- 💨 **Surface wind**: the first card on the Jumpers tab, and the observation, not a forecast: it says so first, with KPMV's distance and the report's time and age, then that a report cannot show a wind that is changing now or the wind at the DZ, and, when KPMV's reports are overdue by its own usual 20 minutes, that too. Sustained + gust, kt/mph toggle, one bar with every mark labelled by its figure, and a line per limit saying which reading it is held to (the caution takes the higher of wind and gust, the gust ceiling the gust) and how far over or under the limit that is. The limits follow the profile in the header: Student or Licensed, then for a student USPA BSR or the LSPC waiver, then the waiver's jump-count tier. A band is drawn only where a published source sets it (the USPA ground-wind figure for a student on the USPA BSR limits, the posted club policy for a student on an LSPC waiver tier) and is labelled with that source. The Licensed profile draws no band and says so: nobody publishes a surface-wind limit for licensed jumpers. A licensed jumper who sets their own limit gets a band labelled as theirs. A standing note gives how the NWS forecast gust, which the Forecast flag reads, compared with KPMV's reports over six months, side and typical size ([docs/nws-gust-archive.md](docs/nws-gust-archive.md)); counts, not a correction.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   Open-Meteo's 10 m, 80, 120 and 180 m winds and its pressure levels, with
@@ -91,12 +79,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
   maximum exit weight for a Student on that size. The chart is the
   maintainer's transcription, not yet checked against PD's own copy here, and
   the canopy model and sizes are theirs to confirm (`#citations`, A12).
-- 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
-  deploy, and fall-rate inputs, worked from whichever hour the winds card shows,
-  with the same hour readout and −1 h / +1 h buttons: stepping either card
-  moves both. Deploy opens on the BSR minimum opening altitude for the
-  profile: 3,000 ft for a student, and under Licensed for the license chosen
-  in the header (3,000 ft for A, 2,500 ft for B, C and D).
+- 🎯 **Freefall drift / spot**: Schulze-style drift estimate with editable exit, deploy, and fall-rate inputs, worked from whichever hour the winds card shows, with the same hour readout and −1 h / +1 h buttons: stepping either card moves both. Deploy opens on the BSR minimum opening altitude for the profile: 3,000 ft for a student, and under Licensed for the license chosen in the header (3,000 ft for A, 2,500 ft for B, C and D). Under the spot, **exit separation on jump run**: the seconds between exits for the two ground distances SIM 4-7 C gives (at least 1,000 ft between solo jumpers, 1,500 ft between small groups), worked from a jump-run bearing and an indicated airspeed the reader can change (it opens on 75 kt, the low end of what the club's Cessna 182s fly, on the maintainer's word) and the forecast wind at exit altitude, with the bearing drawn through the drop zone's GPS point over USGS's aerial image of the field, the landing area marked beside it.
 - 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
   hours from sunset to sunrise shaded, over a selectable 18 h, 36 h, 72 h, 5 d
@@ -104,12 +87,24 @@ card, the charts' limit lines and the flags, each marked as theirs.
   forecast runs past the one before it, and past 72 h the axis names days).
 - 📅 **10-day outlook** — daily sky, high/low, max wind/gust, dominant wind direction, precip chance; tap a
   day for its hourly detail.
-- ☁️ **Ceiling & sky** — current ceiling + an hourly sky-cover/ceiling timeline, with
-  Open-Meteo's cloud cover for the same hours beside the NWS figure, and
-  since 2026-10-27 a "base" row: the lowest cloud base in the NWS National
-  Blend of Models' hourly bulletin for KPMV, read through the relay
-  ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)). It is
-  not a ceiling and flags nothing.
+- ☁️ **Ceiling & sky** — the latest report's flight category and ceiling,
+  then one table per local day of the forecasts (since 2026-11-18; until
+  then an hourly sky-cover/ceiling strip): eight three-hour columns, in
+  usairnet's day-table form, which jumpers know, with the NWS forecast's
+  sky cover and ceiling, Open-Meteo's cloud cover beside it, and the NWS
+  National Blend of Models' two bulletins for KPMV, read through the relay
+  ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)): the
+  hourly NBH's lowest cloud base (on the card since 2026-10-27) and the
+  three-hourly NBS's sky cover, ceiling and base (6 to 72 hours ahead,
+  the bulletin usairnet's three-day table reads, through the relay's third
+  path since 2026-11-12). The cloud heights are drawn as a band the right
+  way up, the day's NWS hours open under each table, a blank cell is a
+  slot a forecast does not reach, and one line under the tables names
+  where the NWS ceiling forecast ends
+  (docs/ceiling-sky-layout-review.md, docs/ceiling-sky-rebuild-review.md,
+  docs/data-viz-notes.md). Night at the drop zone is shaded. The NBM's
+  base is not a ceiling; it and the NBS are a second forecast beside the
+  NWS one, never blended with it, and neither flags anything.
 - ⛈️ **Precipitation & storms** — max precip and thunderstorm chance over the next
   6 h, forecast rain amount, and an hourly precip-probability timeline (narrow
   bars, a time under every third hour).
@@ -144,9 +139,10 @@ card, the charts' limit lines and the flags, each marked as theirs.
   the other feed's report was, and whether the feed's decode of the report
   agreed with the METAR text the app parses, amber when it did not. The
   TAF row says which station is shown and, when it is Offutt's, that it
-  came from aviationweather.gov via the relay; an NBM row, since
-  2026-10-27, names the bulletin cycle and says NOAA's bucket answered
-  through the relay.
+  came from aviationweather.gov via the relay; two NBM rows ("NBM cloud
+  base" since 2026-10-27, "NBM three-day" since 2026-11-12) each name
+  their bulletin's cycle and say NOAA's bucket answered through the
+  relay.
 
 ## 🔗 Data sources (all free, no API key)
 
@@ -155,9 +151,9 @@ card, the charts' limit lines and the flags, each marked as theirs.
 | Source | Used for |
 |---|---|
 | [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/) (IEM) | the current KPMV observation (raw METAR + decoded), read first; the Nearby METARs card's six stations, from its Nebraska ASOS network |
-| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ (its view of the NDFD, below), the current KPMV observation as the backup to IEM's, the Omaha and Lincoln TAFs, and the NOAA FD winds-aloft product as the winds card's fallback when Open-Meteo is unreachable |
+| [NWS api.weather.gov](https://www.weather.gov/documentation/services-web-api) | gridded hourly ceiling/sky/visibility/wind/precip for the DZ (its view of the NDFD, below), the current KPMV observation as the backup to IEM's, and the Omaha and Lincoln TAFs. Until 2026-11-23 it also served NOAA's FD winds-aloft bulletin as the winds card's fallback; NCEP discontinued that bulletin with the NAM model on 2026-11-03 (NWS Service Change Notice 26-47), so the fallback was dropped and the winds card has one source |
 | [Open-Meteo](https://open-meteo.com/) | winds aloft (pressure levels), the 10-day daily outlook and the second cloud-cover figure on Ceiling & sky; on `#parity` and `#wind-errors`, its winds set against other sources. Weather data by Open-Meteo.com under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The dashboard reworks it: winds and temperatures interpolated from pressure levels to heights above the drop zone, a drift estimate worked from those winds, the outlook's weather codes grouped into its own labels, and on the two pages differences from other sources. The outlook's hourly detail is the NWS gridpoint's. The repository's comparison docs and the archives under [`data/parity/`](data/parity/README.md) hold Open-Meteo data too, under the same licence; what this app does to meet Open-Meteo's terms is in [docs/open-meteo-terms.md](docs/open-meteo-terms.md) |
-| The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | two fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, and KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)) |
+| The TAF relay ([`relay/`](relay/), a Cloudflare Worker of the maintainer's, deployed 2026-10-27; [docs/taf-relay.md](docs/taf-relay.md)) | three fixed things a browser cannot fetch itself: Offutt's USAF-issued TAF from aviationweather.gov, KPMV's block of the NWS National Blend of Models' hourly bulletin from NOAA's open-data bucket, for the Ceiling & sky card's "base" row ([docs/nbm-lowest-cloud-base.md](docs/nbm-lowest-cloud-base.md)), and since 2026-11-12 its block of the three-hourly bulletin (NBS) from the same bucket, for the card's day tables |
 | [NWS radar](https://radar.weather.gov/) | KOAX radar loop (image embed, no API) |
 | [FAA VFR sectional](https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59) | Sectional chart tiles (image embed, no API) |
 | [GoatCounter](https://www.goatcounter.com/) | page counts, on the deployed site only: one image request per page shown, carrying the page's path and title, the referrer, the screen width and the query string; no cookies, and nothing from browsers opted out or under automation ([docs/page-counts.md](docs/page-counts.md)) |
@@ -205,11 +201,15 @@ sanity-check the dashboard against sources you already trust:
 
 - **Ceiling & sky ↔ [usairnet KPMV aviation
   forecast](https://www.usairnet.com/cgi-bin/launch/code.cgi?state=NE&sta=KPMV)**
-  — a page many jumpers use. usairnet has no public API and presents NWS
-  forecast data; this dashboard pulls that data directly from the NWS gridpoint
-  API instead. One difference: usairnet's page is for the KPMV station, while
-  the dashboard's forecast grid is centered on the DZ itself (only the METAR
-  observation comes from KPMV).
+  — a page many jumpers use. usairnet has no public API; its three-day
+  table is the NWS National Blend of Models' bulletins for KPMV
+  ([docs/usairnet-parity.md](docs/usairnet-parity.md), "Where usairnet's
+  rows come from"). The card reads the NWS gridpoint API for the drop
+  zone's own grid cell and, through the relay, the same two NBM bulletins
+  for KPMV, kept apart as two forecasts. One difference to keep in mind:
+  usairnet's page is for the KPMV station, while the dashboard's NWS
+  forecast grid is centered on the DZ itself (the METAR observation and
+  the NBM rows are KPMV's).
 - **Winds aloft ↔ [Mark Schulze's Winds
   Aloft](https://www.markschulze.net/winds/?lat=40.8703&lon=-96.1085)** — the popular
   skydiving winds tool; same Open-Meteo model source. After half past the two
@@ -238,9 +238,9 @@ pilots meet elsewhere. In the order they tend to come up:
 | **VFR**, **MVFR**, **IFR**, **LIFR** | the FAA's flight categories from ceiling and visibility, best to worst |
 | **NWS**, **NOAA**, **WFO** | the National Weather Service, its parent agency, and a Weather Forecast Office (Omaha's is OAX) |
 | **NDFD** | National Digital Forecast Database: the NWS's gridded forecast of every element by the hour. api.weather.gov's gridpoint, which the hourly chart and the forecast wind flags read, is its view at the DZ; NOAA's archive of its grids is the forecast's past |
-| **NBM**, **NBH** | the National Blend of Models, the NWS's blended guidance, and its hourly text bulletin (NBH) per station; the "base" row on Ceiling & sky is its lowest cloud base for KPMV |
+| **NBM**, **NBH**, **NBS** | the National Blend of Models, the NWS's blended guidance, and its hourly (NBH) and three-hourly (NBS) text bulletins per station; the "NBM base" row of Ceiling & sky's day tables is the NBH's lowest cloud base for KPMV, and the "NBM %" and "NBM ceil" rows (since 2026-11-12) the NBS's sky cover and ceiling |
 | **HRRR**, **GFS** | NOAA's High-Resolution Rapid Refresh and Global Forecast System, the two models behind the Open-Meteo request the winds-aloft table reads ([docs/run-split.md](docs/run-split.md)) |
-| **FD** | NOAA's winds-and-temperatures-aloft forecast (the "FD" product), the winds card's fallback |
+| **FD** | NOAA's winds-and-temperatures-aloft forecast (the "FD" or "FB" bulletin), the winds card's fallback until 2026-11-23; no longer issued for the contiguous US since 2026-11-03 |
 | **IEM** | the Iowa Environmental Mesonet, Iowa State University's archive and live feed of observations |
 | **AWC** | the Aviation Weather Center, aviationweather.gov |
 | **GFA**, **PIREP**, **SIGMET**, **NOTAM**, **TFR** | the briefing links on the Pilots tab: the Graphical Forecasts for Aviation, pilot reports, significant-weather advisories, notices to air missions and temporary flight restrictions |
@@ -341,6 +341,8 @@ Open-Meteo's three 10 m forms and the NWS hour against the same reports.
 Its data file is rebuilt by the weekly ceiling data refresh. Counts only,
 like the page below.
 
+A page, **How the winds aloft table is built** (`#winds-method`), explains the Winds aloft card's levels, its Surface row and how the table compares with Mark Schulze's tool; the card links it in place of a folded note (since 2026-11-22).
+
 A second page, **How different from other sources** (`#parity`), shows what
 the scheduled comparison logs add up to: the winds-aloft table against Mark
 Schulze's Winds Aloft at the same valid hour, row by row, and the dashboard's
@@ -350,7 +352,9 @@ smallest and largest gap; how often any row was more than 10° apart; how often
 the two pages showed different hours; the two ground rows by time of day and by
 day; the observation fields grouped, with the known reasons a field differs;
 how long usairnet's page has gone unreadable; and, dated, the checks made by
-hand that the figures were read beside — and never a grade. A daily workflow
+hand that the figures were read beside — and never a grade. Since 2026-11-11
+each table's figures are also drawn above it (`src/domain/paritySvg.ts`),
+pictures of the printed figures and nothing more. A daily workflow
 writes its data from the logs. The pipeline and how to read the page are in
 [`docs/source-parity.md`](docs/source-parity.md).
 
@@ -364,6 +368,13 @@ whether KPMV measured rain or reported thunder in that hour
 ([`docs/forecast-chances.md`](docs/forecast-chances.md)). It
 is a static page beside the app (`public/ceiling-errors/`); how it is made and
 updated is in [`docs/ceiling-heights.md`](docs/ceiling-heights.md), "The chart".
+
+The footer also links, since 2026-11-11, **How this was built**: the
+maintainer's Lincoln AI meetup deck on how this dashboard was developed with
+AI agents, a page of the site (`public/talk/index.html`, rendered by
+`scripts/renderTalk.sh` from
+[`docs/talks/lincoln-ai-meetup/talk.qmd`](docs/talks/lincoln-ai-meetup/)),
+which the live-site check loads like any other page.
 
 Every USPA, CFR and FAA citation here began as an AI recollection; the club's
 posted wind-limit tiers did not — they are a transcription of an undated photo

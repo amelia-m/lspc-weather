@@ -7,6 +7,7 @@ import type { WindsAloftLevel } from '../src/domain/types';
 import {
   interpAngle,
   interpolateWindsAloft,
+  levelDiffs,
   windsAloftTop,
   type RawWindSample,
 } from '../src/domain/windsAloft';
@@ -136,14 +137,14 @@ describe('interpolateWindsAloft', () => {
 
 /**
  * The collapsed winds table keeps a fixed set of key altitudes, chosen for the
- * primary path where the lowest row is the surface. The NOAA FD fallback's
- * profile starts at 2,000 ft AGL — not in that set — so the collapsed view
- * opened at 3,000 ft and hid the lowest wind the bulletin actually offers,
- * while the note beneath it said levels below the bulletin's floor are not
- * listed. A reader would read 3,000 ft as the floor.
+ * usual profile whose lowest row is the surface. A profile that starts at
+ * 2,000 ft AGL (the NOAA FD bulletin's did, while the app read it, to
+ * 2026-11-23; an hour whose low samples came back null would) is not in that
+ * set, so the collapsed view opened at 3,000 ft and hid the lowest wind
+ * there was. A reader would read 3,000 ft as the floor.
  */
 describe('the collapsed winds table never hides the lowest available level', () => {
-  const rows = (levels: WindsAloftLevel[], source: 'open-meteo' | 'nws-fd'): string[] => {
+  const rows = (levels: WindsAloftLevel[], source: 'open-meteo'): string[] => {
     const html = renderToStaticMarkup(
       createElement(WindsAloftPanel, {
         levels,
@@ -163,9 +164,9 @@ describe('the collapsed winds table never hides the lowest available level', () 
     tempC: 0,
   });
 
-  it('shows the 2,000 ft row on the FD path, where it is the lowest', () => {
-    const fd = [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level);
-    expect(rows(fd, 'nws-fd')).toContain('2,000 ft');
+  it('shows the 2,000 ft row where it is the lowest', () => {
+    const high = [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level);
+    expect(rows(high, 'open-meteo')).toContain('2,000 ft');
   });
 
   it('still collapses the primary path to the key altitudes', () => {
@@ -294,7 +295,7 @@ describe('the winds table says where its rows stop', () => {
  * model's 10 m wind, Mark Schulze's a line through the pressure levels read at
  * 0 ft (docs/markschulze-altitude-reference.md). Readers see his run higher
  * and need the reason on the card: what each row is shows always, the why in
- * the card's About section. The FD fallback has no Surface row. */
+ * the method page. */
 describe('the note on why the Surface row differs from Schulze’s', () => {
   const level = (agl: number): WindsAloftLevel => ({
     altitudeFtAgl: agl,
@@ -303,7 +304,7 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
     speedKt: 10,
     tempC: 0,
   });
-  const markup = (source: 'open-meteo' | 'nws-fd' | undefined, levels: WindsAloftLevel[]): string =>
+  const markup = (source: 'open-meteo' | undefined, levels: WindsAloftLevel[]): string =>
     renderToStaticMarkup(
       createElement(WindsAloftPanel, {
         levels,
@@ -316,15 +317,11 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
 
   it('says what each Surface row is on the Open-Meteo path', () => {
     const html = markup('open-meteo', Array.from({ length: 14 }, (_, i) => level(i * 1000)));
-    expect(html).toContain('model\u2019s forecast wind at 10\u00a0m');
-    expect(html).toContain('Mark Schulze\u2019s <strong>Surface</strong> row is not a 10\u00a0m');
+    expect(html).toContain('The Surface row is the model\u2019s 10\u00a0m wind');
+    // The why of the two Surface rows is the method page since 2026-11-22.
+    expect(html).toContain('href="#winds-method"');
     // Words, not a verdict or a figure in a colour.
     expect(html).not.toMatch(/class="[^"]*(caution|watch|warn)/);
-  });
-
-  it('is absent on the FD fallback, which has no Surface row', () => {
-    const html = markup('nws-fd', [2000, 3000, 4000, 5000, 7000, 10000, 13000].map(level));
-    expect(html).not.toContain('Mark Schulze\u2019s <strong>Surface</strong> row');
   });
 
   it('is absent when no winds source has loaded, beside "No winds-aloft data"', () => {
@@ -334,3 +331,38 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
   });
 });
 
+/* The comparison logs the hour's table from a second Open-Meteo model
+ * against the app's default (scripts/schulzeCompare.live.ts, from
+ * 2026-11-24). The differences are what the log is, so the arithmetic is
+ * held here, off the network. */
+describe('levelDiffs: one winds table minus another', () => {
+  const at = (agl: number, directionDeg: number, speedKt: number, tempC: number | null): WindsAloftLevel => ({
+    altitudeFtAgl: agl,
+    altitudeFtMsl: 1182 + agl,
+    directionDeg,
+    speedKt,
+    tempC,
+  });
+
+  it('subtracts the base, row by row', () => {
+    expect(levelDiffs([at(3000, 250, 22, -3.4)], [at(3000, 240, 25, -4)])).toEqual([
+      { ft: 3000, dDir: 10, dSpd: -3, dT: 0.6 },
+    ]);
+  });
+
+  it('takes the direction the short way round north', () => {
+    // 350 against 010 is 20 degrees to the left, not 340 to the right.
+    expect(levelDiffs([at(1000, 350, 10, 0)], [at(1000, 10, 10, 0)])[0].dDir).toBe(-20);
+    expect(levelDiffs([at(1000, 10, 10, 0)], [at(1000, 350, 10, 0)])[0].dDir).toBe(20);
+  });
+
+  it('leaves out an altitude only one table reaches, rather than counting it', () => {
+    const rows = levelDiffs([at(0, 180, 5, 10), at(500, 190, 8, 9)], [at(500, 200, 8, 9), at(1000, 210, 12, 8)]);
+    expect(rows.map((r) => r.ft)).toEqual([500]);
+  });
+
+  it('has no temperature difference where either table has none', () => {
+    expect(levelDiffs([at(2000, 200, 10, null)], [at(2000, 200, 10, 5)])[0].dT).toBeNull();
+    expect(levelDiffs([at(2000, 200, 10, 5)], [at(2000, 200, 10, null)])[0].dT).toBeNull();
+  });
+});

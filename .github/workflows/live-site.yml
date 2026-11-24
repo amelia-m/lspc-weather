@@ -116,8 +116,15 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         shell: bash
         run: |
-          gh label create live-site --color D93F0B --force \
-            --description "The deployed site showed a fault in the live-site check"
+          # The label is wanted, not required: a transient failure here
+          # under `-e` opened no issue at all (the ops review of 2026-11-20),
+          # the shape the sky-parity step was changed from on 2026-11-03.
+          labelArgs=(--label live-site)
+          if ! gh label create live-site --color D93F0B --force \
+            --description "The deployed site showed a fault in the live-site check"; then
+            echo "::warning::could not create or update label live-site; opening the issue without it"
+            labelArgs=()
+          fi
           {
             echo "The live-site check (${{ matrix.target }}) failed on $(date -u +%Y-%m-%d). Run: $RUN_URL"
             echo
@@ -137,9 +144,14 @@ jobs:
             fi
             echo '```'
           } > body.md
-          existing=$(gh issue list --label live-site --state open --json number --jq '.[0].number // empty')
+          # Searched by label only while the label is on: without it the
+          # search is every open issue, and the comment lands on any of them.
+          existing=
+          if [ "${#labelArgs[@]}" -gt 0 ]; then
+            existing=$(gh issue list --label live-site --state open --json number --jq '.[0].number // empty')
+          fi
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body-file body.md
           else
-            gh issue create --title "Live-site check failed" --label live-site --body-file body.md
+            gh issue create --title "Live-site check failed" "${labelArgs[@]}" --body-file body.md
           fi

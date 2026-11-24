@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHECK_LABELS, LABEL_DESCRIPTION_MAX, failureExcerpt, isTimeoutError, liveIssues, type VitestJsonReport } from '../src/domain/liveIssue';
+import { CHECK_LABELS, LABEL_DESCRIPTION_MAX, failureExcerpt, isConnectionReset, isRetriedFetchError, isTimeoutError, liveIssues, type VitestJsonReport } from '../src/domain/liveIssue';
 
 /* The shape Vitest's JSON reporter wrote on 2026-10-31 (vitest 4), with
  * #238's failure as its message: a TimeoutError from the fetch, colour
@@ -112,6 +112,24 @@ describe('liveIssues', () => {
   });
 });
 
+describe('the files an issue body names', () => {
+  it('exist, so the issue does not send the maintainer to a file that is not there', async () => {
+    // Every check's `what` names where to look; until 2026-11-20 the sky
+    // check's named src/domain/metar.ts, which has never existed (the METAR
+    // parse is in normalize.ts). The app's tsconfig has no Node types, so
+    // fs is loaded as the other file-reading tests load it.
+    const { existsSync } = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { existsSync: (p: string) => boolean };
+    const report: VitestJsonReport = {
+      testResults: ['skyParity.live.ts', 'pilotLinks.live.ts', 'simText.live.ts', 'other.live.ts'].map((f) =>
+        file(f, [{ title: 't', failed: 'x' }]),
+      ),
+    };
+    const named = liveIssues(report, run).flatMap((i) => i.body.match(/\b(?:src|scripts)\/[\w./-]+\.ts\b/g) ?? []);
+    expect(named.length).toBeGreaterThan(5);
+    for (const path of named) expect(existsSync(path), path).toBe(true);
+  });
+});
+
 describe('the labels', () => {
   it('keep every description within GitHub’s limit, so the label step cannot fail the issue', () => {
     // 2026-11-03: a 113-character description made `gh label create
@@ -136,6 +154,21 @@ describe('failureExcerpt', () => {
     expect(cut.split('\n')).toHaveLength(13);
     expect(cut.endsWith('…')).toBe(true);
     expect(failureExcerpt('x'.repeat(2000)).length).toBe(1501);
+  });
+});
+
+describe('isConnectionReset', () => {
+  it('recognises Node’s fetch failure whose cause is ECONNRESET, and the code in a message, and nothing else', () => {
+    const reset = Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }) });
+    expect(isConnectionReset(reset)).toBe(true);
+    expect(isConnectionReset(new Error('request failed: TypeError: fetch failed (ECONNRESET)'))).toBe(true);
+    expect(isConnectionReset(Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }) }))).toBe(false);
+    expect(isConnectionReset(new TypeError('fetch failed'))).toBe(false);
+    expect(isConnectionReset('ECONNRESET')).toBe(false);
+    // The retried set is the two kinds together.
+    expect(isRetriedFetchError(reset)).toBe(true);
+    expect(isRetriedFetchError(new DOMException('The operation was aborted due to timeout', 'TimeoutError'))).toBe(true);
+    expect(isRetriedFetchError(new TypeError('fetch failed'))).toBe(false);
   });
 });
 

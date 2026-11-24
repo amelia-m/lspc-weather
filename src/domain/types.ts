@@ -185,28 +185,25 @@ export type TafPassedOver =
   | { station: string; none: true };
 
 /** Where the winds-aloft levels came from: Open-Meteo (its 10 to 180 m
- *  winds and pressure levels) or the NOAA FD text-product fallback. */
-export type WindsAloftSource = 'open-meteo' | 'nws-fd';
+ *  winds and pressure levels), the one source since 2026-11-23, when the
+ *  NOAA FD bulletin fallback was dropped (api.weather.gov's products feed
+ *  no longer carried a CONUS bulletin). Kept as a type so "loaded" and "not
+ *  loaded" (null) stay distinct and a second source has a place to go. */
+export type WindsAloftSource = 'open-meteo';
 
 /**
  * WHEN the winds-aloft levels are valid — a first-class fact, not a detail.
  *
- * Both sources are forecasts for a specific time, not observations of now:
+ * The levels are a forecast for a specific time, not an observation of now:
  * Open-Meteo is snapped to the nearest hourly step (which can be up to half an
- * hour ahead of the clock), and a NOAA FD bulletin verifies at a single stated
- * hour. Jumpers cross-check this card against Mark Schulze's Winds Aloft, which
+ * hour ahead of the clock). Jumpers cross-check this card against Mark Schulze's Winds Aloft, which
  * prints its own valid time in Z; unless this app states its valid time too,
  * a routine one-hour offset looks exactly like a data disagreement.
  */
 export interface WindsAloftValidity {
   /** Epoch ms the levels verify at. null when the source states no valid time
-   *  (an FD bulletin whose header did not parse). */
+   *  (an Open-Meteo answer with no hours in it). */
   validMs: number | null;
-  /** FD only: the model cycle the bulletin was computed from ("DATA BASED ON"). */
-  basedOnMs?: number | null;
-  /** FD only: the bulletin's own "FOR USE hhmm-hhmm" window, hours in Z. The
-   *  codes carry no day, so this stays text rather than becoming timestamps. */
-  forUseRaw?: string | null;
 }
 
 /** How the Open-Meteo winds table is built: from every sample this app takes
@@ -217,8 +214,7 @@ export type WindsMethod = 'all' | 'schulze';
 export interface WindsAloftHour {
   validMs: number;
   levels: WindsAloftLevel[];
-  /** The same hour as Mark Schulze's tool builds it (interpolateAsSchulze);
-   *  absent on the NOAA FD fallback. */
+  /** The same hour as Mark Schulze's tool builds it (interpolateAsSchulze). */
   schulzeLevels?: WindsAloftLevel[];
 }
 
@@ -232,18 +228,18 @@ export interface OpenMeteoCloudHour {
   highPct: number | null;
 }
 
-/** One fetch of winds aloft: the interpolated levels and the time they are for.
- *  Returned by both the Open-Meteo path and the NOAA FD fallback so neither can
- *  hand the UI altitudes without a valid time. The Schulze-method table rides
- *  on `hours` only, which is where the card reads it. */
+/** One fetch of winds aloft: the interpolated levels and the time they are
+ *  for, together, so the UI is never handed altitudes without a valid time.
+ *  The Schulze-method table rides on `hours` only, which is where the card
+ *  reads it. */
 export interface WindsAloftForecast {
   levels: WindsAloftLevel[];
   validity: WindsAloftValidity;
   /** Open-Meteo's cloud cover for the same hours, served in the same
-   *  response. Absent on the NOAA FD fallback. */
+   *  response. */
   clouds?: OpenMeteoCloudHour[];
   /** Every hour the source served, ascending, for stepping the card through
-   *  them. Absent on the NOAA FD fallback, which is one bulletin. */
+   *  them. */
   hours?: WindsAloftHour[];
 }
 
@@ -263,8 +259,16 @@ export interface NbmHour {
   skyCoverPct: number | null;
 }
 
+/** The two NBM station bulletins the app reads: the hourly NBH, 25 hours
+ *  ahead, and the three-hourly NBS, 6 to 72 hours ahead (the one usairnet's
+ *  three-day table reads; since 2026-11-12). */
+export type NbmProduct = 'NBH' | 'NBS';
+
 export interface NbmForecast {
   station: string;
+  product: NbmProduct;
+  /** Hours between the bulletin's columns: 1 for the NBH, 3 for the NBS. */
+  stepHours: number;
   /** The bulletin's "NBM V5.0"; null when the header names none, as the
    *  bucket's has not since the 2026-11-03 12Z cycle. */
   version: string | null;
@@ -292,12 +296,11 @@ export interface WeatherSnapshot {
   /** Forecast time the `windsAloft` levels are valid for. null until they load. */
   windsAloftValidity?: WindsAloftValidity | null;
   /** Every forecast hour behind `windsAloft`, for the card's hour buttons.
-   *  null on the FD fallback and until the winds load. */
+   *  null until the winds load. */
   windsAloftHours?: WindsAloftHour[] | null;
-  /** Open-Meteo's hourly cloud cover, from the winds request; null on the
-   *  FD fallback and until it loads. When neither winds source answers, the
-   *  last answer is kept, as the winds are, and Data health marks the
-   *  source stale. */
+  /** Open-Meteo's hourly cloud cover, from the winds request; null until it
+   *  loads. When the request fails, the last answer is kept, as the winds
+   *  are, and Data health marks the source stale. */
   openMeteoClouds?: OpenMeteoCloudHour[] | null;
   sun: SunTimes | null;
   densityAltitude: DensityAltitudeResult | null;
@@ -305,6 +308,9 @@ export interface WeatherSnapshot {
   /** The NBM's hourly bulletin for the METAR station, through the relay;
    *  null until it loads and without the relay. */
   nbm?: NbmForecast | null;
+  /** The NBM's three-hourly bulletin (NBS), the same way; its ceiling, base
+   *  and sky cover reach three days where the NWS ceiling and the NBH stop. */
+  nbs?: NbmForecast | null;
 }
 
 // ---- Advisories (flags, never a go/no-go verdict) ----
@@ -325,6 +331,11 @@ export type AdvisoryLevel = 'info' | 'forecast' | 'watch' | 'caution';
 export interface Advisory {
   id: string;
   level: AdvisoryLevel;
+  /** What the flag reads: the latest report, the forecast, or the clock
+   *  (the daylight flag, from the computed sun times). A flag on the report
+   *  names it and its age in the list (AdvisoryPanel), so a flag read late
+   *  does not read as now; required, so a new flag has to say. */
+  basis: 'report' | 'forecast' | 'clock';
   metric: string; // "Surface wind"
   value: string; // "21 kt (24 mph), gusting 28"
   guidance: string; // brief paraphrase of the cited rule
@@ -349,16 +360,16 @@ export type JumperClass = 'student' | 'licensed';
  *  The type is derived from the list so the two cannot drift: until
  *  2026-11-03 the source log kept a list of its own that lacked `nbm`, and
  *  dropped every NBM entry on reload. */
-export const SOURCE_KEYS = ['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm'] as const;
+export const SOURCE_KEYS = ['metar', 'nws', 'windsAloft', 'taf', 'daily', 'nbm', 'nbs'] as const;
 export type SourceKey = (typeof SOURCE_KEYS)[number];
 
-/** The sources a refresh fetches: all of them, or all but the NBM when
- *  nothing fetches it (no relay set, no fixtures). The refresh marks only
+/** The sources a refresh fetches: all of them, or all but the two NBM
+ *  bulletins when nothing fetches them (no relay set, no fixtures). The refresh marks only
  *  these pending, and Data health lists only these: a source never fetched
  *  would otherwise sit pending for the life of the page, and the Refresh
  *  button, disabled while any source is pending, with it (2026-11-03). */
 export function sourcesFetched(nbmFetched: boolean): SourceKey[] {
-  return nbmFetched ? [...SOURCE_KEYS] : SOURCE_KEYS.filter((k) => k !== 'nbm');
+  return nbmFetched ? [...SOURCE_KEYS] : SOURCE_KEYS.filter((k) => k !== 'nbm' && k !== 'nbs');
 }
 
 export interface SourceStatus {

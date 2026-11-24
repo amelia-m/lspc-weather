@@ -348,6 +348,115 @@ describe('ParityPage', () => {
     });
   });
 
+  /* The charts (since 2026-11-11): each above the table that holds the
+   * same figures, drawn by domain/paritySvg.ts, which its own tests hold to
+   * the figures; here, that the page puts each where it belongs and shows
+   * none without its figures. */
+  describe('the charts', () => {
+    const html = render('ready');
+
+    it('draws the winds spreads by altitude above each table, highest row first', () => {
+      const chart = html.indexOf('aria-label="Direction: 2 rows"');
+      expect(chart).toBeGreaterThan(-1);
+      expect(chart).toBeLessThan(html.indexOf('Direction, ft AGL'));
+      const svg = html.slice(chart, html.indexOf('</svg>', chart));
+      expect(svg.indexOf('>9,000<')).toBeLessThan(svg.indexOf('>1,000<'));
+      expect(svg).toContain('<title>9,000: median 12°, 90th 12°, 12 to 12°, over 1 runs</title>');
+      expect(html).toContain('aria-label="Speed: 2 rows"');
+      expect(html).toContain('median to 90th percentile');
+    });
+
+    it('draws the time-gap groups, an empty group as its label, above that table', () => {
+      const chart = html.indexOf('aria-label="Direction by time gap: 3 rows"');
+      expect(chart).toBeGreaterThan(-1);
+      expect(chart).toBeLessThan(html.indexOf('Time the tables represent'));
+      const svg = html.slice(chart, html.indexOf('</svg>', chart));
+      // The column widens to "Newer run one side", 125 units, so the empty
+      // row's note sits at 129 and no label is clipped at the left edge.
+      expect(svg).toContain('>Same run</text><text class="pty-tick" x="129" y="17">no rows yet</text>');
+      expect(svg).toContain('<title>Newer run one side: median 6.50°');
+    });
+
+    it('gives both winds tables’ direction charts one axis', () => {
+      const withHisWay = summarizeParity(
+        [
+          ...records,
+          {
+            kind: 'schulze',
+            at: '2026-10-08T12:00:00Z',
+            aligned: { rows: [{ ft: 1000, dDir: 3, dSpd: 1, dT: 0 }] },
+            asSchulze: { rows: [{ ft: 1000, dDir: 40, dSpd: 0, dT: 0 }] },
+          } as ParityRecord,
+        ],
+        Date.parse('2026-10-09T00:00:00Z'),
+      );
+      const page = render('ready', withHisWay);
+      // His-way's 40° sets the top (40) for the dashboard's chart too, whose
+      // own largest, 12°, would top at 15.
+      const ours = page.indexOf('aria-label="Direction: 2 rows"');
+      const his = page.indexOf('aria-label="Direction, as Schulze: 1 rows"');
+      expect(his).toBeGreaterThan(-1);
+      expect(his).toBeLessThan(ours);
+      for (const at of [ours, his]) {
+        const svg = page.slice(at, page.indexOf('</svg>', at));
+        expect(svg).toContain('text-anchor="middle">40</text>');
+        expect(svg).not.toContain('text-anchor="middle">15</text>');
+      }
+    });
+
+    it('draws the ground rows by local time and by day above their tables, keyed by side', () => {
+      const at = (iso: string, m: number): string => new Date(Date.parse(iso) + m * 60_000).toISOString();
+      const recs: ParityRecord[] = [0, 4].map((m) => ({
+        kind: 'schulze',
+        at: at('2026-10-03T01:40:00Z', m),
+        appHour: '02Z',
+        aligned: { rows: [{ ft: 0, dDir: 30, dSpd: 4, dT: null }] },
+        ground: { ourKt: 5, theirKt: 9 },
+      }));
+      const page = render('ready', summarizeParity(recs, Date.parse('2026-10-03T16:00:00Z')));
+      const hours = page.indexOf('aria-label="Ground row by local time: this dashboard and Schulze’s, 8 rows"');
+      const days = page.indexOf('aria-label="Ground row by local day: this dashboard and Schulze’s by day, 1 days"');
+      expect(hours).toBeGreaterThan(-1);
+      expect(days).toBeGreaterThan(hours);
+      expect(days).toBeLessThan(page.indexOf('by the local time of the forecast hour'));
+      expect(page).toContain('<title>9\u00a0PM–12\u00a0AM: this dashboard 5 kt, Schulze’s 9 kt, 2 runs</title>');
+      expect(page).toContain('<title>Oct 2: this dashboard 5 kt, Schulze’s 9 kt, 2 runs</title>');
+      expect(page).toContain('Key to the two sides');
+    });
+
+    it('draws the observation fields’ agreement above each field table', () => {
+      const chart = html.indexOf('aria-label="Same observation on both sides: 2 fields');
+      expect(chart).toBeGreaterThan(-1);
+      expect(chart).toBeLessThan(html.indexOf('<caption class="parity-caption">Same observation on both sides</caption>'));
+      expect(html).toContain('<title>dew point °F: agreed on 0 of 1 (0%)</title>');
+      expect(html).toContain('<title>clouds: agreed on 1 of 1 (100%)</title>');
+    });
+
+    it('draws the arrival lags above that table once samples bracket an arrival', () => {
+      expect(html).not.toContain('Minutes from a report to each source');
+      const at = (m: number): string => new Date(Date.parse('2026-09-30T13:36:00Z') + m * 60_000).toISOString();
+      const recs: ParityRecord[] = [0, 2, 4, 6, 8].map((m) => ({
+        kind: 'usairnet',
+        at: at(m),
+        v: 2,
+        ourSource: 'iem',
+        iemObsAt: m >= 6 ? '2026-09-30T13:35:00Z' : '2026-09-30T13:15:00Z',
+        fields: [],
+      }));
+      const page = render('ready', summarizeParity(recs, Date.parse('2026-09-30T14:00:00Z')));
+      const chart = page.indexOf('aria-label="Minutes from a report to each source: 5 rows"');
+      expect(chart).toBeGreaterThan(-1);
+      expect(chart).toBeLessThan(page.indexOf('How soon each source had each report'));
+      expect(page).toContain('<title>IEM: median 7 min, 90th 7 min, 7 to 7 min, over 1 reports</title>');
+    });
+
+    it('shows no chart without its figures', () => {
+      const old = { ...summary, schulze: { ...summary.schulze, byTimeGap: undefined } };
+      expect(render('ready', old)).not.toContain('by time gap');
+      expect(render('missing')).not.toContain('pty-svg');
+    });
+  });
+
   it('never grades: no verdict words, no warning classes', () => {
     const html = render('ready');
     for (const word of ['good', 'bad', 'acceptable', 'unsafe', 'safe', 'ok']) {

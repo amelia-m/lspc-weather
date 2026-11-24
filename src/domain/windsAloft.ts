@@ -14,8 +14,7 @@ export interface RawWindSample {
    * 10 m wind is the ground wind, so the few tens of feet between the model's
    * own surface height and the DZ's published field elevation are a datum
    * mismatch, not a layer of atmosphere. A level aloft licenses nothing below
-   * itself, and the NOAA FD bulletin has no surface level at all — see
-   * `sampleAt`.
+   * itself: see `sampleAt`.
    *
    * `sampleAt` consults it only on the LOWEST sample. Since `normalizeOpenMeteo`
    * drops pressure levels below the model's terrain, the 10 m sample normally
@@ -100,9 +99,8 @@ export interface WindsAloftTop {
  * is invisible. If Open-Meteo served nulls above 700 hPa, the table would
  * end at 9,000 ft while the card's own text still offered every level "up to
  * 13k", and a reader would take the missing rows for a display choice rather
- * than a hole in the report. The bottom of the profile has long had its
- * counterpart (the FD fallback's note about the bulletin's lowest level); this
- * gives the top one.
+ * than a hole in the report. The bottom of the profile has its counterpart
+ * (the drift card's note about the lowest level); this gives the top one.
  *
  * The comparison is against the altitudes that were ASKED for, not a fixed
  * ceiling, so the card and the config cannot drift apart. Levels are
@@ -252,3 +250,39 @@ export function interpolateAsSchulze(
   return out;
 }
 
+/** One altitude of one winds table against the same altitude of another. */
+export interface LevelDiff {
+  ft: number;
+  /** Direction difference the short way round, degrees, -180 to 180. */
+  dDir: number;
+  dSpd: number;
+  /** null when either table has no temperature there. */
+  dT: number | null;
+}
+
+/**
+ * One winds table minus another, altitude by altitude: `levels` minus
+ * `base`, at the altitudes both have. For the comparison's log
+ * (scripts/schulzeCompare.live.ts), where the same hour is built from two
+ * Open-Meteo models and the question is how far the tables on screen would
+ * move if the model changed. An altitude only one table reaches is left out,
+ * not counted as a difference: a model that serves fewer levels shows as
+ * fewer rows. Direction goes the short way round, so 350 against 010 is -20,
+ * not 340. Speeds are as the tables hold them; temperature to a tenth, the
+ * tables' precision.
+ */
+export function levelDiffs(levels: readonly WindsAloftLevel[], base: readonly WindsAloftLevel[]): LevelDiff[] {
+  const byAlt = new Map(base.map((l) => [l.altitudeFtAgl, l]));
+  const out: LevelDiff[] = [];
+  for (const l of levels) {
+    const b = byAlt.get(l.altitudeFtAgl);
+    if (!b) continue;
+    out.push({
+      ft: l.altitudeFtAgl,
+      dDir: ((l.directionDeg - b.directionDeg + 540) % 360) - 180,
+      dSpd: l.speedKt - b.speedKt,
+      dT: l.tempC != null && b.tempC != null ? Math.round((l.tempC - b.tempC) * 10) / 10 : null,
+    });
+  }
+  return out;
+}

@@ -17,10 +17,10 @@ import {
   normalizeOpenMeteoHours,
   openMeteoHourlyVariables,
   openMeteoWindsUrl,
+  OPEN_METEO_RRFS_MODEL,
   OPEN_METEO_FORECAST_URL,
   normalizeOpenMeteoDaily,
-  parseFdTiming,
-  parseFdWinds,
+  ddhhmmToEpoch,
   parseTaf,
   parseValidTime,
   toSkyCover,
@@ -501,51 +501,6 @@ describe('parseTaf body anchoring', () => {
   });
 });
 
-describe('parseFdWinds', () => {
-  const FD = `000
-FBUS33 KWNO 040200
-FD1US3
-DATA BASED ON 040000Z
-VALID 040600Z   FOR USE 0500-0900Z. TEMPS NEG ABV 24000
-
-FT  3000    6000    9000   12000   18000   24000  30000  34000  39000
-DEN         2426+14 2431+08 2536+03 2648-09 2762-21 269536 259545 249256
-OMA 2118    2426+14 2431+08 2536+03 2648-09 7762-21 269536 259545 249256
-`;
-
-  it('decodes direction, speed, and temps for the station row', () => {
-    const s = parseFdWinds(FD, 'OMA')!;
-    expect(s).not.toBeNull();
-    expect(s[0]).toEqual({ heightFtMsl: 3000, speedKt: 18, directionDeg: 210, tempC: null });
-    expect(s[1]).toEqual({ heightFtMsl: 6000, speedKt: 26, directionDeg: 240, tempC: 14 });
-    expect(s[4]).toEqual({ heightFtMsl: 18000, speedKt: 48, directionDeg: 260, tempC: -9 });
-  });
-
-  it('decodes the over-100-kt and implied-negative-temp encodings', () => {
-    const s = parseFdWinds(FD, 'OMA')!;
-    // 7762-21 at 24000: dd 77 -> 270 deg, speed 62+100
-    expect(s[5]).toEqual({ heightFtMsl: 24000, speedKt: 162, directionDeg: 270, tempC: -21 });
-    // 269536 at 30000: unsigned temp above 24k is negative
-    expect(s[6]).toEqual({ heightFtMsl: 30000, speedKt: 95, directionDeg: 260, tempC: -36 });
-  });
-
-  it('handles a blank low-level column via fixed-width slicing', () => {
-    const s = parseFdWinds(FD, 'DEN')!;
-    expect(s[0].heightFtMsl).toBe(6000); // 3000 column blank for DEN
-    expect(s).toHaveLength(8);
-  });
-
-  it('treats 9900 as light and variable (calm)', () => {
-    const calm = parseFdWinds('FT  3000\nOMA 9900\n', 'OMA')!;
-    expect(calm[0].speedKt).toBe(0);
-  });
-
-  it('returns null when the station or header is missing', () => {
-    expect(parseFdWinds(FD, 'LNK')).toBeNull();
-    expect(parseFdWinds('no header here', 'OMA')).toBeNull();
-  });
-});
-
 describe('aggregateDailyFromHourly', () => {
   const CHI = 'America/Chicago';
   const hour = (iso: string, over: Record<string, number | null> = {}) => ({
@@ -704,37 +659,22 @@ describe('normalizeOpenMeteo hour selection', () => {
   });
 });
 
-describe('parseFdTiming', () => {
-  const HEADER = [
-    'FBUS33 KWNO 040200',
-    'FD1US3',
-    'DATA BASED ON 040000Z',
-    'VALID 040600Z   FOR USE 0500-0900Z. TEMPS NEG ABV 24000',
-  ].join('\n');
-
-  it('reads VALID, DATA BASED ON and FOR USE out of the header', () => {
-    const t = parseFdTiming(HEADER, Date.parse('2026-06-04T02:00:00Z'));
-    expect(t.validMs).toBe(Date.parse('2026-06-04T06:00:00Z'));
-    expect(t.basedOnMs).toBe(Date.parse('2026-06-04T00:00:00Z'));
-    // Hour-only codes with no day: kept as the bulletin's own text.
-    expect(t.forUseRaw).toBe('0500-0900');
+// The day-hour-minute code's own tests: it was pinned through the NOAA FD
+// bulletin's header until that parser went with the fallback (2026-11-23),
+// and a METAR's time group still reads through it (metarObservedMs).
+describe('ddhhmmToEpoch', () => {
+  it('resolves the day code in the reference month', () => {
+    expect(ddhhmmToEpoch('040600', Date.parse('2026-06-04T02:00:00Z'))).toBe(Date.parse('2026-06-04T06:00:00Z'));
   });
 
   it('resolves the day code into the month nearest the reference time', () => {
-    // Bulletin issued 31 May, read just after midnight UTC on 1 June: the "31"
+    // A code from 31 May read just after midnight UTC on 1 June: the "31"
     // must resolve backwards into May, not forwards into a later month.
-    const may = 'DATA BASED ON 310000Z\nVALID 310600Z   FOR USE 0500-0900Z.';
-    const t = parseFdTiming(may, Date.parse('2026-06-01T01:00:00Z'));
-    expect(t.validMs).toBe(Date.parse('2026-05-31T06:00:00Z'));
+    expect(ddhhmmToEpoch('310600', Date.parse('2026-06-01T01:00:00Z'))).toBe(Date.parse('2026-05-31T06:00:00Z'));
   });
 
-  it('returns nulls when the header is absent or the codes are impossible', () => {
-    expect(parseFdTiming('FT  3000\nOMA 2118\n', Date.now())).toEqual({
-      validMs: null,
-      basedOnMs: null,
-      forUseRaw: null,
-    });
-    expect(parseFdTiming('VALID 009900Z', Date.parse('2026-06-04T02:00:00Z')).validMs).toBeNull();
+  it('returns null for a code no month has', () => {
+    expect(ddhhmmToEpoch('009900', Date.parse('2026-06-04T02:00:00Z'))).toBeNull();
   });
 });
 
@@ -838,6 +778,18 @@ describe('Open-Meteo pressure levels', () => {
     expect(url.searchParams.get('forecast_days')).toBe('2');
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('timezone')).toBe('UTC');
+    // The app names no model and takes Open-Meteo's default.
+    expect(url.searchParams.has('models')).toBe(false);
+  });
+
+  it('asks the same question of a named model, for the comparison’s RRFS table', () => {
+    const plain = new URL(openMeteoWindsUrl(40.8675, -96.11));
+    const rrfs = new URL(openMeteoWindsUrl(40.8675, -96.11, OPEN_METEO_RRFS_MODEL));
+    expect(rrfs.searchParams.get('models')).toBe('ncep_rrfs_conus');
+    // Everything else is the app's request, parameter for parameter, so the
+    // two tables differ by the model alone.
+    expect([...rrfs.searchParams].filter(([k]) => k !== 'models')).toEqual([...plain.searchParams]);
+    expect(`${rrfs.origin}${rrfs.pathname}`).toBe(`${plain.origin}${plain.pathname}`);
   });
 
   it('reads the 800 and 750 hPa samples between 850 and 700 hPa from the fixture', () => {

@@ -10,6 +10,7 @@ import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
 import { SelectField } from './common/SelectField';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
+import { ExitSeparation } from './ExitSeparation';
 import { useNow } from '../hooks/useNow';
 import { SIM_LAST_READ } from '../config/readingLog';
 
@@ -60,9 +61,8 @@ export function DriftPanel({
    *  the two cards are a screen apart, and a reader changing the hour for
    *  the drift should not have to scroll up to do it. */
   hourNav?: WindsHourNav | null;
-  /** Which source produced `levels`. The card credited Open-Meteo whatever it
-   *  was actually handed, so on the NOAA FD fallback it named a source the
-   *  numbers had not come from. */
+  /** Which source produced `levels`, null when none has loaded, so the Data
+   *  line credits Open-Meteo only for numbers that came from it. */
   source?: WindsAloftSource | null;
 }): JSX.Element {
   const now = useNow(60_000);
@@ -104,7 +104,6 @@ export function DriftPanel({
         <FallbackSources
           inUse={windsAloftSourceInUse(source)}
           usual={[DATA_SOURCES.openMeteo]}
-          fallback={[DATA_SOURCES.fdWinds]}
         />
       }
     >
@@ -112,9 +111,8 @@ export function DriftPanel({
         <p className="muted">No winds-aloft data.</p>
       ) : (
         <>
-          {/* Only with an hour to name. A source with no valid time has no
-              hour to work from, and the FD fallback's one bulletin is not
-              "selected": the note says what each case is. The offset here is
+          {/* Only with an hour to name: an answer with no valid time has no
+              hour to work from, and the note says so. The offset here is
               not a live region; the Winds aloft card's announces the step. */}
           {validMs != null && (
             <>
@@ -183,8 +181,13 @@ export function DriftPanel({
             <strong>{dir(spotToward)}</strong> of the target so you drift back over it.
           </p>
 
-          {/* Only when the winds source stops above the ground — on the NOAA FD
-              fallback, whose lowest level is 3,000 ft MSL. The assumption is
+          {/* Seconds between groups, from the exit altitude and the hour
+              this card already has (the maintainer, 2026-11-24). After the
+              spot, since it is the next thing counted on jump run. */}
+          <ExitSeparation levels={levels} exitFtAgl={exitFt} />
+
+          {/* Only when the profile stops above the ground (an hour whose low
+              samples came back null). The assumption is
               invisible in the result otherwise: the drift figure looks the same
               whether the bottom of the descent was integrated over real levels
               or an assumed one, and the bottom is the wind the jumper lands in.

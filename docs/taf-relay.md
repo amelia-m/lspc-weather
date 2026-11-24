@@ -9,15 +9,16 @@ card showed Omaha's (about 32 mi) and linked Offutt's; since 2026-10-27 it
 reads Offutt's through the relay below. Why a relay and not a workflow:
 docs/open-questions.md, "KOFF's TAF".
 
-`relay/` is a Cloudflare Worker that fetches two fixed things, Offutt's
-TAF, `https://aviationweather.gov/api/data/taf?ids=KOFF&format=json`, and
-since 2026-10-27 KPMV's block of the NBM bulletin ("A second path",
-below), and hands each to the dashboard with the CORS header. It is the
-app's only server-side piece.
+`relay/` is a Cloudflare Worker that fetches three fixed things, Offutt's
+TAF, `https://aviationweather.gov/api/data/taf?ids=KOFF&format=json`,
+since 2026-10-27 KPMV's block of the NBM's hourly bulletin ("A second
+path", below) and since 2026-11-12 its block of the three-hourly one
+(the third path, same section), and hands each to the dashboard with
+the CORS header. It is the app's only server-side piece.
 
-- **Fixed paths only.** It cannot be pointed at anything else: two paths,
-  `/taf/KOFF` and `/nbm/KPMV`, GET only, and the query string is not
-  passed on.
+- **Fixed paths only.** It cannot be pointed at anything else: three paths,
+  `/taf/KOFF`, `/nbm/KPMV` and `/nbm/KPMV/nbs` (since 2026-11-12), GET
+  only, and the query string is not passed on.
 - **Your site only, in a browser.** It answers a page only from
   `https://amelia-m.github.io` and the local dev and preview servers
   (`ALLOWED_ORIGINS`). Another site's page gets a 403. A request with no
@@ -50,10 +51,13 @@ app's only server-side piece.
   - At this club's scale none of that matters: each open dashboard asks
     every 10 minutes, far under the limit with no cache at all.
 - **Within the free plan.** Workers Free allows 100,000 requests a day
-  (Cloudflare's Workers limits page, read 2026-10-20). Since 2026-10-27
-  the card asks the relay twice every 10 minutes per open page, the TAF
-  and the NBM block, 288 a day, so the plan covers about 347 pages open
-  all day (one path, 144 and about 690). Past the limit, Cloudflare answers with its Error 1027 and
+  (Cloudflare's Workers limits page, read 2026-10-20). From 2026-10-27
+  the card asked the relay twice every 10 minutes per open page, the TAF
+  and the NBM block, 288 a day, so the plan covered about 347 pages open
+  all day (one path, 144 and about 690); since 2026-11-12 it asks three
+  times, the NBS block too (`fetchNbs`, in the same refresh,
+  `src/hooks/useWeatherData.ts`), 432 a day, about 231 pages. Past the
+  limit, Cloudflare answers with its Error 1027 and
   the card falls back to Omaha's TAF, as on any failed fetch.
 
 ## What the app does with it
@@ -189,9 +193,16 @@ The same Worker serves `/nbm/KPMV` (`relay/src/nbm.ts`): the NWS
 National Blend of Models' hourly bulletin for KPMV, cut from NOAA's open
 data bucket, for the Ceiling & sky card's lowest cloud base
 (docs/nbm-lowest-cloud-base.md). The origin rule and the shape of the
-answer are the TAF path's (`relay/src/http.ts` holds what the two share);
+answer are the TAF path's (`relay/src/http.ts` holds what the paths share);
 each path fetches one fixed thing, so the relay can still fetch nothing
 else. Deployed by the same build on merge, with nothing to set up.
+
+Since 2026-11-12 a third path, `/nbm/KPMV/nbs`, serves the same
+station's block of the NBM's three-hourly bulletin (NBS, 6 to 72 hours
+ahead, the one usairnet's three-day table reads) the same way, from the
+`blend_nbstx` file beside the `blend_nbhtx` one, with its own memory and
+offset (18,714,526 bytes in the 01Z file of 2026-11-12). The same handler,
+told the product (`relay/src/nbm.ts`, `NbmProduct`).
 
 ## Checked after deploying (2026-10-27)
 
@@ -294,8 +305,8 @@ configuration", "Build watch paths", "Build branches", "workers.dev" and
    opens the PR; the deploy carries the new policy.
 
 To turn it off: `TAF_RELAY_URL` back to null (the TAF card returns to
-Omaha's, and the Ceiling & sky card's base row goes, since the NBM comes
-only through the relay), then delete the Worker in the dashboard.
+Omaha's, and the Ceiling & sky card's NBM rows go, since both bulletins
+come only through the relay), then delete the Worker in the dashboard.
 
 ## Handing it over
 
