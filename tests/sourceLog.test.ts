@@ -88,9 +88,9 @@ describe('logSource', () => {
 
   it('persists to localStorage when it is available', () => {
     const store = installStorage();
-    logSource('windsAloft', 'fallback', 'NOAA FD fallback (5 levels)');
+    logSource('daily', 'fallback', 'NWS gridpoint fallback (7 days)');
     expect(JSON.parse(store.get(STORAGE_KEY) ?? 'null')).toEqual([
-      expect.objectContaining({ source: 'windsAloft', status: 'fallback' }),
+      expect.objectContaining({ source: 'daily', status: 'fallback' }),
     ]);
   });
 });

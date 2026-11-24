@@ -30,12 +30,12 @@ describe('deriveProvenance', () => {
   it('marks the fallback providers as fallback', () => {
     const prov = deriveProvenance({
       ...EMPTY,
-      windsAloftSource: 'nws-fd',
+      windsAloftSource: null,
       dailySource: 'nws-gridpoint',
       taf: { station: 'KOMA', raw: '', issuedMs: null, validRaw: null, passedOver: [{ station: 'KOFF', none: true }] },
     }, false);
-    expect(prov.windsAloft?.fallback).toBe(true);
-    expect(prov.windsAloft?.detail).toContain('NOAA FD');
+    // The winds have no fallback since 2026-11-23: nothing loaded, no row.
+    expect(prov.windsAloft).toBeUndefined();
     expect(prov.daily?.fallback).toBe(true);
     expect(prov.daily?.detail).toContain('NWS gridpoint');
     // A non-primary TAF station (not the first configured) is a fallback,

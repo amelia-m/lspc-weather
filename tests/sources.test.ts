@@ -21,22 +21,12 @@ describe('DATA_SOURCES', () => {
     const stations = [
       SITE.metarStation.id,
       SITE.radarSite.id,
-      SITE.fdWindsStation,
       ...SITE.tafStations.map((s) => s.id),
     ];
     for (const id of stations) {
       if (!new RegExp(`\\b${id}\\b`).test(source.label)) continue;
       expect(source.url, `${key} names ${id} but its link does not select it`).toContain(id);
     }
-  });
-
-  it('does not claim the generic FD product page is station-specific', () => {
-    // The winds-aloft fallback is fetched for OMA, but this link is the generic
-    // NOAA FD page and does not open on OMA. The query parameters that would
-    // select the station could not be verified from the environment this was
-    // written in, so the label states what the link delivers rather than
-    // guessing. The OMA provenance still shows on the winds-aloft card itself.
-    expect(DATA_SOURCES.fdWinds.label).not.toContain(SITE.fdWindsStation);
   });
 
   it('opens the sectional chart centred on the drop zone', () => {

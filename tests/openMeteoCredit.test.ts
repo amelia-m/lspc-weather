@@ -28,7 +28,7 @@ const dataLine = (html: string) => {
 
 describe('Open-Meteo in the cards’ Data lines', () => {
   const level = { altitudeFtAgl: 3000, altitudeFtMsl: 4182, directionDeg: 270, speedKt: 10, tempC: 0 };
-  const winds = (source: 'open-meteo' | 'nws-fd' | null) =>
+  const winds = (source: 'open-meteo' | null) =>
     renderToStaticMarkup(
       createElement(WindsAloftPanel, {
         levels: source === null ? [] : [level],
@@ -53,39 +53,34 @@ describe('Open-Meteo in the cards’ Data lines', () => {
   const [credited, usually] = [(l: string) => l.split(' · usually ')[0], (l: string) => l.split(' · usually ')[1] ?? ''];
 
   it('on a fallback, credits the fallback, says so, and names the usual source after it', () => {
-    for (const [line, fb] of [
-      [dataLine(winds('nws-fd')), DATA_SOURCES.fdWinds],
-      [dataLine(daily('nws-gridpoint')), DATA_SOURCES.nwsForecast],
-    ] as const) {
-      expect(credited(line)).toContain(`>${fb.label}</a>`);
-      expect(credited(line)).toContain('fallback in use');
-      expect(credited(line)).not.toContain('Open-Meteo');
-      expect(usually(line)).toContain(`>Open-Meteo</a> (${LICENCE})`);
-    }
-    // Schulze's cross-reference reads the same Open-Meteo data, so it is not
-    // offered beside the FD bulletin.
-    expect(dataLine(winds('nws-fd'))).not.toContain(DATA_SOURCES.markschulze.label);
+    const line = dataLine(daily('nws-gridpoint'));
+    expect(credited(line)).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
+    expect(credited(line)).toContain('fallback in use');
+    expect(credited(line)).not.toContain('Open-Meteo');
+    expect(usually(line)).toContain(`>Open-Meteo</a> (${LICENCE})`);
   });
 
-  it('with nothing loaded, says so and credits nobody, but still names the usual source and the fallback', () => {
-    const drift = (source: 'open-meteo' | 'nws-fd' | null) =>
+  it('with nothing loaded, says so and credits nobody, but still names the usual source', () => {
+    const drift = (source: 'open-meteo' | null) =>
       renderToStaticMarkup(createElement(DriftPanel, { levels: [], source } as never));
     expect(dataLine(drift('open-meteo'))).toContain(`>Open-Meteo</a> (${LICENCE})`);
-    for (const [html, fb] of [
-      [winds(null), DATA_SOURCES.fdWinds],
-      [daily(null), DATA_SOURCES.nwsForecast],
-      [drift(null), DATA_SOURCES.fdWinds],
-    ] as const) {
+    for (const html of [winds(null), daily(null), drift(null)]) {
       const line = dataLine(html);
       expect(line).toContain('Data: none loaded · usually ');
       expect(usually(line)).toContain(`>Open-Meteo</a> (${LICENCE})`);
-      expect(usually(line)).toContain(`>${fb.label}</a></span> as the fallback`);
       expect(line).not.toContain('fallback in use');
       expect(line).not.toContain(DATA_SOURCES.markschulze.label);
     }
+    // Only the outlook has a fallback to name. The winds cards had NOAA's FD
+    // bulletin until 2026-11-23, after NCEP stopped issuing it for CONUS
+    // (last 2026-11-03); they name no second source now.
+    expect(usually(dataLine(daily(null)))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a></span> as the fallback`);
+    for (const html of [winds(null), drift(null)]) {
+      expect(dataLine(html)).not.toContain('fallback');
+      expect(html).not.toContain('NOAA winds aloft');
+    }
     // The winds card offers Schulze's tool in its body instead.
     expect(winds(null)).toContain('is another place to look.');
-    expect(winds('nws-fd')).not.toContain('is another place to look.');
     // The outlook's hourly detail is the NWS gridpoint's on both paths.
     expect(dataLine(daily('open-meteo'))).toContain(`>${DATA_SOURCES.nwsForecast.label}</a>`);
     // No flag reads a forecast: the observation and the computed sun times.

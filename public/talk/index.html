@@ -529,8 +529,7 @@ the Iowa Environmental Mesonet</a></li>
 <li><a href="https://open-meteo.com/">Open-Meteo</a>, winds aloft, cloud
 cover and the 10-day outlook (CC BY 4.0)</li>
 <li><a href="https://aviationweather.gov/data/taf/?ids=KOFF%2CKOMA%2CKLNK">TAFs
-at aviationweather.gov</a> and <a href="https://aviationweather.gov/data/windtemp/">NOAA’s winds aloft
-(FD)</a></li>
+at aviationweather.gov</a></li>
 <li><a href="https://radar.weather.gov/station/KOAX/standard">NWS radar,
 KOAX</a></li>
 </ul>
@@ -667,8 +666,10 @@ is Offutt’s, written by the Air Force and carried on no feed a browser
 can read, so a relay fetches it; when it is missing, cancelled or ended,
 the card falls back to Omaha’s, then Lincoln’s, and says which it
 shows.</p>
-<p><strong>Winds aloft from two sources too</strong>: Open-Meteo’s model
-levels, with NOAA’s FD winds as the fallback when the request fails.</p>
+<p><strong>Winds aloft from one source now</strong>: Open-Meteo’s model
+levels. NOAA’s FD winds were the fallback until NOAA retired that
+bulletin with the NAM model on 3 November 2026; the dashboard dropped
+the fallback on the 23rd, when it was found it could only fail.</p>
 </div>
 </div>
 <aside class="notes">

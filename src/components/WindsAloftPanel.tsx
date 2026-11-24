@@ -11,7 +11,7 @@ import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
-import { describeWind, fmtClock, fmtZulu } from './format';
+import { describeWind, fmtClock } from './format';
 
 /** Altitudes (ft AGL) shown when the card is collapsed. LSPC jumps top out
  *  around 10,000 ft, so the default view stops there and keeps the low levels
@@ -84,18 +84,13 @@ export function WindsAloftPanel({
   // Ticks each minute so the "ahead of now" offset stays true between the
   // 10-minute data polls rather than freezing at fetch time.
   const now = useNow(60_000);
-  const fallback = source === 'nws-fd';
   const validMs = validity?.validMs ?? null;
   const shifted = hourNav != null && !hourNav.following;
   // Always keep the lowest level the source offers, whether or not it lands on
-  // the key set. That set was picked for the primary path, whose lowest row is
-  // the surface; on the NOAA FD fallback the profile starts at 2,000 ft AGL,
-  // which the set does not contain — so the collapsed table used to open at
-  // 3,000 ft and hide the closest thing to a landing-pattern wind that path
-  // has. Worse, it is the level the drift card names as the one it assumes all
-  // the way down, and the note under the table says levels below the
-  // bulletin's floor are not listed, so a reader had every reason to read
-  // 3,000 ft as the floor.
+  // the key set. That set assumes the lowest row is the surface; a profile
+  // that starts higher (an hour whose low samples came back null) would
+  // otherwise open the collapsed table above its own floor and hide the
+  // level the drift card names as the one it assumes all the way down.
   const lowestFtAgl = levels.length > 0 ? Math.min(...levels.map((l) => l.altitudeFtAgl)) : null;
   const collapsedLevels = levels.filter(
     (l) => COLLAPSED_ALTITUDES_FT.has(l.altitudeFtAgl) || l.altitudeFtAgl === lowestFtAgl,
@@ -118,12 +113,11 @@ export function WindsAloftPanel({
   return (
     <Panel
       title="Winds aloft"
-      subtitle={fallback ? 'NOAA FD fallback' : 'freefall drift / spot'}
+      subtitle="freefall drift / spot"
       footer={
         <FallbackSources
           inUse={windsAloftSourceInUse(source)}
           usual={[DATA_SOURCES.openMeteo]}
-          fallback={[DATA_SOURCES.fdWinds]}
           withUsual={[DATA_SOURCES.markschulze]}
         />
       }
@@ -140,9 +134,7 @@ export function WindsAloftPanel({
               <p className="muted small">
                 {shifted
                   ? 'You stepped to this hour, so the table no longer follows the clock.'
-                  : fallback
-                    ? 'The FD bulletin is issued every 6 hours, so the nearest one is used.'
-                    : 'Follows the hour nearest the clock; moves on at half past.'}
+                  : 'Follows the hour nearest the clock; moves on at half past.'}
               </p>
             </>
           ) : (
@@ -172,17 +164,6 @@ export function WindsAloftPanel({
                   : 'All levels: every sample this app takes. As Schulze: his pressure levels only, and his Surface row.'}
               </p>
             </>
-          )}
-          {fallback && (validity?.forUseRaw != null || validity?.basedOnMs != null) && (
-            <p className="muted small">
-              Bulletin
-              {validity.forUseRaw != null ? ` is for use ${validity.forUseRaw}Z` : ''}
-              {validity.forUseRaw != null && validity.basedOnMs != null ? ',' : ''}
-              {validity.basedOnMs != null
-                ? ` based on the ${fmtZulu(validity.basedOnMs)} model run`
-                : ''}
-              .
-            </p>
           )}
         </>
       )}
@@ -285,24 +266,14 @@ export function WindsAloftPanel({
           level up to {fmtFt(top.highestFtAgl)}.
         </p>
       )}
-      {fallback ? (
-        <p className="muted small">
-          <strong>Fallback source:</strong> Open-Meteo was unreachable, so these levels are
-          interpolated from the NOAA winds-aloft (FD) forecast for {SITE.fdWindsStation} (Omaha,
-          ~30 mi from the DZ) — 3/6/9/12k-ft MSL levels, the same bulletin jump pilots brief from.
-          Levels below the bulletin&rsquo;s lowest (3,000 ft MSL, roughly{' '}
-          {(Math.round((3000 - SITE.dz.elevationFt) / 100) * 100).toLocaleString()} ft above the DZ) are not listed at
-          all, the surface row among them — the bulletin says nothing about them; see the Surface
-          wind card for ground wind.
-        </p>
-      ) : levels.length > 0 ? (
+      {levels.length > 0 ? (
         /* What a reader needs to read the numbers right stays out, in one
            line: that they are a forecast, what the Surface row is, and the
            two things that make Mark Schulze's table look different (its
            AGL scale and its hour). The why of each, and how the levels are
            worked out, is the #winds-method page, linked below, so the card
-           leads with the table and the guidance. The fallback note above, and the missing-levels
-           note under the table, are about this report and stay out too. */
+           leads with the table and the guidance. The missing-levels note
+           under the table is about this report and stays out too. */
         <>
           <p className="muted small">
             A model <strong>forecast</strong> for the DZ, not a measurement.

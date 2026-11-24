@@ -115,7 +115,7 @@ export function offsetFromNow(validMs: number, now: number): { minutes: number; 
  *  `forwardMin` after. The defaults are the step window plus the half hour
  *  the nearest hour can sit either side of the clock, rounded out to whole
  *  hours (three back, five forward), so every hour the buttons reach lands
- *  on the bar. An hour beyond it (the FD fallback's bulletin can be) pins to
+ *  on the bar. An hour beyond it (a stale answer's can be) pins to
  *  the edge and says which, so the bar never draws a far hour as a near one. */
 export function offsetBarPosition(
   minutes: number,

@@ -4,8 +4,6 @@ import {
   aggregateDailyFromHourly,
   normalizeGridpoint,
   normalizeNwsObservation,
-  parseFdTiming,
-  parseFdWinds,
   parseTaf,
   tafFromAwcJson,
   type RawGridpoint,
@@ -14,14 +12,12 @@ import {
 } from '../domain/normalize';
 import { fetchTafChain, type TafStationRef } from './tafChain';
 import { TAF_RELAY_URL, tafRelayUrlFor } from '../config/tafRelay';
-import { interpolateWindsAloft } from '../domain/windsAloft';
 import { newerGridpoint } from '../domain/gridpointFreshness';
 import type {
   CurrentConditions,
   DailyPoint,
   HourlyPoint,
   TafForecast,
-  WindsAloftForecast,
 } from '../domain/types';
 import { GRIDPOINT_FIXTURE } from './fixtures/gridpoint';
 import { OBSERVATION_FIXTURE } from './fixtures/observation';
@@ -261,117 +257,5 @@ export async function fetchTafFrom(
   }
   const taf = await fetchTaf(station, productLocation);
   return taf ? { ...taf, via: 'nws' } : null;
-}
-
-/** NOAA winds-aloft (FD) product type codes, 6-hour issuance first. The
- *  bulletin that carries a given station is DISCOVERED at runtime (see
- *  below) rather than hardcoded — guessed location codes have proven wrong
- *  against the live products API. */
-const FD_TYPES = ['FD1', 'FD2', 'FD3', 'FD5', 'FD8', 'FD9'];
-/** Cap on how many candidate bulletins to download during discovery. */
-const FD_DISCOVERY_BUDGET = 8;
-const FD_CACHE_KEY = 'nws-fd-source';
-
-interface FdProductRef {
-  '@id': string;
-  wmoCollectiveId?: string;
-}
-interface FdProductDetail extends RawNwsProduct {
-  wmoCollectiveId?: string;
-}
-
-/**
- * Fallback winds aloft from the NOAA FD text product via api.weather.gov —
- * used when Open-Meteo is unreachable (some networks block that host). The
- * bulletin forecasts point winds for OMA (~30 mi from the DZ) at 3/6/9/12k+
- * ft MSL; sparser than the pressure-level model but the same data jump
- * pilots brief from.
- *
- * The right bulletin is found by querying recent FD products by TYPE only
- * and parsing until one contains the station's row; the winning WMO
- * collective id is cached so later refreshes use one precise query
- * (?type&wmoid&limit=1). The cache self-invalidates when it stops matching.
- * Returns null when no product yields winds.
- *
- * The bulletin's own header timing (VALID / DATA BASED ON / FOR USE) rides back
- * with the levels so the card can state a valid time on this path too — an FD
- * bulletin is issued every 6 hours and can verify hours from now, an offset
- * even larger than the Open-Meteo hour snap. Its day/hour codes carry no month,
- * so they are resolved against the product's issuanceTime where the API gives
- * one and against `now` otherwise.
- */
-export async function fetchWindsAloftFd(
-  station: string,
-  fieldElevationFt: number,
-  targetAltitudesFtAgl: readonly number[],
-  now: number,
-): Promise<WindsAloftForecast | null> {
-  const tryProduct = async (url: string): Promise<WindsAloftForecast | null> => {
-    const product = await fetchJson<FdProductDetail>(url);
-    const text = product.productText ?? '';
-    const samples = parseFdWinds(text, station);
-    if (!samples || samples.length === 0) return null;
-    if (product.wmoCollectiveId) {
-      safeLocalSet(
-        FD_CACHE_KEY,
-        JSON.stringify({ type: 'FD', wmoid: product.wmoCollectiveId }),
-      );
-    }
-    const issued = product.issuanceTime ? Date.parse(product.issuanceTime) : NaN;
-    const timing = parseFdTiming(text, Number.isNaN(issued) ? now : issued);
-    return {
-      levels: interpolateWindsAloft(samples, fieldElevationFt, targetAltitudesFtAgl),
-      validity: timing,
-    };
-  };
-
-  // Fast path: the previously discovered bulletin.
-  const cached = safeLocalGet(FD_CACHE_KEY);
-  if (cached) {
-    try {
-      const { wmoid } = JSON.parse(cached) as { wmoid?: string };
-      if (wmoid) {
-        const list = await fetchJson<{ '@graph'?: FdProductRef[] }>(
-          `${NWS_BASE}/products?wmoid=${encodeURIComponent(wmoid)}&limit=1`,
-        );
-        const latest = list['@graph']?.[0];
-        if (latest) {
-          const forecast = await tryProduct(latest['@id']);
-          if (forecast) return forecast;
-        }
-      }
-    } catch {
-      /* fall through to rediscovery */
-    }
-    safeLocalRemove(FD_CACHE_KEY);
-  }
-
-  // Discovery: recent products per type, one fetch per distinct collective.
-  let budget = FD_DISCOVERY_BUDGET;
-  for (const type of FD_TYPES) {
-    let entries: FdProductRef[];
-    try {
-      const list = await fetchJson<{ '@graph'?: FdProductRef[] }>(
-        `${NWS_BASE}/products?type=${type}&limit=30`,
-      );
-      entries = list['@graph'] ?? [];
-    } catch {
-      continue;
-    }
-    const seen = new Set<string>();
-    for (const e of entries) {
-      const key = e.wmoCollectiveId ?? e['@id'];
-      if (seen.has(key)) continue;
-      seen.add(key);
-      if (budget-- <= 0) return null;
-      try {
-        const forecast = await tryProduct(e['@id']);
-        if (forecast) return forecast;
-      } catch {
-        /* next candidate */
-      }
-    }
-  }
-  return null;
 }
 

@@ -35,10 +35,11 @@ export interface DriftEstimate {
    *
    * Below it the integral carries this level's wind down, and that assumption
    * is invisible in the result: the drift figure looks the same whether it was
-   * integrated over real levels or an assumed one. On the NOAA FD fallback the
-   * bulletin's lowest level is 3,000 ft MSL, so roughly the last 1,800 ft of
-   * descent — the wind a jumper actually lands in — is extrapolated. The card
-   * says so when this is non-zero.
+   * integrated over real levels or an assumed one. On a profile that starts
+   * above the ground (the NOAA FD bulletin's did, at 3,000 ft MSL, while the
+   * app read it, to 2026-11-23) the last stretch of descent, the wind a
+   * jumper actually lands in, is extrapolated. The card says so when this is
+   * non-zero.
    *
    * It is the level's own altitude, not the depth of descent affected. Those
    * differ when deployment is below the lowest level, and reporting the depth
