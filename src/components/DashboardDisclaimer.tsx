@@ -26,6 +26,14 @@ export function DashboardDisclaimer(): JSX.Element {
         <a href="#citations">citations page</a> lists them). Always confirm conditions with current
         official sources, the <SimTerm term="sta">S&amp;TA</SimTerm>, and the pilot in command.
       </p>
+      {/* Out of the fold below (the maintainer, 2026-11-24): where the
+          observations are taken is a limit on every reading on the page,
+          not background on the sources. */}
+      <p>
+        Observations are from {SITE.metarStation.id}, about {Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
+        {METAR_STATION_OFFSET.compass} of the drop zone, not from the field; forecasts and winds are gridded
+        to the drop zone.
+      </p>
       <details className="disclaimer-more">
         <summary>About the sources</summary>
         <p>
@@ -33,10 +41,6 @@ export function DashboardDisclaimer(): JSX.Element {
           read at their sources on 2026-09-22 and 2026-09-23 (every cited SIM part again on {SIM_LAST_READ}); the club wind tiers are transcribed
           from an undated photo of the posted sign. The citations page records what each source
           says, what a reading could not settle, and when each source was last read.
-        </p>
-        <p>
-          Observations are from {SITE.metarStation.id} (~{Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
-          {METAR_STATION_OFFSET.compass}); forecasts and winds are gridded to the drop zone.
         </p>
       </details>
     </div>

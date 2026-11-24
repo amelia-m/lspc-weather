@@ -5,6 +5,8 @@ import { lowerLimitPublished, lowerLimitUnchecked, windBandUse, withNotHere } fr
 import { DATA_SOURCES } from '../config/sources';
 import { METAR_STATION_OFFSET, SITE } from '../config/site';
 import { fmtClock } from './format';
+import { agoText, overdueReportText } from '../domain/reportAge';
+import { useNow } from '../hooks/useNow';
 import { spreadLabels } from './format';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
@@ -47,17 +49,28 @@ export function SurfaceWindPanel({
   label,
   unit,
   onUnitChange,
+  now: nowProp,
 }: {
   current: CurrentConditions | null;
   thresholds: Thresholds;
   label: string;
   unit: SpeedUnit;
+  /** The time the report's age is counted to; the minute's tick when left
+   *  out (a test passes one). */
+  now?: number;
   /** Page-wide unit setter, handed to the header toggle. Required rather than
    *  optional: this is the most-read card on the page and the one a jumper
    *  compares against a wind limit quoted in mph, so it must never render
    *  without the switch. */
   onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
+  // Ticks each minute so the report's age keeps counting between refreshes.
+  const tick = useNow(60_000);
+  const now = nowProp ?? tick;
+  const station = current?.station ?? SITE.metarStation.id;
+  const overdue = current
+    ? overdueReportText(station, current.observedAt, now, SITE.metarStation.reportIntervalMin)
+    : null;
   const speed = current?.wind.speedKt ?? null;
   const gust = current?.wind.gustKt ?? null;
   // Room past the highest mark, so a gust or limit at the top of the scale
@@ -151,10 +164,23 @@ export function SurfaceWindPanel({
           purpose: with no wind reported the line still says what the card
           would show. */}
       <p className="wind-observed">
-        <strong>Observed</strong> at {current?.station ?? SITE.metarStation.id} (
+        <strong>Observed</strong> at {station} (
         {Math.round(METAR_STATION_OFFSET.distanceMi)} mi {METAR_STATION_OFFSET.compass} of the DZ)
-        {current ? `, ${fmtClock(current.observedAt)}` : ''}: the latest report, not a forecast.
+        {current ? `, ${fmtClock(current.observedAt)}, ${agoText(current.observedAt, now)}` : ''}: the latest
+        report, not a forecast.
       </p>
+      {/* What a report cannot do, in the card's ordinary type and not the
+          small grey of a note (the maintainer, 2026-11-24, after AXIS's
+          page said the like in red): it is one moment at another place.
+          A caveat about the data, at any wind; no threshold, no verdict. */}
+      <p className="wind-report-limit">
+        A report is the wind at {station} when it was taken. It cannot show a wind that is changing now, or
+        the wind at the DZ.
+      </p>
+      {/* The station's own cadence against the report's age, stated and
+          left there (reportAge.ts): no colour, and the reading below is
+          still the newest the page has. */}
+      {overdue && <p className="wind-overdue">{overdue}</p>}
       {speed == null ? (
         <p className="muted">No wind data.</p>
       ) : (

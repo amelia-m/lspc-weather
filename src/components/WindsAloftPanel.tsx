@@ -6,6 +6,7 @@ import { METAR_STATION_OFFSET, SITE, WINDS_ALOFT_LEVELS_AGL } from '../config/si
 import { DATA_SOURCES, windsAloftSourceInUse } from '../config/sources';
 import { FallbackSources } from './common/FallbackSources';
 import { CITATIONS } from '../config/thresholds';
+import { agoText } from '../domain/reportAge';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
 import { SourceLink } from './common/SourceLink';
@@ -225,7 +226,8 @@ export function WindsAloftPanel({
       {observed && levels.length > 0 && (
         <p className="wind-observed">
           <strong>Observed</strong> at {observed.station} ({Math.round(METAR_STATION_OFFSET.distanceMi)} mi{' '}
-          {METAR_STATION_OFFSET.compass} of the DZ), {fmtClock(observed.observedAt)}: {describeWind(observed, unit)}.
+          {METAR_STATION_OFFSET.compass} of the DZ), {fmtClock(observed.observedAt)}, {agoText(observed.observedAt, now)}:{' '}
+          {describeWind(observed, unit)}.
           A report, not a row of the forecast above.
         </p>
       )}

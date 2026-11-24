@@ -331,6 +331,11 @@ export type AdvisoryLevel = 'info' | 'forecast' | 'watch' | 'caution';
 export interface Advisory {
   id: string;
   level: AdvisoryLevel;
+  /** What the flag reads: the latest report, the forecast, or the clock
+   *  (the daylight flag, from the computed sun times). A flag on the report
+   *  names it and its age in the list (AdvisoryPanel), so a flag read late
+   *  does not read as now; required, so a new flag has to say. */
+  basis: 'report' | 'forecast' | 'clock';
   metric: string; // "Surface wind"
   value: string; // "21 kt (24 mph), gusting 28"
   guidance: string; // brief paraphrase of the cited rule

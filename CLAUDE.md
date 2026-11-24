@@ -88,10 +88,11 @@ they were colour and text rather than flags.
   call): six months against KPMV's reports, the side and typical size of the
   difference, dated to docs/nws-gust-archive.md and held to it by a test.
   Figures beside the flag, not a correction to it.
+- **Every report says how old it is, and the page says when reports are overdue** (the maintainer, 2026-11-24, after AXIS's page said "No live data" in red; `src/domain/reportAge.ts`). The age prints beside the time on the Surface wind, Winds aloft and Current conditions cards, each flag read from the report names it ("From the Tue 1:15 PM report, 12 min ago"; `Advisory.basis`, required, so a new flag has to say what it reads), and Data health's METAR row prints the report's age beside the fetch's. No flag stops firing at an age: that figure would be the app's. "Overdue" rests on the station's own cadence, an observed fact (`reportIntervalMin`, 20 minutes at KPMV in 3,110 of 3,134 archived gaps, `scripts/reportCadence.ts`): past two intervals the cards and the list state the cadence and the age in the card's own type, no colour, and Data health's row turns stale. The Surface wind card's second line says what a report cannot show, and the station's distance is in the disclaimer's first paragraphs, not its fold. Do not shrink these back into small grey notes.
 - **The Surface wind card is first on the Jumpers tab: one bar with every
   mark labelled, then one line per limit** (the maintainer, 2026-10-10). Its
   first line says what it is (2026-10-30, "make it very clear"): "Observed at
-  KPMV (11 mi ENE of the DZ), <time>: the latest report, not a forecast"
+  KPMV (11 mi ENE of the DZ), <time>, <age>: the latest report, not a forecast"
   (`.wind-observed`, from `METAR_STATION_OFFSET`, a test pins it). The
   forecast reaches the Jumpers tab only through the Forecast flag and the
   hourly chart; Open-Meteo's 10 m wind is on the Winds aloft card's Surface

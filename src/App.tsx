@@ -422,6 +422,7 @@ export default function App(): JSX.Element {
         editedLimits={editedLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].label)}
         ownLimits={ownLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].ownLabel)}
         forPilots={!VIEW_USES_PROFILE[view]}
+        report={snapshot.current ? { station: snapshot.current.station, observedAt: snapshot.current.observedAt } : null}
       />
 
       {/* The cards each tab shows, in its order: src/config/views.ts. Order
@@ -441,6 +442,7 @@ export default function App(): JSX.Element {
         lastUpdated={lastUpdated}
         onRefresh={refresh}
         openMeteoUsage={usage}
+        reportAt={snapshot.current?.observedAt ?? null}
       />
 
       {VIEW_USES_PROFILE[view] && (

@@ -1,3 +1,5 @@
+import { agoText } from '../domain/reportAge';
+import { useNow } from '../hooks/useNow';
 import type { CurrentConditions } from '../domain/types';
 import { fmtTemp, round, toTemp, type SpeedUnit, type TempUnit, fmtVisibilitySm } from '../domain/units';
 import { relativeHumidity } from '../domain/humidity';
@@ -26,11 +28,13 @@ export function MetarPanel({
    *  head. Failing to pass it should be a type error, not a missing control. */
   onUnitChange: (u: SpeedUnit) => void;
 }): JSX.Element {
+  // Ticks each minute so the report's age keeps counting between refreshes.
+  const now = useNow(60_000);
   return (
     <Panel
       title="Current conditions"
       subtitle={
-        current ? `${current.station} · obs ${fmtTime(current.observedAt)}` : SITE.metarStation.id
+        current ? `${current.station} · obs ${fmtTime(current.observedAt)}, ${agoText(current.observedAt, now)}` : SITE.metarStation.id
       }
       sources={[DATA_SOURCES.iemObservation, DATA_SOURCES.nwsObservation]}
       unit={unit}

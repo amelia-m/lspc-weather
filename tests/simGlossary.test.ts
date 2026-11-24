@@ -140,6 +140,7 @@ const mvfr = normalizeMetar({
 const flags: Advisory[] = [
   {
     id: 'surface-wind',
+    basis: 'report',
     level: 'caution',
     metric: 'Surface wind',
     value: '20 kt',
@@ -148,6 +149,7 @@ const flags: Advisory[] = [
   },
   {
     id: 'other',
+    basis: 'clock',
     level: 'info',
     metric: 'Other',
     value: 'n/a',
