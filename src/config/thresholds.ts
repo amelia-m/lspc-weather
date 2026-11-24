@@ -125,6 +125,21 @@ export const FAR_91155_ROWS =
 export const FLIGHT_CATEGORY_GUIDANCE =
   'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, the rules to check are the pilot’s basic VFR weather minimums, 14 CFR 91.155 (by airspace class and altitude), and the flight-visibility and cloud-clearance rule for parachute operations that the Ceiling & sky card cites; that call belongs to the pilot in command.';
 
+/** SIM 4-7 C's ground separation between groups leaving on one pass, read
+ *  at uspa.org on 2026-11-24 ("Provide at least 1,000 feet of ground
+ *  separation between individuals jumping solo. Provide at least 1,500 feet
+ *  of ground separation between small groups, adding more as the size of
+ *  the groups increase."); the part's text still matched the fingerprint
+ *  taken on its last full reading (readingLog.ts). The SIM gives no figure
+ *  for larger groups, so there is no third row: the Drift card works these
+ *  two into seconds (src/domain/exitSeparation.ts) and quotes the rest.
+ *  #citations A7 carries the same quotes, which the daily SIM check holds
+ *  to the part's text. */
+export const EXIT_SEPARATION_FT = [
+  { ft: 1000, between: 'Solo jumpers' },
+  { ft: 1500, between: 'Small groups' },
+] as const;
+
 /** BSR 2-1 I's minimum container opening altitudes, ft AGL, as read at
  *  uspa.org on 2026-10-08 ("Tandem jumps: 5,000 feet AGL; All students and
  *  A-license holders: 3,000 feet AGL; B-license holders: 2,500 feet AGL;
@@ -340,6 +355,9 @@ export const CITATIONS = {
    * The card states the guidance at any wind speed. The trigger that used to
    * gate it (upper winds above 20 kt) was the app's own and is gone; 4-7 sets
    * separation distances, not a wind speed at which to start caring.
+   *
+   * Since 2026-11-24 the Drift card also works those distances into seconds
+   * between exits (`EXIT_SEPARATION_FT`, src/domain/exitSeparation.ts).
    */
   uspaSpotting: {
     source: 'USPA SIM, Section 4-7 (Spotting)',

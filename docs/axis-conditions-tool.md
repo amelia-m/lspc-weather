@@ -47,7 +47,7 @@ AXIS's server collects the data, at most 60 times an hour and only while someone
 
 ## For the maintainer
 
-1. Exit separation: should the Winds aloft card go as far as seconds between groups, from SIM 4-7 C's two distances and a ground speed the reader enters?
+1. Done 2026-11-24, on the Drift card: seconds between exits from SIM 4-7 C's two distances, with the ground speed worked from a jump-run bearing and an indicated airspeed (her steer: enter the bearing and work the ground speed from the headwind), or taken from the pilot's GPS. Open with her: the indicated airspeed the club's plane flies on jump run, which would let the box open on a dated, attributed figure (also asked of the instructor as A7).
 2. Does LSPC run night jumps often enough for a moon line?
 3. A weather station at the field: wanted, and who would own it?
 4. Heat index, and the "a report cannot show a changing wind" sentence: either?

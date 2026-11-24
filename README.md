@@ -79,12 +79,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
   maximum exit weight for a Student on that size. The chart is the
   maintainer's transcription, not yet checked against PD's own copy here, and
   the canopy model and sizes are theirs to confirm (`#citations`, A12).
-- 🎯 **Freefall drift / spot** — Schulze-style drift estimate with editable exit,
-  deploy, and fall-rate inputs, worked from whichever hour the winds card shows,
-  with the same hour readout and −1 h / +1 h buttons: stepping either card
-  moves both. Deploy opens on the BSR minimum opening altitude for the
-  profile: 3,000 ft for a student, and under Licensed for the license chosen
-  in the header (3,000 ft for A, 2,500 ft for B, C and D).
+- 🎯 **Freefall drift / spot**: Schulze-style drift estimate with editable exit, deploy, and fall-rate inputs, worked from whichever hour the winds card shows, with the same hour readout and −1 h / +1 h buttons: stepping either card moves both. Deploy opens on the BSR minimum opening altitude for the profile: 3,000 ft for a student, and under Licensed for the license chosen in the header (3,000 ft for A, 2,500 ft for B, C and D). Under the spot, **exit separation on jump run**: the seconds between exits for the two ground distances SIM 4-7 C gives (at least 1,000 ft between solo jumpers, 1,500 ft between small groups), worked from a jump-run bearing and an indicated airspeed the reader enters and the forecast wind at exit altitude, or from the pilot's GPS ground speed when there is one.
 - 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
   hours from sunset to sunrise shaded, over a selectable 18 h, 36 h, 72 h, 5 d

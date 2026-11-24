@@ -155,6 +155,7 @@ they were colour and text rather than flags.
   S&TA as B2 on `#citations` since 2026-11-05 (`JUDGEMENTS`, a `judgement`
   entry: questions only, no claim verdict). Change neither before that
   answer.
+- **The Drift card works exit separation into seconds, from SIM 4-7 C's two distances and nothing else** (the maintainer, 2026-11-24; `src/domain/exitSeparation.ts`, `ExitSeparation.tsx`, `EXIT_SEPARATION_FT`). At least 1,000 ft between solo jumpers and 1,500 ft between small groups, over the plane's ground speed, rounded up; the SIM gives no figure for larger groups, so there is no third row. The reader enters the jump run's bearing (it opens into the forecast wind at exit altitude, and says so) and the indicated airspeed, which starts empty: no source read publishes one for the club's plane, and #citations A7 asks. The ground speed is true airspeed (indicated over the root of the density ratio, standard pressure and the forecast temperature at exit altitude) less the headwind, with the crab angle's share for a crosswind; the pilot's GPS ground speed, when entered, replaces it, being measured. Arithmetic on a published figure: no flag, no colour, no word on whether the seconds are enough. It says what it leaves out (drift after exit). Do not add AXIS's 2 s for large groups or its 6 s floor: they are AXIS's.
 - **Wind limits render with a decimal in knots** (`fmtLimitSpeed`): the
   waiver's top gust ceilings are 19 and 20 mph, and rounded to whole knots
   both printed "17 kt", so the tier a jumper earned changed nothing on
