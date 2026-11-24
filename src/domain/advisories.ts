@@ -123,6 +123,7 @@ export function evaluateAdvisories(
         const gustDriven = gustKt != null && gustKt >= limitKt && (speedKt == null || speedKt < limitKt);
         out.push({
           id: 'surface-wind',
+          basis: 'report',
           level: 'caution',
           metric: 'Surface wind',
           // Says what the comparison is (at or above), and not "limit": the
@@ -150,6 +151,7 @@ export function evaluateAdvisories(
     if (thresholds.gustCautionKt != null && gustKt != null && gustKt >= thresholds.gustCautionKt) {
       out.push({
         id: 'gust-limit',
+        basis: 'report',
         level: 'caution',
         metric: 'Gust limit',
         // Both figures in the selected unit. The waiver states its ceiling in
@@ -198,6 +200,7 @@ export function evaluateAdvisories(
       const under = visibilityRowsUnder(thresholds, current.visibilitySm);
       out.push({
         id: 'visibility',
+        basis: 'report',
         level: 'caution',
         metric: 'Visibility',
         value: `${fmtVisibilitySm(current.visibilitySm)} SM${under ? `, ${under}` : ''}`,
@@ -212,6 +215,7 @@ export function evaluateAdvisories(
       const comparison = flightCategoryComparison(current);
       out.push({
         id: 'flight-category',
+        basis: 'report',
         level: FLIGHT_CATEGORY_LEVEL[category],
         metric: 'Flight category',
         value: `${category} (${CATEGORY_LABEL[category]})`,
@@ -257,6 +261,7 @@ export function evaluateAdvisories(
       const lower = lowest != null && (base == null || lowest.baseFtAgl < base) ? lowest : null;
       out.push({
         id: 'overcast',
+        basis: 'report',
         level: OVERCAST_LEVEL,
         metric: 'Sky cover',
         value: base != null ? `Overcast at ${ft(base)} AGL` : 'Overcast, base not reported',
@@ -275,6 +280,7 @@ export function evaluateAdvisories(
     if (current.wxString && /TS/.test(current.wxString)) {
       out.push({
         id: 'thunderstorm',
+        basis: 'report',
         level: 'caution',
         metric: 'Thunderstorm',
         value: current.wxString.trim(),
@@ -320,6 +326,7 @@ export function evaluateAdvisories(
     if (beforeSunrise || now >= sun.sunset) {
       out.push({
         id: 'daylight',
+        basis: 'clock',
         level: 'caution',
         metric: 'Daylight',
         value: beforeSunrise ? 'Before sunrise' : 'After sunset',
@@ -417,6 +424,7 @@ export function forecastWindAdvisories(
           : 'the surface-wind caution';
       out.push({
         id: 'forecast-wind',
+        basis: 'forecast',
         level: 'forecast',
         metric: 'Forecast wind',
         value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,
@@ -460,6 +468,7 @@ export function forecastWindAdvisories(
           : '';
       out.push({
         id: 'forecast-gust',
+        basis: 'forecast',
         level: 'forecast',
         metric: 'Forecast gusts',
         value: `${hourRuns(over.map((h) => h.time))}, to ${fmtSpeed(peak, unit)}`,

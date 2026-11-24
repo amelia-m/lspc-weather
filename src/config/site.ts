@@ -33,6 +33,9 @@ export interface SiteConfig {
     lat: number;
     lon: number;
     elevationFt: number;
+    /** How often the station usually reports, in minutes: an observed fact
+     *  about it, which the "reports overdue" line states (reportAge.ts). */
+    reportIntervalMin: number;
   };
   /** TAF stations near the DZ, in preference order (KPMV issues no TAF).
    *  Offutt is closest, but its TAF is issued by the USAF and the NWS
@@ -82,6 +85,14 @@ export const SITE: SiteConfig = {
     lat: 40.9502,
     lon: -95.9179,
     elevationFt: 1204,
+    // KPMV reports at 15, 35 and 55 past the hour. In IEM's archive of it
+    // from 2026-10-10 to 11-22 (data/parity/metar-*.jsonl.gz, 3,135
+    // reports) the gap to the next report was 20 minutes in 3,110 of
+    // 3,134, longer in 18, over 40 minutes in 4, the longest 6 h 5 min on
+    // 2026-11-03 (scripts/reportCadence.ts prints the count; measured
+    // 2026-11-24). A measured figure, not derived at build time: measure
+    // it again before changing it.
+    reportIntervalMin: 20,
   },
   tafStations: [
     { id: 'KOFF', name: 'Offutt AFB', lat: 41.1183, lon: -95.9124, nwsProductLocation: 'OFF' },

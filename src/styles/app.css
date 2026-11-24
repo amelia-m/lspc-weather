@@ -296,6 +296,9 @@ a {
 .disclaimer p {
   margin: 0;
 }
+.disclaimer p + p {
+  margin-top: 6px;
+}
 .disclaimer-more summary {
   cursor: pointer;
   color: var(--accent);
@@ -477,6 +480,16 @@ a {
   font-size: 0.75rem;
   color: var(--muted);
 }
+/* Which report a flag was read from, under its value. */
+.advisory-report {
+  margin: 4px 0 0;
+}
+/* Reports overdue: said once above the list, in the list's own type. */
+.advisory-overdue {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--fg);
+}
 .advisory-empty {
   color: var(--muted);
   margin: 0;
@@ -589,6 +602,15 @@ a.sim-term {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 0.75rem;
+}
+/* What a report cannot show, and the line when reports are overdue: the
+   card's own type and colour, not a note's small grey, and no warning
+   colour either (a colour would assert; the words state a fact). */
+.wind-report-limit,
+.wind-overdue {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--fg);
 }
 .wind-readout {
   display: flex;

@@ -6,6 +6,10 @@ import { SourceLink } from './common/SourceLink';
 import { SimTerm, SimTermSegments } from './common/SimTerm';
 import { DATA_SOURCES } from '../config/sources';
 import { GLOSSARY_KEYS, citesTerm, splitGlossaryTermsAcross } from '../config/simGlossary';
+import { SITE } from '../config/site';
+import { agoText, overdueReportText } from '../domain/reportAge';
+import { useNow } from '../hooks/useNow';
+import { fmtClock } from './format';
 
 
 /**
@@ -36,6 +40,14 @@ import { GLOSSARY_KEYS, citesTerm, splitGlossaryTermsAcross } from '../config/si
  * (`advisoriesFor`), and the list says so in either state: without it, a
  * pilot reading an empty list, or one with only a visibility flag, could take
  * the wind as having been checked.
+ *
+ * A flag on the report names it: "From the Tue 2:15 PM report, 12 min ago"
+ * (`report`, the maintainer, 2026-11-24). No flag reads the report's age,
+ * and none should stop firing at an age the app chose, so the age is said
+ * instead, on each such flag, and a flag read late does not read as now.
+ * When reports are overdue by the station's own cadence the list says that
+ * once, above the flags and in its empty state alike: an empty list drawn
+ * from an old report is the quietest way to mislead.
  */
 export function AdvisoryPanel({
   advisories,
@@ -44,6 +56,8 @@ export function AdvisoryPanel({
   editedLimits = [],
   ownLimits = [],
   forPilots = false,
+  report = null,
+  now: nowProp,
 }: {
   advisories: Advisory[];
   /** Active wind-limit profile, as shown on the header control ("Licensed"). */
@@ -60,7 +74,19 @@ export function AdvisoryPanel({
   /** The Pilots tab's list: no jumper ground-wind flags, and published
    *  figures only (no Settings on that tab, so no edits to report). */
   forPilots?: boolean;
+  /** The report the observed flags were read from: its station and time.
+   *  Null before one has loaded. */
+  report?: { station: string; observedAt: number } | null;
+  /** The time the report's age is counted to; the minute's tick when left
+   *  out (a test passes one). */
+  now?: number;
 }): JSX.Element {
+  // Ticks each minute so the report's age keeps counting between refreshes.
+  const tick = useNow(60_000);
+  const now = nowProp ?? tick;
+  const overdue = report
+    ? overdueReportText(report.station, report.observedAt, now, SITE.metarStation.reportIntervalMin)
+    : null;
   // Only what evaluateAdvisories reads: the observation, the computed sun
   // times, and the NWS hourly forecast when a Forecast flag is in the list
   // (the forecast wind flags read it). Open-Meteo is never listed: no flag
@@ -124,6 +150,14 @@ export function AdvisoryPanel({
             conditions card.
           </p>
         )}
+        {overdue && (
+          <p className="advisory-overdue">
+            {overdue}{' '}
+            {advisories.length === 0
+              ? 'This list was read from that report.'
+              : 'The flags that name a report were read from that one.'}
+          </p>
+        )}
         {advisories.length === 0 ? (
           <p className="advisory-empty">
             No conditions flagged from the available data.{' '}
@@ -154,6 +188,11 @@ export function AdvisoryPanel({
                   <span className="advisory-metric">{a.metric}</span>
                   <span className="advisory-value">{a.value}</span>
                 </div>
+                {a.basis === 'report' && report && (
+                  <p className="advisory-report muted small">
+                    From the {fmtClock(report.observedAt)} report, {agoText(report.observedAt, now)}.
+                  </p>
+                )}
                 <p className="advisory-guidance">
                   <SimTermSegments segments={guidance[i]} />
                 </p>

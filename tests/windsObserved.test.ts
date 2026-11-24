@@ -31,7 +31,7 @@ describe('the observation under the Winds aloft table', () => {
     expect(line).toContain(
       `<strong>Observed</strong> at KPMV (${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the DZ)`,
     );
-    expect(line).toMatch(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2}:\d{2} (AM|PM)\b/);
+    expect(line).toMatch(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2}:\d{2} (AM|PM), (\d+ days ago|\d+ h( \d+ min)? ago|\d+ min ago|just now):/);
     expect(line).toContain('S (190°) 12 kt, gusting 22 kt');
     expect(line).toContain('A report, not a row of the forecast above.');
     // The Surface-row note points at it.

@@ -9,19 +9,11 @@
 Live backlog. A closed item is kept for a while under a "Done" or "Settled"
 heading, then deleted; the repository history is the record.
 
-## High priority: say how old and how limited the data is, plainly (the maintainer, 2026-11-24)
+## Done 2026-11-24: say how old and how limited the data is, plainly (the maintainer, high priority)
 
-Her word on reading AXIS's page (docs/axis-conditions-tool.md), which says "No live data" and "Do not use this page at all, if wind conditions are volatile" in red where this app says the same accurately and quietly: "make this high priority". It goes ahead of the rest of the wording review (below, "Card wording").
+Her word on reading AXIS's page (docs/axis-conditions-tool.md), then "fix" to each of three findings and "y" to five proposals. Found, read in the code: the cards printed a report's clock time and compared it with nothing; no flag read `observedAt`; Data health's "stale" was the time since the app's last fetch, so an old report fetched a minute ago read as fresh. Built (`src/domain/reportAge.ts`, CLAUDE.md's consequence of the same date): the report's age beside its time on the Surface wind, Winds aloft and Current conditions cards; "A report is the wind at KPMV when it was taken. It cannot show a wind that is changing now, or the wind at the DZ." in the Surface wind card's own type; each flag read from the report names it and its age; a line on the Surface wind card and above the flags, and a stale METAR row on Data health, once the newest report is more than two of KPMV's usual 20-minute intervals old; the station and its distance in the disclaimer's first paragraphs. KPMV's cadence, measured 2026-11-24 with `scripts/reportCadence.ts` over IEM's archive of 2026-10-10 to 11-22: 3,135 reports, the next one 20 minutes later in 3,110 of 3,134 gaps, later than that in 18, over 40 minutes in 4, the longest 6 h 5 min after 06:35Z on 2026-11-03. Checked: 1,453 tests, each new one failing with its behaviour broken (eleven breaks); the fixture build in Chromium at 1280, 390 and 320 px, fresh and 100 minutes on, both tabs, no page wider than the viewport. Not checked: the deployed site on live data, which waits for the merge.
 
-What the cards do now (read in the code 2026-11-24, not rendered with an old report): the Surface wind card's first line and the Winds aloft card's observed line print the report's clock time, not its age (`fmtClock`); only Nearby METARs prints "N min ago". Nothing on the Jumpers tab compares a report's time with now: `advisories.ts` never reads `observedAt`, so a flag fires the same on a report of any age, and Data health's "stale" is the time since the app's last successful fetch (30 minutes, `STALE_AFTER_MS`), so a three-hour-old report fetched a minute ago reads as fresh. The station's distance is on the card's first line; the disclaimer's sentence on it sits inside the folded "About the sources".
-
-Proposals, hers to pick from; none is built:
-
-1. **The report's age on the Surface wind card's first line**, beside the time: "Observed at KPMV (11 mi ENE of the DZ), 2:15 PM, 12 min ago: the latest report, not a forecast." A plain fact; `fmtAgo` exists. Recommended first.
-2. **One plain sentence at the top of that card, not in the small grey type:** "A report is the wind at KPMV when it was taken. It cannot show a wind that is changing now, or the wind at the DZ." Wording to her taste; a caveat, no threshold.
-3. **Each observed flag names its report:** "from the 2:15 PM report, 12 min ago", so a flag read late does not read as now.
-4. **A line when reports have stopped coming.** Needs a basis the app does not invent: KPMV's own cadence is an observed fact (its reports' times are in `data/parity/`), so the line could state it ("KPMV usually reports every N minutes; the newest report is 1 h 40 min old") with no colour and no judgement. Her call whether that is a fact or a threshold, and what N the archive shows.
-5. **The station and distance out of the disclaimer's fold**, into its first paragraph.
+Left for her: the card-wording review's word counts (docs/card-wording-review-2026-11-21.md) predate these lines, which add about 45 words to the Surface wind card and a sentence to the disclaimer; and when the NWS feed alone is serving (24 to 33 minutes behind the station, CLAUDE.md), the overdue line will show at times though KPMV is reporting, which is true of what the page has but worth her knowing.
 
 ## Needs a human with a document
 
