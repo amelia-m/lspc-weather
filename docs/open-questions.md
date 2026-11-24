@@ -215,6 +215,8 @@ api.open-meteo.com; every other page and the late-evening leg passed, and
 Open-Meteo answered 200 again at 21:50Z. Nothing in the code; #297 is the
 maintainer's to close (docs/live-checks-tally.md, "Since the tally").
 
+Again 2026-11-24, the run after #317's deploy (run 45323219653, 03:59Z to 04:16Z): Jumpers at 1280 px failed on both loads, the winds request to api.open-meteo.com timing out from the runner (`net::ERR_TIMED_OUT`, four tries a load); the other 23 page and width combinations and the late-evening leg passed, a comparison run on a runner had its answer at 04:06Z, and Open-Meteo answered the sandbox in 0.15 s at 04:20Z. Nothing in the code: #317 changed the comparison script, not the app's request. Since 2026-11-23 the winds have no fallback, but the one they had could only fail, so the check reads an Open-Meteo outage as it did before.
+
 ## The outlook's daily gust maximum: one request, the address refused (2026-11-12)
 
 Open since 2026-10-09 (docs/surface-wind-sources.md, "What changes, and
