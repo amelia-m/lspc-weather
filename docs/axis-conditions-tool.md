@@ -2,6 +2,8 @@
 
 Read 2026-11-24 from eighteen screenshots the maintainer sent of <https://axis.tools/tool_Cond.php> and seven sibling pages (home, Manifest Calls, Exit Separation, Canopy Risk Quotient, Canopy Size, Reserve Repack, Draw Generator). The pages themselves were not opened: the sandbox's proxy refuses `axis.tools`, and the environment change to allow it was rejected. So this is what the screenshots show and nothing about the site's code or requests; the link is unchecked from here.
 
+The maintainer, 2026-11-24: "goal isn't to outright copy this, but to use it to inform decisions about our app." So the last column of each table says what a feature suggests for this app, a "candidate" is a decision worth taking up and not a port, and the section after the tables is the reading that matters.
+
 ## What it reads that this app does not
 
 | AXIS names | For | Here | Note |
@@ -33,9 +35,18 @@ AXIS's server collects the data, at most 60 times an hour and only while someone
 | Draw Generator 6.0, ChronoPrism, the knowledge repository | Competition draws from an organisation's rules and dive pools (random, guided for coaches, a whiteboard of up to ten practice rounds; canopy formation, dynamic, formation, horizontal, mixed, vertical and cross formation skydiving, outdoor and indoor); a stopwatch that visualises a team's performance; a library of articles (`drawgenerator.axis.tools`, `knowledge.axis.tools/topic_AXISarticle.php`, seen in two more screenshots and as links, not opened) | None | Skip: team training and competition tools, nothing to do with the weather or a jump's limits. The knowledge repository may hold sources worth citing; not read. |
 | Wing loading | A calculator (seen as a tile only) | Wing loading card | Have it. |
 
+## What it suggests for this app
+
+- **The distance to the station is the gap another DZ chose to close.** AXIS is trying its own station at the landing area; this app reads a report from 11 miles away and says so. Nothing in the app's code closes that; hardware would.
+- **A jumper wants the answer in the unit they act in.** AXIS turns separation into seconds between groups, which is what is counted at the door. This app's standing note cites the same SIM section and stops at "plan exit separation accordingly". The same question fits other cards: does each one end in the figure a jumper uses, or in a figure they must convert?
+- **The rows a jumper reads are few.** AXIS marks two of eight levels, the ones nearest a hop and pop and a high exit. This app prints every thousand feet and folds at the usual top. Whether readers find their row quickly is worth watching for, by a plain marker and not a colour.
+- **It says how old and how limited the data is in plain, loud words** ("No live data", "Do not use this page at all, if wind conditions are volatile"). This app says it accurately and quietly. The wording review already under way is the place to weigh that.
+- **It crosses from the weather into the jumper**, with a risk score, a minimum canopy size and red, yellow and green bands. That is the line this app's governing rule draws, and seeing it done confirms where the line is: those tools give a verdict on a person, which this app does not. Where AXIS cites its sources on each tool's page (the SIM, the FFP's directive, FAR 105.43), it shares this app's habit.
+- **It is a set of single-purpose pages behind a tile menu**, each with its own "about this tool" text under the tool. This app is two tabs of cards with the sourcing on each card. Neither is a reason to change the other; the per-tool explanation is the part worth comparing when a card's note grows long.
+
 ## For the maintainer
 
-1. Exit separation on the Winds aloft card, from SIM 4-7 C's two distances: build it?
+1. Exit separation: should the Winds aloft card go as far as seconds between groups, from SIM 4-7 C's two distances and a ground speed the reader enters?
 2. Does LSPC run night jumps often enough for a moon line?
 3. A weather station at the field: wanted, and who would own it?
 4. Heat index, and the "a report cannot show a changing wind" sentence: either?
