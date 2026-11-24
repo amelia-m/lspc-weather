@@ -353,7 +353,7 @@ downloads redirect there); since 2026-10-08 `github.com`, the ADS-B networks
 its basemap art at
 `cdn.arcgis.com` is not, and the map draws without it). Reachable is not
 readable: `globe.adsb.fi`, `api.adsb.one` and `airplanes.live` answer a
-script with Cloudflare's 403. The list is the project's; the environment's own can differ: on 2026-11-23 the session's ("sandbox", read with `get_environment`) lacked `aviationweather.gov`, `tgftp.nws.noaa.gov`, `gml.noaa.gov`, the `*.weather.gov` wildcard (only `api.` and `radar.`), USPA, eCFR, FAA, FAASafety, usairnet, markschulze.net, the Naval Observatory and the NOAA S3 buckets, and the proxy answered each with a CONNECT 403; fourteen exact hosts went back that day on the maintainer's approval, and she added `*.noaa.gov`; the other wildcards not (docs/open-questions.md). Comparison artifacts can be read with
+script with Cloudflare's 403. The list is the project's; the environment's own can differ: on 2026-11-23 the session's ("sandbox", read with `get_environment`) lacked `aviationweather.gov`, `tgftp.nws.noaa.gov`, `gml.noaa.gov`, the `*.weather.gov` wildcard (only `api.` and `radar.`), USPA, eCFR, FAA, FAASafety, usairnet, markschulze.net, the Naval Observatory and the NOAA S3 buckets, and the proxy answered each with a CONNECT 403; the maintainer restored them that day and the next, with `*.noaa.gov` added (docs/open-questions.md). Comparison artifacts can be read with
 `curl -sL https://api.github.com/repos/amelia-m/lspc-weather/actions/artifacts/<id>/zip`
 (the session's GitHub proxy supplies the credential); `gh api` refuses to
 follow that redirect.
