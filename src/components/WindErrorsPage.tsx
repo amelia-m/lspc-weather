@@ -242,7 +242,10 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
             <p className="muted small">
               A sample taken every seventeen minutes (every five until 2026-10-30): each KPMV report once, against each forecast as it stood
               while that report was the newest. Open-Meteo&rsquo;s hourly, 15-minute and current 10 m wind,
-              then the NWS hour on the same reports for reference. Every row here is kept to a tenth of a
+              then the NWS hour on the same reports for reference, and last the hourly 10 m wind of
+              Open-Meteo&rsquo;s RRFS model, asked for by name since 2026-11-24: the model NOAA brought in
+              on 2026-11-03 and Open-Meteo says will replace the one its forecasts here come from now, so
+              that row starts later and holds fewer reports than the others. Every row here is kept to a tenth of a
               knot, as the sample&rsquo;s summary keeps it, and binned to the knot, so a tenth either side
               of zero sits in the zero bar and counts on neither side. How it was taken:{' '}
               <a href={repoDoc('docs/surface-wind-sources.md')} target="_blank" rel="noopener noreferrer">

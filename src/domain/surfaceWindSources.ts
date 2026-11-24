@@ -29,6 +29,7 @@
  * Pure: records in, summary out. No clock is read; every time is in a record.
  */
 import { extent } from './extent';
+import { OPEN_METEO_RRFS_MODEL } from './normalize';
 import { median, spreadOf, type Spread } from './paritySummary';
 
 /** One wind value as a source served it, valid at `t` (ISO). Knots and
@@ -46,8 +47,10 @@ export interface WindAt {
  *  decode's 0° as `dir` (null, as the IEM path's always was). The
  *  direction error skips a calm report on either version, here and in
  *  windErrors.ts, so the change moves no figure; the version marks where
- *  the shape changed. */
-export const SURFACE_WIND_RECORD_VERSION = 2;
+ *  the shape changed. 3 from 2026-11-24, when the record began carrying
+ *  Open-Meteo's RRFS (`rrfs`, `om.sameAsRrfs`); earlier records have
+ *  neither, and read as a source with no value. */
+export const SURFACE_WIND_RECORD_VERSION = 3;
 
 /** Model metadata from Open-Meteo's `/data/<domain>/static/meta.json`, the
  *  one place it says which run it has: init time, when its conversion
@@ -126,8 +129,22 @@ export interface SurfaceWindRecord {
      *  shape alone would have logged 0/0/0, which no run in the first sample
      *  did). Absent when the same or not compared. */
     hrrrMaxDiff?: HrrrDiff;
+    /** Whether the same request with `models=ncep_rrfs_conus` returned the
+     *  same numbers, every series. False while the default is the HRRR;
+     *  true would say Open-Meteo's default has moved to the RRFS, which it
+     *  says is coming (docs/rrfs-comparison-plan.md). null when that
+     *  request failed or had no wind (rrfsError says which); absent before
+     *  version 3. */
+    sameAsRrfs?: boolean | null;
   };
   omError?: string;
+  /** Open-Meteo's RRFS for the same point, asked for by name
+   *  (`OPEN_METEO_RRFS_MODEL`): its hourly 10 m wind around the fetch, the
+   *  form the dashboard would show if the default became the RRFS. From
+   *  version 3. */
+  rrfs?: { hourly: WindAt[] };
+  /** Why there is no `rrfs`: the request failed, or answered with no wind. */
+  rrfsError?: string;
   /** Why the `models=ncep_hrrr_conus` comparison was not made: the request
    *  failed, or it answered with no wind series to compare. */
   omHrrrError?: string;
@@ -278,8 +295,8 @@ const HOUR_MS = 3_600_000;
 const STEP15_MS = 900_000;
 
 /** The forecast sources this file compares, and how each one is read. */
-export type ForecastSource = 'nws' | 'omHourly' | 'om15' | 'omCurrent';
-export const FORECAST_SOURCES: readonly ForecastSource[] = ['nws', 'omHourly', 'om15', 'omCurrent'];
+export type ForecastSource = 'nws' | 'omHourly' | 'om15' | 'omCurrent' | 'rrfsHourly';
+export const FORECAST_SOURCES: readonly ForecastSource[] = ['nws', 'omHourly', 'om15', 'omCurrent', 'rrfsHourly'];
 export type SourceName = 'metar' | ForecastSource;
 
 const RULES: Record<Exclude<ForecastSource, 'omCurrent'>, ReadRule> = {
@@ -288,11 +305,14 @@ const RULES: Record<Exclude<ForecastSource, 'omCurrent'>, ReadRule> = {
   // means the hour was not in the record.
   omHourly: { kind: 'nearest', maxGapMs: HOUR_MS / 2 },
   om15: { kind: 'nearest', maxGapMs: STEP15_MS / 2 },
+  // Read as the default's hourly wind is, so the two differ by the model.
+  rrfsHourly: { kind: 'nearest', maxGapMs: HOUR_MS / 2 },
 };
 
 function seriesOf(r: SurfaceWindRecord, src: Exclude<ForecastSource, 'omCurrent'>): readonly WindAt[] {
   if (src === 'nws') return r.nws?.hours ?? [];
   if (src === 'omHourly') return r.om?.hourly ?? [];
+  if (src === 'rrfsHourly') return r.rrfs?.hourly ?? [];
   return r.om?.m15 ?? [];
 }
 
@@ -428,6 +448,10 @@ export interface SurfaceWindSummary {
    *  times or the same values present, in which case the gaps cover only
    *  the values both had). */
   defaultIsHrrr: { same: number; of: number; diffs: ({ at: string } & HrrrDiff)[] };
+  /** How often the default request returned the same numbers as the RRFS
+   *  asked for by name, over the runs that could compare them (from record
+   *  version 3). None while the default is the HRRR. */
+  defaultIsRrfs: { same: number; of: number };
   /** Distinct run init times seen per model domain, in order, with the first
    *  run time each was seen at. */
   modelRuns: Record<string, { init: string; avail: string | null; firstSeenAt: string }[]>;
@@ -612,6 +636,15 @@ function stalenessOf(records: readonly SurfaceWindRecord[], source: SourceName):
     } else if (source === 'omCurrent') {
       basis = 'run time minus the start of the `current` interval';
       from = r.om?.current?.t;
+    } else if (source === 'rrfsHourly') {
+      // The RRFS's own domain, on the same footing as the HRRR's below:
+      // inferred from the metadata, and only for runs whose RRFS request
+      // returned a forecast. The first record, 2026-11-24, had the 18Z run
+      // available at 03:02Z, nine hours after its start.
+      basis =
+        `INFERRED: run time minus ${OPEN_METEO_RRFS_MODEL}'s last_run_availability_time, ` +
+        'assuming the forecast came from that run';
+      from = r.rrfs ? r.omMeta?.[OPEN_METEO_RRFS_MODEL]?.avail : null;
     } else {
       // Open-Meteo says nothing in the forecast response about its run; the
       // metadata API does, per model domain. Both series are read against
@@ -830,6 +863,9 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
       // lost from the summary. A run whose default request failed is out of
       // defaultIsHrrr too, and is counted under the om* errors above.
       omHrrr: records.filter((r) => r.omHrrrError).length,
+      // Runs that asked the RRFS and got no wind. A record from before
+      // version 3 never asked, so it is not an error.
+      rrfsHourly: records.filter((r) => r.rrfsError).length,
     },
     cadence: sources.map((s) => cadenceOf(records, s)),
     staleness: sources.map((s) => stalenessOf(records, s)),
@@ -838,6 +874,10 @@ export function summarizeSurfaceWind(input: readonly SurfaceWindRecord[]): Surfa
     hourlyIsM15: { same: hourlySame, of: hourlyOf },
     hourlyGustVsHourMax: gustVsMax,
     defaultIsHrrr: { same: hrrrSame, of: hrrrOf, diffs: hrrrDiffs },
+    defaultIsRrfs: {
+      same: records.filter((r) => r.om?.sameAsRrfs === true).length,
+      of: records.filter((r) => r.om?.sameAsRrfs != null).length,
+    },
     modelRuns,
     nwsUpdates,
   };
@@ -891,4 +931,121 @@ export function unarchivedSurfaceWindLines(fresh: string, archived: string): str
 export function mergeSurfaceWindLines(existing: string, added: readonly string[]): string[] {
   const all = [...surfaceWindLineRecords(existing), ...surfaceWindLineRecords(added.join('\n'))];
   return all.sort((a, b) => a.record.at.localeCompare(b.record.at)).map((x) => x.line);
+}
+
+/** One UTC day of the sampler's check on which model Open-Meteo's default
+ *  request is served from. */
+export interface DefaultModelDay {
+  /** The UTC day, "2026-11-24". */
+  day: string;
+  /** Runs that could set the default's answer against the HRRR's by name,
+   *  and how many of those differed. */
+  hrrrCompared: number;
+  notHrrr: number;
+  /** Runs that could set it against the RRFS's by name, and how many were
+   *  the same numbers. */
+  rrfsCompared: number;
+  isRrfs: number;
+  /** Runs whose default request answered, and how many of those had the
+   *  HRRR-by-name request fail or carry no wind: what a day looks like
+   *  once Open-Meteo no longer serves the HRRR at all. */
+  defaultRuns: number;
+  hrrrFailed: number;
+  /** The default looks to have moved that day (`defaultModelSwitched`). */
+  switched: boolean;
+}
+
+/** Fewest compared runs in a day before it can be called, so an outage
+ *  cannot decide it on a handful: the archive's whole days held 45 to 314
+ *  runs (2026-10-09 to 11-23). */
+export const DEFAULT_MODEL_MIN_RUNS = 20;
+
+/**
+ * Whether a day's samples say Open-Meteo's default model here has changed:
+ * most of the comparable runs differed from the HRRR asked for by name, or
+ * most matched the RRFS asked for by name, or the HRRR could not be had by
+ * name in most runs whose default request answered (the model withdrawn,
+ * which leaves nothing to compare). Any one, since a named request can be
+ * failing on the day.
+ *
+ * "Most of a day" because some difference is ordinary: over the archive's
+ * 47 days to 2026-11-23 the default differed from the HRRR on sixteen, in
+ * at most 15 of a day's 180 runs (2026-10-29), while a new run was being
+ * copied or the default was briefly served from another model
+ * (docs/surface-wind-sources.md), and no day comes near half. A change of
+ * default is every run, all day. The bar is this repository's
+ * own, for a maintenance notice (parity-summary.yml opens one issue); it
+ * raises nothing on the dashboard.
+ */
+export function defaultModelSwitched(d: Omit<DefaultModelDay, 'switched' | 'day'>): boolean {
+  const notHrrr = d.hrrrCompared >= DEFAULT_MODEL_MIN_RUNS && d.notHrrr * 2 > d.hrrrCompared;
+  const isRrfs = d.rrfsCompared >= DEFAULT_MODEL_MIN_RUNS && d.isRrfs * 2 > d.rrfsCompared;
+  const hrrrGone = d.defaultRuns >= DEFAULT_MODEL_MIN_RUNS && d.hrrrFailed * 2 > d.defaultRuns;
+  return notHrrr || isRrfs || hrrrGone;
+}
+
+/** The sampler's default-model check by UTC day, oldest first. Each run is
+ *  counted once (`orderedRuns`), under the day it started. */
+export function defaultModelByDay(input: readonly SurfaceWindRecord[]): DefaultModelDay[] {
+  const days = new Map<string, Omit<DefaultModelDay, 'switched' | 'day'>>();
+  for (const r of orderedRuns(input)) {
+    if (!r.om) continue;
+    const day = r.at.slice(0, 10);
+    const d = days.get(day) ?? { hrrrCompared: 0, notHrrr: 0, rrfsCompared: 0, isRrfs: 0, defaultRuns: 0, hrrrFailed: 0 };
+    d.defaultRuns += 1;
+    if (r.omHrrrError) d.hrrrFailed += 1;
+    if (r.om.sameAsHrrr != null) {
+      d.hrrrCompared += 1;
+      if (!r.om.sameAsHrrr) d.notHrrr += 1;
+    }
+    if (r.om.sameAsRrfs != null) {
+      d.rrfsCompared += 1;
+      if (r.om.sameAsRrfs) d.isRrfs += 1;
+    }
+    days.set(day, d);
+  }
+  return [...days.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([day, d]) => ({ day, ...d, switched: defaultModelSwitched(d) }));
+}
+
+/** A maintenance notice for an issue: what parity-summary.yml opens. */
+export interface DefaultModelNotice {
+  day: string;
+  label: string;
+  description: string;
+  title: string;
+  body: string;
+}
+
+/**
+ * The notice for the day the default changed, or null. Given on the first
+ * such day only: the last whole UTC day before `today` reads as switched
+ * and the day of samples before it did not, so the workflow, which runs
+ * daily, opens one issue and not one a day for as long as the change holds.
+ * `today` is passed in ("2026-11-25"); the day in progress is never judged,
+ * since it has only part of its runs.
+ */
+export function defaultModelNotice(days: readonly DefaultModelDay[], today: string): DefaultModelNotice | null {
+  const whole = days.filter((d) => d.day < today);
+  const last = whole[whole.length - 1];
+  const before = whole[whole.length - 2];
+  if (!last?.switched || before?.switched) return null;
+  const line = (d: DefaultModelDay): string =>
+    `| ${d.day} | ${d.notHrrr} of ${d.hrrrCompared} | ${d.isRrfs} of ${d.rrfsCompared} | ${d.hrrrFailed} of ${d.defaultRuns} |`;
+  return {
+    day: last.day,
+    label: 'model-switch',
+    description: 'Open-Meteo\'s default model for the drop zone looks to have changed',
+    title: `Open-Meteo's default model here looks to have changed (${last.day})`,
+    body: [
+      `On ${last.day} (UTC) the surface-wind sampler's default request stopped matching the HRRR asked for by name, began matching the RRFS, or the HRRR could no longer be had by name, in most of its runs. The dashboard's winds aloft, drift, Surface row and second cloud figure come from that default, so they changed with it.`,
+      '',
+      '| UTC day | differed from the HRRR | same as the RRFS | HRRR request failed |',
+      '|---|---|---|---|',
+      ...whole.slice(-7).map(line),
+      '',
+      'What to read: docs/rrfs-comparison-plan.md, and the RRFS rows the comparison has logged against the default since 2026-11-24 (`rrfs` on the comparison\'s records), for how far the table moved. A few hours of difference is ordinary; this is raised only when most of a day\'s runs say so (`defaultModelSwitched`).',
+    ].join('\n'),
+  };
 }

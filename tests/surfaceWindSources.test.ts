@@ -3,6 +3,10 @@ import {
   mergeSurfaceWindLines,
   unarchivedSurfaceWindLines,
   compareWindResponses,
+  defaultModelByDay,
+  defaultModelNotice,
+  defaultModelSwitched,
+  DEFAULT_MODEL_MIN_RUNS,
   hasWind,
   maxAgeSeconds,
   maxWindDiff,
@@ -313,7 +317,8 @@ describe('summarizeSurfaceWind', () => {
     const age = Object.fromEntries(s.staleness.map((x) => [x.source, x.medianMin]));
     // Both Open-Meteo series from the 15-minute domain, which is what the
     // hourly values were seen to follow; the hourly domain (23:51) is not used.
-    expect(age).toEqual({ metar: 8, nws: 7.5, omHourly: 12, om15: 12, omCurrent: 13 });
+    // No RRFS in this run (a record from before version 3): no age for it.
+    expect(age).toEqual({ metar: 8, nws: 7.5, omHourly: 12, om15: 12, omCurrent: 13, rrfsHourly: null });
     expect(s.staleness.find((x) => x.source === 'om15')?.basis).toMatch(/^INFERRED/);
   });
 
@@ -592,5 +597,142 @@ describe('hasWind', () => {
   it('is false for no steps, or steps that are all null (a model not yet available)', () => {
     expect(hasWind([[], [], []])).toBe(false);
     expect(hasWind([[step('2026-10-09T00:00:00.000Z', null, null)], [step('2026-10-09T00:15:00.000Z', null, null)]])).toBe(false);
+  });
+});
+
+/* The RRFS beside the default, from record version 3 (2026-11-24): Open-Meteo
+ * says the HRRR, which the default is served from here, goes with RRFSv2, so
+ * the sampler asks the RRFS by name each run (docs/rrfs-comparison-plan.md). */
+describe('the RRFS as a forecast source', () => {
+  const rrfsMeta = { init: '2026-10-08T18:00:00.000Z', modified: null, avail: '2026-10-09T00:13:00.000Z', stepS: 3600 };
+
+  it('is shown as its nearest hour, read as the default’s hourly wind is', () => {
+    const r = run('00:43', { rrfs: { hourly: [w('00:00', 150, 7), w('01:00', 160, 9)] } });
+    expect(shownAt(r, 'rrfsHourly')).toEqual(w('01:00', 160, 9));
+    // A record from before version 3 never asked: no value, not an error.
+    expect(shownAt(run('00:43'), 'rrfsHourly')).toBeNull();
+  });
+
+  it('is paired against the report like any other source, and its failures counted', () => {
+    const s = summarizeSurfaceWind([
+      run('00:43', { metar: metar('00:35', 120, 5), rrfs: { hourly: [w('01:00', 150, 8)] }, om: om({}), omMeta: { ncep_rrfs_conus: rrfsMeta } }),
+      run('01:00', { metar: metar('00:55', 130, 6), rrfsError: 'HTTP 502', om: om({}) }),
+      // Before version 3: neither a value nor a failure.
+      run('01:17', { metar: metar('01:15', 130, 6), om: om({}) }),
+    ]);
+    const vs = s.vsMetar.find((x) => x.source === 'rrfsHourly');
+    expect(vs).toMatchObject({ reports: 3, n: 1 });
+    expect(s.errors.rrfsHourly).toBe(1);
+    // Its age is taken from its own domain's metadata: 00:43 less 00:13.
+    const age = s.staleness.find((x) => x.source === 'rrfsHourly');
+    expect(age).toMatchObject({ n: 1, medianMin: 30 });
+    expect(age?.basis).toMatch(/^INFERRED: run time minus ncep_rrfs_conus/);
+  });
+
+  it('counts how often the default returned the RRFS’s numbers, over the runs that compared them', () => {
+    const s = summarizeSurfaceWind([
+      run('00:43', { om: om({ sameAsRrfs: false }) }),
+      run('01:00', { om: om({ sameAsRrfs: true }) }),
+      run('01:17', { om: om({ sameAsRrfs: null }) }),
+      run('01:34', { om: om({}) }),
+    ]);
+    expect(s.defaultIsRrfs).toEqual({ same: 1, of: 2 });
+  });
+});
+
+describe('the day Open-Meteo’s default model changes', () => {
+  /** `n` runs seventeen minutes apart from midnight UTC on `day`. */
+  const dayOf = (day: string, n: number, part: (i: number) => Partial<NonNullable<SurfaceWindRecord['om']>>): SurfaceWindRecord[] =>
+    Array.from({ length: n }, (_, i) => ({
+      kind: 'surfacewind' as const,
+      v: 3,
+      at: new Date(Date.parse(`${day}T00:00:00.000Z`) + i * 17 * 60_000).toISOString(),
+      dz: '40.8703,-96.1085',
+      om: om(part(i)),
+    }));
+
+  it('is not called on an ordinary day: the default is the HRRR and never the RRFS', () => {
+    const [d] = defaultModelByDay(dayOf('2026-11-24', 80, () => ({ sameAsHrrr: true, sameAsRrfs: false })));
+    expect(d).toEqual({
+      day: '2026-11-24',
+      hrrrCompared: 80,
+      notHrrr: 0,
+      rrfsCompared: 80,
+      isRrfs: 0,
+      defaultRuns: 80,
+      hrrrFailed: 0,
+      switched: false,
+    });
+  });
+
+  it('is not called for a few hours of difference, which a run being copied gives', () => {
+    // Twelve of eighty runs, about three and a half hours.
+    const [d] = defaultModelByDay(dayOf('2026-10-25', 80, (i) => ({ sameAsHrrr: i >= 12, sameAsRrfs: false })));
+    expect(d.notHrrr).toBe(12);
+    expect(d.switched).toBe(false);
+  });
+
+  it('is called when most of a day’s runs differ from the HRRR, or match the RRFS', () => {
+    const notHrrr = defaultModelByDay(dayOf('2026-12-01', 80, () => ({ sameAsHrrr: false, sameAsRrfs: null })));
+    expect(notHrrr[0].switched).toBe(true);
+    // The HRRR request failing all day (null) leaves the RRFS side to say so.
+    const isRrfs = defaultModelByDay(dayOf('2026-12-01', 80, () => ({ sameAsHrrr: null, sameAsRrfs: true })));
+    expect(isRrfs[0]).toMatchObject({ hrrrCompared: 0, rrfsCompared: 80, isRrfs: 80, switched: true });
+  });
+
+  it('is called when the HRRR can no longer be had by name, though nothing is left to compare', () => {
+    // Open-Meteo withdraws the model: every by-name request fails, the
+    // default still answers, and the new default is no model the sampler
+    // names, so neither comparison moves.
+    const gone = dayOf('2026-12-10', 80, () => ({ sameAsHrrr: null, sameAsRrfs: false })).map((r) => ({
+      ...r,
+      omHrrrError: 'HTTP 400',
+    }));
+    const [d] = defaultModelByDay(gone);
+    expect(d).toMatchObject({ hrrrCompared: 0, notHrrr: 0, defaultRuns: 80, hrrrFailed: 80, switched: true });
+    // A morning of failures is not the model gone.
+    const morning = dayOf('2026-12-10', 80, () => ({ sameAsHrrr: true, sameAsRrfs: false })).map((r, i) =>
+      i < 30 ? { ...r, om: om({ sameAsHrrr: null, sameAsRrfs: false }), omHrrrError: 'timeout' } : r,
+    );
+    expect(defaultModelByDay(morning)[0].switched).toBe(false);
+  });
+
+  it('is not called on a handful of runs, however they read', () => {
+    const few = {
+      hrrrCompared: DEFAULT_MODEL_MIN_RUNS - 1,
+      notHrrr: DEFAULT_MODEL_MIN_RUNS - 1,
+      rrfsCompared: 0,
+      isRrfs: 0,
+      defaultRuns: DEFAULT_MODEL_MIN_RUNS - 1,
+      hrrrFailed: 0,
+    };
+    expect(defaultModelSwitched(few)).toBe(false);
+    expect(defaultModelSwitched({ ...few, hrrrCompared: DEFAULT_MODEL_MIN_RUNS, notHrrr: DEFAULT_MODEL_MIN_RUNS })).toBe(true);
+    // Exactly half is not most.
+    expect(defaultModelSwitched({ hrrrCompared: 40, notHrrr: 20, rrfsCompared: 0, isRrfs: 0, defaultRuns: 40, hrrrFailed: 0 })).toBe(false);
+  });
+
+  it('raises the notice once, for the first whole day that reads as switched', () => {
+    const ok = dayOf('2026-11-29', 80, () => ({ sameAsHrrr: true, sameAsRrfs: false }));
+    const first = dayOf('2026-11-30', 80, () => ({ sameAsHrrr: false, sameAsRrfs: true }));
+    const second = dayOf('2026-12-01', 80, () => ({ sameAsHrrr: false, sameAsRrfs: true }));
+    // The morning after the first switched day: a notice, naming that day.
+    const n = defaultModelNotice(defaultModelByDay([...ok, ...first]), '2026-12-01');
+    expect(n).toMatchObject({ day: '2026-11-30', label: 'model-switch' });
+    expect(n?.title).toContain('2026-11-30');
+    expect(n?.body).toContain('| 2026-11-30 | 80 of 80 | 80 of 80 | 0 of 80 |');
+    // The day after, the change still holds: no second notice.
+    expect(defaultModelNotice(defaultModelByDay([...ok, ...first, ...second]), '2026-12-02')).toBeNull();
+    // The day in progress is never judged: the first switched day is today.
+    expect(defaultModelNotice(defaultModelByDay([...ok, ...first]), '2026-11-30')).toBeNull();
+    // An ordinary day raises nothing.
+    expect(defaultModelNotice(defaultModelByDay(ok), '2026-11-30')).toBeNull();
+  });
+
+  it('counts each run once and keeps the days in order', () => {
+    const a = dayOf('2026-11-25', 3, () => ({ sameAsHrrr: true, sameAsRrfs: false }));
+    const b = dayOf('2026-11-24', 2, () => ({ sameAsHrrr: true, sameAsRrfs: false }));
+    const days = defaultModelByDay([...a, ...b, ...a]);
+    expect(days.map((d) => [d.day, d.hrrrCompared])).toEqual([['2026-11-24', 2], ['2026-11-25', 3]]);
   });
 });

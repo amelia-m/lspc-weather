@@ -320,6 +320,9 @@ export const SAMPLE_ROWS: readonly { source: ForecastSource; label: string }[] =
   { source: 'om15', label: 'Open-Meteo 15-minute' },
   { source: 'omCurrent', label: 'Open-Meteo current' },
   { source: 'nws', label: 'NWS hour, same reports' },
+  // Sampled from 2026-11-24 (record version 3), so its row starts later and
+  // holds fewer pairs than the others until it has run as long.
+  { source: 'rrfsHourly', label: 'Open-Meteo RRFS hourly, from 2026-11-24' },
 ];
 
 /** The surface-wind sample's forecasts against each report, as its summary

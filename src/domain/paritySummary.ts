@@ -34,6 +34,21 @@ export interface RrfsLog {
   levels?: number;
   /** RRFS minus default, at the altitudes both tables have. */
   rows?: { ft: number; dDir: number; dSpd: number; dT: number | null }[];
+  /** Cloud cover for the same hour as each answer served it, percent of
+   *  the sky: the RRFS's, and the default's, which is the second cloud
+   *  figure on the Ceiling & sky card. As served, not differenced: the card
+   *  prints the figure, so the log keeps both. Absent when either answer
+   *  had no cloud cover for the hour. */
+  cloud?: { rrfs: CloudPct; default: CloudPct };
+}
+
+/** One hour of Open-Meteo cloud cover: total, and the low, mid and high
+ *  bands; null where not served. */
+export interface CloudPct {
+  total: number | null;
+  low: number | null;
+  mid: number | null;
+  high: number | null;
 }
 
 /** One run of the Schulze comparison. `aligned` is null when no Schulze table
