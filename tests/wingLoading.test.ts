@@ -5,6 +5,7 @@ import {
   LSPC_STUDENT_NAVIGATOR_SIZES,
   NAVIGATOR_CHART,
   STUDENT_RIG_WEIGHT_LB,
+  USPA_CANOPY_RISK_QUOTIENT,
 } from '../src/config/canopies';
 import { againstChart, exitWeightLb, sizesWithin, wingLoading } from '../src/domain/wingLoading';
 import { WingLoadingPanel } from '../src/components/WingLoadingPanel';
@@ -92,5 +93,21 @@ describe('the exit weight & wing loading card', () => {
       'Check the body weight: a number of pounds above 0 and up to 500.',
     );
     expect(renderToStaticMarkup(createElement(WingLoadingPanel, { initialBodyLb: -5 }))).toContain('Check the body weight');
+  });
+});
+
+describe('the pointer to USPA’s Canopy Risk Quotient', () => {
+  it('links USPA’s page as USPA’s own, and works no score or band here', () => {
+    const html = renderToStaticMarkup(createElement(WingLoadingPanel, { initialBodyLb: 180 }));
+    expect(html).toContain(
+      `<a href="${USPA_CANOPY_RISK_QUOTIENT.url}" target="_blank" rel="noopener noreferrer">${USPA_CANOPY_RISK_QUOTIENT.label}</a>`,
+    );
+    // "USPA's own" holds only while the link is to USPA; that the page is
+    // still there is the daily link check's (scripts/pilotLinks.live.ts).
+    expect(new URL(USPA_CANOPY_RISK_QUOTIENT.url).hostname).toBe('www.uspa.org');
+    expect(html).toContain('Weight is all this card checks. For choosing a canopy, USPA has its own self-assessment');
+    expect(html).toContain('scored on USPA’s page. This card works none of it.');
+    // None of the quiz's verdicts is repeated on the card.
+    for (const band of ['Comfortable', 'Average Risk', 'High Risk', 'Scary']) expect(html).not.toContain(band);
   });
 });

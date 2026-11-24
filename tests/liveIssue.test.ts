@@ -51,6 +51,8 @@ describe('liveIssues', () => {
     expect(sky.description).toMatch(/aviationweather\.gov/);
     expect(pilot.title).toBe('Pilots tab links: opens Plattsmouth in the current Chart Supplement edition');
     expect(pilot.body).toContain('src/domain/chartSupplement.ts');
+    // The same file checks the Wing loading card's link, so the body names its config too.
+    expect(pilot.body).toContain('src/config/canopies.ts');
     // Colour codes stripped, the diff kept, no timeout note.
     expect(pilot.body).toContain('AssertionError: expected 500 to be 200');
     expect(pilot.body).not.toContain('\u001b[');

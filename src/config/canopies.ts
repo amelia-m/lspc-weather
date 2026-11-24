@@ -62,3 +62,22 @@ export const LSPC_STUDENT_NAVIGATOR_SIZES: readonly number[] = [200, 220, 260, 2
  *  for every rig until a table of weights replaces it. The card says so and
  *  lets the reader change it. */
 export const STUDENT_RIG_WEIGHT_LB = 32;
+
+/**
+ * USPA's Canopy Risk Quotient: its own self-assessment for canopy choice, a
+ * questionnaire on experience, currency, the canopy and training that USPA's
+ * page scores into four bands. The Wing loading card links it and works none
+ * of it (the maintainer, 2026-11-24): the score is a judgement on the
+ * jumper, which is USPA's to make on USPA's page, not this app's.
+ *
+ * A link, not a citation: no claim on the card rests on it, so it is in
+ * neither `CITATIONS` nor the reading log. Read at uspa.org on 2026-11-24.
+ * It was a PDF handout until USPA made it a page (its Rating Corner of
+ * March 2020 says so); the PDF's address now answers with a 404 page, which
+ * is how another site's link to it went dead, so the daily link check
+ * (scripts/pilotLinks.live.ts) opens this one.
+ */
+export const USPA_CANOPY_RISK_QUOTIENT = {
+  label: 'USPA: Calculate Your Canopy Risk Quotient',
+  url: 'https://www.uspa.org/canopy-risk-quotient',
+} as const;
