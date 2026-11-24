@@ -123,7 +123,7 @@ describe('the jump run over the aerial image', () => {
     expect(html).toContain('The line is a bearing of 230° SW through the GPS point, the arrow the direction of flight');
     expect(html).toContain('It shows the bearing and nothing else');
     expect(html).toContain('is the spotter’s and the pilot’s');
-    expect(html).toContain('>USGS The National Map</a>');
+    expect(html).toContain('>USDA, USGS The National Map: Orthoimagery</a>');
     expect(map(0)).toContain('a bearing of 360° N through the GPS point');
   });
 

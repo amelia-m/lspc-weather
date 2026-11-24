@@ -353,7 +353,7 @@ downloads redirect there); since 2026-10-08 `github.com`, the ADS-B networks
 `basemapstyles-api.arcgis.com`, `opengeo.ncep.noaa.gov` and
 `geocode.arcgis.com` (radar.weather.gov's viewer, docs/radar-interactive-link.md;
 its basemap art at
-`cdn.arcgis.com` is not, and the map draws without it). Reachable is not
+`cdn.arcgis.com` is not, and the map draws without it); since 2026-11-24 `basemap.nationalmap.gov` (USGS's aerial imagery for the jump-run image), `axis.tools` and `archive.org` (`web.archive.org` is allowed too but resets every connection from here). Reachable is not
 readable: `globe.adsb.fi`, `api.adsb.one` and `airplanes.live` answer a
 script with Cloudflare's 403. The list is the project's; the environment's own can differ: on 2026-11-23 the session's ("sandbox", read with `get_environment`) lacked `aviationweather.gov`, `tgftp.nws.noaa.gov`, `gml.noaa.gov`, the `*.weather.gov` wildcard (only `api.` and `radar.`), USPA, eCFR, FAA, FAASafety, usairnet, markschulze.net, the Naval Observatory and the NOAA S3 buckets, and the proxy answered each with a CONNECT 403; the maintainer restored them that day and the next, with `*.noaa.gov` added (docs/open-questions.md). Comparison artifacts can be read with
 `curl -sL https://api.github.com/repos/amelia-m/lspc-weather/actions/artifacts/<id>/zip`

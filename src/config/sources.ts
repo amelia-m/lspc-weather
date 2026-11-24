@@ -100,10 +100,13 @@ export const DATA_SOURCES = {
     url: 'https://faa.maps.arcgis.com/home/item.html?id=6ab79dc5de5743adb3e3b6e3c803aa59',
   },
   /** The aerial image under the jump-run line on the Drift card: the US
-   *  Geological Survey's National Map imagery, a work of the US government
-   *  (the tiles come from `DZ_IMAGERY_TILES`). */
+   *  Geological Survey's National Map orthoimagery, a work of the US
+   *  government (the tiles come from `DZ_IMAGERY_TILES`). The label is the
+   *  service's own credit line ("USDA, USGS The National Map:
+   *  Orthoimagery. Data refreshed June, 2024", its MapServer description,
+   *  read 2026-11-24). */
   usgsImagery: {
-    label: 'USGS The National Map',
+    label: 'USDA, USGS The National Map: Orthoimagery',
     url: 'https://www.usgs.gov/programs/national-geospatial-program/national-map',
   },
   /** Live air traffic around the drop zone on adsb.lol, a community-run
@@ -199,9 +202,12 @@ export const FAA_SECTIONAL_TILES = {
   maxZoom: 12,
 } as const;
 
-/** USGS's imagery-only base map as tiles, z/y/x, 256 px, Web Mercator.
- *  Loaded as <img>, so no CORS is needed; the CSP's img-src names the host
- *  (vite.config.ts reads it from here). */
+/** USGS's imagery-only base map as tiles, z/y/x, 256 px, Web Mercator
+ *  (its MapServer description, read 2026-11-24: a fused cache of 256 px
+ *  tiles in WKID 102100, levels 0 to 23, "visible to the 1:9,028 zoom
+ *  scale", which is level 16; the drop zone's tile answered with a JPEG at
+ *  each of levels 12 to 16). Loaded as <img>, so no CORS is needed; the
+ *  CSP's img-src names the host, which a test holds to `origin`. */
 export const DZ_IMAGERY_TILES = {
   origin: 'https://basemap.nationalmap.gov',
   url: (z: number, y: number, x: number): string =>
