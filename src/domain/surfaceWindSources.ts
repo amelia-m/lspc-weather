@@ -1011,35 +1011,50 @@ export function defaultModelByDay(input: readonly SurfaceWindRecord[]): DefaultM
 
 /** A maintenance notice for an issue: what parity-summary.yml opens. */
 export interface DefaultModelNotice {
+  /** The last whole UTC day, which reads as switched. */
   day: string;
+  /** The first day of the unbroken run of switched days that `day` ends:
+   *  the workflow opens no issue when one was already opened since then. */
+  since: string;
   label: string;
   description: string;
   title: string;
   body: string;
 }
 
+/** For how many days of a change the notice is given. More than one, so a
+ *  day the workflow did not run, or could not reach GitHub, does not lose
+ *  the one alert this check exists for; not for ever, so a closed issue is
+ *  not looked up daily for as long as the new default holds. */
+export const DEFAULT_MODEL_NOTICE_DAYS = 7;
+
 /**
- * The notice for the day the default changed, or null. Given on the first
- * such day only: the last whole UTC day before `today` reads as switched
- * and the day of samples before it did not, so the workflow, which runs
- * daily, opens one issue and not one a day for as long as the change holds.
- * `today` is passed in ("2026-11-25"); the day in progress is never judged,
- * since it has only part of its runs.
+ * The notice for a change of default, or null. Given while the last whole
+ * UTC day before `today` reads as switched and the unbroken run of switched
+ * days it ends is no longer than `DEFAULT_MODEL_NOTICE_DAYS`; `since` names
+ * that run's first day, and the workflow, which runs daily, opens one issue
+ * for it and none while one opened since then exists. `today` is passed in
+ * ("2026-11-25"); the day in progress is never judged, since it has only
+ * part of its runs.
  */
 export function defaultModelNotice(days: readonly DefaultModelDay[], today: string): DefaultModelNotice | null {
   const whole = days.filter((d) => d.day < today);
   const last = whole[whole.length - 1];
-  const before = whole[whole.length - 2];
-  if (!last?.switched || before?.switched) return null;
+  if (!last?.switched) return null;
+  let first = whole.length - 1;
+  while (first > 0 && whole[first - 1].switched) first -= 1;
+  if (whole.length - first > DEFAULT_MODEL_NOTICE_DAYS) return null;
+  const since = whole[first].day;
   const line = (d: DefaultModelDay): string =>
     `| ${d.day} | ${d.notHrrr} of ${d.hrrrCompared} | ${d.isRrfs} of ${d.rrfsCompared} | ${d.hrrrFailed} of ${d.defaultRuns} |`;
   return {
     day: last.day,
+    since,
     label: 'model-switch',
     description: 'Open-Meteo\'s default model for the drop zone looks to have changed',
-    title: `Open-Meteo's default model here looks to have changed (${last.day})`,
+    title: `Open-Meteo's default model here looks to have changed (${since})`,
     body: [
-      `On ${last.day} (UTC) the surface-wind sampler's default request stopped matching the HRRR asked for by name, began matching the RRFS, or the HRRR could no longer be had by name, in most of its runs. The dashboard's winds aloft, drift, Surface row and second cloud figure come from that default, so they changed with it.`,
+      `On ${since} (UTC) the surface-wind sampler's default request stopped matching the HRRR asked for by name, began matching the RRFS, or the HRRR could no longer be had by name, in most of its runs. The dashboard's winds aloft, drift, Surface row and second cloud figure come from that default, so they changed with it.`,
       '',
       '| UTC day | differed from the HRRR | same as the RRFS | HRRR request failed |',
       '|---|---|---|---|',

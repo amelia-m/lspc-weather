@@ -682,7 +682,7 @@ and uploads `surfacewind-*` artifacts, one per sample in eighteen slices
 since 2026-11-10, each run queueing its successor; `parity-summary.yml`
 archives them as `data/parity/surfacewind-<YYYY-MM>.jsonl.gz`
 (`scripts/surfaceWindArchive.ts`) and the weekly refresh rebuilds the
-`#wind-errors` sample section from them. Since 2026-11-24 each sample also asks Open-Meteo's RRFS by name (record version 3: `rrfs`, a forecast source against the report, and `om.sameAsRrfs`), and `parity-summary.yml` runs `scripts/defaultModelCheck.ts` daily, which opens one `model-switch` issue the first day most runs say the default is no longer the HRRR (`defaultModelSwitched`; docs/rrfs-comparison-plan.md). It changes nothing the dashboard
+`#wind-errors` sample section from them. Since 2026-11-24 each sample also asks Open-Meteo's RRFS by name (record version 3: `rrfs`, a forecast source against the report, and `om.sameAsRrfs`), and `parity-summary.yml` runs `scripts/defaultModelCheck.ts` daily, which opens one `model-switch` issue once most of a day's runs say the default is no longer the HRRR (`defaultModelSwitched`, tried for the change's first week; docs/rrfs-comparison-plan.md). It changes nothing the dashboard
 shows; the first three weeks are in docs/surface-wind-sources.md. The
 maintainer, 2026-10-30: one season is a brief window, so do not time-box or
 delete it again without asking. The run-split sampler (`.github/workflows/run-split-sample.yml`,

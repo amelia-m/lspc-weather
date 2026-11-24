@@ -315,6 +315,11 @@ export function omArchiveSection(records: readonly OmWindRecord[], metars: reado
 
 /** The surface-wind sample's sources, as the page names them. Open-Meteo's
  *  three forms first, the NWS hour on the same reports last, for reference. */
+/** The RRFS row's label. The page explains the row only where a file has
+ *  it: a file built before the row existed has none until the weekly
+ *  refresh rebuilds it. */
+export const RRFS_SAMPLE_LABEL = 'Open-Meteo RRFS hourly, from 2026-11-24';
+
 export const SAMPLE_ROWS: readonly { source: ForecastSource; label: string }[] = [
   { source: 'omHourly', label: 'Open-Meteo hourly' },
   { source: 'om15', label: 'Open-Meteo 15-minute' },
@@ -322,7 +327,7 @@ export const SAMPLE_ROWS: readonly { source: ForecastSource; label: string }[] =
   { source: 'nws', label: 'NWS hour, same reports' },
   // Sampled from 2026-11-24 (record version 3), so its row starts later and
   // holds fewer pairs than the others until it has run as long.
-  { source: 'rrfsHourly', label: 'Open-Meteo RRFS hourly, from 2026-11-24' },
+  { source: 'rrfsHourly', label: RRFS_SAMPLE_LABEL },
 ];
 
 /** The surface-wind sample's forecasts against each report, as its summary

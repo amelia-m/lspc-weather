@@ -7,9 +7,9 @@
  *
  *   npx tsx scripts/defaultModelCheck.ts --logs data/parity/surfacewind-*.jsonl.gz swlogs/*.jsonl --out model-switch.json
  *
- * Prints the last seven days. Writes --out only on the first day the change
- * shows (`defaultModelNotice`, src/domain/surfaceWindSources.ts, pure and
- * tested); writes nothing otherwise. Never fails the workflow it runs in:
+ * Prints the last seven days. Writes --out for the first week of a change
+ * (`defaultModelNotice`, src/domain/surfaceWindSources.ts, pure and tested;
+ * the workflow opens the issue once); writes nothing otherwise. Never fails the workflow it runs in:
  * a file it cannot read is named and skipped.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -56,5 +56,5 @@ if (notice) {
   writeFileSync(out, JSON.stringify(notice));
   console.log(`notice written to ${out}: ${notice.title}`);
 } else {
-  console.log('no notice: the default did not change on the last whole day, or the change was already raised');
+  console.log('no notice: the last whole day does not read as switched, or the change is older than the notice window');
 }

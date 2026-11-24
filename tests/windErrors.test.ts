@@ -8,6 +8,7 @@ import {
   nwsKeptSection,
   omArchiveSection,
   parseOmWindLines,
+  RRFS_SAMPLE_LABEL,
   surfaceSampleSection,
   windErrorsShrinkage,
   yStep,
@@ -266,6 +267,21 @@ describe('WindErrorsPage', () => {
     expect(page(null, 'loading')).toContain('Loading the wind figures');
     expect(page(null, 'missing')).toContain('No wind figures have been published yet');
     expect(page(null, 'error')).toContain('The wind figures could not be read');
+  });
+
+  it('explains the RRFS row only where the file has one: a file built before the row existed has none', () => {
+    const s = surfaceSampleSection([]);
+    const at = '2026-11-24T12:00:00.000Z';
+    const withRow = page({ generatedAt: at, sections: [s] }, 'ready');
+    const without = page(
+      { generatedAt: at, sections: [{ ...s, rows: s.rows.filter((r) => r.label !== RRFS_SAMPLE_LABEL) }] },
+      'ready',
+    );
+    expect(s.rows.map((r) => r.label)).toContain(RRFS_SAMPLE_LABEL);
+    expect(withRow).toContain('RRFS model, asked for by name');
+    expect(withRow).toContain('than the others. Every row');
+    expect(without).not.toContain('RRFS');
+    expect(without).toContain('for reference. Every row');
   });
 
   it('draws a chart per quantity with each bar titled, and grades nothing', () => {

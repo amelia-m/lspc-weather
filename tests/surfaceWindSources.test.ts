@@ -4,6 +4,7 @@ import {
   unarchivedSurfaceWindLines,
   compareWindResponses,
   defaultModelByDay,
+  DEFAULT_MODEL_NOTICE_DAYS,
   defaultModelNotice,
   defaultModelSwitched,
   DEFAULT_MODEL_MIN_RUNS,
@@ -712,21 +713,43 @@ describe('the day Open-Meteo’s default model changes', () => {
     expect(defaultModelSwitched({ hrrrCompared: 40, notHrrr: 20, rrfsCompared: 0, isRrfs: 0, defaultRuns: 40, hrrrFailed: 0 })).toBe(false);
   });
 
-  it('raises the notice once, for the first whole day that reads as switched', () => {
+  it('raises the notice from the first whole day that reads as switched, naming that day while the change holds', () => {
     const ok = dayOf('2026-11-29', 80, () => ({ sameAsHrrr: true, sameAsRrfs: false }));
-    const first = dayOf('2026-11-30', 80, () => ({ sameAsHrrr: false, sameAsRrfs: true }));
-    const second = dayOf('2026-12-01', 80, () => ({ sameAsHrrr: false, sameAsRrfs: true }));
+    const switchedOn = (day: string): SurfaceWindRecord[] => dayOf(day, 80, () => ({ sameAsHrrr: false, sameAsRrfs: true }));
+    const first = switchedOn('2026-11-30');
     // The morning after the first switched day: a notice, naming that day.
     const n = defaultModelNotice(defaultModelByDay([...ok, ...first]), '2026-12-01');
-    expect(n).toMatchObject({ day: '2026-11-30', label: 'model-switch' });
+    expect(n).toMatchObject({ day: '2026-11-30', since: '2026-11-30', label: 'model-switch' });
     expect(n?.title).toContain('2026-11-30');
     expect(n?.body).toContain('| 2026-11-30 | 80 of 80 | 80 of 80 | 0 of 80 |');
-    // The day after, the change still holds: no second notice.
-    expect(defaultModelNotice(defaultModelByDay([...ok, ...first, ...second]), '2026-12-02')).toBeNull();
+    // The day after, the change still holds: the notice again, still for
+    // the first day, so a run that missed yesterday's can still raise it
+    // and one that did not can find the issue it opened.
+    const again = defaultModelNotice(defaultModelByDay([...ok, ...first, ...switchedOn('2026-12-01')]), '2026-12-02');
+    expect(again).toMatchObject({ day: '2026-12-01', since: '2026-11-30' });
+    expect(again?.title).toBe(n?.title);
     // The day in progress is never judged: the first switched day is today.
     expect(defaultModelNotice(defaultModelByDay([...ok, ...first]), '2026-11-30')).toBeNull();
     // An ordinary day raises nothing.
     expect(defaultModelNotice(defaultModelByDay(ok), '2026-11-30')).toBeNull();
+  });
+
+  it('stops giving the notice once the change has held longer than the notice window', () => {
+    const ok = dayOf('2026-11-29', 80, () => ({ sameAsHrrr: true, sameAsRrfs: false }));
+    const switched = (count: number): SurfaceWindRecord[] =>
+      Array.from({ length: count }, (_, i) => `2026-12-${String(i + 1).padStart(2, '0')}`).flatMap((day) =>
+        dayOf(day, 30, () => ({ sameAsHrrr: false, sameAsRrfs: true })),
+      );
+    const dayAfter = (count: number): string => `2026-12-${String(count + 1).padStart(2, '0')}`;
+    const at = (count: number): unknown => defaultModelNotice(defaultModelByDay([...ok, ...switched(count)]), dayAfter(count));
+    expect(at(DEFAULT_MODEL_NOTICE_DAYS)).toMatchObject({ since: '2026-12-01' });
+    expect(at(DEFAULT_MODEL_NOTICE_DAYS + 1)).toBeNull();
+    // A switch back and a second change is a new run of days, with its own first day.
+    const back = dayOf('2026-12-09', 80, () => ({ sameAsHrrr: true, sameAsRrfs: false }));
+    const second = dayOf('2026-12-10', 80, () => ({ sameAsHrrr: false, sameAsRrfs: true }));
+    expect(defaultModelNotice(defaultModelByDay([...ok, ...switched(8), ...back, ...second]), '2026-12-11')).toMatchObject({
+      since: '2026-12-10',
+    });
   });
 
   it('counts each run once and keeps the days in order', () => {

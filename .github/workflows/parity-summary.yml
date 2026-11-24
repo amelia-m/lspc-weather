@@ -133,11 +133,15 @@ jobs:
             --archives data/parity/surfacewind-*.jsonl.gz --out "data/parity/surfacewind-$(date -u +%Y-%m).jsonl.gz"
       # The sampler asks Open-Meteo's default, the HRRR by name and the RRFS
       # by name each run. Open-Meteo says the HRRR goes with RRFSv2
-      # (docs/rrfs-comparison-plan.md); the day the default stops matching the
+      # (docs/rrfs-comparison-plan.md); once the default stops matching the
       # HRRR, or starts matching the RRFS, in most of a day's runs, this opens
-      # one issue (scripts/defaultModelCheck.ts writes the notice on the first
-      # such day only). Never fails the run: the summary matters more.
-      - name: Say if Open-Meteo's default model changed yesterday
+      # one issue. scripts/defaultModelCheck.ts writes the notice for the
+      # first week of a change, so a day this job did not run does not lose
+      # it, and the issue is opened only when none with the label has been
+      # opened since the change began. On main only: a run dispatched on a
+      # branch opens none. Never fails the run: the summary matters more.
+      - name: Say if Open-Meteo's default model changed
+        if: github.ref == 'refs/heads/main'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -149,22 +153,26 @@ jobs:
           npx tsx scripts/defaultModelCheck.ts --logs "${logs[@]}" --out model-switch.json
           [ -f model-switch.json ] || exit 0
           label=$(jq -r .label model-switch.json)
-          # The label is how the open issue is found again; without it, open a
-          # new issue rather than comment on whichever issue is newest.
-          labelArgs=(--label "$label")
-          if ! gh label create "$label" --color D93F0B --force --description "$(jq -r .description model-switch.json)"; then
-            echo "::warning::could not create or update label $label; opening the issue without it"
-            labelArgs=()
-          fi
+          since=$(jq -r .since model-switch.json)
+          day=$(jq -r .day model-switch.json)
           jq -r .body model-switch.json > model-switch.md
-          existing=""
-          if [ ${#labelArgs[@]} -gt 0 ]; then
-            existing=$(gh issue list "${labelArgs[@]}" --state open --json number --jq '.[0].number // empty')
-          fi
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body-file model-switch.md
+          # The label is how an issue already opened for this change is found.
+          if gh label create "$label" --color D93F0B --force --description "$(jq -r .description model-switch.json)"; then
+            # A listing that fails opens nothing: tomorrow's run asks again.
+            existing=$(gh issue list --label "$label" --state all --search "created:>=$since" --json number --jq '.[0].number // empty') \
+              || { echo "::warning::could not list $label issues; not opening one blind"; exit 0; }
+            if [ -n "$existing" ]; then
+              echo "already raised as #$existing"
+            else
+              gh issue create --title "$(jq -r .title model-switch.json)" --label "$label" --body-file model-switch.md
+            fi
+          elif [ "$day" = "$since" ]; then
+            # Without the label an earlier issue cannot be found, so only the
+            # first day's run opens one.
+            echo "::warning::could not create or update label $label; opening the issue without it"
+            gh issue create --title "$(jq -r .title model-switch.json)" --body-file model-switch.md
           else
-            gh issue create --title "$(jq -r .title model-switch.json)" "${labelArgs[@]}" --body-file model-switch.md
+            echo "::warning::could not create or update label $label; an issue is opened without it on the first day only"
           fi
       - name: Combine into the summary
         shell: bash
