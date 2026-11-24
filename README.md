@@ -62,27 +62,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
   against the NWS hourly forecast for the next 12 hours: a **Forecast** flag
   names the hours the forecast reaches the same limit, and ranks below every
   flag on a report.
-- 💨 **Surface wind** — the first card on the Jumpers tab, and the
-  observation, not a forecast: it says so first, with KPMV's distance and
-  the report's time and age, then that a report cannot show a wind that is
-  changing now or the wind at the DZ, and, when KPMV's reports are overdue
-  by its own usual 20 minutes, that too. Sustained + gust,
-  kt/mph toggle, one bar with every mark labelled by its figure, and a line
-  per limit saying which reading it is held to (the caution takes the higher
-  of wind and gust, the gust ceiling the gust) and how far over or under the
-  limit that is. The limits
-  follow the profile in the header: Student or Licensed, then for a student
-  USPA BSR or the LSPC waiver, then the waiver's jump-count tier. A band is
-  drawn only where a published source sets it — the USPA ground-wind figure for
-  a student on the USPA BSR limits, the posted club policy for a student on an
-  LSPC waiver tier — and is labelled
-  with that source. The Licensed profile draws no band and says so: nobody
-  publishes a surface-wind limit for licensed jumpers. A licensed jumper who
-  sets their own limit gets a band labelled as theirs. A standing note gives
-  how the NWS forecast gust, which the Forecast flag reads, compared with
-  KPMV's reports over six months, side and typical size
-  ([docs/nws-gust-archive.md](docs/nws-gust-archive.md)); counts, not a
-  correction.
+- 💨 **Surface wind** — the first card on the Jumpers tab, and the observation, not a forecast: it says so first, with KPMV's distance and the report's time and age, then that a report cannot show a wind that is changing now or the wind at the DZ, and, when KPMV's reports are overdue by its own usual 20 minutes, that too. Sustained + gust, kt/mph toggle, one bar with every mark labelled by its figure, and a line per limit saying which reading it is held to (the caution takes the higher of wind and gust, the gust ceiling the gust) and how far over or under the limit that is. The limits follow the profile in the header: Student or Licensed, then for a student USPA BSR or the LSPC waiver, then the waiver's jump-count tier. A band is drawn only where a published source sets it — the USPA ground-wind figure for a student on the USPA BSR limits, the posted club policy for a student on an LSPC waiver tier — and is labelled with that source. The Licensed profile draws no band and says so: nobody publishes a surface-wind limit for licensed jumpers. A licensed jumper who sets their own limit gets a band labelled as theirs. A standing note gives how the NWS forecast gust, which the Forecast flag reads, compared with KPMV's reports over six months, side and typical size ([docs/nws-gust-archive.md](docs/nws-gust-archive.md)); counts, not a correction.
 - 🌬️ **Winds aloft** — speed/direction/temperature at the surface, 500 ft (pattern
   altitude), then 1,000-ft steps to 13,000 ft AGL, interpolated from
   Open-Meteo's 10 m, 80, 120 and 180 m winds and its pressure levels, with
