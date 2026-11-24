@@ -17,6 +17,7 @@ import {
   normalizeOpenMeteoHours,
   openMeteoHourlyVariables,
   openMeteoWindsUrl,
+  OPEN_METEO_RRFS_MODEL,
   OPEN_METEO_FORECAST_URL,
   normalizeOpenMeteoDaily,
   ddhhmmToEpoch,
@@ -777,6 +778,18 @@ describe('Open-Meteo pressure levels', () => {
     expect(url.searchParams.get('forecast_days')).toBe('2');
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('timezone')).toBe('UTC');
+    // The app names no model and takes Open-Meteo's default.
+    expect(url.searchParams.has('models')).toBe(false);
+  });
+
+  it('asks the same question of a named model, for the comparison’s RRFS table', () => {
+    const plain = new URL(openMeteoWindsUrl(40.8675, -96.11));
+    const rrfs = new URL(openMeteoWindsUrl(40.8675, -96.11, OPEN_METEO_RRFS_MODEL));
+    expect(rrfs.searchParams.get('models')).toBe('ncep_rrfs_conus');
+    // Everything else is the app's request, parameter for parameter, so the
+    // two tables differ by the model alone.
+    expect([...rrfs.searchParams].filter(([k]) => k !== 'models')).toEqual([...plain.searchParams]);
+    expect(`${rrfs.origin}${rrfs.pathname}`).toBe(`${plain.origin}${plain.pathname}`);
   });
 
   it('reads the 800 and 750 hPa samples between 850 and 700 hPa from the fixture', () => {

@@ -622,7 +622,7 @@ the finding. The same job prints two reports that never fail the run:
 `scripts/schulzeCompare.live.ts` (this app's winds-aloft profile beside Mark
 Schulze's; needs a Referer and a browser-like User-Agent) and
 `scripts/usairnetCompare.live.ts` (the dashboard's decode of the latest KPMV
-observation beside usairnet's). `.github/workflows/comparisons.yml` runs
+observation beside usairnet's). Since 2026-11-24 the first also logs the same hour's table from Open-Meteo's RRFS model against the default (`rrfs` on the record; `rrfsLogOf`, src/domain/modelCompare.ts): Open-Meteo says the HRRR, which the unnamed request is served from here, goes with RRFSv2, and the log measures the change before it comes (docs/open-questions.md); not yet on `#parity`. `.github/workflows/comparisons.yml` runs
 both eight more times a day at different minutes; each run uploads one
 `@@parity {json}` line as a `parity-<run id>` artifact (kept 14 days), and
 the summary takes only runs on `main`.

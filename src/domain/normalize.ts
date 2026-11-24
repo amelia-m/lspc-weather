@@ -712,14 +712,27 @@ export const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 
 /** The winds-aloft request, as one string, so the app's fetch and the live
  *  comparison script (scripts/schulzeCompare.live.ts) ask Open-Meteo the same
- *  question. Two days of hourly steps, knots, Unix times in UTC. */
-export function openMeteoWindsUrl(lat: number, lon: number): string {
+ *  question. Two days of hourly steps, knots, Unix times in UTC.
+ *
+ *  `model` is for the comparison alone: the app names none and takes
+ *  Open-Meteo's default, which here has been the HRRR with the GFS. Naming
+ *  one (`OPEN_METEO_RRFS_MODEL`) asks the same question of that model, so
+ *  the two tables can be set side by side before Open-Meteo retires the
+ *  HRRR (its GFS & RRFS page, read 2026-11-24: "will be discontinued in the
+ *  future with the release of RRFSv2"). */
+export function openMeteoWindsUrl(lat: number, lon: number, model?: string): string {
   return (
     `${OPEN_METEO_FORECAST_URL}?latitude=${lat}&longitude=${lon}` +
     `&hourly=${openMeteoHourlyVariables().join(',')}` +
-    `&wind_speed_unit=kn&forecast_days=2&timeformat=unixtime&timezone=UTC`
+    `&wind_speed_unit=kn&forecast_days=2&timeformat=unixtime&timezone=UTC` +
+    (model ? `&models=${model}` : '')
   );
 }
+
+/** NOAA's Rapid Refresh Forecast System over the contiguous US, 3 km, as
+ *  Open-Meteo names it (its GFS & RRFS page, read 2026-11-24). The model
+ *  that replaced the NAM on 2026-11-03 and is to replace the HRRR. */
+export const OPEN_METEO_RRFS_MODEL = 'ncep_rrfs_conus';
 
 /** The 10-day outlook request (temps, wind and gust maxima, precip chance,
  *  WMO weather code), as one string, so the app's fetch and the forecast
