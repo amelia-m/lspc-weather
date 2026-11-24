@@ -207,7 +207,10 @@ export const DZ_IMAGERY_TILES = {
   url: (z: number, y: number, x: number): string =>
     `https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/${z}/${y}/${x}`,
   minZoom: 12,
-  maxZoom: 16,
+  // One step in from the image's opening zoom and no further: at 16 the
+  // landing area, 1,100 ft from the GPS point at the centre, is out of the
+  // frame, and the caption would name a ring that is not there.
+  maxZoom: 15,
 } as const;
 
 /** A link on the Pilots tab's resources card: where a pilot briefs from. */

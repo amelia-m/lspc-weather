@@ -21,6 +21,10 @@ export interface SiteConfig {
     lon: number;
     elevationFt: number;
   };
+  /** The drop zone's GPS point: the pin a jump run is flown on, which is
+   *  not the landing area (`dz`). The Drift card's jump-run image draws
+   *  the bearing through it and marks both. */
+  gpsPin: { lat: number; lon: number };
   /** Nearest reporting station for METARs. */
   metarStation: {
     id: string; // ICAO
@@ -77,6 +81,14 @@ export const SITE: SiteConfig = {
     lon: -96.1085,
     elevationFt: 1182,
   },
+  // The point Mark Schulze's Winds Aloft uses for the club (40.8675006,
+  // -96.11001 in his dropzones.geojson, docs/markschulze-altitude-reference.md),
+  // in the field south-west of the runway, where this app's own point sat
+  // until 2026-10-08. The maintainer, 2026-11-24: the actual GPS pin is not
+  // the landing-area pin she dropped, and "I think it's the same as the
+  // point Mark Schulze's winds aloft uses". Her belief, not yet confirmed
+  // with a pilot's GPS (docs/open-questions.md); the image's caption says so.
+  gpsPin: { lat: 40.8675, lon: -96.11 },
   metarStation: {
     id: 'KPMV',
     iemId: 'PMV',

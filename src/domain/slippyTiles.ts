@@ -25,6 +25,18 @@ export function tileXY(lat: number, lon: number, z: number): { x: number; y: num
   };
 }
 
+/** Where one point sits from another on the map at zoom `z`, in px: x
+ *  grows east and y grows south, as a tile's own pixels do. */
+export function pixelOffset(
+  from: { lat: number; lon: number },
+  to: { lat: number; lon: number },
+  z: number,
+): { x: number; y: number } {
+  const a = tileXY(from.lat, from.lon, z);
+  const b = tileXY(to.lat, to.lon, z);
+  return { x: (b.x - a.x) * TILE_PX, y: (b.y - a.y) * TILE_PX };
+}
+
 export interface PlacedTile {
   z: number;
   x: number;
