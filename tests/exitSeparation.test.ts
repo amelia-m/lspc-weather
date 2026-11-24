@@ -192,6 +192,15 @@ describe('the Drift card’s exit separation', () => {
     expect(row(section({ exitFtAgl: 12500, initialGpsKt: 70 }), SOLO)).toBe('9 s');
   });
 
+  it('calls a calm a calm: no direction printed, and no bearing said to be into the wind', () => {
+    const html = section({ levels: [level(10000, 0, 0)], initialIndicatedKt: 80 });
+    expect(html).toContain('Forecast wind at 10,000 ft AGL: calm.');
+    expect(html).not.toContain('into the forecast wind');
+    expect(html).not.toContain('from N (0°)');
+    // The plane's own speed is all of it.
+    expect(row(html, 'Ground speed, an estimate')).toBe('about 95 kt');
+  });
+
   it('says the standard temperature stood in where the forecast has none', () => {
     const html = section({ levels: [level(10000, 270, 35, null)], initialIndicatedKt: 80 });
     expect(html).toContain('the standard temperature (the forecast has none)');

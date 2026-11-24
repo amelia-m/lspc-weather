@@ -59,6 +59,9 @@ export function ExitSeparation({
   const [gps, setGps] = useState(initialGpsKt != null ? String(initialGpsKt) : '');
 
   const wind = windAtAltitude(levels, exitFtAgl);
+  // A calm has no direction to fly into or to print: the bearing box still
+  // needs a value, but nothing says it is "into the wind".
+  const calm = wind != null && round(wind.speedKt) === 0;
   // Into the forecast wind, to the nearest bearing offered, until chosen.
   const intoWind = wind ? (Math.round(wind.directionDeg / 10) * 10) % 360 : 0;
   const track = chosenTrack ?? intoWind;
@@ -79,14 +82,14 @@ export function ExitSeparation({
         </p>
       ) : (
         <p className="muted small">
-          Forecast wind at {fmtFt(exitFtAgl)} AGL: from {compass(wind.directionDeg)} ({round(wind.directionDeg)}°) at{' '}
-          {round(wind.speedKt)} kt.
+          Forecast wind at {fmtFt(exitFtAgl)} AGL:{' '}
+          {calm ? 'calm' : `from ${compass(wind.directionDeg)} (${round(wind.directionDeg)}°) at ${round(wind.speedKt)} kt`}.
         </p>
       )}
       <div className="drift-inputs">
         {wind && (
           <SelectField
-            label={chosenTrack == null ? 'Jump run toward (° true; into the forecast wind)' : 'Jump run toward (° true)'}
+            label={chosenTrack == null && !calm ? 'Jump run toward (° true; into the forecast wind)' : 'Jump run toward (° true)'}
             value={track}
             options={BEARINGS}
             format={fmtBearing}
