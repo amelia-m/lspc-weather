@@ -273,6 +273,32 @@ a {
   padding: 4px 6px;
   font-variant-numeric: tabular-nums;
 }
+/* Exit separation, a section of the Drift card. */
+.exit-sep {
+  margin: 12px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.exit-sep-title {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+/* Longer labels than the drift inputs': let each box take its label's
+   width rather than a fixed 96px column that would wrap it to four lines. */
+.exit-sep .drift-inputs label {
+  max-width: 100%;
+}
+.exit-sep .drift-inputs input,
+.exit-sep .drift-inputs select {
+  width: 130px;
+}
+.exit-sep-kv {
+  margin-bottom: 8px;
+}
+.exit-sep-none {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
 .drift-spot {
   font-size: 0.85rem;
   background: var(--panel-2);

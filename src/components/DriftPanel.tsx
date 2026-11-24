@@ -10,6 +10,7 @@ import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
 import { SelectField } from './common/SelectField';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
+import { ExitSeparation } from './ExitSeparation';
 import { useNow } from '../hooks/useNow';
 import { SIM_LAST_READ } from '../config/readingLog';
 
@@ -179,6 +180,11 @@ export function DriftPanel({
             Plan to spot <strong>upwind</strong>: exit ~{fmtDist(drift.total.distanceFt)} toward{' '}
             <strong>{dir(spotToward)}</strong> of the target so you drift back over it.
           </p>
+
+          {/* Seconds between groups, from the exit altitude and the hour
+              this card already has (the maintainer, 2026-11-24). After the
+              spot, since it is the next thing counted on jump run. */}
+          <ExitSeparation levels={levels} exitFtAgl={exitFt} />
 
           {/* Only when the profile stops above the ground (an hour whose low
               samples came back null). The assumption is
