@@ -609,7 +609,7 @@ stays hermetic. It fails when the app's METAR sky parse, its derived flight
 category or its TAF group decode (`src/domain/taf.ts`, against
 aviationweather.gov's `fcsts` decode, QNH within 1 hPa since 2026-11-03)
 disagrees with aviationweather.gov's decoder on today's reports; when a
-Pilots tab deep link stops opening what it should (`scripts/pilotLinks.live.ts`;
+Pilots tab deep link, or since 2026-11-24 the Wing loading card's link to USPA's Canopy Risk Quotient page (`USPA_CANOPY_RISK_QUOTIENT`: a pointer to USPA's own self-assessment, no score worked here; its earlier PDF address went dead unannounced), stops opening what it should (`scripts/pilotLinks.live.ts`;
 the Chart Supplement edition scheme is inferred, `src/domain/chartSupplement.ts`,
 and held on the first edition that could have shown it wrong, 2026-10-29);
 and on the SIM checks under "Citations" (`scripts/simText.live.ts`). On

@@ -5,6 +5,7 @@ import {
   NAVIGATOR_SKILL_LABEL,
   NAVIGATOR_SKILLS,
   STUDENT_RIG_WEIGHT_LB,
+  USPA_CANOPY_RISK_QUOTIENT,
 } from '../config/canopies';
 import { CITATIONS } from '../config/thresholds';
 import { againstChart, exitWeightLb, LB_PER_KG, sizesWithin, wingLoading } from '../domain/wingLoading';
@@ -163,6 +164,16 @@ export function WingLoadingPanel({
         help instructors&rdquo; choose a student&rsquo;s canopy: which canopy a student jumps is the
         instructor&rsquo;s call. Sources: <SourceLink citation={CITATIONS.pdNavigator} />;{' '}
         <SourceLink citation={CITATIONS.pdWingLoadingGuide} />
+      </p>
+      {/* A pointer to USPA's own tool, not a figure of this card's: the quiz
+          judges the jumper, which this app does not. */}
+      <p className="muted small">
+        For choosing a canopy beyond its weight limits, USPA has its own self-assessment, the Canopy Risk
+        Quotient: a questionnaire on experience, currency, the canopy and training, scored on USPA&rsquo;s page.
+        This card works none of it.{' '}
+        <a href={USPA_CANOPY_RISK_QUOTIENT.url} target="_blank" rel="noopener noreferrer">
+          {USPA_CANOPY_RISK_QUOTIENT.label}
+        </a>
       </p>
     </Panel>
   );

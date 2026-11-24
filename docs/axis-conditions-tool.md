@@ -51,5 +51,5 @@ AXIS's server collects the data, at most 60 times an hour and only while someone
 2. Does LSPC run night jumps often enough for a moon line?
 3. A weather station at the field: wanted, and who would own it?
 4. Heat index, and the "a report cannot show a changing wind" sentence: either?
-5. The Canopy Risk Quotient is a live USPA page (the row above). Should the Wing loading card link to it, as USPA's own self-assessment, with no score worked here?
+5. Done 2026-11-24: the Wing loading card links USPA's Canopy Risk Quotient page (the row above), with no score worked here.
 6. The SIM's wing-loading table for advanced canopies (AXIS quotes it as 6-10 B) as a note on the Wing loading card: worth finding and reading in the 2026 SIM?
