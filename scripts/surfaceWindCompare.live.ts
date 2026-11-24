@@ -38,7 +38,13 @@
  */
 import { describe, it } from 'vitest';
 import { SITE } from '../src/config/site';
-import { normalizeGridpoint, normalizeNwsObservation, type RawGridpoint, type RawNwsObservation } from '../src/domain/normalize';
+import {
+  normalizeGridpoint,
+  normalizeNwsObservation,
+  OPEN_METEO_RRFS_MODEL,
+  type RawGridpoint,
+  type RawNwsObservation,
+} from '../src/domain/normalize';
 import { chooseObservation, normalizeIemCurrent, type RawIemCurrents } from '../src/domain/iem';
 import {
   hasWind,
@@ -48,6 +54,7 @@ import {
   openMeteoCurrent,
   openMeteoRunMeta,
   openMeteoSeries,
+  shownAt,
   SURFACE_WIND_RECORD_VERSION,
   type HrrrDiff,
   type OpenMeteoRunMeta,
@@ -63,8 +70,9 @@ const HOUR = 3_600_000;
 
 /** The Open-Meteo domains whose run times are logged: HRRR's hourly and
  *  15-minute output, which the default model is for this point
- *  (`sameAsHrrr` checks it each run). */
-const OM_DOMAINS = ['ncep_hrrr_conus', 'ncep_hrrr_conus_15min'] as const;
+ *  (`sameAsHrrr` checks it each run), and since 2026-11-24 the RRFS's,
+ *  which Open-Meteo says is to replace it (docs/rrfs-comparison-plan.md). */
+const OM_DOMAINS = ['ncep_hrrr_conus', 'ncep_hrrr_conus_15min', OPEN_METEO_RRFS_MODEL] as const;
 
 const say = (lines: string[]): void => {
   process.stdout.write(lines.join('\n') + '\n');
@@ -152,7 +160,7 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
       dz: `${dz.lat},${dz.lon}`,
     };
 
-    const [metarR, nwsR, omR, omHrrrR, ...metaR] = await Promise.allSettled([
+    const [metarR, nwsR, omR, omHrrrR, omRrfsR, ...metaR] = await Promise.allSettled([
       // The METAR as the dashboard picks it: IEM and NWS, the newer report.
       // Fetched here rather than through src/api, which reads import.meta.env
       // and so does not load under the live config (usairnetCompare does the
@@ -235,6 +243,8 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
         return { res, fetchedAt: new Date().toISOString(), raw: (await res.json()) as RawOpenMeteoWind };
       })()),
       bounded((async () => (await (await get(omUrl('ncep_hrrr_conus'))).json()) as RawOpenMeteoWind)()),
+      // The same request of the RRFS: three surface variables, one call.
+      bounded((async () => (await (await get(omUrl(OPEN_METEO_RRFS_MODEL))).json()) as RawOpenMeteoWind)()),
       ...OM_DOMAINS.map((d) =>
         bounded(
           (async () =>
@@ -255,6 +265,25 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
     // HRRR one it is compared with; a response in an unexpected shape is
     // logged as omError like a failed request, so the record still prints.
     if (omHrrrR.status === 'rejected') rec.omHrrrError = msg(omHrrrR.reason);
+    // The RRFS's own answer, read whether or not the default's can be: its
+    // hourly wind is a source in its own right against the report. An answer
+    // with no wind, or one that cannot be read, is its failure.
+    let rrfsSeries: { current: WindAt[]; hourly: WindAt[]; m15: WindAt[] } | null = null;
+    if (omRrfsR.status === 'rejected') rec.rrfsError = msg(omRrfsR.reason);
+    else {
+      try {
+        const r = omRrfsR.value;
+        const rc = openMeteoCurrent(r);
+        const got = { current: rc ? [rc] : [], hourly: openMeteoSeries(r.hourly), m15: openMeteoSeries(r.minutely_15) };
+        if (!hasWind([got.current, got.hourly, got.m15])) rec.rrfsError = 'no wind values in the response';
+        else {
+          rrfsSeries = got;
+          rec.rrfs = { hourly: got.hourly };
+        }
+      } catch (e) {
+        rec.rrfsError = `unreadable response: ${msg(e)}`;
+      }
+    }
     if (omR.status === 'fulfilled') {
       try {
         const { raw, res, fetchedAt } = omR.value;
@@ -304,6 +333,15 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
           cacheControl: res.headers.get('cache-control'),
           sameAsHrrr,
           ...(hrrrMaxDiff ? { hrrrMaxDiff } : {}),
+          // The day this turns true, Open-Meteo's default has become the
+          // RRFS; null when the RRFS's answer could not be compared.
+          sameAsRrfs: rrfsSeries
+            ? compareWindResponses([
+                [current ? [current] : [], rrfsSeries.current],
+                [hourly, rrfsSeries.hourly],
+                [m15, rrfsSeries.m15],
+              ]).same
+            : null,
         };
       } catch (e) {
         delete rec.om;
@@ -334,7 +372,8 @@ describe.skipIf(process.env.SURFACE_WIND_SAMPLE !== '1')('surface wind sample (o
       `METAR ${station.id} (${rec.metar?.source ?? '—'}): ${rec.metar ? `${rec.metar.group ?? '?'} ${fmt(rec.metar.wind)}` : rec.metarError}`,
       `NWS gridpoint hour: ${rec.nws ? fmt(nwsHour) : rec.nwsError}  updateTime ${rec.nws?.updateTime ?? '—'}  hourly product updateTime ${rec.nws?.hourlyUpdateTime ?? '—'}`,
       `Open-Meteo hourly (nearest): ${rec.om ? fmt(hourNear) : rec.omError}`,
-      `Open-Meteo current: ${rec.om ? fmt(rec.om.current) : rec.omError}  same as HRRR: ${rec.om?.sameAsHrrr ?? rec.omHrrrError ?? '—'}`,
+      `Open-Meteo current: ${rec.om ? fmt(rec.om.current) : rec.omError}  same as HRRR: ${rec.om?.sameAsHrrr ?? rec.omHrrrError ?? '-'}  same as RRFS: ${rec.om?.sameAsRrfs ?? rec.rrfsError ?? '-'}`,
+      `Open-Meteo RRFS hourly (nearest): ${rec.rrfs ? fmt(shownAt(rec, 'rrfsHourly')) : rec.rrfsError}`,
       ...OM_DOMAINS.map((d) => `  ${d}: init ${omMeta[d]?.init ?? '—'} avail ${omMeta[d]?.avail ?? '—'}`),
       `@@parity ${JSON.stringify(rec)}`,
     ]);

@@ -33,6 +33,7 @@ out.push(`hourly = 15-minute step at the same hour: ${s.hourlyIsM15.same} of ${s
   );
 }
 out.push(`default model = HRRR: ${s.defaultIsHrrr.same} of ${s.defaultIsHrrr.of}`);
+out.push(`default model = RRFS (compared from record version 3): ${s.defaultIsRrfs.same} of ${s.defaultIsRrfs.of}`);
 for (const d of s.defaultIsHrrr.diffs) {
   out.push(`  differed at ${d.at}: up to ${d.dir}°, ${d.spd} kt, gust ${d.gust} kt${d.shapeDiffers ? '; one side carried valid times or values the other did not, which these gaps do not measure' : ''}`);
 }

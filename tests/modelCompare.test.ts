@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { OPEN_METEO_FIXTURE } from '../src/api/fixtures/openMeteo';
 import { hourStartMs } from '../src/api/fixtures/_time';
 import { WINDS_ALOFT_LEVELS_AGL } from '../src/config/site';
-import { rrfsLogOf } from '../src/domain/modelCompare';
-import { normalizeOpenMeteo, OPEN_METEO_RRFS_MODEL, type RawOpenMeteo } from '../src/domain/normalize';
+import { cloudAt, rrfsLogOf } from '../src/domain/modelCompare';
+import { normalizeOpenMeteo, normalizeOpenMeteoClouds, OPEN_METEO_RRFS_MODEL, type RawOpenMeteo } from '../src/domain/normalize';
 import { interpolateWindsAloft } from '../src/domain/windsAloft';
 
 /* The comparison's record of the RRFS (scripts/schulzeCompare.live.ts, from
@@ -63,5 +63,27 @@ describe('rrfsLogOf: the RRFS table against the default, as the comparison logs 
   it('records an answer with no hours as no usable hour', () => {
     const empty = { ...OPEN_METEO_FIXTURE, hourly: { time: [] } } as unknown as RawOpenMeteo;
     expect(rrfsLogOf({ raw: empty }, null, now, validMs, defaultLevels, ELEV).error).toBe('no usable hour');
+  });
+
+  /* The card prints Open-Meteo's cloud cover as served, so the log keeps
+   * each model's figure for the hour rather than a difference. */
+  it('logs each model’s cloud cover for the hour, as served', () => {
+    const defaultCloud = cloudAt(normalizeOpenMeteoClouds(OPEN_METEO_FIXTURE), validMs);
+    expect(defaultCloud).toEqual({ total: 40, low: 10, mid: 30, high: 5 });
+    const cloudier = structuredClone(OPEN_METEO_FIXTURE) as unknown as RawOpenMeteo;
+    const h = cloudier.hourly as Record<string, (number | null)[]>;
+    h.cloud_cover = h.cloud_cover.map(() => 100);
+    const log = rrfsLogOf({ raw: cloudier }, null, now, validMs, defaultLevels, ELEV, defaultCloud);
+    expect(log.cloud).toEqual({ rrfs: { total: 100, low: 10, mid: 30, high: 5 }, default: { total: 40, low: 10, mid: 30, high: 5 } });
+  });
+
+  it('logs no cloud pair when either answer has none for the hour', () => {
+    expect(rrfsLogOf({ raw: iso }, null, now, validMs, defaultLevels, ELEV, null).cloud).toBeUndefined();
+    const none = structuredClone(OPEN_METEO_FIXTURE) as unknown as RawOpenMeteo;
+    const h = none.hourly as Record<string, unknown>;
+    for (const k of ['cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high']) delete h[k];
+    const defaultCloud = { total: 40, low: 10, mid: 30, high: 5 };
+    expect(rrfsLogOf({ raw: none }, null, now, validMs, defaultLevels, ELEV, defaultCloud).cloud).toBeUndefined();
+    expect(cloudAt([], validMs)).toBeNull();
   });
 });

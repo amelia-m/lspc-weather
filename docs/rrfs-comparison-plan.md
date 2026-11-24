@@ -2,7 +2,7 @@
 
 > Open-Meteo figures in this document are weather data by [Open-Meteo.com](https://open-meteo.com/), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), compared as the document describes. See [open-meteo-terms.md](open-meteo-terms.md).
 
-Draft, 2026-11-24, at the maintainer's word ("plan ongoing comparison. roll into other ongoing data comparison workflows"). Step 1 is built and merged; nothing else here is.
+Draft, 2026-11-24, at the maintainer's word ("plan ongoing comparison. roll into other ongoing data comparison workflows"). Steps 1 and 3 to 5 are built (she said to go ahead with 3 to 5 the same day); 2, 6 and 7 are not.
 
 ## Why
 
@@ -23,9 +23,9 @@ Each rolls into a workflow that already runs, on GitHub's runners, never the san
 
 1. **Winds aloft, in the comparison (done 2026-11-24, PR #317).** `scripts/schulzeCompare.live.ts` logs the RRFS table minus the default at the same hour, with the RRFS run's metadata (`rrfs` on the record), nine runs a day. The first record from a runner, 2026-11-24 04:06Z (run 45323976716): 22 samples, all 15 rows, the 18Z RRFS run. About 90 calls a day. Answers 1 and 3 once summarised.
 2. **The summary and `#parity`.** `paritySummary.ts` reads the `rrfs` rows: counts and spreads by altitude, as the page shows the Schulze rows, plus the run's age. Counts only, never a grade. Wait for two weeks of records (about 120) before drawing it. No new requests.
-3. **The 10 m wind, in the surface-wind sampler.** `scripts/surfaceWindCompare.live.ts` already asks once more with `models=ncep_hrrr_conus` and logs whether the default equals it (`sameAsHrrr`). Add the same request for the RRFS: its 10 m series as a fourth forecast source beside `nws`, `omHourly` and `om15`, paired against KPMV by `pairsVsMetar`, and the RRFS domain's run metadata beside the HRRR's. The request is a handful of surface variables for five hours, weight 1, about 85 a day. Answers 2 and 3, and feeds the sample section of `#wind-errors` through the weekly refresh. Bump `SURFACE_WIND_RECORD_VERSION`.
-4. **The switch detector.** The sampler's `sameAsHrrr` goes false when the default stops being the HRRR, and a new `sameAsRrfs` goes true when it becomes the RRFS. The parity-summary workflow, which already archives the sampler's records daily, opens one issue the first day either holds for most of a day's samples. No new requests. Answers 6.
-5. **Cloud cover.** The comparison's RRFS answer already carries `cloud_cover` and its three bands, since it is the app's own request; log those four figures beside the default's on the same record. No new requests. Answers 5.
+3. **The 10 m wind, in the surface-wind sampler (built 2026-11-24).** `scripts/surfaceWindCompare.live.ts` already asks once more with `models=ncep_hrrr_conus` and logs whether the default equals it (`sameAsHrrr`). It now makes the same request of the RRFS: its 10 m series as a fourth forecast source beside `nws`, `omHourly` and `om15`, paired against KPMV by `pairsVsMetar`, and the RRFS domain's run metadata beside the HRRR's. The request is three surface variables, weight 1; the archive's recent days hold about 140 runs, so about 140 calls a day. Answers 2 and 3, and feeds the sample section of `#wind-errors` through the weekly refresh as a fifth row, "Open-Meteo RRFS hourly, from 2026-11-24". Records are version 3 (`rrfs`, `om.sameAsRrfs`). First record, from the sandbox at 05:33Z: RRFS 40° 2.7 kt against the default's 46° 2.2 kt and KPMV's 080° 3 kt; same as the HRRR, not the RRFS.
+4. **The switch detector (built 2026-11-24).** `defaultModelByDay` counts, per UTC day, the runs whose default differed from the HRRR by name, matched the RRFS by name, or could not get the HRRR by name at all; `defaultModelSwitched` calls a day when any of the three holds for more than half of at least twenty runs. `scripts/defaultModelCheck.ts` runs daily in parity-summary.yml, on `main` only, and opens one issue, labelled `model-switch`, for a change: the notice is given for the change's first seven days (`DEFAULT_MODEL_NOTICE_DAYS`), so a missed run does not lose it, and no issue is opened while one with the label has been opened since the change began (the review of 2026-11-24; the step run against a stub `gh` in six cases, the real `gh issue list --search` not tried). Run over the archive's 47 days to 2026-11-23, no day reads as a switch: the most that differed was 15 of 180, the most HRRR failures 13 of 137. No new requests. Answers 6.
+5. **Cloud cover (built 2026-11-24).** The comparison's RRFS answer already carries `cloud_cover` and its three bands, since it is the app's own request; the record now holds those four figures for the hour beside the default's (`rrfs.cloud`), as served. First record: both 100%, low cloud 0% against 5%. No new requests. Answers 5.
 6. **The 500 ft row.** From the records of step 1, set the 500 ft difference beside the 1,000 ft one: if the 500 ft row moves more than its neighbours, the missing 180 m sample is the likely reason. A reading of the log, written up once in this doc. Answers 4.
 7. **The archive by lead, on `#wind-errors`.** The page's Open-Meteo section draws the archived 10 m wind by run against KPMV. Add the RRFS as a second model there, fetched by the weekly ceiling data refresh. Depends on Open-Meteo's previous-runs API serving `ncep_rrfs_conus`, which is not checked; check with one request from a runner before building.
 
@@ -35,8 +35,8 @@ The NWS side changed on the same day: SCN 26-89 moved the National Blend of Mode
 
 ## For the maintainer
 
-1. Go-ahead for steps 3 to 5, which are small and independent of each other.
+1. Given 2026-11-24: steps 3 to 5.
 2. Whether step 2 waits two weeks or shows the rows as they come.
-3. Whether the issue in step 4 is wanted, or a line on Data health is enough.
+3. Step 4 opens an issue, as planned; say if a line on Data health is wanted too.
 4. Whether to split the error pages at 2026-11-03.
 5. When the default does switch: keep naming no model, as Mark Schulze's tool does, so the two stay comparable; or name one.

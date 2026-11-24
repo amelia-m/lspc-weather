@@ -27,12 +27,13 @@ import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../src/config/site';
 import {
   coerceOpenMeteoTimes,
   normalizeOpenMeteo,
+  normalizeOpenMeteoClouds,
   OPEN_METEO_RRFS_MODEL,
   openMeteoWindsUrl,
   type RawOpenMeteo,
 } from '../src/domain/normalize';
 import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
-import { rrfsLogOf, type ModelAnswer } from '../src/domain/modelCompare';
+import { cloudAt, rrfsLogOf, type ModelAnswer } from '../src/domain/modelCompare';
 import { appRawLevels, rawGap, schulzeRawLevels } from '../src/domain/runSplit';
 import { RUN_DOMAINS, runMeta, schulze, type Schulze } from './schulzeFetch';
 
@@ -127,7 +128,10 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   }
   const appHour = new Date(validMs).getUTCHours();
   const [rrfsRaw, rrfsRun] = await rrfsP;
-  const rrfs = rrfsLogOf(rrfsRaw, rrfsRun, now, validMs, levels, dz.elevationFt);
+  // The default's cloud cover for the hour: the second figure on the
+  // Ceiling & sky card, logged beside the RRFS's.
+  const defaultCloud = cloudAt(normalizeOpenMeteoClouds(coerceOpenMeteoTimes(raw)), validMs);
+  const rrfs = rrfsLogOf(rrfsRaw, rrfsRun, now, validMs, levels, dz.elevationFt, defaultCloud);
 
   // The app snaps to the nearest hour; the tool's offset 0 is the hour in
   // progress. Fetch both candidates and use the one that matches.
@@ -199,6 +203,11 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
       : `RRFS (${rrfs.model}) minus the default table, same hour (${rrfs.samples} samples, ${rrfs.levels} rows): ` +
           (rrfs.rows ?? []).map((r) => `${r.ft}: ${r.dDir}°/${r.dSpd} kt`).join('  '),
   );
+  if (rrfs.cloud) {
+    const c = (x: { total: number | null; low: number | null; mid: number | null; high: number | null }): string =>
+      `${x.total ?? '-'}% (low ${x.low ?? '-'}, mid ${x.mid ?? '-'}, high ${x.high ?? '-'})`;
+    out.push(`cloud cover, same hour: RRFS ${c(rrfs.cloud.rrfs)} · default ${c(rrfs.cloud.default)}`);
+  }
   if (ms == null) {
     say([...out, 'No Schulze table for the same hour; nothing compared.', record({ ...base, aligned: null })]);
     return;
