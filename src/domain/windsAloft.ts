@@ -250,3 +250,39 @@ export function interpolateAsSchulze(
   return out;
 }
 
+/** One altitude of one winds table against the same altitude of another. */
+export interface LevelDiff {
+  ft: number;
+  /** Direction difference the short way round, degrees, -180 to 180. */
+  dDir: number;
+  dSpd: number;
+  /** null when either table has no temperature there. */
+  dT: number | null;
+}
+
+/**
+ * One winds table minus another, altitude by altitude: `levels` minus
+ * `base`, at the altitudes both have. For the comparison's log
+ * (scripts/schulzeCompare.live.ts), where the same hour is built from two
+ * Open-Meteo models and the question is how far the tables on screen would
+ * move if the model changed. An altitude only one table reaches is left out,
+ * not counted as a difference: a model that serves fewer levels shows as
+ * fewer rows. Direction goes the short way round, so 350 against 010 is -20,
+ * not 340. Speeds are as the tables hold them; temperature to a tenth, the
+ * tables' precision.
+ */
+export function levelDiffs(levels: readonly WindsAloftLevel[], base: readonly WindsAloftLevel[]): LevelDiff[] {
+  const byAlt = new Map(base.map((l) => [l.altitudeFtAgl, l]));
+  const out: LevelDiff[] = [];
+  for (const l of levels) {
+    const b = byAlt.get(l.altitudeFtAgl);
+    if (!b) continue;
+    out.push({
+      ft: l.altitudeFtAgl,
+      dDir: ((l.directionDeg - b.directionDeg + 540) % 360) - 180,
+      dSpd: l.speedKt - b.speedKt,
+      dT: l.tempC != null && b.tempC != null ? Math.round((l.tempC - b.tempC) * 10) / 10 : null,
+    });
+  }
+  return out;
+}

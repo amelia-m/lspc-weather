@@ -7,6 +7,7 @@ import type { WindsAloftLevel } from '../src/domain/types';
 import {
   interpAngle,
   interpolateWindsAloft,
+  levelDiffs,
   windsAloftTop,
   type RawWindSample,
 } from '../src/domain/windsAloft';
@@ -330,3 +331,38 @@ describe('the note on why the Surface row differs from Schulze’s', () => {
   });
 });
 
+/* The comparison logs the hour's table from a second Open-Meteo model
+ * against the app's default (scripts/schulzeCompare.live.ts, from
+ * 2026-11-24). The differences are what the log is, so the arithmetic is
+ * held here, off the network. */
+describe('levelDiffs: one winds table minus another', () => {
+  const at = (agl: number, directionDeg: number, speedKt: number, tempC: number | null): WindsAloftLevel => ({
+    altitudeFtAgl: agl,
+    altitudeFtMsl: 1182 + agl,
+    directionDeg,
+    speedKt,
+    tempC,
+  });
+
+  it('subtracts the base, row by row', () => {
+    expect(levelDiffs([at(3000, 250, 22, -3.4)], [at(3000, 240, 25, -4)])).toEqual([
+      { ft: 3000, dDir: 10, dSpd: -3, dT: 0.6 },
+    ]);
+  });
+
+  it('takes the direction the short way round north', () => {
+    // 350 against 010 is 20 degrees to the left, not 340 to the right.
+    expect(levelDiffs([at(1000, 350, 10, 0)], [at(1000, 10, 10, 0)])[0].dDir).toBe(-20);
+    expect(levelDiffs([at(1000, 10, 10, 0)], [at(1000, 350, 10, 0)])[0].dDir).toBe(20);
+  });
+
+  it('leaves out an altitude only one table reaches, rather than counting it', () => {
+    const rows = levelDiffs([at(0, 180, 5, 10), at(500, 190, 8, 9)], [at(500, 200, 8, 9), at(1000, 210, 12, 8)]);
+    expect(rows.map((r) => r.ft)).toEqual([500]);
+  });
+
+  it('has no temperature difference where either table has none', () => {
+    expect(levelDiffs([at(2000, 200, 10, null)], [at(2000, 200, 10, 5)])[0].dT).toBeNull();
+    expect(levelDiffs([at(2000, 200, 10, 5)], [at(2000, 200, 10, null)])[0].dT).toBeNull();
+  });
+});

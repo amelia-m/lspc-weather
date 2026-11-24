@@ -27,10 +27,13 @@ import { SITE, WINDS_ALOFT_LEVELS_AGL } from '../src/config/site';
 import {
   coerceOpenMeteoTimes,
   normalizeOpenMeteo,
+  OPEN_METEO_RRFS_MODEL,
   openMeteoWindsUrl,
   type RawOpenMeteo,
 } from '../src/domain/normalize';
-import { interpolateAsSchulze, interpolateWindsAloft } from '../src/domain/windsAloft';
+import { interpolateAsSchulze, interpolateWindsAloft, levelDiffs } from '../src/domain/windsAloft';
+import type { RrfsLog } from '../src/domain/paritySummary';
+import type { WindsAloftLevel } from '../src/domain/types';
 import { appRawLevels, rawGap, schulzeRawLevels } from '../src/domain/runSplit';
 import { RUN_DOMAINS, runMeta, schulze, type Schulze } from './schulzeFetch';
 
@@ -64,6 +67,57 @@ function rowDiff(
   };
 }
 
+/**
+ * The same request with Open-Meteo's RRFS named as the model, and its run
+ * metadata, started with the app's own request so both are answered in the
+ * same minute. Logged from 2026-11-24 (the maintainer's word): NOAA replaced
+ * the NAM with the RRFS on 2026-11-03 and Open-Meteo says the HRRR, which
+ * the app's unnamed request has been served from here, goes with RRFSv2. The
+ * log is how far the table on screen would move, measured before it does.
+ * Never throws: a failure is a record of the failure.
+ */
+async function rrfsAnswer(lat: number, lon: number): Promise<{ raw: RawOpenMeteo } | { error: string }> {
+  try {
+    const res = await fetch(openMeteoWindsUrl(lat, lon, OPEN_METEO_RRFS_MODEL), { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    return { raw: (await res.json()) as RawOpenMeteo };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+/** The RRFS table for the hour the app showed, minus the app's default
+ *  table, row by row (`levelDiffs`). A different hour, or an answer that
+ *  cannot be read, is logged as that. */
+function rrfsLog(
+  answer: { raw: RawOpenMeteo } | { error: string },
+  run: RrfsLog['run'],
+  now: number,
+  validMs: number,
+  defaultLevels: WindsAloftLevel[],
+  elevationFt: number,
+): RrfsLog {
+  const model = OPEN_METEO_RRFS_MODEL;
+  if ('error' in answer) return { model, run, error: answer.error };
+  try {
+    const n = normalizeOpenMeteo(coerceOpenMeteoTimes(answer.raw), now);
+    if (n.validMs == null || n.samples.length === 0) return { model, run, error: 'no usable hour' };
+    if (n.validMs !== validMs) return { model, run, error: `a different hour: ${new Date(n.validMs).toISOString()}` };
+    const levels = interpolateWindsAloft(n.samples, elevationFt, WINDS_ALOFT_LEVELS_AGL);
+    return {
+      model,
+      run,
+      // How much of the profile the model serves: every sample the request
+      // names that came back with a wind, and the rows they reach.
+      samples: n.samples.length,
+      levels: levels.length,
+      rows: levelDiffs(levels, defaultLevels),
+    };
+  } catch (e) {
+    return { model, run, error: `unreadable body: ${(e as Error).message}` };
+  }
+}
+
 it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same valid hour', async () => {
   const dz = SITE.dz;
   const now = Date.now();
@@ -74,6 +128,9 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
   // Started with the request, so it says which runs the servers held while
   // the request was served. Awaited by every record, the failures too.
   const runsP = Promise.all(RUN_DOMAINS.map(async (d) => [d, await runMeta(d)] as const)).then(Object.fromEntries);
+  // The RRFS's answer and run, asked at once; read below, once the app's own
+  // table is built, and by no record of a failed default request.
+  const rrfsP = Promise.all([rrfsAnswer(dz.lat, dz.lon), runMeta(OPEN_METEO_RRFS_MODEL)]);
   let raw: RawOpenMeteo;
   try {
     const res = await fetch(openMeteoWindsUrl(dz.lat, dz.lon), { signal: AbortSignal.timeout(20_000) });
@@ -105,6 +162,8 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     return;
   }
   const appHour = new Date(validMs).getUTCHours();
+  const [rrfsRaw, rrfsRun] = await rrfsP;
+  const rrfs = rrfsLog(rrfsRaw, rrfsRun, now, validMs, levels, dz.elevationFt);
 
   // The app snaps to the nearest hour; the tool's offset 0 is the hour in
   // progress. Fetch both candidates and use the one that matches.
@@ -168,7 +227,14 @@ it('prints this app’s winds-aloft profile beside Mark Schulze’s at the same 
     dz: `${SITE.dz.lat},${SITE.dz.lon}`,
     unaligned,
     omRuns: await runsP,
+    rrfs,
   };
+  out.push(
+    rrfs.error != null
+      ? `RRFS (${rrfs.model}) at the same hour: ${rrfs.error}`
+      : `RRFS (${rrfs.model}) minus the default table, same hour (${rrfs.samples} samples, ${rrfs.levels} rows): ` +
+          (rrfs.rows ?? []).map((r) => `${r.ft}: ${r.dDir}°/${r.dSpd} kt`).join('  '),
+  );
   if (ms == null) {
     say([...out, 'No Schulze table for the same hour; nothing compared.', record({ ...base, aligned: null })]);
     return;
