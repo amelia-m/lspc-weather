@@ -38,7 +38,8 @@ export function CeilingSkyPanel({
   current: CurrentConditions | null;
   hourly: HourlyPoint[];
   /** Open-Meteo's hourly cloud cover (`snapshot.openMeteoClouds`); null
-   *  until it loads, and the card then shows the NWS forecast alone. Each figure is matched to an NWS hour by its time. */
+   *  until it loads, and the card then shows the NWS forecast alone. Each
+   *  figure is matched to an NWS hour by its time. */
   omClouds?: OpenMeteoCloudHour[] | null;
   /** The NBM's hourly bulletin for KPMV (`snapshot.nbm`), through the
    *  relay; null without it. Its lowest cloud base, matched by hour. */
