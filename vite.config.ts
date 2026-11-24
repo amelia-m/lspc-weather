@@ -10,7 +10,9 @@ import { connectSources } from './src/config/tafRelay';
 // - style-src needs 'unsafe-inline' because React style={{...}} attributes
 //   are inline styles.
 // - img-src allows radar.weather.gov for the radar loop image,
-//   tiles.arcgis.com for FAA's VFR sectional tiles on the Sectional card, and
+//   tiles.arcgis.com for FAA's VFR sectional tiles on the Sectional card,
+//   basemap.nationalmap.gov for USGS's aerial imagery under the jump-run
+//   line on the Drift card (`DZ_IMAGERY_TILES`; a test holds the two), and
 //   GoatCounter's /count URL alone, which page counts are sent to as an image
 //   request (src/config/pageCount.ts, docs/page-counts.md).
 // - connect-src covers the live APIs (NWS, Open-Meteo, and the Iowa
@@ -21,7 +23,7 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://radar.weather.gov https://tiles.arcgis.com https://amelia-m.goatcounter.com/count",
+  "img-src 'self' data: https://radar.weather.gov https://tiles.arcgis.com https://basemap.nationalmap.gov https://amelia-m.goatcounter.com/count",
   `connect-src 'self' ${connectSources().join(' ')}`,
   "base-uri 'self'",
   "form-action 'none'",

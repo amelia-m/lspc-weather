@@ -1,3 +1,4 @@
+import { DZ_IMAGERY_TILES } from '../src/config/sources';
 import { describe, expect, it } from 'vitest';
 // Raw imports: the typecheck has no Node types for the tests.
 import appPage from '../index.html?raw';
@@ -82,13 +83,16 @@ describe('the site icon', async () => {
     expect(svg?.trimEnd().endsWith('</svg>')).toBe(true);
   });
 
-  it('is same-origin under both policies, whose img-src is self plus the radar, sectional and count URLs', () => {
+  it('is same-origin under both policies, whose img-src is self plus the radar, sectional, aerial imagery and count URLs', () => {
     // The app's policy is injected at build time from vite.config.ts. The
     // GoatCounter URL is page counting's (tests/pageCount.test.ts), a single
     // path rather than a host.
     expect(imgSrc(viteConfig)).toBe(
-      "'self' data: https://radar.weather.gov https://tiles.arcgis.com https://amelia-m.goatcounter.com/count",
+      "'self' data: https://radar.weather.gov https://tiles.arcgis.com https://basemap.nationalmap.gov https://amelia-m.goatcounter.com/count",
     );
+    // The aerial imagery's host is the one the tiles are asked of.
+    expect(imgSrc(viteConfig).split(' ')).toContain(DZ_IMAGERY_TILES.origin);
+    expect(DZ_IMAGERY_TILES.url(14, 1, 2).startsWith(`${DZ_IMAGERY_TILES.origin}/`)).toBe(true);
     expect(imgSrc(ceilingPage)).toBe("'self' data:");
     const svg = publicFile(servedAt(iconLink(appPage)?.href ?? '', '')) ?? '';
     // Nothing for the icon to fetch: the only URL in it is the SVG namespace.

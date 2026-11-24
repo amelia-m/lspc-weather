@@ -5,6 +5,7 @@ import { estimateExitSeparation, secondsToCover, windAtAltitude, windOnTrack } f
 import { CITATIONS, EXIT_SEPARATION_FT, JUMP_RUN_AIRSPEED_FACT, JUMP_RUN_AIRSPEED_KT } from '../config/thresholds';
 import { SelectField } from './common/SelectField';
 import { SourceLink } from './common/SourceLink';
+import { JumpRunMap } from './JumpRunMap';
 
 /** Jump-run bearings offered: every ten degrees, as a pilot gives one. */
 const BEARINGS = Array.from({ length: 36 }, (_, i) => i * 10);
@@ -107,6 +108,9 @@ export function ExitSeparation({
           </label>
         </div>
       )}
+
+      {/* The bearing as a picture, under the box that sets it. */}
+      {wind && <JumpRunMap trackDeg={track} />}
 
       {/* The words in the labels, which may wrap; each figure short, on one
           line (the Wing loading card's grid): on a phone a value column of
