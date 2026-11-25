@@ -195,6 +195,7 @@ async function observe(
       panels: document.querySelectorAll('.panel').length,
       slides: document.querySelectorAll('.reveal .slides section').length,
       hourNavs: document.querySelector('.fc-nav') != null,
+      trialLink: document.querySelector('.beta-note a')?.getAttribute('href') ?? null,
       sectionBar: [...document.querySelectorAll('nav.section-bar button')].map((b) => (b.textContent ?? '').trim()),
       canopyCards: ['Exit weight & wing loading', 'Canopy Risk Quotient'].filter((t) => text.includes(t)).length,
       advisoryList: document.querySelector('.advisory-panel') != null,
@@ -209,6 +210,7 @@ async function observe(
   o.crashed = seen.crashed;
   o.sources = seen.rows.length ? seen.rows : null;
   if (page.name === 'Jumpers') {
+    o.checks.push({ name: 'the standard page links the trial layout', ok: seen.trialLink?.endsWith('beta/') === true, detail: seen.trialLink ?? 'no link' });
     o.checks.push({
       name: 'radar image drew',
       ok: !seen.radarFailed && !!seen.radar?.complete && (seen.radar?.natural ?? 0) > 0,
@@ -221,6 +223,8 @@ async function observe(
       ok: seen.sectionBar.length === 5,
       detail: seen.sectionBar.length ? seen.sectionBar.join(', ') : 'no bar',
     });
+    // Each layout links the other: the way out of the trial, and into it.
+    o.checks.push({ name: 'the trial layout links the standard page', ok: seen.trialLink != null && !seen.trialLink.includes('beta'), detail: seen.trialLink ?? 'no link' });
   } else if (page.name !== 'Talk' && page.name !== 'Ceiling errors') {
     // And nowhere else: the standard pages are as they were.
     o.checks.push({ name: 'no section bar on a standard page', ok: seen.sectionBar.length === 0, detail: seen.sectionBar.join(', ') || undefined });

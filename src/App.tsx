@@ -54,6 +54,7 @@ import { WingLoadingPanel } from './components/WingLoadingPanel';
 import { CanopyRiskPanel } from './components/CanopyRiskPanel';
 import { AboutPage } from './components/AboutPage';
 import { SectionBar } from './components/SectionBar';
+import { TrialNote } from './components/TrialNote';
 import { CardAnchor } from './components/common/cardAnchor';
 import { VIEW_SECTIONS } from './config/sections';
 import { isBetaPath } from './domain/sectionNav';
@@ -422,13 +423,14 @@ export default function App(): JSX.Element {
         ))}
       </nav>
 
-      {/* The trial layout says it is one, and where the standard page is. */}
-      {beta && (
-        <p className="beta-note muted small">
-          Trial layout: the bar {showBar ? '' : 'on the Jumpers and Pilots tabs '}jumps between sections of the page.{' '}
-          <a href={`${import.meta.env.BASE_URL}${window.location.hash}`}>The standard layout</a>
-        </p>
-      )}
+      {/* The standard page offers the trial layout; the trial says it is
+          one, and where the standard page is. */}
+      <TrialNote
+        beta={beta}
+        hasBar={VIEW_SECTIONS[view].length > 0}
+        base={import.meta.env.BASE_URL}
+        hash={window.location.hash}
+      />
 
       <DashboardDisclaimer />
 

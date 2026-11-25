@@ -5,6 +5,7 @@ import { activeSection, isBetaPath } from '../src/domain/sectionNav';
 import { VIEW_SECTIONS } from '../src/config/sections';
 import { VIEW_CARDS, type View } from '../src/config/views';
 import { SectionBar } from '../src/components/SectionBar';
+import { TrialNote } from '../src/components/TrialNote';
 import { Panel } from '../src/components/common/Panel';
 import { CardAnchor } from '../src/components/common/cardAnchor';
 
@@ -100,6 +101,26 @@ describe('the section bar', () => {
 
   it('is not drawn for a tab with no sections', () => {
     expect(renderToStaticMarkup(createElement(SectionBar, { sections: VIEW_SECTIONS.canopy }))).toBe('');
+  });
+});
+
+describe('the line that joins the two layouts', () => {
+  const note = (beta: boolean, hasBar: boolean, hash = '') =>
+    renderToStaticMarkup(createElement(TrialNote, { beta, hasBar, base: '/lspc-weather/', hash }));
+
+  it('offers the trial from the standard page, at the top, keeping the tab', () => {
+    // The maintainer, 2026-11-25: "yes link, probably at top".
+    expect(note(false, true)).toContain('<a href="/lspc-weather/beta/">a layout with a bar to jump between sections</a>');
+    expect(note(false, true, '#pilots')).toContain('href="/lspc-weather/beta/#pilots"');
+    // Not on a tab the trial changes nothing on.
+    expect(note(false, false, '#canopy')).toBe('');
+  });
+
+  it('on the trial says it is one and gives the way back, keeping the tab', () => {
+    expect(note(true, true)).toContain('Trial layout: the bar jumps between sections of the page.');
+    expect(note(true, true, '#pilots')).toContain('<a href="/lspc-weather/#pilots">The standard layout</a>');
+    expect(note(true, false, '#canopy')).toContain('the bar on the Jumpers and Pilots tabs jumps between sections');
+    expect(note(true, true)).not.toContain('beta/');
   });
 });
 
