@@ -12,8 +12,20 @@ const DEFAULT_ZOOM = 14;
 /** Half the window the mosaic covers, in px: wider than any card, as the
  *  Sectional card's is, so the frame never shows an edge. */
 const HALF_WIDTH = 360;
-const HALF_HEIGHT = 130;
-/** The frame's height is twice this (app.css `.jumprun-frame`). */
+const HALF_HEIGHT = 140;
+/** Half the frame's height on screen (app.css `.jumprun-frame`, 320 px). */
+const FRAME_HALF_HEIGHT_PX = 160;
+/**
+ * The image is drawn a little larger than its tiles: tiles come in whole
+ * zoom levels, each twice the last, and the maintainer wanted it "slightly"
+ * closer while still holding the offsets the club flies (2026-11-25: "we
+ * usually don't go outside of .5 north of the pin or maybe .4 south"). At
+ * zoom 14 half a nautical mile is 128 tile px; scaled by this it is 147 px
+ * of the frame's 160, so that whole range shows at the opening zoom with a
+ * tenth's ticks 29 px apart. The overlay is scaled with the tiles, so the
+ * two stay registered.
+ */
+const IMAGE_SCALE = 1.15;
 const SCALE_FT = 1000;
 
 /** The offset a jump run is called with, from the GPS point: tenths of a
@@ -37,10 +49,11 @@ const TOWARD_WORD: Record<number, string> = {
   315: 'north-west',
 };
 const fmtTenths = (t: number): string => (t / 10).toFixed(1);
-/** The offset point is kept this near the centre, in px, by stepping the
- *  zoom out when an offset is set: inside the frame's 130 px half-height
- *  with room for the line either side. */
-const OFFSET_FIT_PX = 100;
+/** The offset point is kept this near the centre, in tile px, by stepping
+ *  the zoom out when an offset is set: inside the frame's half-height with
+ *  10 px of margin for the diamond. 130 px, so the club's half mile (128 px
+ *  at zoom 14) does not step it out. */
+const OFFSET_FIT_PX = (FRAME_HALF_HEIGHT_PX - 10) / IMAGE_SCALE;
 /** Ticks nearer than this run together, so the tenths give way to half
  *  miles (at the widest zoom a tenth is 6 px). */
 const MIN_TICK_GAP_PX = 10;
@@ -83,18 +96,21 @@ const pts = (ps: readonly { x: number; y: number }[]): string => ps.map((p) => `
 export function JumpRunMap({
   trackDeg,
   initialOffset,
+  initialZoom,
 }: {
   trackDeg: number;
   /** For tests, which cannot work the boxes: the offset the image opens on. */
   initialOffset?: JumpRunOffset;
+  /** For tests, which cannot press the zoom buttons. */
+  initialZoom?: number;
 }): JSX.Element {
   const [tenths, setTenths] = useState(initialOffset?.tenths ?? 0);
   const [toward, setToward] = useState(initialOffset?.towardDeg ?? 0);
-  const [zoom, setZoom] = useState(() => Math.min(DEFAULT_ZOOM, fitZoom(initialOffset?.tenths ?? 0)));
+  const [zoom, setZoom] = useState(() => initialZoom ?? Math.min(DEFAULT_ZOOM, fitZoom(initialOffset?.tenths ?? 0)));
   const [failed, setFailed] = useState(false);
   const { dz, gpsPin } = SITE;
   const tiles = tilesAround(gpsPin.lat, gpsPin.lon, zoom, HALF_WIDTH, HALF_HEIGHT);
-  const scalePx = feetToPixels(SCALE_FT, gpsPin.lat, zoom);
+  const scalePx = feetToPixels(SCALE_FT, gpsPin.lat, zoom) * IMAGE_SCALE;
   const landing = pixelOffset(gpsPin, dz, zoom);
   const bearing = `${trackDeg === 0 ? 360 : trackDeg}° ${compass(trackDeg)}`;
   const offset = offsetPixels(tenths / 10, toward, gpsPin.lat, zoom);
@@ -140,40 +156,43 @@ export function JumpRunMap({
         role="img"
         aria-label={`Aerial image of ${dz.name}, north up, with a line through ${tenths > 0 ? offsetPoint : 'the drop zone’s GPS point'} on a bearing of ${bearing}`}
       >
-        {tiles.map((t) => (
-          <img
-            key={`${t.z}/${t.y}/${t.x}`}
-            className="sectional-tile"
-            src={DZ_IMAGERY_TILES.url(t.z, t.y, t.x)}
-            alt=""
-            width={TILE_PX}
-            height={TILE_PX}
-            loading="lazy"
-            style={{ left: `calc(50% + ${t.left}px)`, top: `calc(50% + ${t.top}px)` }}
-            onError={() => setFailed(true)}
-          />
-        ))}
-        <svg className="jumprun-overlay" width="1" height="1" aria-hidden="true">
-          {/* The run, drawn about the point it passes through: the GPS
-              point, or the offset from it. */}
-          <g transform={tenths > 0 ? `translate(${px1(offset.x)},${px1(offset.y)})` : undefined}>
-            {/* Dark under light: the line reads over pale fields and dark trees. */}
-            <line className="jumprun-casing" x1={line.from.x} y1={line.from.y} x2={line.to.x} y2={line.to.y} />
-            <line className="jumprun-line" x1={line.from.x} y1={line.from.y} x2={line.to.x} y2={line.to.y} />
-            <path className="jumprun-tick-casing" d={tickPath} />
-            <path className="jumprun-tick" d={tickPath} />
-            <polygon className="jumprun-arrow" points={pts(line.arrow)} />
-            {/* The offset point: a diamond, a third shape beside the cross
-                and the ring. */}
-            {tenths > 0 && <path className="jumprun-offset" d="M0,-6L6,0L0,6L-6,0Z" />}
-          </g>
-          {/* The landing area, where it lies from the GPS point. */}
-          <circle className="jumprun-dz" r="7" cx={landing.x.toFixed(1)} cy={landing.y.toFixed(1)} />
-          {/* The GPS point, at the centre: a cross, so the two marks differ
-              by shape and not by colour. */}
-          <path className="jumprun-pin-casing" d="M-8,0H8M0,-8V8" />
-          <path className="jumprun-pin" d="M-8,0H8M0,-8V8" />
-        </svg>
+        {/* Tiles and overlay in one layer, scaled together about the centre. */}
+        <div className="jumprun-layer" style={{ transform: `scale(${IMAGE_SCALE})` }}>
+          {tiles.map((t) => (
+            <img
+              key={`${t.z}/${t.y}/${t.x}`}
+              className="sectional-tile"
+              src={DZ_IMAGERY_TILES.url(t.z, t.y, t.x)}
+              alt=""
+              width={TILE_PX}
+              height={TILE_PX}
+              loading="lazy"
+              style={{ left: `calc(50% + ${t.left}px)`, top: `calc(50% + ${t.top}px)` }}
+              onError={() => setFailed(true)}
+            />
+          ))}
+          <svg className="jumprun-overlay" width="1" height="1" aria-hidden="true">
+            {/* The run, drawn about the point it passes through: the GPS
+                point, or the offset from it. */}
+            <g transform={tenths > 0 ? `translate(${px1(offset.x)},${px1(offset.y)})` : undefined}>
+              {/* Dark under light: the line reads over pale fields and dark trees. */}
+              <line className="jumprun-casing" x1={line.from.x} y1={line.from.y} x2={line.to.x} y2={line.to.y} />
+              <line className="jumprun-line" x1={line.from.x} y1={line.from.y} x2={line.to.x} y2={line.to.y} />
+              <path className="jumprun-tick-casing" d={tickPath} />
+              <path className="jumprun-tick" d={tickPath} />
+              <polygon className="jumprun-arrow" points={pts(line.arrow)} />
+              {/* The offset point: a diamond, a third shape beside the cross
+                  and the ring. */}
+              {tenths > 0 && <path className="jumprun-offset" d="M0,-6L6,0L0,6L-6,0Z" />}
+            </g>
+            {/* The landing area, where it lies from the GPS point. */}
+            <circle className="jumprun-dz" r="7" cx={landing.x.toFixed(1)} cy={landing.y.toFixed(1)} />
+            {/* The GPS point, at the centre: a cross, so the two marks differ
+                by shape and not by colour. */}
+            <path className="jumprun-pin-casing" d="M-8,0H8M0,-8V8" />
+            <path className="jumprun-pin" d="M-8,0H8M0,-8V8" />
+          </svg>
+        </div>
         <span className="jumprun-north" aria-hidden="true">
           N ↑
         </span>

@@ -13,6 +13,12 @@ import type { WindsAloftLevel } from '../src/domain/types';
  * 2026-11-24): the line through the drop zone's point and an arrow in the
  * direction of flight. Screen y grows south. */
 
+/** The image's scale and the frame's half-height on screen (JumpRunMap.tsx,
+ *  app.css `.jumprun-frame` at 320 px): what the reader sees is the tiles'
+ *  pixels times the first, inside the second. */
+const IMAGE_SCALE = 1.15;
+const FRAME_HALF_HEIGHT = 160;
+
 const near = (p: { x: number; y: number }, x: number, y: number): void => {
   expect(p.x).toBeCloseTo(x, 6);
   expect(p.y).toBeCloseTo(y, 6);
@@ -157,15 +163,16 @@ describe('the jump run over the aerial image', () => {
     // The cross is drawn about the origin, which the line passes through.
     expect(html).toContain('<path class="jumprun-pin" d="M-8,0H8M0,-8V8"');
     // The same place at any zoom: twice the pixels one level in, which at
-    // the closest zoom offered is still inside the frame's 130 px half-height.
+    // the closest zoom offered is still inside the frame's half-height.
     const closest = pixelOffset(SITE.gpsPin, SITE.dz, DZ_IMAGERY_TILES.maxZoom);
     expect(closest.x).toBeCloseTo(off.x * 2 ** (DZ_IMAGERY_TILES.maxZoom - 14), 6);
-    expect(Math.abs(closest.y)).toBeLessThan(130 - 7);
+    expect(Math.abs(closest.y) * IMAGE_SCALE).toBeLessThan(FRAME_HALF_HEIGHT - 7);
   });
 
   it('sizes the bar to 1,000 ft on the ground and says what each mark is, and is not', () => {
     const html = map(230);
-    expect(html).toMatch(/class="jumprun-scale" style="width:42\.2px"[^>]*>1,000 ft</);
+    // 42.2 px of tiles at zoom 14, drawn at the image's scale.
+    expect(html).toContain(`class="jumprun-scale" style="width:${(feetToPixels(1000, SITE.gpsPin.lat, 14) * IMAGE_SCALE).toFixed(1)}px"`);
     // The GPS point is the maintainer's belief, and the key says so and when.
     expect(html).toContain(
       'Cross: the drop zone’s GPS point, as the maintainer believes it (2026-11-24; not confirmed against a pilot’s GPS). Ring: the landing area.',
@@ -216,25 +223,43 @@ describe('the jump run over the aerial image', () => {
     expect(offsetMap(270, 2, 90)).toContain('<g transform="translate(51.3,0.0)">');
   });
 
-  it('opens wide enough to hold a long offset, and counts half miles where tenths would run together', () => {
-    const html = offsetMap(90, 10, 180);
+  it('holds the offsets the club flies at the opening zoom, drawn slightly larger, and steps out only for a longer one', () => {
+    // The maintainer, 2026-11-25: "might zoom the map in slightly. we
+    // usually don't go outside of .5 north of the pin or maybe .4 south".
+    const north = offsetMap(90, 5, 0);
+    expect(north).toContain(`<div class="jumprun-layer" style="transform:scale(${IMAGE_SCALE})">`);
+    expect(IMAGE_SCALE).toBeGreaterThan(1);
+    for (const html of [north, offsetMap(90, 4, 180)]) expect(html).toContain('/MapServer/tile/14/');
+    // Half a nautical mile north: 128.2 tile px up, on screen inside the
+    // frame's half-height with the diamond's 7 px to spare.
+    expect(north).toContain('<g transform="translate(0.0,-128.2)">');
+    expect(nmToPixels(0.5, SITE.gpsPin.lat, 14) * IMAGE_SCALE + 7).toBeLessThan(FRAME_HALF_HEIGHT);
+    expect(north).toContain('Ticks: every 0.1 nautical mile from the diamond.');
+    // Past that the image steps out a level, and a mile still fits there.
+    expect(offsetMap(90, 6, 0)).toContain('/MapServer/tile/13/');
+    const mile = offsetMap(90, 10, 180);
+    expect(mile).toContain('/MapServer/tile/13/');
+    expect(mile).toContain('<g transform="translate(0.0,128.2)">');
+    // Drawn about the offset point, the line reaches that much farther, so
+    // a run that crosses the frame never stops short inside it: its ends
+    // are the mosaic's 500 px reach plus the offset's distance from the point.
+    expect(attr(mile, 'jumprun-line', 'x2')).toBeCloseTo(500 + nmToPixels(1, SITE.gpsPin.lat, 13), 3);
+    expect(attr(map(90), 'jumprun-line', 'x2')).toBeCloseTo(500, 3);
+  });
+
+  it('counts half miles at the widest zoom, where tenths would run together', () => {
+    const html = renderToStaticMarkup(
+      createElement(JumpRunMap, { trackDeg: 90, initialOffset: { tenths: 10, towardDeg: 180 }, initialZoom: 12 }),
+    );
     const srcs = [...html.matchAll(/<img[^>]*src="([^"]+)"/g)].map((m) => m[1]);
     expect(srcs.every((s) => s.includes('/MapServer/tile/12/'))).toBe(true);
-    // A nautical mile south at zoom 12: 64.1 px down, inside the 130 px half-height.
     expect(html).toContain('<g transform="translate(0.0,64.1)">');
     expect(html).toContain('Ticks: every 0.5 nautical mile at this zoom from the diamond.');
     const xs = tickXs(html);
     expect(xs).toContain(Number(nmToPixels(0.5, SITE.gpsPin.lat, 12).toFixed(1)));
     expect(xs).not.toContain(Number(nmToPixels(0.1, SITE.gpsPin.lat, 12).toFixed(1)));
-    // The 1,000 ft bar shrinks with the image: a quarter of its 42.2 px at zoom 14.
-    expect(html).toContain(`style="width:${feetToPixels(1000, SITE.gpsPin.lat, 12).toFixed(1)}px"`);
-    // Drawn about the offset point, the line reaches that much farther, so
-    // a run that crosses the frame never stops short inside it: its ends
-    // are the frame's 490 px reach plus the offset's 64.1 px from the point.
-    expect(attr(html, 'jumprun-line', 'x2')).toBeCloseTo(490 + nmToPixels(1, SITE.gpsPin.lat, 12), 3);
-    expect(attr(map(90), 'jumprun-line', 'x2')).toBeCloseTo(490, 3);
-    // A short offset leaves the opening zoom alone.
-    expect(offsetMap(90, 3, 0)).toContain('/MapServer/tile/14/');
+    // The 1,000 ft bar shrinks with the image: a quarter of its zoom-14 width.
+    expect(html).toContain(`style="width:${(feetToPixels(1000, SITE.gpsPin.lat, 12) * IMAGE_SCALE).toFixed(1)}px"`);
   });
 
   it('is under the bearing box on the Drift card’s exit-separation section, and absent with no wind to fly into', () => {

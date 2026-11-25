@@ -52,6 +52,7 @@ import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { WingLoadingPanel } from './components/WingLoadingPanel';
 import { CanopyRiskPanel } from './components/CanopyRiskPanel';
+import { AboutPage } from './components/AboutPage';
 import { DashboardDisclaimer } from './components/DashboardDisclaimer';
 import { ProfileSelector } from './components/ProfileSelector';
 import { AppFooter } from './components/AppFooter';
@@ -97,9 +98,9 @@ function toWindProfileId(raw: string | null): WindProfileId {
 
 /** Which page or dashboard tab is showing. A hash rather than a router: the
  *  app is a single page served from a GitHub Pages subpath, and `#citations`,
- *  `#parity`, `#wind-errors`, `#winds-method`, `#pilots` or `#canopy` needs no server rewrite, no dependency, and
+ *  `#parity`, `#wind-errors`, `#winds-method`, `#about`, `#pilots` or `#canopy` needs no server rewrite, no dependency, and
  *  survives a reload and a shared link. No hash is the Jumpers tab. */
-function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | 'pilots' | 'canopy' | null {
+function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | 'about' | 'pilots' | 'canopy' | null {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHashChange = (): void => setHash(window.location.hash);
@@ -110,6 +111,7 @@ function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | '
   if (hash === '#parity') return 'parity';
   if (hash === '#wind-errors') return 'wind-errors';
   if (hash === '#winds-method') return 'winds-method';
+  if (hash === '#about') return 'about';
   if (hash === VIEW_HASH.pilots) return 'pilots';
   if (hash === VIEW_HASH.canopy) return 'canopy';
   return null;
@@ -276,6 +278,7 @@ export default function App(): JSX.Element {
   if (route === 'parity') return <ParityRoute />;
   if (route === 'wind-errors') return <WindErrorsRoute />;
   if (route === 'winds-method') return <WindsMethodPage />;
+  if (route === 'about') return <AboutPage />;
 
   const cards: Record<CardId, JSX.Element> = {
     metar: <MetarPanel current={snapshot.current} unit={unit} onUnitChange={setUnit} {...temp} />,

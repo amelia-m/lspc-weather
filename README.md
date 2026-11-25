@@ -333,6 +333,8 @@ Open-Meteo's three 10 m forms and the NWS hour against the same reports.
 Its data file is rebuilt by the weekly ceiling data refresh. Counts only,
 like the page below.
 
+A page, **About this site** (`#about`), holds what the footer used to: the full data credit with what the dashboard changes in Open-Meteo's data, a line on each page behind the dashboard, and who makes the site and how. The footer lists the pages by name.
+
 A page, **How the winds aloft table is built** (`#winds-method`), explains the Winds aloft card's levels, its Surface row and how the table compares with Mark Schulze's tool; the card links it in place of a folded note (since 2026-11-22).
 
 A second page, **How different from other sources** (`#parity`), shows what

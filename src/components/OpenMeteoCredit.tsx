@@ -7,7 +7,12 @@ import { SourceLinks } from './common/SourceLinks';
  * 2026-10-08). Each card showing the data links Open-Meteo and the licence
  * in its own "Data:" line; this is the fuller statement.
  *
- * `scope` is what the page it sits on shows. The dashboard footer names
+ * `scope` is what the page it sits on shows. The dashboard's footer carries
+ * the short form ('footer': the credit, the licence, and that the data are
+ * reworked here) since 2026-11-25, when the maintainer had the footer cut
+ * to a credit line and link names; the full statement moved to `#about`
+ * ('dashboard'). The cards' own Data lines are what puts Open-Meteo's link
+ * beside its data. The full statement names
  * what Open-Meteo feeds (Winds aloft, Drift, the 10-day outlook's day rows
  * and the second cloud-cover figure on Ceiling & sky) and says the cards
  * name the fallback that answered (the outlook's NWS gridpoint; the winds
@@ -21,7 +26,7 @@ export function OpenMeteoCredit({
   scope,
   surface = { archive: true, sample: true },
 }: {
-  scope: 'dashboard' | 'winds' | 'surface';
+  scope: 'dashboard' | 'footer' | 'winds' | 'surface';
   surface?: { archive: boolean; sample: boolean };
 }): JSX.Element {
   const credit = (
@@ -36,6 +41,15 @@ export function OpenMeteoCredit({
         {credit}: {what}. This page shows it reworked: each value less KPMV&rsquo;s reported wind
         {surface.archive && ' (the archived forecasts first rounded to whole knots)'}, binned to the knot or to
         ten degrees.
+      </>
+    );
+  }
+  if (scope === 'footer') {
+    // The credit, the licence and the fact of the change, in view on every
+    // tab; what is changed, and how, is the 'dashboard' statement on #about.
+    return (
+      <>
+        {credit}, reworked by this dashboard (<a href="#about">how</a>).
       </>
     );
   }
