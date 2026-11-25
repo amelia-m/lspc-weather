@@ -17,9 +17,11 @@ Amelia, 2026-11-23: "Y to attribution trailers".
 
 ## Pushing and merging
 
-Not delegated. Every push and every merge waits for her word, each time (global rule, "Confirm before destructive or outward-facing actions"). Her one-off instructions do not stand: "Push and merge If the changes pass local review" (2026-11-22) covered that change.
+**Committing and pushing: delegated.** Amelia, 2026-11-25: "For this project you can commit and push without my confirmation". An agent may commit and push to its own working branch without asking, after the four gates and a clean local review (the global rule's condition for a delegated push). Not a force-push, and not a push to `main` or any other branch: those still wait for her.
 
-**For her to decide:** whether to delegate pushing and merging here after a clean local review. If so, her words and the date go in this section; nothing else on the global list can be delegated.
+**Merging: not delegated.** She said commit and push, not merge, so opening a pull request and merging it each wait for her word, each time. Her one-off instructions do not stand: "Push and merge If the changes pass local review" (2026-11-22) covered that change, as each later "push and merge" covered its own.
+
+**For her to decide:** whether to delegate merging too. If so, her words and the date go in this section; nothing else on the global list can be delegated.
 
 How a merge is done when she says so: the four gates on real exit codes, a local review from the global table (which one and why goes in the PR body), CI green on the PR head, then merge at that head's sha. Since 2026-11-23 the branch is pushed as a fast-forward with `main` merged in and the PR squash-merged, because the session's permission classifier refused a force-with-lease push that day; no history is rewritten on the remote.
 
