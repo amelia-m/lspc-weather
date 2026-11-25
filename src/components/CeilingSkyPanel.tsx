@@ -7,6 +7,8 @@ import { METAR_STATION_OFFSET, SITE, repoDoc } from '../config/site';
 import { CLOUD_COMPARISON } from '../config/cloudComparison';
 import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
 import { Panel } from './common/Panel';
+import { NerdStats } from './common/NerdStats';
+import { ReadingKey } from './common/ReadingKey';
 import { CeilingSkyDays } from './CeilingSkyDays';
 import { buildDayBlocks, nwsCeilingForecastEnd } from '../domain/skyDays';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
@@ -166,50 +168,49 @@ export function CeilingSkyPanel({
           NWS ceiling forecast ends {fmtWeekday(ceilingEnds)} {fmtShortHour(ceilingEnds)}; its sky row runs on.
         </p>
       )}
-      <p className="muted small">
-        Each day across, every 3 h, in the drop zone&rsquo;s time; the dark columns are night there, sunset to
-        sunrise, the same times the night flag uses, a three-hour slot going by its greater part. Sky cover
-        % as a bar and a figure: the NWS forecast&rsquo;s{showOm && ', Open-Meteo\u2019s cloud cover (OM) as a figure beside it,'} and
-        the NBM&rsquo;s. Heights in thousands of ft AGL; &ldquo;no&rdquo; = no broken/overcast layer (ceiling)
-        or no layer at all (base); a blank cell is a slot that forecast does not cover or gives no figure for, and a
-        row is left out of a day it has no figure in. The band is the heights, ground to 12,000 ft: the NBM&rsquo;s
-        lowest base a short bar at its height, its ceiling as cloud above it, the NWS ceiling a line across the
-        column while that forecast runs; a mark on the top edge is a height at or above 12,000 ft, the row has the
-        figure. &ldquo;hourly&rdquo; opens the day&rsquo;s NWS hours, scrolling sideways; today is its hours alone
-        when two slots or fewer remain.
-      </p>
+      {/* The tables' key, folded since 2026-11-25 (ReadingKey): the longest
+          block on the page, 182 words. */}
+      <ReadingKey>
+        <p className="muted small">
+          Each day across, every 3 h, in the drop zone&rsquo;s time; the dark columns are night there, sunset to
+          sunrise, the same times the night flag uses, a three-hour slot going by its greater part. Sky cover
+          % as a bar and a figure: the NWS forecast&rsquo;s{showOm && ', Open-Meteo\u2019s cloud cover (OM) as a figure beside it,'} and
+          the NBM&rsquo;s. Heights in thousands of ft AGL; &ldquo;no&rdquo; = no broken/overcast layer (ceiling)
+          or no layer at all (base); a blank cell is a slot that forecast does not cover or gives no figure for, and a
+          row is left out of a day it has no figure in. The band is the heights, ground to 12,000 ft: the NBM&rsquo;s
+          lowest base a short bar at its height, its ceiling as cloud above it, the NWS ceiling a line across the
+          column while that forecast runs; a mark on the top edge is a height at or above 12,000 ft, the row has the
+          figure. &ldquo;hourly&rdquo; opens the day&rsquo;s NWS hours, scrolling sideways; today is its hours alone
+          when two slots or fewer remain.
+        </p>
+      </ReadingKey>
       {(showBase || nbsShown) && (nbm || nbs) && (
         <p className="muted small">
-          The NBM rows are the NWS National Blend of Models&rsquo; bulletins for {(nbs ?? nbm)!.station}, read through the
-          relay{nbm && ' (hourly, 25 hours'}{nbm && nbs && '; '}{nbs && `${nbm ? '' : ' ('}three-hourly, 6 to 72 hours, the bulletin usairnet\u2019s three-day table reads`}
-          {(nbm || nbs) && ')'}; each bulletin&rsquo;s cycle is on Data health. Their base is the lowest cloud base
-          whether or not a ceiling is present, a few or scattered layer included, from a blend of models and humidity
-          (MDL&rsquo;s definition, read 2026-10-26). A column is one bulletin&rsquo;s: the three-hourly one&rsquo;s where
-          it has a column there, the hourly one&rsquo;s base alone before it begins, dotted; the hourly rows&rsquo; base
-          is the hourly bulletin&rsquo;s. A second forecast beside the NWS one, which it can disagree with; neither
-          raises a flag.
+          The NBM rows are the NWS National Blend of Models&rsquo; bulletins for {(nbs ?? nbm)!.station}: a second
+          forecast beside the NWS one, which it can disagree with; neither raises a flag.
         </p>
       )}
-      {/* How each forecast compared with KPMV, so a reader can weigh them by
-          the kind of hour: one measure for both, the 5/8 that AC 00-45H's
-          sky table gives as the least a broken layer covers, cited. The
-          figures are CLOUD_COMPARISON's, which a test works out again from
-          the archived records; measured, not a threshold, and nothing here
-          flags or colours an hour. One line shows; the rest is collapsed. */}
-      {showOm && (
-        <>
-          <p className="muted small sky-compare-brief">
-            Against {SITE.metarStation.id}, {CLOUD_COMPARISON.period}, the share of hours each forecast
-            reached {CEILING_EIGHTHS}/8 cover: with a ceiling, NWS {CLOUD_COMPARISON.ceilingHours.nws}%,
-            Open-Meteo {CLOUD_COMPARISON.ceilingHours.omStart}% ({CLOUD_COMPARISON.ceilingHours.omDayAhead}% a
-            day ahead); with none, NWS {CLOUD_COMPARISON.noCeilingHours.nws}%, Open-Meteo{' '}
-            {CLOUD_COMPARISON.noCeilingHours.omStart}% ({CLOUD_COMPARISON.noCeilingHours.omDayAhead}% a day
-            ahead). Open-Meteo&rsquo;s first figure is its best case, the first hours of its runs.
+      {/* Behind the fold since 2026-11-25 (NerdStats): what each source is
+          and how the sources compared. How each forecast compared with
+          KPMV uses one measure for both, the 5/8 that AC 00-45H's sky table
+          gives as the least a broken layer covers, cited; the figures are
+          dated readings in CLOUD_COMPARISON, and nothing here flags or
+          colours an hour. The one-line brief that stood above the fold
+          repeated its figures and is gone. */}
+      <NerdStats>
+        {(showBase || nbsShown) && (nbm || nbs) && (
+          <p className="muted small">
+            The NBM bulletins are read through the relay{nbm && ' (hourly, 25 hours'}{nbm && nbs && '; '}{nbs && `${nbm ? '' : ' ('}three-hourly, 6 to 72 hours, the bulletin usairnet\u2019s three-day table reads`}
+            {(nbm || nbs) && ')'}; each bulletin&rsquo;s cycle is on Data health. Their base is the lowest cloud base
+            whether or not a ceiling is present, a few or scattered layer included, from a blend of models and
+            humidity (MDL&rsquo;s definition, read 2026-10-26). A column is one bulletin&rsquo;s: the three-hourly
+            one&rsquo;s where it has a column there, the hourly one&rsquo;s base alone before it begins, dotted; the
+            hourly rows&rsquo; base is the hourly bulletin&rsquo;s.
           </p>
-          <details className="sky-compare">
-            <summary className="small">How the two compared, in full</summary>
-            <p className="muted small">
-              Each figure is the share of hours a forecast was at or above {CEILING_EIGHTHS}/8 (
+        )}
+        {showOm && (
+          <p className="muted small sky-compare">
+              How the NWS and Open-Meteo cloud cover compared with {SITE.metarStation.id}, {CLOUD_COMPARISON.period}. Each figure is the share of hours a forecast was at or above {CEILING_EIGHTHS}/8 (
               {CEILING_EIGHTHS * 12.5}%), the least a broken layer covers.{' '}
               {SITE.metarStation.id} is about {Math.round(METAR_STATION_OFFSET.distanceMi)} mi away. On
               hours it reported a ceiling: NWS {CLOUD_COMPARISON.ceilingHours.nws}%; Open-Meteo{' '}
@@ -230,19 +231,15 @@ export function CeilingSkyPanel({
               </a>
               .
             </p>
-          </details>
-        </>
-      )}
-      {/* Only what is particular to this card. Confirming conditions with
-          official sources, the S&TA and the PIC is the page's to say, in its
-          banner. */}
-      <p className="muted small">
-        Same NWS forecast as the{' '}
-        <a href={DATA_SOURCES.usairnet.url} target="_blank" rel="noopener noreferrer">
-          usairnet KPMV page
-        </a>
-        , here for the drop zone&rsquo;s own grid point rather than the station.
-      </p>
+        )}
+        <p className="muted small">
+          Same NWS forecast as the{' '}
+          <a href={DATA_SOURCES.usairnet.url} target="_blank" rel="noopener noreferrer">
+            usairnet KPMV page
+          </a>
+          , here for the drop zone&rsquo;s own grid point rather than the station.
+        </p>
+      </NerdStats>
     </Panel>
   );
 }

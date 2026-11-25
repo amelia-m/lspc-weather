@@ -14,6 +14,7 @@ import { DATA_SOURCES } from '../config/sources';
 import { describeTafSource } from '../domain/sourceProvenance';
 import { CITATIONS } from '../config/thresholds';
 import { Panel } from './common/Panel';
+import { ReadingKey } from './common/ReadingKey';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
 import { SourceLink } from './common/SourceLink';
 import { fmtClock, fmtDateClock, shortError } from './format';
@@ -230,21 +231,13 @@ export function TafPanel({
                   </tbody>
                 </table>
               </div>
+              {/* In view: what the table is, that a category is not a jump
+                  rule, and anything the decoder could not read. The words'
+                  meanings are a key, folded since 2026-11-25 (ReadingKey). */}
               <p className="muted small">
-                Decoded from the text above.{' '}
-                {[...kindsUsed].map((k) => `${GROUP_WORDS[k].label}: ${GROUP_WORDS[k].means}.`).join(' ')}{' '}
-                {kindsUsed.has('TEMPO') || kindsUsed.has('BECMG') || kindsUsed.has('PROB')
-                  ? 'A blank cell on a change row means that element stays as the prevailing row says. '
-                  : ''}
-                Category is the FAA classification of the row&rsquo;s ceiling and visibility, a
-                description of the weather and not a jump rule. Source:{' '}
+                Decoded from the text above. Category is the FAA classification of the row&rsquo;s ceiling and
+                visibility, a description of the weather and not a jump rule. Source:{' '}
                 <SourceLink citation={CITATIONS.aimFlightCategory} />
-                {jointUse.length > 0 && (
-                  <>
-                    {' '}
-                    {jointUse.join(' ')} Source: <SourceLink citation={CITATIONS.faaJointUseTaf} />
-                  </>
-                )}
                 {decoded.undecoded.length > 0 && (
                   <>
                     {' '}
@@ -252,6 +245,20 @@ export function TafPanel({
                   </>
                 )}
               </p>
+              <ReadingKey>
+                <p className="muted small">
+                  {[...kindsUsed].map((k) => `${GROUP_WORDS[k].label}: ${GROUP_WORDS[k].means}.`).join(' ')}
+                  {kindsUsed.has('TEMPO') || kindsUsed.has('BECMG') || kindsUsed.has('PROB')
+                    ? ' A blank cell on a change row means that element stays as the prevailing row says.'
+                    : ''}
+                  {jointUse.length > 0 && (
+                    <>
+                      {' '}
+                      {jointUse.join(' ')} Source: <SourceLink citation={CITATIONS.faaJointUseTaf} />
+                    </>
+                  )}
+                </p>
+              </ReadingKey>
             </>
           )}
         </>

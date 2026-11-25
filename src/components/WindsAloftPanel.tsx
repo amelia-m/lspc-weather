@@ -9,6 +9,7 @@ import { CITATIONS } from '../config/thresholds';
 import { agoText } from '../domain/reportAge';
 import { useNow } from '../hooks/useNow';
 import { Panel } from './common/Panel';
+import { NerdStats } from './common/NerdStats';
 import { SourceLink } from './common/SourceLink';
 import { SimTerm } from './common/SimTerm';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
@@ -270,12 +271,12 @@ export function WindsAloftPanel({
       )}
       {levels.length > 0 ? (
         /* What a reader needs to read the numbers right stays out, in one
-           line: that they are a forecast, what the Surface row is, and the
-           two things that make Mark Schulze's table look different (its
-           AGL scale and its hour). The why of each, and how the levels are
-           worked out, is the #winds-method page, linked below, so the card
-           leads with the table and the guidance. The missing-levels note
-           under the table is about this report and stays out too. */
+           line: that they are a forecast and what the Surface row is. How
+           the table differs from Mark Schulze's (its samples, its hour, the
+           ground his altitudes count from) is a comparison of two tools,
+           behind the fold since 2026-11-25 with the link to #winds-method,
+           the page that has the why of each. The missing-levels note under
+           the table is about this report and stays out too. */
         <>
           <p className="muted small">
             A model <strong>forecast</strong> for the DZ, not a measurement.
@@ -286,30 +287,34 @@ export function WindsAloftPanel({
                   ? 'In this view the Surface row is built his way, not the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.'
                   : 'The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.'}
               </>
-            )}{' '}
-            Mark Schulze&rsquo;s tool reads the same data;{' '}
-            {schulzeView
-              ? 'this view is built his way'
-              : `this table takes samples his does not${schulzeAvailable ? ' (“As Schulze” rebuilds it his way)' : ''}`}
-            , and after half past his is the hour before this one.
-          </p>
-          {/* The why of each line above, and how the levels are worked out,
-              is a page of its own (#winds-method, since 2026-11-22: the card
-              folded 464 words here). The one figure that changes with the
-              hour stays on the card: which ground his table counts from,
-              read off the his-way table (useWindsHour), not typed. */}
-          <p className="muted small">
-            {source === 'open-meteo' && schulzeGroundFtMsl != null && schulzeGroundFtMsl !== SITE.dz.elevationFt && (
-              <>
-                His altitudes count from Open-Meteo&rsquo;s ground at the pin, {schulzeGroundFtMsl.toLocaleString()}&nbsp;ft,
-                against the field&rsquo;s {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft, so his rows sit about{' '}
-                {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft{' '}
-                {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'}
-                {schulzeView ? ' than the All levels table’s' : ''}.{' '}
-              </>
             )}
-            <a href="#winds-method">How this table is built, and how it compares with Mark Schulze&rsquo;s tool</a>.
           </p>
+          <NerdStats>
+            <p className="muted small">
+              Mark Schulze&rsquo;s tool reads the same data;{' '}
+              {schulzeView
+                ? 'this view is built his way'
+                : `this table takes samples his does not${schulzeAvailable ? ' (“As Schulze” rebuilds it his way)' : ''}`}
+              , and after half past his is the hour before this one.
+            </p>
+            {/* The why of each line above, and how the levels are worked out,
+                is a page of its own (#winds-method, since 2026-11-22: the card
+                folded 464 words here). The one figure that changes with the
+                hour stays on the card: which ground his table counts from,
+                read off the his-way table (useWindsHour), not typed. */}
+            <p className="muted small">
+              {source === 'open-meteo' && schulzeGroundFtMsl != null && schulzeGroundFtMsl !== SITE.dz.elevationFt && (
+                <>
+                  His altitudes count from Open-Meteo&rsquo;s ground at the pin, {schulzeGroundFtMsl.toLocaleString()}&nbsp;ft,
+                  against the field&rsquo;s {SITE.dz.elevationFt.toLocaleString()}&nbsp;ft, so his rows sit about{' '}
+                  {Math.abs(SITE.dz.elevationFt - schulzeGroundFtMsl)}&nbsp;ft{' '}
+                  {schulzeGroundFtMsl < SITE.dz.elevationFt ? 'lower' : 'higher'}
+                  {schulzeView ? ' than the All levels table’s' : ''}.{' '}
+                </>
+              )}
+              <a href="#winds-method">How this table is built, and how it compares with Mark Schulze&rsquo;s tool</a>.
+            </p>
+          </NerdStats>
         </>
       ) : null}
     </Panel>

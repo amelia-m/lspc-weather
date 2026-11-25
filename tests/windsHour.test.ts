@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { foldCount, folded, inView } from './support/fold';
 import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
 import { DriftPanel } from '../src/components/DriftPanel';
 import { ForecastHourNav, type WindsHourNav } from '../src/components/common/ForecastHourNav';
@@ -111,13 +112,18 @@ describe('Winds aloft explanatory text', () => {
     expect(html).toContain('Strong upper winds increase freefall drift');
     expect(html).toContain('<table class="aloft-table">');
     expect(html).toContain('Arrow shows drift direction');
-    // What reading the numbers right needs, in view: a forecast, what the
-    // Surface row is, and why Schulze's table can look different.
-    expect(html).toContain('A model <strong>forecast</strong> for the DZ, not a measurement.');
-    expect(html).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.');
+    // What reading the numbers right needs, in view: a forecast, and what
+    // the Surface row is. Why Schulze's table can look different is a
+    // comparison of two tools, behind the fold since 2026-11-25.
+    expect(inView(html)).toContain('A model <strong>forecast</strong> for the DZ, not a measurement.');
+    expect(inView(html)).toContain('The Surface row is the model’s 10\u00a0m wind; the observed wind is under the table and on the Surface wind card.');
+    expect(inView(html)).toContain('Strong upper winds increase freefall drift');
+    expect(inView(html)).not.toContain('Mark Schulze’s tool reads the same data');
+    expect(foldCount(html)).toBe(1);
+    expect(folded(html)).toContain('<a href="#winds-method">How this table is built, and how it compares with Mark Schulze’s tool</a>');
     // The extra samples are said even with no switch to offer: the table
     // on screen still takes levels his does not.
-    expect(withoutGlossaryLinks(html)).toContain(
+    expect(withoutGlossaryLinks(folded(html))).toContain(
       'Mark Schulze’s tool reads the same data; this table takes samples his does not, and after half past his is the hour before this one.',
     );
     // The clock line no longer repeats the time the offset bar marks.

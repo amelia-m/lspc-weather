@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { foldCount, folded, inView } from './support/fold';
 import { densityAltitude, densityAltitudeOf } from '../src/domain/densityAltitude';
 import { DensityAltitudePanel } from '../src/components/DensityAltitudePanel';
 import { CITATIONS } from '../src/config/thresholds';
@@ -130,6 +131,15 @@ describe('the density-altitude card', () => {
         da: densityAltitude({ elevationFt: FIELD, altimeterInHg, oatC, dewpointC }),
       }),
     );
+
+  it('keeps the FAA’s guidance in view and folds how the figures are worked', () => {
+    const html = render(24);
+    expect(foldCount(html)).toBe(1);
+    // The standing note that replaced the density-altitude bands.
+    expect(inView(html)).toContain('add 10 percent to your computed takeoff distance and anticipate a reduced climb rate');
+    expect(inView(html)).not.toContain('Both figures are worked with');
+    expect(folded(html)).toContain('the NWS calculator gives the humidity row to within about ten feet');
+  });
 
   it('heads with the dry figure and gives the humid one its own named row', () => {
     const html = render(24);

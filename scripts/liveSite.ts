@@ -1,6 +1,6 @@
 /**
  * Load the deployed site in a browser and say whether a reader would meet a
- * fault: every page (Jumpers, Pilots, Canopy, #citations, #parity, #wind-errors, #winds-method, #about, the
+ * fault: every page (Jumpers, Pilots, Canopy, the trial layout at beta/, #citations, #parity, #wind-errors, #winds-method, #about, the
  * ceiling-error page and, since 2026-11-11, the talk) at 1280, 390 and 320 px,
  * live data. What counts as a fault is src/domain/liveSite.ts; this file
  * drives the browser and prints.
@@ -16,6 +16,7 @@
  *   CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
  * A GitHub runner needs none of that.
  *
+ * LIVE_PAGES names the pages to check ("Jumpers,Trial layout"); unset, all.
  * LIVE_SITE_URL names another site to check, such as a local build served
  * over http. LIVE_CLOCK (an ISO instant) pins the browser's clock, in the
  * DZ's time zone, before each load: the workflow's second leg builds the
@@ -51,6 +52,10 @@ const PAGES: { name: string; path: string }[] = [
   { name: 'Jumpers', path: '' },
   { name: 'Pilots', path: '#pilots' },
   { name: 'Canopy', path: '#canopy' },
+  // The trial layout: the Jumpers page again from its own folder, with the
+  // section bar. Pages serves files only, so this also holds that the build
+  // put a page there.
+  { name: 'Trial layout', path: 'beta/' },
   { name: 'Citations', path: '#citations' },
   { name: 'Parity', path: '#parity' },
   { name: 'Wind errors', path: '#wind-errors' },
@@ -190,6 +195,8 @@ async function observe(
       panels: document.querySelectorAll('.panel').length,
       slides: document.querySelectorAll('.reveal .slides section').length,
       hourNavs: document.querySelector('.fc-nav') != null,
+      trialLink: document.querySelector('.beta-note a')?.getAttribute('href') ?? null,
+      sectionBar: [...document.querySelectorAll('nav.section-bar button')].map((b) => (b.textContent ?? '').trim()),
       canopyCards: ['Exit weight & wing loading', 'Canopy Risk Quotient'].filter((t) => text.includes(t)).length,
       advisoryList: document.querySelector('.advisory-panel') != null,
     };
@@ -203,11 +210,24 @@ async function observe(
   o.crashed = seen.crashed;
   o.sources = seen.rows.length ? seen.rows : null;
   if (page.name === 'Jumpers') {
+    o.checks.push({ name: 'the standard page links the trial layout', ok: seen.trialLink?.endsWith('beta/') === true, detail: seen.trialLink ?? 'no link' });
     o.checks.push({
       name: 'radar image drew',
       ok: !seen.radarFailed && !!seen.radar?.complete && (seen.radar?.natural ?? 0) > 0,
       detail: seen.radarFailed ? 'the card says the image is unavailable' : `naturalWidth ${seen.radar?.natural ?? 'no image'}`,
     });
+  }
+  if (page.name === 'Trial layout') {
+    o.checks.push({
+      name: 'the trial layout drew its section bar',
+      ok: seen.sectionBar.length === 5,
+      detail: seen.sectionBar.length ? seen.sectionBar.join(', ') : 'no bar',
+    });
+    // Each layout links the other: the way out of the trial, and into it.
+    o.checks.push({ name: 'the trial layout links the standard page', ok: seen.trialLink != null && !seen.trialLink.includes('beta'), detail: seen.trialLink ?? 'no link' });
+  } else if (page.name !== 'Talk' && page.name !== 'Ceiling errors') {
+    // And nowhere else: the standard pages are as they were.
+    o.checks.push({ name: 'no section bar on a standard page', ok: seen.sectionBar.length === 0, detail: seen.sectionBar.join(', ') || undefined });
   }
   if (page.name === 'Canopy') {
     // The tab about the wing: both its cards, and none of the weather's
@@ -244,7 +264,15 @@ const relayServesOrigin = TAF_RELAY_SET && RELAY_ORIGINS.includes(new URL(BASE).
 
 console.log(`Checking ${BASE}${CLOCK ? ` with the clock at ${CLOCK.toISOString()} (${SITE.timeZone})` : ''}`);
 let failed = 0;
-for (const page of PAGES) {
+// LIVE_PAGES names the pages to check, by name, comma-separated: for trying
+// a check on one page from the sandbox. The workflow never sets it, so it
+// checks them all.
+const ONLY = process.env.LIVE_PAGES?.split(',').map((n) => n.trim());
+if (ONLY && !ONLY.every((n) => PAGES.some((p) => p.name === n))) {
+  console.error(`LIVE_PAGES names a page there is not: ${process.env.LIVE_PAGES}`);
+  process.exit(2);
+}
+for (const page of ONLY ? PAGES.filter((p) => ONLY.includes(p.name)) : PAGES) {
   for (const width of WIDTHS) {
     const verdicts: LoadVerdict[] = [];
     // A second load only when the first had a fault (pagePasses).

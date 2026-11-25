@@ -1,6 +1,7 @@
 import type { DensityAltitudeResult } from '../domain/types';
 import { fmtTemp, fmtTempDelta, type TempUnit } from '../domain/units';
 import { Panel } from './common/Panel';
+import { NerdStats } from './common/NerdStats';
 import { SourceLink } from './common/SourceLink';
 import { CITATIONS } from '../config/thresholds';
 import { DATA_SOURCES } from '../config/sources';
@@ -80,15 +81,17 @@ export function DensityAltitudePanel({
             distance and anticipate a reduced climb rate”. Source:{' '}
             <SourceLink citation={CITATIONS.faaDensityAltitude} />
           </p>
-          <p className="muted small">
-            Both figures are worked with the National Weather Service calculators’ formulas: the
-            altimeter setting reduced to the station pressure at the field, the pressure altitude
-            from it, then the density altitude. Given the station pressure, temperature and dew point
-            above, the NWS calculator gives the humidity row to within about ten feet (the rows are
-            rounded); the headline is its formula with the temperature in place of the virtual
-            temperature. Source:{' '}
-            <SourceLink citation={CITATIONS.nwsDensityAltitude} />
-          </p>
+          <NerdStats>
+            <p className="muted small">
+              Both figures are worked with the National Weather Service calculators’ formulas: the
+              altimeter setting reduced to the station pressure at the field, the pressure altitude
+              from it, then the density altitude. Given the station pressure, temperature and dew point
+              above, the NWS calculator gives the humidity row to within about ten feet (the rows are
+              rounded); the headline is its formula with the temperature in place of the virtual
+              temperature. Source:{' '}
+              <SourceLink citation={CITATIONS.nwsDensityAltitude} />
+            </p>
+          </NerdStats>
         </>
       )}
     </Panel>

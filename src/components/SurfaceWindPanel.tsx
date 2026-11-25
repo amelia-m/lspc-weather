@@ -9,6 +9,7 @@ import { agoText, overdueReportText } from '../domain/reportAge';
 import { useNow } from '../hooks/useNow';
 import { spreadLabels } from './format';
 import { Panel } from './common/Panel';
+import { NerdStats } from './common/NerdStats';
 import { SourceLink } from './common/SourceLink';
 import { SimTermSegments } from './common/SimTerm';
 import { linkableTerms, splitGlossaryTerms } from '../config/simGlossary';
@@ -290,14 +291,17 @@ export function SurfaceWindPanel({
           six-month comparison, with its figures and its doc; no colour, no
           threshold, and it changes nothing that fires. Shown for every
           profile, since the gust is the same forecast whichever limit reads
-          it. */}
-      <p className="muted small forecast-gust-note">
-        {FORECAST_GUST_NOTE.sentence}{' '}
-        <a href={FORECAST_GUST_NOTE.url} target="_blank" rel="noopener noreferrer">
-          The comparison
-        </a>
-        .
-      </p>
+          it. Behind the fold since 2026-11-25: a comparison of two sources,
+          which no reading of the card depends on. */}
+      <NerdStats>
+        <p className="muted small forecast-gust-note">
+          {FORECAST_GUST_NOTE.sentence}{' '}
+          <a href={FORECAST_GUST_NOTE.url} target="_blank" rel="noopener noreferrer">
+            The comparison
+          </a>
+          .
+        </p>
+      </NerdStats>
     </Panel>
   );
 }
