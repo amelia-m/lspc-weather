@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { foldCount, folded, inView } from './support/fold';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
 import { CLOUD_COMPARISON } from '../src/config/cloudComparison';
 import { CITATIONS } from '../src/config/thresholds';
@@ -88,17 +89,17 @@ describe('the Ceiling & sky card with Open-Meteo beside NWS', () => {
     const text = (re: RegExp) => (re.exec(html)?.[0] ?? '').replace(/<[^>]+>/g, '');
     const figures = (t: string) => [...t.matchAll(/(\d+(?:\.\d+)?)%/g)].map((m) => Number(m[1]));
     const c = CLOUD_COMPARISON;
-    // One line shows; the full comparison is collapsed under it.
-    const brief = text(/<p class="muted small sky-compare-brief">[\s\S]*?<\/p>/);
-    expect(brief).toContain(c.period);
-    expect(brief).toContain(`reached ${CEILING_EIGHTHS}/8 cover`);
-    expect(figures(brief)).toEqual([
-      c.ceilingHours.nws, c.ceilingHours.omStart, c.ceilingHours.omDayAhead,
-      c.noCeilingHours.nws, c.noCeilingHours.omStart, c.noCeilingHours.omDayAhead,
-    ]);
-    expect(html).toMatch(/<details class="sky-compare"><summary/);
-    expect(html).not.toMatch(/<details class="sky-compare" open/);
-    const full = /<details class="sky-compare">[\s\S]*?<\/details>/.exec(html)?.[0] ?? '';
+    // Behind the card's one fold, closed (2026-11-25: comparisons of data
+    // sources are hidden); the line that stood above it repeated its
+    // figures and is gone, so nothing of the comparison shows untapped.
+    expect(foldCount(html)).toBe(1);
+    expect(html).not.toContain('sky-compare-brief');
+    expect(inView(html)).not.toContain('sky-compare');
+    expect(inView(html)).not.toContain(`${c.ceilingHours.nws}%`);
+    expect(folded(html)).not.toMatch(/<details class="nerd-stats" open/);
+    const full = /<p class="muted small sky-compare">[\s\S]*?<\/p>/.exec(folded(html))?.[0] ?? '';
+    expect(text(/<p class="muted small sky-compare">[\s\S]*?<\/p>/)).toContain(`compared with KPMV, ${c.period}.`);
+    expect(full).toContain(`at or above ${CEILING_EIGHTHS}/8`);
     expect(full).toContain('docs/cloud-cover-sources.md');
     expect(full).toContain(`href="${CITATIONS.faaSkyCover.url}"`);
     // Every figure, in the order the full note gives them, after the cut itself.

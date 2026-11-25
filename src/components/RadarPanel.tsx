@@ -4,6 +4,7 @@ import { haversineMiles, initialBearingDeg } from '../domain/geo';
 import { DZ_ON_RADAR_IMAGE, RADAR_IMAGE_PX, SITE } from '../config/site';
 import { DATA_SOURCES } from '../config/sources';
 import { Panel } from './common/Panel';
+import { NerdStats } from './common/NerdStats';
 
 /** NWS radar loop (animated GIF) for the covering WSR-88D, shown as a
  *  cross-origin <img> (no fetch/CORS), with a link to the interactive radar. */
@@ -70,15 +71,20 @@ export function RadarPanel(): JSX.Element {
         <>
           {DZ_ON_RADAR_IMAGE && (
             <p className="muted small">
-              <span className="radar-dz-key" aria-hidden="true" /> marks the drop zone. Its position
-              is derived from the DZ coordinates and the image&rsquo;s georeferencing, which NWS
-              does not publish — it was measured against county boundaries, so read it as
-              approximate.
+              <span className="radar-dz-key" aria-hidden="true" /> marks the drop zone, approximately.
             </p>
           )}
           <p className="muted small">
             Tap the image for the interactive radar; the loop updates every few minutes.
           </p>
+          {DZ_ON_RADAR_IMAGE && (
+            <NerdStats>
+              <p className="muted small">
+                The marker&rsquo;s position is derived from the DZ coordinates and the image&rsquo;s georeferencing,
+                which NWS does not publish: it was measured against county boundaries.
+              </p>
+            </NerdStats>
+          )}
         </>
       )}
     </Panel>

@@ -1920,7 +1920,7 @@ a.sim-term {
   font-size: 0.85rem;
 }
 .far-rows summary,
-.sky-compare summary {
+.nerd-stats summary {
   cursor: pointer;
   color: var(--accent);
   margin: 8px 0 4px;

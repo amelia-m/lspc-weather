@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { foldCount, folded, inView } from './support/fold';
 import { SurfaceWindPanel } from '../src/components/SurfaceWindPanel';
 import { spreadLabels } from '../src/components/format';
 import { profileShortLabel, resolveThresholds, WIND_PROFILE_IDS, withOverrides, type Thresholds, type WindProfileId } from '../src/config/thresholds';
@@ -181,6 +182,23 @@ describe('the forecast-gust note', () => {
       expect(note![1]).toContain(`href="${FORECAST_GUST_NOTE.url}"`);
       expect(note![1]).not.toMatch(/class="[^"]*(warn|caution|band-)/);
     }
+  });
+
+  it('is behind the card’s one fold, closed, with every warning and limit still in view', () => {
+    // The maintainer, 2026-11-25: "important warnings stay out. details on
+    // data-source comparisons get hidden". Student, so the round-reserve
+    // note and the caution's source are on the card.
+    const html = card(10, null, 'student');
+    expect(foldCount(html)).toBe(1);
+    expect(folded(html)).toMatch(/^<details class="nerd-stats"><summary class="small">Stats for nerds<\/summary>/);
+    expect(folded(html)).toContain('forecast-gust-note');
+    // Text only: the glossary links split a sentence's markup.
+    const seen = inView(html).replace(/<[^>]+>/g, '');
+    expect(seen).not.toContain('gusting hours');
+    expect(seen).toContain('the latest report, not a forecast');
+    expect(seen).toContain('It cannot show a wind that is changing now, or the wind at the DZ.');
+    expect(seen).toContain('on round reserves');
+    expect(seen).toContain('No student rig at LSPC carries a round reserve');
   });
 
   it('quotes the figures the comparison doc holds, cell for cell from the latest-issuance column', () => {
