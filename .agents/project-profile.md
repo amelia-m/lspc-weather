@@ -23,7 +23,7 @@ Amelia, 2026-11-23: "Y to attribution trailers".
 
 **Still hers, each time:** a force-push, a push to `main` or to any branch but the agent's own, deleting a branch or tag that holds unmerged work, rewriting history, and everything else on the global list. The global rules allow a profile to delegate pushing and merging and nothing more.
 
-How a merge is done when she says so: the four gates on real exit codes, a local review from the global table (which one and why goes in the PR body), CI green on the PR head, then merge at that head's sha. Since 2026-11-23 the branch is pushed as a fast-forward with `main` merged in and the PR squash-merged, because the session's permission classifier refused a force-with-lease push that day; no history is rewritten on the remote.
+How a merge is done: the four gates on real exit codes, a local review from the global table (which one and why goes in the PR body), CI green on the PR head, then merge at that head's sha. Since 2026-11-23 the branch is pushed as a fast-forward with `main` merged in and the PR squash-merged, because the session's permission classifier refused a force-with-lease push that day; no history is rewritten on the remote.
 
 ## Reviews
 
