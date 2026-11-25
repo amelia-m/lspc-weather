@@ -33,8 +33,8 @@ export function loadSurfaceWindRecords(files: readonly string[]): SurfaceWindRec
 /** Open-Meteo's archived wind (scripts/cloudCoverFetch.py, PARTS=omwind),
  *  in the order the files are given; `omArchiveSection` keeps the last
  *  record of an hour fetched twice. */
-export function loadOmWindRecords(files: readonly string[]): OmWindRecord[] {
-  return files.flatMap((f) => parseOmWindLines(read(f)));
+export function loadOmWindRecords(files: readonly string[], model?: string): OmWindRecord[] {
+  return files.flatMap((f) => parseOmWindLines(read(f), model));
 }
 
 /** NDFD's wind, gust and direction records from any mix of files

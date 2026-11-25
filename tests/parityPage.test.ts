@@ -539,3 +539,61 @@ describe('ParityPage, why runs were over', () => {
     expect(html).not.toContain('could not be judged');
   });
 });
+
+describe('ParityPage, the RRFS model beside the default', () => {
+  const run = (init: string, avail: string) => ({ init, modified: avail, avail, stepS: 3600, reads: 3, variants: 1 });
+  const withRrfs = summarizeParity(
+    [
+      ...records,
+      {
+        kind: 'schulze',
+        at: '2026-11-24T04:00:00Z',
+        aligned: { rows: [{ ft: 1000, dDir: 1, dSpd: 0, dT: 0 }] },
+        omRuns: { ncep_hrrr_conus: run('2026-11-24T02:00:00Z', '2026-11-24T03:30:00Z') },
+        rrfs: {
+          model: 'ncep_rrfs_conus',
+          run: run('2026-11-23T18:00:00Z', '2026-11-24T03:00:00Z'),
+          samples: 22,
+          levels: 15,
+          rows: [
+            { ft: 0, dDir: 20, dSpd: 1, dT: 0 },
+            { ft: 500, dDir: -2, dSpd: 1, dT: 0 },
+            { ft: 1000, dDir: 12, dSpd: -4, dT: 0 },
+          ],
+          cloud: { rrfs: { total: 100, low: 40, mid: null, high: null }, default: { total: 54, low: 5, mid: null, high: null } },
+        },
+      } as ParityRecord,
+      // Asked, with nothing to compare.
+      { kind: 'schulze', at: '2026-11-24T06:00:00Z', rrfs: { model: 'ncep_rrfs_conus', run: null, error: 'HTTP 503' } } as ParityRecord,
+    ],
+    Date.parse('2026-11-25T00:00:00Z'),
+  );
+
+  it('prints the runs compared of those that asked, the rows by altitude with which side ran higher, and no grade', () => {
+    const html = render('ready', withRrfs);
+    const panel = html.slice(html.indexOf('Winds aloft: the RRFS model beside the default'));
+    expect(panel).toContain('1 of 2 runs that asked');
+    expect(panel).toContain('a difference here is not an error in either');
+    expect(panel).toContain('Direction, RRFS against default');
+    // The signed mean, RRFS minus default: +12° and −4 kt at 1,000 ft.
+    expect(panel).toContain('<th>avg, RRFS minus default</th>');
+    expect(panel).toContain('<td>+12°</td>');
+    expect(panel).toContain('<td>−4 kt</td>');
+    // The 500 ft row beside its neighbours, and the count of samples.
+    expect(panel).toContain('surface 20° and 1 kt (1 run); 500 ft 2° and 1 kt (1 run); 1,000 ft 12° and 4 kt (1 run)');
+    expect(panel).toContain('answered with 22 wind samples a run');
+    // The RRFS run started 10 h before the comparison, the default's 2 h.
+    expect(panel).toContain('the RRFS run had started 10 h median (10 to 10 h, 1 run) before');
+    expect(panel).toContain('the run the default was served from, 2 h median');
+    expect(panel).toContain('total 46 points apart at the median');
+    expect(panel.slice(0, panel.indexOf('Latest observation vs usairnet'))).not.toMatch(/\b(good|bad|accurate|inaccurate|reliable|better|worse)\b/i);
+  });
+
+  it('is not on the page while no run has logged the RRFS, and the Schulze tables gain no signed column', () => {
+    const html = render('ready');
+    expect(html).not.toContain('RRFS');
+    expect(html).not.toContain('avg, RRFS minus default');
+    const schulzeOnly = render('ready', withRrfs).split('Winds aloft: the RRFS model beside the default')[0];
+    expect(schulzeOnly).not.toContain('avg, RRFS minus default');
+  });
+});

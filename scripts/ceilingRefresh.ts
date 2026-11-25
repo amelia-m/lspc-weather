@@ -39,6 +39,7 @@ import {
   shrinkage,
 } from '../src/domain/ceilingRefresh';
 import { parseCloudCoverLines } from '../src/domain/cloudCoverSources';
+import { OPEN_METEO_RRFS_MODEL } from '../src/domain/normalize';
 import { OM_ARCHIVE_ROWS, parseOmWindLines } from '../src/domain/windErrors';
 import { parseNdfdWindLines } from '../src/domain/ndfdGust';
 
@@ -78,7 +79,7 @@ const omWindFiles = (): string[] =>
     .filter((n) => /^om-wind-.*\.jsonl\.gz$/.test(n))
     .sort()
     .map((n) => join(dir, n));
-const omWindRecords = (files: string[]) => files.flatMap((f) => parseOmWindLines(read(f)));
+const omWindRecords = (files: string[], model?: string) => files.flatMap((f) => parseOmWindLines(read(f), model));
 const OM_RUNS = OM_ARCHIVE_ROWS.map((r) => r.run);
 
 /** NDFD's wind, gust and direction (data/parity/ndfd-wgust-*, ndfd-wind-*),
@@ -177,16 +178,24 @@ if (cmd === 'inputs') {
     gate(NDFD_ELEMENTS.map((el, i) => ({ label: `NDFD ${el}`, what: 'issuances', times: fetched[i], keptNewest: newest(kept[i]), distinct: true })));
   }
   if (part === 'omwind') {
-    const fetched = omWindRecords([file]);
-    const kept = omWindRecords(omWindFiles());
+    // The default model's hours, then the RRFS's by name (the fetch asks for
+    // both since 2026-11-25): gated apart, so a week whose RRFS half came
+    // back empty fails here and is fetched again, not kept with a hole.
     gate(
-      OM_RUNS.map((run) => ({
-        label: `Open-Meteo ${run}`,
-        what: 'wind hours',
-        times: fetched.filter((r) => r.run === run).map((r) => r.valid),
-        keptNewest: newest(kept.filter((r) => r.run === run).map((r) => r.valid)),
-        distinct: true,
-      })),
+      [
+        { name: 'Open-Meteo', model: undefined },
+        { name: 'Open-Meteo RRFS', model: OPEN_METEO_RRFS_MODEL },
+      ].flatMap(({ name, model }) => {
+        const fetched = omWindRecords([file], model);
+        const kept = omWindRecords(omWindFiles(), model);
+        return OM_RUNS.map((run) => ({
+          label: `${name} ${run}`,
+          what: 'wind hours',
+          times: fetched.filter((r) => r.run === run).map((r) => r.valid),
+          keptNewest: newest(kept.filter((r) => r.run === run).map((r) => r.valid)),
+          distinct: true,
+        }));
+      }),
     );
   }
   gate(

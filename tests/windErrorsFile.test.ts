@@ -12,7 +12,7 @@ const data = JSON.parse(publishedText) as WindErrorsData;
 
 describe('the published #wind-errors file', () => {
   it('holds every section, each with dates in order and a row per source or lead', () => {
-    expect(data.sections.map((s) => s.id)).toEqual(['nws-kept', 'nws-archive', 'om-archive', 'surface-sample']);
+    expect(data.sections.map((s) => s.id)).toEqual(['nws-kept', 'nws-archive', 'om-archive', 'om-rrfs-archive', 'surface-sample']);
     for (const s of data.sections) {
       expect(s.rows.length).toBeGreaterThan(0);
       expect(s.first).not.toBeNull();
@@ -29,8 +29,11 @@ describe('the published #wind-errors file', () => {
           expect([p.lo, p.hi, p.bin]).toEqual([c.lo, c.hi, c.bin]);
           expect(p.counts).toHaveLength(Math.round((c.hi - c.lo) / c.bin) + 1);
           expect(p.counts.reduce((a, b) => a + b, 0) + p.outside).toBe(p.n);
-          expect(p.n).toBeGreaterThan(0);
         }
+        // Every row has paired speeds. A gust chart can be empty while a row
+        // is new: the RRFS sample row began 2026-11-24 and KPMV reported no
+        // gust in its first day, so the first rebuild with that row had none.
+        expect(row.panels[0].n).toBeGreaterThan(0);
       }
     }
   });

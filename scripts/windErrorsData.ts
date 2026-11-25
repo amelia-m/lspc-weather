@@ -19,12 +19,13 @@
  * --reports takes KPMV's reports (scripts/keptInputs.ts): every archive of
  * them, since Open-Meteo's archive reaches back to 2026-04-01 and the
  * drop-zone cloud-cover archive holds that window's reports. --om takes
- * Open-Meteo's archived wind (scripts/cloudCoverFetch.py, PARTS=omwind),
+ * Open-Meteo's archived wind (scripts/cloudCoverFetch.py, PARTS=omwind: the
+ * default model's and, tagged `model`, the RRFS's by name),
  * --ndfd the NDFD wind, gust and direction (PARTS=wspd,wgust,wdir),
  * --sample the surface-wind sampler's logs. --figures draws the docs'
  * versions (scripts/histogramGrid.ts), named for the day of each section's
  * last pair, `kept-wind-errors-<day>.svg`, `nws-archive-wind-errors-<day>.svg`,
- * `om-archive-wind-errors-<day>.svg`
+ * `om-archive-wind-errors-<day>.svg`, `om-rrfs-archive-wind-errors-<day>.svg`
  * and `surface-wind-errors-<day>.svg`:
  * a doc quotes the figures of one dated reading, so a new reading is a new
  * file beside it, never the one the doc's text describes. The weekly
@@ -38,12 +39,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { NWS_ISSUANCES } from '../src/domain/cloudCoverSources';
+import { OPEN_METEO_RRFS_MODEL } from '../src/domain/normalize';
 import { pairInstants, prepareInstants } from '../src/domain/keptForecasts';
 import { nwsRowLabel, pairNdfdWind } from '../src/domain/ndfdGust';
 import {
   nwsArchiveSection,
   nwsKeptSection,
   omArchiveSection,
+  omRrfsArchiveSection,
   spanDay,
   surfaceSampleSection,
   windErrorsShrinkage,
@@ -84,16 +87,24 @@ const nws = nwsKeptSection(
   })),
 );
 const nwsArchive = nwsArchiveSection(pairNdfdWind(loadNdfdWind(ndfd), metars));
-const archive = omArchiveSection(loadOmWindRecords(om), metars);
+const omDefault = loadOmWindRecords(om);
+const archive = omArchiveSection(omDefault, metars);
+// The RRFS by name shares the default's files (PARTS=omwind fetches both
+// from 2026-11-25). With none of its records there is no section, said
+// here; a published file that had one then fails --check-against.
+const omRrfs = loadOmWindRecords(om, OPEN_METEO_RRFS_MODEL);
+if (omRrfs.length === 0) console.warn(`no ${OPEN_METEO_RRFS_MODEL} records in --om: the RRFS section is left out`);
+const rrfsArchive = omRrfs.length ? omRrfsArchiveSection(omRrfs, omDefault, metars) : null;
 const surface = surfaceSampleSection(loadSurfaceWindRecords(sample));
-for (const s of [nws, nwsArchive, archive, surface]) {
+const sections = [nws, nwsArchive, archive, ...(rrfsArchive ? [rrfsArchive] : []), surface];
+for (const s of sections) {
   if (s.rows.every((r) => r.panels[0].n === 0)) {
     console.error(`${s.id}: nothing paired; check the inputs (is --kept the snapshots' data folder?)`);
     process.exit(1);
   }
 }
 
-const data: WindErrorsData = { generatedAt: new Date().toISOString(), sections: [nws, nwsArchive, archive, surface] };
+const data: WindErrorsData = { generatedAt: new Date().toISOString(), sections };
 if (checkAgainst) {
   if (!existsSync(checkAgainst)) {
     console.error(`--check-against ${checkAgainst}: no such file; nothing written`);
@@ -157,6 +168,24 @@ if (figures) {
         credit: OM_CREDIT,
       }),
     ],
+    ...(rrfsArchive
+      ? ([
+          [
+            `om-rrfs-archive-wind-errors-${(rrfsArchive.last ?? '').slice(0, 10)}.svg`,
+            histogramGridSvg({
+              section: rrfsArchive,
+              title: `Open-Meteo's RRFS and its default model minus KPMV's reports, ${spanDay(rrfsArchive.first)} to ${spanDay(rrfsArchive.last)}`,
+              desc: "Histograms of forecast minus reported wind speed, gust and direction for Open-Meteo's archived 10 m wind from the RRFS model asked by name and from its default model over the same hours. Hours counted per bin; the dashed line is zero.",
+              subtitle: [
+                'Hours per bin. Right of the dashed line the forecast was above the report, left of it below.',
+                'Row pairs: the RRFS by name, then the default model over the same hours; the start of each run, then a day earlier.',
+              ],
+              note: 'Speeds rounded to whole knots, as a METAR reports. Direction only where the report gave one (not calm or variable). Source: docs/rrfs-comparison-plan.md, scripts/windErrorsData.ts.',
+              credit: OM_CREDIT,
+            }),
+          ],
+        ] as [string, string][])
+      : []),
     [
       `surface-wind-errors-${(surface.last ?? '').slice(0, 10)}.svg`,
       histogramGridSvg({

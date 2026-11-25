@@ -58,6 +58,10 @@ Sources, each as read 2026-10-10:
           two archives as `om` (read 2026-10-23), for the #wind-errors page
           (src/domain/windErrors.ts). Never in the default, like `cig`: its
           records ('om-wind') go to their own archive, data/parity/om-wind-*.
+          Since 2026-11-25 it fetches the same twice: the default model, and
+          Open-Meteo's RRFS asked for by name (`models=ncep_rrfs_conus`),
+          whose records carry `model` (docs/rrfs-comparison-plan.md, step 7).
+  omwindrrfs  The RRFS half of `omwind` alone, to fetch its past once.
 """
 import datetime as dt
 import gzip
@@ -258,13 +262,21 @@ def om_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -
     ]
 
 
-def om_wind_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float) -> list[dict]:
+# Open-Meteo's name for the RRFS (OPEN_METEO_RRFS_MODEL, src/domain/normalize.ts).
+RRFS_MODEL = 'ncep_rrfs_conus'
+
+
+def om_wind_records(start: dt.date, end: dt.date, sid: str, lat: float, lon: float, model: str | None = None) -> list[dict]:
     # Knots to the tenth, as the dashboard asks for its own 10 m wind
     # (openMeteoWindsUrl), so the archive and the card read the same units.
+    # `model` names one (the dashboard names none, so no `model` is the
+    # default's record); a single named model keeps the plain variable names.
     names = ['wind_speed_10m', 'wind_gusts_10m', 'wind_direction_10m']
+    extra = '&wind_speed_unit=kn' + (f'&models={model}' if model else '')
+    named = {'model': model} if model else {}
     return [
-        tag({'src': 'om-wind', 'run': run, 'valid': t, 'spd': v[0], 'gust': v[1], 'dir': v[2], 'grid': grid}, sid)
-        for run, t, v, grid in om_archive(start, end, lat, lon, names, '&wind_speed_unit=kn')
+        tag({'src': 'om-wind', **named, 'run': run, 'valid': t, 'spd': v[0], 'gust': v[1], 'dir': v[2], 'grid': grid}, sid)
+        for run, t, v, grid in om_archive(start, end, lat, lon, names, extra)
     ]
 
 
@@ -322,6 +334,12 @@ def main() -> None:
                 time.sleep(3)
             for sid, lat, lon in (SITES if 'omwind' in parts else []):
                 emit(om_wind_records(start, end, sid, lat, lon))
+                time.sleep(3)
+            # The RRFS by name, after the default: a failure here ends the run
+            # like any other, so the weekly refresh keeps neither half and
+            # starts the next run from the same day.
+            for sid, lat, lon in (SITES if parts & {'omwind', 'omwindrrfs'} else []):
+                emit(om_wind_records(start, end, sid, lat, lon, RRFS_MODEL))
                 time.sleep(3)
             jobs = [(d, p) for p in NDFD_PARTS if p in parts for d in days]
             with ThreadPoolExecutor(8) as pool:

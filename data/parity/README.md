@@ -13,7 +13,9 @@ Open-Meteo's terms ask for a credit next to wherever its data are shown
   records with `"src":"om"`, Open-Meteo's cloud cover as served by its
   Historical Forecast and Previous Runs APIs (`scripts/cloudCoverFetch.py`).
 - `om-wind-*.jsonl.gz`: its 10 m wind, gust and direction from the same
-  two archives, as served (`PARTS=omwind`).
+  two archives, as served (`PARTS=omwind`). Records with `model` are the
+  RRFS asked for by name (`om-wind-rrfs-*` is its past, fetched once on
+  2026-11-25 with `PARTS=omwindrrfs`; the weekly files hold both since).
 - `runsplit-*` (the run-split sampler, docs/run-split.md): its raw
   pressure-level winds set against Mark Schulze's and against a second
   request of the app's own, as gaps, with the run metadata of its HRRR

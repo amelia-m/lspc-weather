@@ -22,7 +22,7 @@ import type { RunsSeen } from './runAge';
 /** The same hour's table built from Open-Meteo's RRFS model, minus the app's
  *  default table (scripts/schulzeCompare.live.ts, from 2026-11-24). `error`
  *  set means no rows: the request failed, or the model answered for another
- *  hour or with nothing usable. Logged, not yet summarised on `#parity`. */
+ *  hour or with nothing usable. Summarised by `rrfsSummary`. */
 export interface RrfsLog {
   /** Open-Meteo's name for the model asked (`OPEN_METEO_RRFS_MODEL`). */
   model: string;
@@ -170,6 +170,46 @@ export interface AltitudeSpread {
   spd: Spread;
 }
 
+/** Least, middle and most of a set of hours, to the tenth. */
+export interface HoursRange {
+  n: number;
+  min: number;
+  median: number;
+  max: number;
+}
+
+/** The RRFS tables the comparison logged (`SchulzeRecord.rrfs`), added up:
+ *  how far the table on screen would move if it were built from that model,
+ *  altitude by altitude, RRFS minus default, so a Spread's signed `mean`
+ *  says which model ran higher or further clockwise. Counts and spreads,
+ *  as the page shows the Schulze rows: nothing here says which is right. */
+export interface RrfsSummary {
+  /** Runs that logged an RRFS answer, and those of them with rows. */
+  runs: number;
+  compared: number;
+  /** First and last compared run, ISO. */
+  from: string | null;
+  to: string | null;
+  byAltitude: AltitudeSpread[];
+  runsAllWithin1: number;
+  runsWithRowOver10Deg: number;
+  runsWithRowOver3Kt: number;
+  /** Raw samples the RRFS answered with a wind, least and most over the
+   *  compared runs: it had no 180 m wind on 2026-11-24, the sample between
+   *  the 500 ft row's neighbours. Null when no run logged the count. */
+  samples: { min: number; max: number } | null;
+  /** Hours from the model run's start to the comparison (how old the
+   *  forecast behind the table was), for the RRFS and for the HRRR domain
+   *  the default was served from, over the same runs; and from the RRFS
+   *  run's start to when Open-Meteo had it. Null where no run had the times. */
+  runAgeH: HoursRange | null;
+  defaultRunAgeH: HoursRange | null;
+  availAfterH: HoursRange | null;
+  /** Total and low cloud cover for the hour, RRFS minus default, percent of
+   *  the sky, over the runs that logged both. */
+  cloud: { n: number; total: Spread | null; low: Spread | null };
+}
+
 /** One way the two winds tables can differ in the time they represent. */
 export type TimeGapKey = 'same-hour-same-run' | 'same-hour-different-run' | 'one-hour-apart';
 
@@ -311,6 +351,9 @@ export interface ParitySummary {
     groundByLocalDay?: GroundDay[];
     /** Absent in summaries written before 2026-09-26. */
     byTimeGap?: TimeGapGroup[];
+    /** The RRFS model beside the default (`rrfsSummary`). Absent before
+     *  2026-11-25 and while no run has logged one. */
+    rrfs?: RrfsSummary;
   };
   usairnet: {
     runs: number;
@@ -534,6 +577,8 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
   const ground = groundRuns.map((r) => groundKt(r)!);
   const ratios = ground.filter((g) => g.ours > 0).map((g) => g.theirs / g.ours);
 
+  const rrfs = rrfsSummary(readable);
+
   const usair = records.filter((r): r is UsairnetRecord => r.kind === 'usairnet');
   const usairReadable = usair.filter((r) => !r.error && r.fields != null);
   const sameRuns = usairReadable.filter((r) => r.sameReport === true);
@@ -579,6 +624,7 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
       groundByLocalHour: groundByLocalHour(groundRuns),
       groundByLocalDay: groundByLocalDay(groundRuns),
       byTimeGap: timeGapGroups(schulze),
+      ...(rrfs ? { rrfs } : {}),
     },
     usairnet: {
       runs: usair.length,
@@ -595,6 +641,55 @@ export function summarizeParity(records: readonly ParityRecord[], now: number): 
       arrival: arrivalLags(usair),
       outages: outagesOf(usair),
     },
+  };
+}
+
+/** The domain the app's unnamed request is served from at this point, as
+ *  the comparison names it in `omRuns` (RUN_DOMAINS, scripts/schulzeFetch.ts). */
+export const DEFAULT_RUN_DOMAIN = 'ncep_hrrr_conus';
+
+function hoursRange(hours: readonly number[]): HoursRange | null {
+  const span = extent(hours);
+  if (!span) return null;
+  return { n: hours.length, min: round1(span.min)!, median: round1(median(hours))!, max: round1(span.max)! };
+}
+
+const hoursBetween = (from: string | null | undefined, to: string | null | undefined): number | null => {
+  const a = from ? Date.parse(from) : NaN;
+  const b = to ? Date.parse(to) : NaN;
+  return Number.isFinite(a) && Number.isFinite(b) ? (b - a) / 3_600_000 : null;
+};
+
+/** The RRFS logs of the readable runs, added up; null when none logged
+ *  one. A run whose RRFS answer failed, was for another hour or reached no
+ *  altitude the default has is counted in `runs` and compared in nothing. */
+export function rrfsSummary(readable: readonly SchulzeRecord[]): RrfsSummary | null {
+  const logged = readable.filter((r) => r.rrfs != null);
+  if (logged.length === 0) return null;
+  const compared = logged.filter((r) => (r.rrfs!.rows?.length ?? 0) > 0);
+  const sp = spreads(compared.map((r) => r.rrfs!.rows!));
+  const times = extent(compared.map((r) => Date.parse(r.at)).filter(Number.isFinite));
+  const sampleCounts = compared.map((r) => r.rrfs!.samples).filter((n): n is number => n != null);
+  const sampleSpan = extent(sampleCounts);
+  const ages = (start: (r: SchulzeRecord) => string | null | undefined, end: (r: SchulzeRecord) => string | null | undefined): HoursRange | null =>
+    hoursRange(compared.map((r) => hoursBetween(start(r), end(r))).filter((h): h is number => h != null));
+  const clouds = compared.map((r) => r.rrfs!.cloud).filter((c): c is NonNullable<RrfsLog['cloud']> => c != null);
+  const cloudDiff = (band: 'total' | 'low'): Spread | null =>
+    spreadOf(clouds.map((c) => (c.rrfs[band] != null && c.default[band] != null ? c.rrfs[band]! - c.default[band]! : null)).filter((d): d is number => d != null));
+  return {
+    runs: logged.length,
+    compared: compared.length,
+    from: times ? new Date(times.min).toISOString() : null,
+    to: times ? new Date(times.max).toISOString() : null,
+    byAltitude: sp.byAltitude,
+    runsAllWithin1: sp.within1,
+    runsWithRowOver10Deg: sp.over10,
+    runsWithRowOver3Kt: sp.over3,
+    samples: sampleSpan ? { min: sampleSpan.min, max: sampleSpan.max } : null,
+    runAgeH: ages((r) => r.rrfs!.run?.init, (r) => r.at),
+    defaultRunAgeH: ages((r) => r.omRuns?.[DEFAULT_RUN_DOMAIN]?.init, (r) => r.at),
+    availAfterH: ages((r) => r.rrfs!.run?.init, (r) => r.rrfs!.run?.avail),
+    cloud: { n: clouds.length, total: cloudDiff('total'), low: cloudDiff('low') },
   };
 }
 

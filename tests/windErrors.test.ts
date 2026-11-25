@@ -7,6 +7,7 @@ import {
   nwsArchiveSection,
   nwsKeptSection,
   omArchiveSection,
+  omRrfsArchiveSection,
   parseOmWindLines,
   RRFS_SAMPLE_LABEL,
   surfaceSampleSection,
@@ -112,6 +113,13 @@ describe('parseOmWindLines', () => {
     ].join('\n');
     expect(parseOmWindLines(text)).toEqual([om('historical', '2026-10-20T15:00Z', 9.4, 15.2, 200)]);
   });
+
+  it('keeps a model fetched by name apart from the default, which names none', () => {
+    const rrfs = { ...om('historical', '2026-10-20T15:00Z', 11, 17, 210), model: 'ncep_rrfs_conus' };
+    const text = [JSON.stringify(om('historical', '2026-10-20T15:00Z', 9.4, 15.2, 200)), JSON.stringify(rrfs)].join('\n');
+    expect(parseOmWindLines(text)).toEqual([om('historical', '2026-10-20T15:00Z', 9.4, 15.2, 200)]);
+    expect(parseOmWindLines(text, 'ncep_rrfs_conus')).toEqual([rrfs]);
+  });
 });
 
 describe('omArchiveSection', () => {
@@ -162,6 +170,40 @@ describe('omArchiveSection', () => {
     const s = omArchiveSection([om('historical', '2026-10-20T15:00Z', 30, 40, 200), partial], reports);
     expect(s.rows[0].panels[0]).toMatchObject({ n: 1, median: 3 }); // the later speed
     expect(s.rows[0].panels[2]).toMatchObject({ n: 1, median: 10 }); // the earlier direction
+  });
+});
+
+describe('omRrfsArchiveSection', () => {
+  const reports = [
+    metar('2026-10-20T15:03Z', 'KPMV 201503Z AUTO 19010KT 10SM CLR 12/03 A3001'),
+    metar('2026-10-20T15:55Z', 'KPMV 201555Z AUTO 19010KT 10SM CLR 13/03 A3001'),
+    metar('2026-10-20T16:55Z', 'KPMV 201655Z AUTO 19010KT 10SM CLR 13/03 A3001'),
+  ];
+  const rrfs = (run: OmWindRecord['run'], valid: string, spd: number): OmWindRecord => ({ ...om(run, valid, spd, 0, 190), model: 'ncep_rrfs_conus' });
+
+  it('sets each RRFS row beside the default over the same hours, and only those', () => {
+    const s = omRrfsArchiveSection(
+      [rrfs('historical', '2026-10-20T15:00Z', 14), rrfs('historical', '2026-10-20T16:00Z', 13), rrfs('previous_day1', '2026-10-20T15:00Z', 12)],
+      [
+        om('historical', '2026-10-20T15:00Z', 11, 0, 190),
+        // 16Z: the default has no record, so the RRFS's 16Z is left out too.
+        // 17Z: the RRFS has none, so the default's 17Z (20 kt over) is left out.
+        om('historical', '2026-10-20T17:00Z', 30, 0, 190),
+        om('previous_day1', '2026-10-20T15:00Z', 8, 0, 190),
+      ],
+      reports,
+    );
+    expect(s).toMatchObject({ id: 'om-rrfs-archive', unitWord: 'hour' });
+    expect(s.rows.map((r) => r.label)).toEqual([
+      'RRFS, start of run',
+      'Default model, same hours, start of run',
+      'RRFS, a day earlier',
+      'Default model, same hours, a day earlier',
+    ]);
+    // 15Z alone in each pair: 14 and 11 against 10 at the start of run, 12 and 8 a day earlier.
+    expect(s.rows.map((r) => [r.panels[0].n, r.panels[0].median])).toEqual([[1, 4], [1, 1], [1, 2], [1, -2]]);
+    expect(s.first).toBe('2026-10-20T15:00:00.000Z');
+    expect(s.last).toBe('2026-10-20T15:00:00.000Z');
   });
 });
 
@@ -316,6 +358,21 @@ describe('WindErrorsPage', () => {
     // Only the archive is on this page: the credit names it and not the sample.
     expect(html).toContain('archived forecasts’ charts');
     expect(html).not.toContain('surface-wind sample’s');
+  });
+
+  it('draws the RRFS section with what a row pair is, and credits Open-Meteo for it', () => {
+    const report = [metar('2026-10-20T15:03Z', 'KPMV 201503Z AUTO 19010KT 10SM CLR 12/03 A3001')];
+    const section = omRrfsArchiveSection(
+      [{ ...om('historical', '2026-10-20T15:00Z', 14, 18, 200), model: 'ncep_rrfs_conus' }],
+      [om('historical', '2026-10-20T15:00Z', 12, 18, 200)],
+      report,
+    );
+    const html = page({ ...data, sections: [...data.sections, section] }, 'ready');
+    expect(html).toContain('Open-Meteo’s RRFS archive beside its default model, against KPMV');
+    expect(html).toContain('so a pair differs by the model alone');
+    expect(html).toContain('RRFS, start of run');
+    expect(html).toContain('Open-Meteo.com');
+    expect(html).not.toMatch(/\b(good|bad|accurate|inaccurate|reliable|better|worse)\b/i);
   });
 });
 
