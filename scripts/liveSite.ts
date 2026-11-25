@@ -16,6 +16,7 @@
  *   CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
  * A GitHub runner needs none of that.
  *
+ * LIVE_PAGES names the pages to check ("Jumpers,Trial layout"); unset, all.
  * LIVE_SITE_URL names another site to check, such as a local build served
  * over http. LIVE_CLOCK (an ISO instant) pins the browser's clock, in the
  * DZ's time zone, before each load: the workflow's second leg builds the
@@ -259,7 +260,15 @@ const relayServesOrigin = TAF_RELAY_SET && RELAY_ORIGINS.includes(new URL(BASE).
 
 console.log(`Checking ${BASE}${CLOCK ? ` with the clock at ${CLOCK.toISOString()} (${SITE.timeZone})` : ''}`);
 let failed = 0;
-for (const page of PAGES) {
+// LIVE_PAGES names the pages to check, by name, comma-separated: for trying
+// a check on one page from the sandbox. The workflow never sets it, so it
+// checks them all.
+const ONLY = process.env.LIVE_PAGES?.split(',').map((n) => n.trim());
+if (ONLY && !ONLY.every((n) => PAGES.some((p) => p.name === n))) {
+  console.error(`LIVE_PAGES names a page there is not: ${process.env.LIVE_PAGES}`);
+  process.exit(2);
+}
+for (const page of ONLY ? PAGES.filter((p) => ONLY.includes(p.name)) : PAGES) {
   for (const width of WIDTHS) {
     const verdicts: LoadVerdict[] = [];
     // A second load only when the first had a fault (pagePasses).
