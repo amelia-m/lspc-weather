@@ -19,9 +19,9 @@ Amelia, 2026-11-23: "Y to attribution trailers".
 
 **Committing and pushing: delegated.** Amelia, 2026-11-25: "For this project you can commit and push without my confirmation". An agent may commit and push to its own working branch without asking, after the four gates and a clean local review (the global rule's condition for a delegated push). Not a force-push, and not a push to `main` or any other branch: those still wait for her.
 
-**Merging: not delegated.** She said commit and push, not merge, so opening a pull request and merging it each wait for her word, each time. Her one-off instructions do not stand: "Push and merge If the changes pass local review" (2026-11-22) covered that change, as each later "push and merge" covered its own.
+**Opening a pull request and merging it: delegated.** Amelia, 2026-11-25: "Yes", in answer to the agent's "If you'd like me to open and merge pull requests after a clean review too, say so and I'll record that the same way." An agent may open a pull request from its working branch and merge it without asking when all of these hold: the four gates pass on the pushed head, a local review from the global table is clean (its findings and what was done about each in the PR body), and CI is green on that head. A review finding left open that changes what a reader sees or does is not clean: it goes to her first.
 
-**For her to decide:** whether to delegate merging too. If so, her words and the date go in this section; nothing else on the global list can be delegated.
+**Still hers, each time:** a force-push, a push to `main` or to any branch but the agent's own, deleting a branch or tag that holds unmerged work, rewriting history, and everything else on the global list. The global rules allow a profile to delegate pushing and merging and nothing more.
 
 How a merge is done when she says so: the four gates on real exit codes, a local review from the global table (which one and why goes in the PR body), CI green on the PR head, then merge at that head's sha. Since 2026-11-23 the branch is pushed as a fast-forward with `main` merged in and the PR squash-merged, because the session's permission classifier refused a force-with-lease push that day; no history is rewritten on the remote.
 
