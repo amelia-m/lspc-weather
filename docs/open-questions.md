@@ -1626,3 +1626,24 @@ the location view with a marker (D), which show the national composite.
 [`markschulze-altitude-reference.md`](markschulze-altitude-reference.md).
 The winds-aloft card says so, since it is the cross-check it sends
 jumpers to.
+
+## More sources to compare against
+
+Amelia flagged these on 2026-09-30 as possible comparison sources, alongside usairnet and Mark Schulze's tool:
+
+- <https://jumpslut.com/directory/ne/lincoln-sport-parachute-club/>, the club's own entry on jumpslut.com
+- <https://jumpslut.com/directory/weather/>, that site's weather directory
+- <https://www.windy.com/?40.868,-96.078,13>, Windy, centred near the drop zone at zoom 13.
+  That point is about 1.6 mi east of the DZ point in `src/config/site.ts` (40.8703, -96.1085, the landing area since 2026-10-08); whether the difference matters depends on the model's grid spacing.
+  (An earlier link, <https://www.windy.com/?39.500,-98.350,4,p:favs>, was centred on the middle of the US with the favourites panel open.)
+
+Nobody has opened any of them yet, so it is not known what each shows (observation, forecast, winds aloft), which feed or model it reads, or whether it can be fetched from a script.
+Neither `jumpslut.com` nor `windy.com` is on the sandbox allowlist, and Windy renders in the browser, so a page scrape may not work there.
+First step: open each, note what it displays and its source, then decide whether it earns a `scripts/*.live.ts` comparison and a row on `#parity`.
+
+## Club background: USPA article on the club's 60th year
+
+<https://www.uspa.org/uspa-news/making-a-sport-of-itlincoln-sport-parachute-club-celebrates-60-years>, flagged by Amelia on 2026-09-30.
+Not a weather source.
+It is a USPA news piece about the club, kept here as possible background for the README or the drop-zone details the app states.
+Not yet read, so nothing in it has been checked against `src/config/site.ts` or anything else in the repo.
