@@ -1,6 +1,6 @@
 /**
  * Load the deployed site in a browser and say whether a reader would meet a
- * fault: every page (Jumpers, Pilots, Canopy, #citations, #parity, #wind-errors, #winds-method, #about, the
+ * fault: every page (Jumpers, Pilots, Canopy, the trial layout at beta/, #citations, #parity, #wind-errors, #winds-method, #about, the
  * ceiling-error page and, since 2026-11-11, the talk) at 1280, 390 and 320 px,
  * live data. What counts as a fault is src/domain/liveSite.ts; this file
  * drives the browser and prints.
@@ -51,6 +51,10 @@ const PAGES: { name: string; path: string }[] = [
   { name: 'Jumpers', path: '' },
   { name: 'Pilots', path: '#pilots' },
   { name: 'Canopy', path: '#canopy' },
+  // The trial layout: the Jumpers page again from its own folder, with the
+  // section bar. Pages serves files only, so this also holds that the build
+  // put a page there.
+  { name: 'Trial layout', path: 'beta/' },
   { name: 'Citations', path: '#citations' },
   { name: 'Parity', path: '#parity' },
   { name: 'Wind errors', path: '#wind-errors' },
@@ -190,6 +194,7 @@ async function observe(
       panels: document.querySelectorAll('.panel').length,
       slides: document.querySelectorAll('.reveal .slides section').length,
       hourNavs: document.querySelector('.fc-nav') != null,
+      sectionBar: [...document.querySelectorAll('nav.section-bar button')].map((b) => (b.textContent ?? '').trim()),
       canopyCards: ['Exit weight & wing loading', 'Canopy Risk Quotient'].filter((t) => text.includes(t)).length,
       advisoryList: document.querySelector('.advisory-panel') != null,
     };
@@ -208,6 +213,16 @@ async function observe(
       ok: !seen.radarFailed && !!seen.radar?.complete && (seen.radar?.natural ?? 0) > 0,
       detail: seen.radarFailed ? 'the card says the image is unavailable' : `naturalWidth ${seen.radar?.natural ?? 'no image'}`,
     });
+  }
+  if (page.name === 'Trial layout') {
+    o.checks.push({
+      name: 'the trial layout drew its section bar',
+      ok: seen.sectionBar.length === 5,
+      detail: seen.sectionBar.length ? seen.sectionBar.join(', ') : 'no bar',
+    });
+  } else if (page.name !== 'Talk' && page.name !== 'Ceiling errors') {
+    // And nowhere else: the standard pages are as they were.
+    o.checks.push({ name: 'no section bar on a standard page', ok: seen.sectionBar.length === 0, detail: seen.sectionBar.join(', ') || undefined });
   }
   if (page.name === 'Canopy') {
     // The tab about the wing: both its cards, and none of the weather's

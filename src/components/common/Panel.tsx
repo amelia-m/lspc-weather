@@ -1,8 +1,9 @@
-import { useId, type ReactNode } from 'react';
+import { useContext, useId, type ReactNode } from 'react';
 import type { DataSource } from '../../config/sources';
 import type { SpeedUnit, TempUnit } from '../../domain/units';
 import { TempToggle, UnitToggle, UnitToggleScope } from './UnitToggle';
 import { SourceLinks } from './SourceLinks';
+import { CardAnchor } from './cardAnchor';
 
 export function Panel({
   title,
@@ -48,6 +49,9 @@ export function Panel({
   children: ReactNode;
 }): JSX.Element {
   const headingId = useId();
+  // Which card this is, where the dashboard says (cardAnchor.ts): the trial
+  // layout's section bar scrolls to it. Absent anywhere else.
+  const anchor = useContext(CardAnchor);
   const speedToggle = unit !== undefined && onUnitChange !== undefined;
   const tempToggle = tempUnit !== undefined && onTempUnitChange !== undefined;
   const unitToggle =
@@ -60,7 +64,7 @@ export function Panel({
       </UnitToggleScope>
     ) : null;
   return (
-    <section className={className ? `panel ${className}` : 'panel'}>
+    <section className={className ? `panel ${className}` : 'panel'} data-card={anchor ?? undefined}>
       {/* `has-aside` lets the stylesheet allow the header to wrap only on the
           cards that carry a toggle. Cards without one keep the unwrapped
           header they have always had, with the subtitle beside the title. */}

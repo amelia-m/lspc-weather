@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SITE } from './config/site';
 import {
   resolveThresholds,
@@ -53,6 +53,10 @@ import { SunPanel } from './components/SunPanel';
 import { WingLoadingPanel } from './components/WingLoadingPanel';
 import { CanopyRiskPanel } from './components/CanopyRiskPanel';
 import { AboutPage } from './components/AboutPage';
+import { SectionBar } from './components/SectionBar';
+import { CardAnchor } from './components/common/cardAnchor';
+import { VIEW_SECTIONS } from './config/sections';
+import { isBetaPath } from './domain/sectionNav';
 import { DashboardDisclaimer } from './components/DashboardDisclaimer';
 import { ProfileSelector } from './components/ProfileSelector';
 import { AppFooter } from './components/AppFooter';
@@ -246,6 +250,11 @@ export default function App(): JSX.Element {
     });
 
   const view: View = route === 'pilots' || route === 'canopy' ? route : 'jumpers';
+  // The trial layout (option B, docs/mockups/layout-options-2026-11-25.html)
+  // is this same page served from beta/, with a bar that jumps between
+  // sections. Read once: the path does not change while the page is open.
+  const beta = isBetaPath(window.location.pathname);
+  const showBar = beta && VIEW_SECTIONS[view].length > 0;
   // The Pilots tab has no Settings, so its flags fire on the profile's
   // published figures, not on edits a reader made for a jumper profile on
   // the other tab: an edit there would otherwise move the visibility flag a
@@ -360,7 +369,7 @@ export default function App(): JSX.Element {
   };
 
   return (
-    <div className="app">
+    <div className={showBar ? 'app has-section-bar' : 'app'}>
       <header className="app-head">
         <div>
           <h1>LSPC Weather</h1>
@@ -413,6 +422,14 @@ export default function App(): JSX.Element {
         ))}
       </nav>
 
+      {/* The trial layout says it is one, and where the standard page is. */}
+      {beta && (
+        <p className="beta-note muted small">
+          Trial layout: the bar {showBar ? '' : 'on the Jumpers and Pilots tabs '}jumps between sections of the page.{' '}
+          <a href={`${import.meta.env.BASE_URL}${window.location.hash}`}>The standard layout</a>
+        </p>
+      )}
+
       <DashboardDisclaimer />
 
       {VIEW_SHOWS_WEATHER[view] && (
@@ -441,7 +458,9 @@ export default function App(): JSX.Element {
           so switching tabs remounts the grid and it packs afresh. */}
       <MasonryGrid key={view}>
         {VIEW_CARDS[view].map((id) => (
-          <Fragment key={id}>{cards[id]}</Fragment>
+          <CardAnchor.Provider key={id} value={id}>
+            {cards[id]}
+          </CardAnchor.Provider>
         ))}
       </MasonryGrid>
 
@@ -468,6 +487,7 @@ export default function App(): JSX.Element {
       )}
 
       <AppFooter />
+      {showBar && <SectionBar sections={VIEW_SECTIONS[view]} />}
     </div>
   );
 }
