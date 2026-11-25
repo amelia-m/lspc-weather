@@ -32,11 +32,7 @@ The maintainer sets what the dashboard should do, decides what ships, and suppli
 
 ## 🌤️ What it shows
 
-The dashboard has two tabs. **Jumpers** (the plain address) has the wind
-limits, drift and the day's planning. **Pilots** (`#pilots`) has the nearby airports'
-METARs, the sectional, the TAF, density altitude, winds aloft and briefing
-links. Conditions now,
-the sky, daylight, radar and the advisories show on both. Which cards each tab
+The dashboard has three tabs. **Jumpers** (the plain address) has the wind limits, drift and the day's planning. **Pilots** (`#pilots`) has the nearby airports' METARs, the sectional, the TAF, density altitude, winds aloft and briefing links. **Canopy** (`#canopy`) has the exit weight and wing loading card and a pointer to USPA's Canopy Risk Quotient, and no weather. Conditions now, the sky, daylight, radar and the advisories show on Jumpers and Pilots. Which cards each tab
 shows is `src/config/views.ts`. The jumper wind-limit profile (Student,
 Licensed and its license, the waiver tiers) and "Set your own thresholds" are on Jumpers only:
 the Pilots advisory list leaves out the jumper wind flags (surface wind
@@ -74,7 +70,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
   far the hour shown is from now. Under the table, KPMV's latest report,
   labelled as the observation it is, so the forecast and the measurement
   sit together.
-- ⚖️ **Exit weight & wing loading**: body weight plus gear (32 lb, one student rig weighed) over a Navigator 200/220/260/280, against Performance Designs' maximum exit weight for a Student on that size. The chart is the maintainer's transcription, not yet checked against PD's own copy here, and the canopy model and sizes are theirs to confirm (`#citations`, A12). The card also links USPA's own self-assessment for canopy choice, the Canopy Risk Quotient, and works none of it.
+- ⚖️ **Exit weight & wing loading**: body weight plus gear (32 lb, one student rig weighed) over a Navigator 200/220/260/280, against Performance Designs' maximum exit weight for a Student on that size. The chart is the maintainer's transcription, not yet checked against PD's own copy here, and the canopy model and sizes are theirs to confirm (`#citations`, A12). On the Canopy tab, beside a card that links USPA's own self-assessment for canopy choice, the Canopy Risk Quotient, and works none of it.
 - 🎯 **Freefall drift / spot**: Schulze-style drift estimate with editable exit, deploy, and fall-rate inputs, worked from whichever hour the winds card shows, with the same hour readout and −1 h / +1 h buttons: stepping either card moves both. Deploy opens on the BSR minimum opening altitude for the profile: 3,000 ft for a student, and under Licensed for the license chosen in the header (3,000 ft for A, 2,500 ft for B, C and D). Under the spot, **exit separation on jump run**: the seconds between exits for the two ground distances SIM 4-7 C gives (at least 1,000 ft between solo jumpers, 1,500 ft between small groups), worked from a jump-run bearing and an indicated airspeed the reader can change (it opens on 75 kt, the low end of what the club's Cessna 182s fly, on the maintainer's word) and the forecast wind at exit altitude, with the bearing drawn through the drop zone's GPS point over USGS's aerial image of the field, the landing area marked beside it; the line can be offset from the GPS point in tenths of a nautical mile, and is ticked every 0.1 nm.
 - 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
@@ -336,6 +332,8 @@ each run and a day earlier), and, from the surface-wind sample,
 Open-Meteo's three 10 m forms and the NWS hour against the same reports.
 Its data file is rebuilt by the weekly ceiling data refresh. Counts only,
 like the page below.
+
+A page, **About this site** (`#about`), holds what the footer used to: the full data credit with what the dashboard changes in Open-Meteo's data, a line on each page behind the dashboard, and who makes the site and how. The footer lists the pages by name.
 
 A page, **How the winds aloft table is built** (`#winds-method`), explains the Winds aloft card's levels, its Surface row and how the table compares with Mark Schulze's tool; the card links it in place of a folded note (since 2026-11-22).
 

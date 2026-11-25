@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AppFooter } from '../src/components/AppFooter';
+import { AboutPage } from '../src/components/AboutPage';
+import { SITE_PAGES } from '../src/components/sitePages';
 import { AdvisoryPanel } from '../src/components/AdvisoryPanel';
 import { DailyForecastPanel } from '../src/components/DailyForecastPanel';
 import { WindsAloftPanel } from '../src/components/WindsAloftPanel';
@@ -106,8 +108,16 @@ describe('the Open-Meteo credit', () => {
   const parity = (state: 'ready' | 'loading' | 'missing' | 'error', summary = withWinds) =>
     renderToStaticMarkup(createElement(ParityPage, { summary: state === 'ready' ? summary : null, state }));
 
-  it('credits Open-Meteo, links the licence, and says what is changed, on the page footer', () => {
+  it('credits Open-Meteo, links the licence and says its data are reworked, on every tab’s footer', () => {
     const html = renderToStaticMarkup(createElement(AppFooter));
+    expect(html).toContain('>Weather data by Open-Meteo.com</a>');
+    expect(html).toContain(LICENCE);
+    // The fact of the change stays in view; what is changed is a link away.
+    expect(html).toContain(', reworked by this dashboard (<a href="#about">how</a>).');
+  });
+
+  it('says what is changed, in full, on #about', () => {
+    const html = renderToStaticMarkup(createElement(AboutPage));
     expect(html).toContain('>Weather data by Open-Meteo.com</a>');
     expect(html).toContain(LICENCE);
     expect(html).toContain('the winds aloft, the drift estimate, the 10-day outlook’s day rows and the');
@@ -119,10 +129,43 @@ describe('the Open-Meteo credit', () => {
 
   it('keeps the sign-off out of the sources line, last in the footer', () => {
     const html = renderToStaticMarkup(createElement(AppFooter));
-    const data = html.slice(0, html.indexOf('<br/>'));
+    const data = html.slice(0, html.indexOf('<nav'));
     expect(data).toContain('Data: Iowa Environmental Mesonet');
-    expect(data).not.toContain('fly safe');
-    expect(html.trimEnd()).toMatch(/<br\/>Built for fun — fly safe\.<\/footer>$/);
+    expect(data).not.toContain('Fly safe');
+    expect(html.trimEnd()).toMatch(/<\/nav>Built for fun\. Fly safe\.<\/footer>$/);
+  });
+
+  // The maintainer, 2026-11-25: the footer "is getting huge. list the
+  // links, but move much of the prose". Names in the footer; each page's
+  // line, and the full credit, on #about.
+  it('lists the pages behind the dashboard by name in the footer, with no line of description', () => {
+    const html = renderToStaticMarkup(createElement(AppFooter));
+    const nav = html.slice(html.indexOf('<nav'), html.indexOf('</nav>'));
+    expect(SITE_PAGES.length).toBeGreaterThanOrEqual(7);
+    expect(nav).toContain('<a href="#about">About this site</a>');
+    for (const page of SITE_PAGES) {
+      expect(nav).toContain(`href="${page.href}"`);
+      expect(nav).toContain(`>${page.label}</a>`);
+      expect(html).not.toContain(page.about.replace(/’/g, '’'));
+    }
+    // What used to stand here, in conditions that printed it: the credit's
+    // long account and a page's description.
+    expect(html).not.toContain('interpolated from fixed heights');
+    expect(html).not.toContain('what nobody has checked yet');
+    // Short: a credit line, the names and a sign-off.
+    const words = html.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).length;
+    expect(words).toBeLessThan(75);
+  });
+
+  it('gives each page its line on #about, and says who makes the site and how', () => {
+    const html = renderToStaticMarkup(createElement(AboutPage));
+    for (const page of SITE_PAGES) {
+      expect(html).toContain(`href="${page.href}"`);
+      expect(html).toContain(`>${page.label}</a><span class="muted small">: ${page.about}</span>`);
+    }
+    expect(html).toContain('written by AI coding agents (Anthropic’s Claude Code) at the maintainer’s direction');
+    expect(html).toContain('no instructor or other licensed professional has reviewed them');
+    expect(html).toContain('<a href="#">back to the dashboard</a>');
   });
 
   it('credits the winds and quoted figures on #parity, which has no outlook or drift card', () => {

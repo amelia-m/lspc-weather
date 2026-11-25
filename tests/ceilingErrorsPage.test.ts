@@ -1,7 +1,8 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { AppFooter, CEILING_ERRORS_URL } from '../src/components/AppFooter';
+import { AppFooter } from '../src/components/AppFooter';
+import { CEILING_ERRORS_URL } from '../src/components/sitePages';
 import { CHANCE_BINS, CHANCE_ELEMENTS } from '../src/domain/chances';
 // Raw imports: the typecheck has no Node types for the tests.
 import page from '../public/ceiling-errors/index.html?raw';

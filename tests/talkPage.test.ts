@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { AppFooter, TALK_URL } from '../src/components/AppFooter';
+import { AppFooter } from '../src/components/AppFooter';
+import { TALK_URL } from '../src/components/sitePages';
 import talkPage from '../public/talk/index.html?raw';
 import talkSource from '../docs/talks/lincoln-ai-meetup/talk.qmd?raw';
 

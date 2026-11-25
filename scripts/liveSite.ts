@@ -1,6 +1,6 @@
 /**
  * Load the deployed site in a browser and say whether a reader would meet a
- * fault: every page (Jumpers, Pilots, #citations, #parity, #wind-errors, #winds-method, the
+ * fault: every page (Jumpers, Pilots, Canopy, #citations, #parity, #wind-errors, #winds-method, #about, the
  * ceiling-error page and, since 2026-11-11, the talk) at 1280, 390 and 320 px,
  * live data. What counts as a fault is src/domain/liveSite.ts; this file
  * drives the browser and prints.
@@ -50,10 +50,12 @@ if (CLOCK && Number.isNaN(CLOCK.getTime())) {
 const PAGES: { name: string; path: string }[] = [
   { name: 'Jumpers', path: '' },
   { name: 'Pilots', path: '#pilots' },
+  { name: 'Canopy', path: '#canopy' },
   { name: 'Citations', path: '#citations' },
   { name: 'Parity', path: '#parity' },
   { name: 'Wind errors', path: '#wind-errors' },
   { name: 'Winds method', path: '#winds-method' },
+  { name: 'About', path: '#about' },
   { name: 'Ceiling errors', path: 'ceiling-errors/index.html' },
   // The talk, a reveal.js deck in one file (public/talk/, scripts/renderTalk.sh).
   { name: 'Talk', path: 'talk/index.html' },
@@ -188,6 +190,8 @@ async function observe(
       panels: document.querySelectorAll('.panel').length,
       slides: document.querySelectorAll('.reveal .slides section').length,
       hourNavs: document.querySelector('.fc-nav') != null,
+      canopyCards: ['Exit weight & wing loading', 'Canopy Risk Quotient'].filter((t) => text.includes(t)).length,
+      advisoryList: document.querySelector('.advisory-panel') != null,
     };
   });
   if (seen.hourNavs) o.hourNavs = await p.evaluate(measureHourNavs);
@@ -203,6 +207,15 @@ async function observe(
       name: 'radar image drew',
       ok: !seen.radarFailed && !!seen.radar?.complete && (seen.radar?.natural ?? 0) > 0,
       detail: seen.radarFailed ? 'the card says the image is unavailable' : `naturalWidth ${seen.radar?.natural ?? 'no image'}`,
+    });
+  }
+  if (page.name === 'Canopy') {
+    // The tab about the wing: both its cards, and none of the weather's
+    // lists, which would read as bearing on a wing-loading sum.
+    o.checks.push({
+      name: 'the Canopy tab drew its two cards and no weather list',
+      ok: seen.canopyCards === 2 && seen.rows.length === 0 && !seen.advisoryList,
+      detail: `${seen.canopyCards} of 2 cards, ${seen.rows.length} Data health rows, advisory list ${seen.advisoryList ? 'shown' : 'absent'}`,
     });
   }
   if (page.name === 'Parity') o.checks.push({ name: 'parity summary loaded', ok: seen.paritySummary === 'ok', detail: seen.paritySummary });

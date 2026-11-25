@@ -1482,10 +1482,17 @@ a.sim-term {
 }
 .jumprun-frame {
   position: relative;
-  height: 260px;
+  height: 320px;
   overflow: hidden;
   border-radius: 6px;
   background: var(--panel-2);
+}
+/* Tiles and overlay, scaled together about the frame's centre
+   (IMAGE_SCALE in JumpRunMap.tsx). */
+.jumprun-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
 }
 .jumprun-overlay {
   position: absolute;
@@ -1719,6 +1726,22 @@ a.sim-term {
   color: var(--muted);
   font-size: 0.75rem;
   padding: 18px 0;
+}
+/* The pages behind the dashboard, by name, wrapping as the width allows. */
+.app-foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin: 8px 0;
+}
+/* The same pages on #about, each with its line. */
+.about-pages {
+  margin: 0;
+  padding-left: 18px;
+}
+.about-pages li {
+  margin: 4px 0;
 }
 
 /* Error boundary fallback */
