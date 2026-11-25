@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LSPC Weather: layout options</title>
+<style>
+  :root { --bg:#0e1116; --panel:#171c24; --panel-2:#1f2630; --border:#2a323d; --text:#e6edf3; --muted:#93a1b0; --accent:#4aa8ff; --caution:#ff5d5d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  h2 { font-size: 1.2rem; margin: 0 0 4px; }
+  .lede, .note { color: var(--muted); margin: 0 0 14px; max-width: 70ch; }
+  section.option { background: #11151b; border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin: 22px 0; }
+  .frames { display: flex; flex-wrap: wrap; gap: 18px; margin: 14px 0; align-items: flex-start; }
+  figure { margin: 0; }
+  figcaption { color: var(--muted); font-size: 0.8rem; margin-top: 6px; max-width: 270px; }
+  .pros { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 24px; }
+  .pros h3 { font-size: 0.85rem; margin: 0 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .pros ul { margin: 0; padding-left: 18px; }
+  .pros li { margin: 3px 0; }
+
+  /* A phone, drawn small. */
+  .ph { width: 270px; height: 560px; background: var(--bg); border: 2px solid #3a4553; border-radius: 26px; overflow: hidden; display: flex; flex-direction: column; font-size: 11px; line-height: 1.35; }
+  .ph-head { padding: 12px 12px 6px; }
+  .ph-head b { font-size: 15px; display: block; }
+  .ph-head span { color: var(--muted); }
+  .ph-body { flex: 1; overflow: hidden; padding: 0 10px 10px; display: flex; flex-direction: column; gap: 8px; }
+  .back { color: var(--accent); font-weight: 600; }
+  .flagbar { background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--caution); border-radius: 8px; padding: 6px 8px; }
+  .flagbar b { display: block; }
+  .flagbar small, .card small { color: var(--muted); font-size: 10px; }
+  .flagbar ul { margin: 4px 0 0; padding-left: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+  .card h4 { margin: 0 0 4px; font-size: 12px; }
+  .big { font-size: 22px; font-weight: 700; }
+  .bar { height: 8px; border-radius: 4px; background: var(--panel-2); margin: 6px 0 2px; position: relative; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 46%; background: var(--accent); border-radius: 4px; }
+  .rows i { display: block; height: 7px; border-radius: 3px; background: var(--panel-2); margin: 5px 0; }
+  .rows i:nth-child(2) { width: 85%; } .rows i:nth-child(3) { width: 70%; } .rows i:nth-child(4) { width: 90%; }
+  .img { height: 86px; border-radius: 6px; background: linear-gradient(135deg, #23313a, #1b2a22 60%, #2a3324); margin-top: 4px; }
+  .tabs { display: flex; }
+  .tabs span { flex: 1; text-align: center; padding: 5px; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+  .tabs span:first-child { border-radius: 6px 0 0 6px; } .tabs span:last-child { border-radius: 0 6px 6px 0; }
+  .tabs .on { background: var(--accent); color: #04121f; }
+
+  /* Tiles, the bottom bar and the side rail: an icon always with its word. */
+  svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 9px; min-height: 66px; }
+  .tile svg { color: var(--accent); }
+  .tile b { display: block; font-size: 12px; }
+  .tile small { color: var(--muted); font-size: 10px; }
+  .bnav { display: flex; border-top: 1px solid var(--border); background: var(--panel); }
+  .bnav span { flex: 1; text-align: center; padding: 6px 0 8px; color: var(--muted); font-size: 10px; }
+  .bnav span svg { display: block; margin: 0 auto 1px; }
+  .bnav .on { color: var(--accent); font-weight: 700; }
+  .list span { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .list svg { color: var(--accent); }
+
+  /* A desktop window, drawn small. */
+  .desk { width: 470px; height: 300px; background: var(--bg); border: 2px solid #3a4553; border-radius: 10px; overflow: hidden; display: flex; font-size: 10px; }
+  .rail { width: 64px; background: var(--panel); border-right: 1px solid var(--border); padding: 8px 0; }
+  .rail span { display: block; text-align: center; color: var(--muted); padding: 6px 0; font-size: 9px; }
+  .rail span svg { display: block; margin: 0 auto; }
+  .rail .on { color: var(--accent); font-weight: 700; }
+  .desk-body { flex: 1; padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
+  .desk-body .flagbar { grid-column: 1 / -1; }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/></symbol>
+  <symbol id="i-aloft" viewBox="0 0 24 24"><path d="M12 3v18M6 9l6-6 6 6M5 15h4M15 15h4M5 20h4M15 20h4"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></symbol>
+  <symbol id="i-plan" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+  <symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 12l6-6"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M3 13l18-8-6 16-3-7-9-1z"/></symbol>
+  <symbol id="i-canopy" viewBox="0 0 24 24"><path d="M3 11a9 7 0 0 1 18 0zM3 11l9 10 9-10M12 11v10"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-now" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 9h8M8 13h8M8 17h5"/></symbol>
+</svg>
+
+<main>
+<h1>LSPC Weather: three layout options</h1>
+<p class="lede">Mock-ups for the maintainer, 2026-11-25. Sample figures, not live weather. Drawn at phone size first, since that is where the page is read at the drop zone. In every option the flags ("Conditions to note") stay at the top of each weather page: a layout that needs a tap to reach them would let silence read as an all-clear.</p>
+
+<section class="option" id="option-a">
+  <h2>A. A landing page of tiles</h2>
+  <p class="note">The plain address opens a menu. Each tile opens a short page of two or three cards, with a way back.</p>
+  <div class="frames">
+    <figure>
+      <div class="ph">
+        <div class="ph-head"><b>LSPC Weather</b><span>Brown's Airport (NE69) · obs from KPMV</span></div>
+        <div class="ph-body">
+          <div class="flagbar"><b>2 conditions to note</b><small>From the 1:55 PM report, 5 min ago</small><ul><li>Surface wind at the student caution</li><li>Forecast gusts this afternoon</li></ul></div>
+          <div class="tiles">
+            <div class="tile"><svg class="ic"><use href="#i-wind"/></svg><b>Wind now</b><small>12 kt, gust 22 · 5 min ago</small></div>
+            <div class="tile"><svg class="ic"><use href="#i-aloft"/></svg><b>Aloft &amp; drift</b><small>Winds, spot, jump run</small></div>
+            <div class="tile"><svg class="ic"><use href="#i-cloud"/></svg><b>Sky</b><small>Ceiling, cover, rain</small></div>
+            <div class="tile"><svg class="ic"><use href="#i-plan"/></svg><b>Outlook</b><small>Hourly wind, 10 days</small></div>
+            <div class="tile"><svg class="ic"><use href="#i-radar"/></svg><b>Radar</b><small>KOAX loop</small></div>
+            <div class="tile"><svg class="ic"><use href="#i-plane"/></svg><b>Pilots</b><small>TAF, sectional, DA</small></div>
+            <div class="tile"><svg class="ic"><use href="#i-canopy"/></svg><b>Canopy</b><small>Wing loading, USPA quiz</small></div>
+            <div class="tile"><svg class="ic"><use href="#i-info"/></svg><b>About</b><small>Citations, sources</small></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Home. Flags first, then eight tiles. A tile may carry one live figure, always with its age.</figcaption>
+    </figure>
+    <figure>
+      <div class="ph">
+        <div class="ph-head"><span class="back">‹ Home</span><b>Wind now</b></div>
+        <div class="ph-body">
+          <div class="flagbar"><b>2 conditions to note</b><small>Tap to read them · 5 min ago</small></div>
+          <div class="card"><h4>Surface wind</h4><small>Observed at KPMV, 1:55 PM, 5 min ago</small><div><span class="big">12</span> kt &nbsp; gust 22 kt</div><div class="bar"><i></i></div><small>Caution ≥ 12 kt · 10 kt over</small></div>
+          <div class="card"><h4>Hourly wind</h4><div class="img"></div></div>
+          <div class="card"><h4>Current conditions</h4><div class="rows"><i></i><i></i><i></i></div></div>
+        </div>
+      </div>
+      <figcaption>A tile's page: two or three cards, flags folded to one line, "Home" to go back.</figcaption>
+    </figure>
+  </div>
+  <div class="pros">
+    <div><h3>For</h3><ul><li>The whole site is visible on one screen; nothing is found by scrolling.</li><li>Each page is short, so a card is never far down.</li><li>Room to grow: a new tool is one more tile.</li></ul></div>
+    <div><h3>Against</h3><ul><li>The wind against the limit, the day's first question, is now one tap away. It was the first thing on the page.</li><li>Every move between sections goes through Home: two taps, where a bar needs one.</li><li>A figure on a tile is a second place for every caveat the card carries (age, station distance).</li></ul></div>
+  </div>
+</section>
+
+<section class="option" id="option-b">
+  <h2>B. One page, with icons to jump between sections</h2>
+  <p class="note">The page stays as it is: one scroll per tab. A bar of five icons, each with its word, stays on screen and jumps to a section; the one in view is highlighted. On a phone it sits at the bottom, in reach of a thumb; on a wide screen it becomes a rail down the side.</p>
+  <div class="frames">
+    <figure>
+      <div class="ph">
+        <div class="ph-head"><b>LSPC Weather</b><span>Brown's Airport (NE69) · obs from KPMV</span></div>
+        <div class="ph-body">
+          <div class="tabs"><span class="on">Jumpers</span><span>Pilots</span><span>Canopy</span></div>
+          <div class="flagbar"><b>2 conditions to note</b><small>From the 1:55 PM report, 5 min ago</small><ul><li>Surface wind at the student caution</li><li>Forecast gusts this afternoon</li></ul></div>
+          <div class="card"><h4>Surface wind</h4><small>Observed at KPMV, 1:55 PM, 5 min ago</small><div><span class="big">12</span> kt &nbsp; gust 22 kt</div><div class="bar"><i></i></div><small>Caution ≥ 12 kt · 10 kt over</small></div>
+          <div class="card"><h4>Hourly wind</h4><div class="img"></div></div>
+        </div>
+        <div class="bnav"><span class="on"><svg class="ic"><use href="#i-wind"/></svg>Wind</span><span><svg class="ic"><use href="#i-aloft"/></svg>Aloft</span><span><svg class="ic"><use href="#i-cloud"/></svg>Sky</span><span><svg class="ic"><use href="#i-plan"/></svg>Outlook</span><span><svg class="ic"><use href="#i-radar"/></svg>Radar</span></div>
+      </div>
+      <figcaption>The top of the page, as today, plus the bar. The tabs stay for Pilots and Canopy.</figcaption>
+    </figure>
+    <figure>
+      <div class="ph">
+        <div class="ph-body" style="padding-top:10px">
+          <div class="card"><h4>Winds aloft</h4><small>Forecast for 2 PM</small><div class="rows"><i></i><i></i><i></i><i></i></div></div>
+          <div class="card"><h4>Freefall drift / spot</h4><small>Exit 1.55 mi toward SSW of the target</small><div class="img"></div><small>Exit separation: 11 s solo, 17 s small groups</small></div>
+          <div class="card"><h4>Current conditions</h4><div class="rows"><i></i><i></i></div></div>
+        </div>
+        <div class="bnav"><span><svg class="ic"><use href="#i-wind"/></svg>Wind</span><span class="on"><svg class="ic"><use href="#i-aloft"/></svg>Aloft</span><span><svg class="ic"><use href="#i-cloud"/></svg>Sky</span><span><svg class="ic"><use href="#i-plan"/></svg>Outlook</span><span><svg class="ic"><use href="#i-radar"/></svg>Radar</span></div>
+      </div>
+      <figcaption>After tapping "Aloft", or scrolling there: the bar follows the section in view.</figcaption>
+    </figure>
+    <figure>
+      <div class="desk">
+        <div class="rail"><span class="on"><svg class="ic"><use href="#i-wind"/></svg>Wind</span><span><svg class="ic"><use href="#i-aloft"/></svg>Aloft</span><span><svg class="ic"><use href="#i-cloud"/></svg>Sky</span><span><svg class="ic"><use href="#i-plan"/></svg>Outlook</span><span><svg class="ic"><use href="#i-radar"/></svg>Radar</span></div>
+        <div class="desk-body">
+          <div class="flagbar"><b>2 conditions to note</b><small>From the 1:55 PM report, 5 min ago</small></div>
+          <div class="card"><h4>Surface wind</h4><div><span class="big">12</span> kt</div><div class="bar"><i></i></div></div>
+          <div class="card"><h4>Hourly wind</h4><div class="img" style="height:60px"></div></div>
+          <div class="card"><h4>Winds aloft</h4><div class="rows"><i></i><i></i><i></i></div></div>
+          <div class="card"><h4>Freefall drift / spot</h4><div class="rows"><i></i><i></i></div></div>
+        </div>
+      </div>
+      <figcaption style="max-width:470px">On a wide screen the same five become a rail on the left.</figcaption>
+    </figure>
+  </div>
+  <div class="pros">
+    <div><h3>For</h3><ul><li>Nothing moves: the wind and the flags are still the first thing on the page, and every link and habit keeps working.</li><li>One tap to any section, from anywhere on the page.</li><li>The smallest change of the three to build and to test.</li></ul></div>
+    <div><h3>Against</h3><ul><li>The page is as long as it is now; the bar shortens the trip, not the page.</li><li>A bar at the bottom takes about 50 px of a phone's height for good.</li><li>Three tabs across the top and five icons across the bottom are two rows of navigation to learn.</li></ul></div>
+  </div>
+</section>
+
+<section class="option" id="option-c">
+  <h2>C. Both: a bottom bar of short pages, opening on "Now"</h2>
+  <p class="note">The bar is the navigation: five places, each a short page. The plain address opens "Now", which is the flags and the surface wind, so there is no menu between the reader and the first question. "More" is the tile menu from option A, for everything that is not today's weather.</p>
+  <div class="frames">
+    <figure>
+      <div class="ph">
+        <div class="ph-head"><b>LSPC Weather</b><span>Brown's Airport (NE69) · obs from KPMV</span></div>
+        <div class="ph-body">
+          <div class="flagbar"><b>2 conditions to note</b><small>From the 1:55 PM report, 5 min ago</small><ul><li>Surface wind at the student caution</li><li>Forecast gusts this afternoon</li></ul></div>
+          <div class="card"><h4>Surface wind</h4><small>Observed at KPMV, 1:55 PM, 5 min ago</small><div><span class="big">12</span> kt &nbsp; gust 22 kt</div><div class="bar"><i></i></div><small>Caution ≥ 12 kt · 10 kt over</small></div>
+          <div class="card"><h4>Hourly wind</h4><div class="img" style="height:70px"></div></div>
+          <div class="card"><h4>Current conditions</h4><div class="rows"><i></i><i></i></div></div>
+        </div>
+        <div class="bnav"><span class="on"><svg class="ic"><use href="#i-now"/></svg>Now</span><span><svg class="ic"><use href="#i-aloft"/></svg>Aloft</span><span><svg class="ic"><use href="#i-cloud"/></svg>Sky</span><span><svg class="ic"><use href="#i-plan"/></svg>Outlook</span><span><svg class="ic"><use href="#i-more"/></svg>More</span></div>
+      </div>
+      <figcaption>"Now": what the plain address opens. Flags, surface wind, the day's wind, conditions.</figcaption>
+    </figure>
+    <figure>
+      <div class="ph">
+        <div class="ph-head"><b>Aloft</b></div>
+        <div class="ph-body">
+          <div class="flagbar"><b>2 conditions to note</b><small>Tap to read them · 5 min ago</small></div>
+          <div class="card"><h4>Winds aloft</h4><small>Forecast for 2 PM</small><div class="rows"><i></i><i></i><i></i><i></i></div></div>
+          <div class="card"><h4>Freefall drift / spot</h4><small>Exit 1.55 mi toward SSW of the target</small><div class="img"></div><small>Exit separation: 11 s solo, 17 s small groups</small></div>
+        </div>
+        <div class="bnav"><span><svg class="ic"><use href="#i-now"/></svg>Now</span><span class="on"><svg class="ic"><use href="#i-aloft"/></svg>Aloft</span><span><svg class="ic"><use href="#i-cloud"/></svg>Sky</span><span><svg class="ic"><use href="#i-plan"/></svg>Outlook</span><span><svg class="ic"><use href="#i-more"/></svg>More</span></div>
+      </div>
+      <figcaption>"Aloft": two cards that work from the same hour, on one short page. "Sky" would hold ceiling, rain and radar; "Outlook" the 10 days and daylight.</figcaption>
+    </figure>
+    <figure>
+      <div class="ph">
+        <div class="ph-head"><b>More</b></div>
+        <div class="ph-body">
+          <div class="list">
+            <span><svg class="ic"><use href="#i-plane"/></svg>Pilots: TAF, sectional, density altitude</span>
+            <span><svg class="ic"><use href="#i-canopy"/></svg>Canopy: wing loading, USPA's quiz</span>
+            <span><svg class="ic"><use href="#i-radar"/></svg>Data health</span>
+            <span><svg class="ic"><use href="#i-check"/></svg>Citations to verify</span>
+            <span><svg class="ic"><use href="#i-plan"/></svg>How the forecasts compared</span>
+            <span><svg class="ic"><use href="#i-info"/></svg>About this site</span>
+          </div>
+        </div>
+        <div class="bnav"><span><svg class="ic"><use href="#i-now"/></svg>Now</span><span><svg class="ic"><use href="#i-aloft"/></svg>Aloft</span><span><svg class="ic"><use href="#i-cloud"/></svg>Sky</span><span><svg class="ic"><use href="#i-plan"/></svg>Outlook</span><span class="on"><svg class="ic"><use href="#i-more"/></svg>More</span></div>
+      </div>
+      <figcaption>"More": the menu, for what is not today's weather. It replaces the three tabs and most of the footer.</figcaption>
+    </figure>
+  </div>
+  <div class="pros">
+    <div><h3>For</h3><ul><li>The first screen is still the wind and the flags, and it fits without a long scroll.</li><li>One tap between any two sections, and each page is short.</li><li>One row of navigation, where option B has two.</li></ul></div>
+    <div><h3>Against</h3><ul><li>The largest change: every card is re-homed, and the Jumpers and Pilots tabs go away as tabs (Pilots moves under "More", or takes a slot).</li><li>Cards that read together today on one scroll (surface wind beside the winds aloft) are a tap apart.</li><li>Old links to "#pilots" and the rest need to keep landing somewhere sensible.</li></ul></div>
+  </div>
+</section>
+
+<section class="option" id="compare">
+  <h2>Side by side</h2>
+  <table>
+    <tr><th></th><th>A. Tiles</th><th>B. Jump bar</th><th>C. Bar of pages</th></tr>
+    <tr><th>Taps to the wind against the limit</th><td>1</td><td>0</td><td>0</td></tr>
+    <tr><th>Taps between two sections</th><td>2</td><td>1</td><td>1</td></tr>
+    <tr><th>Length of a page</th><td>Short</td><td>As now</td><td>Short</td></tr>
+    <tr><th>Flags in view on arrival</th><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+    <tr><th>Size of the change</th><td>Medium</td><td>Small</td><td>Large</td></tr>
+  </table>
+  <p class="note" style="margin-top:12px">Common to all three: an icon always has its word under it; five places at most in a bar; touch targets of 44 px or more; the place you are in is marked; each place keeps its own address, so the back button, a reload and a shared link still work.</p>
+</section>
+</main>
+</body>
+</html>
