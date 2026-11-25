@@ -6,6 +6,7 @@ import {
   advisoriesFor,
   VIEW_CARDS,
   VIEW_HASH,
+  VIEW_SHOWS_WEATHER,
   VIEW_USES_PROFILE,
   type CardId,
 } from '../src/config/views';
@@ -23,11 +24,11 @@ import { pilotLinks } from '../src/config/sources';
 describe('the dashboard tabs', () => {
   const ALL: CardId[] = [
     'metar', 'surfaceWind', 'ceilingSky', 'windsAloft', 'drift', 'hourly', 'daily', 'precip',
-    'densityAltitude', 'sun', 'radar', 'sectional', 'taf', 'pilotLinks', 'nearbyMetars', 'wingLoading',
+    'densityAltitude', 'sun', 'radar', 'sectional', 'taf', 'pilotLinks', 'nearbyMetars', 'wingLoading', 'canopyRisk',
   ];
 
   it('puts every card on at least one tab, and none twice on a tab', () => {
-    const shown = new Set([...VIEW_CARDS.jumpers, ...VIEW_CARDS.pilots]);
+    const shown = new Set(Object.values(VIEW_CARDS).flat());
     expect([...shown].sort()).toEqual([...ALL].sort());
     for (const cards of Object.values(VIEW_CARDS)) expect(new Set(cards).size).toBe(cards.length);
   });
@@ -41,6 +42,21 @@ describe('the dashboard tabs', () => {
       expect(VIEW_CARDS.pilots).toContain(id);
       expect(VIEW_CARDS.jumpers).not.toContain(id);
     }
+  });
+
+  it('keeps what is about the wing on the Canopy tab, off the weather tabs, at its own address', () => {
+    // The maintainer, 2026-11-25: the wing loading card and the Canopy Risk
+    // Quotient moved to a tab of their own.
+    expect(VIEW_CARDS.canopy).toEqual(['wingLoading', 'canopyRisk']);
+    for (const id of VIEW_CARDS.canopy) {
+      expect(VIEW_CARDS.jumpers).not.toContain(id);
+      expect(VIEW_CARDS.pilots).not.toContain(id);
+    }
+    expect(VIEW_HASH.canopy).toBe('#canopy');
+    // Nothing on it reads the weather, so it is the one tab without the
+    // advisory list and Data health, and it asks for no jumper profile.
+    expect(VIEW_SHOWS_WEATHER).toEqual({ jumpers: true, pilots: true, canopy: false });
+    expect(VIEW_USES_PROFILE.canopy).toBe(false);
   });
 
   it('opens Jumpers on the plain address, so existing links still land on it', () => {
@@ -85,7 +101,7 @@ describe('the Pilots tab and the jumper wind limits', () => {
     // The wiring lives in App.tsx, which no test renders (it fetches). Read it.
     const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { readFileSync: (p: string, e: string) => string };
     const app = fs.readFileSync(decodeURIComponent(new URL('../src/App.tsx', import.meta.url).pathname), 'utf8');
-    expect(VIEW_USES_PROFILE).toEqual({ jumpers: true, pilots: false });
+    expect(VIEW_USES_PROFILE).toEqual({ jumpers: true, pilots: false, canopy: false });
     expect(app).toMatch(/const advisoryThresholds = VIEW_USES_PROFILE\[view\] \? thresholds : base;/);
     expect(app).toMatch(/useWeatherData\(advisoryThresholds, unit\)/);
     expect(app).toMatch(/advisories=\{advisoriesFor\(view, advisories\)\}/);

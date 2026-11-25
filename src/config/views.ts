@@ -13,10 +13,16 @@ import type { Advisory } from '../domain/types';
  * show on both; the wind-limit profile and the threshold settings are the
  * Jumpers tab's only (`VIEW_USES_PROFILE`).
  *
+ * Canopy (the maintainer, 2026-11-25) holds what is about the wing and not
+ * the weather: the exit weight and wing loading card, moved off the foot of
+ * the Jumpers tab, and the pointer to USPA's Canopy Risk Quotient. Nothing
+ * on it reads the weather, so it carries no advisory list and no Data
+ * health (`VIEW_SHOWS_WEATHER`).
+ *
  * Order is the reading order on a phone, where the grid is one column; at
  * wider widths MasonryGrid packs cards into the shortest column.
  */
-export type View = 'jumpers' | 'pilots';
+export type View = 'jumpers' | 'pilots' | 'canopy';
 
 export type CardId =
   | 'metar'
@@ -34,7 +40,8 @@ export type CardId =
   | 'taf'
   | 'pilotLinks'
   | 'nearbyMetars'
-  | 'wingLoading';
+  | 'wingLoading'
+  | 'canopyRisk';
 
 export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
   // The ground wind against the limit first, at the maintainer's request
@@ -43,10 +50,8 @@ export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
   // the winds through the climb and freefall. Drift directly after Winds
   // aloft: it works from the hour that card's buttons step to, and on a
   // phone a card further down would change off screen. Then the rest of now
-  // (conditions, sky), planning (outlook, precip), daylight and radar. Last,
-  // the exit weight and wing loading card: not weather, and the same every
-  // day.
-  jumpers: ['surfaceWind', 'hourly', 'windsAloft', 'drift', 'metar', 'ceilingSky', 'daily', 'precip', 'sun', 'radar', 'wingLoading'],
+  // (conditions, sky), planning (outlook, precip), daylight and radar.
+  jumpers: ['surfaceWind', 'hourly', 'windsAloft', 'drift', 'metar', 'ceilingSky', 'daily', 'precip', 'sun', 'radar'],
   // Now (conditions, sky, the airports around), then the chart and the
   // forecast for the flight (sectional, TAF), the climb and the jump run
   // (density altitude, winds aloft), then daylight, radar and the briefing
@@ -63,11 +68,14 @@ export const VIEW_CARDS: Readonly<Record<View, readonly CardId[]>> = {
     'radar',
     'pilotLinks',
   ],
+  // The reader's own figures first, then the pointer to USPA's.
+  canopy: ['wingLoading', 'canopyRisk'],
 };
 
 export const VIEW_LABEL: Readonly<Record<View, string>> = {
   jumpers: 'Jumpers',
   pilots: 'Pilots',
+  canopy: 'Canopy',
 };
 
 /** The hash that selects each view: none for Jumpers, so the page's plain
@@ -75,6 +83,7 @@ export const VIEW_LABEL: Readonly<Record<View, string>> = {
 export const VIEW_HASH: Readonly<Record<View, string>> = {
   jumpers: '',
   pilots: '#pilots',
+  canopy: '#canopy',
 };
 
 /**
@@ -90,6 +99,20 @@ export const VIEW_HASH: Readonly<Record<View, string>> = {
 export const VIEW_USES_PROFILE: Readonly<Record<View, boolean>> = {
   jumpers: true,
   pilots: false,
+  canopy: false,
+};
+
+/**
+ * Whether the tab shows anything read from the weather. Where it does not
+ * (Canopy), the advisory list, Data health and the wind-speed unit switch
+ * are left off: flags about the wind beside a wing-loading sum would read
+ * as bearing on it, and a list with the jumper flags filtered out (as on
+ * Pilots) would read as an all-clear on a tab that shows no weather at all.
+ */
+export const VIEW_SHOWS_WEATHER: Readonly<Record<View, boolean>> = {
+  jumpers: true,
+  pilots: true,
+  canopy: false,
 };
 
 /** The advisories that are jumper limits: the ground wind against the

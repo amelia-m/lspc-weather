@@ -66,7 +66,7 @@ export const STUDENT_RIG_WEIGHT_LB = 32;
 /**
  * USPA's Canopy Risk Quotient: its own self-assessment for canopy choice, a
  * questionnaire on experience, currency, the canopy and training that USPA's
- * page scores into four bands. The Wing loading card links it and works none
+ * page scores into four bands. The Canopy tab's card links it and works none
  * of it (the maintainer, 2026-11-24): the score is a judgement on the
  * jumper, which is USPA's to make on USPA's page, not this app's.
  *

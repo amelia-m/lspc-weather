@@ -200,6 +200,7 @@ they were colour and text rather than flags.
   forecast: behind the newest known forecast at 10.9% of refreshes (mean
   7.2 min) over 13 days of samples, 6.0% (3.9 min) with the guard. A
   cache-busting query parameter gets a 400. See docs/nws-gridpoint-age.md.
+- **A third tab, Canopy (`#canopy`), holds what is about the wing and not the weather** (the maintainer, 2026-11-25: "move the wing loading and canopy risk to a new tab?", named "canopy for now"): the Wing loading card, off the foot of the Jumpers tab, and a card pointing to USPA's Canopy Risk Quotient (`CanopyRiskPanel`; no score worked, none of USPA's bands repeated). The tab shows no advisory list, Data health or unit switch (`VIEW_SHOWS_WEATHER`): wind flags beside a wing-loading sum would read as bearing on it. The live-site check loads it and fails if a card is missing or a weather list appears. Open with her: a pointer to it on the Jumpers tab, and the landing-page idea (docs/open-questions.md).
 - **Offutt's TAF comes through a relay of the maintainer's** (`relay/`, a
   Cloudflare Worker at `lspc-taf-relay.amelia-m.workers.dev`, deployed
   2026-10-27; `TAF_RELAY_URL` in `src/config/tafRelay.ts`; docs/taf-relay.md).
@@ -609,7 +610,7 @@ stays hermetic. It fails when the app's METAR sky parse, its derived flight
 category or its TAF group decode (`src/domain/taf.ts`, against
 aviationweather.gov's `fcsts` decode, QNH within 1 hPa since 2026-11-03)
 disagrees with aviationweather.gov's decoder on today's reports; when a
-Pilots tab deep link, or since 2026-11-24 the Wing loading card's link to USPA's Canopy Risk Quotient page (`USPA_CANOPY_RISK_QUOTIENT`: a pointer to USPA's own self-assessment, no score worked here; its earlier PDF address went dead unannounced), stops opening what it should (`scripts/pilotLinks.live.ts`;
+Pilots tab deep link, or since 2026-11-24 the link to USPA's Canopy Risk Quotient page (on the Canopy tab's card since 2026-11-25) (`USPA_CANOPY_RISK_QUOTIENT`: a pointer to USPA's own self-assessment, no score worked here; its earlier PDF address went dead unannounced), stops opening what it should (`scripts/pilotLinks.live.ts`;
 the Chart Supplement edition scheme is inferred, `src/domain/chartSupplement.ts`,
 and held on the first edition that could have shown it wrong, 2026-10-29);
 and on the SIM checks under "Citations" (`scripts/simText.live.ts`). On

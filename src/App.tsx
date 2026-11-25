@@ -34,6 +34,7 @@ import {
   advisoriesFor,
   VIEW_CARDS,
   VIEW_HASH,
+  VIEW_SHOWS_WEATHER,
   VIEW_LABEL,
   VIEW_USES_PROFILE,
   type CardId,
@@ -50,6 +51,7 @@ import { WindsAloftPanel } from './components/WindsAloftPanel';
 import { DensityAltitudePanel } from './components/DensityAltitudePanel';
 import { SunPanel } from './components/SunPanel';
 import { WingLoadingPanel } from './components/WingLoadingPanel';
+import { CanopyRiskPanel } from './components/CanopyRiskPanel';
 import { DashboardDisclaimer } from './components/DashboardDisclaimer';
 import { ProfileSelector } from './components/ProfileSelector';
 import { AppFooter } from './components/AppFooter';
@@ -95,9 +97,9 @@ function toWindProfileId(raw: string | null): WindProfileId {
 
 /** Which page or dashboard tab is showing. A hash rather than a router: the
  *  app is a single page served from a GitHub Pages subpath, and `#citations`,
- *  `#parity`, `#wind-errors`, `#winds-method` or `#pilots` needs no server rewrite, no dependency, and
+ *  `#parity`, `#wind-errors`, `#winds-method`, `#pilots` or `#canopy` needs no server rewrite, no dependency, and
  *  survives a reload and a shared link. No hash is the Jumpers tab. */
-function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | 'pilots' | null {
+function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | 'pilots' | 'canopy' | null {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHashChange = (): void => setHash(window.location.hash);
@@ -109,6 +111,7 @@ function useRoute(): 'citations' | 'parity' | 'wind-errors' | 'winds-method' | '
   if (hash === '#wind-errors') return 'wind-errors';
   if (hash === '#winds-method') return 'winds-method';
   if (hash === VIEW_HASH.pilots) return 'pilots';
+  if (hash === VIEW_HASH.canopy) return 'canopy';
   return null;
 }
 
@@ -240,7 +243,7 @@ export default function App(): JSX.Element {
       return out;
     });
 
-  const view: View = route === 'pilots' ? 'pilots' : 'jumpers';
+  const view: View = route === 'pilots' || route === 'canopy' ? route : 'jumpers';
   // The Pilots tab has no Settings, so its flags fire on the profile's
   // published figures, not on edits a reader made for a jumper profile on
   // the other tab: an edit there would otherwise move the visibility flag a
@@ -345,6 +348,7 @@ export default function App(): JSX.Element {
     densityAltitude: <DensityAltitudePanel da={snapshot.densityAltitude} {...temp} />,
     sun: <SunPanel sun={snapshot.sun} />,
     wingLoading: <WingLoadingPanel />,
+    canopyRisk: <CanopyRiskPanel />,
     radar: <RadarPanel />,
     sectional: <SectionalPanel />,
     taf: <TafPanel taf={snapshot.taf} status={status.taf} tempUnit={temp.tempUnit} />,
@@ -386,7 +390,7 @@ export default function App(): JSX.Element {
           )}
           {/* Rendered outside a UnitToggleScope, so it names itself "Wind speed
               unit" — there is no card heading up here to borrow. */}
-          <UnitToggle unit={unit} onChange={setUnit} />
+          {VIEW_SHOWS_WEATHER[view] && <UnitToggle unit={unit} onChange={setUnit} />}
         </div>
       </header>
 
@@ -408,22 +412,24 @@ export default function App(): JSX.Element {
 
       <DashboardDisclaimer />
 
-      <AdvisoryPanel
-        advisories={advisoriesFor(view, advisories)}
-        profile={profileLabel(profile)}
-        /* Not "is the wind high" — whether there is a limit to flag it
-           against: a published one, or the reader's own on Licensed. With
-           neither the Jumpers list cannot carry the sustained wind at any
-           speed and says so: in its empty state, or, beside an own gust
-           ceiling (ownLimits), in either state. The Pilots list carries no
-           jumper wind flag on any profile and says that instead (forPilots).
-           The same test gates the wind flag and the card's band. */
-        hasWindLimit={hasWindLimit(advisoryThresholds)}
-        editedLimits={editedLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].label)}
-        ownLimits={ownLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].ownLabel)}
-        forPilots={!VIEW_USES_PROFILE[view]}
-        report={snapshot.current ? { station: snapshot.current.station, observedAt: snapshot.current.observedAt } : null}
-      />
+      {VIEW_SHOWS_WEATHER[view] && (
+        <AdvisoryPanel
+          advisories={advisoriesFor(view, advisories)}
+          profile={profileLabel(profile)}
+          /* Not "is the wind high" — whether there is a limit to flag it
+             against: a published one, or the reader's own on Licensed. With
+             neither the Jumpers list cannot carry the sustained wind at any
+             speed and says so: in its empty state, or, beside an own gust
+             ceiling (ownLimits), in either state. The Pilots list carries no
+             jumper wind flag on any profile and says that instead (forPilots).
+             The same test gates the wind flag and the card's band. */
+          hasWindLimit={hasWindLimit(advisoryThresholds)}
+          editedLimits={editedLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].label)}
+          ownLimits={ownLimits(advisoryThresholds).map((k) => EDITABLE_LIMITS[k].ownLabel)}
+          forPilots={!VIEW_USES_PROFILE[view]}
+          report={snapshot.current ? { station: snapshot.current.station, observedAt: snapshot.current.observedAt } : null}
+        />
+      )}
 
       {/* The cards each tab shows, in its order: src/config/views.ts. Order
           matters most on mobile, where the grid is a single linear column; at
@@ -436,14 +442,16 @@ export default function App(): JSX.Element {
         ))}
       </MasonryGrid>
 
-      <DataFreshness
-        status={status}
-        provenance={provenance}
-        lastUpdated={lastUpdated}
-        onRefresh={refresh}
-        openMeteoUsage={usage}
-        reportAt={snapshot.current?.observedAt ?? null}
-      />
+      {VIEW_SHOWS_WEATHER[view] && (
+        <DataFreshness
+          status={status}
+          provenance={provenance}
+          lastUpdated={lastUpdated}
+          onRefresh={refresh}
+          openMeteoUsage={usage}
+          reportAt={snapshot.current?.observedAt ?? null}
+        />
+      )}
 
       {VIEW_USES_PROFILE[view] && (
         <SettingsPanel

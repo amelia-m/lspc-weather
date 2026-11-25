@@ -49,10 +49,10 @@ describe('the Pilots tab links', () => {
 });
 
 /* Not a Pilots tab link, but checked here with the other outbound links:
- * the Wing loading card points at USPA's Canopy Risk Quotient page, and the
+ * the Canopy tab points at USPA's Canopy Risk Quotient page, and the
  * quiz's earlier address (a PDF) went dead without notice. uspa.org answers
  * a missing page with a 200 and its "404 Error Page", so the body is read. */
-describe('the Wing loading card’s link', () => {
+describe('the Canopy tab’s link', () => {
   it('opens USPA’s Canopy Risk Quotient quiz', async () => {
     const res = await fetchWithRetry(USPA_CANOPY_RISK_QUOTIENT.url, { headers: { 'user-agent': UA }, redirect: 'follow' }, 20_000);
     const body = await res.text();
