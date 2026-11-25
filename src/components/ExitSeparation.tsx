@@ -165,22 +165,20 @@ export function ExitSeparation({
         </p>
       )}
 
+      {/* Cut to what a figure rests on (the maintainer, 2026-11-25: the
+          card was "super wordy"). */}
       <p className="muted small">
-        Seconds between exits for the ground separation SIM 4-7 C gives: &ldquo;at least 1,000 feet&rdquo; between
-        solo jumpers and &ldquo;at least 1,500 feet&rdquo; between small groups, &ldquo;adding more as the size of
-        the groups increase&rdquo; (it gives no figure for larger groups, so none is worked here). Rounded up to
-        the second.
+        The distances are SIM 4-7 C&rsquo;s, which gives none for larger groups; seconds are rounded up.
         {est && (
           <>
             {' '}
-            The ground speed is an estimate: the forecast wind for the hour above, and a true airspeed worked from
-            the indicated one with {est.tempForecast ? 'the forecast temperature' : 'the standard temperature (the forecast has none)'}{' '}
-            and standard pressure at exit altitude. The pilot&rsquo;s GPS reads the real one.
+            Ground speed is an estimate from the forecast wind and{' '}
+            {est.tempForecast ? 'temperature' : 'a standard temperature (the forecast has none)'}; the pilot&rsquo;s
+            GPS reads the real one.
           </>
         )}{' '}
-        {JUMP_RUN_AIRSPEED_FACT.sentence}{' '}
-        This is separation at exit and nothing after it: the same part says slower-falling groups are blown
-        farther downwind, which this does not work out. Source: <SourceLink citation={CITATIONS.uspaSpotting} />
+        {JUMP_RUN_AIRSPEED_FACT.sentence} Separation at exit only: drift after it is not worked out. Source:{' '}
+        <SourceLink citation={CITATIONS.uspaSpotting} />
       </p>
     </div>
   );

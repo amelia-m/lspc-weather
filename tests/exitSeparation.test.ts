@@ -139,7 +139,7 @@ describe('the Drift card’s exit separation', () => {
     expect(JUMP_RUN_AIRSPEED_KT).toEqual({ low: 75, high: 80 });
     expect(html).toMatch(/Airspeed on jump run \(kt indicated\)<input[^>]*value="75"/);
     expect(html).toContain(
-      'Jump run in LSPC’s Cessna 182s is typically flown at about 75 to 80 kt indicated (the maintainer, 2026-11-24; confirmation asked on the citations page), so the airspeed box opens on 75 kt, the slower end, which gives the longer count.',
+      'LSPC’s Cessna 182s typically fly jump run at about 75 to 80 kt indicated (the maintainer, 2026-11-24; confirmation asked on the citations page), so the airspeed box opens on 75 kt.',
     );
     // 75 kt indicated is 88.9 kt true there, 53.9 kt over the ground:
     // 1,000 ft in 10.99 s, 1,500 ft in 16.48 s.
@@ -161,7 +161,7 @@ describe('the Drift card’s exit separation', () => {
     const html = section();
     expect(html.match(/<input/g)).toHaveLength(1);
     expect(html).not.toMatch(/GPS ground speed/);
-    expect(html).toContain('The pilot’s GPS reads the real one.');
+    expect(html).toContain('the pilot’s GPS reads the real one.');
   });
 
   it('works the SIM’s two distances into seconds from the bearing and the indicated airspeed', () => {
@@ -170,8 +170,7 @@ describe('the Drift card’s exit separation', () => {
     expect(row(html, 'Ground speed, an estimate')).toBe('about 60 kt');
     expect(row(html, SOLO)).toBe('10 s');
     expect(row(html, GROUPS)).toBe('15 s');
-    expect(html).toContain('The ground speed is an estimate: the forecast wind for the hour above');
-    expect(html).toContain('the forecast temperature');
+    expect(html).toContain('Ground speed is an estimate from the forecast wind and temperature; the pilot’s GPS reads the real one.');
   });
 
   it('gives fewer seconds across the wind than into it', () => {
@@ -215,14 +214,13 @@ describe('the Drift card’s exit separation', () => {
 
   it('says the standard temperature stood in where the forecast has none', () => {
     const html = section({ levels: [level(10000, 270, 35, null)], initialIndicatedKt: 80 });
-    expect(html).toContain('the standard temperature (the forecast has none)');
+    expect(html).toContain('the forecast wind and a standard temperature (the forecast has none)');
   });
 
-  it('quotes the SIM for its figures, says what it leaves out, and links the section', () => {
+  it('ties its distances to the SIM, says what it leaves out, and links the section', () => {
     const html = section({ initialIndicatedKt: 80 });
-    expect(html).toContain('“at least 1,000 feet” between solo jumpers and “at least 1,500 feet” between small groups, “adding more as the size of the groups increase”');
-    expect(html).toContain('it gives no figure for larger groups, so none is worked here');
-    expect(html).toContain('slower-falling groups are blown farther downwind, which this does not work out');
+    expect(html).toContain('The distances are SIM 4-7 C’s, which gives none for larger groups; seconds are rounded up.');
+    expect(html).toContain('Separation at exit only: drift after it is not worked out.');
     expect(html).toContain('href="https://www.uspa.org/sim/4-7#7C"');
   });
 
