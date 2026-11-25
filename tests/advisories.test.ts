@@ -37,7 +37,7 @@ const HOLDS: Record<VisibilityRow, string> = {
   'below-10000-msl': 'holds the surface reading to the 3 SM row.',
   'at-or-above-10000-msl': 'holds the surface reading to the 5 SM row.',
   both:
-    'holds the surface reading to both rows: 5 SM, the row a full-altitude exit from this DZ is in, and 3 SM, the row a hop-and-pop is in, and says which the reading is under. ' +
+    'holds the surface reading to both rows, 5 SM (a full-altitude exit) and 3 SM (a hop-and-pop), and says which it is under. ' +
     'Hop-and-pop exits at LSPC are well below 10,000 ft MSL (the maintainer, 2026-10-31; confirmation asked on the citations page), so a hop-and-pop is in the 3 SM row throughout.',
 };
 const IN_PLACE_OF: Record<VisibilityRow, string> = {
@@ -685,15 +685,15 @@ describe('an empty advisory list is not an all-clear', () => {
     const breezy = normalizeMetar({ ...METAR_FIXTURE[0], wspd: 10, wgst: null });
     const t = DEFAULT_THRESHOLDS.student;
     expect(evaluateAdvisories(snapshot({ current: breezy }), t, now, 'kt').some((a) => a.id === 'surface-wind')).toBe(false);
-    const note = (html: string) => /<p class="muted small">A lower maximum[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
+    const note = (html: string) => /<p class="muted small">A lower limit[\s\S]*?<\/p>/.exec(html)?.[0] ?? '';
     for (const current of [breezy, null]) {
       const kt = note(withoutGlossaryLinks(windPanel(t, 'Student', 'kt', current)));
-      expect(kt).toContain('A lower maximum ground wind, 8.7 kt, is published for solo students on round reserves.');
+      expect(kt).toContain('A lower limit, 8.7 kt, is published for solo students on round reserves.');
       // The figure is the BSR's; that it binds nobody here is the club's
       // fact, dated, after what the band leaves unchecked.
-      expect(kt).toContain('The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so neither checks the lower one. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26; confirmation asked on the citations page), so that figure binds no student at this drop zone.');
+      expect(kt).toContain('The band and flag use 12 kt, the 14 mph ram-air figure rounded down to whole knots, so neither checks it. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26; confirmation asked on the citations page), so it binds no student here.');
       expect(kt).toContain(CITATIONS.uspaStudentWinds.url);
-      expect(note(windPanel(t, 'Student', 'mph', current))).toContain('A lower maximum ground wind, 10 mph,');
+      expect(note(windPanel(t, 'Student', 'mph', current))).toContain('A lower limit, 10 mph,');
     }
     // The student ground-wind ref, not the licensed one at the same URL.
     expect(t.windBandCaveat?.citation).toBe(CITATIONS.uspaStudentWinds);
@@ -702,11 +702,11 @@ describe('an empty advisory list is not an all-clear', () => {
   it('names the caution as edited, and goes once the band checks the lower limit', () => {
     const t = DEFAULT_THRESHOLDS.student;
     const edited = (windCautionKt: number) => windPanel(withOverrides(t, { windCautionKt }), 'Student', 'kt', null);
-    expect(edited(10)).toContain('The band and flag here use 10 kt, as edited in Settings, not a published figure, so neither');
+    expect(edited(10)).toContain('The band and flag use 10 kt, as edited in Settings, not a published figure, so neither');
     // Readings are whole knots: 8 kt is 9.2 mph and 9 kt is 10.4 mph, so a
     // 9 kt caution flags every reading over 10 mph and the note must go.
-    expect(edited(9)).not.toContain('A lower maximum');
-    expect(edited(9.5)).toContain('A lower maximum');
+    expect(edited(9)).not.toContain('A lower limit');
+    expect(edited(9.5)).toContain('A lower limit');
   });
 
   it('leaves the round-reserve question to the club on the waiver tiers', () => {
@@ -938,20 +938,20 @@ describe('a limit edited in Settings is not presented as the published one', () 
     const g = wind(withOverrides(DEFAULT_THRESHOLDS.student))?.guidance ?? '';
     expect(g).toContain('10 mph on round reserves');
     expect(g).toContain(
-      'The band and flag here use 12 kt, the 14 mph figure for ram-air canopies rounded down to whole knots, so below the band nothing on this page flags the lower limit for solo students on round reserves. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26; confirmation asked on the citations page), so that figure binds no student at this drop zone.',
+      'The band and flag use 12 kt, the 14 mph ram-air figure rounded down to whole knots; nothing on this page flags the lower limit for solo students on round reserves. No student rig at LSPC carries a round reserve (the maintainer, 2026-10-26; confirmation asked on the citations page), so it binds no student here.',
     );
   });
 
   it('says the student flag fires at an edited caution, not at a published figure', () => {
     const g = wind(withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 14 }))?.guidance ?? '';
     expect(g).toContain(
-      'The band and flag here use 14 kt, as edited in Settings, not a published figure, so below the band nothing on this page flags the lower limit for solo students on round reserves.',
+      'The band and flag use 14 kt, as edited in Settings, not a published figure; nothing on this page flags the lower limit for solo students on round reserves.',
     );
     expect(g).not.toContain('figure for ram-air canopies');
     // Low enough to flag every whole-knot reading over 10 mph: nothing left
     // unchecked to name.
     const low = wind(withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 9 }))?.guidance ?? '';
-    expect(low).toContain('The band and flag here use 9 kt, as edited in Settings, not a published figure.');
+    expect(low).toContain('The band and flag use 9 kt, as edited in Settings, not a published figure.');
     expect(low).not.toContain('below the band');
     // Nothing unchecked, so no round-reserve fact to give either (the
     // guidance still quotes the BSR's two figures).
@@ -1042,13 +1042,13 @@ describe('a limit edited in Settings is not presented as the published one', () 
     expect(settings(withOverrides(licensed, { visibilityCautionSm: row + 2 }), licensed)).toContain(`· published ${row}`);
     expect(settings(withOverrides(licensed), licensed)).not.toContain(`published ${row}`);
     expect(settings(withOverrides(licensed), licensed)).toContain(
-      `14 CFR 105.17’s ${row} SM row${VISIBILITY_ROW === 'both' ? ', the higher of the two rows the flag holds the reading to' : ''}.`,
+      `14 CFR 105.17’s ${row} SM row${VISIBILITY_ROW === 'both' ? ', the higher of the two the flag holds the reading to' : ''}.`,
     );
   });
 
   it('treats an override equal to the published value as unedited', () => {
     const t = withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 12 });
-    expect(wind(t)?.guidance).toContain('the 14 mph figure for ram-air canopies');
+    expect(wind(t)?.guidance).toContain('the 14 mph ram-air figure');
   });
 });
 

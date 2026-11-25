@@ -124,8 +124,8 @@ export function TafPanel({
       sources={[(taf && describeTafSource(taf, relay).source) || DATA_SOURCES.taf]}
     >
       <p className="muted small">
-        Terminal Aerodrome Forecast for {st.name} ({st.id}), ~{miles} mi {bearing} of the drop zone
-        (KPMV issues no TAF). Regional guidance, not field-specific to NE69.
+        Terminal Aerodrome Forecast for {st.name} ({st.id}); KPMV issues none. Regional guidance, not
+        field-specific to NE69.
       </p>
       {/* The nearest station's "no TAF" has its own note below, with the
           link to read it elsewhere. */}

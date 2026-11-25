@@ -492,12 +492,12 @@ export function forecastWindAdvisories(
 export function windBandUse(t: Thresholds, unit: SpeedUnit): string {
   const figure = fmtLimitSpeed(t.windCautionKt, unit);
   if (isOwnLimit(t, 'windCautionKt')) {
-    return `The band and flag here use ${figure}, your own limit from Settings; no published source sets one for this profile`;
+    return `The band and flag use ${figure}, your own limit from Settings; no published source sets one for this profile`;
   }
   if (isEdited(t, 'windCautionKt')) {
-    return `The band and flag here use ${figure}, as edited in Settings, not a published figure`;
+    return `The band and flag use ${figure}, as edited in Settings, not a published figure`;
   }
-  return t.windBandCaveat ? `The band and flag here use ${figure}, ${t.windBandCaveat.bandIs}` : '';
+  return t.windBandCaveat ? `The band and flag use ${figure}, ${t.windBandCaveat.bandIs}` : '';
 }
 
 /** Whether the profile's lower published limit (`windBandCaveat`) goes
@@ -513,7 +513,7 @@ export function lowerLimitUnchecked(t: Thresholds): boolean {
  *  theirs does not check it. Empty where the profile has none. */
 export function lowerLimitPublished(t: Thresholds, unit: SpeedUnit): string {
   const c = t.windBandCaveat;
-  return c ? `A lower maximum ground wind, ${fmtLimitSpeed(c.limitKt, unit)}, is published for ${c.appliesTo}.` : '';
+  return c ? `A lower limit, ${fmtLimitSpeed(c.limitKt, unit)}, is published for ${c.appliesTo}.` : '';
 }
 
 /** A sentence about the lower limit, followed by the drop zone's fact that
@@ -538,5 +538,5 @@ export function windBandSentence(t: Thresholds, unit: SpeedUnit): string {
   const use = windBandUse(t, unit);
   if (!use) return '';
   if (!lowerLimitUnchecked(t) || !t.windBandCaveat) return `${use}.`;
-  return withNotHere(`${use}, so below the band nothing on this page flags the lower limit for ${t.windBandCaveat.appliesTo}.`, t);
+  return withNotHere(`${use}; nothing on this page flags the lower limit for ${t.windBandCaveat.appliesTo}.`, t);
 }

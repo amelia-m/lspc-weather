@@ -113,7 +113,7 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A2',
     title: 'Minimum opening altitudes',
-    claim: `USPA BSR minimum container-opening altitudes: ${OPENING_ALTITUDES_TEXT}. These are floors — deploy above your minimum, not at it.`,
+    claim: `USPA BSR minimum container-opening altitudes: ${OPENING_ALTITUDES_TEXT}.`,
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
     sources: [CITATIONS.uspaOpeningAltitude],
     found: {
@@ -212,7 +212,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A7',
     title: 'Exit separation and spotting in strong upper winds',
     claim:
-      'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
+      'Strong upper winds increase freefall drift and lengthen the spot: plan jump run and exit separation accordingly.',
     where:
       'Winds aloft card, standing note under the table, at any wind speed. Since 2026-11-24 the Freefall drift / spot card also works the section’s two distances into seconds between exits, from a jump-run bearing and an indicated airspeed the reader can change and the forecast wind at exit altitude',
     sources: [CITATIONS.uspaSpotting],
@@ -334,7 +334,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A10',
     title: 'Density altitude and climb performance',
     claim:
-      'High density altitude reduces a loaded jump plane’s climb performance — expect longer climbs to altitude.',
+      'High density altitude reduces a loaded jump plane’s climb performance: expect longer climbs to altitude.',
     where: 'Density altitude card, as a standing note under the figures, with the pamphlet’s definition (the headline) and its humidity advice. No flag fires on density altitude.',
     sources: [CITATIONS.faaDensityAltitude],
     found: {

@@ -69,12 +69,12 @@ export function SettingsPanel({
         ) : (
           <>
             <p className="muted small">
-              What you set here appears in the charts, the Surface wind card and the flags under
-              &ldquo;Conditions to note&rdquo; above, each marked as yours. No published source sets a
-              ground-wind limit or gust ceiling for licensed jumpers; leave either empty for none. The
-              visibility row, unedited, is 14 CFR 105.17&rsquo;s {base.visibilityCautionSm} SM
-              row{base.visibilityRow === 'both' && ', the higher of the two rows the flag holds the reading to'}.
-              Saved in this browser; winds and gusts in knots (1 kt ≈ 1.15 mph).
+              What you set here is drawn on the charts and the Surface wind card and flagged under
+              &ldquo;Conditions to note&rdquo;, each marked as yours. No published source sets a
+              ground-wind limit or gust ceiling for licensed jumpers; empty means none. Visibility,
+              unedited, is 14 CFR 105.17&rsquo;s {base.visibilityCautionSm} SM
+              row{base.visibilityRow === 'both' && ', the higher of the two the flag holds the reading to'}.
+              Kept in this browser; knots (1 kt ≈ 1.15 mph).
             </p>
             <div className="settings-grid">
               {FIELDS.filter((f) => isEditable(base, f.key)).map((f) => {

@@ -243,6 +243,9 @@ describe('the drift card’s deploy default', () => {
     // "Listed below": the BSR paragraph, with its link.
     expect(html).toContain('B-license 2,500 ft');
     expect(html).toContain(`href="${CITATIONS.uspaOpeningAltitude.url}"`);
+    // The BSR says "minimum"; "deploy above your minimum, not at it" was the
+    // app's instruction beside it, dropped 2026-11-25 (review D2).
+    expect(html).not.toMatch(/deploy above your minimum|These are floors/);
   });
 
   it('treats a card handed no license as a student', () => {

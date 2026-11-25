@@ -76,6 +76,9 @@ describe('the outlook’s Dir column', () => {
     expect(html).toContain('>Dir</th>');
     // Fixture day 4: 250°, WSW on a 16-point compass.
     expect(html).toContain('<td title="250°">WSW</td>');
-    expect(html).toContain('not the direction of the maximum');
+    expect(html).toContain('not the direction at the maximum');
+    // An unsourced claim about forecast skill, then advice: dropped
+    // 2026-11-25 (review O1). The banner sends the reader to current conditions.
+    expect(html).not.toMatch(/Confidence drops|which days to watch/);
   });
 });

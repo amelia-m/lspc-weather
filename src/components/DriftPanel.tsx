@@ -12,7 +12,6 @@ import { SelectField } from './common/SelectField';
 import { ForecastHourNav, type WindsHourNav } from './common/ForecastHourNav';
 import { ExitSeparation } from './ExitSeparation';
 import { useNow } from '../hooks/useNow';
-import { SIM_LAST_READ } from '../config/readingLog';
 
 /** Build an inclusive numeric range [lo, hi] stepping by `step`. */
 const range = (lo: number, hi: number, step: number): number[] =>
@@ -125,7 +124,7 @@ export function DriftPanel({
               />
               <p className="muted small">
                 {hourNav
-                  ? 'Worked from the forecast hour selected on the Winds aloft card, and the table shown there (all levels, or as Schulze). The buttons here and on that card step the same hour, so changing either moves both.'
+                  ? 'Worked from the Winds aloft card’s hour and table (all levels, or as Schulze); the hour buttons here and there step the same hour.'
                   : 'Worked from the same forecast hour as the Winds aloft card.'}
               </p>
             </>
@@ -236,16 +235,11 @@ export function DriftPanel({
             <strong>{OPENING_ALTITUDES_WORDING.lead}</strong>
             {OPENING_ALTITUDES_WORDING.rest}
             <SimTerm term="sta">{OPENING_ALTITUDES_WORDING.sta}</SimTerm>
-            {OPENING_ALTITUDES_WORDING.tail}. These are floors — deploy above your minimum, not at it. See the{' '}
-            <a href={CITATIONS.uspaOpeningAltitude.url} target="_blank" rel="noopener noreferrer">
-              USPA SIM §2-1 (BSR)
-            </a>
-            ; section text last read at uspa.org on {SIM_LAST_READ} (the{' '}
-            <a href="#citations">citations page</a> lists every reading) — re-check against the current SIM.
+            {OPENING_ALTITUDES_WORDING.tail}. Source: <SourceLink citation={CITATIONS.uspaOpeningAltitude} />
           </p>
           <p className="muted small">
-            *Canopy drift assumes you don’t steer (1,000 ft/min descent); you normally fly it out.
-            Rough estimate only: the winds are a model forecast, and choosing the <SimTerm term="exitPoint">exit point</SimTerm> is the
+            *Canopy drift assumes no steering (1,000 ft/min descent); you normally fly it out. A rough
+            estimate from a model forecast; choosing the <SimTerm term="exitPoint">exit point</SimTerm> is the
             spotter&rsquo;s job, not this card&rsquo;s. Source:{' '}
             <SourceLink citation={CITATIONS.uspaSpottingWho} />
           </p>

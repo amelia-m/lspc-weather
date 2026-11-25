@@ -194,19 +194,15 @@ export function DailyForecastPanel({
       {fallback && (
         <p className="muted small">
           <strong>Fallback source:</strong> Open-Meteo was unreachable, so these days are
-          aggregated from the NWS gridpoint forecast (~7 days instead of 10). Sky shows the day’s
-          mean cloud cover, not an icon: a weather icon is the forecasting service's own reading of
-          its model, this source publishes none, and the cutoffs this app used to derive one from
-          cloud cover and rain chance were its own. Rain chance is in its own column. The first and
-          last days cover only the hours the grid forecast has, for the maxima and Dir alike.
+          aggregated from the NWS gridpoint forecast (~7 days, not 10). Sky is the day’s mean cloud
+          cover: this source publishes no weather code, and the app derives none. The first and last
+          days cover only the hours the grid has, maxima and Dir alike.
         </p>
       )}
       <p className="muted small">
-        Model forecast for the DZ (daily maxima; wind/gust are 10 m surface values). Dir is the
-        direction the wind blows from, averaged over the day&rsquo;s hours and weighted by speed: not
-        the direction of the maximum, and on a day the wind swings it can be one it seldom blew
-        from. Tap a day for its hourly breakdown. Confidence drops fast past a few days — use this for planning which
-        days to watch, and check current conditions before jumping.
+        Model forecast for the DZ: daily maxima; wind and gust at 10 m. Dir: the direction the wind
+        blows from, the day&rsquo;s speed-weighted mean, not the direction at the maximum, so on a
+        swinging day it can be one it seldom blew from. Tap a day for its hours.
       </p>
     </Panel>
   );
