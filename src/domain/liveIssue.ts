@@ -63,9 +63,9 @@ const CHECKS: Record<string, { label: string; name: string; description: string;
   'pilotLinks.live.ts': {
     label: 'pilot-links',
     name: 'Pilots tab links',
-    description: 'A Pilots tab deep link no longer opens what it should',
+    description: 'A Pilots tab deep link, or the Wing loading card’s USPA link, no longer opens what it should',
     what:
-      'A Pilots tab deep link no longer opens what it should (src/config/sources.ts; the Chart Supplement edition is inferred in src/domain/chartSupplement.ts; scripts/pilotLinks.live.ts).',
+      'A Pilots tab deep link no longer opens what it should (src/config/sources.ts; the Chart Supplement edition is inferred in src/domain/chartSupplement.ts), or the Wing loading card’s link to USPA’s Canopy Risk Quotient page does not (src/config/canopies.ts). The failed test’s name says which (scripts/pilotLinks.live.ts).',
   },
   'simText.live.ts': {
     label: 'sim-text',

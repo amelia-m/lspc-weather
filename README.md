@@ -74,11 +74,7 @@ card, the charts' limit lines and the flags, each marked as theirs.
   far the hour shown is from now. Under the table, KPMV's latest report,
   labelled as the observation it is, so the forecast and the measurement
   sit together.
-- ⚖️ **Exit weight & wing loading** — body weight plus gear (32 lb, one student
-  rig weighed) over a Navigator 200/220/260/280, against Performance Designs'
-  maximum exit weight for a Student on that size. The chart is the
-  maintainer's transcription, not yet checked against PD's own copy here, and
-  the canopy model and sizes are theirs to confirm (`#citations`, A12).
+- ⚖️ **Exit weight & wing loading**: body weight plus gear (32 lb, one student rig weighed) over a Navigator 200/220/260/280, against Performance Designs' maximum exit weight for a Student on that size. The chart is the maintainer's transcription, not yet checked against PD's own copy here, and the canopy model and sizes are theirs to confirm (`#citations`, A12). The card also links USPA's own self-assessment for canopy choice, the Canopy Risk Quotient, and works none of it.
 - 🎯 **Freefall drift / spot**: Schulze-style drift estimate with editable exit, deploy, and fall-rate inputs, worked from whichever hour the winds card shows, with the same hour readout and −1 h / +1 h buttons: stepping either card moves both. Deploy opens on the BSR minimum opening altitude for the profile: 3,000 ft for a student, and under Licensed for the license chosen in the header (3,000 ft for A, 2,500 ft for B, C and D). Under the spot, **exit separation on jump run**: the seconds between exits for the two ground distances SIM 4-7 C gives (at least 1,000 ft between solo jumpers, 1,500 ft between small groups), worked from a jump-run bearing and an indicated airspeed the reader can change (it opens on 75 kt, the low end of what the club's Cessna 182s fly, on the maintainer's word) and the forecast wind at exit altitude, with the bearing drawn through the drop zone's GPS point over USGS's aerial image of the field, the landing area marked beside it.
 - 🌡️ **Current conditions** — decoded KPMV METAR (raw text included).
 - 📈 **Hourly wind** — wind/gust chart with precip-probability bars and the
