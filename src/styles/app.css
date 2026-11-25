@@ -1920,6 +1920,7 @@ a.sim-term {
   font-size: 0.85rem;
 }
 .far-rows summary,
+.reading-key summary,
 .nerd-stats summary {
   cursor: pointer;
   color: var(--accent);

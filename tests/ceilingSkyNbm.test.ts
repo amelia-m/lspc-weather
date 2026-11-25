@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { folded, inView } from './support/fold';
+import { folded, inView, keyFolded } from './support/fold';
 import { CeilingSkyPanel } from '../src/components/CeilingSkyPanel';
 import { DATA_SOURCES } from '../src/config/sources';
 import { SITE } from '../src/config/site';
@@ -79,7 +79,7 @@ const rowCells = (html: string, label: string, from = 0): string[] => {
 /** The n-th day block's markup (0 = today). */
 const dayBlock = (html: string, n: number): string => {
   const starts = [...html.matchAll(/class="csd-day(?: csd-today-hours)?"/g)].map((m) => m.index as number);
-  return html.slice(starts[n], starts[n + 1] ?? html.indexOf('Each day across'));
+  return html.slice(starts[n], starts[n + 1] ?? html.indexOf('<details class="reading-key">'));
 };
 
 describe('the NBM hourly bulletin’s base on the day tables', () => {
@@ -89,6 +89,13 @@ describe('the NBM hourly bulletin’s base on the day tables', () => {
     expect(rowOf(html, 'NBM base')).toEqual(['', '', '', '', '2.5', 'no', '8', '']);
     expect(rowCells(html, 'NBM base').slice(4, 7)).toEqual([' class="muted csd-hb"', ' class="muted csd-hb"', ' class="muted csd-hb night"']);
     expect(html).not.toContain('title="from the');
+    // The tables' key is behind "How to read this", closed, and is not
+    // filed under the comparisons.
+    expect(keyFolded(html)).toMatch(/^<details class="reading-key"><summary class="small">How to read this<\/summary>/);
+    expect(keyFolded(html)).toContain('Each day across, every 3 h');
+    expect(keyFolded(html)).toContain('a blank cell is a slot that forecast does not cover');
+    expect(inView(html)).not.toContain('Each day across');
+    expect(folded(html)).not.toContain('Each day across');
     // In view: what the rows are, and that a second forecast can disagree
     // and raises no flag. Behind the fold: which bulletins, and how.
     expect(inView(html)).toContain(
@@ -227,7 +234,7 @@ describe('the NBM three-hourly bulletin on the day tables', () => {
   });
 
   it('is a picture of the figures in the muted colour: no warning class in the tables', () => {
-    const tables = html.slice(html.indexOf('class="csd-day"'), html.indexOf('Each day across'));
+    const tables = html.slice(html.indexOf('class="csd-day"'), html.indexOf('<details class="reading-key">'));
     expect(tables).not.toMatch(/warn|caution|danger|alert|ok\b/);
   });
 });

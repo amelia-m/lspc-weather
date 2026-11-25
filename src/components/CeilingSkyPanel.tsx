@@ -8,6 +8,7 @@ import { CLOUD_COMPARISON } from '../config/cloudComparison';
 import { CEILING_EIGHTHS } from '../domain/cloudCoverSources';
 import { Panel } from './common/Panel';
 import { NerdStats } from './common/NerdStats';
+import { ReadingKey } from './common/ReadingKey';
 import { CeilingSkyDays } from './CeilingSkyDays';
 import { buildDayBlocks, nwsCeilingForecastEnd } from '../domain/skyDays';
 import { FlightCategoryPill } from './common/FlightCategoryPill';
@@ -167,18 +168,22 @@ export function CeilingSkyPanel({
           NWS ceiling forecast ends {fmtWeekday(ceilingEnds)} {fmtShortHour(ceilingEnds)}; its sky row runs on.
         </p>
       )}
-      <p className="muted small">
-        Each day across, every 3 h, in the drop zone&rsquo;s time; the dark columns are night there, sunset to
-        sunrise, the same times the night flag uses, a three-hour slot going by its greater part. Sky cover
-        % as a bar and a figure: the NWS forecast&rsquo;s{showOm && ', Open-Meteo\u2019s cloud cover (OM) as a figure beside it,'} and
-        the NBM&rsquo;s. Heights in thousands of ft AGL; &ldquo;no&rdquo; = no broken/overcast layer (ceiling)
-        or no layer at all (base); a blank cell is a slot that forecast does not cover or gives no figure for, and a
-        row is left out of a day it has no figure in. The band is the heights, ground to 12,000 ft: the NBM&rsquo;s
-        lowest base a short bar at its height, its ceiling as cloud above it, the NWS ceiling a line across the
-        column while that forecast runs; a mark on the top edge is a height at or above 12,000 ft, the row has the
-        figure. &ldquo;hourly&rdquo; opens the day&rsquo;s NWS hours, scrolling sideways; today is its hours alone
-        when two slots or fewer remain.
-      </p>
+      {/* The tables' key, folded since 2026-11-25 (ReadingKey): the longest
+          block on the page, 182 words. */}
+      <ReadingKey>
+        <p className="muted small">
+          Each day across, every 3 h, in the drop zone&rsquo;s time; the dark columns are night there, sunset to
+          sunrise, the same times the night flag uses, a three-hour slot going by its greater part. Sky cover
+          % as a bar and a figure: the NWS forecast&rsquo;s{showOm && ', Open-Meteo\u2019s cloud cover (OM) as a figure beside it,'} and
+          the NBM&rsquo;s. Heights in thousands of ft AGL; &ldquo;no&rdquo; = no broken/overcast layer (ceiling)
+          or no layer at all (base); a blank cell is a slot that forecast does not cover or gives no figure for, and a
+          row is left out of a day it has no figure in. The band is the heights, ground to 12,000 ft: the NBM&rsquo;s
+          lowest base a short bar at its height, its ceiling as cloud above it, the NWS ceiling a line across the
+          column while that forecast runs; a mark on the top edge is a height at or above 12,000 ft, the row has the
+          figure. &ldquo;hourly&rdquo; opens the day&rsquo;s NWS hours, scrolling sideways; today is its hours alone
+          when two slots or fewer remain.
+        </p>
+      </ReadingKey>
       {(showBase || nbsShown) && (nbm || nbs) && (
         <p className="muted small">
           The NBM rows are the NWS National Blend of Models&rsquo; bulletins for {(nbs ?? nbm)!.station}: a second

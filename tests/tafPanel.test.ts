@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { inView, keyFolded } from './support/fold';
 import { TafPanel } from '../src/components/TafPanel';
 import { parseTaf } from '../src/domain/normalize';
 import type { SourceStatus, TafPassedOver } from '../src/domain/types';
@@ -74,6 +75,17 @@ describe('TafPanel change rows', () => {
       '<td class="taf-wrap"><span class="taf-layer">BKN 900 ft</span><span class="taf-layer">OVC 1,500 ft</span></td>',
     );
     expect(html).toContain('A blank cell on a change row means that element stays as the prevailing row says.');
+  });
+
+  it('folds what the group words mean under "How to read this", and keeps in view that a category is not a jump rule', () => {
+    // The maintainer, 2026-11-25: fold the key; warnings stay out.
+    expect(keyFolded(html)).toMatch(/^<details class="reading-key"><summary class="small">How to read this<\/summary>/);
+    expect(keyFolded(html)).toContain('Temporary: ');
+    expect(keyFolded(html)).toContain('A blank cell on a change row means that element stays as the prevailing row says.');
+    const seen = inView(html);
+    expect(seen).not.toContain('Temporary: ');
+    expect(seen).toContain('Decoded from the text above. Category is the FAA classification of the row’s ceiling and visibility, a description of the weather and not a jump rule.');
+    expect(keyFolded(html)).not.toContain('not a jump rule');
   });
 
   it('reads the TEMPO category with the prevailing visibility: 900 ft under P6SM is IFR', () => {
