@@ -139,7 +139,7 @@ describe('the Drift card’s exit separation', () => {
     expect(JUMP_RUN_AIRSPEED_KT).toEqual({ low: 75, high: 80 });
     expect(html).toMatch(/Airspeed on jump run \(kt indicated\)<input[^>]*value="75"/);
     expect(html).toContain(
-      'LSPC’s Cessna 182s typically fly jump run at about 75 to 80 kt indicated (the maintainer, 2026-11-24; confirmation asked on the citations page), so the box opens on 75 kt.',
+      'LSPC’s Cessna 182s typically fly jump run at about 75 to 80 kt indicated (the maintainer, 2026-11-24; confirmation asked on the citations page), so the airspeed box opens on 75 kt.',
     );
     // 75 kt indicated is 88.9 kt true there, 53.9 kt over the ground:
     // 1,000 ft in 10.99 s, 1,500 ft in 16.48 s.

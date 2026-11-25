@@ -94,18 +94,22 @@ export function JumpRunMap({
   const [failed, setFailed] = useState(false);
   const { dz, gpsPin } = SITE;
   const tiles = tilesAround(gpsPin.lat, gpsPin.lon, zoom, HALF_WIDTH, HALF_HEIGHT);
-  const line = jumpRunLine(trackDeg, HALF_WIDTH + HALF_HEIGHT, 70);
   const scalePx = feetToPixels(SCALE_FT, gpsPin.lat, zoom);
   const landing = pixelOffset(gpsPin, dz, zoom);
   const bearing = `${trackDeg === 0 ? 360 : trackDeg}° ${compass(trackDeg)}`;
   const offset = offsetPixels(tenths / 10, toward, gpsPin.lat, zoom);
-  const through = tenths > 0 ? `a point ${fmtTenths(tenths)} nm ${TOWARD_WORD[toward]} of the GPS point` : 'the GPS point';
+  // The line and its ticks are drawn about the offset point, so they reach
+  // that much farther: zoomed in on a long offset, a run that still crosses
+  // the frame would otherwise stop short inside it.
+  const reach = HALF_WIDTH + HALF_HEIGHT + Math.hypot(offset.x, offset.y);
+  const line = jumpRunLine(trackDeg, reach, 70);
+  const offsetPoint = `a point ${fmtTenths(tenths)} nm ${TOWARD_WORD[toward]} of the GPS point`;
   // A tenth of a nautical mile apart where that leaves room, else half a mile.
   const tenthPx = nmToPixels(0.1, gpsPin.lat, zoom);
   const tenthTicks = tenthPx >= MIN_TICK_GAP_PX;
   const ticks = tenthTicks
-    ? jumpRunTicks(trackDeg, tenthPx, HALF_WIDTH + HALF_HEIGHT)
-    : jumpRunTicks(trackDeg, tenthPx * 5, HALF_WIDTH + HALF_HEIGHT, 9, 9);
+    ? jumpRunTicks(trackDeg, tenthPx, reach)
+    : jumpRunTicks(trackDeg, tenthPx * 5, reach, 9, 9);
   const tickPath = ticks.map((t) => `M${t.a.x.toFixed(1)},${t.a.y.toFixed(1)}L${t.b.x.toFixed(1)},${t.b.y.toFixed(1)}`).join('');
   // Setting an offset steps the image out, never in, until its point is in
   // the frame; the reader's own zoom stands otherwise.
@@ -134,7 +138,7 @@ export function JumpRunMap({
       <div
         className="jumprun-frame"
         role="img"
-        aria-label={`Aerial image of ${dz.name}, north up, with a line through ${tenths > 0 ? through : 'the drop zone’s GPS point'} on a bearing of ${bearing}`}
+        aria-label={`Aerial image of ${dz.name}, north up, with a line through ${tenths > 0 ? offsetPoint : 'the drop zone’s GPS point'} on a bearing of ${bearing}`}
       >
         {tiles.map((t) => (
           <img
@@ -192,7 +196,7 @@ export function JumpRunMap({
           "super wordy"). North and the bar's length are on the image. */}
       <figcaption className="muted small">
         Cross: the drop zone&rsquo;s GPS point, as the maintainer believes it (2026-11-24; not confirmed against a
-        pilot&rsquo;s GPS). Ring: the landing area.{tenths > 0 ? ` Diamond: ${through}.` : ''} Ticks:{' '}
+        pilot&rsquo;s GPS). Ring: the landing area.{tenths > 0 ? ` Diamond: ${offsetPoint}.` : ''} Ticks:{' '}
         {tenthTicks ? 'every 0.1 nautical mile' : 'every 0.5 nautical mile at this zoom'} from the{' '}
         {tenths > 0 ? 'diamond' : 'cross'}. The bearing{tenths > 0 ? ' and offset' : ''} only: where the run lies
         and exits start is the spotter&rsquo;s and the pilot&rsquo;s. Image:{' '}

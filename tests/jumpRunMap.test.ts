@@ -228,6 +228,11 @@ describe('the jump run over the aerial image', () => {
     expect(xs).not.toContain(Number(nmToPixels(0.1, SITE.gpsPin.lat, 12).toFixed(1)));
     // The 1,000 ft bar shrinks with the image: a quarter of its 42.2 px at zoom 14.
     expect(html).toContain(`style="width:${feetToPixels(1000, SITE.gpsPin.lat, 12).toFixed(1)}px"`);
+    // Drawn about the offset point, the line reaches that much farther, so
+    // a run that crosses the frame never stops short inside it: its ends
+    // are the frame's 490 px reach plus the offset's 64.1 px from the point.
+    expect(attr(html, 'jumprun-line', 'x2')).toBeCloseTo(490 + nmToPixels(1, SITE.gpsPin.lat, 12), 3);
+    expect(attr(map(90), 'jumprun-line', 'x2')).toBeCloseTo(490, 3);
     // A short offset leaves the opening zoom alone.
     expect(offsetMap(90, 3, 0)).toContain('/MapServer/tile/14/');
   });

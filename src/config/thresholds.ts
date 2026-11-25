@@ -948,7 +948,7 @@ export const JUMP_RUN_AIRSPEED_FACT = dzFact({
   source: 'the maintainer',
   date: '2026-11-24',
   claim: `LSPC’s Cessna 182s typically fly jump run at about ${JUMP_RUN_AIRSPEED_KT.low} to ${JUMP_RUN_AIRSPEED_KT.high} kt indicated`,
-  consequence: `so the box opens on ${JUMP_RUN_AIRSPEED_KT.low} kt`,
+  consequence: `so the airspeed box opens on ${JUMP_RUN_AIRSPEED_KT.low} kt`,
 });
 
 /** The one fact about this drop zone the Student profile's wind figures
