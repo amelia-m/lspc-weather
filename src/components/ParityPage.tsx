@@ -1,6 +1,8 @@
 import type {
   OverCauses,
+  HoursRange,
   ParitySummary,
+  RrfsSummary,
   Spread,
   TimeGapGroup,
   TimeGapKey,
@@ -110,6 +112,7 @@ export function ParityPage({
           </p>
           <GlancePanel s={summary} />
           <SchulzePanel s={summary} />
+          {summary.schulze.rrfs && <RrfsPanel r={summary.schulze.rrfs} />}
           <UsairnetPanel s={summary} />
           <ParityTimeline />
           <ParityContext />
@@ -301,12 +304,20 @@ function SpreadTable({
   title,
   unit,
   rows,
+  signedHeader,
 }: {
   title: string;
   unit: string;
   rows: [number, Spread | undefined][];
+  /** Adds a last column for the signed mean, under this heading: the one
+   *  figure that says which side ran higher, where the comparison has a
+   *  side to name (RRFS minus default). */
+  signedHeader?: string;
 }): JSX.Element {
   const v = (x: number | undefined): string => (x == null ? '—' : `${num(x)}${unit}`);
+  const signed = (x: number | undefined): string =>
+    // To the tenth: a mean of a dozen whole-degree differences carries no more.
+    x == null ? v(x) : `${x > 0 ? '+' : x < 0 ? '\u2212' : ''}${Math.round(Math.abs(x) * 10) / 10}${unit}`;
   return (
     <div className="sky-scroll">
       <table className="aloft-table">
@@ -319,6 +330,7 @@ function SpreadTable({
             <th>90th</th>
             <th>min diff</th>
             <th>max diff</th>
+            {signedHeader && <th>{signedHeader}</th>}
           </tr>
         </thead>
         <tbody>
@@ -331,6 +343,7 @@ function SpreadTable({
               <td>{v(sp?.p90Abs)}</td>
               <td>{v(sp?.minAbs)}</td>
               <td>{v(sp?.maxAbs)}</td>
+              {signedHeader && <td>{signed(sp?.mean)}</td>}
             </tr>
           ))}
         </tbody>
@@ -512,6 +525,83 @@ function SchulzePanel({ s }: { s: ParitySummary }): JSX.Element {
         per-altitude tables measure the same hour on both sides.
       </p>
       <GroundSection bands={w.groundByLocalHour} days={w.groundByLocalDay} />
+    </Panel>
+  );
+}
+
+const runsWord = (n: number): string => `${n} ${n === 1 ? 'run' : 'runs'}`;
+const hoursText = (h: HoursRange | null): string =>
+  h == null ? 'not logged' : `${h.median} h median (${h.min} to ${h.max} h, ${runsWord(h.n)})`;
+
+/**
+ * The RRFS model beside the default: how far the winds-aloft table would
+ * move if Open-Meteo served it from the model it says will replace the one
+ * it serves now (docs/rrfs-comparison-plan.md). Two forecasts set against
+ * each other, so every figure is a difference and none an error: nothing
+ * aloft is measured here. Counts and spreads, no grade, and the count of
+ * runs said first, since the log began on 2026-11-24.
+ */
+function RrfsPanel({ r }: { r: RrfsSummary }): JSX.Element {
+  const axisMax = altitudeAxisMax([r.byAltitude]);
+  const at = (ft: number): AltitudeSpread | undefined => r.byAltitude.find((a) => a.ft === ft);
+  const pair = (a: AltitudeSpread | undefined): string =>
+    a == null ? 'no rows' : `${deg(a.dir.medianAbs)} and ${num(a.spd.medianAbs)} kt (${runsWord(a.n)})`;
+  const cloudText = (sp: Spread | null): string =>
+    sp == null ? 'not logged' : `${num(sp.medianAbs)} points apart at the median, ${num(sp.maxAbs)} at most (${runsWord(sp.n)})`;
+  const samples = r.samples == null ? null : r.samples.min === r.samples.max ? String(r.samples.min) : `${r.samples.min} to ${r.samples.max}`;
+  return (
+    <Panel
+      title="Winds aloft: the RRFS model beside the default"
+      subtitle={`${r.compared} runs compared, from ${fmtDay(r.from)}`}
+    >
+      <p className="muted small">
+        Since 2026-11-24 each comparison run also asks Open-Meteo for the same hour from the RRFS by
+        name: the model NOAA brought in on 2026-11-03, and the one Open-Meteo says will replace the
+        model this dashboard&rsquo;s winds are served from now. The rows are the RRFS table minus the
+        table the dashboard showed. Two forecasts set against each other: a difference here is not
+        an error in either, and no wind aloft is measured. {r.compared} of {r.runs} runs that asked
+        had rows to compare.
+      </p>
+      {r.compared > 0 && (
+        <>
+          <SpreadKey />
+          <AltitudeCharts rows={r.byAltitude} suffix=", RRFS against default" axisMax={axisMax} />
+          <SpreadTable
+            title="Direction"
+            unit="°"
+            rows={r.byAltitude.map((a) => [a.ft, a.dir])}
+            signedHeader="avg, RRFS minus default"
+          />
+          <SpreadTable
+            title="Speed"
+            unit=" kt"
+            rows={r.byAltitude.map((a) => [a.ft, a.spd])}
+            signedHeader="avg, RRFS minus default"
+          />
+          <ul className="cite-found">
+            <li>
+              <strong>Runs with any row over 10° apart:</strong> {r.runsWithRowOver10Deg} of {r.compared} (
+              {pct(r.runsWithRowOver10Deg, r.compared)}); over 3 kt, {r.runsWithRowOver3Kt} (
+              {pct(r.runsWithRowOver3Kt, r.compared)}); every row within 1° and 1 kt, {r.runsAllWithin1}.
+            </li>
+            <li>
+              <strong>The 500 ft row beside its neighbours, median apart:</strong> surface {pair(at(0))}; 500 ft{' '}
+              {pair(at(500))}; 1,000 ft {pair(at(1000))}.
+              {samples &&
+                ` The RRFS answered with ${samples} wind samples a run; on 2026-11-24 it had no 180 m wind (590 ft), the default’s sample just above the 500 ft row, so its 500 ft row is interpolated across a wider gap.`}
+            </li>
+            <li>
+              <strong>How old the forecast was at the comparison:</strong> the RRFS run had started{' '}
+              {hoursText(r.runAgeH)} before; the run the default was served from, {hoursText(r.defaultRunAgeH)}.
+              Open-Meteo had each RRFS run {hoursText(r.availAfterH)} after it started.
+            </li>
+            <li>
+              <strong>Cloud cover for the same hour, RRFS against default:</strong> total {cloudText(r.cloud.total)};
+              low cloud {cloudText(r.cloud.low)}. The Ceiling &amp; sky card prints the default&rsquo;s.
+            </li>
+          </ul>
+        </>
+      )}
     </Panel>
   );
 }

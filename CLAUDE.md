@@ -460,7 +460,7 @@ Open-Meteo's daily request limit is per address, and the sandbox leaves by a
 pool of shared addresses (eight seen in 160.79.106.0/24 on 2026-11-19 via
 Cloudflare's `/cdn-cgi/trace` on an allowlisted host it fronts), so it
 can be refused for a day by other tenants: "Daily API request limit
-exceeded." Five times so far (2026-09-23, 10-10, 11-12, 11-13, 11-19), each
+exceeded." Six times so far (2026-09-23, 10-10, 11-12, 11-13, 11-19, 11-25), each
 with `X-RateLimit-Remaining: 0.0` of 10,000 and a reset moments after
 midnight UTC, when nothing of this repo was running
 (docs/open-questions.md, "How the sandbox hits the limit"). A key on
@@ -628,7 +628,7 @@ the finding. The same job prints two reports that never fail the run:
 `scripts/schulzeCompare.live.ts` (this app's winds-aloft profile beside Mark
 Schulze's; needs a Referer and a browser-like User-Agent) and
 `scripts/usairnetCompare.live.ts` (the dashboard's decode of the latest KPMV
-observation beside usairnet's). Since 2026-11-24 the first also logs the same hour's table from Open-Meteo's RRFS model against the default (`rrfs` on the record, with both models' cloud cover; `rrfsLogOf`, src/domain/modelCompare.ts): Open-Meteo says the HRRR, which the unnamed request is served from here, goes with RRFSv2, and the log measures the change before it comes (docs/open-questions.md); not yet on `#parity`. `.github/workflows/comparisons.yml` runs
+observation beside usairnet's). Since 2026-11-24 the first also logs the same hour's table from Open-Meteo's RRFS model against the default (`rrfs` on the record, with both models' cloud cover; `rrfsLogOf`, src/domain/modelCompare.ts): Open-Meteo says the HRRR, which the unnamed request is served from here, goes with RRFSv2, and the log measures the change before it comes (docs/open-questions.md); `#parity` shows it since 2026-11-25 as a panel of its own (`rrfsSummary`, `RrfsPanel`: RRFS minus default by altitude, each run's age, the count of runs first). `.github/workflows/comparisons.yml` runs
 both eight more times a day at different minutes; each run uploads one
 `@@parity {json}` line as a `parity-<run id>` artifact (kept 14 days), and
 the summary takes only runs on `main`.
@@ -671,7 +671,7 @@ docs/nws-gust-archive.md).
 The page at `#wind-errors` draws forecast minus reported surface wind as
 histograms: the kept NWS forecasts by lead, the NDFD archive by lead
 (`data/parity/ndfd-wgust-*`, `ndfd-wind-*`, from 2026-04-01), Open-Meteo's
-archived 10 m wind by run (`data/parity/om-wind-*`) and the surface-wind
+archived 10 m wind by run (`data/parity/om-wind-*`), since 2026-11-25 its RRFS by name beside the default model over the same hours (`omRrfsArchiveSection`; records tagged `model` in the same files, from 2026-09-26; docs/rrfs-comparison-plan.md), and the surface-wind
 sample by source (`src/domain/windErrors.ts`,
 `src/components/WindErrorsPage.tsx`). Its
 data file, `public/wind-errors/summary.json`, is rebuilt weekly by the

@@ -149,6 +149,7 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
   const kept = data?.sections.find((s) => s.id === 'nws-kept');
   const nwsArchive = data?.sections.find((s) => s.id === 'nws-archive');
   const archive = data?.sections.find((s) => s.id === 'om-archive');
+  const rrfsArchive = data?.sections.find((s) => s.id === 'om-rrfs-archive');
   const sample = data?.sections.find((s) => s.id === 'surface-sample');
   const station = `${SITE.metarStation.id}, ~${Math.round(METAR_STATION_OFFSET.distanceMi)} mi ${METAR_STATION_OFFSET.compass} of the drop zone`;
   return (
@@ -169,9 +170,9 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
         about whether a jump was safe, and nothing on the dashboard reads them. The forecasts are for
         the drop zone, so part of every difference is the distance.
       </p>
-      {(archive || sample) && (
+      {(archive || rrfsArchive || sample) && (
         <p className="muted small">
-          <OpenMeteoCredit scope="surface" surface={{ archive: archive != null, sample: sample != null }} />
+          <OpenMeteoCredit scope="surface" surface={{ archive: archive != null || rrfsArchive != null, sample: sample != null }} />
         </p>
       )}
 
@@ -230,6 +231,24 @@ export function WindErrorsPage({ data, state }: { data: WindErrorsData | null; s
               it was fetched:{' '}
               <a href={repoDoc('docs/surface-wind-sources.md')} target="_blank" rel="noopener noreferrer">
                 docs/surface-wind-sources.md
+              </a>
+              .
+            </p>
+          }
+        />
+      )}
+      {rrfsArchive && (
+        <SectionPanel
+          s={rrfsArchive}
+          intro={
+            <p className="muted small">
+              The same archive asked for one model by name: the RRFS, which NOAA brought in on
+              2026-11-03 and Open-Meteo says will replace the model its forecasts here come from now.
+              Each RRFS row sits above the default model&rsquo;s over the same hours, so a pair differs by
+              the model alone; paired with KPMV and read as the section above. Counts over these days,
+              which are far fewer than the section above holds. The plan it is a step of:{' '}
+              <a href={repoDoc('docs/rrfs-comparison-plan.md')} target="_blank" rel="noopener noreferrer">
+                docs/rrfs-comparison-plan.md
               </a>
               .
             </p>

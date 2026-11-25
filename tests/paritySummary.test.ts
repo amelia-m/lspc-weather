@@ -579,3 +579,70 @@ describe('uniqueParityRecords', () => {
     expect(out[0]).not.toHaveProperty('v');
   });
 });
+
+describe('the RRFS tables in the summary', () => {
+  const run = (init: string, avail: string) => ({ init, modified: avail, avail, stepS: 3600, reads: 3, variants: 1 });
+  const row = (ft: number, dDir: number, dSpd: number) => ({ ft, dDir, dSpd, dT: null });
+  const cloud = (rrfsTotal: number, defTotal: number, rrfsLow: number | null, defLow: number | null) => ({
+    rrfs: { total: rrfsTotal, low: rrfsLow, mid: null, high: null },
+    default: { total: defTotal, low: defLow, mid: null, high: null },
+  });
+  const records: ParityRecord[] = [
+    schulze('2026-11-24T04:00:00Z', [[1000, 1, 0]], {
+      omRuns: { ncep_hrrr_conus: run('2026-11-24T02:00:00Z', '2026-11-24T03:30:00Z') },
+      rrfs: {
+        model: 'ncep_rrfs_conus',
+        run: run('2026-11-23T18:00:00Z', '2026-11-24T03:00:00Z'),
+        samples: 22,
+        levels: 15,
+        rows: [row(500, -2, 1), row(1000, 12, 4)],
+        cloud: cloud(100, 100, 0, 5),
+      },
+    }),
+    schulze('2026-11-24T14:00:00Z', [[1000, 1, 0]], {
+      omRuns: { ncep_hrrr_conus: run('2026-11-24T13:00:00Z', '2026-11-24T13:50:00Z') },
+      rrfs: {
+        model: 'ncep_rrfs_conus',
+        run: run('2026-11-24T06:00:00Z', '2026-11-24T12:00:00Z'),
+        samples: 23,
+        levels: 15,
+        rows: [row(500, 1, -1), row(1000, 1, 0)],
+        cloud: cloud(40, 60, null, 10),
+      },
+    }),
+    // Asked, and answered for another hour: logged, compared in nothing.
+    schulze('2026-11-24T20:00:00Z', [[1000, 1, 0]], {
+      rrfs: { model: 'ncep_rrfs_conus', run: null, error: 'a different hour: 2026-11-24T21:00:00.000Z' },
+    }),
+    // Before 2026-11-24: no RRFS on the record at all.
+    schulze('2026-11-20T20:00:00Z', [[1000, 30, 9]]),
+  ];
+  const s = summarizeParity(records, NOW).schulze.rrfs!;
+
+  it('counts the runs that logged it and those with rows, and spreads RRFS minus default by altitude', () => {
+    expect(s).toMatchObject({ runs: 3, compared: 2, from: '2026-11-24T04:00:00.000Z', to: '2026-11-24T14:00:00.000Z' });
+    expect(s.byAltitude.map((a) => a.ft)).toEqual([500, 1000]);
+    // The Schulze rows of the same records (30° on the older one) are not in it.
+    expect(s.byAltitude[1].dir).toMatchObject({ n: 2, maxAbs: 12, mean: 6.5 });
+    expect(s.byAltitude[0].spd).toMatchObject({ n: 2, mean: 0 });
+    expect(s).toMatchObject({ runsWithRowOver10Deg: 1, runsWithRowOver3Kt: 1, runsAllWithin1: 1 });
+  });
+
+  it('gives each model run’s age at the comparison, the hours the RRFS took to arrive, and its sample counts', () => {
+    // RRFS runs started 10 h and 8 h before; the HRRR's 2 h and 1 h.
+    expect(s.runAgeH).toEqual({ n: 2, min: 8, median: 9, max: 10 });
+    expect(s.defaultRunAgeH).toEqual({ n: 2, min: 1, median: 1.5, max: 2 });
+    expect(s.availAfterH).toEqual({ n: 2, min: 6, median: 7.5, max: 9 });
+    expect(s.samples).toEqual({ min: 22, max: 23 });
+  });
+
+  it('differences cloud cover only where both models gave the band', () => {
+    expect(s.cloud.n).toBe(2);
+    expect(s.cloud.total).toMatchObject({ n: 2, mean: -10 });
+    expect(s.cloud.low).toMatchObject({ n: 1, mean: -5 });
+  });
+
+  it('leaves the summary without the block while no run has logged one', () => {
+    expect(summarizeParity([schulze('2026-11-20T20:00:00Z', [[1000, 1, 0]])], NOW).schulze.rrfs).toBeUndefined();
+  });
+});

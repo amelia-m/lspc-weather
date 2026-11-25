@@ -158,7 +158,7 @@ export interface WindErrorRow {
 }
 
 export interface WindErrorSection {
-  id: 'nws-kept' | 'nws-archive' | 'om-archive' | 'surface-sample';
+  id: 'nws-kept' | 'nws-archive' | 'om-archive' | 'om-rrfs-archive' | 'surface-sample';
   title: string;
   /** What a bar counts: an hour of the kept forecasts, a report of the sample. */
   unitWord: 'hour' | 'report';
@@ -248,16 +248,22 @@ export interface OmWindRecord {
   /** Set only when the fetch was given SITES; the page reads the drop
    *  zone's, which carry none. */
   site?: string;
+  /** Open-Meteo's name for the model asked, on the records fetched by name
+   *  (the RRFS, from 2026-11-25). None on the default's: the dashboard's
+   *  request names no model, and neither did that fetch. */
+  model?: string;
 }
 
 /** The archive's records from JSON lines, skipping blank lines, other
- *  records and other sites' points. */
-export function parseOmWindLines(text: string): OmWindRecord[] {
+ *  records and other sites' points. The default model's, or with `model`
+ *  the records fetched for that model by name: the two share the files and
+ *  never a section's row. */
+export function parseOmWindLines(text: string, model?: string): OmWindRecord[] {
   const out: OmWindRecord[] = [];
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
     const r = JSON.parse(line) as OmWindRecord;
-    if (r.src === 'om-wind' && r.site == null) out.push(r);
+    if (r.src === 'om-wind' && r.site == null && r.model === model) out.push(r);
   }
   return out;
 }
@@ -279,34 +285,103 @@ export const OM_ARCHIVE_ROWS: readonly { run: OmArchiveRun; label: string }[] = 
  *  field null does not take away a value an earlier fetch had. */
 export function omArchiveSection(records: readonly OmWindRecord[], metars: readonly MetarRecord[]): WindErrorSection {
   const byHour = reportsByHour(metars);
+  const latest = latestByRunHour(records);
+  const times: number[] = [];
+  const rows = OM_ARCHIVE_ROWS.map(({ run, label }) => {
+    const diffs = runDiffs(latest, run, byHour);
+    for (const d of diffs) times.push(d.t);
+    return rowOf(label, diffs);
+  });
+  return {
+    id: 'om-archive',
+    title: 'Open-Meteo’s archived forecasts, against KPMV',
+    unitWord: 'hour',
+    ...span(times),
+    rows,
+  };
+}
+
+/** Each run's record for each hour, once: an hour fetched twice takes each
+ *  field from the later record where it has one. Keyed `run|valid ms`. */
+function latestByRunHour(records: readonly OmWindRecord[]): Map<string, OmWindRecord> {
   const latest = new Map<string, OmWindRecord>();
   for (const r of records) {
     const key = `${r.run}|${Date.parse(r.valid)}`;
     const had = latest.get(key);
     latest.set(key, had ? { ...r, spd: r.spd ?? had.spd, gust: r.gust ?? had.gust, dir: r.dir ?? had.dir } : r);
   }
+  return latest;
+}
+
+/** One run's hours against the report near each, as `windDiffs` reads a
+ *  pair; an hour with no report near it, or nothing to compare, gives none.
+ *  `only` keeps the hours it names. */
+function runDiffs(
+  latest: ReadonlyMap<string, OmWindRecord>,
+  run: OmArchiveRun,
+  byHour: ReturnType<typeof reportsByHour>,
+  only?: ReadonlySet<number>,
+): (Diffs & { t: number })[] {
+  const out: (Diffs & { t: number })[] = [];
+  for (const r of latest.values()) {
+    if (r.run !== run) continue;
+    const t = Date.parse(r.valid);
+    if (only && !only.has(t)) continue;
+    const obs = reportNear(byHour.get(t) ?? [], t);
+    if (!obs) continue;
+    const fc: InstantPair['fc'] = {};
+    if (r.spd != null) fc.windSpeed = r.spd;
+    if (r.gust != null) fc.windGust = r.gust;
+    if (r.dir != null) fc.windDirection = r.dir;
+    const d = windDiffs({ fc, obs });
+    if (d.speed == null && d.gust == null && d.dir == null) continue;
+    out.push({ t, speed: d.speed, gust: d.gust, dir: d.dir });
+  }
+  return out;
+}
+
+/** The RRFS section's row labels: the model asked by name, then the
+ *  default over the same hours, for each of the archive's two runs. */
+export const omRrfsRowLabels = (runLabel: string): { rrfs: string; default: string } => ({
+  rrfs: `RRFS, ${runLabel}`,
+  default: `Default model, same hours, ${runLabel}`,
+});
+
+/**
+ * Open-Meteo's RRFS by name against KPMV, beside the default model over
+ * the same hours (docs/rrfs-comparison-plan.md, step 7).
+ *
+ * Why the default is repeated here: its own section runs from 2026-04-01
+ * and the RRFS's archive from when Open-Meteo began keeping it, so the two
+ * sections cover different weather. A row pair here is one set of hours,
+ * those where both models have a record for the run and KPMV a report
+ * near, read exactly as `omArchiveSection` reads its own; what differs
+ * between the two rows of a pair is the model and nothing else.
+ */
+export function omRrfsArchiveSection(
+  rrfs: readonly OmWindRecord[],
+  defaults: readonly OmWindRecord[],
+  metars: readonly MetarRecord[],
+): WindErrorSection {
+  const byHour = reportsByHour(metars);
+  const rrfsLatest = latestByRunHour(rrfs);
+  const defaultLatest = latestByRunHour(defaults);
   const times: number[] = [];
-  const rows = OM_ARCHIVE_ROWS.map(({ run, label }) => {
-    const diffs: Diffs[] = [];
-    for (const r of latest.values()) {
-      if (r.run !== run) continue;
+  const rows: WindErrorRow[] = [];
+  for (const { run, label } of OM_ARCHIVE_ROWS) {
+    const both = new Set<number>();
+    for (const r of rrfsLatest.values()) {
       const t = Date.parse(r.valid);
-      const obs = reportNear(byHour.get(t) ?? [], t);
-      if (!obs) continue;
-      const fc: InstantPair['fc'] = {};
-      if (r.spd != null) fc.windSpeed = r.spd;
-      if (r.gust != null) fc.windGust = r.gust;
-      if (r.dir != null) fc.windDirection = r.dir;
-      const d = windDiffs({ fc, obs });
-      if (d.speed == null && d.gust == null && d.dir == null) continue;
-      times.push(t);
-      diffs.push({ speed: d.speed, gust: d.gust, dir: d.dir });
+      if (r.run === run && defaultLatest.has(`${run}|${t}`)) both.add(t);
     }
-    return rowOf(label, diffs);
-  });
+    const names = omRrfsRowLabels(label);
+    const rrfsDiffs = runDiffs(rrfsLatest, run, byHour, both);
+    for (const d of rrfsDiffs) times.push(d.t);
+    rows.push(rowOf(names.rrfs, rrfsDiffs), rowOf(names.default, runDiffs(defaultLatest, run, byHour, both)));
+  }
   return {
-    id: 'om-archive',
-    title: 'Open-Meteo’s archived forecasts, against KPMV',
+    id: 'om-rrfs-archive',
+    title: 'Open-Meteo’s RRFS archive beside its default model, against KPMV',
     unitWord: 'hour',
     ...span(times),
     rows,
