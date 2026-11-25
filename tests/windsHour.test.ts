@@ -161,8 +161,7 @@ describe('Drift card follows the hour', () => {
 
   it('says the estimate is the Winds aloft card\'s hour, and that the buttons move both', () => {
     const html = drift(ahead(), nav());
-    expect(html).toContain('Worked from the forecast hour selected on the Winds aloft card, and the table shown there (all levels, or as Schulze).');
-    expect(html).toContain('The buttons here and on that card step the same hour, so changing either moves both.');
+    expect(html).toContain('Worked from the Winds aloft card’s hour and table (all levels, or as Schulze); the hour buttons here and there step the same hour.');
   });
 
   it('names its buttons apart from the Winds aloft card\'s, and announces nothing twice', () => {

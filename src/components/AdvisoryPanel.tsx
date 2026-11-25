@@ -165,17 +165,16 @@ export function AdvisoryPanel({
                 steady wind goes unflagged. */}
             {!forPilots && !hasWindLimit && ownLimits.length === 0 && (
               <>
-                Surface wind is never flagged on the {profile} profile unless you set your own wind
-                limit in Settings — no published source sets one — so read the speed on the Surface
-                wind card.{' '}
+                Surface wind is never flagged on the {profile} profile (no published source sets a
+                limit) unless you set your own in Settings: read the speed on the Surface wind card.{' '}
               </>
             )}
             {forPilots ? (
               'This is not clearance to fly the load: the pilot in command decides.'
             ) : (
               <>
-                This is not clearance to jump — confirm winds, clouds, and the spot yourself and with
-                the <SimTerm term="sta">S&amp;TA</SimTerm>.
+                This is not clearance to jump: confirm winds, clouds and the spot yourself and with the{' '}
+                <SimTerm term="sta">S&amp;TA</SimTerm>.
               </>
             )}
           </p>

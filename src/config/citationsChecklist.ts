@@ -2,6 +2,7 @@ import type { AdvisoryLevel, Citation } from '../domain/types';
 import { FLIGHT_CATEGORY_LEVEL, LEVEL_LABEL, OVERCAST_LEVEL } from '../domain/advisories';
 import {
   CITATIONS,
+  DEFAULT_THRESHOLDS,
   FAR_91155_ROWS,
   FLIGHT_CATEGORY_GUIDANCE,
   flightCategoryComparisonText,
@@ -113,7 +114,7 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A2',
     title: 'Minimum opening altitudes',
-    claim: `USPA BSR minimum container-opening altitudes: ${OPENING_ALTITUDES_TEXT}. These are floors — deploy above your minimum, not at it.`,
+    claim: `USPA BSR minimum container-opening altitudes: ${OPENING_ALTITUDES_TEXT}.`,
     where: 'Freefall drift / spot card. Also sets the Deploy dropdown default.',
     sources: [CITATIONS.uspaOpeningAltitude],
     found: {
@@ -152,8 +153,7 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A4',
     title: 'No USPA wind limit for licensed jumpers',
-    claim:
-      'No USPA ground-wind limit for licensed jumpers: the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
+    claim: DEFAULT_THRESHOLDS.licensed.windGuidance,
     where:
       'Surface wind card with Licensed selected — a standing note under the reading, at any wind speed. No surface-wind flag fires on this profile at any speed unless the jumper sets their own limit in Settings, which every surface calls theirs.',
     sources: [CITATIONS.uspaLicensedWinds],
@@ -212,7 +212,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A7',
     title: 'Exit separation and spotting in strong upper winds',
     claim:
-      'Strong upper winds increase freefall drift and lengthen the spot — plan jump run and exit separation accordingly.',
+      'Strong upper winds increase freefall drift and lengthen the spot: plan jump run and exit separation accordingly.',
     where:
       'Winds aloft card, standing note under the table, at any wind speed. Since 2026-11-24 the Freefall drift / spot card also works the section’s two distances into seconds between exits, from a jump-run bearing and an indicated airspeed the reader can change and the forecast wind at exit altitude',
     sources: [CITATIONS.uspaSpotting],
@@ -334,7 +334,7 @@ export const CHECKLIST: ChecklistEntry[] = [
     id: 'A10',
     title: 'Density altitude and climb performance',
     claim:
-      'High density altitude reduces a loaded jump plane’s climb performance — expect longer climbs to altitude.',
+      'High density altitude reduces a loaded jump plane’s climb performance: expect longer climbs to altitude.',
     where: 'Density altitude card, as a standing note under the figures, with the pamphlet’s definition (the headline) and its humidity advice. No flag fires on density altitude.',
     sources: [CITATIONS.faaDensityAltitude],
     found: {

@@ -105,10 +105,10 @@ export function SectionalPanel(): JSX.Element {
               adsb.fi →
             </a>{' '}
             <span className="muted">
-              Two volunteer networks; if one is down, try the other. Each link asks its map to open
-              over the same sectional, centred on the drop zone. They show only aircraft
-              broadcasting ADS-B (or located by multilateration) within range of their receivers,
-              so an aircraft on neither map may still be there; neither is a traffic service.
+              Two volunteer networks; if one is down, try the other. Each opens over the same
+              sectional, centred on the drop zone, and shows only aircraft broadcasting ADS-B (or
+              located by multilateration) within range of its receivers, so an aircraft on neither
+              map may still be there; neither is a traffic service.
             </span>
           </p>
           <p className="muted small">

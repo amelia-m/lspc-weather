@@ -133,7 +133,7 @@ export function SurfaceWindPanel({
   const showCaveat = caveat != null && lowerLimitUnchecked(t);
   const caveatText = showCaveat
     ? splitGlossaryTerms(
-        withNotHere(`${lowerLimitPublished(t, unit)} ${windBandUse(t, unit)}, so neither checks the lower one.`, t),
+        withNotHere(`${lowerLimitPublished(t, unit)} ${windBandUse(t, unit)}, so neither checks it.`, t),
         linkableTerms([caveat.citation]),
       )
     : [];
@@ -273,10 +273,9 @@ export function SurfaceWindPanel({
               </>
             ) : (
               <>
-                <strong>No published limit for this profile</strong>, so there is no band to draw —
-                and no surface-wind flag appears under &ldquo;Conditions to note&rdquo; at any speed.
-                The reading is the observation; judging it is yours. You can set your own limit in
-                Settings at the foot of the page.
+                <strong>No published limit for this profile</strong>: no band, and no surface-wind flag
+                appears under &ldquo;Conditions to note&rdquo; at any speed. Judging the reading is yours;
+                set your own limit in Settings (foot of the page) to draw one.
               </>
             )}
           </p>

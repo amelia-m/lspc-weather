@@ -74,7 +74,7 @@ export function DensityAltitudePanel({
               The number above is the reading; judging it is the reader's job,
               with the PIC's. */}
           <p className="muted small">
-            High density altitude reduces a loaded jump plane’s climb performance — expect longer
+            High density altitude reduces a loaded jump plane’s climb performance: expect longer
             climbs to altitude. The headline is the FAA’s density altitude, “pressure altitude
             corrected for nonstandard temperature variations”, which leaves humidity out; when
             humidity is high, the same pamphlet says to “add 10 percent to your computed takeoff

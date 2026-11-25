@@ -123,7 +123,7 @@ export const FAR_91155_ROWS =
  *  105.17 and BSR 2-1 I by number with their links (the flag's
  *  `citations`). */
 export const FLIGHT_CATEGORY_GUIDANCE =
-  'Standard FAA flight category (AIM 7-1-7) from ceiling and visibility — a label for the weather, not a jump rule. Below VFR, the rules to check are the pilot’s basic VFR weather minimums, 14 CFR 91.155 (by airspace class and altitude), and the flight-visibility and cloud-clearance rule for parachute operations that the Ceiling & sky card cites; that call belongs to the pilot in command.';
+  'FAA flight category (AIM 7-1-7) from ceiling and visibility: a label for the weather, not a jump rule. Below VFR, check the pilot’s basic VFR weather minimums, 14 CFR 91.155 (by airspace class and altitude), and the flight-visibility and cloud-clearance rule for parachute operations on the Ceiling & sky card; the call is the pilot in command’s.';
 
 /** SIM 4-7 C's ground separation between groups leaving on one pass, read
  *  at uspa.org on 2026-11-24 ("Provide at least 1,000 feet of ground
@@ -543,7 +543,7 @@ export interface Thresholds {
   windBandCaveat?: {
     limitKt: number;
     appliesTo: string;
-    /** What the unedited band figure is, after "The band and flag here use
+    /** What the unedited band figure is, after "The band and flag use
      *  12 kt, ". */
     bandIs: string;
     citation: Citation;
@@ -779,7 +779,7 @@ const EXIT_ROW_FROM_FT_AGL = ftAgl(10_000 - SITE.dz.elevationFt);
 
 /** What 105.17 says, the same whichever row the flag uses; the flag then
  *  says which (`visibilityGuidance`). */
-export const VISIBILITY_RULE = `14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it; an exit from this DZ at or above ${EXIT_ROW_FROM_FT_AGL} ft AGL is in the 5 SM row. This reading is surface visibility from the METAR; the rule is about flight visibility at altitude.`;
+export const VISIBILITY_RULE = `14 CFR 105.17 requires at least 3 SM flight visibility below 10,000 ft MSL, and 5 SM at or above it; from this DZ an exit at or above ${EXIT_ROW_FROM_FT_AGL} ft AGL is in the 5 SM row. This reading is the METAR’s surface visibility; the rule is flight visibility at altitude.`;
 
 /** What the flight-category flag adds under IFR and LIFR, in the report's
  *  figures: the maintainer's call of 2026-11-03 ("make the flag print the
@@ -914,8 +914,8 @@ export function visibilityFigure(t: VisibilityThresholds, opts: { onCitationsPag
   if (both) {
     const fact = opts.onCitationsPage ? HOP_AND_POP_FACT.sentenceOnCitations : HOP_AND_POP_FACT.sentence;
     return (
-      `holds the surface reading to both rows: ${HIGH_ROW_SM} SM, the row a full-altitude exit from this DZ is in, ` +
-      `and ${LOW_ROW_SM} SM, the row a hop-and-pop is in, and says which the reading is under. ${fact}`
+      `holds the surface reading to both rows, ${HIGH_ROW_SM} SM (a full-altitude exit) and ${LOW_ROW_SM} SM (a hop-and-pop), ` +
+      `and says which it is under. ${fact}`
     );
   }
   return isRow ? `holds the surface reading to the ${publishedSm} SM row.` : `fires below ${publishedSm} SM.`;
@@ -959,7 +959,7 @@ export const STUDENT_ROUND_RESERVE_FACT = dzFact({
   source: 'the maintainer',
   date: '2026-10-26',
   claim: 'no student rig at LSPC carries a round reserve',
-  consequence: 'so that figure binds no student at this drop zone',
+  consequence: 'so it binds no student here',
 });
 
 const STUDENT: Thresholds = {
@@ -1003,7 +1003,7 @@ const STUDENT: Thresholds = {
   windBandCaveat: {
     limitKt: mphToKt(10),
     appliesTo: 'solo students on round reserves',
-    bandIs: 'the 14 mph figure for ram-air canopies rounded down to whole knots',
+    bandIs: 'the 14 mph ram-air figure rounded down to whole knots',
     citation: CITATIONS.uspaStudentWinds,
     notHere: STUDENT_ROUND_RESERVE_FACT.sentence,
   },
@@ -1030,8 +1030,8 @@ const STUDENT: Thresholds = {
 const LICENSED: Thresholds = {
   windCautionKt: LICENSED_BAR_SCALE_KT,
   windGuidance:
-    'No USPA ground-wind limit for licensed jumpers: the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. ' +
-    'Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
+    'No USPA ground-wind limit for licensed jumpers: the BSR sets maximum ground winds for solo students and says for licensed skydivers they "are unlimited". Judge it on your canopy, currency and the conditions, with the S&TA. ' +
+    'Whether the load flies is the pilot in command’s call under the aircraft’s operating limitations, not USPA’s: ask the pilot.',
   // Cites the BSR for the absence of a limit, not the student limit: a reader
   // who follows the link should land on the section that shows the wind rule is
   // written for students.

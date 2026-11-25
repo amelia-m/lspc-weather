@@ -18,7 +18,7 @@ export function RadarPanel(): JSX.Element {
   return (
     <Panel className="panel-secondary" title="Radar" subtitle={`${r.id} · ~${miles} mi ${bearing}`} sources={[DATA_SOURCES.radar]}>
       <p className="muted small">
-        {r.name} ({r.id}) WSR-88D — covers the drop zone (~{miles} mi {bearing}).
+        {r.name} ({r.id}) WSR-88D.
       </p>
       {failed ? (
         <p className="muted">

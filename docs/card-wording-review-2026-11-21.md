@@ -8,6 +8,8 @@ disclaimers the rules in CLAUDE.md's first section require (silence
 named, own limits called the reader's, a sourced figure the app cannot
 act on said to be so), shortened but present.
 
+Applied since: W1 to W4, F2 and C4 on 2026-11-22; S1, S3, F1, F3, F4, A, H1, D1 to D3, O1, O2, R, WL, P1, P4 and SET on 2026-11-25 (docs/open-questions.md, "Card wording", has the counts). The "now" texts below are as they stood on 2026-11-21.
+
 ## How it was measured
 
 The fixture build (`BASE_PATH=/ VITE_USE_FIXTURES=true npm run build`,

@@ -259,7 +259,7 @@ export function WindsAloftPanel({
           any wind rather than appearing only once an invented threshold is
           crossed. Read the speeds above and judge them. */}
       <p className="muted small">
-        Strong upper winds increase freefall drift and lengthen the spot — plan <SimTerm term="jumpRun">jump run</SimTerm> and
+        Strong upper winds increase freefall drift and lengthen the spot: plan <SimTerm term="jumpRun">jump run</SimTerm> and
         exit separation accordingly. Source: <SourceLink citation={CITATIONS.uspaSpotting} />
       </p>
       {!expanded && toggleable && collapsedTopFtAgl != null && top.highestFtAgl != null && (

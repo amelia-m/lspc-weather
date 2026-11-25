@@ -69,7 +69,7 @@ describe('own limits on Licensed', () => {
   it('flags wind at the reader’s own limit, and says it is theirs', () => {
     expect(flag(withOverrides(licensed), 18, null, 'surface-wind')).toBeUndefined();
     const f = flag(own({ windCautionKt: 15 }), 18, null, 'surface-wind');
-    expect(f?.guidance).toContain('The band and flag here use 15 kt, your own limit from Settings; no published source sets one for this profile.');
+    expect(f?.guidance).toContain('The band and flag use 15 kt, your own limit from Settings; no published source sets one for this profile.');
     expect(flag(own({ windCautionKt: 15 }), 12, 17, 'surface-wind')?.value).toContain('(gusts at or above your limit)');
   });
 
@@ -101,7 +101,7 @@ describe('own limits on Licensed', () => {
     expect(note).not.toContain('<a ');
     const unset = card(withOverrides(licensed));
     expect(unset).not.toContain('band-caution');
-    expect(ownNote(unset)).toContain('You can set your own limit in Settings');
+    expect(ownNote(unset)).toContain('set your own limit in Settings (foot of the page) to draw one');
   });
 
   it('names the figures in the note even with no wind reading', () => {
@@ -164,7 +164,7 @@ describe('the Set your own thresholds panel', () => {
 
   it('on Licensed, offers an empty wind limit and gust ceiling and says where they appear', () => {
     const p = panel(withOverrides(licensed), licensed);
-    expect(p).toContain('appears in the charts, the Surface wind card and the flags');
+    expect(p).toContain('is drawn on the charts and the Surface wind card and flagged under');
     expect(p).toContain('Your wind limit');
     expect(p).toContain('Your gust ceiling');
     expect(p.match(/placeholder="none" value=""/g)).toHaveLength(2);

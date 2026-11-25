@@ -157,11 +157,10 @@ export function WingLoadingPanel({
         </table>
       </div>
       <p className="muted small">
-        PD&rsquo;s maximum <SimTerm term="exitWeight">exit weight</SimTerm> for each category on this size; the comparison above uses
+        PD&rsquo;s maximum <SimTerm term="exitWeight">exit weight</SimTerm> per category on this size; the comparison above uses
         the Student figure only. Gear is one student rig weighed (about {STUDENT_RIG_WEIGHT_LB} lb);
         change it for yours. Body weight is not saved. PD gives its Student figures &ldquo;mainly to
-        help instructors&rdquo; choose a student&rsquo;s canopy: which canopy a student jumps is the
-        instructor&rsquo;s call. Sources: <SourceLink citation={CITATIONS.pdNavigator} />;{' '}
+        help instructors&rdquo;: which canopy a student jumps is the instructor&rsquo;s call. Sources: <SourceLink citation={CITATIONS.pdNavigator} />;{' '}
         <SourceLink citation={CITATIONS.pdWingLoadingGuide} />
       </p>
     </Panel>
