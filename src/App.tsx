@@ -416,7 +416,7 @@ export default function App(): JSX.Element {
         <AdvisoryPanel
           advisories={advisoriesFor(view, advisories)}
           profile={profileLabel(profile)}
-          /* Not "is the wind high" — whether there is a limit to flag it
+          /* Not "is the wind high": whether there is a limit to flag it
              against: a published one, or the reader's own on Licensed. With
              neither the Jumpers list cannot carry the sustained wind at any
              speed and says so: in its empty state, or, beside an own gust
