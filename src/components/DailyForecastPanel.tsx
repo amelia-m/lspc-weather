@@ -195,7 +195,7 @@ export function DailyForecastPanel({
         <p className="muted small">
           <strong>Fallback source:</strong> Open-Meteo was unreachable, so these days are
           aggregated from the NWS gridpoint forecast (~7 days, not 10). Sky is the day’s mean cloud
-          cover: this source publishes no weather code, and the app derives none. The first and last
+          cover, not an icon: this source publishes none, and the app derives none. The first and last
           days cover only the hours the grid has, maxima and Dir alike.
         </p>
       )}

@@ -712,7 +712,7 @@ describe('an empty advisory list is not an all-clear', () => {
   it('leaves the round-reserve question to the club on the waiver tiers', () => {
     // Whether the waiver reaches the 10 mph figure is A5's question, not the
     // card's to settle.
-    expect(windPanel(resolveThresholds('waiver:0-5'), 'Waiver', 'kt', null)).not.toContain('A lower maximum');
+    expect(windPanel(resolveThresholds('waiver:0-5'), 'Waiver', 'kt', null)).not.toContain('A lower limit');
   });
 
   it('says on Licensed that no published limit is drawn, and names a sourced profile alone', () => {
@@ -952,7 +952,7 @@ describe('a limit edited in Settings is not presented as the published one', () 
     // unchecked to name.
     const low = wind(withOverrides(DEFAULT_THRESHOLDS.student, { windCautionKt: 9 }))?.guidance ?? '';
     expect(low).toContain('The band and flag use 9 kt, as edited in Settings, not a published figure.');
-    expect(low).not.toContain('below the band');
+    expect(low).not.toContain('nothing on this page flags');
     // Nothing unchecked, so no round-reserve fact to give either (the
     // guidance still quotes the BSR's two figures).
     expect(low).not.toContain('binds no student');

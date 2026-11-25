@@ -2,6 +2,7 @@ import type { AdvisoryLevel, Citation } from '../domain/types';
 import { FLIGHT_CATEGORY_LEVEL, LEVEL_LABEL, OVERCAST_LEVEL } from '../domain/advisories';
 import {
   CITATIONS,
+  DEFAULT_THRESHOLDS,
   FAR_91155_ROWS,
   FLIGHT_CATEGORY_GUIDANCE,
   flightCategoryComparisonText,
@@ -152,8 +153,7 @@ export const CHECKLIST: ChecklistEntry[] = [
   {
     id: 'A4',
     title: 'No USPA wind limit for licensed jumpers',
-    claim:
-      'No USPA ground-wind limit for licensed jumpers: the BSR states maximum ground winds for solo students and then that for licensed skydivers they "are unlimited". Judge it on your canopy, your currency and the conditions, with the S&TA. Whether the load flies is a separate question: takeoff limits come from the aircraft’s operating limitations and the pilot in command, not from USPA: ask the pilot.',
+    claim: DEFAULT_THRESHOLDS.licensed.windGuidance,
     where:
       'Surface wind card with Licensed selected — a standing note under the reading, at any wind speed. No surface-wind flag fires on this profile at any speed unless the jumper sets their own limit in Settings, which every surface calls theirs.',
     sources: [CITATIONS.uspaLicensedWinds],

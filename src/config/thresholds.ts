@@ -543,7 +543,7 @@ export interface Thresholds {
   windBandCaveat?: {
     limitKt: number;
     appliesTo: string;
-    /** What the unedited band figure is, after "The band and flag here use
+    /** What the unedited band figure is, after "The band and flag use
      *  12 kt, ". */
     bandIs: string;
     citation: Citation;
