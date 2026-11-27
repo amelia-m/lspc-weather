@@ -58,7 +58,7 @@ a {
   padding: 16px;
 }
 
-/* The trial layout's section bar (SectionBar.tsx): across the bottom of a
+/* The section bar (SectionBar.tsx): across the bottom of a
    phone, where a thumb reaches, and down the left side of a wide screen.
    Each place is an icon with its word, 52 px tall at least. */
 .section-bar {
@@ -116,9 +116,6 @@ a {
 /* A card the bar scrolls to stops a little under the top edge. */
 [data-card] {
   scroll-margin-top: 10px;
-}
-.beta-note {
-  margin: 0 0 10px;
 }
 @media (min-width: 900px) {
   .section-bar {

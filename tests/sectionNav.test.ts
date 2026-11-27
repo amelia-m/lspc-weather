@@ -1,30 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { activeSection, isBetaPath } from '../src/domain/sectionNav';
+import { activeSection } from '../src/domain/sectionNav';
 import { VIEW_SECTIONS } from '../src/config/sections';
 import { VIEW_CARDS, type View } from '../src/config/views';
 import { SectionBar } from '../src/components/SectionBar';
-import { TrialNote } from '../src/components/TrialNote';
 import { Panel } from '../src/components/common/Panel';
 import { CardAnchor } from '../src/components/common/cardAnchor';
 
-/* The trial layout (the maintainer, 2026-11-25: "Build b first but for now
- * let's launch it as an alternate view, possibly at a new address"): the
- * page as it is, served again from beta/, with a bar of labelled icons that
- * jumps between sections. docs/mockups/layout-options-2026-11-25.html, B. */
-
-describe('the trial layout’s address', () => {
-  it('is the site’s beta folder, with or without its index file, and nothing else', () => {
-    for (const p of ['/lspc-weather/beta/', '/lspc-weather/beta', '/lspc-weather/beta/index.html', '/beta/']) {
-      expect(isBetaPath(p), p).toBe(true);
-    }
-    for (const p of ['/lspc-weather/', '/lspc-weather/index.html', '/', '/lspc-weather/ceiling-errors/index.html', '/lspc-weather/beta/x', '/lspc-weather/betamax/', '/alphabeta']) {
-      expect(isBetaPath(p), p).toBe(false);
-    }
-  });
-});
-
+/* The section bar (option B of docs/mockups/layout-options-2026-11-25.html):
+ * tried at beta/ from 2026-11-25, the layout since 2026-11-27. */
 describe('which section the reader is in', () => {
   // A phone: one column, the sections in order down the page.
   const column = (scrolled: number) =>
@@ -101,26 +86,6 @@ describe('the section bar', () => {
 
   it('is not drawn for a tab with no sections', () => {
     expect(renderToStaticMarkup(createElement(SectionBar, { sections: VIEW_SECTIONS.canopy }))).toBe('');
-  });
-});
-
-describe('the line that joins the two layouts', () => {
-  const note = (beta: boolean, hasBar: boolean, hash = '') =>
-    renderToStaticMarkup(createElement(TrialNote, { beta, hasBar, base: '/lspc-weather/', hash }));
-
-  it('offers the trial from the standard page, at the top, keeping the tab', () => {
-    // The maintainer, 2026-11-25: "yes link, probably at top".
-    expect(note(false, true)).toContain('<a href="/lspc-weather/beta/">a layout with a bar to jump between sections</a>');
-    expect(note(false, true, '#pilots')).toContain('href="/lspc-weather/beta/#pilots"');
-    // Not on a tab the trial changes nothing on.
-    expect(note(false, false, '#canopy')).toBe('');
-  });
-
-  it('on the trial says it is one and gives the way back, keeping the tab', () => {
-    expect(note(true, true)).toContain('Trial layout: the bar jumps between sections of the page.');
-    expect(note(true, true, '#pilots')).toContain('<a href="/lspc-weather/#pilots">The standard layout</a>');
-    expect(note(true, false, '#canopy')).toContain('the bar on the Jumpers and Pilots tabs jumps between sections');
-    expect(note(true, true)).not.toContain('beta/');
   });
 });
 

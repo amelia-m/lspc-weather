@@ -49,8 +49,8 @@ export function Panel({
   children: ReactNode;
 }): JSX.Element {
   const headingId = useId();
-  // Which card this is, where the dashboard says (cardAnchor.ts): the trial
-  // layout's section bar scrolls to it. Absent anywhere else.
+  // Which card this is, where the dashboard says (cardAnchor.ts): the
+  // section bar scrolls to it. Absent anywhere else.
   const anchor = useContext(CardAnchor);
   const speedToggle = unit !== undefined && onUnitChange !== undefined;
   const tempToggle = tempUnit !== undefined && onTempUnitChange !== undefined;
