@@ -16,6 +16,11 @@ Open-Meteo's terms ask for a credit next to wherever its data are shown
   two archives, as served (`PARTS=omwind`). Records with `model` are the
   RRFS asked for by name (`om-wind-rrfs-*` is its past, fetched once on
   2026-11-25 with `PARTS=omwindrrfs`; the weekly files hold both since).
+- `rrfs-cloud-vs-kpmv-<day>.md` (`scripts/rrfsCloudVsKpmv.ts`): the RRFS's
+  and the default model's cloud cover as the comparison logged them, hour
+  by hour beside KPMV's reported sky; `rrfs-cloud-kpmv-metar-*.csv` is the
+  reports it was read against (IEM's ASOS archive), with the request and
+  its time in the `.fetch.json` beside it.
 - `runsplit-*` (the run-split sampler, docs/run-split.md): its raw
   pressure-level winds set against Mark Schulze's and against a second
   request of the app's own, as gaps, with the run metadata of its HRRR
