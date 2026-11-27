@@ -333,7 +333,7 @@ Open-Meteo's three 10 m forms and the NWS hour against the same reports.
 Its data file is rebuilt by the weekly ceiling data refresh. Counts only,
 like the page below.
 
-A trial layout is at `beta/` beside the site: the same dashboard with a bar of five labelled icons that jumps between sections of the page (at the bottom of a phone, down the left side of a wide screen). The standard address is unchanged.
+The Jumpers and Pilots tabs carry a bar of five labelled icons that jumps between sections of the page (at the bottom of a phone, down the left side of a wide screen).
 
 A page, **About this site** (`#about`), holds what the footer used to: the full data credit with what the dashboard changes in Open-Meteo's data, a line on each page behind the dashboard, and who makes the site and how. The footer lists the pages by name.
 

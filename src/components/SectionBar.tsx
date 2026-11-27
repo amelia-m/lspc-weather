@@ -22,7 +22,7 @@ const LINE_PX = 120;
 const cardEl = (card: string): HTMLElement | null => document.querySelector<HTMLElement>(`[data-card="${card}"]`);
 
 /**
- * The trial layout's bar (option B of docs/mockups/layout-options-2026-11-25.html;
+ * The section bar (option B of docs/mockups/layout-options-2026-11-25.html;
  * the maintainer, 2026-11-25): five labelled icons that jump to a section
  * of the page and mark the one in view. At the bottom of a phone's screen,
  * in reach of a thumb, and a rail down the left side on a wide one

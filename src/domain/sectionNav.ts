@@ -1,23 +1,13 @@
 /**
- * The trial layout's section bar: which address shows it, and which section
- * the reader is in.
+ * The section bar: which section the reader is in.
  *
- * The maintainer, 2026-11-25, of three layouts mocked up for her
- * (docs/mockups/layout-options-2026-11-25.html): "Build b first but for now
- * let's launch it as an alternate view, possibly at a new address". Option B
- * keeps the page as it is and adds a bar of labelled icons that jumps
- * between sections. It is served from `beta/` beside the site (the build
- * copies the page there, vite.config.ts), so the standard address and
- * everything behind it are unchanged while it is tried.
+ * The bar of labelled icons that jumps between a tab's sections (option B
+ * of docs/mockups/layout-options-2026-11-25.html) was tried at `beta/` from
+ * 2026-11-25 and is the layout since 2026-11-27, at the maintainer's word
+ * ("Move beta to the main page. I and an instructor looked at it").
  *
  * Pure: the page passes in what it measured.
  */
-
-/** Whether this address is the trial layout's: the site's `beta/` folder,
- *  with or without its index file or the closing slash. */
-export function isBetaPath(pathname: string): boolean {
-  return /\/beta(\/(index\.html)?)?$/.test(pathname);
-}
 
 export interface SectionTop {
   id: string;

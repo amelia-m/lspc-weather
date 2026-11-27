@@ -1,7 +1,7 @@
 import type { CardId, View } from './views';
 
 /**
- * The trial layout's sections: the places its bar jumps to on each tab, each
+ * The sections of each tab: the places the section bar jumps to, each
  * the first card of a run of cards that read together (src/config/views.ts
  * has the order). Five at most, each an icon with its word: an icon alone is
  * a guess, and more than five do not fit a phone's width at a size a thumb

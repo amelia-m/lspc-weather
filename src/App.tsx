@@ -54,10 +54,8 @@ import { WingLoadingPanel } from './components/WingLoadingPanel';
 import { CanopyRiskPanel } from './components/CanopyRiskPanel';
 import { AboutPage } from './components/AboutPage';
 import { SectionBar } from './components/SectionBar';
-import { TrialNote } from './components/TrialNote';
 import { CardAnchor } from './components/common/cardAnchor';
 import { VIEW_SECTIONS } from './config/sections';
-import { isBetaPath } from './domain/sectionNav';
 import { DashboardDisclaimer } from './components/DashboardDisclaimer';
 import { ProfileSelector } from './components/ProfileSelector';
 import { AppFooter } from './components/AppFooter';
@@ -251,11 +249,11 @@ export default function App(): JSX.Element {
     });
 
   const view: View = route === 'pilots' || route === 'canopy' ? route : 'jumpers';
-  // The trial layout (option B, docs/mockups/layout-options-2026-11-25.html)
-  // is this same page served from beta/, with a bar that jumps between
-  // sections. Read once: the path does not change while the page is open.
-  const beta = isBetaPath(window.location.pathname);
-  const showBar = beta && VIEW_SECTIONS[view].length > 0;
+  // The bar that jumps between a tab's sections (option B of
+  // docs/mockups/layout-options-2026-11-25.html): the layout since
+  // 2026-11-27, after a trial at beta/ that the maintainer and an instructor
+  // looked at. A tab with no sections (Canopy) has no bar.
+  const showBar = VIEW_SECTIONS[view].length > 0;
   // The Pilots tab has no Settings, so its flags fire on the profile's
   // published figures, not on edits a reader made for a jumper profile on
   // the other tab: an edit there would otherwise move the visibility flag a
@@ -422,15 +420,6 @@ export default function App(): JSX.Element {
           </a>
         ))}
       </nav>
-
-      {/* The standard page offers the trial layout; the trial says it is
-          one, and where the standard page is. */}
-      <TrialNote
-        beta={beta}
-        hasBar={VIEW_SECTIONS[view].length > 0}
-        base={import.meta.env.BASE_URL}
-        hash={window.location.hash}
-      />
 
       <DashboardDisclaimer />
 
